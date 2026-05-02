@@ -1,6 +1,19 @@
-/.lake
+# Lean
+/.lake/
+/lean/.lake/
+/lean/lake-packages/
 
-# LaTeX
+# LaTeX workspace: keep local sources/build products, track only the final PDF.
+/latex/*
+!/latex/main.pdf
+
+# Paper library
+/papers/
+
+# Archives
+*.zip
+
+# LaTeX build products
 *.aux
 *.log
 *.out
@@ -18,7 +31,6 @@
 *.nav
 *.snm
 *.vrb
-*.pdf
 *.dvi
 *.ps
 
