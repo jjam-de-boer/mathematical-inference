@@ -6,6 +6,7 @@
 # LaTeX workspace: keep local sources/build products, track only the final PDF.
 /latex/*
 !/latex/main.pdf
+!/latex/story.txt
 
 # Paper library
 /papers/

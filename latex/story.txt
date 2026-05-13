@@ -1,0 +1,321 @@
+Story:
+
+
+
+[Quote: Everything, everywhere, all at once]
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+----- [Quote: Huizinga]
+----- 1. Prelude: Andante
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+Setting the mission and introducing Jaynes [JAYNES]:
+Proper process of adding new knowledge to existing information -- which should be the process of science.
+There are three aspects to the mathematical and statistical sciences (Jaynes does not consider anything outside of these disciplines, like existential philosophy, French literature in the 17th century or the efficient management of large cooperations, e.g.) that Jaynes deemed essential:
+- Solid foundations for mathematics
+- Solid foundations for statistics
+- A good and honest attitude for practicing these sciences
+According to Jaynes there is a lot wrong with all three aspects. The sense of urgency and passion can be felt throughout his work [see quote Huizinga]. He flags his discontent with all three aspects, he proposes a solution for statistics (a universal, subjective Bayesian probability theory); the other two are discussed, but not solved. 
+
+This work is aimed to propose a solution for all three things in a holistic view. The first two are tackled using Martin-Löf type theory, a form of mathematics Jaynes surely would have approved of. Jaynes' solution for statistics is scrutinized and problems with its derivation are flagged and addressed using Martin-Löf type theory; furthermore, his theory is extended to more deeply include subjectivity and also account for Pearl's causal framework. The third problem is placed in a much wider context and a practical proposal is made with a combination of policies, regulations and incentives.
+This research is extremely relevant for the field of artificial intelligence/AI for several reasons: 
+- As artificial intelligence deals with the formalization and computability of inference, having a solid and computational method for doing these inferences is of the utmost importance 
+- Extending Jaynes' system to include causility, making it a more encompassing and powerful inference engine, is therefore also an important, new feature
+- Of course, having a good environment in which scientific progress can take place is relevant for virtually any scientific enterprise, including the field of artificial intelligence 
+This research has the following structure:
+- First movement expounds on the claims made by Jaynes
+- Second movement discusses problems with Jaynes' solution 
+- Third movement proposes a viable alternative for mathematics more in line with Jaynes' philosophy
+- Fourth movement then solves Jaynes' problems discussed in the second movement, using this new mathematics
+- Fifth movement elaborate on the bad attitudes Jaynes referred to; Argues those are actively being promoted by the structure of the scientific enterprise and proposes solutions for this
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+----- [Quote: Jaynes]
+----- 2. First movement: Allegro
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+Here, Jaynes' claims are investigated further.
+- Solid foundations for mathematics
+    - Axiomatic set theory, also known as Zermelo-Fraenkel+axiom of Choice (ZFC) theory, which is prevalent in modern mathematics lends itself too easily for sloppy work in Jaynes' view. This can be seen by the abundance of mathematical paradoxes, especially concerning infinity, like Banach-Tarski, Borel-Kolmogorov, Ross-Littlewood (or likewise, Thomson's lamp). Jaynes views this 'infinite paradoxing' a degredation of mathematical quality and rigor, as he prefers a way of doing mathematics where one starts from finite quantities and then only in limiting processes go to infinity -- a way of doing mathematics more in line of Gauss, Kronecker and Pioncaré rather than Cantor, Hilbert and Nicolas Bourbaki/the Bourbaki group. It is not so much wrong (although sometimes it is), but it is more that a lot of energy and effort is wasted on mathematical theories that sound profound, but are from a pragmatic standpoint absolutely worthless -- and doing experimental and pragmatic science is in Jaynes' view essential for the progress of science (which is not suprising given he is a physicist).
+    - He flags the problem, but doesn't solve it; in fact, in his work he resorts to axiomatic set theory as a basis for his theory.
+- Solid foundations for statistics
+    - This science takes the heaviest blow in Jaynes' work. He critizes it for being unstructured, erratic, illogical and inconsistent. He provides ample examples of statistics that seem arbitrary and derivations that are rather hand-waving rather than rigorous. Clear examples of this can be seen in experiments where multiple teams versed in mathematical statistics receive the same data set, but arrive at opposite conclusions [Silberzahn, Schweinsberg, Massey, Botvinik-Nezer]. This is a serious accusation and threatens the very foundations of every statistical claim that has ever been made in economy, psychology, sociology and other sciences [REPRODUCTION CRISIS, NAME PAPERS]. This is even more serious than previous point, in the sense that not only time and energy is wasted, but it actually poses a serious and accute risk of propagating incorrect conclusions, which is directly contrary to doing science.
+    - He solves it by proposing a universal, subjective Bayesian probability theory, based on logic -- internally sound and consistent, inspired by the works of Cox and Jeffreys. He uses it to solve some problems that cannot be easily or consistently solved in mathematical statistics. This is absolutely the main feature that is achieved by Jaynes in his work and a contribution to scientific praxis that cannot be easily overstated. His solution is not without problems, but an important and sincere contribution to the advancement of science.
+- A good and honest attitude for doing these sciences
+    - Jaynes makes rather personal attacks and accusations on people doing mathematics and statistics in a rather `unscientific' way. Especially Fisher, but also Feller, the Nicolas Bourbaki/the Bourbaki group and others take personal blows. Jaynes objects to their method on grounds of:
+        - gamesmanship: showing off rather than contributing something significant
+        - cutting corners: delivering something (generally impressive-looking), but without rigor
+        - hidden assumptions: sweeping the essential, but illogical or incorrect, foundations of a theory under the carpet 
+        - hyperfocused: delivering results that are not focused on the larger narrative, and are sometimes completely contradictory to it
+        - theoretical: delivering results that are not applicable to any real-world design, nor have the faintest ambition to be in accordance with the experimental sciences
+    - He flags it, but doesn't solve it, except by public shaming; in fact, in his work one could definitely accuse Jaynes himself of cutting corners [not so much of the other points], as will be seen in the next movement.
+From the above it can be seen that mathematics, statistics as well as the scientific attitude of its main and most influential contributors is not progressing science in a meaningful way. 
+Introduce mathematical manifesto as solution on personal level:
+    - Algorithms over abstractions
+    - Narrative over formulae
+    - Explicit over implicit
+    - Simple over complex
+Stress that this will be followed in the remainder.
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+----- [Quote: Pfeijffer]
+----- 4. Second movement: Andante
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+Jaynes' + Cox theory, what is derived
+Inspired by Cox and Jeffreys and discontent by (then) current scientific praxis, Jaynes claimed to have found a universal mathematical, yet subjective theory for adding new knowledge to existing information -- either for certain information (propositional logic) or for uncertain information (a calculus of probability, also known as: ``Probability theory''.). This was done by adding suggestive rules as extension of propositional logic, by which the rules for probability theory could be derived (e.g.: Kolmogorov's axioms for probability theory can be derived from these). The rules are:
+1. Divisibility and comparability. Plausibility is represented by a real number that varies continuously with the information available.
+2. Consistency. Whenever a plausibility can be derived by two independent routes, the two results must coincide.
+3. Common–sense. Classical Aristotelian logic should emerge as the special case in which every proposition is known to be either true or false; plausibilities must change smoothly with the plausibilities of their premises.
+These rules lead to the familiar axioms of probability theory:
+1. Non-negativity. For any event A ∈ F : P (A) ≥ 0
+2. Normalization. The probability of the entire sample space Ω is exactly 1: P (Ω) = 1
+3. Countable Additivity. For any countable sequence of mutually exclusive (disjoint) events A 1 , A 2 , A 3 , · · · ∈ F (where A i ∩ A j = ; for all i ̸= j ): Ã ! ∞ ∞ X [ P (A i ) P Ai = i =1 i =1 
+He makes the claims that thus everything not following these rules, contradicts logic/the process of science. Finding many examples in his book, he makes a quite convincing point that mathematical statistics as practiced so far, is often not following these rules (have a slight level of disorganised approach, therefore allowing many hidden assumptions and a lot of theoretical work without any practical correspondence). He also makes the point about some branches of theoretical physics becoming more prone to falling to these errors (having many hidden assumptions, hyperfocus and a lot of theoretical work) -- especially quantum physics and, to a lesser extent, statistical physics.
+
+Although Jaynes' derivations look correct some problems in his approach have been flagged -- regardless of these objections his rebuttals of mathematical statistics seem completely legitimate -- starting with content and going to more fundamental objections afterwards:
+
+    - Are these additional reasonably-sounding rules actually consistent?
+        - Halpert found error
+        - Arnborg and Sjodin corrected for discrete domains
+        - van Horn corrected for continuous domains
+        - Therefore, domains consistent with axiomatic set theory look covered
+
+    - Are these additional reasonably-sounding rules actually reasonable?
+        - When giving these rules precise mathematical meaning, everyone seems to disagree that they are reasonable
+        - Shafer disagrees
+        - van Horn disagrees, creates alternative, but also these seem unreasonable
+        - Clayton disagrees, creates alternative that seems more reasonable
+        - Therefore, this work is focused on derivation of Clayton
+
+    - Is the derived theory actually universal?
+        - Shafer + Colyvan: Which logic do you use and why?
+            - Homer example: Was Achilles considered the fastest among mortals by the Greeks? This follows a completely different logic than propositional logic; so other logics clearly possible
+            - There is a huge difference between different logics, like ontological (concerned with `being') and epistemological (concerned with `knowing') logic
+                - In ontology, things are generally seen as ``true'' if they are ``real in the world'' or, in the ever-present scientific tradition of logical positivism, ``are observable or logically deductible''. This view is natural and useful, if one deals with directly observable and/or logical things and/or a few interacting persons or agents – as is the case in a lot of branches of mathematics, biology, chemistry and physics.
+                - In epistemology deals with the realm of knowledge, defining something as ``true'' more as ``true to someone''
+                - The logic used by Jaynes is a classical, ontological one, although his work should naturally have been done using an epistemological one
+            - As per Van Horn: Important to distinguish fuzzy logic from probability theory, one deals with degree of thruthness, all information being available, other with degree of certainty on a clearly defined decidable-/yes-no-question. Therefore, fuzzy statements (Jim is tall), cannot be solved properly with this type of logic, and therefore also not by this type of probability theory 
+            - This work therefore uses an epistemological logic as a basis and lays to rest the claims of absoluteness or universality, knowing that yet other logics are perfectly viable
+        - There seems to be other problems with propositional logic and the derived probability theory:
+            - Weatherson + Colyvan give reason for something not happening as flawed in propositional logic, however has hidden proposition "This event actually happening" -- if that is included, the expected value actually corresponds nicely Expected_value = p(event) * event_valuation = p(event_value & event_actually_happening) * event_valuation = p(event_value | event_actually_happening) * p(event_actually_happening) * event_valuation, in Weatherson's example p(event_actually_happening) is non-negligibly not equal to 1
+                - However, having hidden assumptions falisifed happens a lot in research, should a theory maybe account for this before failing? 
+                    - This happens naturely in an epistemological setting, since there the matter of something happening/being becomes less relevant
+            - Being un/certain about the uncertainty itself seems ill-defined, but can be solved in many cases at second glance
+                - Coin flip of new coin versus coin flip of throughly tested coin
+                    - Solved by confidence intervals of posterior
+                - Die even versus "is this dog a terrier?" -> Die even versus "is this dog a terrier, a bulldog or something else?" (problem with clearly defining priors)
+                    - Solved by being precise in meaning and comparing certainty of different events
+
+    - Is the derived theory actually subjective?
+        - This is the starkest philosophical contrast between general praxis in the exact sciences Jaynes' theory 
+            - Mathematicians and physicists generally follow Parmenides and Plato in allowing for a single truth and/or a `true' Nature (Discovering the inner workings of mathematical theory of Nature as a way to God/Truth; a Neo-Platonic Nature as a true reflection of God)
+            - Since scientists see themselves as `uncovering this one single Truth', they like to describe their activities as `objective'; practicing ontology or logical positivism. Since they only deal with a small amount of people and on small domains, this generally doesn't give problems
+                - This also reflects the origin of modern science, where doing science was often a lonely enterprise.
+            - In this view, uncertainty is often seen as an apriori property of the objects themselves -- a coin is intrinsically described having probabilities 1/2 on each side 
+            - In this view, one just needs to repeat an experiment many times to uncover the `true probability' of such an object [approaching certainty with many experiments]
+            - This corresponds to what is generally known as the `frequentists' view of probability
+            - Jaynes ridicules this view in several passages
+                - He demonstrates that this is clearly erroneous as a coin can in an experiment be flipped as to have any probability you like [thus, this view is clearly made up by mathematicians never doing experiments, but just hypothesizing about them -- see the theoretical objection by him above]
+                - He does not accept that an experiment can be simply described as `random' as to ignore this problem, since this just hides the precise procedure what entails `random' [see the hidden assumptions objection by him above]
+                - Jaynes therefore poses that probability should not be sought in the objects themselves, but in the precise procedures and in the description of information someone has/hasn't; proposing to base probability theory on epistemology
+                - This corresponds to the Bayesian view of probability
+                - Some theories have inherent uncertainties in them, like statistical physics and quantum physics, and not seeing their probabilities as missing information, but as fundamentally unknown (as in: Given as unknown in Nature itself) gives a misunderstanding of what these theories reflect -- see quantum theory not progressing significantly and the utter confusion around glasses (Jaynes mentions the `projection fallacy', where personal missing information is projected on a situation as a whole or is seen as being fundamentally missing)
+            - Note that subjectivity is actually nowhere explicitly introduced in Jaynes' theory, so it is a post-hoc interpretation rather than something inherent in the theory itself
+            - In this work, an epistemological logic is taken as a basis for the derivations, allowing for baking in subjectivity at a fundamental level
+        - Colyvan: Interest is topic not being currently discussed in science, but it should be, since it makes statements non-decidable. Next to true/false you now add an option "I really don't care". Classical logic/domains assume you have intrinsic interest in all of them 
+            - This is a not problem when dealing with people that operate on completely different domains 
+                - I don't really care whether the ancient Greeks considered Achilles the fastest among mortals 
+            - However, this becomes absolutely crucial for overlapping domains. 
+                - I don't care for most diseases, except when I would get them -- and even then, I'd care mostly about the results and perhaps some causes [as to prevent it from worsening or (reoccurring) in (people around) me], but not about (bio)chemistry, the organizational structure of the hospital or the inner workings of some medical devices, which are all in fact much related to my newly contracted disease
+                - I need a way to deal with people with other domains of interest (also in scientific research)
+                    - Solution would be to add dimension to probability mapping, making it two-dimensional; Add rules on how to deal with probabilities with different interest values
+                        - Adds complexity and only worsens the problem of clearly defining prior information, as it extends to defining prior interest as well
+                    - Do all operations, like marginalizing/integrating out variables, or rescaling of variables, in the codomain of the probability map -- this does not explicitly account for these difference in interest, but does allow for the consequences
+                        - Adds complexity and one always needs all information to bridge the domains, which might not always be at hand
+                    - Use different logic that allows for adding different values than only true/false to statements
+                        - This is done in model-based AI and Clingo; a three- or multiple-valued logic that adds such a state of knowledge explicitly
+            - This critique can be repeated for some fact that was known but is now forgotten
+                - Classical logic assumes that information is never lost in the process
+            - Interest and forgetting and hypothesizing and other knowledge-related phenomena will be explicitly accounted for in this epistemological logic 
+
+    - Does the theory account for causality?
+        - It does not, as there is no way to fundamentally define whether wet grass causes rain with this theory [also greatly diminishing claims for universality]
+        - Pearl’s framework provides a rigorous mathematical foundation for distinguishing correlation from causation and moves beyond passive observations to active interventions and counterfactual reasoning
+            - It has three levels of abstraction:
+                - 1. Association. Concerns observational queries of the form P (Y |X ), derived directly from data distributions without causal assumptions except the Causal Markov Con- dition, which posits that each variable is independent of its non-descendants given its parents in the causal diagram.
+                - 2. Intervention. Addresses queries involving the do-operator, written as P (Y |d o(X = x)), representing the distribution of Y under an external manipulation that sets X = x; identifying these effects requires the Faithfulness Assumption (that observed con- ditional independencies reflect the graph structure) and other constraints expounded on below.
+                - 3. Counterfactuals. Involves reasoning about specific instances under hypothetical conditions, denoted Y x (u), asking what the outcome Y would have been for unit u had X been x; this level demands the strongest commitments regarding the underly- ing graph and functions.
+            - Uses three rules:
+                - Rule 1 (Insertion/Deletion of Observations): P (y | d o(x), z, w) = P (y | d o(x), w) if (Y ⊥⊥ Z | X ,W )G X
+                - Rule 2 (Action/Observation Exchange): P (y | d o(x), d o(z), w) = P (y | d o(x), z, w) if (Y ⊥⊥ Z | X ,W )G X Z
+                - Rule 3 (Insertion/Deletion of Actions): P (y | d o(x), d o(z), w) = P (y | d o(x), w) if (Y ⊥⊥ Z | X ,W )G X Z (W )
+            - For the third level (counterfactuals) it uses three steps:
+                - 1. Abduction: Where the posterior distribution of exogenous variables P (U |e) is com- puted given observed evidence e to infer the specific state of unit u.
+                - 2. Action: Where the structural equation for X is replaced by the constant assignment X = x to create an adjusted model Mx . 11P
+                - 3. Prediction: Where the outcome is computed as P (Y x = y|e) = u P (Y x (u) = y|U = u)P (U = u|e). This specification ensures the Consistency Axiom holds (X = x =⇒ Y x = Y ) and guarantees that the mechanism f i remains invariant across factual and counterfactual worlds, allowing for determination of specific noise terms.
+            - Pearl's theory equips (AI) systems with the ability to understand not just what happens, but why it happens and what would happen if the world were different, addressing a fundamental limitation of traditional statistical methods -- including Jaynes' theory
+            - Show that Pearl's framework is complete with respect to its rules [MENTION THE THREE PAPERS]
+            - Pearl is not derived from philosophical foundations, and therefore is done rather post-hoc. There is urgency and the critique feels justified, but there is actually very little philosophical and mathematical/logical foundation to it
+                - Humans think/talk/do completely causally about things/the world/each other and science can be seen as discovering new causal relations in surroundings/environment (be it human-world/society, be it animal/biological world, be it material world) [reasons for this need not be uncovered, this is a mere observation]
+                - Solution: Huizinga (there is a playful and conjunctive element in all these human activities -- like science; it is therefore a creative ("scheppend") activity done together), Erasmus (there is certainly a degree of irony in anything that is conjured this way/together), Kierkegaard (but this irony is bounded by tradition/everything that is already there/past) AND me (everything is bounded by the fact that it is an activity together, so it needs to go through other people too -- which is flexible (post-truth/manipulation) but like [Kierkegaard's] tradition not infinitely so)
+                - Therefore: Since causality is deeply traditional and human, not any observation goes (as according to Feyerabend), and is it completely useful and justified to talk about it (contrary to what Hume says) and whether it stems from the `world itself' or `human perspective' becomes irrelevant once science is perceived as inter-human activity (as according to Kant who saw every observation as deeply human -- where causality comes from in this process is completely irrelevant as a justification for this process); any theory that serves the tradition of science should therefore account for causality; Both from pragmatic necessity as well as acknowledgment of the fact that science is after all a deeply human activity and humans have this fundamental need for causal reasoning
+                - Therefore: This work will incorporate causality as to allow for humans to meaningfully interact with the encompassed theory and interchange ideas with it
+            - Pearl only takes one static kind of causality into account
+                - It does not naturally account for causality that changes during the experiment/reasons that change while observing, as the structures/graphs that Pearl uses are rather static once an experiment is started
+                - In this work, the structures will be very flexible and allowed to change at will -- supporting an even broader view on causality
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+----- [Quote: Adams]
+----- 3. Third movement: Scherzo
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+Explain a bit what the difference between ontological and epistemological logic (try answer: "Does God exist?" with both).
+Introduce Intuitionistic Type Theory (Martin-Löf-style) with formation, introduction, elimination, and computation rules; judgements, contexts, and the turnstile; etc. (give example of how Booleans are defined in both logics).
+Introduce what types are, what problems they solve and make propositions-as-type explicit. 
+Explain that interest is natively solved in MLTT
+    - Interest is naturally encoded in contexts, where terms and types appearing in the context define the things in scope. On the converse, things not explicitly in context, cannot be part of any calculations for that context and are, thus, out of scope. 
+Explain that some additional work is required to account for probability -- a probability type needs to be defined
+Explain that some additional work needs to be done to account for epistemological phenomena like forgetting or hypothesizing -- modalities (ways of switching contexts) are needed
+Stress that mathematical manifesto is strictly followed by applying this theory.
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+----- [Quote: Pratchett]
+----- 5. Fourth movement: Vivace
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+Extend this framework with a probability type
+    - Make explicit that this either derives or is at the very least consistent with the Kolmogorov axioms
+Extend this framework with modes/modalities/Gratzer's theory to account for epistemological phenomena like forgetting or hypothesizing
+    - Make these modes + modalities explicit
+    - Make explicit that this is in accordance with Pearl's framework [and thus complete as well]
+Explain how this solves the problem
+    - One can also think in this framework of introducing new nodes in the SCM (‘learning’), or removing them (‘forgetting’). In this interpretation, modes serve as a natural semantic layer on how to change contexts 
+    - They can, as such, serve as a framework for epistemological concepts as `interest', `forgetting', `learning' and `hypothesizing'.
+Make explicit that this extended theory fundamentally solves the following (Jaynes' and also his oponents') objections
+    - Infinite paradoxing/set theoretical practices
+        - Will be solved by only allowing for N, everything else is derived from there
+    - Being very abstraction-heavy, theory-focused
+        - Algorithms are naturally built in, since the selected logic is due to Curry-Howard correspondence very algorithm-focused
+    - Having many hidden assumptions + prone to cutting corners
+        - Everything needs to be specified since proofs can be computed -- however in order for this to work everything needs to be specified precisely
+    - Gamesmanship
+        - Will now lead to actual/incremental progress, rather than having to use much-needed and valuable capacity to re-do or correct earlier work, which is valuable!
+    - Consistency
+        - Will be ensured by taking all previous analyses and objections into account
+    - Reasonability
+        - All steps can easily and automatically be verified, but remains in the eye of the beholder
+    - Universality
+        - Will be narrowed/specified on the basis of domain/operations that are allowed
+        - Domain is taken as discrete (other things are limits -- tying in with first point)
+        - Logic is taken as epistemic logic (classical logic is ontological) -- if domains are following a different kind of logic, this probability theory doesn't hold
+    - Subjectivity
+        - Will be built into the logic itself by introducing modal logic on top of it/Kripke Worlds/Gratzer -- makes it very explicit already from the beginning
+        - Interest and forgetting can likewise naturally be baked into epistemic logic by using modalities
+    - Pearl/causality
+        - Pearl can be taken into account in a similar fashion as classical case
+        - Extend it to include the other/more general operations as well
+By doing Clayton + Gratzer in Martin-Löf type theory, one obtains the following:
+- Discrete basis for probability
+- Logical basis for subjectivity (interest and background) via context and modalities
+- Logical basis for causality
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+----- [Quote: Piketty]
+----- 6. Fifth movement: Presto
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+Things flagged by Jaynes symptoms of large underlying problem. Every step of scientific process seems corrupted/prone to large errors.
+Science can be defined in more than one way, but let's give two; Science can be seen as activity that:
+    1) uncovers the Truth (as in Neo-Platonic view already expressed above) in the most effective and sincere way
+    2) promises to efficiently solve society's large problems, both local as global (cancer, poverty, pollution, etc.)
+Research more and more run like a business, with KPI's included to hit targets, thereby forcing highly non-linear process of discovery in simplistic linear framework [mention Higgs]
+- Start research/career:
+    - Feels pressure to deliver (positive) findings, enhancing confirmation bias [Stapel; Woo-suk; Obokata; Green]
+    - Amplifies cutting corners [Obokata; Schon]
+    - Amplifies hyperfocus
+    - Amplifies gamesmanship [Woo-suk; Obokata]
+    - Effect starker due to visas (look for increase in fraud now that visa rules have been sharpened world-wide)
+    - Catch-22 effect: Can't start to do research without funding, can't get no funding without research, enhancing stress and pressure [Ibáñez]
+        - Has as side-effect that only rich entities can embark on innovative projects, with the rest either supporting or having considerably less funding
+        - Thus, increases inequality and descreases overall access
+- Reporting in journal:
+    - Again, positve and/or exaggerated findings [Stapel; Wakefield; Woo-suk; Green; Raoult]
+    - Destroys collaboration (due to have competition for limited spots) [Obokata]
+        - Amplifies gamesmanship
+    - Journals only interested in attention/subscriptions, therefore supporting claims that are exaggerated or plain wrong [Wakefield; Woo-suk; Raoult; Fujii]
+        - Amplifies cutting corners
+    - Many degrees of freedom/forking paths, leading to reproducibility crisis
+    - Often light penalties in case researchers decides not to align with publication standards, breaking ethical guidelines or declaring conflict of interest [Wakefield; Woo-suk; Raoult]
+        - Amplifies cutting corners
+- Peer-review/editorial process:
+    - Stimulate conservatism [Raoult]
+        - Amplifies hyperfocus
+        - Amplifies gamesmanship
+        - Amplifies hidden assumptions (shared by reviewers) [Green]
+        - Amplifies theoretical work 
+        - Actually destroys natural tendency that can be seen in rest society: A new order with new ideas arises, gradually replacing the old order and ideas. Current set-up completely hampers/slows down this process
+    - Often forcing people to include references of reviewer, or simply adding themselves as co-authors in editorial process, distorting relevance [Pandey; Fujii]
+        - Amplifies hyperfocus
+    - Always incremental, almost never radical (due to conservative approach, since everyone wants funding), slowing progress considerably [mention that most explicit fraud causes are actually radical and therefore more likely to being caught in the act]
+        - Amplifies hyperfocus
+        - Amplifies gamesmanship
+        - Amplifies hidden assumptions (shared by reviewers)
+    - Gives disproportionate power to senior researchers and prestiguous institutes (both in needing them as a name on a paper before being able to publish, as well as reviewer, since these are the people that have the time to review at all) [Stapel; Woo-suk; Obokata; Pandey; Raoult]
+    - Inadequate process for detecting any sort of fraud or breaking of standards (lack of time + methodology) [Stapel; Wakefield; Schon; Woo-suk; Obokata; Green; Raoult; Fujii; Pandey]
+        - Plagiarism, fabrication of data, fabrication of figures, not maintaining ethical standards, not declaring conflict of interest, salami slicing, p-hacking, harking, citation manipulation, having unusual review processes (like writer and editor/exceptionally fast review times), etc.
+        - Mention often (not always) completely inadequate mechanisms both within journals as institutes to investigate fraud [Raoult; Wakefield; Pandey]
+    - No standards (both in method and time spent), leading to incoherent processes
+- Career advancement
+    - Gives incentive of quantity over quality [Stapel; Fujii; Pandey; Schon]
+        - Amplifies hyperfocus
+        - Amplifies gamesmanship
+        - Amplifies hidden assumptions (shared by reviewers) [Green]
+        - Amplifies theoretical work 
+        - Amplifies cutting corners
+    - People are trained as researchers (or profession `publishers' depending on your view), yet are somehow supposed to manage people and do HR, PR and all organizational things. Like demanding that a bus driver becomes a market manager when progressing with his career. Some would flourish if this was asked, but it doesn't look efficient
+    - Blocked from some fields of research, since most publications are closed-source, therefore leaving poorer researchers/institutes/countries enable to contribute to subjects they could meaningfully contribute
+    - Impossible time-wise to remain up-to-date with own, let alone other, fields, since keeping up consists of a full-time job with current science growth rates [Bornmann; LANDHUIS]
+        - Amplifies hyperfocus
+    - Impossible time-wise to give same level of scrutiny to every paper during review
+        - Amplifies cutting corners
+If you think aforementioned things are not problematic, look at scale of fraud in the paper-mill paper.
+
+
+Introduce scientific manifesto:
+- Given overall situation, it is highly problematic to call current set-up `science', since it doesn't have as a mission to uncover Truth in an effective and sincere way, nor keeps to the promise of efficiently solving society's problems. We should refer to it as funded research, until a more adequate construction is found [Schekman]
+- Funding would need a radical change -> partly peer (ensures that more obscure or `science for scientists' always receives funding) + partly directly by citizen science (enhances outreach and local scientific initiatives) + partly by politics' agenda (now research funding initiatives often done by industry input, not democratic at all) [mention Higgs]
+    - If society leaves researchers open to pursue interests of choice since ``they know best'' (from a dogma of not interferring with science from outside), research will logically diffuse towards companies' agendas, since these have a clear agenda
+- Publication alternative by government (tax money is spent now on publications, which cost an enormous amount; better to more efficiently spend it such that everything is automatically open-source as to give relevant people access to relevant sources) [Gurdon; Eisen]
+    - In this publication system it should be obligatory to submit raw data as well, even in rare cases inaccessible (for proprietary research). Many fraud cases actually were difficult to uncover since `original data was lost', which is not a red flag, but a completely obiquitous practice among scientists [Schon; Obokata]
+- Review system more like online platforms (open reviews and reliability of publications judged by how many and how well the reviews are made -- give opportunity of anonymous reviews, but also gives opportunity of scientists getting a career as prolific or famous reviewers, alike music, film or book critics) [Eisen]
+- Divide current head of research groups into head of research and (possible shared -- to save costs) and head of operations in each research group
+- Make funding of researchers (on public research institutes) open by law
+
+Make case that this approach solves all above problems.
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+----- [Quote: Xenofon]
+----- Acknowledgements
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+----- [Quote: Plato]
+----- Definitions
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+----- [Quote: Dostojewski]
+----- Proofs
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+----- [Quote: Erasmus]
+----- Bibliography/sources
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
