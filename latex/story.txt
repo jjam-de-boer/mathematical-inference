@@ -9,7 +9,11 @@ Story:
 ----- [Quote: Huizinga]
 ----- 1. Prelude: Andante
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-Setting the mission and introducing Jaynes [JAYNES]:
+1.a Inspiration
+Introduce Jaynes' [JAYNES] book and cite it as a main motivator for studying probability theory outside the context of physics and for studying AI. When studying physics as bachelor and master, both statistical physics and quantum physics seemed rather esotherical and contrived systems with very mixed and fundamentally opposing interpretations. Jaynes brought clarity and was the book I very much wished I had read during my physics years. Current work is therefore both a hommage as an intent to expand some of Jaynes' formulations, as well as an update to include (relatively) modern developments.
+
+1.b Introduction
+Setting the mission within Jaynes [JAYNES]:
 Proper process of adding new knowledge to existing information -- which should be the process of science.
 There are three aspects to the mathematical and statistical sciences (Jaynes does not consider anything outside of these disciplines, like existential philosophy, French literature in the 17th century or the efficient management of large cooperations, e.g.) that Jaynes deemed essential:
 - Solid foundations for mathematics
@@ -17,17 +21,45 @@ There are three aspects to the mathematical and statistical sciences (Jaynes doe
 - A good and honest attitude for practicing these sciences
 According to Jaynes there is a lot wrong with all three aspects. The sense of urgency and passion can be felt throughout his work [see quote Huizinga]. He flags his discontent with all three aspects, he proposes a solution for statistics (a universal, subjective Bayesian probability theory); the other two are discussed, but not solved. 
 
-This work is aimed to propose a solution for all three things in a holistic view. The first two are tackled using Martin-Löf type theory, a form of mathematics Jaynes surely would have approved of. Jaynes' solution for statistics is scrutinized and problems with its derivation are flagged and addressed using Martin-Löf type theory; furthermore, his theory is extended to more deeply include subjectivity and also account for Pearl's causal framework. The third problem is placed in a much wider context and a practical proposal is made with a combination of policies, regulations and incentives.
+This work is aimed to propose a solution for all three things in a holistic view. The first two are tackled using Martin-Löf type theory, a form of mathematics Jaynes surely would have approved of. Jaynes' solution for statistics is scrutinized and problems with its derivation are flagged and addressed using this Martin-Löf type theory; furthermore, his theory is extended to more deeply include subjectivity and also account for Pearl's causal framework. The third problem is placed in a much wider context and a practical proposal is made with a combination of policies, regulations and incentives.
+
+1.b.1 Research questions:
+Referring to the above text, the thesis will aim to answer the following research questions:
+- Can Jaynes' probabilistic framework be cast in the language of Martin-Löf type theory?
+- Can Jaynes' probabilistic framework be extended as to natively include subjectivity?
+- Can Jaynes' probabilistic framework be extended as to include Pearl's causal framework?
+- Can Jaynes' commentary on the bad practices within the scientific community be placed in a wider context?
+
+1.b.2 Relevance:
 This research is extremely relevant for the field of artificial intelligence/AI for several reasons: 
 - As artificial intelligence deals with the formalization and computability of inference, having a solid and computational method for doing these inferences is of the utmost importance 
 - Extending Jaynes' system to include causility, making it a more encompassing and powerful inference engine, is therefore also an important, new feature
 - Of course, having a good environment in which scientific progress can take place is relevant for virtually any scientific enterprise, including the field of artificial intelligence 
+
+1.c Outline
 This research has the following structure:
 - First movement expounds on the claims made by Jaynes
-- Second movement discusses problems with Jaynes' solution 
+- Second movement discusses problems with Jaynes' solution on statistics
 - Third movement proposes a viable alternative for mathematics more in line with Jaynes' philosophy
-- Fourth movement then solves Jaynes' problems discussed in the second movement, using this new mathematics
+- Fourth movement then solves Jaynes' problems discussed in the second movement, using this new mathematics, and extends it to include causality; and subjectivity on a more fundamental level
 - Fifth movement elaborate on the bad attitudes Jaynes referred to; Argues those are actively being promoted by the structure of the scientific enterprise and proposes solutions for this
+
+1.d Idiosyncrasies
+Before continuing the main part of the text, some habits may well be highlighted as to avoid confusion or annoyance:
+- Inconventional structure: The thesis is intentionally structure as a symphony. This is inspired by Huizinga and the observation that the once playful character that once played a central part within the sciences has been gone and replaced by and overly competitive and institutionalized environment
+- Stylistic choices that are conciously taken are:
+    - Minimal acronyms: Science has become riddled with fun-sounding non-functional abbreviations -- probably in an attempt to secure funding -- which will not be done by me. Acronyms will be avoided if possible.
+    - Lower-case preference: Likewise, there has been a recent tendency to PascalCase or **Highlight** every other word in respectable publications. I find this distracting, so it will not be done by me
+    - Therefore no MILE (Mathematical Induction as a Logical Extension), but simply mathematical induction.
+- Alternative naming: Some names will appear different in my text compared to their standard reading
+    - In this work, mathematical induction does not refer to the mathematical proof strategy, which is a historical misnomer and should have correctly been called 'mathematical deduction'. Mathematical induction is here referred to the act of making inferences based on mathematical methods.
+    - To be completely consistent I refer to distributions as 'distros'. This to be fully consistent with the terminology that I use when dealing with Linux flavours. Either I would call all these Linux distributions, which seemed so outrageously contrived that I decided to name probability densities as probability distros instead -- which is rather acceptable.
+- Active collaboration with AI: As AI is more-and-more interwoven with our daily activities, so it is within scientific work
+    - Searching sources: For investigating and gathering sources, ChatGPT is heavily used.
+    - Writing text: For writing text Lumo, together with ChatGPT will be used [100% AI-made, 100% human-reviewed].
+    - The most interesting one: For doing the actual mathematics Claude and ChatGPT are heavily used. As this research is heavily based on Martin-Löf type theory, a proof checker like Lean or Agda can be employed. This, in turn, invites the use of AI coding agents like Claude and ChatGPT to help along [INFINITE PARADOXING LINKS PROOF CHECKERS].
+- Audience: This thesis aims to serve multiple audiences, which is always rather risks being risque for every audience independently. However, as this research lives at the crossroads of logic; mathematics; applied research; philosopical interpretations of mathematical entities; and the sociology and organization of the scientific enterprise as a whole; current text can hold interesting elements for anyone taking an interest in any of these subjects. As this is a wide audience to cater, I acknowledge beforehand that very few will be fully satisfied, but patience and kindness is requested of the reader.
+- Emphasis on narrative: As the main emphasis of this text is the natural 'flow' of information, non-essential details like definitions, proofs and code are moved to the appendices, so that the interested reader can trace all the derivations, but the less interested reader is not interrupted from the main story line.
 
 
 
@@ -37,20 +69,20 @@ This research has the following structure:
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 Here, Jaynes' claims are investigated further.
 - Solid foundations for mathematics
-    - Axiomatic set theory, also known as Zermelo-Fraenkel+axiom of Choice (ZFC) theory, which is prevalent in modern mathematics lends itself too easily for sloppy work in Jaynes' view. This can be seen by the abundance of mathematical paradoxes, especially concerning infinity, like Banach-Tarski, Borel-Kolmogorov, Ross-Littlewood (or likewise, Thomson's lamp). Jaynes views this 'infinite paradoxing' a degredation of mathematical quality and rigor, as he prefers a way of doing mathematics where one starts from finite quantities and then only in limiting processes go to infinity -- a way of doing mathematics more in line of Gauss, Kronecker and Pioncaré rather than Cantor, Hilbert and Nicolas Bourbaki/the Bourbaki group. It is not so much wrong (although sometimes it is), but it is more that a lot of energy and effort is wasted on mathematical theories that sound profound, but are from a pragmatic standpoint absolutely worthless -- and doing experimental and pragmatic science is in Jaynes' view essential for the progress of science (which is not suprising given he is a physicist).
+    - Axiomatic set theory, also known as Zermelo-Fraenkel+axiom of Choice (ZFC) theory, which is prevalent in modern mathematics lends itself too easily for sloppy work in Jaynes' view. This can be seen by the abundance of mathematical paradoxes, especially concerning infinity, like Banach-Tarski, Borel-Kolmogorov, Ross-Littlewood (or likewise, Thomson's lamp) [INFINITE PARADOXING PAPERS EXCEPT PROOF CHECKERS]. Jaynes views this 'infinite paradoxing' a degredation of mathematical quality and rigor, as he prefers a way of doing mathematics where one starts from finite quantities and then only in limiting processes go to infinity -- a way of doing mathematics more in line of Gauss, Kronecker and Pioncaré rather than Cantor, Hilbert and Nicolas Bourbaki/the Bourbaki group. It is not so much wrong (although sometimes it is), but it is more that a lot of energy and effort is wasted on mathematical theories that sound profound, but are from a pragmatic standpoint absolutely worthless -- and doing experimental and pragmatic science is in Jaynes' view essential for the progress of science (which is not suprising given he is a physicist) [see quote Jaynes].
     - He flags the problem, but doesn't solve it; in fact, in his work he resorts to axiomatic set theory as a basis for his theory.
 - Solid foundations for statistics
-    - This science takes the heaviest blow in Jaynes' work. He critizes it for being unstructured, erratic, illogical and inconsistent. He provides ample examples of statistics that seem arbitrary and derivations that are rather hand-waving rather than rigorous. Clear examples of this can be seen in experiments where multiple teams versed in mathematical statistics receive the same data set, but arrive at opposite conclusions [Silberzahn, Schweinsberg, Massey, Botvinik-Nezer]. This is a serious accusation and threatens the very foundations of every statistical claim that has ever been made in economy, psychology, sociology and other sciences [REPRODUCTION CRISIS, NAME PAPERS]. This is even more serious than previous point, in the sense that not only time and energy is wasted, but it actually poses a serious and accute risk of propagating incorrect conclusions, which is directly contrary to doing science.
+    - This field of research takes the heaviest blow in Jaynes' work. He critizes it for being unstructured, erratic, illogical and inconsistent. He provides ample examples of statistics that seem arbitrary and derivations that are rather hand-waving rather than rigorous. Clear examples of this can be seen in experiments where multiple teams versed in mathematical statistics receive the same data set, but arrive at opposite conclusions [CONTRADICTING CLAIMS]. This is a serious accusation and threatens the very foundations of every statistical claim that has ever been made in economy, psychology, sociology and other sciences [REPRODUCTION CRISIS, NAME PAPERS]. This is even more serious than previous point, in the sense that not only time and energy is wasted, but it actually poses a serious and accute risk of propagating incorrect conclusions, which is directly contrary to doing science.
     - He solves it by proposing a universal, subjective Bayesian probability theory, based on logic -- internally sound and consistent, inspired by the works of Cox and Jeffreys. He uses it to solve some problems that cannot be easily or consistently solved in mathematical statistics. This is absolutely the main feature that is achieved by Jaynes in his work and a contribution to scientific praxis that cannot be easily overstated. His solution is not without problems, but an important and sincere contribution to the advancement of science.
 - A good and honest attitude for doing these sciences
-    - Jaynes makes rather personal attacks and accusations on people doing mathematics and statistics in a rather `unscientific' way. Especially Fisher, but also Feller, the Nicolas Bourbaki/the Bourbaki group and others take personal blows. Jaynes objects to their method on grounds of:
+    - Jaynes makes rather personal attacks and accusations on people doing mathematics and statistics in a rather `unscientific' way. Especially Fisher, but also Feller, the Nicolas Bourbaki/the Bourbaki group and others take personal blows. He has a rather strong opinion on that science should not be primarily seen as the process for doing 'useless' or contrived things and/or boasting someone's career, but as a helpful instrument for making mathematical inferences in the real world [again, see quote Jaynes]. Jaynes objects to their method on grounds of:
         - gamesmanship: showing off rather than contributing something significant
         - cutting corners: delivering something (generally impressive-looking), but without rigor
         - hidden assumptions: sweeping the essential, but illogical or incorrect, foundations of a theory under the carpet 
         - hyperfocused: delivering results that are not focused on the larger narrative, and are sometimes completely contradictory to it
         - theoretical: delivering results that are not applicable to any real-world design, nor have the faintest ambition to be in accordance with the experimental sciences
     - He flags it, but doesn't solve it, except by public shaming; in fact, in his work one could definitely accuse Jaynes himself of cutting corners [not so much of the other points], as will be seen in the next movement.
-From the above it can be seen that mathematics, statistics as well as the scientific attitude of its main and most influential contributors is not progressing science in a meaningful way. 
+From the points above it can be seen that mathematics, statistics as well as the scientific attitude of its main and most influential contributors is not progressing science in a meaningful way. 
 Introduce mathematical manifesto as solution on personal level:
     - Algorithms over abstractions
     - Narrative over formulae
