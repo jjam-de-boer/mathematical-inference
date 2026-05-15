@@ -21,16 +21,96 @@ There are three aspects to the mathematical and statistical sciences (Jaynes doe
 - A good and honest attitude for practicing these sciences
 According to Jaynes there is a lot wrong with all three aspects. The sense of urgency and passion can be felt throughout his work [see quote Huizinga]. He flags his discontent with all three aspects, he proposes a solution for statistics (a universal, subjective Bayesian probability theory); the other two are discussed, but not solved. 
 
-This work is aimed to propose a solution for all three things in a holistic view. The first two are tackled using Martin-Löf type theory, a form of mathematics Jaynes surely would have approved of. Jaynes' solution for statistics is scrutinized and problems with its derivation are flagged and addressed using this Martin-Löf type theory; furthermore, his theory is extended to more deeply include subjectivity and also account for Pearl's causal framework. The third problem is placed in a much wider context and a practical proposal is made with a combination of policies, regulations and incentives.
+This work is aimed to propose a solution for all three things in a holistic view. The first two are tackled using Martin-Löf type theory, a form of mathematics Jaynes surely would have approved of. Jaynes' solution for statistics is scrutinized and problems with its derivation are flagged and addressed using this Martin-Löf type theory; furthermore, his theory is extended to more deeply include subjectivity and also account for Pearl's causal framework. The third problem is placed in a much wider context and a practical proposal is made with a combination of policies, regulations and incentives. 
 
-1.b.1 Research questions:
+There is a dire need to consider these parts together: As mentioned by [JAYNES and MACELREATH] inference is only one component of scientific knowledge production; AI systems that formalize inference inherit the weaknesses of the wider scientific pipeline in which questions, data, models, incentives, publication, and review are produced. It is therefore extremely important that both the fomralization of mathematical inference, as well as the environment in which those inferences take place, are sensible and constructive. If not, the inferences will only be as good as the weakest link.
+
+1.b.1 Scope and assumptions
+Make explicit what is and is not attempted in this work.
+
+State that current work is a thesis in AI, where AI is taken to mean the formalization and implementation of inference. In that sense, probability theory, logic, causality and proof checking all fall naturally within the scope of AI.
+
+Stress that this is also the reason why the scientific-practice part is included. Jaynes is not merely complaining about a few technical details in probability theory, but about the way in which scientific conclusions are made, defended and institutionalized. MacElreath makes a similar point: statistical inference is only one part of the much larger machinery of science. Therefore, if the machinery surrounding inference is bad, then even a formally sound inference engine will only be as useful as the scientific process in which it is embedded.
+
+Therefore current work looks at inference on two levels:
+- Internally: What formal rules should govern uncertain, subjective and causal inference?
+- Externally: In what scientific environment are these rules used, ignored, rewarded or abused?
+
+State the mathematical scope:
+- This work is carried out in a finitary and constructive mathematical setting
+- Probability spaces are finite/discrete
+- Causal models are finite/discrete
+- Epistemic states and contexts are assumed to be explicitly representable
+- Every object that plays a central role should, be constructible and implementable
+
+Stress that this restriction is not merely done for convenience:
+- It follows Jaynes' suspicion towards uncontrolled infinities and hidden assumptions (as will be later seen)
+- It follows the constructive spirit of Martin-Löf-style type theory (as will be later seen)
+- It fits the AI-perspective, since formal reasoning should be executable or at least checkable
+
+State that selected formal parts will be implemented in Lean 4:
+- Lean 4 is used as a proof checker for representative definitions, proofs and examples
+- The Lean formalization is not expected to cover every philosophical claim
+- It is meant to check that the central mathematical constructions are not merely suggestive prose, but can actually be made precise
+
+Mention the limitations that follow directly from this:
+- This work does not attempt to reconstruct all of classical probability theory
+- It does not attempt to give a general theory of continuous probability spaces
+- It does not attempt to solve measure theory, real-valued stochastic processes or actual infinity
+- It does not claim that Martin-Löf-style type theory is the only acceptable foundation for mathematics
+- It does not claim that Pearl's framework captures everything that can meaningfully be called causality
+- It does not claim to give a complete empirical sociology of science
+
+1.b.2 Research questions:
 Referring to the above text, the thesis will aim to answer the following research questions:
 - Can Jaynes' probabilistic framework be cast in the language of Martin-Löf type theory?
 - Can Jaynes' probabilistic framework be extended as to natively include subjectivity?
 - Can Jaynes' probabilistic framework be extended as to include Pearl's causal framework?
 - Can Jaynes' commentary on the bad practices within the scientific community be placed in a wider context?
 
-1.b.2 Relevance:
+1.b.3 Expected contributions
+State what should have been achieved by the end of the thesis.
+
+Current work aims to contribute the following:
+
+- Clarification of Jaynes' program:
+    - Present Jaynes' probability theory as a powerful attempt to treat probability theory as extended logic
+    - Separate what is actually derived from what is interpreted philosophically afterwards
+    - Flag where his claims of universality, subjectivity and completeness become too strong
+    - Keep what is valuable in Jaynes, while being explicit about the parts that need repair or extension
+
+- Constructive reconstruction of probability:
+    - Recast the relevant part of Jaynes/Cox-style probability theory in a finitary Martin-Löf-style type-theoretic setting
+    - Use probability types, following [CLAYTON AND WADDINGTON], where appropriate (as will be seen later)
+    - Derive or recover the familiar rules of probability theory in this finite constructive setting
+
+- More explicit account of subjectivity:
+    - Do not treat subjectivity merely as a verbal interpretation of probability
+    - Encode epistemic position using contexts, modes and transitions between epistemic states
+    - Account for learning, forgetting, interest and hypothesizing as structured changes between such states
+    - Show that subjectivity can therefore become part of the formal machinery rather than a philosophical comment added afterwards
+
+- Constructive account of causality:
+    - Connect the probabilistic framework to Pearl-style causal reasoning
+    - Represent finite structural causal models in the chosen type-theoretic language
+    - Account for interventions and representative counterfactuals
+    - Stress that Pearl is not replaced, but embedded in a broader constructive and epistemic framework
+
+- Lean 4 formalization:
+    - Formalize selected definitions, proofs and examples in Lean 4
+    - Use a small running example to check that the framework actually works computationally
+    - Use the proof checker as a guard against hidden assumptions and hand-waving derivations
+
+- Wider scientific-practice diagnosis:
+    - Place Jaynes' complaints about bad scientific practice in a wider institutional setting
+    - Argue that hidden assumptions, publication pressure, funding structures and review practices all influence the reliability of scientific inference
+    - Propose practical changes as a counterpart to the formal demand for explicitness
+
+State compact success criterion:
+- The formal part succeeds if finite Jaynes-style probabilistic updating and finite Pearl-style causal reasoning can be represented in the chosen Martin-Löf-style framework, with representative constructions checked in Lean 4
+- The wider thesis succeeds if this formal work can be convincingly connected to the claim that good science needs both good inference and a good environment in which this inference is practiced
+
+1.b.4 Relevance:
 This research is extremely relevant for the field of artificial intelligence/AI for several reasons: 
 - As artificial intelligence deals with the formalization and computability of inference, having a solid and computational method for doing these inferences is of the utmost importance 
 - Extending Jaynes' system to include causility, making it a more encompassing and powerful inference engine, is therefore also an important, new feature
@@ -193,7 +273,7 @@ Although Jaynes' derivations look correct some problems in his approach have bee
     - Pearl’s framework provides a rigorous mathematical foundation for distinguishing correlation from causation and moves beyond passive observations to active interventions and counterfactual reasoning [CAUSAL NETWORKS -- RELEVANT PAPERS/SOURCES]
         - It has three levels of abstraction:
             - 1. Association. Concerns observational queries of the form P (Y |X ), derived directly from data distributions without causal assumptions except the Causal Markov Condition, which posits that each variable is independent of its non-descendants given its parents in the causal diagram.
-            - 2. Intervention. Addresses queries involving the do-operator, written as P (Y |d o(X = x)), representing the distribution of Y under an external manipulation that sets X = x; identifying these effects requires the Faithfulness Assumption (that observed con- ditional independencies reflect the graph structure) and other constraints expounded on below.
+            - 2. Intervention. Addresses queries involving the do-operator, written as P (Y |d o(X = x)), representing the distribution of Y under an external manipulation that sets X = x; learning these effects requires the Faithfulness Assumption (that observed conditional independencies reflect the graph structure) and other constraints expounded on below.
             - 3. Counterfactuals. Involves reasoning about specific instances under hypothetical conditions, denoted Y x (u), asking what the outcome Y would have been for unit u had X been x; this level demands the strongest commitments regarding the underlying graph and functions.
         - Uses three rules:
             - Rule 1 (Insertion/Deletion of Observations): P (y | d o(x), z, w) = P (y | d o(x), w) if (Y ⊥⊥ Z | X ,W )G X
@@ -217,6 +297,7 @@ Although Jaynes' derivations look correct some problems in his approach have bee
             - Thus, this interpretation is against a crude Feyerabendian reading, not anything goes ( but a rather 'soft', pluralistic view is allowed for here). Against a crude Humean skepticism, causal talk need not be metaphysically guaranteed in order to be scientifically indispensable. And against a purely Kantian framing, the question whether causality originates in the world or in human cognition becomes secondary once science is understood as a human practice of shared orientation, intervention, and explanation.
             - Therefore: This work will incorporate causality as to allow for humans to meaningfully interact with the encompassed theory and interchange ideas with it
         - Pearl only takes one static kind of causality into account
+            - Pearl’s basic SCM formalism usually fixes a model during a query
             - It does not naturally account for causality that changes during the experiment/reasons that change while observing, as the structures/graphs that Pearl uses are rather static once an experiment is started
             - In this work, the structures will be very flexible and allowed to change at will -- supporting an even broader view on causality
 
