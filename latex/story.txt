@@ -68,13 +68,15 @@ Before continuing the main part of the text, some habits may well be highlighted
 ----- 2. First movement: Allegro
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 Here, Jaynes' claims are investigated further.
-- Solid foundations for mathematics
+2.a Solid foundations for mathematics
     - Axiomatic set theory, also known as Zermelo-Fraenkel+axiom of Choice (ZFC) theory, which is prevalent in modern mathematics lends itself too easily for sloppy work in Jaynes' view. This can be seen by the abundance of mathematical paradoxes, especially concerning infinity, like Banach-Tarski, Borel-Kolmogorov, Ross-Littlewood (or likewise, Thomson's lamp) [INFINITE PARADOXING PAPERS EXCEPT PROOF CHECKERS]. Jaynes views this 'infinite paradoxing' a degredation of mathematical quality and rigor, as he prefers a way of doing mathematics where one starts from finite quantities and then only in limiting processes go to infinity -- a way of doing mathematics more in line of Gauss, Kronecker and Pioncaré rather than Cantor, Hilbert and Nicolas Bourbaki/the Bourbaki group. It is not so much wrong (although sometimes it is), but it is more that a lot of energy and effort is wasted on mathematical theories that sound profound, but are from a pragmatic standpoint absolutely worthless -- and doing experimental and pragmatic science is in Jaynes' view essential for the progress of science (which is not suprising given he is a physicist) [see quote Jaynes].
     - He flags the problem, but doesn't solve it; in fact, in his work he resorts to axiomatic set theory as a basis for his theory.
-- Solid foundations for statistics
-    - This field of research takes the heaviest blow in Jaynes' work. He critizes it for being unstructured, erratic, illogical and inconsistent. He provides ample examples of statistics that seem arbitrary and derivations that are rather hand-waving rather than rigorous. Clear examples of this can be seen in experiments where multiple teams versed in mathematical statistics receive the same data set, but arrive at opposite conclusions [CONTRADICTING CLAIMS]. This is a serious accusation and threatens the very foundations of every statistical claim that has ever been made in economy, psychology, sociology and other sciences [REPRODUCTION CRISIS, NAME PAPERS]. This is even more serious than previous point, in the sense that not only time and energy is wasted, but it actually poses a serious and accute risk of propagating incorrect conclusions, which is directly contrary to doing science.
+
+2.b Solid foundations for statistics
+    - This field of research takes the heaviest blow in Jaynes' work. He critizes it for being unstructured, erratic, illogical and inconsistent. He provides ample examples of statistics that seem arbitrary and derivations that are rather hand-waving rather than rigorous. Clear examples of this can be seen in experiments where multiple teams versed in mathematical statistics receive the same data set, but arrive at opposite conclusions [CONTRADICTING CLAIMS]. This is a serious accusation and threatens the very foundations of every statistical claim that has ever been made in economy, psychology, sociology and other sciences [REPRODUCTION CRISIS]. This is even more serious than previous point, in the sense that not only time and energy is wasted, but it actually poses a serious and accute risk of propagating incorrect conclusions, which is directly contrary to doing science.
     - He solves it by proposing a universal, subjective Bayesian probability theory, based on logic -- internally sound and consistent, inspired by the works of Cox and Jeffreys. He uses it to solve some problems that cannot be easily or consistently solved in mathematical statistics. This is absolutely the main feature that is achieved by Jaynes in his work and a contribution to scientific praxis that cannot be easily overstated. His solution is not without problems, but an important and sincere contribution to the advancement of science.
-- A good and honest attitude for doing these sciences
+
+2.c A good and honest attitude for doing these sciences
     - Jaynes makes rather personal attacks and accusations on people doing mathematics and statistics in a rather `unscientific' way. Especially Fisher, but also Feller, the Nicolas Bourbaki/the Bourbaki group and others take personal blows. He has a rather strong opinion on that science should not be primarily seen as the process for doing 'useless' or contrived things and/or boasting someone's career, but as a helpful instrument for making mathematical inferences in the real world [again, see quote Jaynes]. Jaynes objects to their method on grounds of:
         - gamesmanship: showing off rather than contributing something significant
         - cutting corners: delivering something (generally impressive-looking), but without rigor
@@ -82,7 +84,10 @@ Here, Jaynes' claims are investigated further.
         - hyperfocused: delivering results that are not focused on the larger narrative, and are sometimes completely contradictory to it
         - theoretical: delivering results that are not applicable to any real-world design, nor have the faintest ambition to be in accordance with the experimental sciences
     - He flags it, but doesn't solve it, except by public shaming; in fact, in his work one could definitely accuse Jaynes himself of cutting corners [not so much of the other points], as will be seen in the next movement.
-From the points above it can be seen that mathematics, statistics as well as the scientific attitude of its main and most influential contributors is not progressing science in a meaningful way. 
+
+2.d Mathematical manifesto
+From the points above it can be seen that mathematics, statistics as well as the scientific attitude of its main and most influential contributors is not progressing science in a meaningful way.
+In software development, there has been some attempt to establish workflow standards as part of an effort to optimize operations, for example the agile framework [AGILE MANIFESTO] and later derived frameworks as scrum [SCRUM GUIDE]. In mathematics, and science in general, there seems to be a general lack of such efforts. In this work one variation, heavily indebted to the agile framework, is adhered to.
 Introduce mathematical manifesto as solution on personal level:
     - Algorithms over abstractions
     - Narrative over formulae
@@ -94,9 +99,9 @@ Stress that this will be followed in the remainder.
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 ----- [Quote: Pfeijffer]
------ 4. Second movement: Andante
+----- 3. Second movement: Andante
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-Jaynes' + Cox theory, what is derived
+3.a Jaynes' + Cox theory, what is derived
 Inspired by Cox and Jeffreys and discontent by (then) current scientific praxis, Jaynes claimed to have found a universal mathematical, yet subjective theory for adding new knowledge to existing information -- either for certain information (propositional logic) or for uncertain information (a calculus of probability, also known as: ``Probability theory''.). This was done by adding suggestive rules as extension of propositional logic, by which the rules for probability theory could be derived (e.g.: Kolmogorov's axioms for probability theory can be derived from these). The rules are:
 1. Divisibility and comparability. Plausibility is represented by a real number that varies continuously with the information available.
 2. Consistency. Whenever a plausibility can be derived by two independent routes, the two results must coincide.
@@ -105,114 +110,179 @@ These rules lead to the familiar axioms of probability theory:
 1. Non-negativity. For any event A ∈ F : P (A) ≥ 0
 2. Normalization. The probability of the entire sample space Ω is exactly 1: P (Ω) = 1
 3. Countable Additivity. For any countable sequence of mutually exclusive (disjoint) events A 1 , A 2 , A 3 , · · · ∈ F (where A i ∩ A j = ; for all i ̸= j ): Ã ! ∞ ∞ X [ P (A i ) P Ai = i =1 i =1 
-He makes the claims that thus everything not following these rules, contradicts logic/the process of science. Finding many examples in his book, he makes a quite convincing point that mathematical statistics as practiced so far, is often not following these rules (have a slight level of disorganised approach, therefore allowing many hidden assumptions and a lot of theoretical work without any practical correspondence). He also makes the point about some branches of theoretical physics becoming more prone to falling to these errors (having many hidden assumptions, hyperfocus and a lot of theoretical work) -- especially quantum physics and, to a lesser extent, statistical physics.
+He makes the claims that thus everything not following these rules, contradicts logic/the process of science. Jaynes is not the first to use Bayesian theory [KEYNES, JEFFREYS, COX, RAMSEY], but the first to derive it, relatively thoroughly, and to give an account on how rules directly lead to another framework for making inferences and how it structurally differs from the frequentists' approach.
 
+Finding many examples in his book, Jaynes makes a quite convincing point that mathematical statistics as practiced so far, is often not following these rules (have a slight level of disorganised approach, therefore allowing many hidden assumptions and a lot of theoretical work without any practical correspondence). He also makes the point about some branches of theoretical physics becoming more prone to falling to these errors (having many hidden assumptions, hyperfocus and a lot of theoretical work) -- especially quantum physics and, to a lesser extent, statistical physics.
+
+3.b Objections
 Although Jaynes' derivations look correct some problems in his approach have been flagged -- regardless of these objections his rebuttals of mathematical statistics seem completely legitimate -- starting with content and going to more fundamental objections afterwards:
 
-    - Are these additional reasonably-sounding rules actually consistent?
-        - Halpert found error
-        - Arnborg and Sjodin corrected for discrete domains
-        - van Horn corrected for continuous domains
-        - Therefore, domains consistent with axiomatic set theory look covered
+[QUOTE COX PAPERS IN THE FOLLOWING SUBSECTIONS WHERE APPROPRIATE]
+3.b.1 Consistency
+- Are these additional reasonably-sounding rules actually consistent?
+    - Halpert found error
+    - Arnborg and Sjodin corrected for discrete domains
+    - van Horn corrected for continuous domains
+    - Therefore, domains consistent with axiomatic set theory look covered
 
-    - Are these additional reasonably-sounding rules actually reasonable?
-        - When giving these rules precise mathematical meaning, everyone seems to disagree that they are reasonable
-        - Shafer disagrees
-        - van Horn disagrees, creates alternative, but also these seem unreasonable
-        - Clayton disagrees, creates alternative that seems more reasonable
-        - Therefore, this work is focused on derivation of Clayton
+3.b.2 Reasonableness
+- Are these additional reasonably-sounding rules actually reasonable?
+    - When giving these rules precise mathematical meaning, everyone seems to disagree that they are reasonable
+    - Shafer disagrees
+    - van Horn disagrees, creates alternative, but also these seem unreasonable
+    - Clayton disagrees, creates alternative that seems more reasonable
+    - Therefore, this work is focused on derivation of Clayton
 
-    - Is the derived theory actually universal?
-        - Shafer + Colyvan: Which logic do you use and why?
-            - Homer example: Was Achilles considered the fastest among mortals by the Greeks? This follows a completely different logic than propositional logic; so other logics clearly possible
-            - There is a huge difference between different logics, like ontological (concerned with `being') and epistemological (concerned with `knowing') logic
-                - In ontology, things are generally seen as ``true'' if they are ``real in the world'' or, in the ever-present scientific tradition of logical positivism, ``are observable or logically deductible''. This view is natural and useful, if one deals with directly observable and/or logical things and/or a few interacting persons or agents – as is the case in a lot of branches of mathematics, biology, chemistry and physics.
-                - In epistemology deals with the realm of knowledge, defining something as ``true'' more as ``true to someone''
-                - The logic used by Jaynes is a classical, ontological one, although his work should naturally have been done using an epistemological one
-            - As per Van Horn: Important to distinguish fuzzy logic from probability theory, one deals with degree of thruthness, all information being available, other with degree of certainty on a clearly defined decidable-/yes-no-question. Therefore, fuzzy statements (Jim is tall), cannot be solved properly with this type of logic, and therefore also not by this type of probability theory 
-            - This work therefore uses an epistemological logic as a basis and lays to rest the claims of absoluteness or universality, knowing that yet other logics are perfectly viable
-        - There seems to be other problems with propositional logic and the derived probability theory:
-            - Weatherson + Colyvan give reason for something not happening as flawed in propositional logic, however has hidden proposition "This event actually happening" -- if that is included, the expected value actually corresponds nicely Expected_value = p(event) * event_valuation = p(event_value & event_actually_happening) * event_valuation = p(event_value | event_actually_happening) * p(event_actually_happening) * event_valuation, in Weatherson's example p(event_actually_happening) is non-negligibly not equal to 1
-                - However, having hidden assumptions falisifed happens a lot in research, should a theory maybe account for this before failing? 
-                    - This happens naturely in an epistemological setting, since there the matter of something happening/being becomes less relevant
-            - Being un/certain about the uncertainty itself seems ill-defined, but can be solved in many cases at second glance
-                - Coin flip of new coin versus coin flip of throughly tested coin
-                    - Solved by confidence intervals of posterior
-                - Die even versus "is this dog a terrier?" -> Die even versus "is this dog a terrier, a bulldog or something else?" (problem with clearly defining priors)
-                    - Solved by being precise in meaning and comparing certainty of different events
+3.b.3 Universality
+- Is the derived theory actually universal?
+    - Shafer + Colyvan: Which logic do you use and why?
+        - Homer example: Was Achilles considered the fastest among mortals by the Greeks? This follows a completely different logic than propositional logic; so other logics clearly possible
+        - There is a huge difference between different logics, like ontological (concerned with `being') and epistemological (concerned with `knowing') logic [STANFORD EPISTEMOLOGY, STANFORD ONTOLOGY]
+            - In ontology, things are generally seen as ``true'' if they are ``real in the world'' or, in the ever-present scientific tradition of logical positivism, ``are observable or logically deductible''. This view is natural and useful, if one deals with directly observable and/or logical things and/or a few interacting persons or agents – as is the case in a lot of branches of mathematics, biology, chemistry and physics.
+            - In epistemology deals with the realm of knowledge, defining something as ``true'' more as ``true to someone''
+            - The logic used by Jaynes is a classical, ontological one, although his work should naturally have been done using an epistemological one
+        - As per Van Horn: Important to distinguish fuzzy logic from probability theory, one deals with degree of thruthness, all information being available, other with degree of certainty on a clearly defined decidable-/yes-no-question. Therefore, fuzzy statements (Jim is tall), cannot be solved properly with this type of logic, and therefore also not by this type of probability theory 
+        - There is even a fierce, current discussion among physicsists which type of logic is the appropriate one to use for describing their theories [PHYSICS]
+        - This work therefore uses an epistemological logic as a basis and lays to rest the claims of absoluteness or universality, knowing that yet other logics are perfectly viable
+    - There seems to be other problems with propositional logic and the derived probability theory:
+        - Weatherson + Colyvan give reason for something not happening as flawed in propositional logic, however has hidden proposition "This event actually happening" -- if that is included, the expected value actually corresponds nicely Expected_value = p(event) * event_valuation = p(event_value & event_actually_happening) * event_valuation = p(event_value | event_actually_happening) * p(event_actually_happening) * event_valuation, in Weatherson's example p(event_actually_happening) is non-negligibly not equal to 1
+            - However, having hidden assumptions falisifed happens a lot in research, should a theory maybe account for this before failing? 
+                - This happens naturely in an epistemological setting, since there the matter of something happening/being becomes less relevant
+        - Being un/certain about the uncertainty itself seems ill-defined, but can be solved in many cases at second glance
+            - Coin flip of new coin versus coin flip of throughly tested coin
+                - Solved by confidence intervals of posterior
+            - Die even versus "is this dog a terrier?" -> Die even versus "is this dog a terrier, a bulldog or something else?" (problem with clearly defining priors)
+                - Solved by being precise in meaning and comparing certainty of different events
 
-    - Is the derived theory actually subjective?
-        - This is the starkest philosophical contrast between general praxis in the exact sciences Jaynes' theory 
-            - Mathematicians and physicists generally follow Parmenides and Plato in allowing for a single truth and/or a `true' Nature (Discovering the inner workings of mathematical theory of Nature as a way to God/Truth; a Neo-Platonic Nature as a true reflection of God)
-            - Since scientists see themselves as `uncovering this one single Truth', they like to describe their activities as `objective'; practicing ontology or logical positivism. Since they only deal with a small amount of people and on small domains, this generally doesn't give problems
-                - This also reflects the origin of modern science, where doing science was often a lonely enterprise.
-            - In this view, uncertainty is often seen as an apriori property of the objects themselves -- a coin is intrinsically described having probabilities 1/2 on each side 
-            - In this view, one just needs to repeat an experiment many times to uncover the `true probability' of such an object [approaching certainty with many experiments]
-            - This corresponds to what is generally known as the `frequentists' view of probability
-            - Jaynes ridicules this view in several passages
-                - He demonstrates that this is clearly erroneous as a coin can in an experiment be flipped as to have any probability you like [thus, this view is clearly made up by mathematicians never doing experiments, but just hypothesizing about them -- see the theoretical objection by him above]
-                - He does not accept that an experiment can be simply described as `random' as to ignore this problem, since this just hides the precise procedure what entails `random' [see the hidden assumptions objection by him above]
-                - Jaynes therefore poses that probability should not be sought in the objects themselves, but in the precise procedures and in the description of information someone has/hasn't; proposing to base probability theory on epistemology
-                - This corresponds to the Bayesian view of probability
-                - Some theories have inherent uncertainties in them, like statistical physics and quantum physics, and not seeing their probabilities as missing information, but as fundamentally unknown (as in: Given as unknown in Nature itself) gives a misunderstanding of what these theories reflect -- see quantum theory not progressing significantly and the utter confusion around glasses (Jaynes mentions the `projection fallacy', where personal missing information is projected on a situation as a whole or is seen as being fundamentally missing)
-            - Note that subjectivity is actually nowhere explicitly introduced in Jaynes' theory, so it is a post-hoc interpretation rather than something inherent in the theory itself
-            - In this work, an epistemological logic is taken as a basis for the derivations, allowing for baking in subjectivity at a fundamental level
-        - Colyvan: Interest is topic not being currently discussed in science, but it should be, since it makes statements non-decidable. Next to true/false you now add an option "I really don't care". Classical logic/domains assume you have intrinsic interest in all of them 
-            - This is a not problem when dealing with people that operate on completely different domains 
-                - I don't really care whether the ancient Greeks considered Achilles the fastest among mortals 
-            - However, this becomes absolutely crucial for overlapping domains. 
-                - I don't care for most diseases, except when I would get them -- and even then, I'd care mostly about the results and perhaps some causes [as to prevent it from worsening or (reoccurring) in (people around) me], but not about (bio)chemistry, the organizational structure of the hospital or the inner workings of some medical devices, which are all in fact much related to my newly contracted disease
-                - I need a way to deal with people with other domains of interest (also in scientific research)
-                    - Solution would be to add dimension to probability mapping, making it two-dimensional; Add rules on how to deal with probabilities with different interest values
-                        - Adds complexity and only worsens the problem of clearly defining prior information, as it extends to defining prior interest as well
-                    - Do all operations, like marginalizing/integrating out variables, or rescaling of variables, in the codomain of the probability map -- this does not explicitly account for these difference in interest, but does allow for the consequences
-                        - Adds complexity and one always needs all information to bridge the domains, which might not always be at hand
-                    - Use different logic that allows for adding different values than only true/false to statements
-                        - This is done in model-based AI and Clingo; a three- or multiple-valued logic that adds such a state of knowledge explicitly
-            - This critique can be repeated for some fact that was known but is now forgotten
-                - Classical logic assumes that information is never lost in the process
-            - Interest and forgetting and hypothesizing and other knowledge-related phenomena will be explicitly accounted for in this epistemological logic 
+3.b.4 Subjectivity
+- Is the derived theory actually subjective?
+    - This is the starkest philosophical contrast between general praxis in the exact sciences Jaynes' theory 
+        - Mathematicians and physicists generally follow Parmenides and Plato in allowing for a single truth and/or a `true' Nature (Discovering the inner workings of mathematical theory of Nature as a way to God/Truth; a Neo-Platonic Nature as a true reflection of God)
+        - Since scientists see themselves as `uncovering this one single Truth', they like to describe their activities as `objective'; practicing ontology or logical positivism. Since they only deal with a small amount of people and on small domains, this generally doesn't give problems
+            - This also reflects the origin of modern science, where doing science was often a lonely enterprise.
+        - In this view, uncertainty is often seen as an apriori property of the objects themselves -- a coin is intrinsically described having probabilities 1/2 on each side 
+        - In this view, one just needs to repeat an experiment many times to uncover the `true probability' of such an object [approaching certainty with many experiments]
+        - This corresponds to what is generally known as the `frequentists' view of probability
+        - Jaynes ridicules this view in several passages
+            - He demonstrates that this is clearly erroneous as a coin can in an experiment be flipped as to have any probability you like [thus, this view is clearly made up by mathematicians never doing experiments, but just hypothesizing about them -- see the theoretical objection by him above]
+            - He does not accept that an experiment can be simply described as `random' as to ignore this problem, since this just hides the precise procedure what entails `random' [see the hidden assumptions objection by him above]
+            - Jaynes therefore poses that probability should not be sought in the objects themselves, but in the precise procedures and in the description of information someone has/hasn't; proposing to base probability theory on epistemology
+            - This corresponds to the Bayesian view of probability
+            - Some theories have inherent uncertainties in them, like statistical physics and quantum physics, and not seeing their probabilities as missing information, but as fundamentally unknown (as in: Given as unknown in Nature itself) gives a misunderstanding of what these theories reflect -- see quantum theory not progressing significantly and the utter confusion around glasses (Jaynes mentions the `projection fallacy', where personal missing information is projected on a situation as a whole or is seen as being fundamentally missing)
+        - Note that subjectivity is actually nowhere explicitly introduced in Jaynes' theory, so it is a post-hoc interpretation rather than something inherent in the theory itself
+        - In this work, an epistemological logic is taken as a basis for the derivations, allowing for baking in subjectivity at a fundamental level
+    - Colyvan: Interest is topic not being currently discussed in science, but it should be, since it makes statements non-decidable. Next to true/false you now add an option "I really don't care". Classical logic/domains assume you have intrinsic interest in all of them 
+        - This is a not problem when dealing with people that operate on completely different domains 
+            - I don't really care whether the ancient Greeks considered Achilles the fastest among mortals 
+        - However, this becomes absolutely crucial for overlapping domains. 
+            - I don't care for most diseases, except when I would get them -- and even then, I'd care mostly about the results and perhaps some causes [as to prevent it from worsening or (reoccurring) in (people around) me], but not about (bio)chemistry, the organizational structure of the hospital or the inner workings of some medical devices, which are all in fact much related to my newly contracted disease
+            - I need a way to deal with people with other domains of interest (also in scientific research)
+                - Solution would be to add dimension to probability mapping, making it two-dimensional; Add rules on how to deal with probabilities with different interest values
+                    - Adds complexity and only worsens the problem of clearly defining prior information, as it extends to defining prior interest as well
+                - Do all operations, like marginalizing/integrating out variables, or rescaling of variables, in the codomain of the probability map -- this does not explicitly account for these difference in interest, but does allow for the consequences
+                    - Adds complexity and one always needs all information to bridge the domains, which might not always be at hand
+                - Use different logic that allows for adding different values than only true/false to statements
+                    - This is done in model-based AI and Clingo; a three- or multiple-valued logic that adds such a state of knowledge explicitly
+        - This critique can be repeated for some fact that was known but is now forgotten
+            - Classical logic assumes that information is never lost in the process
+        - Interest and forgetting and hypothesizing and other knowledge-related phenomena will be explicitly accounted for in this epistemological logic 
 
-    - Does the theory account for causality?
-        - It does not, as there is no way to fundamentally define whether wet grass causes rain with this theory [also greatly diminishing claims for universality]
-        - Pearl’s framework provides a rigorous mathematical foundation for distinguishing correlation from causation and moves beyond passive observations to active interventions and counterfactual reasoning
-            - It has three levels of abstraction:
-                - 1. Association. Concerns observational queries of the form P (Y |X ), derived directly from data distributions without causal assumptions except the Causal Markov Con- dition, which posits that each variable is independent of its non-descendants given its parents in the causal diagram.
-                - 2. Intervention. Addresses queries involving the do-operator, written as P (Y |d o(X = x)), representing the distribution of Y under an external manipulation that sets X = x; identifying these effects requires the Faithfulness Assumption (that observed con- ditional independencies reflect the graph structure) and other constraints expounded on below.
-                - 3. Counterfactuals. Involves reasoning about specific instances under hypothetical conditions, denoted Y x (u), asking what the outcome Y would have been for unit u had X been x; this level demands the strongest commitments regarding the underly- ing graph and functions.
-            - Uses three rules:
-                - Rule 1 (Insertion/Deletion of Observations): P (y | d o(x), z, w) = P (y | d o(x), w) if (Y ⊥⊥ Z | X ,W )G X
-                - Rule 2 (Action/Observation Exchange): P (y | d o(x), d o(z), w) = P (y | d o(x), z, w) if (Y ⊥⊥ Z | X ,W )G X Z
-                - Rule 3 (Insertion/Deletion of Actions): P (y | d o(x), d o(z), w) = P (y | d o(x), w) if (Y ⊥⊥ Z | X ,W )G X Z (W )
-            - For the third level (counterfactuals) it uses three steps:
-                - 1. Abduction: Where the posterior distribution of exogenous variables P (U |e) is com- puted given observed evidence e to infer the specific state of unit u.
-                - 2. Action: Where the structural equation for X is replaced by the constant assignment X = x to create an adjusted model Mx . 11P
-                - 3. Prediction: Where the outcome is computed as P (Y x = y|e) = u P (Y x (u) = y|U = u)P (U = u|e). This specification ensures the Consistency Axiom holds (X = x =⇒ Y x = Y ) and guarantees that the mechanism f i remains invariant across factual and counterfactual worlds, allowing for determination of specific noise terms.
-            - Pearl's theory equips (AI) systems with the ability to understand not just what happens, but why it happens and what would happen if the world were different, addressing a fundamental limitation of traditional statistical methods -- including Jaynes' theory
-            - Show that Pearl's framework is complete with respect to its rules [MENTION THE THREE PAPERS]
-            - Pearl is not derived from philosophical foundations, and therefore is done rather post-hoc. There is urgency and the critique feels justified, but there is actually very little philosophical and mathematical/logical foundation to it
-                - Humans think/talk/do completely causally about things/the world/each other and science can be seen as discovering new causal relations in surroundings/environment (be it human-world/society, be it animal/biological world, be it material world) [reasons for this need not be uncovered, this is a mere observation]
-                - Solution: Huizinga (there is a playful and conjunctive element in all these human activities -- like science; it is therefore a creative ("scheppend") activity done together), Erasmus (there is certainly a degree of irony in anything that is conjured this way/together), Kierkegaard (but this irony is bounded by tradition/everything that is already there/past) AND me (everything is bounded by the fact that it is an activity together, so it needs to go through other people too -- which is flexible (post-truth/manipulation) but like [Kierkegaard's] tradition not infinitely so)
-                - Therefore: Since causality is deeply traditional and human, not any observation goes (as according to Feyerabend), and is it completely useful and justified to talk about it (contrary to what Hume says) and whether it stems from the `world itself' or `human perspective' becomes irrelevant once science is perceived as inter-human activity (as according to Kant who saw every observation as deeply human -- where causality comes from in this process is completely irrelevant as a justification for this process); any theory that serves the tradition of science should therefore account for causality; Both from pragmatic necessity as well as acknowledgment of the fact that science is after all a deeply human activity and humans have this fundamental need for causal reasoning
-                - Therefore: This work will incorporate causality as to allow for humans to meaningfully interact with the encompassed theory and interchange ideas with it
-            - Pearl only takes one static kind of causality into account
-                - It does not naturally account for causality that changes during the experiment/reasons that change while observing, as the structures/graphs that Pearl uses are rather static once an experiment is started
-                - In this work, the structures will be very flexible and allowed to change at will -- supporting an even broader view on causality
+3.b.5 Causality
+- Does the theory account for causality?
+    - It does not, as there is no way to fundamentally define whether wet grass causes rain with this theory [also greatly diminishing claims for universality]
+    - Pearl’s framework provides a rigorous mathematical foundation for distinguishing correlation from causation and moves beyond passive observations to active interventions and counterfactual reasoning [CAUSAL NETWORKS -- RELEVANT PAPERS/SOURCES]
+        - It has three levels of abstraction:
+            - 1. Association. Concerns observational queries of the form P (Y |X ), derived directly from data distributions without causal assumptions except the Causal Markov Condition, which posits that each variable is independent of its non-descendants given its parents in the causal diagram.
+            - 2. Intervention. Addresses queries involving the do-operator, written as P (Y |d o(X = x)), representing the distribution of Y under an external manipulation that sets X = x; identifying these effects requires the Faithfulness Assumption (that observed con- ditional independencies reflect the graph structure) and other constraints expounded on below.
+            - 3. Counterfactuals. Involves reasoning about specific instances under hypothetical conditions, denoted Y x (u), asking what the outcome Y would have been for unit u had X been x; this level demands the strongest commitments regarding the underlying graph and functions.
+        - Uses three rules:
+            - Rule 1 (Insertion/Deletion of Observations): P (y | d o(x), z, w) = P (y | d o(x), w) if (Y ⊥⊥ Z | X ,W )G X
+            - Rule 2 (Action/Observation Exchange): P (y | d o(x), d o(z), w) = P (y | d o(x), z, w) if (Y ⊥⊥ Z | X ,W )G X Z
+            - Rule 3 (Insertion/Deletion of Actions): P (y | d o(x), d o(z), w) = P (y | d o(x), w) if (Y ⊥⊥ Z | X ,W )G X Z (W )
+        - For the third level (counterfactuals) it uses three steps:
+            - 1. Abduction: Where the posterior distribution of exogenous variables P (U |e) is com- puted given observed evidence e to infer the specific state of unit u.
+            - 2. Action: Where the structural equation for X is replaced by the constant assignment X = x to create an adjusted model Mx . 11P
+            - 3. Prediction: Where the outcome is computed as P (Y x = y|e) = u P (Y x (u) = y|U = u)P (U = u|e). This specification ensures the Consistency Axiom holds (X = x =⇒ Y x = Y ) and guarantees that the mechanism f i remains invariant across factual and counterfactual worlds, allowing for determination of specific noise terms.
+        - Explicate what mathematical models are needed at each level, explain what they are, but put every extensive definition in the appendix:
+            - Level 1+2: Causal Bayesian networks/graphs
+            - Level 3: Structural causal models 
+        - Pearl's theory equips (AI) systems with the ability to understand not just what happens, but why it happens and what would happen if the world were different, addressing a fundamental limitation of traditional statistical methods -- including Jaynes' theory
+        - Show that Pearl's framework is complete with respect to its rules [CAUSAL NETWORKS -- RELEVANT PAPERS]
+        - Pearl is not derived from philosophical foundations, and therefore is done rather post-hoc. There is urgency and the critique feels justified, but there is actually very little philosophical and mathematical/logical foundation to it. it shows how causal reasoning can be formalized, but less fully why causal reasoning is indispensable to human scientific practice.
+            - Humans think/talk/do completely causally about things/the world/each other and science can be seen as discovering new causal relations in surroundings/environment (be it human-world/society, be it animal/biological world, be it material world) [reasons for this need not be uncovered, this is a mere observation]
+            - [MEMO: ADD IAN HACKING AND LUDWIK FLECK]
+            - Solution: Huizinga (there is a playful and conjunctive element in all these human activities -- like science; it is therefore a creative ("scheppend") activity done together), Erasmus (there is certainly a degree of irony in anything that is conjured this way/together), Kierkegaard (but this irony is bounded by tradition/everything that is already there/past) AND me (everything is bounded by the fact that it is an activity together, so it needs to go through other people too -- which is flexible (post-truth/manipulation) but like [Kierkegaard's] tradition not infinitely so) [FLECK: Causality is not merely an individual cognitive habit. It is stabilized within scientific communities, inherited styles of thought, shared techniques, and historically formed expectations.] [HACKING: Science is not only a representational activity but an interventionist one. Causal reasoning is central because scientists do things: isolate, manipulate, produce, measure, and stabilize phenomena. Therefore, Pearl's framework is indispensable.]
+            - This very practically does not mean that any causal story is acceptable. Scientific inquiry is a communal, historically situated practice. With Huizinga, it contains a playful and creative element: scientists construct models, concepts, and experimental situations together. With Erasmus, such constructions retain an ironic or provisional character: they are humanly made and therefore never identical with reality itself. With Kierkegaard, however, irony is not limitless; it is bounded by what has already been inherited. To this I add that scientific construction is also bounded by intersubjective accountability: claims must pass through other people, practices, institutions, instruments, and traditions of criticism.
+            - Therefore: Since causality is deeply traditional and human, not any observation goes (as according to Feyerabend), and is it completely useful and justified to talk about it (contrary to what a skeptical reading of Hume does) and whether it stems from the `world itself' or `human perspective' becomes irrelevant once science is perceived as inter-human activity (as according to Kant who saw every observation as deeply human -- where causality comes from in this process is completely irrelevant as a justification for this process); any theory that serves the tradition of science should therefore account for causality; Both from pragmatic necessity as well as acknowledgment of the fact that science is after all a deeply human activity and humans have this fundamental need for causal reasoning [see quote Pfeijffer]
+            - Thus, this interpretation is against a crude Feyerabendian reading, not anything goes ( but a rather 'soft', pluralistic view is allowed for here). Against a crude Humean skepticism, causal talk need not be metaphysically guaranteed in order to be scientifically indispensable. And against a purely Kantian framing, the question whether causality originates in the world or in human cognition becomes secondary once science is understood as a human practice of shared orientation, intervention, and explanation.
+            - Therefore: This work will incorporate causality as to allow for humans to meaningfully interact with the encompassed theory and interchange ideas with it
+        - Pearl only takes one static kind of causality into account
+            - It does not naturally account for causality that changes during the experiment/reasons that change while observing, as the structures/graphs that Pearl uses are rather static once an experiment is started
+            - In this work, the structures will be very flexible and allowed to change at will -- supporting an even broader view on causality
 
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 ----- [Quote: Adams]
------ 3. Third movement: Scherzo
+----- 4. Third movement: Scherzo
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-Explain a bit what the difference between ontological and epistemological logic (try answer: "Does God exist?" with both).
-Introduce Intuitionistic Type Theory (Martin-Löf-style) with formation, introduction, elimination, and computation rules; judgements, contexts, and the turnstile; etc. (give example of how Booleans are defined in both logics).
-Introduce what types are, what problems they solve and make propositions-as-type explicit. 
-Explain that interest is natively solved in MLTT
-    - Interest is naturally encoded in contexts, where terms and types appearing in the context define the things in scope. On the converse, things not explicitly in context, cannot be part of any calculations for that context and are, thus, out of scope. 
-Explain that some additional work is required to account for probability -- a probability type needs to be defined
-Explain that some additional work needs to be done to account for epistemological phenomena like forgetting or hypothesizing -- modalities (ways of switching contexts) are needed
-Stress that mathematical manifesto is strictly followed by applying this theory.
+4.a Different type of logics
+Go over different type of logics, like classical, modal (explain Kripke world somewhat, as these will be used later on), fuzzy, multi-valued logic, ontologic and epistemological, not in exruciating detail, but slightly more detail than section 4.b.3.
+Explain a bit what the difference between ontological and epistemological logic (try answer: "Does God exist?" with both -- ontological logic forces one to take a stand and to provide evidence for or against, whether epistemological can simple answer "I don't know") [STANFORD EPTISTEMOLOGY, STANFORD ONTOLOGY].
+Introduce intuitionism as a branch of epistemology within (constructive) mathematics [STANFORD INTUITIONISM].
+
+Explain that working in an epistemological setting most closely aligns with Jaynes' viewpoint. In this work, a complete form of agnosticism will be employed towards any form of ontology [unlike PHYSICS papers, where either people reject ontology fiercely like SPEKKENS, or embrace it fiercely like GISIN and PUSEY], but the theory will be considered as a pure mental model. This means, for example with respect to quantum physics, that I don't reject the possibility that the probability waves are ontic [rejected by SPEKKENS], but I also am completely open to the possibility there will be another theory developed that explains the causes or inner workings of these waves in more detail or a more detailed level [rejected by PUSEY and GISIN]. For one thing, the 'indeterministic' nature of quantum physics can, for example, already be neatly explained by either using finite numbers [GISIN, LOSING INFINITY] or by adhering to a pure epistemological reading of probability theory [SPEKKENS], although -- at the moment -- not all.
+
+4.b Type theory
+To completely work towards an ideal that Jaynes had and to follow the mathematical manifesto above -- namely: A form of mathematics that could be automated and eliminates most forms of career boasting -- the selected logic needs to be implemented as a programmable enterprise. This would greatly hamper:
+- gamesmanship: showing off rather than contributing something significant
+- cutting corners: delivering something (generally impressive-looking), but without rigor
+- hidden assumptions: sweeping the essential, but illogical or incorrect, foundations of a theory under the carpet 
+
+One great candidate for achieving this is type theory, which builds a direct correspondence between programming and mathematics.
+Shortly explain what type theory is and why it can serve as a basis for mathematics using the Curry-Howard correspondence. 
+
+Introduce some basic concepts:
+- types
+- contexts (specify that these are ordered, this is important later with respect to directed acyclical graphs used in Pearl's framework)
+- functions
+- lambda abstractions
+- substitution
+- some form of equality, like beta-reduction
+- product types
+- sum types
+With each point, give intuition and how it roughly looks, but put all extensive definitions in the appendix.
+
+Stress that type theory is computational in nature, but not necessarily epistemological, which is developed next.
+
+4.c Martin-Löf-style type theory
+Introduce Intuitionistic Type Theory (Martin-Löf-style) as a very specific implementation of type theory [MARTIN-LOF, NORDSTROM and STANFORD]. 
+
+Explain what the differences:
+- dependent types
+- dependent function types
+- dependent pair types
+- identity types
+- inductive types
+- propositions-as-types
+- universes
+- specific judgement structure:
+    - formation
+    - introduction
+    - elimination
+    - computation
+With each point, give intuition and how it roughly looks, but put all extensive definitions in the appendix.
+
+Stress that since this framework is part of a constructive philosophy, it, almost automatically, does not allow for infinite paradoxing, since everything that is used, can be explicitly constructed -- like the natural numbers or fractions can, but real numbers cannot. One needs to explicitly introduce 'infinity' or 'real numbers' as a backdoor in this theory, but it does not natively support it an I will -- naturally -- take a version without these additions to be in accordance with the Jaynes' and Brouwers' philosophies.
+
+Explain that there exists different 'versions' or 'flavours' of this theory, with differences like:
+- identity/equality (intensional/extensional)
+- definitional equality
+- universes
+- inductive types/what types are accepted
+- structural rules and substitution
+
+Explain that I adhere to the version used in [GRATZER], since I will need this on a later stage. Stress that mathematical manifesto is strictly adhered to following this framework.
 
 
 
@@ -220,40 +290,46 @@ Stress that mathematical manifesto is strictly followed by applying this theory.
 ----- [Quote: Pratchett]
 ----- 5. Fourth movement: Vivace
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-Extend this framework with a probability type
-    - Make explicit that this either derives or is at the very least consistent with the Kolmogorov axioms
-Extend this framework with modes/modalities/Gratzer's theory to account for epistemological phenomena like forgetting or hypothesizing
-    - Make these modes + modalities explicit
-    - Make explicit that this is in accordance with Pearl's framework [and thus complete as well]
-Explain how this solves the problem
-    - One can also think in this framework of introducing new nodes in the SCM (‘learning’), or removing them (‘forgetting’). In this interpretation, modes serve as a natural semantic layer on how to change contexts 
-    - They can, as such, serve as a framework for epistemological concepts as `interest', `forgetting', `learning' and `hypothesizing'.
-Make explicit that this extended theory fundamentally solves the following (Jaynes' and also his oponents') objections
-    - Infinite paradoxing/set theoretical practices
-        - Will be solved by only allowing for N, everything else is derived from there
-    - Being very abstraction-heavy, theory-focused
-        - Algorithms are naturally built in, since the selected logic is due to Curry-Howard correspondence very algorithm-focused
-    - Having many hidden assumptions + prone to cutting corners
-        - Everything needs to be specified since proofs can be computed -- however in order for this to work everything needs to be specified precisely
-    - Gamesmanship
-        - Will now lead to actual/incremental progress, rather than having to use much-needed and valuable capacity to re-do or correct earlier work, which is valuable!
-    - Consistency
-        - Will be ensured by taking all previous analyses and objections into account
-    - Reasonability
-        - All steps can easily and automatically be verified, but remains in the eye of the beholder
-    - Universality
-        - Will be narrowed/specified on the basis of domain/operations that are allowed
-        - Domain is taken as discrete (other things are limits -- tying in with first point)
-        - Logic is taken as epistemic logic (classical logic is ontological) -- if domains are following a different kind of logic, this probability theory doesn't hold
-    - Subjectivity
-        - Will be built into the logic itself by introducing modal logic on top of it/Kripke Worlds/Gratzer -- makes it very explicit already from the beginning
-        - Interest and forgetting can likewise naturally be baked into epistemic logic by using modalities
-    - Pearl/causality
-        - Pearl can be taken into account in a similar fashion as classical case
-        - Extend it to include the other/more general operations as well
+5.a Context manipulation in Martin-Löf-style type theory
+The following operations are natively allowed in Martin-Löf-style type theory:
+- adding a variable
+- letting a variable depend on a variable 'earlier' in a context
+- swapping variables (if order of context allows)
+- deleting variables (if nothing depends on it, via strengthening)
+Therefore, the type theory naturally accounts for:
+- interest: Everything that is in scope can be used, everything that is out of scope can literally not be conversed about. The only appropriate answer when someone refers to proofs or types that are out of scope are "I don't care" or "I don't know"
+- learning: Adding variables to the context can directly be seen as learning new statements/proofs and types
+- forgetting: When variables are unrelated to anything else, one can remove the variable from the context; This corresponds to forgetting
+- causing: this corresponds to setting variables to a value and removing other influences from it; This corresponds to setting a variable and removing relations to that variable
+- hypothesizing: This corresponds to a combination of causing, and 'learning' the same variables in an alternative reality; This can be seen as a combination of causing and learning
+Therefore, all the operations for epistemic concepts are natively present inside of Martin-Löf-style type theory, but to distinguish it from other operations and encode is more explicitly as transitions between 'epistemics'/'epistemic states', it is more fruitful to classify these operations as 'special' and differences between epistemics as changes between 'modes' (like Kripke worlds).
+Stress that, although not strictly necessary from a functional perspective, this distinction/extension encodes the subjective part of the theory explicitly.
+
+5.b Modalities inside Martin-Löf-style type theory
+This can be done by implementing Gratzer. Explain some details Gratzer and what it gets:
+- identity/equality (intensional/extensional)
+- definitional equality
+- universes
+- inductive types/what types are accepted
+- structural rules and substitution
+With each point, give intuition and how it roughly looks, but put all extensive definitions in the appendix.
+Make explanations brief and move possible proofs to the appendix.
+Explicate that modes/encoded structural causal models now corresponds to epistemics and 
+
+5.c Probability types
+Use [CLAYTON AND WADDINGTON] to construct probability types. State in plain English the assumptions that are needed for these types.
+Mention that the Kolmogorov axioms and Bayes' theorem can be derived using these rules, but move these proofs to the appendix.
+
+5.d. Structural causal models in Martin-Löf-style type theory
+Outline -- using probability types derived before -- how to define SCMs and epistemics in Martin-Löf-style type theory, using extensive context operations, mode theory and Gratzer.
+Mention all components, but put precise definitions in the appendix.
+Mention that the modalities correspond to valid transitions and correspond to the context manipulations, but put proof in the appendix.
+Mention that current framework maintains the proofs that Pearl's framework is complete with respect its rules, but put proofs in the appendix (rather the correspondence between this framework and 'classic' framework, which implies that the 'classic' proofs carry-over in this logic).
+
+5.d Results
 By doing Clayton + Gratzer in Martin-Löf type theory, one obtains the following:
-- Discrete basis for probability
-- Logical basis for subjectivity (interest and background) via context and modalities
+- Discrete, computational basis for probability
+- Logical basis for subjectivity via context and modalities
 - Logical basis for causality
 
 
