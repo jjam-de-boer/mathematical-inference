@@ -21,7 +21,7 @@ There are three aspects to the mathematical and statistical sciences (Jaynes doe
 - A good and honest attitude for practicing these sciences
 According to Jaynes there is a lot wrong with all three aspects. The sense of urgency and passion can be felt throughout his work [see quote Huizinga]. He flags his discontent with all three aspects, he proposes a solution for statistics (a universal, subjective Bayesian probability theory); the other two are discussed, but not solved. 
 
-This work is aimed to propose a solution for all three things in a holistic view. The first two are tackled using Martin-Löf type theory, a form of mathematics Jaynes surely would have approved of. Jaynes' solution for statistics is scrutinized and problems with its derivation are flagged and addressed using this Martin-Löf type theory; furthermore, his theory is extended to more deeply include subjectivity and also account for Pearl's causal framework. The third problem is placed in a much wider context and a practical proposal is made with a combination of policies, regulations and incentives. 
+This work is aimed to addresses all three things in a holistic view. The first two are tackled using Martin-Löf type theory, a form of mathematics Jaynes surely would have approved of. Jaynes' solution for statistics is scrutinized and problems with its derivation are flagged and addressed using this Martin-Löf type theory; furthermore, his theory is extended to more deeply include subjectivity and also account for Pearl's causal framework. The third problem is placed in a much wider context and a practical proposal is made with a combination of policies, regulations and incentives. 
 
 There is a dire need to consider these parts together: As mentioned by [JAYNES and MACELREATH] inference is only one component of scientific knowledge production; AI systems that formalize inference inherit the weaknesses of the wider scientific pipeline in which questions, data, models, incentives, publication, and review are produced. It is therefore extremely important that both the fomralization of mathematical inference, as well as the environment in which those inferences take place, are sensible and constructive. If not, the inferences will only be as good as the weakest link.
 
@@ -249,7 +249,7 @@ Although Jaynes' derivations look correct some problems in his approach have bee
             - Jaynes therefore poses that probability should not be sought in the objects themselves, but in the precise procedures and in the description of information someone has/hasn't; proposing to base probability theory on epistemology
             - This corresponds to the Bayesian view of probability
             - Some theories have inherent uncertainties in them, like statistical physics and quantum physics, and not seeing their probabilities as missing information, but as fundamentally unknown (as in: Given as unknown in Nature itself) gives a misunderstanding of what these theories reflect -- see quantum theory not progressing significantly and the utter confusion around glasses (Jaynes mentions the `projection fallacy', where personal missing information is projected on a situation as a whole or is seen as being fundamentally missing)
-        - Note that subjectivity is actually nowhere explicitly introduced in Jaynes' theory, so it is a post-hoc interpretation rather than something inherent in the theory itself
+        - Note that subjectivity is actually nowhere explicitly introduced in Jaynes' theory, so it is a post-hoc interpretation rather than something inherently represented in the theory itself
         - In this work, an epistemological logic is taken as a basis for the derivations, allowing for baking in subjectivity at a fundamental level
     - Colyvan: Interest is topic not being currently discussed in science, but it should be, since it makes statements non-decidable. Next to true/false you now add an option "I really don't care". Classical logic/domains assume you have intrinsic interest in all of them 
         - This is a not problem when dealing with people that operate on completely different domains 
@@ -273,7 +273,7 @@ Although Jaynes' derivations look correct some problems in his approach have bee
     - Pearl’s framework provides a rigorous mathematical foundation for distinguishing correlation from causation and moves beyond passive observations to active interventions and counterfactual reasoning [CAUSAL NETWORKS -- RELEVANT PAPERS/SOURCES]
         - It has three levels of abstraction:
             - 1. Association. Concerns observational queries of the form P (Y |X ), derived directly from data distributions without causal assumptions except the Causal Markov Condition, which posits that each variable is independent of its non-descendants given its parents in the causal diagram.
-            - 2. Intervention. Addresses queries involving the do-operator, written as P (Y |d o(X = x)), representing the distribution of Y under an external manipulation that sets X = x; learning these effects requires the Faithfulness Assumption (that observed conditional independencies reflect the graph structure) and other constraints expounded on below.
+            - 2. Intervention. Addresses queries involving the do-operator, written as P (Y |d o(X = x)), representing the distribution of Y under an external manipulation that sets X = x; learning these effects from data requires the Faithfulness Assumption (that observed conditional independencies reflect the graph structure) and other constraints expounded on below.
             - 3. Counterfactuals. Involves reasoning about specific instances under hypothetical conditions, denoted Y x (u), asking what the outcome Y would have been for unit u had X been x; this level demands the strongest commitments regarding the underlying graph and functions.
         - Uses three rules:
             - Rule 1 (Insertion/Deletion of Observations): P (y | d o(x), z, w) = P (y | d o(x), w) if (Y ⊥⊥ Z | X ,W )G X
@@ -296,7 +296,7 @@ Although Jaynes' derivations look correct some problems in his approach have bee
             - Therefore: Since causality is deeply traditional and human, not any observation goes (as according to Feyerabend), and is it completely useful and justified to talk about it (contrary to what a skeptical reading of Hume does) and whether it stems from the `world itself' or `human perspective' becomes irrelevant once science is perceived as inter-human activity (as according to Kant who saw every observation as deeply human -- where causality comes from in this process is completely irrelevant as a justification for this process); any theory that serves the tradition of science should therefore account for causality; Both from pragmatic necessity as well as acknowledgment of the fact that science is after all a deeply human activity and humans have this fundamental need for causal reasoning [see quote Pfeijffer]
             - Thus, this interpretation is against a crude Feyerabendian reading, not anything goes ( but a rather 'soft', pluralistic view is allowed for here). Against a crude Humean skepticism, causal talk need not be metaphysically guaranteed in order to be scientifically indispensable. And against a purely Kantian framing, the question whether causality originates in the world or in human cognition becomes secondary once science is understood as a human practice of shared orientation, intervention, and explanation.
             - Therefore: This work will incorporate causality as to allow for humans to meaningfully interact with the encompassed theory and interchange ideas with it
-        - Pearl only takes one static kind of causality into account
+        - In general, Pearl only takes one static kind of causality into account
             - Pearl’s basic SCM formalism usually fixes a model during a query
             - It does not naturally account for causality that changes during the experiment/reasons that change while observing, as the structures/graphs that Pearl uses are rather static once an experiment is started
             - In this work, the structures will be very flexible and allowed to change at will -- supporting an even broader view on causality
@@ -377,7 +377,7 @@ The following operations are natively allowed in Martin-Löf-style type theory:
 - letting a variable depend on a variable 'earlier' in a context
 - swapping variables (if order of context allows)
 - deleting variables (if nothing depends on it, via strengthening)
-Therefore, the type theory naturally accounts for:
+Therefore, the type theory, with some additional definitions and operations done later, accounts for:
 - interest: Everything that is in scope can be used, everything that is out of scope can literally not be conversed about. The only appropriate answer when someone refers to proofs or types that are out of scope are "I don't care" or "I don't know"
 - learning: Adding variables to the context can directly be seen as learning new statements/proofs and types
 - forgetting: When variables are unrelated to anything else, one can remove the variable from the context; This corresponds to forgetting
@@ -405,7 +405,7 @@ Mention that the Kolmogorov axioms and Bayes' theorem can be derived using these
 Outline -- using probability types derived before -- how to define SCMs and epistemics in Martin-Löf-style type theory, using extensive context operations, mode theory and Gratzer.
 Mention all components, but put precise definitions in the appendix.
 Mention that the modalities correspond to valid transitions and correspond to the context manipulations, but put proof in the appendix.
-Mention that current framework maintains the proofs that Pearl's framework is complete with respect its rules, but put proofs in the appendix (rather the correspondence between this framework and 'classic' framework, which implies that the 'classic' proofs carry-over in this logic).
+Mention that current framework maintains the proofs that Pearl's framework is complete with respect its rules, but put proofs in the appendix (rather: Proof the expressiveness of this framework with respect to the 'classic' framework, and that it has soundness with respect to the three rules + any finite sequence of Pearl do-calculus rule applications can be translated into a sequence of derivations in your framework, which implies that the 'classic' proofs carry-over in this logic -- at the very least, proof expressiveness).
 
 5.d Results
 By doing Clayton + Gratzer in Martin-Löf type theory, one obtains the following:
@@ -486,7 +486,7 @@ Introduce scientific manifesto:
 - Divide current head of research groups into head of research and (possible shared -- to save costs) and head of operations in each research group
 - Make funding of researchers (on public research institutes) open by law
 
-Make case that this approach solves all above problems.
+Make case that this approach solves addresses all above problems.
 
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
