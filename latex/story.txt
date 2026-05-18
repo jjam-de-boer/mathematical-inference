@@ -131,12 +131,9 @@ Before continuing the main part of the text, some habits may well be highlighted
     - Minimal acronyms: Science has become riddled with fun-sounding non-functional abbreviations -- probably in an attempt to secure funding -- which will not be done by me. Acronyms will be avoided if possible.
     - Lower-case preference: Likewise, there has been a recent tendency to PascalCase or **Highlight** every other word in respectable publications. I find this distracting, so it will not be done by me
     - Therefore no MILE (Mathematical Induction as a Logical Extension), but simply mathematical induction.
-- Alternative naming: Some names will appear different in my text compared to their standard reading
-    - In this work, mathematical induction does not refer to the mathematical proof strategy, which is a historical misnomer and should have correctly been called 'mathematical deduction'. Mathematical induction is here referred to the act of making inferences based on mathematical methods.
-    - To be completely consistent I refer to distributions as 'distros'. This to be fully consistent with the terminology that I use when dealing with Linux flavours. Either I would call all these Linux distributions, which seemed so outrageously contrived that I decided to name probability densities as probability distros instead -- which is rather acceptable.
-- Active collaboration with AI: As AI is more-and-more interwoven with our daily activities, so it is within scientific work
+- Active collaboration with AI: As AI is more-and-more interwoven with our daily activities, so it is within scientific work; This is gracefully interwoven in current thesis in AI:
     - Searching sources: For investigating and gathering sources, ChatGPT is heavily used.
-    - Writing text: For writing text Lumo, together with ChatGPT will be used [100% AI-made, 100% human-reviewed].
+    - Writing text: For writing text Lumo (stylistic choices), together with ChatGPT (general frame) will be used [100% AI-made, 100% human-reviewed].
     - The most interesting one: For doing the actual mathematics Claude and ChatGPT are heavily used. As this research is heavily based on Martin-Löf type theory, a proof checker like Lean or Agda can be employed. This, in turn, invites the use of AI coding agents like Claude and ChatGPT to help along [PROOF CHECKERS].
 - Audience: This thesis aims to serve multiple audiences, which is always arries risks for resulting into something risque for every audience independently. However, as this research lives at the crossroads of logic; mathematics; applied research; philosopical interpretations of mathematical entities; and the sociology and organization of the scientific enterprise as a whole; current text can hold interesting elements for anyone taking an interest in any of these subjects. As this is a wide audience to cater, I acknowledge beforehand that not everyone will be fully satisfied, but patience and kindness is requested of the reader.
 - Emphasis on narrative: As the main emphasis of this text is the natural 'flow' of information, non-essential details like definitions, proofs and code are moved to the appendices, so that the interested reader can trace all the derivations, but the less interested reader is not interrupted from the main story line.
@@ -220,7 +217,7 @@ Although Jaynes' derivations look correct some problems in his approach have bee
         - There is a huge difference between different logics, like ontological (concerned with `being') and epistemological (concerned with `knowing') logic [STANFORD EPISTEMOLOGY, STANFORD ONTOLOGY]
             - In ontology, things are generally seen as ``true'' if they are ``real in the world'' or, in the ever-present scientific tradition of logical positivism, ``are observable or logically deductible''. This view is natural and useful, if one deals with directly observable and/or logical things and/or a few interacting persons or agents – as is the case in a lot of branches of mathematics, biology, chemistry and physics.
             - In epistemology deals with the realm of knowledge, defining something as ``true'' more as ``true to someone''
-            - The logic used by Jaynes is a classical, ontological one, although his work should naturally have been done using an epistemological one
+            - The logic used by Jaynes is a classical, ontological one -- and, thus, epistemics are not treated as first-class citizens inside this theory -- although his work should naturally have been done using an epistemological one
         - As per Van Horn: Important to distinguish fuzzy logic from probability theory, one deals with degree of thruthness, all information being available, other with degree of certainty on a clearly defined decidable-/yes-no-question. Therefore, fuzzy statements (Jim is tall), cannot be solved properly with this type of logic, and therefore also not by this type of probability theory 
         - There is even a fierce, current discussion among physicists which type of logic is the appropriate one to use for describing their theories [PHYSICS]
         - This work therefore uses an epistemological logic as a basis and lays to rest the claims of absoluteness or universality, knowing that yet other logics are perfectly viable
@@ -291,7 +288,7 @@ Although Jaynes' derivations look correct some problems in his approach have bee
         - Pearl is not derived from philosophical foundations, and therefore is done rather post-hoc. There is urgency and the critique feels justified, but there is actually very little philosophical and mathematical/logical foundation to it. it shows how causal reasoning can be formalized, but less fully why causal reasoning is indispensable to human scientific practice.
             - This work acknowledges the necessity of needing a way to communicate about causality; Pearl certainly isn't the only framework [BOOK OF WHY], but it turns out to be hugely convenient and rather general
             - This work will incorporate causality as to allow for humans to meaningfully interact with the encompassed theory and interchange ideas with it; the argument is laid down in {CAUSALITY-ARGUMENT}
-        - In general, Pearl only takes one static kind of causality into account
+        - Usually, Pearl only takes one static kind of causality into account
             - Pearl’s basic SCM formalism usually fixes a model during a query
             - It does not naturally account for causality that changes during the experiment/reasons that change while observing, as the structures/graphs that Pearl uses are rather static once an experiment is started
             - In this work, the structures will be very flexible and allowed to change at will -- supporting an even broader view on causality
@@ -414,7 +411,7 @@ Explain why it is sensible to define epistemics with structural causal models --
 Mention all components, but put precise definitions in the appendix.
 Mention that the modalities correspond to valid transitions and correspond to the context manipulations, but put proof in the appendix.
 Work out some complete examples of how this looks.
-Mention that current framework maintains the proofs that Pearl's framework is complete with respect its rules, but put proofs in the appendix (rather: Proof the expressiveness of this framework with respect to the 'classic' framework, and that it has soundness with respect to the three rules + any finite sequence of Pearl do-calculus rule applications can be translated into a sequence of derivations in your framework, which implies that the 'classic' proofs carry-over in this logic -- at the very least, proof expressiveness) {CAUSALITY-COMPLETENESS-PROOF}.
+For finite, discrete, recursive SCMs with finite probability distributions, the MLTT formalization gives a natural and adequate encoding of the standard SCM formalism: variables, structural functions, exogenous distributions, induced observational distributions, interventions, marginalization, conditioning where defined, graph operations, d-separation, c-components, hedges, and do-calculus derivations are preserved and reflected. Therefore, once this correspondence theorem is proved, every proof in the classical framework whose assumptions and constructions are confined to this finitary SCM fragment can be translated into the MLTT framework. In particular, the [CAUSAL NETWORKS] identification and do-calculus completeness results for finite interventional distributions carry over. The correspondence proof is placed in appendix {SCM-EQUIVALENCE-PROOF}; the transferred completeness result is placed in appendix {CAUSALITY-COMPLETENESS-PROOF}.
 
 5.e Results
 By doing Clayton + Gratzer in Martin-Löf type theory, one obtains the following:
@@ -534,6 +531,8 @@ The natural conjunction of the above is the following: Theories such as a partic
 {EXCLUDED-MIDDLE-PROOF}
 
 {CLAYTON-PROOF}
+
+{SCM-EQUIVALENCE-PROOF}
 
 {CAUSALITY-COMPLETENESS-PROOF}
 
