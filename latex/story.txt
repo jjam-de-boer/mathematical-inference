@@ -44,8 +44,8 @@ State the mathematical scope:
 - Every object that plays a central role should, be constructible and implementable
 
 Stress that this restriction is not merely done for convenience:
-- It follows Jaynes' suspicion towards uncontrolled infinities and hidden assumptions (as will be later seen)
-- It follows the constructive spirit of Martin-Löf-style type theory (as will be later seen)
+- It follows Jaynes' suspicion towards uncontrolled infinities and hidden assumptions (as will be later seen in the First movement)
+- It follows the constructive spirit of Martin-Löf-style type theory (as will be later seen in the Second and Third movements)
 - It fits the AI-perspective, since formal reasoning should be executable or at least checkable
 
 State that selected formal parts will be implemented in Lean 4:
@@ -81,7 +81,7 @@ Current work aims to contribute the following:
 
 - Constructive reconstruction of probability:
     - Recast the relevant part of Jaynes/Cox-style probability theory in a finitary Martin-Löf-style type-theoretic setting
-    - Use probability types, following [CLAYTON AND WADDINGTON], where appropriate (as will be seen later)
+    - Use probability types, following [CLAYTON AND WADDINGTON], where appropriate (as will be seen later in the Fourth movement)
     - Derive or recover the familiar rules of probability theory in this finite constructive setting
 
 - More explicit account of subjectivity:
@@ -137,8 +137,8 @@ Before continuing the main part of the text, some habits may well be highlighted
 - Active collaboration with AI: As AI is more-and-more interwoven with our daily activities, so it is within scientific work
     - Searching sources: For investigating and gathering sources, ChatGPT is heavily used.
     - Writing text: For writing text Lumo, together with ChatGPT will be used [100% AI-made, 100% human-reviewed].
-    - The most interesting one: For doing the actual mathematics Claude and ChatGPT are heavily used. As this research is heavily based on Martin-Löf type theory, a proof checker like Lean or Agda can be employed. This, in turn, invites the use of AI coding agents like Claude and ChatGPT to help along [INFINITE PARADOXING LINKS PROOF CHECKERS].
-- Audience: This thesis aims to serve multiple audiences, which is always rather risks being risque for every audience independently. However, as this research lives at the crossroads of logic; mathematics; applied research; philosopical interpretations of mathematical entities; and the sociology and organization of the scientific enterprise as a whole; current text can hold interesting elements for anyone taking an interest in any of these subjects. As this is a wide audience to cater, I acknowledge beforehand that very few will be fully satisfied, but patience and kindness is requested of the reader.
+    - The most interesting one: For doing the actual mathematics Claude and ChatGPT are heavily used. As this research is heavily based on Martin-Löf type theory, a proof checker like Lean or Agda can be employed. This, in turn, invites the use of AI coding agents like Claude and ChatGPT to help along [PROOF CHECKERS].
+- Audience: This thesis aims to serve multiple audiences, which is always arries risks for resulting into something risque for every audience independently. However, as this research lives at the crossroads of logic; mathematics; applied research; philosopical interpretations of mathematical entities; and the sociology and organization of the scientific enterprise as a whole; current text can hold interesting elements for anyone taking an interest in any of these subjects. As this is a wide audience to cater, I acknowledge beforehand that not everyone will be fully satisfied, but patience and kindness is requested of the reader.
 - Emphasis on narrative: As the main emphasis of this text is the natural 'flow' of information, non-essential details like definitions, proofs and code are moved to the appendices, so that the interested reader can trace all the derivations, but the less interested reader is not interrupted from the main story line.
 
 
@@ -149,7 +149,7 @@ Before continuing the main part of the text, some habits may well be highlighted
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 Here, Jaynes' claims are investigated further.
 2.a Solid foundations for mathematics
-    - Axiomatic set theory, also known as Zermelo-Fraenkel+axiom of Choice (ZFC) theory, which is prevalent in modern mathematics lends itself too easily for sloppy work in Jaynes' view. This can be seen by the abundance of mathematical paradoxes, especially concerning infinity, like Banach-Tarski, Borel-Kolmogorov, Ross-Littlewood (or likewise, Thomson's lamp) [INFINITE PARADOXING PAPERS EXCEPT PROOF CHECKERS]. Jaynes views this 'infinite paradoxing' a degredation of mathematical quality and rigor, as he prefers a way of doing mathematics where one starts from finite quantities and then only in limiting processes go to infinity -- a way of doing mathematics more in line of Gauss, Kronecker and Pioncaré rather than Cantor, Hilbert and Nicolas Bourbaki/the Bourbaki group. It is not so much wrong (although sometimes it is), but it is more that a lot of energy and effort is wasted on mathematical theories that sound profound, but are from a pragmatic standpoint absolutely worthless -- and doing experimental and pragmatic science is in Jaynes' view essential for the progress of science (which is not suprising given he is a physicist) [see quote Jaynes].
+    - Axiomatic set theory, also known as Zermelo-Fraenkel+axiom of Choice (ZFC) theory, which is prevalent in modern mathematics lends itself too easily for sloppy work in Jaynes' view. This can be seen by the abundance of mathematical paradoxes, especially concerning infinity, like Banach-Tarski, Borel-Kolmogorov, Ross-Littlewood (or likewise, Thomson's lamp) [INFINITE PARADOXING]. Jaynes views this 'infinite paradoxing' a degredation of mathematical quality and rigor, as he prefers a way of doing mathematics where one starts from finite quantities and then only in limiting processes go to infinity -- a way of doing mathematics more in line of Gauss, Kronecker and Pioncaré rather than Cantor, Hilbert and Nicolas Bourbaki/the Bourbaki group. It is not so much wrong (although sometimes it is), but it is more that a lot of energy and effort is wasted on mathematical theories that sound profound, but are from a pragmatic standpoint absolutely worthless -- and doing experimental and pragmatic science is in Jaynes' view essential for the progress of science (which is not suprising given he is a physicist) [see quote Jaynes].
     - He flags the problem, but doesn't solve it; in fact, in his work he resorts to axiomatic set theory as a basis for his theory.
 
 2.b Solid foundations for statistics
@@ -222,7 +222,7 @@ Although Jaynes' derivations look correct some problems in his approach have bee
             - In epistemology deals with the realm of knowledge, defining something as ``true'' more as ``true to someone''
             - The logic used by Jaynes is a classical, ontological one, although his work should naturally have been done using an epistemological one
         - As per Van Horn: Important to distinguish fuzzy logic from probability theory, one deals with degree of thruthness, all information being available, other with degree of certainty on a clearly defined decidable-/yes-no-question. Therefore, fuzzy statements (Jim is tall), cannot be solved properly with this type of logic, and therefore also not by this type of probability theory 
-        - There is even a fierce, current discussion among physicsists which type of logic is the appropriate one to use for describing their theories [PHYSICS]
+        - There is even a fierce, current discussion among physicists which type of logic is the appropriate one to use for describing their theories [PHYSICS]
         - This work therefore uses an epistemological logic as a basis and lays to rest the claims of absoluteness or universality, knowing that yet other logics are perfectly viable
     - There seems to be other problems with propositional logic and the derived probability theory:
         - Weatherson + Colyvan give reason for something not happening as flawed in propositional logic, however has hidden proposition "This event actually happening" -- if that is included, the expected value actually corresponds nicely Expected_value = p(event) * event_valuation = p(event_value & event_actually_happening) * event_valuation = p(event_value | event_actually_happening) * p(event_actually_happening) * event_valuation, in Weatherson's example p(event_actually_happening) is non-negligibly not equal to 1
@@ -289,13 +289,8 @@ Although Jaynes' derivations look correct some problems in his approach have bee
         - Pearl's theory equips (AI) systems with the ability to understand not just what happens, but why it happens and what would happen if the world were different, addressing a fundamental limitation of traditional statistical methods -- including Jaynes' theory
         - Show that Pearl's framework is complete with respect to its rules [CAUSAL NETWORKS -- RELEVANT PAPERS]
         - Pearl is not derived from philosophical foundations, and therefore is done rather post-hoc. There is urgency and the critique feels justified, but there is actually very little philosophical and mathematical/logical foundation to it. it shows how causal reasoning can be formalized, but less fully why causal reasoning is indispensable to human scientific practice.
-            - Humans think/talk/do completely causally about things/the world/each other and science can be seen as discovering new causal relations in surroundings/environment (be it human-world/society, be it animal/biological world, be it material world) [reasons for this need not be uncovered, this is a mere observation]
-            - [MEMO: ADD IAN HACKING AND LUDWIK FLECK]
-            - Solution: Huizinga (there is a playful and conjunctive element in all these human activities -- like science; it is therefore a creative ("scheppend") activity done together), Erasmus (there is certainly a degree of irony in anything that is conjured this way/together), Kierkegaard (but this irony is bounded by tradition/everything that is already there/past) AND me (everything is bounded by the fact that it is an activity together, so it needs to go through other people too -- which is flexible (post-truth/manipulation) but like [Kierkegaard's] tradition not infinitely so) [FLECK: Causality is not merely an individual cognitive habit. It is stabilized within scientific communities, inherited styles of thought, shared techniques, and historically formed expectations.] [HACKING: Science is not only a representational activity but an interventionist one. Causal reasoning is central because scientists do things: isolate, manipulate, produce, measure, and stabilize phenomena. Therefore, Pearl's framework is indispensable.]
-            - This very practically does not mean that any causal story is acceptable. Scientific inquiry is a communal, historically situated practice. With Huizinga, it contains a playful and creative element: scientists construct models, concepts, and experimental situations together. With Erasmus, such constructions retain an ironic or provisional character: they are humanly made and therefore never identical with reality itself. With Kierkegaard, however, irony is not limitless; it is bounded by what has already been inherited. To this I add that scientific construction is also bounded by intersubjective accountability: claims must pass through other people, practices, institutions, instruments, and traditions of criticism.
-            - Therefore: Since causality is deeply traditional and human, not any observation goes (as according to Feyerabend), and is it completely useful and justified to talk about it (contrary to what a skeptical reading of Hume does) and whether it stems from the `world itself' or `human perspective' becomes irrelevant once science is perceived as inter-human activity (as according to Kant who saw every observation as deeply human -- where causality comes from in this process is completely irrelevant as a justification for this process); any theory that serves the tradition of science should therefore account for causality; Both from pragmatic necessity as well as acknowledgment of the fact that science is after all a deeply human activity and humans have this fundamental need for causal reasoning [see quote Pfeijffer]
-            - Thus, this interpretation is against a crude Feyerabendian reading, not anything goes ( but a rather 'soft', pluralistic view is allowed for here). Against a crude Humean skepticism, causal talk need not be metaphysically guaranteed in order to be scientifically indispensable. And against a purely Kantian framing, the question whether causality originates in the world or in human cognition becomes secondary once science is understood as a human practice of shared orientation, intervention, and explanation.
-            - Therefore: This work will incorporate causality as to allow for humans to meaningfully interact with the encompassed theory and interchange ideas with it
+            - This work acknowledges the necessity of needing a way to communicate about causality; Pearl certainly isn't the only framework [BOOK OF WHY], but it turns out to be hugely convenient and rather general
+            - This work will incorporate causality as to allow for humans to meaningfully interact with the encompassed theory and interchange ideas with it; the argument is laid down in {CAUSALITY-ARGUMENT}
         - In general, Pearl only takes one static kind of causality into account
             - Pearl’s basic SCM formalism usually fixes a model during a query
             - It does not naturally account for causality that changes during the experiment/reasons that change while observing, as the structures/graphs that Pearl uses are rather static once an experiment is started
@@ -310,9 +305,11 @@ Although Jaynes' derivations look correct some problems in his approach have bee
 4.a Different type of logics
 Go over different type of logics, like classical, modal (explain Kripke world somewhat, as these will be used later on), fuzzy, multi-valued logic, ontologic and epistemological, not in exruciating detail, but slightly more detail than section 4.b.3.
 Explain a bit what the difference between ontological and epistemological logic (try answer: "Does God exist?" with both -- ontological logic forces one to take a stand and to provide evidence for or against, whether epistemological can simple answer "I don't know") [STANFORD EPTISTEMOLOGY, STANFORD ONTOLOGY].
-Introduce intuitionism as a branch of epistemology within (constructive) mathematics [STANFORD INTUITIONISM].
+Introduce intuitionism as a branch of epistemology within (constructive) mathematics [STANFORD INTUITIONISM]. Naturally, the law of excluded middle should be discussed.
 
-Explain that working in an epistemological setting most closely aligns with Jaynes' viewpoint. In this work, a complete form of agnosticism will be employed towards any form of ontology [unlike PHYSICS papers, where either people reject ontology fiercely like SPEKKENS, or embrace it fiercely like GISIN and PUSEY], but the theory will be considered as a pure mental model. This means, for example with respect to quantum physics, that I don't reject the possibility that the probability waves are ontic [rejected by SPEKKENS], but I also am completely open to the possibility there will be another theory developed that explains the causes or inner workings of these waves in more detail or a more detailed level [rejected by PUSEY and GISIN]. For one thing, the 'indeterministic' nature of quantum physics can, for example, already be neatly explained by either using finite numbers [GISIN, LOSING INFINITY] or by adhering to a pure epistemological reading of probability theory [SPEKKENS], although -- at the moment -- not all.
+Explain that working in an epistemological setting most closely aligns with Jaynes' viewpoint, as discussed in, amongst others, 3.b.4. 
+
+In this work, a complete form of agnosticism will be employed towards any form of ontology + an argument for using an epistemological, constructive stance towards mathematics is defended; the argument is laid down in {PHYSICS-ARGUMENT}.
 
 4.b Type theory
 To completely work towards an ideal that Jaynes had and to follow the mathematical manifesto above -- namely: A form of mathematics that could be automated and eliminates most forms of career boasting -- the selected logic needs to be implemented as a programmable enterprise. This would greatly hamper:
@@ -354,7 +351,9 @@ Explain what the differences:
     - computation
 With each point, give intuition and how it roughly looks, but put all extensive definitions in the appendix.
 
-Stress that since this framework is part of a constructive philosophy, it, almost automatically, does not allow for infinite paradoxing, since everything that is used, can be explicitly constructed -- like the natural numbers or fractions can, but real numbers cannot. One needs to explicitly introduce 'infinity' or 'real numbers' as a backdoor in this theory, but it does not natively support it an I will -- naturally -- take a version without these additions to be in accordance with the Jaynes' and Brouwers' philosophies.
+Naturally, the law of excluded middle should again be mentioned here. It should be explained that Martin-Löf-style type theory doesn't have it. If a proof is needed, it should be placed in the appendix {EXCLUDED-MIDDLE-PROOF}.
+
+Stress that since this framework is part of a constructive philosophy, it, almost automatically, does not allow for infinite paradoxing, since everything that is used, can be explicitly constructed -- like the natural numbers or fractions can, but real numbers cannot easily. One needs to explicitly introduce 'infinity' or 'real numbers' as a backdoor in this theory, but it does not natively support it an I will -- naturally -- take a version without these additions to be in accordance with the Jaynes' and Brouwers' philosophies.
 
 Explain that there exists different 'versions' or 'flavours' of this theory, with differences like:
 - identity/equality (intensional/extensional)
@@ -395,19 +394,29 @@ This can be done by implementing Gratzer. Explain some details Gratzer and what 
 - structural rules and substitution
 With each point, give intuition and how it roughly looks, but put all extensive definitions in the appendix.
 Make explanations brief and move possible proofs to the appendix.
-Explicate that modes/encoded structural causal models now corresponds to epistemics and 
+Explain briefly what a mode theory entails and why it is needed:all the operations for epistemic concepts are natively present inside of Martin-Löf-style type theory, but to distinguish it from other operations and encode is more explicitly as transitions between 'epistemics'/'epistemic states', it is more fruitful to classify these operations as 'special' and differences between epistemics as changes between 'modes' (like Kripke worlds).
+Explicate that modes can be seen to correspond to epistemics and that moving between these modes is naturally moving between different states of knowing. 
 
 5.c Probability types
-Use [CLAYTON AND WADDINGTON] to construct probability types. State in plain English the assumptions that are needed for these types.
-Mention that the Kolmogorov axioms and Bayes' theorem can be derived using these rules, but move these proofs to the appendix.
+Use [CLAYTON AND WADDINGTON] to construct probability types. State in plain English the assumptions that are needed for these types (for example):
+1. Logical equivalence: equivalent decidable events get equal plausibility.
+2. Translation/permutation invariance: relabelling Fin N does not change plausibility.
+3. Urn existence: for every N > 0, the symmetric N-urn exists.
+4. Monotonicity: if an event contains more urn labels, it is more plausible.
+5. Refinement invariance: replacing each urn cell by c indistinguishable subcells does not change the plausibility ratio.
+6. Product urn compatibility: an M × N urn behaves like an MN-urn.
+
+Mention that the Kolmogorov axioms and Bayes' theorem can be derived using these rules, but move these proofs to the appendix {CLAYTON-PROOF}.
 
 5.d. Structural causal models in Martin-Löf-style type theory
-Outline -- using probability types derived before -- how to define SCMs and epistemics in Martin-Löf-style type theory, using extensive context operations, mode theory and Gratzer.
+Outline -- using probability types derived before -- how to define structural causal models and epistemics in Martin-Löf-style type theory, using extensive context operations, mode theory and Gratzer.
+Explain why it is sensible to define epistemics with structural causal models -- having modes as epistemics was already defined, having modes corresponds to structural causal models one needs to make sense why a different structural causal model is a different state of knowledge. If this can be properly argumented, it can be made rather acceptable to make modes as structural causal models.
 Mention all components, but put precise definitions in the appendix.
 Mention that the modalities correspond to valid transitions and correspond to the context manipulations, but put proof in the appendix.
-Mention that current framework maintains the proofs that Pearl's framework is complete with respect its rules, but put proofs in the appendix (rather: Proof the expressiveness of this framework with respect to the 'classic' framework, and that it has soundness with respect to the three rules + any finite sequence of Pearl do-calculus rule applications can be translated into a sequence of derivations in your framework, which implies that the 'classic' proofs carry-over in this logic -- at the very least, proof expressiveness).
+Work out some complete examples of how this looks.
+Mention that current framework maintains the proofs that Pearl's framework is complete with respect its rules, but put proofs in the appendix (rather: Proof the expressiveness of this framework with respect to the 'classic' framework, and that it has soundness with respect to the three rules + any finite sequence of Pearl do-calculus rule applications can be translated into a sequence of derivations in your framework, which implies that the 'classic' proofs carry-over in this logic -- at the very least, proof expressiveness) {CAUSALITY-COMPLETENESS-PROOF}.
 
-5.d Results
+5.e Results
 By doing Clayton + Gratzer in Martin-Löf type theory, one obtains the following:
 - Discrete, computational basis for probability
 - Logical basis for subjectivity via context and modalities
@@ -421,7 +430,7 @@ By doing Clayton + Gratzer in Martin-Löf type theory, one obtains the following
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 Things flagged by Jaynes symptoms of large underlying problem. Every step of scientific process seems corrupted/prone to large errors.
 Science can be defined in more than one way, but let's give two; Science can be seen as activity that:
-    1) uncovers the Truth (as in Neo-Platonic view already expressed above) in the most effective and sincere way
+    1) uncovers the Truth (as a Neo-Platonic view) in the most effective and sincere way
     2) promises to efficiently solve society's large problems, both local as global (cancer, poverty, pollution, etc.)
 Research more and more run like a business, with KPI's included to hit targets, thereby forcing highly non-linear process of discovery in simplistic linear framework [mention Higgs]
 - Start research/career:
@@ -501,8 +510,33 @@ Make case that this approach solves addresses all above problems.
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 ----- [Quote: Dostojewski]
------ Proofs
+----- Proofs and arguments
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+{CAUSALITY-ARGUMENT}
+- Humans think/talk/do completely causally about things/the world/each other and science can be seen as discovering new causal relations in surroundings/environment (be it human-world/society, be it animal/biological world, be it material world) [reasons for this need not be uncovered, this is a mere observation]
+- Solution: Huizinga (there is a playful and conjunctive element in all these human activities -- like science; it is therefore a creative ("scheppend") activity done together), Erasmus (there is certainly a degree of irony in anything that is conjured this way/together), Kierkegaard (but this irony is bounded by tradition/everything that is already there/past) AND me (everything is bounded by the fact that it is an activity together, so it needs to go through other people too -- which is flexible (post-truth/manipulation) but like [Kierkegaard's] tradition not infinitely so) [FLECK: Causality is not merely an individual cognitive habit. It is stabilized within scientific communities, inherited styles of thought, shared techniques, and historically formed expectations.] [HACKING: Science is not only a representational activity but an interventionist one. Causal reasoning is central because scientists do things: isolate, manipulate, produce, measure, and stabilize phenomena. Therefore, Pearl's framework is indispensable.]
+- This very practically does not mean that any causal story is acceptable. Scientific inquiry is a communal, historically situated practice. With Huizinga, it contains a playful and creative element: scientists construct models, concepts, and experimental situations together. With Erasmus, such constructions retain an ironic or provisional character: they are humanly made and therefore never identical with reality itself. With Kierkegaard, however, irony is not limitless; it is bounded by what has already been inherited. To this I add that scientific construction is also bounded by intersubjective accountability: claims must pass through other people, practices, institutions, instruments, and traditions of criticism.
+- Therefore: Since causality is deeply traditional and human, not any observation goes (as according to Feyerabend), and is it completely useful and justified to talk about it (contrary to what a skeptical reading of Hume does) and whether it stems from the `world itself' or `human perspective' becomes irrelevant once science is perceived as inter-human activity (as according to Kant who saw every observation as deeply human -- where causality comes from in this process is completely irrelevant as a justification for this process); any theory that serves the tradition of science should therefore account for causality; Both from pragmatic necessity as well as acknowledgment of the fact that science is after all a deeply human activity and humans have this fundamental need for causal reasoning [see quote Pfeijffer]
+- Thus, this interpretation is against a crude Feyerabendian reading, not anything goes ( but a rather 'soft', pluralistic view is allowed for here). Against a crude Humean skepticism, causal talk need not be metaphysically guaranteed in order to be scientifically indispensable. And against a purely Kantian framing, the question whether causality originates in the world or in human cognition becomes secondary once science is understood as a human practice of shared orientation, intervention, and explanation.
+
+
+{PHYSICS-ARGUMENT}
+In [GISIN + QUANTA LOSING INFINITY], there is a helpful suggestion that observations are limited by finite information, and should, naturally, be composed of finite numbers. This allows to explain some 'uncertainty' features of statistical and quantum physics, but on a more inherent basis than purely ontologically. [GISIN] then proposes to base the observed numbers on intuitionism. Although in principle a good suggestion, [GISIN] then, in fact, continues to *not* do that. He continues to base numbers on infinite sequences of 'propensities', which are 'probability-like' numbers, where every probability in this case indicates the possible numeric value on that position. Some values measured would have propensity 1 for the measure value, some values on the edge of the precision of the measurement, would have some higher propensity for some values; the values beyond would have propensities that indicate absolute undertainty about their precise value. This, as [GISIN] indicates, allows numbers to have finite information, but still be 'developed', in principle, ad infinitum.
+
+Albeit charming, this is not the proper interpretation of intuitionism. Firstly, intuitionism is, as the name indicates, something primarily focused on the intuition and, therefore, very epistemological. However, being a classically trained physicist, [GISIN et. al] insist to define these numbers ontologically. Secondly, intuitionism is part of constructive mathematics, so that the numbers are constructable and constructed. In [GISIN]s reading, the number *look* constructed, but are in fact *not* constructed, since the *infinite* sequence of proposensities is, in fact, 'God-given'. Unknowingly, infinity is then introduced in the back-door, exactly contrary to the whole philosophy of constructivism. 
+
+Firstly, the epistemological part: [SPEKKENS et al] already investigated whether a purely epistemological reading of quantum physics would be consistent. It is able to come quite far, but as [PUSEY] indicates: It can't get you all the way if you assume a completely certain, completely defined, ontological state underneath. This is hopeful, as it allows for space if some of these constraints are loosened somewhat.
+
+Secondly, the constructive part: The act of measuring a quantity could very naturally be interpreted in this mathematics as 'constructing the measured number', with constructed also implying: Up to the precision of the measurement (for example: In experimental notation .13(4), where .13 is the observed value, and (4) is the +/- 4 in the last digit that the measurement is having). In this reading, there is no need for propensities, all numbers are -- per definition -- always finite, as all measurements are, and all measurements can be seen as developing numbers. 
+
+The natural conjunction of the above is the following: Theories such as a particular logic, are most naturally taken as an epistemological vehicle for describing the encountered observations. There is no need at all to make any assumptions on the ontological aspects, and agnosticism in this regards seems justified. Furthermore, as measurements are finite, the natural choice of representing them is with a constructive logic. The natural mixture of a constructive mathematics that is epistemological in nature, would be intuitionism (so, intuitively -- pun intended -- [GISIN] did make the right choice in that regard). Having a finite mathematics allows for [GISIN], having an epistemological reading allows for [SPEKKENS], whilst not committing to a specific ontology circumvents [PUSEY]. This reading also allows better for having incorrect measurements, which an ontological reading of measurements such as [GISIN] would have a hard time to justify.
+
+{EXCLUDED-MIDDLE-PROOF}
+
+{CLAYTON-PROOF}
+
+{CAUSALITY-COMPLETENESS-PROOF}
+
 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
 ----- [Quote: Erasmus]
