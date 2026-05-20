@@ -23,7 +23,7 @@ According to Jaynes there is a lot wrong with all three aspects. The sense of ur
 
 This work is aimed to addresses all three things in a holistic view. The first two are tackled using Martin-Löf type theory, a form of mathematics Jaynes surely would have approved of. Jaynes' solution for statistics is scrutinized and problems with its derivation are flagged and addressed using this Martin-Löf type theory; furthermore, his theory is extended to more deeply include subjectivity and also account for Pearl's causal framework. The third problem is placed in a much wider context and a practical proposal is made with a combination of policies, regulations and incentives. 
 
-There is a dire need to consider these parts together: As mentioned by [JAYNES and MACELREATH] inference is only one component of scientific knowledge production; AI systems that formalize inference inherit the weaknesses of the wider scientific pipeline in which questions, data, models, incentives, publication, and review are produced. It is therefore extremely important that both the fomralization of mathematical inference, as well as the environment in which those inferences take place, are sensible and constructive. If not, the inferences will only be as good as the weakest link.
+There is a dire need to consider these parts together: As mentioned by [JAYNES and MCELREATH] inference is only one component of scientific knowledge production; AI systems that formalize inference inherit the weaknesses of the wider scientific pipeline in which questions, data, models, incentives, publication, and review are produced. It is therefore extremely important that both the fomralization of mathematical inference, as well as the environment in which those inferences take place, are sensible and constructive. If not, the inferences will only be as good as the weakest link.
 
 1.b.1 Scope and assumptions
 Make explicit what is and is not attempted in this work.
@@ -130,7 +130,7 @@ Before continuing the main part of the text, some habits may well be highlighted
 - Stylistic choices that are conciously taken are:
     - Minimal acronyms: Science has become riddled with fun-sounding non-functional abbreviations -- probably in an attempt to secure funding -- which will not be done by me. Acronyms will be avoided if possible.
     - Lower-case preference: Likewise, there has been a recent tendency to PascalCase or **Highlight** every other word in respectable publications. I find this distracting, so it will not be done by me
-    - Therefore no MILE (Mathematical Induction as a Logical Extension), but simply mathematical induction.
+    - Therefore no MILE (Mathematical Inference as a Logical Extension), but simply mathematical inference.
 - Active collaboration with AI: As AI is more-and-more interwoven with our daily activities, so it is within scientific work; This is gracefully interwoven in current thesis in AI:
     - Searching sources: For investigating and gathering sources, ChatGPT is heavily used.
     - Writing text: For writing text Lumo (stylistic choices), together with ChatGPT (general frame) will be used [100% AI-made, 100% human-reviewed].
