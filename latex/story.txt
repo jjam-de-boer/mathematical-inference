@@ -395,13 +395,18 @@ Explain briefly what a mode theory entails and why it is needed:all the operatio
 Explicate that modes can be seen to correspond to epistemics and that moving between these modes is naturally moving between different states of knowing. 
 
 5.c Probability types
+Distinguish carefully between urn assignments into an arbitrary codomain X and the equivalence with finite rational records. The former only needs a finite source urn and decidable predicates on X; the latter requires X to be a finite event/value type with a finite enumeration.
+Add that the Lean formalization proves the equivalence in common-denominator weighted-record form: an urn becomes a list of weight-1 atoms, and a weighted record becomes an urn by expanding each weighted atom into repeated cells. Agreement is extensional, meaning agreement on all decidable events, not literal equality of representations.
+
 Use [CLAYTON AND WADDINGTON] to construct probability types. State in plain English the assumptions that are needed for these types (for example):
 1. Logical equivalence: equivalent decidable events get equal plausibility.
-2. Translation/permutation invariance: relabelling Fin N does not change plausibility.
-3. Urn existence: for every N > 0, the symmetric N-urn exists.
-4. Monotonicity: if an event contains more urn labels, it is more plausible.
-5. Refinement invariance: replacing each urn cell by c indistinguishable subcells does not change the plausibility ratio.
-6. Product urn compatibility: an M × N urn behaves like an MN-urn.
+2. Qualitative coherence: plausibility equivalence is an equivalence relation, strict order respects it, and equivalent plausibilities are not strictly ordered.
+3. Translation/permutation invariance: relabelling Fin N does not change plausibility.
+4. Urn existence: for every N > 0, the symmetric N-urn exists.
+5. Monotonicity: if an event contains more urn labels, it is more plausible.
+6. Refinement invariance: replacing each urn cell by c indistinguishable subcells does not change the plausibility ratio.
+
+Then treat product urn compatibility separately after the ratio representation is fixed: an M × N urn behaves like an MN-urn, so rectangular product events multiply.
 
 Mention that the Kolmogorov axioms and Bayes' theorem can be derived using these rules, but move these proofs to the appendix {CLAYTON-PROOF}.
 
