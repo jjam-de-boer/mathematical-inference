@@ -90,6 +90,50 @@ theorem count_union_disjoint (xs : List X) (E F : Event X)
         omega
       · exact False.elim (h x hE hF)
 
+theorem count_mono {xs : List X} {E F : Event X}
+    (h : ∀ x, E x = true → F x = true) :
+    count xs E ≤ count xs F := by
+  induction xs with
+  | nil =>
+      simp [count]
+  | cons x xs ih =>
+      have ih' : List.countP E xs ≤ List.countP F xs := by
+        simpa [count] using ih
+      change List.countP E (x :: xs) ≤ List.countP F (x :: xs)
+      rw [List.countP_cons, List.countP_cons]
+      cases hE : E x with
+      | true =>
+          have hF : F x = true := h x hE
+          simp [hF]
+          omega
+      | false =>
+          cases hF : F x with
+          | true =>
+              simp
+              omega
+          | false =>
+              simp
+              exact ih'
+
+theorem count_union_inter (xs : List X) (E F : Event X) :
+    count xs (union E F) + count xs (inter E F) =
+      count xs E + count xs F := by
+  induction xs with
+  | nil =>
+      simp [count]
+  | cons x xs ih =>
+      have ih' :
+          List.countP (union E F) xs + List.countP (inter E F) xs =
+            List.countP E xs + List.countP F xs := by
+        simpa [count] using ih
+      change
+        List.countP (union E F) (x :: xs) + List.countP (inter E F) (x :: xs) =
+          List.countP E (x :: xs) + List.countP F (x :: xs)
+      rw [List.countP_cons, List.countP_cons, List.countP_cons,
+        List.countP_cons]
+      cases hE : E x <;> cases hF : F x <;>
+        simp [union, inter, hE, hF] <;> omega
+
 theorem list_ofFn_get {α : Type u} (xs : List α) :
     List.ofFn (fun i : Fin xs.length => xs.get i) = xs := by
   induction xs with
@@ -451,6 +495,66 @@ theorem bayes_formula (μ : UrnProb X) (E F : Event X)
     exact (count_inter_comm μ.support E F).symm
   simp [QProb.Equiv, QProb.div, QProb.mul, condVal, probVal, hInter,
     Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm]
+
+/--
+Monotonicity of finite urn probability: a sub-event has at most the same urn
+count as the larger event. This is the integer counterpart of the standard
+`E ⊆ F ⇒ P(E) ≤ P(F)` rule, used implicitly by inclusion–exclusion arguments.
+-/
+theorem monotonicity (μ : UrnProb X) {E F : Event X}
+    (h : ∀ x, E x = true → F x = true) :
+    μ.probNum E ≤ μ.probNum F :=
+  count_mono h
+
+/--
+Two-event count form of inclusion–exclusion: the sum of cells in `E ∪ F` and in
+`E ∩ F` equals the sum of cells in `E` and in `F`. This generalises
+`finite_additivity_num` to events that need not be disjoint.
+-/
+theorem probNum_union_inter (μ : UrnProb X) (E F : Event X) :
+    μ.probNum (union E F) + μ.probNum (inter E F) =
+      μ.probNum E + μ.probNum F :=
+  count_union_inter μ.support E F
+
+/--
+Two-event inclusion–exclusion as an equivalence of `QProb` values. The sum of
+the `E ∪ F` and `E ∩ F` probabilities equals the sum of the `E` and `F`
+probabilities. This is the form used implicitly by the fellowship-example
+calculation in the main text.
+-/
+theorem inclusion_exclusion (μ : UrnProb X) (E F : Event X) :
+    QProb.Equiv
+      (QProb.add (μ.probVal (union E F)) (μ.probVal (inter E F)))
+      (QProb.add (μ.probVal E) (μ.probVal F)) := by
+  have hcount := μ.probNum_union_inter E F
+  unfold QProb.Equiv QProb.add probVal
+  simp only [← Nat.add_mul]
+  rw [hcount]
+
+/--
+The Bayesian update probability of `F` given conditioning event `E`, computed
+directly from the formula `p_E(ω) := 𝟙_E(ω)·p(ω) / P(E)` of the appendix
+definition `def:bayesian-update`. In the urn presentation this is the count of
+cells satisfying both `E` and `F`, divided by the count of cells satisfying `E`.
+-/
+def bayesianUpdateProb (μ : UrnProb X) (E F : Event X)
+    (hE : 0 < μ.probNum E) : QProb where
+  num := μ.probNum (inter E F)
+  den := μ.probNum E
+  den_pos := hE
+
+/--
+Consistency of Bayesian update with conditional probability: when the
+conditioning event has positive count, the update value `P_E(F)` equals
+`P(F | E)`. This is the lemma the main text uses implicitly when treating
+`P_E` and `P(- | E)` as interchangeable.
+-/
+theorem bayesian_update_consistency (μ : UrnProb X) (E F : Event X)
+    (hE : 0 < μ.probNum E) :
+    QProb.Equiv (μ.bayesianUpdateProb E F hE) (μ.condVal F E hE) := by
+  have hcomm : μ.probNum (inter E F) = μ.probNum (inter F E) :=
+    count_inter_comm μ.support E F
+  simp [QProb.Equiv, bayesianUpdateProb, condVal, hcomm]
 
 end UrnProb
 
