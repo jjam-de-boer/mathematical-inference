@@ -122,6 +122,25 @@ theorem unsetModel_setModel_cancel (M : RecursiveSCMData A U)
       · simp [h]
       · simp [h]
 
+theorem evalPrefix_mk_congr (k n : Nat) (hk : k ≤ n)
+    (noise₁ noise₂ : FinDist U)
+    (fn₁ fn₂ : (i : Fin n) -> List A -> U -> A)
+    (hfn : ∀ i xs u, fn₁ i xs u = fn₂ i xs u) (u : U) :
+    ({ n := n, noise := noise₁, fn := fn₁ } : RecursiveSCMData A U).evalPrefix u k hk =
+      ({ n := n, noise := noise₂, fn := fn₂ } : RecursiveSCMData A U).evalPrefix u k hk := by
+  induction k with
+  | zero =>
+      rfl
+  | succ n ih =>
+      simp [RecursiveSCMData.evalPrefix, ih (Nat.le_of_succ_le hk), hfn]
+
+theorem eval_mk_congr (n : Nat) (noise₁ noise₂ : FinDist U)
+    (fn₁ fn₂ : (i : Fin n) -> List A -> U -> A)
+    (hfn : ∀ i xs u, fn₁ i xs u = fn₂ i xs u) (u : U) :
+    ({ n := n, noise := noise₁, fn := fn₁ } : RecursiveSCMData A U).eval u =
+      ({ n := n, noise := noise₂, fn := fn₂ } : RecursiveSCMData A U).eval u := by
+  exact evalPrefix_mk_congr n n (Nat.le_refl n) noise₁ noise₂ fn₁ fn₂ hfn u
+
 structure EpistemicRecord (A : Type u) (U : Type v) where
   model : RecursiveSCMData A U
   wfNoise : model.noise.IsProbability
@@ -263,6 +282,35 @@ def counterfactualAfterSetProb (R : EpistemicRecord A U)
     (target : Fin R.model.n) (value : A) (event : List A -> Bool) : Rat :=
   (R.conditionOnObservationThenSet observation hEvidence target value).model.observationalProb
     event
+
+theorem counterfactualAfterSetProb_eq_counterfactualProb (R : EpistemicRecord A U)
+    (observation : List A -> Bool)
+    (hEvidence : 0 < R.model.noise.probOf (fun u => observation (R.model.eval u)))
+    (target : Fin R.model.n) (value : A) (event : List A -> Bool) :
+    R.counterfactualAfterSetProb observation hEvidence target value event =
+      R.model.counterfactualProb observation hEvidence
+        (fun i => if i = target then some value else none) event := by
+  simp [counterfactualAfterSetProb, conditionOnObservationThenSet,
+    conditionOnObservation, conditionOnExogenousEvidence, conditionNoise,
+    conditionNoiseModel, setVariable, setModel, RecursiveSCMData.counterfactualProb,
+    RecursiveSCMData.observationalProb, RecursiveSCMData.intervene]
+  apply congrArg
+    (fun ev =>
+      (R.model.noise.bayesPosterior fun u => observation (R.model.eval u)).probOf ev)
+  funext u
+  exact congrArg event
+    (eval_mk_congr R.model.n
+      (R.model.noise.bayesPosterior fun u => observation (R.model.eval u))
+      R.model.noise
+      (fun i xs u => if i = target then value else R.model.fn i xs u)
+      (fun i xs u =>
+        match if i = target then some value else none with
+        | some x => x
+        | none => R.model.fn i xs u)
+      (by
+        intro i xs u
+        by_cases h : i = target <;> simp [h])
+      u)
 
 def unsetVariable (R : EpistemicRecord A U) (target : Fin R.model.n)
     (oldFn : List A -> U -> A) : EpistemicRecord A U where
