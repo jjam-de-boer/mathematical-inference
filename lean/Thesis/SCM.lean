@@ -122,6 +122,21 @@ def interventionalProb (M : RecursiveSCMData A U)
     (target : Fin M.n → Option A) (event : List A → Bool) : Rat :=
   (M.intervene target).observationalProb event
 
+def counterfactualProb (M : RecursiveSCMData A U)
+    (evidence : List A → Bool) (_hEvidence : 0 < M.observationalProb evidence)
+    (target : Fin M.n → Option A) (event : List A → Bool) : Rat :=
+  let posterior := M.noise.bayesPosterior (fun u => evidence (M.eval u))
+  posterior.probOf (fun u => event ((M.intervene target).eval u))
+
+theorem counterfactualProb_eq (M : RecursiveSCMData A U)
+    (evidence : List A → Bool) (hEvidence : 0 < M.observationalProb evidence)
+    (target : Fin M.n → Option A) (event : List A → Bool) :
+    M.counterfactualProb evidence hEvidence target event =
+      M.noise.probOf
+        (fun u => evidence (M.eval u) && event ((M.intervene target).eval u)) /
+      M.noise.probOf (fun u => evidence (M.eval u)) := by
+  simp [counterfactualProb, FinDist.bayesPosterior_probOf]
+
 end RecursiveSCMData
 
 namespace FiniteFunctionalisation
@@ -253,10 +268,10 @@ end BinaryCPTRow
 
 end FiniteFunctionalisation
 
-namespace Fellowship
+namespace TenureTrack
 
 /-!
-A checked version of the running fellowship SCM calculation from the thesis.
+A checked version of the running tenure-track SCM calculation from the thesis.
 
 The example is intentionally small and concrete: all endogenous variables are
 Boolean and appear in the order
@@ -349,6 +364,9 @@ def prAndQuEvent : List Bool → Bool :=
 def fitAndOffEvent : List Bool → Bool :=
   fun xs => fitEvent xs && offEvent xs
 
+def noPrestigeGoodNoOfferEvent : List Bool → Bool :=
+  fun xs => (!prEvent xs) && quEvent xs && (!offEvent xs)
+
 def setPrTrue (i : Fin model.n) : Option Bool :=
   if i.val = 0 then some true else none
 
@@ -385,7 +403,34 @@ theorem prob_off_do_fit_true :
     model.interventionalProb setFitTrue offEvent = (5 / 16 : Rat) := by
   native_decide
 
-end Fellowship
+theorem prob_noPrestigeGoodNoOffer :
+    model.observationalProb noPrestigeGoodNoOfferEvent = (3 / 32 : Rat) := by
+  native_decide
+
+theorem prob_noPrestigeGoodNoOffer_positive :
+    0 < model.observationalProb noPrestigeGoodNoOfferEvent := by
+  native_decide
+
+theorem posterior_noPrestigeGoodNoOffer_isProbability :
+    (model.noise.bayesPosterior
+      (fun u => noPrestigeGoodNoOfferEvent (model.eval u))).IsProbability := by
+  exact model.noise.bayesPosterior_isProbability noiseDist_isProbability
+    (fun u => noPrestigeGoodNoOfferEvent (model.eval u))
+    prob_noPrestigeGoodNoOffer_positive
+
+theorem prob_counterfactual_offer_do_pr_given_noPrestigeGoodNoOffer :
+    model.counterfactualProb noPrestigeGoodNoOfferEvent
+      prob_noPrestigeGoodNoOffer_positive setPrTrue offEvent =
+      (1 / 2 : Rat) := by
+  native_decide
+
+theorem prob_counterfactual_offer_do_fit_given_noPrestigeGoodNoOffer :
+    model.counterfactualProb noPrestigeGoodNoOfferEvent
+      prob_noPrestigeGoodNoOffer_positive setFitTrue offEvent =
+      (1 / 2 : Rat) := by
+  native_decide
+
+end TenureTrack
 
 namespace SCMCorrespondence
 

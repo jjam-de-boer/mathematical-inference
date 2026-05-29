@@ -519,7 +519,7 @@ theorem probNum_union_inter (μ : UrnProb X) (E F : Event X) :
 /--
 Two-event inclusion–exclusion as an equivalence of `QProb` values. The sum of
 the `E ∪ F` and `E ∩ F` probabilities equals the sum of the `E` and `F`
-probabilities. This is the form used implicitly by the fellowship-example
+probabilities. This is the form used implicitly by the tenure-track example
 calculation in the main text.
 -/
 theorem inclusion_exclusion (μ : UrnProb X) (E F : Event X) :

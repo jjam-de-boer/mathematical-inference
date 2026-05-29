@@ -239,6 +239,31 @@ theorem setVariable_preserves_wellFormed (R : EpistemicRecord A U)
     (R.setVariable target value).WellFormed :=
   (R.setVariable target value).wellFormed
 
+def conditionOnObservationThenSet (R : EpistemicRecord A U)
+    (observation : List A -> Bool)
+    (hEvidence : 0 < R.model.noise.probOf (fun u => observation (R.model.eval u)))
+    (target : Fin R.model.n) (value : A) : EpistemicRecord A U :=
+  (R.conditionOnObservation observation hEvidence).setVariable
+    ⟨target.val, by
+      dsimp [conditionOnObservation, conditionOnExogenousEvidence, conditionNoise,
+        conditionNoiseModel]
+      exact target.isLt⟩
+    value
+
+theorem conditionOnObservationThenSet_preserves_wellFormed (R : EpistemicRecord A U)
+    (observation : List A -> Bool)
+    (hEvidence : 0 < R.model.noise.probOf (fun u => observation (R.model.eval u)))
+    (target : Fin R.model.n) (value : A) :
+    (R.conditionOnObservationThenSet observation hEvidence target value).WellFormed :=
+  (R.conditionOnObservationThenSet observation hEvidence target value).wellFormed
+
+def counterfactualAfterSetProb (R : EpistemicRecord A U)
+    (observation : List A -> Bool)
+    (hEvidence : 0 < R.model.noise.probOf (fun u => observation (R.model.eval u)))
+    (target : Fin R.model.n) (value : A) (event : List A -> Bool) : Rat :=
+  (R.conditionOnObservationThenSet observation hEvidence target value).model.observationalProb
+    event
+
 def unsetVariable (R : EpistemicRecord A U) (target : Fin R.model.n)
     (oldFn : List A -> U -> A) : EpistemicRecord A U where
   model := unsetModel R.model target oldFn
@@ -393,6 +418,42 @@ def unrelating (sourceName targetName : String) (R : EpistemicRecord A U)
   label := TransitionLabel.unrelating
   source := { name := sourceName, record := R }
   target := { name := targetName, record := R.unrelate edge }
+
+namespace TenureTrackCounterfactual
+
+def record : EpistemicRecord Bool Thesis.TenureTrack.Noise where
+  model := Thesis.TenureTrack.model
+  wfNoise := Thesis.TenureTrack.noiseDist_isProbability
+  exoCount := 6
+  relations := []
+  wfRelations := by
+    intro edge hmem
+    cases hmem
+
+def prIndex : Fin record.model.n :=
+  ⟨0, by native_decide⟩
+
+def fitIndex : Fin record.model.n :=
+  ⟨4, by native_decide⟩
+
+theorem evidence_positive :
+    0 < record.model.noise.probOf
+      (fun u => Thesis.TenureTrack.noPrestigeGoodNoOfferEvent (record.model.eval u)) := by
+  native_decide
+
+theorem modal_counterfactual_offer_do_pr_given_noPrestigeGoodNoOffer :
+    record.counterfactualAfterSetProb Thesis.TenureTrack.noPrestigeGoodNoOfferEvent
+      evidence_positive prIndex true Thesis.TenureTrack.offEvent =
+      (1 / 2 : Rat) := by
+  native_decide
+
+theorem modal_counterfactual_offer_do_fit_given_noPrestigeGoodNoOffer :
+    record.counterfactualAfterSetProb Thesis.TenureTrack.noPrestigeGoodNoOfferEvent
+      evidence_positive fitIndex true Thesis.TenureTrack.offEvent =
+      (1 / 2 : Rat) := by
+  native_decide
+
+end TenureTrackCounterfactual
 
 end Modalities
 end Thesis
