@@ -556,6 +556,20 @@ theorem bayesian_update_consistency (μ : UrnProb X) (E F : Event X)
     count_inter_comm μ.support E F
   simp [QProb.Equiv, bayesianUpdateProb, condVal, hcomm]
 
+/--
+The Bayesian update induced by a positive event is normalized: the updated
+probability of the total event is one.
+-/
+theorem bayesian_update_normalization (μ : UrnProb X) (E : Event X)
+    (hE : 0 < μ.probNum E) :
+    QProb.Equiv (μ.bayesianUpdateProb E topEvent hE) QProb.one := by
+  have htop : μ.probNum (inter E topEvent) = μ.probNum E := by
+    unfold probNum
+    apply count_congr
+    intro x
+    cases h : E x <;> simp [inter, topEvent, h]
+  simp [QProb.Equiv, bayesianUpdateProb, QProb.one, htop]
+
 end UrnProb
 
 namespace FiniteProbRecord

@@ -22,6 +22,9 @@ def probOf (D : FinDist Ω) (event : Ω → Bool) : Rat :=
     (fun acc ω => if event ω then acc + D.mass ω else acc)
     0
 
+def IsProbability (D : FinDist Ω) : Prop :=
+  (∀ ω, 0 ≤ D.mass ω) ∧ D.probOf (fun _ => true) = 1
+
 end FinDist
 
 /--
@@ -201,6 +204,140 @@ theorem oneVariableSCM_eval (row : BinaryCPTRow) (seedCell : row.Seed) :
 end BinaryCPTRow
 
 end FiniteFunctionalisation
+
+namespace Fellowship
+
+/-!
+A checked version of the running fellowship SCM calculation from the thesis.
+
+The example is intentionally small and concrete: all endogenous variables are
+Boolean and appear in the order
+`Pr, Qu, Top, Com, Fit, Short, Fund, Off`.
+-/
+
+structure Noise where
+  background : Bool
+  prestige : Bool
+  quality : Bool
+  topic : Bool
+  committee : Bool
+  funding : Bool
+  deriving DecidableEq, Repr
+
+def bools : List Bool := [false, true]
+
+def support : List Noise :=
+  bools.flatMap fun background =>
+  bools.flatMap fun prestige =>
+  bools.flatMap fun quality =>
+  bools.flatMap fun topic =>
+  bools.flatMap fun committee =>
+  bools.map fun funding =>
+    { background, prestige, quality, topic, committee, funding }
+
+def bernoulliMass (pTrue : Rat) : Bool → Rat
+  | true => pTrue
+  | false => 1 - pTrue
+
+def mass (u : Noise) : Rat :=
+  bernoulliMass (1 / 3) u.background *
+  bernoulliMass (1 / 4) u.prestige *
+  bernoulliMass (1 / 4) u.quality *
+  bernoulliMass (1 / 2) u.topic *
+  bernoulliMass (1 / 2) u.committee *
+  bernoulliMass (1 / 4) u.funding
+
+def noiseDist : FinDist Noise where
+  support := support
+  mass := mass
+
+theorem noiseDist_nonnegative :
+    ∀ u, 0 ≤ noiseDist.mass u := by
+  intro u
+  rcases u with ⟨background, prestige, quality, topic, committee, funding⟩
+  cases background <;> cases prestige <;> cases quality <;>
+    cases topic <;> cases committee <;> cases funding <;>
+    native_decide
+
+theorem noiseDist_normalized :
+    noiseDist.probOf (fun _ => true) = 1 := by
+  native_decide
+
+theorem noiseDist_isProbability : noiseDist.IsProbability := by
+  exact ⟨noiseDist_nonnegative, noiseDist_normalized⟩
+
+def prior (xs : List Bool) (i : Nat) : Bool :=
+  xs.getD i false
+
+def model : RecursiveSCMData Bool Noise where
+  n := 8
+  noise := noiseDist
+  fn := fun i xs u =>
+    match i.val with
+    | 0 => u.background || u.prestige
+    | 1 => u.background || u.quality
+    | 2 => u.topic
+    | 3 => u.committee
+    | 4 => prior xs 2 && prior xs 3
+    | 5 => prior xs 1 && (prior xs 0 || prior xs 4)
+    | 6 => prior xs 2 || u.funding
+    | _ => prior xs 5 && prior xs 6
+
+def prEvent : List Bool → Bool :=
+  fun xs => prior xs 0
+
+def quEvent : List Bool → Bool :=
+  fun xs => prior xs 1
+
+def fitEvent : List Bool → Bool :=
+  fun xs => prior xs 4
+
+def offEvent : List Bool → Bool :=
+  fun xs => prior xs 7
+
+def prAndQuEvent : List Bool → Bool :=
+  fun xs => prEvent xs && quEvent xs
+
+def fitAndOffEvent : List Bool → Bool :=
+  fun xs => fitEvent xs && offEvent xs
+
+def setPrTrue (i : Fin model.n) : Option Bool :=
+  if i.val = 0 then some true else none
+
+def setFitTrue (i : Fin model.n) : Option Bool :=
+  if i.val = 4 then some true else none
+
+theorem prob_pr_true :
+    model.observationalProb prEvent = (1 / 2 : Rat) := by
+  native_decide
+
+theorem prob_qu_true :
+    model.observationalProb quEvent = (1 / 2 : Rat) := by
+  native_decide
+
+theorem prob_pr_and_qu_true :
+    model.observationalProb prAndQuEvent = (3 / 8 : Rat) := by
+  native_decide
+
+theorem prob_qu_given_pr :
+    model.observationalProb prAndQuEvent / model.observationalProb prEvent =
+      (3 / 4 : Rat) := by
+  native_decide
+
+theorem prob_qu_do_pr_true :
+    model.interventionalProb setPrTrue quEvent = (1 / 2 : Rat) := by
+  native_decide
+
+theorem prob_off_given_fit :
+    model.observationalProb fitAndOffEvent / model.observationalProb fitEvent =
+      (1 / 2 : Rat) := by
+  native_decide
+
+theorem prob_off_do_fit_true :
+    model.interventionalProb setFitTrue offEvent = (5 / 16 : Rat) := by
+  native_decide
+
+end Fellowship
 
 namespace SCMCorrespondence
 
