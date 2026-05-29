@@ -17,13 +17,61 @@ structure FinDist (Ω : Type u) where
 
 namespace FinDist
 
+def sumMass : List Ω → (Ω → Rat) → (Ω → Bool) → Rat
+  | [], _, _ => 0
+  | ω :: rest, mass, event => (if event ω then mass ω else 0) + sumMass rest mass event
+
 def probOf (D : FinDist Ω) (event : Ω → Bool) : Rat :=
-  D.support.foldl
-    (fun acc ω => if event ω then acc + D.mass ω else acc)
-    0
+  sumMass D.support D.mass event
 
 def IsProbability (D : FinDist Ω) : Prop :=
   (∀ ω, 0 ≤ D.mass ω) ∧ D.probOf (fun _ => true) = 1
+
+def bayesPosterior (D : FinDist Ω) (evidence : Ω → Bool) : FinDist Ω where
+  support := D.support
+  mass := fun ω => if evidence ω then D.mass ω / D.probOf evidence else 0
+
+theorem sumMass_bayesPosterior (support : List Ω) (mass : Ω → Rat)
+    (evidence event : Ω → Bool) (den : Rat) :
+    sumMass support (fun ω => if evidence ω then mass ω / den else 0) event =
+      sumMass support mass (fun ω => evidence ω && event ω) / den := by
+  induction support with
+  | nil =>
+      simp [sumMass, Rat.div_def]
+  | cons ω rest ih =>
+      have ihMul :
+          sumMass rest (fun ω => if evidence ω then mass ω * den⁻¹ else 0) event =
+            (sumMass rest mass fun ω => evidence ω && event ω) * den⁻¹ := by
+        simpa [Rat.div_def] using ih
+      cases hEvidence : evidence ω <;> cases hEvent : event ω <;>
+        simp [sumMass, hEvidence, hEvent, ihMul, Rat.div_def, Rat.add_mul]
+
+theorem bayesPosterior_probOf (D : FinDist Ω)
+    (evidence event : Ω → Bool) :
+    (D.bayesPosterior evidence).probOf event =
+      D.probOf (fun ω => evidence ω && event ω) / D.probOf evidence := by
+  simp [probOf, bayesPosterior, sumMass_bayesPosterior]
+
+theorem bayesPosterior_probOf_top (D : FinDist Ω)
+    (evidence : Ω → Bool) (hEvidence : 0 < D.probOf evidence) :
+    (D.bayesPosterior evidence).probOf (fun _ => true) = 1 := by
+  rw [bayesPosterior_probOf]
+  simp [probOf]
+  rw [Rat.div_def]
+  exact Rat.mul_inv_cancel (D.probOf evidence) (Rat.ne_of_gt hEvidence)
+
+theorem bayesPosterior_isProbability (D : FinDist Ω)
+    (hD : D.IsProbability) (evidence : Ω → Bool)
+    (hEvidence : 0 < D.probOf evidence) :
+    (D.bayesPosterior evidence).IsProbability := by
+  constructor
+  · intro ω
+    by_cases hω : evidence ω = true
+    · simp [bayesPosterior, hω, Rat.div_def]
+      exact Rat.mul_nonneg (hD.1 ω)
+        (Rat.le_of_lt ((Rat.inv_pos).mpr hEvidence))
+    · simp [bayesPosterior, hω]
+  · exact D.bayesPosterior_probOf_top evidence hEvidence
 
 end FinDist
 
