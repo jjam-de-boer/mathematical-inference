@@ -430,31 +430,35 @@ By doing Clayton + Gratzer in Martin-Löf type theory, one obtains the following
 ----- [Quote: Piketty]
 ----- 6. Fifth movement: Presto
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-Character flaws flagged by Jaynes could be symptoms of a larger underlying problem. As noted by [RICHARDSON FRAUD LARGE SCALE; MARTINSON FRAUD AT SCALE], unethical behaviour in the scientific process is often assumed to be due to character failures -- as is done by Jaynes indeed. However, looking at the sheer scale of defection, a more structural problem might be the cause of such behaviour. Every step of scientific process seems prone to large errors, as outlined below.
-Science can be defined in more than one way, but let's give two; Science can be seen as activity that:
-    1) uncovers the Truth (as a Neo-Platonic view) in the most effective and sincere way
-    2) promises to efficiently solve society's large problems, both local as global (cancer, poverty, pollution, etc.)
-Research more and more run like a business, with KPI's included to hit targets, thereby forcing highly non-linear process of discovery in simplistic linear framework [mention Higgs]
-If you think following obstacles are not problematic, look at scale of fraud that now comes to the fore [RICHARDSON FRAUD LARGE SCALE; MARTINSON FRAUD AT SCALE].
+Character flaws flagged by Jaynes could be symptoms of a larger underlying problem. As noted by [RICHARDSON FRAUD LARGE SCALE; MARTINSON FRAUD AT SCALE; SMALDINO NATURAL SELECTION BAD SCIENCE; FANELLI NUMBER OF DEFECTORS; FANG FRAUD ACCOUNTS FOR MAJORITY OF RETRACTIONS], unethical behaviour in the scientific process is often assumed to be due to character failures -- as is done by Jaynes and [SIMMONS FALSE-POSITIVE RATE] indeed. However, looking at the sheer scale of defection [MAYBE ADD FIGURE FOR FALSE-POSITIVE RATE ESTIMATES FROM VARIOUS PAPERS], a more structural problem might be the cause of such behaviour. Every step of scientific process seems prone to large errors, as outlined below.
+    - Be noted that the number of defectors is naturally higher than those reported or estimated on the basis of (self-)reporting, due to the stigma and personal risk of being uncovered as a fraudster
+Research more and more run like a business, with KPI's included to hit targets; thereby forcing highly non-linear process of discovery in simplistic linear framework; with an increased hyperfocus on publishing ["publish or perish" culture], since funds, grants, job security and prestige all rely (in)directly on the publication rate [mention Higgs] 
+As per [SMALDINO NATURAL SELECTION BAD SCIENCE], this does not necessarily imply bad intent by all users individually, but it results in a process where bad behaviour is actively rewarded, and therefore a selection process happens where bad practices and "bad character traits" actually prevail, without the actual intention of making it so [FANELLI NUMBER OF DEFECTERS].
+If you think following obstacles are not problematic, look at scale of fraud that now comes to the fore [RICHARDSON FRAUD LARGE SCALE; MARTINSON FRAUD AT SCALE; FANG FRAUD ACCOUNTS FOR MAJORITY OF RETRACTIONS].
 In fact, if you read the numbers within the paper of [MARTINSON FRAUD AT SCALE] carefully, you see that current scientific curriculum actively *promotes* fraudulant behaviour
 6.a Start research/career:
-- Feels pressure to deliver (positive) findings, enhancing confirmation bias [Stapel; Woo-suk; Obokata; Green]
+- Feels pressure to deliver (positive) findings, enhancing confirmation bias [Stapel; Woo-suk; Obokata; Green; SMALDINO NATURAL SELECTION BAD SCIENCE]
     - Amplifies cutting corners [Obokata; Schon]
+        - Specifice cases include salami slicing, p-hacking, harking [SMALDINO NATURAL SELECTION BAD SCIENCE; SIMMONS FALSE-POSITIVE RATE]
     - Amplifies hyperfocus
-    - Amplifies gamesmanship [Woo-suk; Obokata]
+    - Amplifies gamesmanship [Woo-suk; Obokata] [REFER BACK TO PIKETTY QUOTE]
     - Effect starker due to visas (look for increase in fraud now that visa rules have been sharpened world-wide)
 - Catch-22 effect: Can't start to do research without funding, can't get no funding without research, enhancing stress and pressure [Ibáñez]
     - Has as side-effect that only rich entities can embark on innovative projects, with the rest either supporting or having considerably less funding
     - Thus, increases inequality and descreases overall access
     - Results into conservative approach to selecting research topics [CONSERVATISM GETS FUNDED PAPERS; PARK LESS DISRUPTIVE OVER TIME]
 6.b Reporting in journal:
-- Again, positve and/or exaggerated findings [Stapel; Wakefield; Woo-suk; Green; Raoult]
+- Again, positve and/or exaggerated findings [Stapel; Wakefield; Woo-suk; Green; Raoult; SMALDINO NATURAL SELECTION BAD SCIENCE]
+    - By post-hoc hypothesizing
+    - By active selection of positive findings [since these will be publishable, negative claims are not]
+    - Cutting power of a study, since more data requires more effort
+    - By poor modeling, since extensive, careful modeling requires serious effort that slows publication rates
 - Destroys collaboration (due to have competition for limited spots, an effect amplified by AI) [Obokata; ZHAO AI HYPERFOCUS]
     - Amplifies gamesmanship
-- Journals only interested in attention/subscriptions, therefore supporting claims that are exaggerated or plain wrong [Wakefield; Woo-suk; Raoult; Fujii]
+- Journals only interested in attention/subscriptions, therefore supporting claims that are exaggerated or plain wrong [Wakefield; Woo-suk; Raoult; Fujii; CAN BE SEEN AS WELL BY FANG FRAUD ACCOUNTS FOR MAJORITY OF RETRACTIONS WHERE MORE IMPORTANT JOURNALS SOMETIMES DON'T RETRACT INCORRECT OR FRAUDULANT PAPERS AT ALL OR DON'T PROVIDE ANY REASON FOR RETRACTION]
     - Amplifies cutting corners
-- Many degrees of freedom/forking paths, leading to reproducibility crisis
-- Often light penalties in case researchers decides not to align with publication standards, breaking ethical guidelines or declaring conflict of interest [Wakefield; Woo-suk; Raoult]
+- Many degrees of freedom/forking paths, leading to reproducibility crisis [SMALDINO NATURAL SELECTION BAD SCIENCE; SIMMONS FALSE-POSITIVE RATE]
+- Often light penalties in case researchers decides not to align with publication standards, breaking ethical guidelines or declaring conflict of interest [Wakefield; Woo-suk; Raoult; RICHARDSON FRAUD LARGE SCALE; MARTINSON FRAUD AT SCALE]
     - Amplifies cutting corners
 6.c Peer-review/editorial process:
 - Stimulate conservatism [Raoult; CONSERVATISM GETS FUNDED PAPERS; PARK LESS DISRUPTIVE OVER TIME]
@@ -469,13 +473,14 @@ In fact, if you read the numbers within the paper of [MARTINSON FRAUD AT SCALE] 
     - Amplifies hyperfocus
     - Amplifies gamesmanship
     - Amplifies hidden assumptions (shared by reviewers)
-- Gives disproportionate power to senior researchers and prestiguous institutes (both in needing them as a name on a paper before being able to publish, as well as reviewer, since these are the people that have the time to review at all) [Stapel; Woo-suk; Obokata; Pandey; Raoult; CONSERVATISM GETS FUNDED]
+- Gives disproportionate power to senior researchers and prestigious institutes (both in needing them as a name on a paper before being able to publish, as well as reviewer, since these are the people that have the time to review at all) [Stapel; Woo-suk; Obokata; Pandey; Raoult; CONSERVATISM GETS FUNDED; SMALDINO NATURAL SELECTION BAD SCIENCE]
 - Inadequate process for detecting any sort of fraud or breaking of standards (lack of time + methodology) [Stapel; Wakefield; Schon; Woo-suk; Obokata; Green; Raoult; Fujii; Pandey; RICHARDSON FRAUD LARGE SCALE]
     - Plagiarism, fabrication of data, fabrication of figures, not maintaining ethical standards, not declaring conflict of interest, salami slicing, p-hacking, harking, citation manipulation, having unusual review processes (like writer and editor/exceptionally fast review times), etc.
     - Mention often (not always) completely inadequate mechanisms both within journals as institutes to investigate fraud [Raoult; Wakefield; Pandey]
-- No standards (both in method and time spent), leading to incoherent processes
+    - This is exacerbated by the fact that nor the researchers (who are supposed to self-report), nor the journals (who are supposed to lead the investigation), nor the reasearch institutes (whom the journals often delegate the fraud investigation to, which, in practice, can result in the researchers investigating themselves, such as Raoult, Wakefield and Pandey) have any incentive to besmirch their reputation by a case of fraud, and often therefore simply hope the problem will go away/disappear by itself
+- No standards (both in method and time spent) in reviewing, leading to incoherent processes
 6.d Career advancement
-- Gives incentive of quantity over quality [Stapel; Fujii; Pandey; Schon; PARK LESS DISRUPTIVE OVER TIME]
+- Gives incentive of quantity over quality [Stapel; Fujii; Pandey; Schon; PARK LESS DISRUPTIVE OVER TIME; SMALDINO NATURAL SELECTION BAD SCIENCE]
     - Amplifies hyperfocus
     - Amplifies gamesmanship
     - Amplifies hidden assumptions (shared by reviewers) [Green]
@@ -487,16 +492,22 @@ In fact, if you read the numbers within the paper of [MARTINSON FRAUD AT SCALE] 
 - Impossible time-wise to remain up-to-date with own, let alone other, fields, since keeping up consists of a full-time job with current science growth rates [Bornmann; LANDHUIS]
     - Amplifies hyperfocus (effect even drastically increased by AI, where AI "rewards" circling on the same data and the same problems [ZHAO AI HYPERFOCUS])
 - Impossible time-wise to give same level of scrutiny to every paper during review
+    - Often gives positive bias towards senior researchers or prestigious institutes
     - Amplifies cutting corners
 
 
 6.e Introduce scientific manifesto:
-- Given overall situation, it is highly problematic to call current set-up `science', since it doesn't have as a mission to uncover Truth in an effective and sincere way, nor keeps to the promise of efficiently solving society's problems. We should refer to it as funded research, until a more adequate construction is found [Schekman]
-- Funding would need a radical change -> partly peer (ensures that more obscure or `science for scientists' always receives funding) + partly directly by citizen science (enhances outreach and local scientific initiatives) + partly by politics' agenda (now research funding initiatives often done by industry input, not democratic at all); follows more of a Rheinish stakeholder model, rather than "winner takes all" [mention Higgs]
+- Science can be defined in more than one way, but let's give two; Science can be seen as activity that:
+    1) uncovers the Truth (as a Neo-Platonic view) in the most effective and sincere way
+    2) promises to efficiently solve society's large problems, both local as global (cancer, poverty, pollution, etc.)
+    - Given overall situation, it is highly problematic to call current set-up `science', since it doesn't have as a mission to uncover Truth in an effective and sincere way, nor keeps to the promise of efficiently solving society's problems
+    - We should refer to it as funded research, until a more adequate construction is found [Schekman]
+- Funding would need a radical change -> partly peer (ensures that more obscure or `science for scientists' always receives funding) + partly directly by citizen science (enhances outreach and local scientific initiatives) + partly by politics' agenda (now research funding initiatives often done by industry input, not democratic at all); follows more of a Rheinish stakeholder model, rather than "winner takes all" [mention Higgs] [SUGGESTED TOO BY SMALDINO NATURAL SELECTION BAD SCIENCE]
     - If society leaves researchers open to pursue interests of choice since ``they know best'' (from a dogma of not interferring with science from outside), research will logically diffuse towards companies' agendas, since these have a clear agenda and spent money on that
 - Publication alternative by government (tax money is spent now on publications, which cost an enormous amount; better to more efficiently spend it such that everything is automatically open-source as to give relevant people access to relevant sources) [Gurdon; Eisen]
     - In this publication system it should be obligatory to submit raw data as well, even in rare cases inaccessible (for proprietary research). Many fraud cases actually were difficult to uncover since `original data was lost', which is not a red flag, but a completely obiquitous practice among scientists [Schon; Obokata]
 - Review system more like online platforms (open reviews and reliability of publications judged by how many and how well the reviews are made -- give opportunity of anonymous reviews, but also gives opportunity of scientists getting a career as prolific or famous reviewers, alike music, film or book critics) [Eisen]
+    - This implies a more important role for post-publication reviews
 - Divide current head of research groups into head of research and (possible shared -- to save costs) and head of operations in each research group
 - Make funding of researchers (on public research institutes) open/transparent by law
 
