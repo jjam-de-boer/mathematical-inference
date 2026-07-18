@@ -1,0 +1,373 @@
+import Thesis.Causality.Graph
+import Thesis.Probability
+
+namespace Thesis
+namespace Causality
+
+open Probability
+
+/-!
+Finite recursive structural causal models with explicit latent roots.
+
+The observed signature fixes the finite observed variables, their possibly
+different value types, and the acyclic directed parent graph.  A model adds a
+finite family of latent roots, a product probability law for those roots, and
+structural mechanisms typed only over declared parent and incident-latent
+inputs.  Bidirected edges are derived by hiding shared latent roots.
+-/
+
+namespace ObservedSignature
+
+instance assignmentDecidableEq (S : ObservedSignature) :
+    DecidableEq S.Assignment :=
+  FiniteProduct.assignmentDecidableEq S.count S.Value S.valueDecidableEq
+
+/-- A repetition-free enumeration of all dependent observed assignments. -/
+def assignmentEnumeration (S : ObservedSignature) : List S.Assignment :=
+  deduplicate
+    (FiniteProduct.enumeration S.count S.Value S.valueEnumeration)
+
+theorem assignmentEnumeration_complete (S : ObservedSignature)
+    (assignment : S.Assignment) : assignment ∈ S.assignmentEnumeration := by
+  rw [assignmentEnumeration, mem_deduplicate]
+  exact FiniteProduct.enumeration_complete S.count S.Value S.valueEnumeration
+    S.value_complete assignment
+
+theorem assignmentEnumeration_nodup (S : ObservedSignature) :
+    S.assignmentEnumeration.Nodup :=
+  deduplicate_nodup _
+
+/-- Keep selected coordinates and replace every other coordinate canonically. -/
+def project (S : ObservedSignature) (nodes : NodeSet S)
+    (assignment : S.Assignment) : S.Assignment :=
+  fun i => if nodes i then assignment i else S.defaultValue i
+
+theorem project_idempotent (S : ObservedSignature) (nodes : NodeSet S)
+    (assignment : S.Assignment) :
+    S.project nodes (S.project nodes assignment) = S.project nodes assignment := by
+  funext i
+  cases selected : nodes i <;>
+    simp [project, selected]
+
+end ObservedSignature
+
+/-- Latent roots and their directed incidence into observed mechanisms. -/
+structure LatentExtension.{u, v} (S : ObservedSignature.{u}) where
+  count : Nat
+  Value : Fin count -> Type v
+  valueEnumeration : (l : Fin count) -> List (Value l)
+  value_complete : forall l value, value ∈ valueEnumeration l
+  valueDecidableEq : (l : Fin count) -> DecidableEq (Value l)
+  incident : Fin count -> Fin S.count -> Bool
+
+namespace LatentExtension
+
+instance (L : LatentExtension S) (l : Fin L.count) : DecidableEq (L.Value l) :=
+  L.valueDecidableEq l
+
+abbrev Assignment (L : LatentExtension S) :=
+  (l : Fin L.count) -> L.Value l
+
+def Inputs (L : LatentExtension S) (child : Fin S.count) :=
+  (l : Fin L.count) -> L.incident l child = true -> L.Value l
+
+def rectangularEvent (L : LatentExtension S)
+    (events : (l : Fin L.count) -> L.Value l -> Bool)
+    (u : L.Assignment) : Bool :=
+  FiniteProduct.rectangularEvent L.count L.Value events u
+
+/-- Two observed nodes are confounded exactly when a hidden root feeds both. -/
+def projectedBidirected (L : LatentExtension S)
+    (i j : Fin S.count) : Bool :=
+  !(Nat.beq i.val j.val) &&
+    finAny L.count (fun latent => L.incident latent i && L.incident latent j)
+
+theorem projectedBidirected_symmetric (L : LatentExtension S) {i j}
+    (h : L.projectedBidirected i j = true) :
+    L.projectedBidirected j i = true := by
+  have hany :
+      finAny L.count (fun latent => L.incident latent i && L.incident latent j) =
+        finAny L.count (fun latent => L.incident latent j && L.incident latent i) :=
+    finAny_congr (fun latent => Bool.and_comm _ _)
+  unfold projectedBidirected at h ⊢
+  rw [natBeq_comm j.val i.val, ← hany]
+  exact h
+
+theorem projectedBidirected_irreflexive (L : LatentExtension S) (i) :
+    L.projectedBidirected i i = false := by
+  unfold projectedBidirected
+  rw [natBeq_refl]
+  rfl
+
+def observedGraph (L : LatentExtension S) : ObservedGraph S where
+  bidirected := L.projectedBidirected
+  bidirected_symmetric := L.projectedBidirected_symmetric
+  bidirected_irreflexive := L.projectedBidirected_irreflexive
+
+/-- Every hidden source is private to at most one observed mechanism. -/
+def Markovian (L : LatentExtension S) : Prop :=
+  forall l i j,
+    L.incident l i = true -> L.incident l j = true -> i = j
+
+/-- Every hidden source has at most two distinct observed children. -/
+def CanonicalSemiMarkovian (L : LatentExtension S) : Prop :=
+  forall l i j k,
+    L.incident l i = true ->
+    L.incident l j = true ->
+    L.incident l k = true ->
+    i = j \/ i = k \/ j = k
+
+theorem markovian_has_no_bidirected (L : LatentExtension S)
+    (hMarkov : L.Markovian) (i j : Fin S.count) :
+    L.projectedBidirected i j = false := by
+  cases edgeEq : L.projectedBidirected i j with
+  | false => rfl
+  | true =>
+      have edge : L.projectedBidirected i j = true := edgeEq
+      have hne : i ≠ j := by
+        intro equal
+        subst j
+        simp [projectedBidirected] at edge
+      have hany :
+          finAny L.count
+              (fun latent => L.incident latent i && L.incident latent j) =
+            true := by
+        exact (Bool.and_eq_true_iff.mp edge).2
+      have witness : Exists fun latent : Fin L.count =>
+          L.incident latent i = true /\ L.incident latent j = true := by
+        rcases (finAny_eq_true_iff _).mp hany with ⟨latent, hlatent⟩
+        exact ⟨latent, Bool.and_eq_true_iff.mp hlatent⟩
+      rcases witness with ⟨latent, hi, hj⟩
+      exact (hne (hMarkov latent i j hi hj)).elim
+
+def expandedEdge (L : LatentExtension S) :=
+  Causality.expandedEdge S L.count L.incident
+
+theorem expandedEdge_rank_lt (L : LatentExtension S) {i j}
+    (h : L.expandedEdge i j = true) : i.rank < j.rank :=
+  Causality.expandedEdge_rank_lt S L.count L.incident h
+
+end LatentExtension
+
+/--
+A finite latent-root SCM over a fixed observed signature.
+
+`product_law` is the exact finite independence condition: every rectangular
+event in the joint latent assignment has probability equal to the product of
+its source-wise probabilities.  Because the sample space is the dependent
+product of the source value types, this characterizes the supplied joint
+prior as the product of the factors.
+-/
+structure FiniteLatentSCM.{u, v} (S : ObservedSignature.{u}) where
+  latent : LatentExtension.{u, v} S
+  factor : (l : Fin latent.count) -> FiniteProbRecord (latent.Value l)
+  prior : FiniteProbRecord latent.Assignment
+  product_law :
+    forall events : (l : Fin latent.count) -> latent.Value l -> Bool,
+      QProb.Equiv
+        (prior.probVal (latent.rectangularEvent events))
+        (FiniteProduct.qProduct latent.count
+          (fun l => (factor l).probVal (events l)))
+  mechanism :
+    (child : Fin S.count) ->
+      S.ParentValues child -> latent.Inputs child -> S.Value child
+
+namespace FiniteLatentSCM
+
+def IsMarkovian (M : FiniteLatentSCM S) : Prop := M.latent.Markovian
+
+def IsCanonicalSemiMarkovian (M : FiniteLatentSCM S) : Prop :=
+  M.latent.CanonicalSemiMarkovian
+
+theorem markovian_isCanonicalSemiMarkovian (M : FiniteLatentSCM S)
+    (markovian : M.IsMarkovian) : M.IsCanonicalSemiMarkovian := by
+  intro latent i j k hi hj _hk
+  exact Or.inl (markovian latent i j hi hj)
+
+def observedGraph (M : FiniteLatentSCM S) : ObservedGraph S :=
+  M.latent.observedGraph
+
+theorem jointPrior_normalized (M : FiniteLatentSCM S) :
+    M.prior.probRat topEvent = 1 :=
+  M.prior.probRat_top
+
+theorem sourceFactors_normalized (M : FiniteLatentSCM S) (l) :
+    (M.factor l).probRat topEvent = 1 :=
+  (M.factor l).probRat_top
+
+theorem product_of_source_normalizations (M : FiniteLatentSCM S) :
+    finProductRat M.latent.count
+        (fun l => (M.factor l).probRat topEvent) = 1 := by
+  apply Eq.trans (finProductRat_congr fun l => M.sourceFactors_normalized l)
+  exact finProductRat_one M.latent.count
+
+def noIntervention (S : ObservedSignature) :
+    (i : Fin S.count) -> Option (S.Value i) :=
+  fun _ => none
+
+def cutOf (S : ObservedSignature)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (i : Fin S.count) : Bool :=
+  (target i).isSome
+
+def equationUnder (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (child : Fin S.count) (parents : S.ParentValues child)
+    (latents : M.latent.Inputs child) : S.Value child :=
+  match target child with
+  | some value => value
+  | none => M.mechanism child parents latents
+
+/-- Recursive evaluation in the topological order fixed by `S`. -/
+def evalPrefixUnder (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (u : M.latent.Assignment) :
+    (k : Nat) -> (hk : k <= S.count) -> S.Prefix k hk
+  | 0, _ => fun i => Fin.elim0 i
+  | k + 1, hk =>
+      let hkPrev : k <= S.count := Nat.le_trans (Nat.le_succ k) hk
+      let previous := evalPrefixUnder M target u k hkPrev
+      let child : Fin S.count := ⟨k, Nat.lt_of_succ_le hk⟩
+      let parents : S.ParentValues child := fun parent hEdge =>
+        previous ⟨parent.val, S.directed_earlier hEdge⟩
+      let latents : M.latent.Inputs child := fun l _ => u l
+      let value := M.equationUnder target child parents latents
+      fun i =>
+        Fin.lastCases
+          (by simpa [child] using value)
+          (fun j => by simpa using previous j)
+          i
+
+/-- Direct well-founded evaluation, avoiding extensional prefix equality. -/
+def evalNodeUnder (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (u : M.latent.Assignment) (child : Fin S.count) : S.Value child :=
+  M.equationUnder target child
+    (fun parent _edge => M.evalNodeUnder target u parent)
+    (fun latent _ => u latent)
+termination_by child.val
+decreasing_by
+  exact S.directed_earlier _edge
+
+def evalUnder (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (u : M.latent.Assignment) : S.Assignment :=
+  fun child => M.evalNodeUnder target u child
+
+def eval (M : FiniteLatentSCM S) (u : M.latent.Assignment) : S.Assignment :=
+  M.evalUnder (noIntervention S) u
+
+def observationalDist (M : FiniteLatentSCM S) :
+    FiniteProbRecord S.Assignment :=
+  M.prior.map M.eval
+
+def observationalProb (M : FiniteLatentSCM S)
+    (event : S.Assignment -> Bool) : Rat :=
+  M.observationalDist.probRat event
+
+def observationalValue (M : FiniteLatentSCM S)
+    (event : S.Assignment -> Bool) : QProb :=
+  M.observationalDist.probVal event
+
+def interventionalDist (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i)) :
+    FiniteProbRecord S.Assignment :=
+  M.prior.map (M.evalUnder target)
+
+def interventionalProb (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (event : S.Assignment -> Bool) : Rat :=
+  (M.interventionalDist target).probRat event
+
+def interventionalValue (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (event : S.Assignment -> Bool) : QProb :=
+  (M.interventionalDist target).probVal event
+
+theorem observationalProb_eq (M : FiniteLatentSCM S)
+    (event : S.Assignment -> Bool) :
+    M.observationalProb event =
+      M.prior.probRat (fun u => event (M.eval u)) := by
+  simp [observationalProb, observationalDist, FiniteProbRecord.map_probRat]
+
+theorem interventionalProb_eq (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (event : S.Assignment -> Bool) :
+    M.interventionalProb target event =
+      M.prior.probRat (fun u => event (M.evalUnder target u)) := by
+  simp [interventionalProb, interventionalDist, FiniteProbRecord.map_probRat]
+
+def counterfactualProb (M : FiniteLatentSCM S)
+    (evidence : S.Assignment -> Bool)
+    (hEvidence : 0 < M.observationalProb evidence)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (event : S.Assignment -> Bool) : Rat :=
+  let posterior := M.prior.condition (fun u => evidence (M.eval u)) (by
+    simpa [M.observationalProb_eq] using hEvidence)
+  posterior.probRat (fun u => event (M.evalUnder target u))
+
+theorem counterfactualProb_eq (M : FiniteLatentSCM S)
+    (evidence : S.Assignment -> Bool)
+    (hEvidence : 0 < M.observationalProb evidence)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (event : S.Assignment -> Bool) :
+    M.counterfactualProb evidence hEvidence target event =
+      M.prior.probRat
+          (fun u => evidence (M.eval u) && event (M.evalUnder target u)) /
+        M.prior.probRat (fun u => evidence (M.eval u)) := by
+  simp [counterfactualProb, FiniteProbRecord.condition_probRat]
+
+/-- The observed graph after a hard intervention. -/
+def mutilatedSignature (_M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i)) :
+    ObservedSignature where
+  count := S.count
+  Value := S.Value
+  valueEnumeration := S.valueEnumeration
+  value_complete := S.value_complete
+  value_nodup := S.value_nodup
+  defaultValue := S.defaultValue
+  valueDecidableEq := S.valueDecidableEq
+  directed := mutilatedDirected S (cutOf S target)
+  directed_earlier := mutilatedDirected_earlier S (cutOf S target)
+
+def mutilatedGraph (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i)) :
+    ObservedGraph (M.mutilatedSignature target) where
+  bidirected := fun i j =>
+    !(cutOf S target i) && !(cutOf S target j) &&
+      M.observedGraph.bidirected i j
+  bidirected_symmetric := by
+    intro i j h
+    have parts := Bool.and_eq_true_iff.mp h
+    have cuts := Bool.and_eq_true_iff.mp parts.1
+    apply Bool.and_eq_true_iff.mpr
+    exact ⟨Bool.and_eq_true_iff.mpr ⟨cuts.2, cuts.1⟩,
+      M.observedGraph.bidirected_symmetric parts.2⟩
+  bidirected_irreflexive := by
+    intro i
+    simp [M.observedGraph.bidirected_irreflexive i]
+
+theorem do_removes_incoming_directed (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (child : Fin S.count) (value : S.Value child)
+    (hTarget : target child = some value) (parent : Fin S.count) :
+    (M.mutilatedSignature target).directed parent child = false := by
+  simp [mutilatedSignature, mutilatedDirected, cutOf, hTarget]
+
+theorem do_removes_incident_bidirected (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (child : Fin S.count) (value : S.Value child)
+    (hTarget : target child = some value) (other : Fin S.count) :
+    (M.mutilatedGraph target).bidirected child other = false := by
+  simp [mutilatedGraph, cutOf, hTarget]
+
+theorem markovian_projection_has_no_bidirected (M : FiniteLatentSCM S)
+    (hMarkov : M.IsMarkovian) (i j : Fin S.count) :
+    M.observedGraph.bidirected i j = false :=
+  M.latent.markovian_has_no_bidirected hMarkov i j
+
+end FiniteLatentSCM
+
+end Causality
+end Thesis

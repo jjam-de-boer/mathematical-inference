@@ -1,7 +1,9 @@
-import Thesis.SCM
+import Thesis.Legacy.SCM
 
 namespace Thesis
 namespace Modalities
+
+open Probability
 
 /-!
 A small finite transition layer for the thesis' epistemic modalities.
@@ -105,7 +107,8 @@ def unsetModel (M : RecursiveSCMData A U) (target : Fin M.n)
   noise := M.noise
   fn := fun i xs u => if i = target then oldFn xs u else M.fn i xs u
 
-def conditionNoiseModel (M : RecursiveSCMData A U) (posterior : FinDist U) :
+def conditionNoiseModel (M : RecursiveSCMData A U)
+    (posterior : FiniteProbRecord U) :
     RecursiveSCMData A U where
   n := M.n
   noise := posterior
@@ -123,7 +126,7 @@ theorem unsetModel_setModel_cancel (M : RecursiveSCMData A U)
       · simp [h]
 
 theorem evalPrefix_mk_congr (k n : Nat) (hk : k ≤ n)
-    (noise₁ noise₂ : FinDist U)
+    (noise₁ noise₂ : FiniteProbRecord U)
     (fn₁ fn₂ : (i : Fin n) -> List A -> U -> A)
     (hfn : ∀ i xs u, fn₁ i xs u = fn₂ i xs u) (u : U) :
     ({ n := n, noise := noise₁, fn := fn₁ } : RecursiveSCMData A U).evalPrefix u k hk =
@@ -134,7 +137,8 @@ theorem evalPrefix_mk_congr (k n : Nat) (hk : k ≤ n)
   | succ n ih =>
       simp [RecursiveSCMData.evalPrefix, ih (Nat.le_of_succ_le hk), hfn]
 
-theorem eval_mk_congr (n : Nat) (noise₁ noise₂ : FinDist U)
+theorem eval_mk_congr (n : Nat)
+    (noise₁ noise₂ : FiniteProbRecord U)
     (fn₁ fn₂ : (i : Fin n) -> List A -> U -> A)
     (hfn : ∀ i xs u, fn₁ i xs u = fn₂ i xs u) (u : U) :
     ({ n := n, noise := noise₁, fn := fn₁ } : RecursiveSCMData A U).eval u =
@@ -143,7 +147,6 @@ theorem eval_mk_congr (n : Nat) (noise₁ noise₂ : FinDist U)
 
 structure EpistemicRecord (A : Type u) (U : Type v) where
   model : RecursiveSCMData A U
-  wfNoise : model.noise.IsProbability
   exoCount : Nat
   relations : List Relation
   wfRelations :
@@ -152,16 +155,16 @@ structure EpistemicRecord (A : Type u) (U : Type v) where
 namespace EpistemicRecord
 
 def WellFormed (R : EpistemicRecord A U) : Prop :=
-  R.model.noise.IsProbability ∧
+  0 < R.model.noise.den ∧
+    FiniteProbRecord.totalMass R.model.noise.atoms = R.model.noise.den ∧
     ∀ edge, edge ∈ R.relations -> RelationBounded R.model.n R.exoCount edge
 
 theorem wellFormed (R : EpistemicRecord A U) : R.WellFormed :=
-  ⟨R.wfNoise, R.wfRelations⟩
+  ⟨R.model.noise.den_pos, R.model.noise.total_mass, R.wfRelations⟩
 
 def learnFresh (R : EpistemicRecord A U) (fresh : List A -> U -> A) :
     EpistemicRecord A U where
   model := learnFreshModel R.model fresh
-  wfNoise := R.wfNoise
   exoCount := R.exoCount
   relations := R.relations
   wfRelations := by
@@ -179,7 +182,6 @@ def forgetLast (R : EpistemicRecord A U) (_hpos : 0 < R.model.n)
         RelationBounded (R.model.n - 1) R.exoCount edge) :
     EpistemicRecord A U where
   model := forgetLastModel R.model _hpos
-  wfNoise := R.wfNoise
   exoCount := R.exoCount
   relations := R.relations
   wfRelations := hRelations
@@ -201,54 +203,51 @@ theorem forgetLast_learnFresh_cancel (R : EpistemicRecord A U)
   cases R
   simp [forgetLast, learnFresh, forgetLastModel_learnFresh_cancel]
 
-def conditionNoise (R : EpistemicRecord A U) (posterior : FinDist U)
-    (hPosterior : posterior.IsProbability) : EpistemicRecord A U where
+def conditionNoise (R : EpistemicRecord A U)
+    (posterior : FiniteProbRecord U) : EpistemicRecord A U where
   model := conditionNoiseModel R.model posterior
-  wfNoise := hPosterior
   exoCount := R.exoCount
   relations := R.relations
   wfRelations := R.wfRelations
 
 theorem conditionNoise_preserves_wellFormed (R : EpistemicRecord A U)
-    (posterior : FinDist U) (hPosterior : posterior.IsProbability) :
-    (R.conditionNoise posterior hPosterior).WellFormed :=
-  (R.conditionNoise posterior hPosterior).wellFormed
+    (posterior : FiniteProbRecord U) :
+    (R.conditionNoise posterior).WellFormed :=
+  (R.conditionNoise posterior).wellFormed
 
 def conditionOnExogenousEvidence (R : EpistemicRecord A U)
-    (evidence : U -> Bool) (hEvidence : 0 < R.model.noise.probOf evidence) :
+    (evidence : U -> Bool) (hEvidence : 0 < R.model.noise.probRat evidence) :
     EpistemicRecord A U :=
-  R.conditionNoise (R.model.noise.bayesPosterior evidence)
-    (R.model.noise.bayesPosterior_isProbability R.wfNoise evidence hEvidence)
+  R.conditionNoise (R.model.noise.condition evidence hEvidence)
 
 theorem conditionOnExogenousEvidence_preserves_wellFormed (R : EpistemicRecord A U)
-    (evidence : U -> Bool) (hEvidence : 0 < R.model.noise.probOf evidence) :
+    (evidence : U -> Bool) (hEvidence : 0 < R.model.noise.probRat evidence) :
     (R.conditionOnExogenousEvidence evidence hEvidence).WellFormed :=
   (R.conditionOnExogenousEvidence evidence hEvidence).wellFormed
 
-theorem conditionOnExogenousEvidence_probOf (R : EpistemicRecord A U)
-    (evidence event : U -> Bool) (hEvidence : 0 < R.model.noise.probOf evidence) :
-    (R.conditionOnExogenousEvidence evidence hEvidence).model.noise.probOf event =
-      R.model.noise.probOf (fun u => evidence u && event u) /
-        R.model.noise.probOf evidence := by
+theorem conditionOnExogenousEvidence_probRat (R : EpistemicRecord A U)
+    (evidence event : U -> Bool) (hEvidence : 0 < R.model.noise.probRat evidence) :
+    (R.conditionOnExogenousEvidence evidence hEvidence).model.noise.probRat event =
+      R.model.noise.probRat (fun u => evidence u && event u) /
+        R.model.noise.probRat evidence := by
   simp [conditionOnExogenousEvidence, conditionNoise, conditionNoiseModel,
-    FinDist.bayesPosterior_probOf]
+    FiniteProbRecord.condition_probRat]
 
 def conditionOnObservation (R : EpistemicRecord A U)
     (observation : List A -> Bool)
-    (hEvidence : 0 < R.model.noise.probOf (fun u => observation (R.model.eval u))) :
+    (hEvidence : 0 < R.model.noise.probRat (fun u => observation (R.model.eval u))) :
     EpistemicRecord A U :=
   R.conditionOnExogenousEvidence (fun u => observation (R.model.eval u)) hEvidence
 
 theorem conditionOnObservation_preserves_wellFormed (R : EpistemicRecord A U)
     (observation : List A -> Bool)
-    (hEvidence : 0 < R.model.noise.probOf (fun u => observation (R.model.eval u))) :
+    (hEvidence : 0 < R.model.noise.probRat (fun u => observation (R.model.eval u))) :
     (R.conditionOnObservation observation hEvidence).WellFormed :=
   (R.conditionOnObservation observation hEvidence).wellFormed
 
 def setVariable (R : EpistemicRecord A U) (target : Fin R.model.n) (value : A) :
     EpistemicRecord A U where
   model := setModel R.model target value
-  wfNoise := R.wfNoise
   exoCount := R.exoCount
   relations := R.relations
   wfRelations := R.wfRelations
@@ -260,7 +259,7 @@ theorem setVariable_preserves_wellFormed (R : EpistemicRecord A U)
 
 def conditionOnObservationThenSet (R : EpistemicRecord A U)
     (observation : List A -> Bool)
-    (hEvidence : 0 < R.model.noise.probOf (fun u => observation (R.model.eval u)))
+    (hEvidence : 0 < R.model.noise.probRat (fun u => observation (R.model.eval u)))
     (target : Fin R.model.n) (value : A) : EpistemicRecord A U :=
   (R.conditionOnObservation observation hEvidence).setVariable
     ⟨target.val, by
@@ -271,36 +270,43 @@ def conditionOnObservationThenSet (R : EpistemicRecord A U)
 
 theorem conditionOnObservationThenSet_preserves_wellFormed (R : EpistemicRecord A U)
     (observation : List A -> Bool)
-    (hEvidence : 0 < R.model.noise.probOf (fun u => observation (R.model.eval u)))
+    (hEvidence : 0 < R.model.noise.probRat (fun u => observation (R.model.eval u)))
     (target : Fin R.model.n) (value : A) :
     (R.conditionOnObservationThenSet observation hEvidence target value).WellFormed :=
   (R.conditionOnObservationThenSet observation hEvidence target value).wellFormed
 
 def counterfactualAfterSetProb (R : EpistemicRecord A U)
     (observation : List A -> Bool)
-    (hEvidence : 0 < R.model.noise.probOf (fun u => observation (R.model.eval u)))
+    (hEvidence : 0 < R.model.noise.probRat (fun u => observation (R.model.eval u)))
     (target : Fin R.model.n) (value : A) (event : List A -> Bool) : Rat :=
   (R.conditionOnObservationThenSet observation hEvidence target value).model.observationalProb
     event
 
 theorem counterfactualAfterSetProb_eq_counterfactualProb (R : EpistemicRecord A U)
     (observation : List A -> Bool)
-    (hEvidence : 0 < R.model.noise.probOf (fun u => observation (R.model.eval u)))
+    (hEvidence : 0 < R.model.noise.probRat (fun u => observation (R.model.eval u)))
     (target : Fin R.model.n) (value : A) (event : List A -> Bool) :
     R.counterfactualAfterSetProb observation hEvidence target value event =
-      R.model.counterfactualProb observation hEvidence
+      R.model.counterfactualProb observation
+        (by
+          simpa [RecursiveSCMData.observationalProb,
+            RecursiveSCMData.observationalDist,
+            FiniteProbRecord.map_probRat] using hEvidence)
         (fun i => if i = target then some value else none) event := by
   simp [counterfactualAfterSetProb, conditionOnObservationThenSet,
     conditionOnObservation, conditionOnExogenousEvidence, conditionNoise,
     conditionNoiseModel, setVariable, setModel, RecursiveSCMData.counterfactualProb,
-    RecursiveSCMData.observationalProb, RecursiveSCMData.intervene]
+    RecursiveSCMData.observationalProb, RecursiveSCMData.observationalDist,
+    RecursiveSCMData.intervene, FiniteProbRecord.map_probRat]
   apply congrArg
     (fun ev =>
-      (R.model.noise.bayesPosterior fun u => observation (R.model.eval u)).probOf ev)
+      (R.model.noise.condition
+        (fun u => observation (R.model.eval u)) hEvidence).probRat ev)
   funext u
   exact congrArg event
     (eval_mk_congr R.model.n
-      (R.model.noise.bayesPosterior fun u => observation (R.model.eval u))
+      (R.model.noise.condition
+        (fun u => observation (R.model.eval u)) hEvidence)
       R.model.noise
       (fun i xs u => if i = target then value else R.model.fn i xs u)
       (fun i xs u =>
@@ -315,7 +321,6 @@ theorem counterfactualAfterSetProb_eq_counterfactualProb (R : EpistemicRecord A 
 def unsetVariable (R : EpistemicRecord A U) (target : Fin R.model.n)
     (oldFn : List A -> U -> A) : EpistemicRecord A U where
   model := unsetModel R.model target oldFn
-  wfNoise := R.wfNoise
   exoCount := R.exoCount
   relations := R.relations
   wfRelations := R.wfRelations
@@ -369,6 +374,33 @@ theorem unrelate_relate_cancel (R : EpistemicRecord A U)
 
 end EpistemicRecord
 
+/-!
+The operation constructs the target record; the transition label merely names
+the admissible move.  `RecordStep` is the proof object connecting those two
+layers, preventing a label from being attached to unrelated endpoints.
+-/
+inductive RecordStep :
+    TransitionLabel -> EpistemicRecord A U -> EpistemicRecord A U -> Prop
+  | learning (R : EpistemicRecord A U) (fresh : List A -> U -> A) :
+      RecordStep .learning R (R.learnFresh fresh)
+  | forgetting (R : EpistemicRecord A U) (hpos : 0 < R.model.n)
+      (hRelations :
+        forall edge, edge ∈ R.relations ->
+          RelationBounded (R.model.n - 1) R.exoCount edge) :
+      RecordStep .forgetting R (R.forgetLast hpos hRelations)
+  | conditioning (R : EpistemicRecord A U) (posterior : FiniteProbRecord U) :
+      RecordStep .conditioning R (R.conditionNoise posterior)
+  | setting (R : EpistemicRecord A U) (target : Fin R.model.n) (value : A) :
+      RecordStep .setting R (R.setVariable target value)
+  | unsetting (R : EpistemicRecord A U) (target : Fin R.model.n)
+      (oldFn : List A -> U -> A) :
+      RecordStep .unsetting R (R.unsetVariable target oldFn)
+  | relating (R : EpistemicRecord A U) (edge : Relation)
+      (hEdge : RelationBounded R.model.n R.exoCount edge) :
+      RecordStep .relating R (R.relate edge hEdge)
+  | unrelating (R : EpistemicRecord A U) (edge : Relation) :
+      RecordStep .unrelating R (R.unrelate edge)
+
 structure EpistemicMode (A : Type u) (U : Type v) where
   name : String
   record : EpistemicRecord A U
@@ -387,6 +419,7 @@ structure ModalTransition (A : Type u) (U : Type v) where
   label : TransitionLabel
   source : EpistemicMode A U
   target : EpistemicMode A U
+  valid : RecordStep label source.record target.record
 
 namespace ModalTransition
 
@@ -403,6 +436,7 @@ def learning (sourceName targetName : String) (R : EpistemicRecord A U)
   label := TransitionLabel.learning
   source := { name := sourceName, record := R }
   target := { name := targetName, record := R.learnFresh fresh }
+  valid := RecordStep.learning R fresh
 
 def forgetting (sourceName targetName : String) (R : EpistemicRecord A U)
     (hpos : 0 < R.model.n)
@@ -413,39 +447,49 @@ def forgetting (sourceName targetName : String) (R : EpistemicRecord A U)
   label := TransitionLabel.forgetting
   source := { name := sourceName, record := R }
   target := { name := targetName, record := R.forgetLast hpos hRelations }
+  valid := RecordStep.forgetting R hpos hRelations
 
 def conditioning (sourceName targetName : String) (R : EpistemicRecord A U)
-    (posterior : FinDist U) (hPosterior : posterior.IsProbability) :
+    (posterior : FiniteProbRecord U) :
     ModalTransition A U where
   label := TransitionLabel.conditioning
   source := { name := sourceName, record := R }
-  target := { name := targetName, record := R.conditionNoise posterior hPosterior }
+  target := { name := targetName, record := R.conditionNoise posterior }
+  valid := RecordStep.conditioning R posterior
 
 def conditioningOnExogenousEvidence (sourceName targetName : String)
     (R : EpistemicRecord A U) (evidence : U -> Bool)
-    (hEvidence : 0 < R.model.noise.probOf evidence) :
+    (hEvidence : 0 < R.model.noise.probRat evidence) :
     ModalTransition A U where
   label := TransitionLabel.conditioning
   source := { name := sourceName, record := R }
   target :=
     { name := targetName
       record := R.conditionOnExogenousEvidence evidence hEvidence }
+  valid := by
+    exact RecordStep.conditioning R
+      (R.model.noise.condition evidence hEvidence)
 
 def conditioningOnObservation (sourceName targetName : String)
     (R : EpistemicRecord A U) (observation : List A -> Bool)
-    (hEvidence : 0 < R.model.noise.probOf (fun u => observation (R.model.eval u))) :
+    (hEvidence : 0 < R.model.noise.probRat (fun u => observation (R.model.eval u))) :
     ModalTransition A U where
   label := TransitionLabel.conditioning
   source := { name := sourceName, record := R }
   target :=
     { name := targetName
       record := R.conditionOnObservation observation hEvidence }
+  valid := by
+    exact RecordStep.conditioning R
+      (R.model.noise.condition
+        (fun u => observation (R.model.eval u)) hEvidence)
 
 def setting (sourceName targetName : String) (R : EpistemicRecord A U)
     (target : Fin R.model.n) (value : A) : ModalTransition A U where
   label := TransitionLabel.setting
   source := { name := sourceName, record := R }
   target := { name := targetName, record := R.setVariable target value }
+  valid := RecordStep.setting R target value
 
 def unsetting (sourceName targetName : String) (R : EpistemicRecord A U)
     (target : Fin R.model.n) (oldFn : List A -> U -> A) :
@@ -453,6 +497,7 @@ def unsetting (sourceName targetName : String) (R : EpistemicRecord A U)
   label := TransitionLabel.unsetting
   source := { name := sourceName, record := R }
   target := { name := targetName, record := R.unsetVariable target oldFn }
+  valid := RecordStep.unsetting R target oldFn
 
 def relating (sourceName targetName : String) (R : EpistemicRecord A U)
     (edge : Relation) (hEdge : RelationBounded R.model.n R.exoCount edge) :
@@ -460,18 +505,19 @@ def relating (sourceName targetName : String) (R : EpistemicRecord A U)
   label := TransitionLabel.relating
   source := { name := sourceName, record := R }
   target := { name := targetName, record := R.relate edge hEdge }
+  valid := RecordStep.relating R edge hEdge
 
 def unrelating (sourceName targetName : String) (R : EpistemicRecord A U)
     (edge : Relation) : ModalTransition A U where
   label := TransitionLabel.unrelating
   source := { name := sourceName, record := R }
   target := { name := targetName, record := R.unrelate edge }
+  valid := RecordStep.unrelating R edge
 
 namespace TenureTrackCounterfactual
 
 def record : EpistemicRecord Bool Thesis.TenureTrack.Noise where
   model := Thesis.TenureTrack.model
-  wfNoise := Thesis.TenureTrack.noiseDist_isProbability
   exoCount := 6
   relations := []
   wfRelations := by
@@ -485,7 +531,7 @@ def fitIndex : Fin record.model.n :=
   ⟨4, by native_decide⟩
 
 theorem evidence_positive :
-    0 < record.model.noise.probOf
+    0 < record.model.noise.probRat
       (fun u => Thesis.TenureTrack.noPrestigeGoodNoOfferEvent (record.model.eval u)) := by
   native_decide
 

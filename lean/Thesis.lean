@@ -1,6 +1,13 @@
--- This module serves as the root of the `Thesis` library.
--- Import modules here that should be built as part of the library.
-import Thesis.Basic
 import Thesis.Probability
-import Thesis.SCM
-import Thesis.Modalities
+import Thesis.Causality.Graph
+import Thesis.Causality.Derivation
+import Thesis.Causality.Model
+import Thesis.Causality.Reductions
+import Thesis.Causality.Semantics
+import Thesis.CausalTransport.DSeparation
+import Thesis.CausalTransport.Correspondence
+import Thesis.CausalTransport.HiddenDAGModel
+import Thesis.CausalTransport.HiddenDAG
+import Thesis.CausalTransport.Construction
+import Thesis.Causality.Modalities
+import Thesis.Examples.TenureTrack

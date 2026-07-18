@@ -1,6 +1,8 @@
-import Std
+import Thesis.Probability
 
 namespace Thesis
+
+open Probability
 
 /-!
 This file formalizes the small correspondence core used in the thesis.
@@ -10,70 +12,6 @@ finite recursive fragment in which a classical SCM and the MLTT-style SCM
 have the same computational data, and proves that the encoding preserves the
 operations needed before invoking the published completeness results.
 -/
-
-structure FinDist (Ω : Type u) where
-  support : List Ω
-  mass : Ω → Rat
-
-namespace FinDist
-
-def sumMass : List Ω → (Ω → Rat) → (Ω → Bool) → Rat
-  | [], _, _ => 0
-  | ω :: rest, mass, event => (if event ω then mass ω else 0) + sumMass rest mass event
-
-def probOf (D : FinDist Ω) (event : Ω → Bool) : Rat :=
-  sumMass D.support D.mass event
-
-def IsProbability (D : FinDist Ω) : Prop :=
-  (∀ ω, 0 ≤ D.mass ω) ∧ D.probOf (fun _ => true) = 1
-
-def bayesPosterior (D : FinDist Ω) (evidence : Ω → Bool) : FinDist Ω where
-  support := D.support
-  mass := fun ω => if evidence ω then D.mass ω / D.probOf evidence else 0
-
-theorem sumMass_bayesPosterior (support : List Ω) (mass : Ω → Rat)
-    (evidence event : Ω → Bool) (den : Rat) :
-    sumMass support (fun ω => if evidence ω then mass ω / den else 0) event =
-      sumMass support mass (fun ω => evidence ω && event ω) / den := by
-  induction support with
-  | nil =>
-      simp [sumMass, Rat.div_def]
-  | cons ω rest ih =>
-      have ihMul :
-          sumMass rest (fun ω => if evidence ω then mass ω * den⁻¹ else 0) event =
-            (sumMass rest mass fun ω => evidence ω && event ω) * den⁻¹ := by
-        simpa [Rat.div_def] using ih
-      cases hEvidence : evidence ω <;> cases hEvent : event ω <;>
-        simp [sumMass, hEvidence, hEvent, ihMul, Rat.div_def, Rat.add_mul]
-
-theorem bayesPosterior_probOf (D : FinDist Ω)
-    (evidence event : Ω → Bool) :
-    (D.bayesPosterior evidence).probOf event =
-      D.probOf (fun ω => evidence ω && event ω) / D.probOf evidence := by
-  simp [probOf, bayesPosterior, sumMass_bayesPosterior]
-
-theorem bayesPosterior_probOf_top (D : FinDist Ω)
-    (evidence : Ω → Bool) (hEvidence : 0 < D.probOf evidence) :
-    (D.bayesPosterior evidence).probOf (fun _ => true) = 1 := by
-  rw [bayesPosterior_probOf]
-  simp [probOf]
-  rw [Rat.div_def]
-  exact Rat.mul_inv_cancel (D.probOf evidence) (Rat.ne_of_gt hEvidence)
-
-theorem bayesPosterior_isProbability (D : FinDist Ω)
-    (hD : D.IsProbability) (evidence : Ω → Bool)
-    (hEvidence : 0 < D.probOf evidence) :
-    (D.bayesPosterior evidence).IsProbability := by
-  constructor
-  · intro ω
-    by_cases hω : evidence ω = true
-    · simp [bayesPosterior, hω, Rat.div_def]
-      exact Rat.mul_nonneg (hD.1 ω)
-        (Rat.le_of_lt ((Rat.inv_pos).mpr hEvidence))
-    · simp [bayesPosterior, hω]
-  · exact D.bayesPosterior_probOf_top evidence hEvidence
-
-end FinDist
 
 /--
 Finite recursive SCM data with homogeneous endogenous value type `A`.
@@ -86,7 +24,7 @@ of endogenous values, the exogenous assignment, and returns the next value.
 -/
 structure RecursiveSCMData (A : Type u) (U : Type v) where
   n : Nat
-  noise : FinDist U
+  noise : FiniteProbRecord U
   fn : (i : Fin n) → List A → U → A
 
 abbrev ClassicSCM (A : Type u) (U : Type v) := RecursiveSCMData A U
@@ -114,9 +52,12 @@ def intervene (M : RecursiveSCMData A U)
     | some x => x
     | none => M.fn i pref u
 
+def observationalDist (M : RecursiveSCMData A U) : FiniteProbRecord (List A) :=
+  M.noise.map M.eval
+
 def observationalProb (M : RecursiveSCMData A U)
     (event : List A → Bool) : Rat :=
-  M.noise.probOf (fun u => event (M.eval u))
+  M.observationalDist.probRat event
 
 def interventionalProb (M : RecursiveSCMData A U)
     (target : Fin M.n → Option A) (event : List A → Bool) : Rat :=
@@ -125,17 +66,19 @@ def interventionalProb (M : RecursiveSCMData A U)
 def counterfactualProb (M : RecursiveSCMData A U)
     (evidence : List A → Bool) (_hEvidence : 0 < M.observationalProb evidence)
     (target : Fin M.n → Option A) (event : List A → Bool) : Rat :=
-  let posterior := M.noise.bayesPosterior (fun u => evidence (M.eval u))
-  posterior.probOf (fun u => event ((M.intervene target).eval u))
+  let posterior := M.noise.condition (fun u => evidence (M.eval u)) (by
+    simpa [observationalProb, observationalDist,
+      FiniteProbRecord.map_probRat] using _hEvidence)
+  posterior.probRat (fun u => event ((M.intervene target).eval u))
 
 theorem counterfactualProb_eq (M : RecursiveSCMData A U)
     (evidence : List A → Bool) (hEvidence : 0 < M.observationalProb evidence)
     (target : Fin M.n → Option A) (event : List A → Bool) :
     M.counterfactualProb evidence hEvidence target event =
-      M.noise.probOf
+      M.noise.probRat
         (fun u => evidence (M.eval u) && event ((M.intervene target).eval u)) /
-      M.noise.probOf (fun u => evidence (M.eval u)) := by
-  simp [counterfactualProb, FinDist.bayesPosterior_probOf]
+      M.noise.probRat (fun u => evidence (M.eval u)) := by
+  simp [counterfactualProb, FiniteProbRecord.condition_probRat]
 
 end RecursiveSCMData
 
@@ -255,9 +198,8 @@ theorem probFalse_eq (row : BinaryCPTRow) :
 
 def oneVariableSCM (row : BinaryCPTRow) : RecursiveSCMData Bool row.Seed where
   n := 1
-  noise :=
-    { support := row.seedSupport
-      mass := fun _ => (1 : Rat) / (row.seedSupport.length : Rat) }
+  noise := FiniteProbRecord.ofUrn
+    (UrnProb.ofList row.seedSupport row.seedSupport_nonempty)
   fn := fun _ _ seedCell => row.rowFn seedCell
 
 theorem oneVariableSCM_eval (row : BinaryCPTRow) (seedCell : row.Seed) :
@@ -298,36 +240,23 @@ def support : List Noise :=
   bools.map fun funding =>
     { background, prestige, quality, topic, committee, funding }
 
-def bernoulliMass (pTrue : Rat) : Bool → Rat
-  | true => pTrue
-  | false => 1 - pTrue
+def bernoulliWeight (trueWeight falseWeight : Nat) : Bool → Nat
+  | true => trueWeight
+  | false => falseWeight
 
-def mass (u : Noise) : Rat :=
-  bernoulliMass (1 / 3) u.background *
-  bernoulliMass (1 / 4) u.prestige *
-  bernoulliMass (1 / 4) u.quality *
-  bernoulliMass (1 / 2) u.topic *
-  bernoulliMass (1 / 2) u.committee *
-  bernoulliMass (1 / 4) u.funding
+def weight (u : Noise) : Nat :=
+  bernoulliWeight 1 2 u.background *
+  bernoulliWeight 1 3 u.prestige *
+  bernoulliWeight 1 3 u.quality *
+  bernoulliWeight 1 1 u.topic *
+  bernoulliWeight 1 1 u.committee *
+  bernoulliWeight 1 3 u.funding
 
-def noiseDist : FinDist Noise where
-  support := support
-  mass := mass
-
-theorem noiseDist_nonnegative :
-    ∀ u, 0 ≤ noiseDist.mass u := by
-  intro u
-  rcases u with ⟨background, prestige, quality, topic, committee, funding⟩
-  cases background <;> cases prestige <;> cases quality <;>
-    cases topic <;> cases committee <;> cases funding <;>
-    native_decide
-
-theorem noiseDist_normalized :
-    noiseDist.probOf (fun _ => true) = 1 := by
-  native_decide
-
-theorem noiseDist_isProbability : noiseDist.IsProbability := by
-  exact ⟨noiseDist_nonnegative, noiseDist_normalized⟩
+def noiseDist : FiniteProbRecord Noise where
+  atoms := support.map (fun u => (u, weight u))
+  den := 768
+  den_pos := by native_decide
+  total_mass := by native_decide
 
 def prior (xs : List Bool) (i : Nat) : Bool :=
   xs.getD i false
@@ -411,12 +340,19 @@ theorem prob_noPrestigeGoodNoOffer_positive :
     0 < model.observationalProb noPrestigeGoodNoOfferEvent := by
   native_decide
 
-theorem posterior_noPrestigeGoodNoOffer_isProbability :
-    (model.noise.bayesPosterior
-      (fun u => noPrestigeGoodNoOfferEvent (model.eval u))).IsProbability := by
-  exact model.noise.bayesPosterior_isProbability noiseDist_isProbability
+def posteriorNoPrestigeGoodNoOffer : FiniteProbRecord Noise :=
+  model.noise.condition
     (fun u => noPrestigeGoodNoOfferEvent (model.eval u))
-    prob_noPrestigeGoodNoOffer_positive
+    (by
+      simpa [RecursiveSCMData.observationalProb,
+        RecursiveSCMData.observationalDist,
+        FiniteProbRecord.map_probRat] using
+        prob_noPrestigeGoodNoOffer_positive)
+
+theorem posterior_noPrestigeGoodNoOffer_normalized :
+    QProb.Equiv
+      (posteriorNoPrestigeGoodNoOffer.probVal topEvent) QProb.one := by
+  exact posteriorNoPrestigeGoodNoOffer.normalization
 
 theorem prob_counterfactual_offer_do_pr_given_noPrestigeGoodNoOffer :
     model.counterfactualProb noPrestigeGoodNoOfferEvent
