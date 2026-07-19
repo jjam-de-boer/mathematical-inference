@@ -102,10 +102,10 @@ structure PublishedLatentProjection
     (P : FiniteLatentProjection S) (H : HiddenDAGModelClass S P) where
   joint_identifiable_iff : forall query,
     H.JointIdentifiable query <->
-      ClassicalIdentifiable P.observedGraph query
+      Identifiable P.observedGraph query
   conditional_identifiable_iff : forall query,
     H.ConditionalIdentifiable query <->
-      ClassicalConditionalIdentifiable P.observedGraph query
+      ConditionalIdentifiable P.observedGraph query
 
 theorem hiddenDAG_joint_transport
     {S : ObservedSignature} {P : FiniteLatentProjection S}
@@ -114,8 +114,7 @@ theorem hiddenDAG_joint_transport
     (query : JointKernelQuery S) :
     H.JointIdentifiable query <->
       TypeTheoreticIdentifiable P.observedGraph query := by
-  exact (published.joint_identifiable_iff query).trans
-    (identifiable_iff P.observedGraph query)
+  exact published.joint_identifiable_iff query
 
 theorem hiddenDAG_conditional_transport
     {S : ObservedSignature} {P : FiniteLatentProjection S}
@@ -124,8 +123,7 @@ theorem hiddenDAG_conditional_transport
     (query : ConditionalKernelQuery S) :
     H.ConditionalIdentifiable query <->
       TypeTheoreticConditionalIdentifiable P.observedGraph query := by
-  exact (published.conditional_identifiable_iff query).trans
-    (conditional_identifiable_iff P.observedGraph query)
+  exact published.conditional_identifiable_iff query
 
 end Causality
 end Thesis

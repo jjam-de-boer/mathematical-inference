@@ -187,19 +187,13 @@ theorem markovian_isCanonicalSemiMarkovian (M : FiniteLatentSCM S)
 def observedGraph (M : FiniteLatentSCM S) : ObservedGraph S :=
   M.latent.observedGraph
 
-theorem jointPrior_normalized (M : FiniteLatentSCM S) :
-    M.prior.probRat topEvent = 1 :=
-  M.prior.probRat_top
+theorem jointPrior_normalizedValue (M : FiniteLatentSCM S) :
+    QProb.Equiv (M.prior.probVal topEvent) QProb.one :=
+  M.prior.normalization
 
-theorem sourceFactors_normalized (M : FiniteLatentSCM S) (l) :
-    (M.factor l).probRat topEvent = 1 :=
-  (M.factor l).probRat_top
-
-theorem product_of_source_normalizations (M : FiniteLatentSCM S) :
-    finProductRat M.latent.count
-        (fun l => (M.factor l).probRat topEvent) = 1 := by
-  apply Eq.trans (finProductRat_congr fun l => M.sourceFactors_normalized l)
-  exact finProductRat_one M.latent.count
+theorem sourceFactors_normalizedValue (M : FiniteLatentSCM S) (l) :
+    QProb.Equiv ((M.factor l).probVal topEvent) QProb.one :=
+  (M.factor l).normalization
 
 def noIntervention (S : ObservedSignature) :
     (i : Fin S.count) -> Option (S.Value i) :=
@@ -261,10 +255,6 @@ def observationalDist (M : FiniteLatentSCM S) :
     FiniteProbRecord S.Assignment :=
   M.prior.map M.eval
 
-def observationalProb (M : FiniteLatentSCM S)
-    (event : S.Assignment -> Bool) : Rat :=
-  M.observationalDist.probRat event
-
 def observationalValue (M : FiniteLatentSCM S)
     (event : S.Assignment -> Bool) : QProb :=
   M.observationalDist.probVal event
@@ -274,48 +264,57 @@ def interventionalDist (M : FiniteLatentSCM S)
     FiniteProbRecord S.Assignment :=
   M.prior.map (M.evalUnder target)
 
-def interventionalProb (M : FiniteLatentSCM S)
-    (target : (i : Fin S.count) -> Option (S.Value i))
-    (event : S.Assignment -> Bool) : Rat :=
-  (M.interventionalDist target).probRat event
-
 def interventionalValue (M : FiniteLatentSCM S)
     (target : (i : Fin S.count) -> Option (S.Value i))
     (event : S.Assignment -> Bool) : QProb :=
   (M.interventionalDist target).probVal event
 
-theorem observationalProb_eq (M : FiniteLatentSCM S)
+theorem observationalValue_eq (M : FiniteLatentSCM S)
     (event : S.Assignment -> Bool) :
-    M.observationalProb event =
-      M.prior.probRat (fun u => event (M.eval u)) := by
-  simp [observationalProb, observationalDist, FiniteProbRecord.map_probRat]
+    QProb.Equiv (M.observationalValue event)
+      (M.prior.probVal (fun u => event (M.eval u))) :=
+  FiniteProbRecord.map_probVal M.prior M.eval event
 
-theorem interventionalProb_eq (M : FiniteLatentSCM S)
+theorem interventionalValue_eq (M : FiniteLatentSCM S)
     (target : (i : Fin S.count) -> Option (S.Value i))
     (event : S.Assignment -> Bool) :
-    M.interventionalProb target event =
-      M.prior.probRat (fun u => event (M.evalUnder target u)) := by
-  simp [interventionalProb, interventionalDist, FiniteProbRecord.map_probRat]
+    QProb.Equiv (M.interventionalValue target event)
+      (M.prior.probVal (fun u => event (M.evalUnder target u))) :=
+  FiniteProbRecord.map_probVal M.prior (M.evalUnder target) event
 
-def counterfactualProb (M : FiniteLatentSCM S)
+def CounterfactualSupported (M : FiniteLatentSCM S)
+    (evidence : S.Assignment -> Bool) : Prop :=
+  M.observationalDist.EventPositive evidence
+
+def counterfactualValue (M : FiniteLatentSCM S)
     (evidence : S.Assignment -> Bool)
-    (hEvidence : 0 < M.observationalProb evidence)
+    (hEvidence : M.CounterfactualSupported evidence)
     (target : (i : Fin S.count) -> Option (S.Value i))
-    (event : S.Assignment -> Bool) : Rat :=
-  let posterior := M.prior.condition (fun u => evidence (M.eval u)) (by
-    simpa [M.observationalProb_eq] using hEvidence)
-  posterior.probRat (fun u => event (M.evalUnder target u))
+    (event : S.Assignment -> Bool) : QProb :=
+  let posterior := M.prior.conditionOn (fun u => evidence (M.eval u)) (by
+    simpa [CounterfactualSupported, observationalDist,
+      FiniteProbRecord.EventPositive, FiniteProbRecord.map,
+      FiniteProbRecord.eventMass_map_labels] using hEvidence)
+  posterior.probVal (fun u => event (M.evalUnder target u))
 
-theorem counterfactualProb_eq (M : FiniteLatentSCM S)
+theorem counterfactualValue_eq (M : FiniteLatentSCM S)
     (evidence : S.Assignment -> Bool)
-    (hEvidence : 0 < M.observationalProb evidence)
+    (hEvidence : M.CounterfactualSupported evidence)
     (target : (i : Fin S.count) -> Option (S.Value i))
     (event : S.Assignment -> Bool) :
-    M.counterfactualProb evidence hEvidence target event =
-      M.prior.probRat
-          (fun u => evidence (M.eval u) && event (M.evalUnder target u)) /
-        M.prior.probRat (fun u => evidence (M.eval u)) := by
-  simp [counterfactualProb, FiniteProbRecord.condition_probRat]
+    QProb.Equiv (M.counterfactualValue evidence hEvidence target event)
+      (QProb.div
+        (M.prior.probVal
+          (fun u => evidence (M.eval u) && event (M.evalUnder target u)))
+        (M.prior.probVal (fun u => evidence (M.eval u)))
+        (by
+          simpa [CounterfactualSupported, observationalDist,
+            FiniteProbRecord.EventPositive, FiniteProbRecord.map,
+            FiniteProbRecord.eventMass_map_labels] using hEvidence)) := by
+  unfold counterfactualValue
+  exact M.prior.conditionOn_probVal
+    (fun u => evidence (M.eval u))
+    (fun u => event (M.evalUnder target u)) _
 
 /-- The observed graph after a hard intervention. -/
 def mutilatedSignature (_M : FiniteLatentSCM S)

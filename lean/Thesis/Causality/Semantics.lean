@@ -145,6 +145,16 @@ noncomputable def sum_map_congr (values : List X) (left right : X -> Result)
   | cons value values ih =>
       exact add_congr (h value) ih
 
+noncomputable def sum_map_congr_mem (values : List X)
+    (left right : X -> Result)
+    (h : forall value, value ∈ values -> Equivalent (left value) (right value)) :
+    Equivalent (sum (values.map left)) (sum (values.map right)) := by
+  induction values with
+  | nil => exact refl _
+  | cons value values ih =>
+      exact add_congr (h value (by simp))
+        (ih (fun member memberIn => h member (by simp [memberIn])))
+
 def add_supported {left right : Result}
     (leftSupported : Sigma fun value => Equivalent left (some value))
     (rightSupported : Sigma fun value => Equivalent right (some value)) :
@@ -335,86 +345,29 @@ noncomputable def denote (model : FiniteLatentSCM S) (term : ProbabilityTerm S)
         (numeratorDenote assignment) (denominatorDenote assignment))
     term
 
-def EquivalentIn (model : FiniteLatentSCM S)
-    (left right : ProbabilityTerm S) : Type :=
-  forall assignment,
-    ProbabilityResult.Equivalent
-      (left.denote model assignment) (right.denote model assignment)
-
-def SupportedIn (model : FiniteLatentSCM S) (term : ProbabilityTerm S) : Type :=
-  forall assignment, Sigma fun value =>
+/-- Support and equality at one finite valuation, used by partial kernels. -/
+def SupportedAt (model : FiniteLatentSCM S) (term : ProbabilityTerm S)
+    (assignment : S.Assignment) : Type :=
+  Sigma fun value =>
     ProbabilityResult.Equivalent (term.denote model assignment) (some value)
 
-noncomputable def equivalent_refl (model : FiniteLatentSCM S)
-    (term : ProbabilityTerm S) : EquivalentIn model term term :=
-  fun assignment => ProbabilityResult.refl (term.denote model assignment)
+def EquivalentAt (model : FiniteLatentSCM S)
+    (left right : ProbabilityTerm S) (assignment : S.Assignment) : Type :=
+  ProbabilityResult.Equivalent
+    (left.denote model assignment) (right.denote model assignment)
 
-noncomputable def equivalent_symm (model : FiniteLatentSCM S) {left right}
-    (h : EquivalentIn model left right) : EquivalentIn model right left :=
-  fun assignment => ProbabilityResult.symm (h assignment)
-
-noncomputable def equivalent_trans (model : FiniteLatentSCM S) {left middle right}
-    (hlm : EquivalentIn model left middle)
-    (hmr : EquivalentIn model middle right) : EquivalentIn model left right :=
-  fun assignment => ProbabilityResult.trans (hlm assignment) (hmr assignment)
-
-noncomputable def marginalize_congr (model : FiniteLatentSCM S) (nodes : NodeSet S)
-    {left right} (h : EquivalentIn model left right) :
-    EquivalentIn model (.marginalize nodes left) (.marginalize nodes right) := by
-  intro assignment
+noncomputable def marginalize_congrAt (model : FiniteLatentSCM S)
+    (nodes : NodeSet S) (assignment : S.Assignment) {left right}
+    (h : forall variant,
+      variant ∈ marginalAssignments S nodes assignment ->
+        EquivalentAt model left right variant) :
+    EquivalentAt model (.marginalize nodes left) (.marginalize nodes right)
+      assignment := by
   simpa only [denote] using
-    (ProbabilityResult.sum_map_congr
+    (ProbabilityResult.sum_map_congr_mem
       (marginalAssignments S nodes assignment)
       (fun variant => left.denote model variant)
       (fun variant => right.denote model variant) h)
-
-noncomputable def marginalize_supported (model : FiniteLatentSCM S) (nodes : NodeSet S)
-    (term : ProbabilityTerm S) (supported : SupportedIn model term) :
-    SupportedIn model (.marginalize nodes term) := by
-  intro assignment
-  simpa only [denote] using
-    (ProbabilityResult.sum_map_supported
-      (marginalAssignments S nodes assignment)
-      (fun variant => term.denote model variant) supported)
-
-noncomputable def multiply_congr (model : FiniteLatentSCM S)
-    {left left' right right'}
-    (hleft : EquivalentIn model left left')
-    (hright : EquivalentIn model right right') :
-    EquivalentIn model (.multiply left right) (.multiply left' right') :=
-  fun assignment => by
-    simpa only [denote] using
-      (ProbabilityResult.multiply_congr
-        (hleft assignment) (hright assignment))
-
-noncomputable def multiply_supported (model : FiniteLatentSCM S)
-    (left right : ProbabilityTerm S)
-    (leftSupported : SupportedIn model left)
-    (rightSupported : SupportedIn model right) :
-    SupportedIn model (.multiply left right) := by
-  intro assignment
-  simpa only [denote] using
-    (ProbabilityResult.multiply_supported
-      (leftSupported assignment) (rightSupported assignment))
-
-noncomputable def divide_congr (model : FiniteLatentSCM S)
-    {left left' right right'}
-    (hleft : EquivalentIn model left left')
-    (hright : EquivalentIn model right right') :
-    EquivalentIn model (.divide left right) (.divide left' right') :=
-  fun assignment => by
-    simpa only [denote] using
-      (ProbabilityResult.divide_congr
-        (hleft assignment) (hright assignment))
-
-noncomputable def supported_of_equivalent (model : FiniteLatentSCM S)
-    {left right : ProbabilityTerm S}
-    (equivalent : EquivalentIn model left right)
-    (supported : SupportedIn model left) : SupportedIn model right := by
-  intro assignment
-  rcases supported assignment with ⟨value, hvalue⟩
-  exact ⟨value, ProbabilityResult.trans
-    (ProbabilityResult.symm (equivalent assignment)) hvalue⟩
 
 theorem actionFree_hasAction_false (kernel : Kernel S)
     (actionFree : (ProbabilityTerm.kernel kernel).ActionFree) :
@@ -457,185 +410,124 @@ noncomputable def actionFree_invariant
 
 end ProbabilityTerm
 
-/--
-The primitive semantic obligations for one graph and one finite SCM.
+/-! ## Pointwise support semantics for partial conditional kernels -/
 
-Probability-algebra congruence is proved internally above.  These four fields
-isolate the substantive laws: the global-Markov justification of a do-rule
-step and the three kernel identities used as primitive probability rules.
--/
-structure PrimitiveSoundness (G : ObservedGraph S) (model : FiniteLatentSCM S) where
-  doRule : forall {left right},
+/-- Primitive soundness at one valuation and only under its local support. -/
+structure LocalPrimitiveSoundness (G : ObservedGraph S)
+    (model : FiniteLatentSCM S) where
+  doRule : forall {left right} (assignment : S.Assignment),
     DoRuleApplication G left right ->
-      ProbabilityTerm.SupportedIn model (.kernel left) ->
-      ProbabilityTerm.SupportedIn model (.kernel right) ->
-      ProbabilityTerm.EquivalentIn model (.kernel left) (.kernel right)
-  marginalization : forall (x y z w : NodeSet S),
+      ProbabilityTerm.SupportedAt model (.kernel left) assignment ->
+      ProbabilityTerm.SupportedAt model (.kernel right) assignment ->
+      ProbabilityTerm.EquivalentAt model (.kernel left) (.kernel right)
+        assignment
+  marginalization : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
     FourWayDisjoint x y z w ->
-      ProbabilityTerm.SupportedIn model (.kernel ⟨y, x, w⟩) ->
-      ProbabilityTerm.SupportedIn model
-        (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩)) ->
-      ProbabilityTerm.EquivalentIn model
+      ProbabilityTerm.SupportedAt model (.kernel ⟨y, x, w⟩) assignment ->
+      ProbabilityTerm.SupportedAt model
+        (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩)) assignment ->
+      ProbabilityTerm.EquivalentAt model
         (.kernel ⟨y, x, w⟩)
-        (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩))
-  conditioning : forall (x y z w : NodeSet S),
+        (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩)) assignment
+  conditioning : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
     FourWayDisjoint x y z w ->
-      ProbabilityTerm.SupportedIn model
-        (.kernel ⟨y, x, NodeSet.union z w⟩) ->
-      ProbabilityTerm.SupportedIn model
+      ProbabilityTerm.SupportedAt model
+        (.kernel ⟨y, x, NodeSet.union z w⟩) assignment ->
+      ProbabilityTerm.SupportedAt model
         (.divide
           (.kernel ⟨NodeSet.union y z, x, w⟩)
-          (.kernel ⟨z, x, w⟩)) ->
-      ProbabilityTerm.EquivalentIn model
+          (.kernel ⟨z, x, w⟩)) assignment ->
+      ProbabilityTerm.EquivalentAt model
         (.kernel ⟨y, x, NodeSet.union z w⟩)
         (.divide
           (.kernel ⟨NodeSet.union y z, x, w⟩)
-          (.kernel ⟨z, x, w⟩))
-  chain : forall (x y z w : NodeSet S),
+          (.kernel ⟨z, x, w⟩)) assignment
+  chain : forall (x y z w : NodeSet S) (assignment : S.Assignment),
     FourWayDisjoint x y z w ->
-      ProbabilityTerm.SupportedIn model
-        (.kernel ⟨NodeSet.union y z, x, w⟩) ->
-      ProbabilityTerm.SupportedIn model
+      ProbabilityTerm.SupportedAt model
+        (.kernel ⟨NodeSet.union y z, x, w⟩) assignment ->
+      ProbabilityTerm.SupportedAt model
         (.multiply
           (.kernel ⟨y, x, NodeSet.union z w⟩)
-          (.kernel ⟨z, x, w⟩)) ->
-      ProbabilityTerm.EquivalentIn model
+          (.kernel ⟨z, x, w⟩)) assignment ->
+      ProbabilityTerm.EquivalentAt model
         (.kernel ⟨NodeSet.union y z, x, w⟩)
         (.multiply
           (.kernel ⟨y, x, NodeSet.union z w⟩)
-          (.kernel ⟨z, x, w⟩))
+          (.kernel ⟨z, x, w⟩)) assignment
 
-/-- Support evidence for every primitive and intermediate term in a derivation. -/
-inductive DerivationSupport (model : FiniteLatentSCM S) :
-    {left right : ProbabilityTerm S} ->
-      DoCalculusDerivation G left right -> Type
-  | refl (supported : term.SupportedIn model) :
-      DerivationSupport model (.refl term)
-  | symm (supported : DerivationSupport model derivation) :
-      DerivationSupport model (.symm derivation)
-  | trans (leftSupported : DerivationSupport model leftDerivation)
-      (rightSupported : DerivationSupport model rightDerivation) :
-      DerivationSupport model (.trans leftDerivation rightDerivation)
-  | doRule {left right : Kernel S} (rule : DoRuleApplication G left right)
-      (leftSupported : ProbabilityTerm.SupportedIn model (.kernel left))
-      (rightSupported : ProbabilityTerm.SupportedIn model (.kernel right)) :
-      DerivationSupport model (.doRule rule)
-  | marginalization {x y z w : NodeSet S}
-      (disjoint : FourWayDisjoint x y z w)
-      (leftSupported : ProbabilityTerm.SupportedIn model
-        (.kernel ⟨y, x, w⟩))
-      (rightSupported : ProbabilityTerm.SupportedIn model
-        (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩))) :
-      DerivationSupport model (.marginalization x y z w disjoint)
-  | conditioning {x y z w : NodeSet S}
-      (disjoint : FourWayDisjoint x y z w)
-      (leftSupported : ProbabilityTerm.SupportedIn model
-        (.kernel ⟨y, x, NodeSet.union z w⟩))
-      (rightSupported : ProbabilityTerm.SupportedIn model
-        (.divide
-          (.kernel ⟨NodeSet.union y z, x, w⟩)
-          (.kernel ⟨z, x, w⟩))) :
-      DerivationSupport model (.conditioning x y z w disjoint)
-  | chain {x y z w : NodeSet S}
-      (disjoint : FourWayDisjoint x y z w)
-      (leftSupported : ProbabilityTerm.SupportedIn model
-        (.kernel ⟨NodeSet.union y z, x, w⟩))
-      (rightSupported : ProbabilityTerm.SupportedIn model
-        (.multiply
-          (.kernel ⟨y, x, NodeSet.union z w⟩)
-          (.kernel ⟨z, x, w⟩))) :
-      DerivationSupport model (.chain x y z w disjoint)
-  | marginalizeCongr
-      (supported : DerivationSupport model derivation) :
-      DerivationSupport model (.marginalizeCongr nodes derivation)
-  | multiplyCongr
-      (leftSupported : DerivationSupport model leftDerivation)
-      (rightSupported : DerivationSupport model rightDerivation) :
-      DerivationSupport model (.multiplyCongr leftDerivation rightDerivation)
-  | divideCongr {left left' right right' : ProbabilityTerm S}
-      {numeratorDerivation : DoCalculusDerivation G left left'}
-      {denominatorDerivation : DoCalculusDerivation G right right'}
-      (divisionLeftSupported : ProbabilityTerm.SupportedIn model
-        (.divide left right))
-      (divisionRightSupported : ProbabilityTerm.SupportedIn model
-        (.divide left' right'))
-      (numeratorSupported : DerivationSupport model numeratorDerivation)
-      (denominatorSupported : DerivationSupport model denominatorDerivation) :
-      DerivationSupport model
-        (.divideCongr numeratorDerivation denominatorDerivation)
+/-- Recursive support evidence for one valuation of one derivation. -/
+def LocalDerivationSupport (model : FiniteLatentSCM S)
+    (assignment : S.Assignment) {left right : ProbabilityTerm S}
+    (derivation : DoCalculusDerivation G left right) : Type :=
+  left.SupportedAt model assignment ×
+    right.SupportedAt model assignment ×
+      match derivation with
+      | .refl _ => Unit
+      | .symm inner => LocalDerivationSupport model assignment inner
+      | .trans first second =>
+          LocalDerivationSupport model assignment first ×
+            LocalDerivationSupport model assignment second
+      | .doRule _ => Unit
+      | .marginalization _ _ _ _ _ => Unit
+      | .conditioning _ _ _ _ _ => Unit
+      | .chain _ _ _ _ _ => Unit
+      | .marginalizeCongr nodes inner =>
+          forall variant,
+            variant ∈ ProbabilityTerm.marginalAssignments S nodes assignment ->
+              LocalDerivationSupport model variant inner
+      | .multiplyCongr first second =>
+          LocalDerivationSupport model assignment first ×
+            LocalDerivationSupport model assignment second
+      | .divideCongr numerator denominator =>
+          LocalDerivationSupport model assignment numerator ×
+            LocalDerivationSupport model assignment denominator
 
-noncomputable def DerivationSupport.endpoints
+noncomputable def LocalDerivationSupport.endpoints
     {left right : ProbabilityTerm S}
     {derivation : DoCalculusDerivation G left right}
-    (supported : DerivationSupport model derivation) :
-    ProbabilityTerm.SupportedIn model left ×
-      ProbabilityTerm.SupportedIn model right := by
-  induction supported with
-  | refl supported => exact ⟨supported, supported⟩
-  | symm _ ih => exact ⟨ih.2, ih.1⟩
-  | trans _ _ leftIH rightIH => exact ⟨leftIH.1, rightIH.2⟩
-  | doRule _ leftSupported rightSupported =>
-      exact ⟨leftSupported, rightSupported⟩
-  | marginalization _ leftSupported rightSupported =>
-      exact ⟨leftSupported, rightSupported⟩
-  | conditioning _ leftSupported rightSupported =>
-      exact ⟨leftSupported, rightSupported⟩
-  | chain _ leftSupported rightSupported =>
-      exact ⟨leftSupported, rightSupported⟩
-  | marginalizeCongr _ ih =>
-      exact ⟨ProbabilityTerm.marginalize_supported model _ _ ih.1,
-        ProbabilityTerm.marginalize_supported model _ _ ih.2⟩
-  | multiplyCongr _ _ leftIH rightIH =>
-      exact ⟨ProbabilityTerm.multiply_supported model _ _ leftIH.1 rightIH.1,
-        ProbabilityTerm.multiply_supported model _ _ leftIH.2 rightIH.2⟩
-  | divideCongr leftSupported rightSupported _ _ =>
-      exact ⟨leftSupported, rightSupported⟩
+    (supported : LocalDerivationSupport model assignment derivation) :
+    left.SupportedAt model assignment × right.SupportedAt model assignment := by
+  cases derivation <;> exact ⟨supported.1, supported.2.1⟩
 
-noncomputable def DerivationSupport.leftSupported
-    {left right : ProbabilityTerm S}
-    {derivation : DoCalculusDerivation G left right}
-    (supported : DerivationSupport model derivation) :
-    ProbabilityTerm.SupportedIn model left :=
-  supported.endpoints.1
-
-noncomputable def DerivationSupport.rightSupported
-    {left right : ProbabilityTerm S}
-    {derivation : DoCalculusDerivation G left right}
-    (supported : DerivationSupport model derivation) :
-    ProbabilityTerm.SupportedIn model right :=
-  supported.endpoints.2
-
-noncomputable def DoCalculusDerivation.denotational_sound
-    (semantics : PrimitiveSoundness G model)
+noncomputable def DoCalculusDerivation.denotational_soundAt
+    (semantics : LocalPrimitiveSoundness G model)
     (derivation : DoCalculusDerivation G left right)
-    (supported : DerivationSupport model derivation) :
-    ProbabilityTerm.EquivalentIn model left right := by
-  induction supported with
-  | refl =>
-      exact ProbabilityTerm.equivalent_refl model _
-  | symm _ ih =>
-      exact ProbabilityTerm.equivalent_symm model ih
-  | trans _ _ ihLeft ihRight =>
-      exact ProbabilityTerm.equivalent_trans model
-        ihLeft ihRight
-  | doRule rule leftSupported rightSupported =>
-      exact semantics.doRule rule leftSupported rightSupported
-  | marginalization disjoint leftSupported rightSupported =>
-      exact semantics.marginalization _ _ _ _ disjoint
-        leftSupported rightSupported
-  | conditioning disjoint leftSupported rightSupported =>
-      exact semantics.conditioning _ _ _ _ disjoint
-        leftSupported rightSupported
-  | chain disjoint leftSupported rightSupported =>
-      exact semantics.chain _ _ _ _ disjoint leftSupported rightSupported
-  | marginalizeCongr _ ih =>
-      exact ProbabilityTerm.marginalize_congr model _ ih
-  | multiplyCongr _ _ ihLeft ihRight =>
-      exact ProbabilityTerm.multiply_congr model
-        ihLeft ihRight
-  | divideCongr _ _ _ _ ihLeft ihRight =>
-      exact ProbabilityTerm.divide_congr model
-        ihLeft ihRight
+    (supported : LocalDerivationSupport model assignment derivation) :
+    ProbabilityTerm.EquivalentAt model left right assignment := by
+  induction derivation generalizing assignment with
+  | refl => exact ProbabilityResult.refl _
+  | symm derivation ih =>
+      exact ProbabilityResult.symm (ih supported.2.2)
+  | trans leftDerivation rightDerivation leftIH rightIH =>
+      exact ProbabilityResult.trans
+        (leftIH supported.2.2.1) (rightIH supported.2.2.2)
+  | doRule rule =>
+      exact semantics.doRule assignment rule supported.1 supported.2.1
+  | marginalization x y z w disjoint =>
+      exact semantics.marginalization x y z w assignment disjoint
+        supported.1 supported.2.1
+  | conditioning x y z w disjoint =>
+      exact semantics.conditioning x y z w assignment disjoint
+        supported.1 supported.2.1
+  | chain x y z w disjoint =>
+      exact semantics.chain x y z w assignment disjoint
+        supported.1 supported.2.1
+  | marginalizeCongr nodes derivation ih =>
+      apply ProbabilityTerm.marginalize_congrAt
+      intro variant member
+      exact ih (supported.2.2 variant member)
+  | multiplyCongr leftDerivation rightDerivation leftIH rightIH =>
+      simpa only [ProbabilityTerm.denote] using
+        ProbabilityResult.multiply_congr
+          (leftIH supported.2.2.1) (rightIH supported.2.2.2)
+  | divideCongr numeratorDerivation denominatorDerivation
+      numeratorIH denominatorIH =>
+      simpa only [ProbabilityTerm.denote] using
+        ProbabilityResult.divide_congr
+          (numeratorIH supported.2.2.1) (denominatorIH supported.2.2.2)
 
 end Causality
 end Thesis

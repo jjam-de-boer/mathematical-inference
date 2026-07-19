@@ -17,7 +17,7 @@ model; the identifiability premise therefore remains explicit.
 namespace FiniteRationalCPT
 
 def toTypeTheoreticModel (C : FiniteRationalCPT S) : TypeTheoreticModel S :=
-  TypeTheoreticModel.ofCore C.toSCM
+  C.toSCM
 
 theorem toTypeTheoreticModel_compatible (C : FiniteRationalCPT S) :
     TypeTheoreticCompatible C.toSCM.observedGraph

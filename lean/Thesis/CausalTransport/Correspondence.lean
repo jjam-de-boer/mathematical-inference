@@ -7,12 +7,13 @@ namespace Causality
 open Probability
 
 /-!
-The theorem-facing classical/MLTT correspondence and completeness transport.
+The theorem-facing intrinsic SCM semantics and completeness-certificate transport.
 
 The published identification theorem is deliberately represented by an
-explicit parameter.  Lean checks the finite model-class correspondence,
-identifiability transport, counterexample transport, and the application of
-that external theorem; it does not hide the published theorem behind an axiom.
+explicit parameter. The independent finite classical source and its semantic
+interpretation are defined in `FiniteSource`; this module checks certificate
+compilation, local denotational soundness, hedge failure, and the application
+of the external interface without hiding it behind an axiom.
 -/
 
 /-- The correspondence keeps observed and latent finite values in one universe. -/
@@ -36,6 +37,10 @@ def set (I : HardIntervention S) (target : Fin S.count)
   value := fun i =>
     if h : i = target then some (h.symm ▸ value) else I.value i
 
+def unset (I : HardIntervention S) (target : Fin S.count) :
+    HardIntervention S where
+  value := fun i => if i = target then none else I.value i
+
 theorem set_at_target (I : HardIntervention S) (target : Fin S.count)
     (value : S.Value target) :
     (I.set target value).value target = some value := by
@@ -45,6 +50,10 @@ theorem set_away_from_target (I : HardIntervention S)
     (target i : Fin S.count) (value : S.Value target) (h : i ≠ target) :
     (I.set target value).value i = I.value i := by
   simp [set, h]
+
+theorem unset_at_target (I : HardIntervention S) (target : Fin S.count) :
+    (I.unset target).value target = none := by
+  simp [unset]
 
 def referenceFor (I : HardIntervention S) (assignment : S.Assignment) :
     S.Assignment :=
@@ -147,6 +156,15 @@ def ConditionalKernelQuery.sourceTerm (q : ConditionalKernelQuery S) :
       action := q.action
       condition := q.condition }
 
+noncomputable def JointKernelQuery.supportedAt (q : JointKernelQuery S)
+    (model : ExactModel S) (assignment : S.Assignment) :
+    q.sourceTerm.SupportedAt model assignment := by
+  let value :=
+    (Kernel.mk q.outcome q.action NodeSet.empty).distribution model assignment
+  refine ⟨value.probVal (Kernel.agreesOn q.outcome assignment), ?_⟩
+  simpa [JointKernelQuery.sourceTerm] using
+    (Kernel.unconditionalDenote model q.outcome q.action assignment)
+
 def JointKernelQuery.ValueEquivalent (q : JointKernelQuery S)
     (M N : ExactModel S) : Prop :=
   forall assignment,
@@ -157,13 +175,11 @@ def JointKernelQuery.ValueEquivalent (q : JointKernelQuery S)
 def ConditionalKernelQuery.ValueEquivalent (q : ConditionalKernelQuery S)
     (M N : ExactModel S) : Prop :=
   forall assignment,
+    q.sourceTerm.SupportedAt M assignment ->
+    q.sourceTerm.SupportedAt N assignment ->
     Nonempty (ProbabilityResult.Equivalent
       (q.sourceTerm.denote M assignment)
       (q.sourceTerm.denote N assignment))
-
-def ConditionalKernelQuery.SupportedIn (q : ConditionalKernelQuery S)
-    (M : ExactModel S) : Prop :=
-  Nonempty (q.sourceTerm.SupportedIn M)
 
 def InterventionalQuery.distribution (q : InterventionalQuery S)
     (M : ExactModel S) : FiniteProbRecord S.Assignment :=
@@ -377,12 +393,13 @@ def EventConditionalSupported (G : ObservedGraph S)
 
 def EventConditionalIdentifiable (G : ObservedGraph S)
     (q : ConditionalQuery S) : Prop :=
-  EventConditionalSupported G q /\
-    forall (M N : ExactModel S),
-      Compatible M G ->
-      Compatible N G ->
-      ObservationallyEquivalent M N ->
-      q.ValueEquivalent M N
+  forall (M N : ExactModel S),
+    Compatible M G ->
+    Compatible N G ->
+    ObservationallyEquivalent M N ->
+    0 < (q.denominator M).num ->
+    0 < (q.denominator N).num ->
+    q.ValueEquivalent M N
 
 /-- Distributional identifiability is the notion used by the published theorem. -/
 def Identifiable (G : ObservedGraph S) (q : JointKernelQuery S) : Prop :=
@@ -392,18 +409,13 @@ def Identifiable (G : ObservedGraph S) (q : JointKernelQuery S) : Prop :=
     ObservationallyEquivalent M N ->
     q.ValueEquivalent M N
 
-def ConditionalSupported (G : ObservedGraph S)
-    (q : ConditionalKernelQuery S) : Prop :=
-  forall M : ExactModel S, Compatible M G -> q.SupportedIn M
-
 def ConditionalIdentifiable (G : ObservedGraph S)
     (q : ConditionalKernelQuery S) : Prop :=
-  ConditionalSupported G q /\
-    forall (M N : ExactModel S),
-      Compatible M G ->
-      Compatible N G ->
-      ObservationallyEquivalent M N ->
-      q.ValueEquivalent M N
+  forall (M N : ExactModel S),
+    Compatible M G ->
+    Compatible N G ->
+    ObservationallyEquivalent M N ->
+    q.ValueEquivalent M N
 
 /-- Full kernel identifiability entails every local fixed-event instance. -/
 theorem kernel_identifiable_implies_event_identifiable
@@ -508,64 +520,7 @@ structure HedgeWitness (G : ObservedGraph S)
               mutilatedDirected S q.action i j = true)
             root outcome
 
-/-! ## Separate classical and type-theoretic presentations -/
-
-/--
-Classical field presentation of the finite SCM data.  Its fields are declared
-independently of the intrinsic record below; `core` supplies its semantics.
--/
-structure ClassicalModel.{u} (S : ObservedSignature.{u}) where
-  latent : LatentExtension.{u, u} S
-  factor : (l : Fin latent.count) -> FiniteProbRecord (latent.Value l)
-  prior : FiniteProbRecord latent.Assignment
-  product_law :
-    forall events : (l : Fin latent.count) -> latent.Value l -> Bool,
-      QProb.Equiv
-        (prior.probVal (latent.rectangularEvent events))
-        (FiniteProduct.qProduct latent.count
-          (fun l => (factor l).probVal (events l)))
-  mechanism :
-    (child : Fin S.count) ->
-      S.ParentValues child -> latent.Inputs child -> S.Value child
-
-def ClassicalModel.core (M : ClassicalModel S) : ExactModel S where
-  latent := M.latent
-  factor := M.factor
-  prior := M.prior
-  product_law := M.product_law
-  mechanism := M.mechanism
-
-/--
-Intrinsic dependent presentation.  The latent family, factors, assignments
-and mechanisms occur as dependent fields rather than through a shared wrapper.
--/
-structure TypeTheoreticModel.{u} (S : ObservedSignature.{u}) where
-  latent : LatentExtension.{u, u} S
-  factor : (l : Fin latent.count) -> FiniteProbRecord (latent.Value l)
-  prior : FiniteProbRecord latent.Assignment
-  product_law :
-    forall events : (l : Fin latent.count) -> latent.Value l -> Bool,
-      QProb.Equiv
-        (prior.probVal (latent.rectangularEvent events))
-        (FiniteProduct.qProduct latent.count
-          (fun l => (factor l).probVal (events l)))
-  mechanism :
-    (child : Fin S.count) ->
-      S.ParentValues child -> latent.Inputs child -> S.Value child
-
-def TypeTheoreticModel.core (M : TypeTheoreticModel S) : ExactModel S where
-  latent := M.latent
-  factor := M.factor
-  prior := M.prior
-  product_law := M.product_law
-  mechanism := M.mechanism
-
-def TypeTheoreticModel.ofCore (M : ExactModel S) : TypeTheoreticModel S where
-  latent := M.latent
-  factor := M.factor
-  prior := M.prior
-  product_law := M.product_law
-  mechanism := M.mechanism
+/-! ## Intrinsic type-theoretic target -/
 
 /-- Semantic agreement avoids extensional equality of functions and records. -/
 structure ModelAgreement (left right : ExactModel S) : Prop where
@@ -579,194 +534,31 @@ structure ModelAgreement (left right : ExactModel S) : Prop where
   projectedGraph : forall i j,
     left.observedGraph.bidirected i j = right.observedGraph.bidirected i j
 
-namespace ModelEncoding
+/-- The target model is the dependent finite SCM record itself. -/
+abbrev TypeTheoreticModel (S : ObservedSignature) := ExactModel S
 
-def encode (M : ClassicalModel S) : TypeTheoreticModel S :=
-  { latent := M.latent
-    factor := M.factor
-    prior := M.prior
-    product_law := M.product_law
-    mechanism := M.mechanism }
+abbrev TypeTheoreticCompatible (G : ObservedGraph S)
+    (M : TypeTheoreticModel S) : Prop := Compatible M G
 
-def decode (M : TypeTheoreticModel S) : ClassicalModel S where
-  latent := M.core.latent
-  factor := M.core.factor
-  prior := M.core.prior
-  product_law := M.core.product_law
-  mechanism := M.core.mechanism
+abbrev TypeTheoreticObsEq (M N : TypeTheoreticModel S) : Prop :=
+  ObservationallyEquivalent M N
 
-theorem decode_encode_agrees (M : ClassicalModel S) :
-    ModelAgreement (decode (encode M)).core M.core := by
-  constructor
-  · intro event
-    exact QProb.equiv_refl _
-  · intro target event
-    exact QProb.equiv_refl _
-  · intro i j
-    rfl
+abbrev TypeTheoreticIdentifiable (G : ObservedGraph S)
+    (q : JointKernelQuery S) : Prop := Identifiable G q
 
-theorem encode_decode_agrees (M : TypeTheoreticModel S) :
-    ModelAgreement (encode (decode M)).core M.core := by
-  constructor
-  · intro event
-    exact QProb.equiv_refl _
-  · intro target event
-    exact QProb.equiv_refl _
-  · intro i j
-    rfl
+abbrev TypeTheoreticConditionalIdentifiable (G : ObservedGraph S)
+    (q : ConditionalKernelQuery S) : Prop := ConditionalIdentifiable G q
 
-theorem encode_observationalProb (M : ClassicalModel S)
-    (event : S.Assignment -> Bool) :
-    QProb.Equiv
-      ((encode M).core.observationalValue event)
-      (M.core.observationalValue event) :=
-  QProb.equiv_refl _
-
-theorem encode_interventionalProb (M : ClassicalModel S)
-    (target : (i : Fin S.count) -> Option (S.Value i))
-    (event : S.Assignment -> Bool) :
-    QProb.Equiv
-      ((encode M).core.interventionalValue target event)
-      (M.core.interventionalValue target event) :=
-  QProb.equiv_refl _
-
-theorem encode_graph (M : ClassicalModel S) :
-    forall i j,
-      (encode M).core.observedGraph.bidirected i j =
-        M.core.observedGraph.bidirected i j := by
-  intro i j
-  rfl
-
-end ModelEncoding
-
-def ClassicalCompatible (G : ObservedGraph S) (M : ClassicalModel S) : Prop :=
-  Compatible M.core G
-
-def TypeTheoreticCompatible (G : ObservedGraph S)
-    (M : TypeTheoreticModel S) : Prop :=
-  Compatible M.core G
-
-def ClassicalObsEq (M N : ClassicalModel S) : Prop :=
-  ObservationallyEquivalent M.core N.core
-
-def TypeTheoreticObsEq (M N : TypeTheoreticModel S) : Prop :=
-  ObservationallyEquivalent M.core N.core
-
-def ClassicalIdentifiable (G : ObservedGraph S)
-    (q : JointKernelQuery S) : Prop :=
-  forall (M N : ClassicalModel S),
-    ClassicalCompatible G M ->
-    ClassicalCompatible G N ->
-    ClassicalObsEq M N ->
-    q.ValueEquivalent M.core N.core
-
-def TypeTheoreticIdentifiable (G : ObservedGraph S)
-    (q : JointKernelQuery S) : Prop :=
-  forall (M N : TypeTheoreticModel S),
-    TypeTheoreticCompatible G M ->
-    TypeTheoreticCompatible G N ->
-    TypeTheoreticObsEq M N ->
-    q.ValueEquivalent M.core N.core
-
-def ClassicalConditionalIdentifiable (G : ObservedGraph S)
-    (q : ConditionalKernelQuery S) : Prop :=
-  (forall M : ClassicalModel S,
-      ClassicalCompatible G M -> q.SupportedIn M.core) /\
-    forall (M N : ClassicalModel S),
-      ClassicalCompatible G M ->
-      ClassicalCompatible G N ->
-      ClassicalObsEq M N ->
-      q.ValueEquivalent M.core N.core
-
-def TypeTheoreticConditionalIdentifiable (G : ObservedGraph S)
-    (q : ConditionalKernelQuery S) : Prop :=
-  (forall M : TypeTheoreticModel S,
-      TypeTheoreticCompatible G M -> q.SupportedIn M.core) /\
-    forall (M N : TypeTheoreticModel S),
-      TypeTheoreticCompatible G M ->
-      TypeTheoreticCompatible G N ->
-      TypeTheoreticObsEq M N ->
-      q.ValueEquivalent M.core N.core
-
-theorem compatible_iff (G : ObservedGraph S) (M : ClassicalModel S) :
-    ClassicalCompatible G M <->
-      TypeTheoreticCompatible G (ModelEncoding.encode M) := by
-  rfl
-
-theorem observational_equivalence_iff (M N : ClassicalModel S) :
-    ClassicalObsEq M N <->
-      TypeTheoreticObsEq (ModelEncoding.encode M) (ModelEncoding.encode N) := by
-  rfl
-
-def ClassicalEventIdentifiable (G : ObservedGraph S)
-    (q : InterventionalQuery S) : Prop :=
-  forall (M N : ClassicalModel S),
-    ClassicalCompatible G M -> ClassicalCompatible G N ->
-    ClassicalObsEq M N -> QProb.Equiv (q.value M.core) (q.value N.core)
-
-def TypeTheoreticEventIdentifiable (G : ObservedGraph S)
-    (q : InterventionalQuery S) : Prop :=
-  forall (M N : TypeTheoreticModel S),
-    TypeTheoreticCompatible G M -> TypeTheoreticCompatible G N ->
-    TypeTheoreticObsEq M N -> QProb.Equiv (q.value M.core) (q.value N.core)
-
-theorem event_identifiable_iff (G : ObservedGraph S) (q : InterventionalQuery S) :
-    ClassicalEventIdentifiable G q <-> TypeTheoreticEventIdentifiable G q := by
-  constructor
-  · intro h M N hM hN hObs
-    exact h (ModelEncoding.decode M) (ModelEncoding.decode N) hM hN hObs
-  · intro h M N hM hN hObs
-    exact h (ModelEncoding.encode M) (ModelEncoding.encode N) hM hN hObs
+abbrev TypeTheoreticEventIdentifiable (G : ObservedGraph S)
+    (q : InterventionalQuery S) : Prop := EventIdentifiable G q
 
 theorem typeTheoretic_kernel_identifiable_implies_event
     (G : ObservedGraph S) (q : InterventionalQuery S)
     (kernelIdentifiable : TypeTheoreticIdentifiable G q.kernelQuery) :
-    TypeTheoreticEventIdentifiable G q := by
-  intro left right leftCompatible rightCompatible observational
-  apply kernel_identifiable_implies_event_identifiable G q
-  · intro model model' compatible compatible' equivalent
-    exact kernelIdentifiable
-      (TypeTheoreticModel.ofCore model)
-      (TypeTheoreticModel.ofCore model')
-      compatible compatible' equivalent
-  · exact leftCompatible
-  · exact rightCompatible
-  · exact observational
-
-theorem identifiable_iff (G : ObservedGraph S) (q : JointKernelQuery S) :
-    ClassicalIdentifiable G q <-> TypeTheoreticIdentifiable G q := by
-  constructor
-  · intro h M N hM hN hObs
-    exact h (ModelEncoding.decode M) (ModelEncoding.decode N)
-      hM hN hObs
-  · intro h M N hM hN hObs
-    exact h (ModelEncoding.encode M) (ModelEncoding.encode N)
-      hM hN hObs
-
-theorem conditional_identifiable_iff (G : ObservedGraph S)
-    (q : ConditionalKernelQuery S) :
-    ClassicalConditionalIdentifiable G q <->
-      TypeTheoreticConditionalIdentifiable G q := by
-  constructor
-  · intro h
-    constructor
-    · intro M hM
-      exact h.1 (ModelEncoding.decode M) hM
-    · intro M N hM hN hObs
-      exact h.2 (ModelEncoding.decode M) (ModelEncoding.decode N) hM hN hObs
-  · intro h
-    constructor
-    · intro M hM
-      exact h.1 (ModelEncoding.encode M) hM
-    · intro M N hM hN hObs
-      exact h.2 (ModelEncoding.encode M) (ModelEncoding.encode N) hM hN hObs
+    TypeTheoreticEventIdentifiable G q :=
+  kernel_identifiable_implies_event_identifiable G q kernelIdentifiable
 
 /-! ## Explicit external theorem interface and checked transport -/
-
-def ProbabilityTerm.SupportedOn (G : ObservedGraph S)
-    (term : ProbabilityTerm S) :=
-  forall model : ExactModel S,
-    Compatible model G -> term.SupportedIn model
 
 /--
 An inspectable identification certificate for an ordinary interventional
@@ -780,7 +572,8 @@ structure JointIdentificationCertificate (G : ObservedGraph S)
   actionFree : formula.ActionFree
   derivation : DoCalculusDerivation G q.sourceTerm formula
   supported : forall model : ExactModel S, (compatible : Compatible model G) ->
-    DerivationSupport model derivation
+    forall assignment, q.sourceTerm.SupportedAt model assignment ->
+      LocalDerivationSupport model assignment derivation
 
 /-- The corresponding certificate for a conditional interventional query. -/
 structure ConditionalIdentificationCertificate (G : ObservedGraph S)
@@ -789,7 +582,8 @@ structure ConditionalIdentificationCertificate (G : ObservedGraph S)
   actionFree : formula.ActionFree
   derivation : DoCalculusDerivation G q.sourceTerm formula
   supported : forall model : ExactModel S, (compatible : Compatible model G) ->
-    DerivationSupport model derivation
+    forall assignment, q.sourceTerm.SupportedAt model assignment ->
+      LocalDerivationSupport model assignment derivation
 
 /-- Published certificate before active-path conditions are compiled. -/
 structure PublishedJointCertificate (G : ObservedGraph S)
@@ -798,7 +592,8 @@ structure PublishedJointCertificate (G : ObservedGraph S)
   actionFree : formula.ActionFree
   derivation : PathDoCalculusDerivation G q.sourceTerm formula
   supported : forall model : ExactModel S, (compatible : Compatible model G) ->
-    DerivationSupport model (derivation.compile correct)
+    forall assignment, q.sourceTerm.SupportedAt model assignment ->
+      LocalDerivationSupport model assignment (derivation.compile correct)
 
 structure PublishedConditionalCertificate (G : ObservedGraph S)
     (correct : DSeparationCorrectness G) (q : ConditionalKernelQuery S) where
@@ -806,7 +601,8 @@ structure PublishedConditionalCertificate (G : ObservedGraph S)
   actionFree : formula.ActionFree
   derivation : PathDoCalculusDerivation G q.sourceTerm formula
   supported : forall model : ExactModel S, (compatible : Compatible model G) ->
-    DerivationSupport model (derivation.compile correct)
+    forall assignment, q.sourceTerm.SupportedAt model assignment ->
+      LocalDerivationSupport model assignment (derivation.compile correct)
 
 def PublishedJointCertificate.compile
     (certificate : PublishedJointCertificate G correct q) :
@@ -834,10 +630,10 @@ structure PublishedCompleteness (S : ObservedSignature)
     (G : ObservedGraph S) where
   dseparation : DSeparationCorrectness G
   joint_complete : forall q,
-    ClassicalIdentifiable G q ->
+    Identifiable G q ->
       PublishedJointCertificate G dseparation q
   conditional_complete : forall q,
-    ClassicalConditionalIdentifiable G q ->
+    ConditionalIdentifiable G q ->
       PublishedConditionalCertificate G dseparation q
   hedge_counterexample : forall q,
     HedgeWitness G q -> Counterexample G q
@@ -845,52 +641,55 @@ structure PublishedCompleteness (S : ObservedSignature)
 /-- Primitive semantics stated with the standard path-blocking side condition. -/
 structure PathPrimitiveSoundness (G : ObservedGraph S)
     (model : FiniteLatentSCM S) where
-  doRule : forall {left right},
+  doRule : forall {left right} (assignment : S.Assignment),
     PathDoRuleApplication G left right ->
-      ProbabilityTerm.SupportedIn model (.kernel left) ->
-      ProbabilityTerm.SupportedIn model (.kernel right) ->
-      ProbabilityTerm.EquivalentIn model (.kernel left) (.kernel right)
-  marginalization : forall (x y z w : NodeSet S),
+      ProbabilityTerm.SupportedAt model (.kernel left) assignment ->
+      ProbabilityTerm.SupportedAt model (.kernel right) assignment ->
+      ProbabilityTerm.EquivalentAt model (.kernel left) (.kernel right)
+        assignment
+  marginalization : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
     FourWayDisjoint x y z w ->
-      ProbabilityTerm.SupportedIn model (.kernel ⟨y, x, w⟩) ->
-      ProbabilityTerm.SupportedIn model
-        (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩)) ->
-      ProbabilityTerm.EquivalentIn model
+      ProbabilityTerm.SupportedAt model (.kernel ⟨y, x, w⟩) assignment ->
+      ProbabilityTerm.SupportedAt model
+        (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩)) assignment ->
+      ProbabilityTerm.EquivalentAt model
         (.kernel ⟨y, x, w⟩)
-        (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩))
-  conditioning : forall (x y z w : NodeSet S),
+        (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩)) assignment
+  conditioning : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
     FourWayDisjoint x y z w ->
-      ProbabilityTerm.SupportedIn model
-        (.kernel ⟨y, x, NodeSet.union z w⟩) ->
-      ProbabilityTerm.SupportedIn model
+      ProbabilityTerm.SupportedAt model
+        (.kernel ⟨y, x, NodeSet.union z w⟩) assignment ->
+      ProbabilityTerm.SupportedAt model
         (.divide
           (.kernel ⟨NodeSet.union y z, x, w⟩)
-          (.kernel ⟨z, x, w⟩)) ->
-      ProbabilityTerm.EquivalentIn model
+          (.kernel ⟨z, x, w⟩)) assignment ->
+      ProbabilityTerm.EquivalentAt model
         (.kernel ⟨y, x, NodeSet.union z w⟩)
         (.divide
           (.kernel ⟨NodeSet.union y z, x, w⟩)
-          (.kernel ⟨z, x, w⟩))
-  chain : forall (x y z w : NodeSet S),
+          (.kernel ⟨z, x, w⟩)) assignment
+  chain : forall (x y z w : NodeSet S) (assignment : S.Assignment),
     FourWayDisjoint x y z w ->
-      ProbabilityTerm.SupportedIn model
-        (.kernel ⟨NodeSet.union y z, x, w⟩) ->
-      ProbabilityTerm.SupportedIn model
+      ProbabilityTerm.SupportedAt model
+        (.kernel ⟨NodeSet.union y z, x, w⟩) assignment ->
+      ProbabilityTerm.SupportedAt model
         (.multiply
           (.kernel ⟨y, x, NodeSet.union z w⟩)
-          (.kernel ⟨z, x, w⟩)) ->
-      ProbabilityTerm.EquivalentIn model
+          (.kernel ⟨z, x, w⟩)) assignment ->
+      ProbabilityTerm.EquivalentAt model
         (.kernel ⟨NodeSet.union y z, x, w⟩)
         (.multiply
           (.kernel ⟨y, x, NodeSet.union z w⟩)
-          (.kernel ⟨z, x, w⟩))
+          (.kernel ⟨z, x, w⟩)) assignment
 
 def PathPrimitiveSoundness.compile
     (correct : DSeparationCorrectness G)
     (semantics : PathPrimitiveSoundness G model) :
-    PrimitiveSoundness G model where
-  doRule := fun application leftSupported rightSupported =>
-    semantics.doRule (application.toPath correct)
+    LocalPrimitiveSoundness G model where
+  doRule := fun assignment application leftSupported rightSupported =>
+    semantics.doRule assignment (application.toPath correct)
       leftSupported rightSupported
   marginalization := semantics.marginalization
   conditioning := semantics.conditioning
@@ -908,53 +707,64 @@ structure PublishedSoundness (S : ObservedSignature)
 
 def PublishedSoundness.primitive (sound : PublishedSoundness S G)
     (model : ExactModel S) (compatible : Compatible model G) :
-    PrimitiveSoundness G model :=
+    LocalPrimitiveSoundness G model :=
   (sound.pathPrimitive model compatible).compile sound.dseparation
 
-noncomputable def JointIdentificationCertificate.denotational_sound
+noncomputable def JointIdentificationCertificate.denotational_soundAt
     (sound : PublishedSoundness S G)
     (certificate : JointIdentificationCertificate G q)
-    (model : ExactModel S) (compatible : Compatible model G) :
-    ProbabilityTerm.EquivalentIn model q.sourceTerm certificate.formula :=
-  certificate.derivation.denotational_sound
-    (sound.primitive model compatible) (certificate.supported model compatible)
+    (model : ExactModel S) (compatible : Compatible model G)
+    (assignment : S.Assignment)
+    (sourceSupported : q.sourceTerm.SupportedAt model assignment) :
+    ProbabilityTerm.EquivalentAt model q.sourceTerm certificate.formula
+      assignment :=
+  certificate.derivation.denotational_soundAt
+    (sound.primitive model compatible)
+    (certificate.supported model compatible assignment sourceSupported)
 
-noncomputable def ConditionalIdentificationCertificate.denotational_sound
+noncomputable def ConditionalIdentificationCertificate.denotational_soundAt
     (sound : PublishedSoundness S G)
     (certificate : ConditionalIdentificationCertificate G q)
-    (model : ExactModel S) (compatible : Compatible model G) :
-    ProbabilityTerm.EquivalentIn model q.sourceTerm certificate.formula :=
-  certificate.derivation.denotational_sound
-    (sound.primitive model compatible) (certificate.supported model compatible)
+    (model : ExactModel S) (compatible : Compatible model G)
+    (assignment : S.Assignment)
+    (sourceSupported : q.sourceTerm.SupportedAt model assignment) :
+    ProbabilityTerm.EquivalentAt model q.sourceTerm certificate.formula
+      assignment :=
+  certificate.derivation.denotational_soundAt
+    (sound.primitive model compatible)
+    (certificate.supported model compatible assignment sourceSupported)
 
-theorem JointIdentificationCertificate.classical_identifiable
+theorem JointIdentificationCertificate.identifiable
     (sound : PublishedSoundness S G)
     (certificate : JointIdentificationCertificate G q) :
-    ClassicalIdentifiable G q := by
+    Identifiable G q := by
   intro M N hM hN observational assignment
-  let sourceToFormulaM := certificate.denotational_sound sound M.core hM
-  let sourceToFormulaN := certificate.denotational_sound sound N.core hN
-  exact ⟨ProbabilityResult.trans (sourceToFormulaM assignment)
+  let supportedM := q.supportedAt M assignment
+  let supportedN := q.supportedAt N assignment
+  let sourceToFormulaM := certificate.denotational_soundAt sound M hM
+    assignment supportedM
+  let sourceToFormulaN := certificate.denotational_soundAt sound N hN
+    assignment supportedN
+  exact ⟨ProbabilityResult.trans sourceToFormulaM
     (ProbabilityResult.trans
-      (ProbabilityTerm.actionFree_invariant M.core N.core observational
+      (ProbabilityTerm.actionFree_invariant M N observational
         certificate.formula certificate.actionFree assignment)
-      (ProbabilityResult.symm (sourceToFormulaN assignment)))⟩
+      (ProbabilityResult.symm sourceToFormulaN))⟩
 
-theorem ConditionalIdentificationCertificate.classical_identifiable
+theorem ConditionalIdentificationCertificate.identifiable
     (sound : PublishedSoundness S G)
     (certificate : ConditionalIdentificationCertificate G q) :
-    ClassicalConditionalIdentifiable G q := by
-  constructor
-  · intro M hM
-    exact ⟨(certificate.supported M.core hM).leftSupported⟩
-  · intro M N hM hN observational assignment
-    let sourceToFormulaM := certificate.denotational_sound sound M.core hM
-    let sourceToFormulaN := certificate.denotational_sound sound N.core hN
-    exact ⟨ProbabilityResult.trans (sourceToFormulaM assignment)
-      (ProbabilityResult.trans
-        (ProbabilityTerm.actionFree_invariant M.core N.core observational
-          certificate.formula certificate.actionFree assignment)
-        (ProbabilityResult.symm (sourceToFormulaN assignment)))⟩
+    ConditionalIdentifiable G q := by
+  intro M N hM hN observational assignment supportedM supportedN
+  let sourceToFormulaM := certificate.denotational_soundAt sound M hM
+    assignment supportedM
+  let sourceToFormulaN := certificate.denotational_soundAt sound N hN
+    assignment supportedN
+  exact ⟨ProbabilityResult.trans sourceToFormulaM
+    (ProbabilityResult.trans
+      (ProbabilityTerm.actionFree_invariant M N observational
+        certificate.formula certificate.actionFree assignment)
+      (ProbabilityResult.symm sourceToFormulaN))⟩
 
 /-- Encoded derivation certificate; the finite derivation data is preserved. -/
 structure EncodedJointDerivation
@@ -969,22 +779,20 @@ def transport_joint_completeness
     (P : PublishedCompleteness S G) (q : JointKernelQuery S)
     (h : TypeTheoreticIdentifiable G q) : EncodedJointDerivation G q := by
   constructor
-  exact (P.joint_complete q ((identifiable_iff G q).mpr h)).compile
+  exact (P.joint_complete q h).compile
 
 def transport_conditional_completeness
     (P : PublishedCompleteness S G) (q : ConditionalKernelQuery S)
     (h : TypeTheoreticConditionalIdentifiable G q) :
     EncodedConditionalDerivation G q := by
   constructor
-  exact (P.conditional_complete q
-    ((conditional_identifiable_iff G q).mpr h)).compile
+  exact (P.conditional_complete q h).compile
 
 theorem transport_joint_soundness
     (P : PublishedSoundness S G) (q : JointKernelQuery S)
     (certificate : EncodedJointDerivation G q) :
     TypeTheoreticIdentifiable G q := by
-  exact (identifiable_iff G q).mp
-    (certificate.classical.classical_identifiable P)
+  exact certificate.classical.identifiable P
 
 /-- A sound distributional certificate also identifies each local event. -/
 theorem transport_joint_event_soundness
@@ -998,8 +806,7 @@ theorem transport_conditional_soundness
     (P : PublishedSoundness S G) (q : ConditionalKernelQuery S)
     (certificate : EncodedConditionalDerivation G q) :
     TypeTheoreticConditionalIdentifiable G q := by
-  exact (conditional_identifiable_iff G q).mp
-    (certificate.classical.classical_identifiable P)
+  exact certificate.classical.identifiable P
 
 theorem transported_joint_iff
     (complete : PublishedCompleteness S G)
@@ -1031,9 +838,8 @@ theorem transport_hedge_failure
   let C := P.hedge_counterexample q hedge
   intro h
   exact C.query_separated
-    (h (TypeTheoreticModel.ofCore C.left)
-      (TypeTheoreticModel.ofCore C.right)
-      C.left_compatible C.right_compatible C.observationally_equal)
+    (h C.left C.right C.left_compatible C.right_compatible
+      C.observationally_equal)
 
 /-- The combined finite-rational completeness transport used by the thesis. -/
 theorem finite_causal_completeness_transport

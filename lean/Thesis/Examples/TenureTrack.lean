@@ -8,9 +8,10 @@ namespace Examples
 open Probability
 
 /-!
-Small executable witnesses for the theorem-facing causal layer.  These are
-deliberately concrete: they make the latent projection, intervention, and
-proof-carrying modality claims pass through Lean's kernel.
+Executable witnesses for the theorem-facing causal layer, including the full
+eight-variable tenure-track model. They make the probability, latent
+projection, intervention, counterfactual, and proof-carrying modality claims
+pass through Lean's kernel.
 -/
 
 def twoBoolSignature : ObservedSignature where
@@ -246,15 +247,8 @@ noncomputable def observationalSecondCertificate :
     rfl
   derivation := .refl _
   supported := by
-    intro model _compatible
-    apply DerivationSupport.refl
-    intro assignment
-    let value :=
-      (Kernel.mk secondNodeSet NodeSet.empty NodeSet.empty).distribution
-        model assignment
-    refine ⟨value.probVal (Kernel.agreesOn secondNodeSet assignment), ?_⟩
-    simpa [observationalSecondQuery, JointKernelQuery.sourceTerm] using
-      (Kernel.unconditionalDenote model secondNodeSet NodeSet.empty assignment)
+    intro _model _compatible _assignment sourceSupported
+    exact ⟨sourceSupported, sourceSupported, ()⟩
 
 theorem intervention_removes_projected_confounding :
     (sharedCauseModel.mutilatedGraph setFirstTrue.value).bidirected
@@ -290,6 +284,594 @@ theorem relating_is_noncausal_metadata :
     ((sharedInitial.relate epistemicEdge).unrelate epistemicEdge) =
       sharedInitial :=
   sharedInitial.unrelate_relate_cancel epistemicEdge
+
+namespace TenureTrack
+
+/-!
+The complete eight-variable running example, rebuilt on the theorem-facing
+finite probability, latent-SCM, intervention, and modal APIs.
+-/
+
+def signature : ObservedSignature where
+  count := 8
+  Value := fun _ => Bool
+  valueEnumeration := fun _ => [false, true]
+  value_complete := by
+    intro _ value
+    cases value <;> simp
+  value_nodup := by
+    intro _
+    simp
+  defaultValue := fun _ => false
+  valueDecidableEq := fun _ => inferInstance
+  directed := fun parent child => decide
+    ((parent.val = 2 /\ child.val = 4) \/
+      (parent.val = 3 /\ child.val = 4) \/
+      (parent.val = 1 /\ child.val = 5) \/
+      (parent.val = 0 /\ child.val = 5) \/
+      (parent.val = 4 /\ child.val = 5) \/
+      (parent.val = 2 /\ child.val = 6) \/
+      (parent.val = 5 /\ child.val = 7) \/
+      (parent.val = 6 /\ child.val = 7))
+  directed_earlier := by
+    intro parent child edge
+    simp at edge
+    rcases edge with edge | edge | edge | edge | edge | edge | edge | edge <;>
+      omega
+
+def node (value : Nat) (bound : value < signature.count) : Fin signature.count :=
+  ⟨value, bound⟩
+
+def prestigeNode : Fin signature.count := node 0 (by decide)
+def qualityNode : Fin signature.count := node 1 (by decide)
+def topicNode : Fin signature.count := node 2 (by decide)
+def committeeNode : Fin signature.count := node 3 (by decide)
+def fitNode : Fin signature.count := node 4 (by decide)
+def shortlistNode : Fin signature.count := node 5 (by decide)
+def fundingNode : Fin signature.count := node 6 (by decide)
+def offerNode : Fin signature.count := node 7 (by decide)
+
+def bernoulli (trueWeight falseWeight : Nat)
+    (positive : 0 < falseWeight + trueWeight) : FiniteProbRecord Bool where
+  atoms := [(false, falseWeight), (true, trueWeight)]
+  den := falseWeight + trueWeight
+  den_pos := positive
+  total_mass := by
+    simp [FiniteProbRecord.totalMass, Nat.add_comm]
+
+def latent : LatentExtension signature where
+  count := 6
+  Value := fun _ => Bool
+  valueEnumeration := fun _ => [false, true]
+  value_complete := by
+    intro _ value
+    cases value <;> simp
+  valueDecidableEq := fun _ => inferInstance
+  incident := fun source child => decide
+    ((source.val = 0 /\ (child.val = 0 \/ child.val = 1)) \/
+      (source.val = 1 /\ child.val = 0) \/
+      (source.val = 2 /\ child.val = 1) \/
+      (source.val = 3 /\ child.val = 2) \/
+      (source.val = 4 /\ child.val = 3) \/
+      (source.val = 5 /\ child.val = 6))
+
+def factor (source : Fin latent.count) : FiniteProbRecord Bool :=
+  match source.val with
+  | 0 => bernoulli 1 2 (by decide)
+  | 1 => bernoulli 1 3 (by decide)
+  | 2 => bernoulli 1 3 (by decide)
+  | 3 => bernoulli 1 1 (by decide)
+  | 4 => bernoulli 1 1 (by decide)
+  | _ => bernoulli 1 3 (by decide)
+
+def prior : FiniteProbRecord latent.Assignment :=
+  FiniteProduct.record latent.count latent.Value factor
+
+def source (value : Nat) (bound : value < latent.count) : Fin latent.count :=
+  ⟨value, bound⟩
+
+def backgroundSource : Fin latent.count := source 0 (by decide)
+def prestigeSource : Fin latent.count := source 1 (by decide)
+def qualitySource : Fin latent.count := source 2 (by decide)
+def topicSource : Fin latent.count := source 3 (by decide)
+def committeeSource : Fin latent.count := source 4 (by decide)
+def fundingSource : Fin latent.count := source 5 (by decide)
+
+theorem background_prestige :
+    latent.incident backgroundSource prestigeNode = true := by decide
+theorem prestige_prestige :
+    latent.incident prestigeSource prestigeNode = true := by decide
+theorem background_quality :
+    latent.incident backgroundSource qualityNode = true := by decide
+theorem quality_quality :
+    latent.incident qualitySource qualityNode = true := by decide
+theorem topic_topic :
+    latent.incident topicSource topicNode = true := by decide
+theorem committee_committee :
+    latent.incident committeeSource committeeNode = true := by decide
+theorem funding_funding :
+    latent.incident fundingSource fundingNode = true := by decide
+
+theorem topic_fit : signature.directed topicNode fitNode = true := by decide
+theorem committee_fit :
+    signature.directed committeeNode fitNode = true := by decide
+theorem quality_shortlist :
+    signature.directed qualityNode shortlistNode = true := by decide
+theorem prestige_shortlist :
+    signature.directed prestigeNode shortlistNode = true := by decide
+theorem fit_shortlist :
+    signature.directed fitNode shortlistNode = true := by decide
+theorem topic_funding :
+    signature.directed topicNode fundingNode = true := by decide
+theorem shortlist_offer :
+    signature.directed shortlistNode offerNode = true := by decide
+theorem funding_offer :
+    signature.directed fundingNode offerNode = true := by decide
+
+theorem remaining_child_is_offer (child : Fin signature.count)
+    (h0 : child ≠ prestigeNode) (h1 : child ≠ qualityNode)
+    (h2 : child ≠ topicNode) (h3 : child ≠ committeeNode)
+    (h4 : child ≠ fitNode) (h5 : child ≠ shortlistNode)
+    (h6 : child ≠ fundingNode) : child = offerNode := by
+  apply Fin.ext
+  have childBound := child.isLt
+  simp [signature] at childBound
+  simp [prestigeNode, qualityNode, topicNode, committeeNode, fitNode,
+    shortlistNode, fundingNode, offerNode, node, signature] at h0 h1 h2 h3 h4 h5 h6 ⊢
+  omega
+
+def model : ExactModel signature where
+  latent := latent
+  factor := factor
+  prior := prior
+  product_law := by
+    intro events
+    simpa [prior, latent, LatentExtension.rectangularEvent] using
+      (FiniteProduct.record_rectangular_probVal latent.count latent.Value
+        factor events)
+  mechanism := fun child parents latents =>
+    if h0 : child = prestigeNode then
+      latents backgroundSource (h0 ▸ background_prestige) ||
+        latents prestigeSource (h0 ▸ prestige_prestige)
+    else if h1 : child = qualityNode then
+      latents backgroundSource (h1 ▸ background_quality) ||
+        latents qualitySource (h1 ▸ quality_quality)
+    else if h2 : child = topicNode then
+      latents topicSource (h2 ▸ topic_topic)
+    else if h3 : child = committeeNode then
+      latents committeeSource (h3 ▸ committee_committee)
+    else if h4 : child = fitNode then
+      parents topicNode (h4 ▸ topic_fit) &&
+        parents committeeNode (h4 ▸ committee_fit)
+    else if h5 : child = shortlistNode then
+      parents qualityNode (h5 ▸ quality_shortlist) &&
+        (parents prestigeNode (h5 ▸ prestige_shortlist) ||
+          parents fitNode (h5 ▸ fit_shortlist))
+    else if h6 : child = fundingNode then
+      parents topicNode (h6 ▸ topic_funding) ||
+        latents fundingSource (h6 ▸ funding_funding)
+    else
+      let h7 := remaining_child_is_offer child h0 h1 h2 h3 h4 h5 h6
+      parents shortlistNode (h7 ▸ shortlist_offer) &&
+        parents fundingNode (h7 ▸ funding_offer)
+
+theorem model_is_canonical_semiMarkovian :
+    model.IsCanonicalSemiMarkovian := by
+  intro source i j k hi hj hk
+  by_cases hij : i = j
+  · exact Or.inl hij
+  by_cases hik : i = k
+  · exact Or.inr (Or.inl hik)
+  by_cases hjk : j = k
+  · exact Or.inr (Or.inr hjk)
+  have hvij : i.val ≠ j.val := fun equal => hij (Fin.ext equal)
+  have hvik : i.val ≠ k.val := fun equal => hik (Fin.ext equal)
+  have hvjk : j.val ≠ k.val := fun equal => hjk (Fin.ext equal)
+  simp [model, latent] at hi hj hk
+  omega
+
+theorem background_projects_to_confounding :
+    model.observedGraph.bidirected prestigeNode qualityNode = true := by
+  decide
+
+def prestigeEvent (assignment : signature.Assignment) : Bool :=
+  assignment prestigeNode
+
+def qualityEvent (assignment : signature.Assignment) : Bool :=
+  assignment qualityNode
+
+def fitEvent (assignment : signature.Assignment) : Bool :=
+  assignment fitNode
+
+def offerEvent (assignment : signature.Assignment) : Bool :=
+  assignment offerNode
+
+def prestigeAndQualityEvent (assignment : signature.Assignment) : Bool :=
+  prestigeEvent assignment && qualityEvent assignment
+
+def fitAndOfferEvent (assignment : signature.Assignment) : Bool :=
+  fitEvent assignment && offerEvent assignment
+
+def noPrestigeGoodNoOfferEvent (assignment : signature.Assignment) : Bool :=
+  !prestigeEvent assignment && qualityEvent assignment && !offerEvent assignment
+
+def ratio (num den : Nat) (positive : 0 < den) : QProb :=
+  ⟨num, den, positive⟩
+
+def setPrestigeTrue : HardIntervention signature :=
+  (HardIntervention.empty signature).set prestigeNode true
+
+def setFitTrue : HardIntervention signature :=
+  (HardIntervention.empty signature).set fitNode true
+
+def latentPrestige (u : model.latent.Assignment) : Bool :=
+  u backgroundSource || u prestigeSource
+
+def latentQuality (u : model.latent.Assignment) : Bool :=
+  u backgroundSource || u qualitySource
+
+def latentFit (u : model.latent.Assignment) : Bool :=
+  u topicSource && u committeeSource
+
+def latentShortlist (u : model.latent.Assignment) : Bool :=
+  latentQuality u && (latentPrestige u || latentFit u)
+
+def latentFunding (u : model.latent.Assignment) : Bool :=
+  u topicSource || u fundingSource
+
+def latentOffer (u : model.latent.Assignment) : Bool :=
+  latentShortlist u && latentFunding u
+
+def latentPrestigeAndQuality (u : model.latent.Assignment) : Bool :=
+  latentPrestige u && latentQuality u
+
+def latentFitAndOffer (u : model.latent.Assignment) : Bool :=
+  latentFit u && latentOffer u
+
+def latentEvidence (u : model.latent.Assignment) : Bool :=
+  !latentPrestige u && latentQuality u && !latentOffer u
+
+def latentOfferDoPrestige (u : model.latent.Assignment) : Bool :=
+  latentQuality u && latentFunding u
+
+def latentOfferDoFit (u : model.latent.Assignment) : Bool :=
+  latentQuality u && latentFunding u
+
+theorem eval_prestige (u : model.latent.Assignment) :
+    prestigeEvent (model.eval u) = latentPrestige u := by
+  simp [prestigeEvent, latentPrestige, FiniteLatentSCM.eval,
+    FiniteLatentSCM.evalUnder, FiniteLatentSCM.evalNodeUnder,
+    FiniteLatentSCM.equationUnder, FiniteLatentSCM.noIntervention, model,
+    prestigeNode, qualityNode, topicNode, committeeNode, fitNode,
+    shortlistNode, fundingNode, offerNode, node, signature]
+
+theorem eval_quality (u : model.latent.Assignment) :
+    qualityEvent (model.eval u) = latentQuality u := by
+  simp [qualityEvent, latentQuality, FiniteLatentSCM.eval,
+    FiniteLatentSCM.evalUnder, FiniteLatentSCM.evalNodeUnder,
+    FiniteLatentSCM.equationUnder, FiniteLatentSCM.noIntervention, model,
+    prestigeNode, qualityNode, topicNode, committeeNode, fitNode,
+    shortlistNode, fundingNode, offerNode, node, signature]
+
+theorem eval_fit (u : model.latent.Assignment) :
+    fitEvent (model.eval u) = latentFit u := by
+  simp [fitEvent, latentFit, FiniteLatentSCM.eval,
+    FiniteLatentSCM.evalUnder, FiniteLatentSCM.evalNodeUnder,
+    FiniteLatentSCM.equationUnder, FiniteLatentSCM.noIntervention, model,
+    prestigeNode, qualityNode, topicNode, committeeNode, fitNode,
+    shortlistNode, fundingNode, offerNode, node, signature]
+
+theorem eval_offer (u : model.latent.Assignment) :
+    offerEvent (model.eval u) = latentOffer u := by
+  simp [offerEvent, latentOffer, latentShortlist, latentFunding, latentQuality,
+    latentPrestige, latentFit, FiniteLatentSCM.eval, FiniteLatentSCM.evalUnder,
+    FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.equationUnder,
+    FiniteLatentSCM.noIntervention, model, prestigeNode, qualityNode,
+    topicNode, committeeNode, fitNode, shortlistNode, fundingNode, offerNode,
+    node, signature]
+
+theorem eval_prestigeAndQuality (u : model.latent.Assignment) :
+    prestigeAndQualityEvent (model.eval u) = latentPrestigeAndQuality u := by
+  simp [prestigeAndQualityEvent, latentPrestigeAndQuality, eval_prestige,
+    eval_quality]
+
+theorem eval_fitAndOffer (u : model.latent.Assignment) :
+    fitAndOfferEvent (model.eval u) = latentFitAndOffer u := by
+  simp [fitAndOfferEvent, latentFitAndOffer, eval_fit, eval_offer]
+
+theorem eval_evidence (u : model.latent.Assignment) :
+    noPrestigeGoodNoOfferEvent (model.eval u) = latentEvidence u := by
+  simp [noPrestigeGoodNoOfferEvent, latentEvidence, eval_prestige,
+    eval_quality, eval_offer]
+
+theorem eval_offer_doPrestige (u : model.latent.Assignment) :
+    offerEvent (model.evalUnder setPrestigeTrue.value u) =
+      latentOfferDoPrestige u := by
+  simp [offerEvent, latentOfferDoPrestige, latentQuality, latentFunding,
+    setPrestigeTrue, HardIntervention.set, HardIntervention.empty,
+    FiniteLatentSCM.evalUnder, FiniteLatentSCM.evalNodeUnder,
+    FiniteLatentSCM.equationUnder, FiniteLatentSCM.noIntervention, model,
+    prestigeNode, qualityNode, topicNode, committeeNode, fitNode,
+    shortlistNode, fundingNode, offerNode, node, signature]
+
+theorem eval_offer_doFit (u : model.latent.Assignment) :
+    offerEvent (model.evalUnder setFitTrue.value u) = latentOfferDoFit u := by
+  simp [offerEvent, latentOfferDoFit, latentQuality, latentFunding,
+    setFitTrue, HardIntervention.set, HardIntervention.empty,
+    FiniteLatentSCM.evalUnder, FiniteLatentSCM.evalNodeUnder,
+    FiniteLatentSCM.equationUnder, FiniteLatentSCM.noIntervention, model,
+    prestigeNode, qualityNode, topicNode, committeeNode, fitNode,
+    shortlistNode, fundingNode, offerNode, node, signature]
+
+set_option maxRecDepth 100000 in
+theorem prior_prestige :
+    QProb.Equiv (model.prior.probVal latentPrestige)
+      (ratio 1 2 (by decide)) := by decide
+
+set_option maxRecDepth 100000 in
+theorem prior_quality :
+    QProb.Equiv (model.prior.probVal latentQuality)
+      (ratio 1 2 (by decide)) := by decide
+
+set_option maxRecDepth 100000 in
+theorem prior_prestigeAndQuality :
+    QProb.Equiv (model.prior.probVal latentPrestigeAndQuality)
+      (ratio 3 8 (by decide)) := by decide
+
+set_option maxRecDepth 100000 in
+theorem prior_fit :
+    QProb.Equiv (model.prior.probVal latentFit)
+      (ratio 1 4 (by decide)) := by decide
+
+set_option maxRecDepth 100000 in
+theorem prior_fitAndOffer :
+    QProb.Equiv (model.prior.probVal latentFitAndOffer)
+      (ratio 1 8 (by decide)) := by decide
+
+set_option maxRecDepth 100000 in
+theorem prior_offerDoFit :
+    QProb.Equiv (model.prior.probVal latentOfferDoFit)
+      (ratio 5 16 (by decide)) := by decide
+
+set_option maxRecDepth 100000 in
+theorem prior_evidence :
+    QProb.Equiv (model.prior.probVal latentEvidence)
+      (ratio 3 32 (by decide)) := by decide
+
+def latentEvidenceAndOfferDoPrestige (u : model.latent.Assignment) : Bool :=
+  latentEvidence u && latentOfferDoPrestige u
+
+def latentEvidenceAndOfferDoFit (u : model.latent.Assignment) : Bool :=
+  latentEvidence u && latentOfferDoFit u
+
+set_option maxRecDepth 100000 in
+theorem prior_evidenceAndOfferDoPrestige :
+    QProb.Equiv (model.prior.probVal latentEvidenceAndOfferDoPrestige)
+      (ratio 3 64 (by decide)) := by decide
+
+set_option maxRecDepth 100000 in
+theorem prior_evidenceAndOfferDoFit :
+    QProb.Equiv (model.prior.probVal latentEvidenceAndOfferDoFit)
+      (ratio 3 64 (by decide)) := by decide
+
+theorem observational_from_prior
+    (event : signature.Assignment -> Bool)
+    (latentEvent : model.latent.Assignment -> Bool)
+    (evaluation : forall u, event (model.eval u) = latentEvent u)
+    (value : QProb) (priorValue : QProb.Equiv
+      (model.prior.probVal latentEvent) value) :
+    QProb.Equiv (model.observationalValue event) value :=
+  QProb.equiv_trans (model.observationalValue_eq event)
+    (QProb.equiv_trans
+      (FiniteProbRecord.probVal_congr model.prior _ _ evaluation)
+      priorValue)
+
+theorem interventional_from_prior
+    (target : (i : Fin signature.count) -> Option (signature.Value i))
+    (event : signature.Assignment -> Bool)
+    (latentEvent : model.latent.Assignment -> Bool)
+    (evaluation : forall u, event (model.evalUnder target u) = latentEvent u)
+    (value : QProb) (priorValue : QProb.Equiv
+      (model.prior.probVal latentEvent) value) :
+    QProb.Equiv (model.interventionalValue target event) value :=
+  QProb.equiv_trans (model.interventionalValue_eq target event)
+    (QProb.equiv_trans
+      (FiniteProbRecord.probVal_congr model.prior _ _ evaluation)
+      priorValue)
+
+theorem prob_prestige_true :
+    QProb.Equiv (model.observationalValue prestigeEvent)
+      (ratio 1 2 (by decide)) := by
+  exact QProb.equiv_trans (model.observationalValue_eq prestigeEvent)
+    (QProb.equiv_trans
+      (FiniteProbRecord.probVal_congr model.prior _ _ eval_prestige)
+      prior_prestige)
+
+theorem prob_quality_true :
+    QProb.Equiv (model.observationalValue qualityEvent)
+      (ratio 1 2 (by decide)) := by
+  exact observational_from_prior qualityEvent latentQuality eval_quality _
+    prior_quality
+
+theorem prob_prestige_and_quality_true :
+    QProb.Equiv (model.observationalValue prestigeAndQualityEvent)
+      (ratio 3 8 (by decide)) := by
+  exact observational_from_prior prestigeAndQualityEvent
+    latentPrestigeAndQuality eval_prestigeAndQuality _
+      prior_prestigeAndQuality
+
+theorem prob_fit_true :
+    QProb.Equiv (model.observationalValue fitEvent)
+      (ratio 1 4 (by decide)) := by
+  exact observational_from_prior fitEvent latentFit eval_fit _ prior_fit
+
+theorem prob_fit_and_offer_true :
+    QProb.Equiv (model.observationalValue fitAndOfferEvent)
+      (ratio 1 8 (by decide)) := by
+  exact observational_from_prior fitAndOfferEvent latentFitAndOffer
+    eval_fitAndOffer _ prior_fitAndOffer
+
+theorem prob_quality_given_prestige :
+    QProb.Equiv
+      (QProb.div (model.observationalValue prestigeAndQualityEvent)
+        (model.observationalValue prestigeEvent)
+          ((QProb.equiv_num_pos_iff prob_prestige_true).mpr (by decide)))
+      (ratio 3 4 (by decide)) := by
+  exact QProb.equiv_trans
+    (QProb.div_congr prob_prestige_and_quality_true prob_prestige_true
+      ((QProb.equiv_num_pos_iff prob_prestige_true).mpr (by decide))
+      (by decide))
+    (by decide)
+
+theorem prob_quality_do_prestige_true :
+    QProb.Equiv
+      (model.interventionalValue setPrestigeTrue.value qualityEvent)
+      (ratio 1 2 (by decide)) := by
+  apply interventional_from_prior setPrestigeTrue.value qualityEvent
+    latentQuality
+  · intro u
+    simp [qualityEvent, latentQuality, setPrestigeTrue,
+      HardIntervention.set, HardIntervention.empty,
+      FiniteLatentSCM.evalUnder, FiniteLatentSCM.evalNodeUnder,
+      FiniteLatentSCM.equationUnder, FiniteLatentSCM.noIntervention, model,
+      prestigeNode, qualityNode, topicNode, committeeNode, fitNode,
+      shortlistNode, fundingNode, offerNode, node, signature]
+  · exact prior_quality
+
+theorem prob_offer_given_fit :
+    QProb.Equiv
+      (QProb.div (model.observationalValue fitAndOfferEvent)
+        (model.observationalValue fitEvent)
+          ((QProb.equiv_num_pos_iff prob_fit_true).mpr (by decide)))
+      (ratio 1 2 (by decide)) := by
+  exact QProb.equiv_trans
+    (QProb.div_congr prob_fit_and_offer_true prob_fit_true
+      ((QProb.equiv_num_pos_iff prob_fit_true).mpr (by decide))
+      (by decide))
+    (by decide)
+
+theorem prob_offer_do_fit_true :
+    QProb.Equiv
+      (model.interventionalValue setFitTrue.value offerEvent)
+      (ratio 5 16 (by decide)) := by
+  exact interventional_from_prior setFitTrue.value offerEvent
+    latentOfferDoFit eval_offer_doFit _ prior_offerDoFit
+
+theorem evidence_probability :
+    QProb.Equiv (model.observationalValue noPrestigeGoodNoOfferEvent)
+      (ratio 3 32 (by decide)) := by
+  exact observational_from_prior noPrestigeGoodNoOfferEvent latentEvidence
+    eval_evidence _ prior_evidence
+
+theorem evidence_positive :
+    model.CounterfactualSupported noPrestigeGoodNoOfferEvent := by
+  simpa [FiniteLatentSCM.CounterfactualSupported,
+    FiniteLatentSCM.observationalValue, FiniteProbRecord.probVal] using
+      ((QProb.equiv_num_pos_iff evidence_probability).mpr (by decide))
+
+def posterior : FiniteProbRecord model.latent.Assignment :=
+  model.prior.conditionOn
+    (fun u => noPrestigeGoodNoOfferEvent (model.eval u)) (by
+      simpa [FiniteLatentSCM.CounterfactualSupported,
+        FiniteLatentSCM.observationalDist, FiniteProbRecord.EventPositive,
+        FiniteProbRecord.map, FiniteProbRecord.eventMass_map_labels] using
+          evidence_positive)
+
+theorem posterior_normalized :
+    QProb.Equiv (posterior.probVal topEvent) QProb.one :=
+  posterior.normalization
+
+theorem counterfactual_offer_do_prestige_given_evidence :
+    QProb.Equiv
+      (model.counterfactualValue noPrestigeGoodNoOfferEvent evidence_positive
+        setPrestigeTrue.value offerEvent)
+      (ratio 1 2 (by decide)) := by
+  have numerator : QProb.Equiv
+      (model.prior.probVal (fun u =>
+        noPrestigeGoodNoOfferEvent (model.eval u) &&
+          offerEvent (model.evalUnder setPrestigeTrue.value u)))
+      (ratio 3 64 (by decide)) :=
+    QProb.equiv_trans
+      (FiniteProbRecord.probVal_congr model.prior _ _ (fun u => by
+        simp [latentEvidenceAndOfferDoPrestige, eval_evidence,
+          eval_offer_doPrestige]))
+      prior_evidenceAndOfferDoPrestige
+  have denominator : QProb.Equiv
+      (model.prior.probVal (fun u =>
+        noPrestigeGoodNoOfferEvent (model.eval u)))
+      (ratio 3 32 (by decide)) :=
+    QProb.equiv_trans
+      (FiniteProbRecord.probVal_congr model.prior _ _ eval_evidence)
+      prior_evidence
+  exact QProb.equiv_trans
+    (model.counterfactualValue_eq noPrestigeGoodNoOfferEvent
+      evidence_positive setPrestigeTrue.value offerEvent)
+    (QProb.equiv_trans
+      (QProb.div_congr numerator denominator
+        ((QProb.equiv_num_pos_iff denominator).mpr (by decide)) (by decide))
+      (by decide))
+
+theorem counterfactual_offer_do_fit_given_evidence :
+    QProb.Equiv
+      (model.counterfactualValue noPrestigeGoodNoOfferEvent evidence_positive
+        setFitTrue.value offerEvent)
+      (ratio 1 2 (by decide)) := by
+  have numerator : QProb.Equiv
+      (model.prior.probVal (fun u =>
+        noPrestigeGoodNoOfferEvent (model.eval u) &&
+          offerEvent (model.evalUnder setFitTrue.value u)))
+      (ratio 3 64 (by decide)) :=
+    QProb.equiv_trans
+      (FiniteProbRecord.probVal_congr model.prior _ _ (fun u => by
+        simp [latentEvidenceAndOfferDoFit, eval_evidence, eval_offer_doFit]))
+      prior_evidenceAndOfferDoFit
+  have denominator : QProb.Equiv
+      (model.prior.probVal (fun u =>
+        noPrestigeGoodNoOfferEvent (model.eval u)))
+      (ratio 3 32 (by decide)) :=
+    QProb.equiv_trans
+      (FiniteProbRecord.probVal_congr model.prior _ _ eval_evidence)
+      prior_evidence
+  exact QProb.equiv_trans
+    (model.counterfactualValue_eq noPrestigeGoodNoOfferEvent
+      evidence_positive setFitTrue.value offerEvent)
+    (QProb.equiv_trans
+      (QProb.div_congr numerator denominator
+        ((QProb.equiv_num_pos_iff denominator).mpr (by decide)) (by decide))
+      (by decide))
+
+def initial : CausalEpistemicRecord signature :=
+  CausalEpistemicRecord.initial model
+
+def conditionOnEvidence : CausalTransition signature :=
+  CausalTransition.conditioning "observational" "evidence" initial
+    (fun u => noPrestigeGoodNoOfferEvent (model.eval u)) (by
+      simpa [initial, CausalEpistemicRecord.initial,
+        FiniteLatentSCM.CounterfactualSupported,
+        FiniteLatentSCM.observationalDist, FiniteProbRecord.EventPositive,
+        FiniteProbRecord.map, FiniteProbRecord.eventMass_map_labels] using
+          evidence_positive)
+
+def setPrestigeTransition : CausalTransition signature :=
+  CausalTransition.setting "evidence" "do-prestige"
+    conditionOnEvidence.target.record prestigeNode true
+
+theorem modal_counterfactual_offer_do_prestige :
+    QProb.Equiv
+      (setPrestigeTransition.target.record.observedDist.probVal offerEvent)
+      (ratio 1 2 (by decide)) := by
+  simp only [setPrestigeTransition, conditionOnEvidence, initial,
+    CausalTransition.setting, CausalTransition.conditioning,
+    CausalEpistemicRecord.setVariable, CausalEpistemicRecord.conditionLatent,
+    CausalEpistemicRecord.initial, CausalEpistemicRecord.observedDist]
+  exact QProb.equiv_trans
+    (FiniteProbRecord.map_probVal _ _ offerEvent)
+    (by
+      simpa [FiniteLatentSCM.counterfactualValue, setPrestigeTrue,
+        HardIntervention.set, HardIntervention.empty] using
+          counterfactual_offer_do_prestige_given_evidence)
+
+end TenureTrack
 
 end Examples
 end Causality

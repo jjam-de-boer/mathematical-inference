@@ -20,11 +20,6 @@ def finAny : (n : Nat) -> (Fin n -> Bool) -> Bool
   | 0, _ => false
   | n + 1, p => finAny n (fun i => p i.castSucc) || p (Fin.last n)
 
-def finProductRat : (n : Nat) -> (Fin n -> Rat) -> Rat
-  | 0, _ => 1
-  | n + 1, f =>
-      finProductRat n (fun i => f i.castSucc) * f (Fin.last n)
-
 theorem natBeq_comm (left right : Nat) :
     Nat.beq left right = Nat.beq right left := by
   induction left generalizing right with
@@ -47,12 +42,6 @@ theorem finAll_true (n : Nat) :
   induction n with
   | zero => rfl
   | succ n ih => simp [finAll, ih]
-
-theorem finProductRat_one (n : Nat) :
-    finProductRat n (fun _ => (1 : Rat)) = 1 := by
-  induction n with
-  | zero => rfl
-  | succ n ih => simp [finProductRat, ih]
 
 theorem finAll_congr {n : Nat} {p q : Fin n -> Bool}
     (h : forall i, p i = q i) : finAll n p = finAll n q := by
@@ -91,14 +80,6 @@ theorem finAny_congr {n : Nat} {p q : Fin n -> Bool}
   | zero => rfl
   | succ n ih =>
       simp only [finAny]
-      rw [ih (fun i => h i.castSucc), h (Fin.last n)]
-
-theorem finProductRat_congr {n : Nat} {f g : Fin n -> Rat}
-    (h : forall i, f i = g i) : finProductRat n f = finProductRat n g := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-      simp only [finProductRat]
       rw [ih (fun i => h i.castSucc), h (Fin.last n)]
 
 theorem finAny_eq_false_iff {n : Nat} (p : Fin n -> Bool) :

@@ -6,6 +6,7 @@ import Thesis.Causality.Reductions
 import Thesis.Causality.Semantics
 import Thesis.CausalTransport.DSeparation
 import Thesis.CausalTransport.Correspondence
+import Thesis.CausalTransport.FiniteSource
 import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.CausalTransport.HiddenDAG
 import Thesis.CausalTransport.Construction

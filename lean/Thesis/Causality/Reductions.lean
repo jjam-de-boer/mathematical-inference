@@ -219,14 +219,15 @@ theorem toSCM_has_no_bidirected (B : FunctionalCBN S) (i j) :
 /-- The converted SCM keeps each local seed distribution definitionally. -/
 theorem toSCM_factor_prob (B : FunctionalCBN S) (i)
     (event : B.Seed i -> Bool) :
-    (B.toSCM.factor i).probRat event = (B.factor i).probRat event := by
-  rfl
+    QProb.Equiv ((B.toSCM.factor i).probVal event)
+      ((B.factor i).probVal event) :=
+  QProb.equiv_refl _
 
 /-- The converted SCM keeps the full independent seed law definitionally. -/
 theorem toSCM_prior_prob (B : FunctionalCBN S)
     (event : ((i : Fin S.count) -> B.Seed i) -> Bool) :
-    B.toSCM.prior.probRat event = B.prior.probRat event := by
-  rfl
+    QProb.Equiv (B.toSCM.prior.probVal event) (B.prior.probVal event) :=
+  QProb.equiv_refl _
 
 end FunctionalCBN
 
@@ -295,10 +296,11 @@ def responseMechanism (C : FiniteRationalCPT S)
 theorem responseFactor_preserves_row (C : FiniteRationalCPT S)
     (child : Fin S.count) (parents : S.ParentValues child)
     (event : S.Value child -> Bool) :
-    (C.responseFactor child).probRat
-        (fun seed => event (C.responseMechanism child parents seed)) =
-      (C.rowRecord child (C.encode child parents)).probRat event := by
-  exact FiniteProduct.record_coordinate_probRat (C.configCount child)
+    QProb.Equiv
+      ((C.responseFactor child).probVal
+        (fun seed => event (C.responseMechanism child parents seed)))
+      ((C.rowRecord child (C.encode child parents)).probVal event) := by
+  exact FiniteProduct.record_coordinate_probVal (C.configCount child)
     (S.Value child) (C.rowRecord child) (C.encode child parents) event
 
 theorem finiteProduct_rectangular_eq_finAll (n : Nat)
@@ -313,16 +315,6 @@ theorem finiteProduct_rectangular_eq_finAll (n : Nat)
       simp [FiniteProduct.rectangularEvent, finAll,
         ih (fun i => Value i.castSucc) (fun i => events i.castSucc)
           (fun i => assignment i.castSucc), Bool.and_comm]
-
-theorem finiteProduct_ratProduct_eq_finProductRat (n : Nat)
-    (values : Fin n -> Rat) :
-    FiniteProduct.ratProduct n values = finProductRat n values := by
-  induction n with
-  | zero =>
-      rfl
-  | succ n ih =>
-      simp [FiniteProduct.ratProduct, finProductRat,
-        ih (fun i => values i.castSucc), Rat.mul_comm]
 
 def responsePrior (C : FiniteRationalCPT S) :
     FiniteProbRecord ((child : Fin S.count) -> C.ResponseSeed child) :=
@@ -356,9 +348,10 @@ theorem toSCM_isMarkovian (C : FiniteRationalCPT S) :
 theorem toSCM_preserves_row (C : FiniteRationalCPT S)
     (child : Fin S.count) (parents : S.ParentValues child)
     (event : S.Value child -> Bool) :
-    (C.toSCM.factor child).probRat
-        (fun seed => event (C.responseMechanism child parents seed)) =
-      (C.row child (C.encode child parents)).toRecord.probRat event := by
+    QProb.Equiv
+      ((C.toSCM.factor child).probVal
+        (fun seed => event (C.responseMechanism child parents seed)))
+      ((C.row child (C.encode child parents)).toRecord.probVal event) := by
   exact C.responseFactor_preserves_row child parents event
 
 end FiniteRationalCPT
