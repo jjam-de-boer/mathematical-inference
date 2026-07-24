@@ -179,6 +179,8 @@ namespace NodeSet
 
 def empty : NodeSet S := fun _ => false
 
+def full : NodeSet S := fun _ => true
+
 def singleton (node : Fin S.count) : NodeSet S :=
   fun i => decide (i = node)
 

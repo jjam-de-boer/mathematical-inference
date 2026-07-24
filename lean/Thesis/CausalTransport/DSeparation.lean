@@ -100,7 +100,7 @@ structure DSeparationCorrectness (G : ObservedGraph S) : Prop where
 
 /-- A published do-rule step stated with the standard active-path criterion. -/
 inductive PathDoRuleApplication (G : ObservedGraph S) :
-    Kernel S -> Kernel S -> Prop
+    Kernel S -> Kernel S -> Type
   | rule1 (x y z w : NodeSet S)
       (disjoint : FourWayDisjoint x y z w)
       (separated :
@@ -200,6 +200,14 @@ inductive PathDoCalculusDerivation (G : ObservedGraph S) :
   | marginalizeCongr (nodes : NodeSet S) {left right} :
       PathDoCalculusDerivation G left right ->
       PathDoCalculusDerivation G (.marginalize nodes left) (.marginalize nodes right)
+  | evaluateAtCongr (assignment : S.Assignment) {left right} :
+      PathDoCalculusDerivation G left right ->
+      PathDoCalculusDerivation G
+        (.evaluateAt assignment left) (.evaluateAt assignment right)
+  | addCongr {left left' right right'} :
+      PathDoCalculusDerivation G left left' ->
+      PathDoCalculusDerivation G right right' ->
+      PathDoCalculusDerivation G (.add left right) (.add left' right')
   | multiplyCongr {left left' right right'} :
       PathDoCalculusDerivation G left left' ->
       PathDoCalculusDerivation G right right' ->
@@ -223,6 +231,10 @@ def PathDoCalculusDerivation.compile (correct : DSeparationCorrectness G) :
   | .chain x y z w disjoint => .chain x y z w disjoint
   | .marginalizeCongr nodes derivation =>
       .marginalizeCongr nodes (derivation.compile correct)
+  | .evaluateAtCongr assignment derivation =>
+      .evaluateAtCongr assignment (derivation.compile correct)
+  | .addCongr first second =>
+      .addCongr (first.compile correct) (second.compile correct)
   | .multiplyCongr first second =>
       .multiplyCongr (first.compile correct) (second.compile correct)
   | .divideCongr first second =>

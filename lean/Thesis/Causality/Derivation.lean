@@ -219,7 +219,7 @@ structure FourWayDisjoint (x y z w : NodeSet S) : Prop where
   zw : NodeSet.Disjoint z w
 
 /-- One checked application of one of Pearl's three rules. -/
-inductive DoRuleApplication (G : ObservedGraph S) : Kernel S -> Kernel S -> Prop
+inductive DoRuleApplication (G : ObservedGraph S) : Kernel S -> Kernel S -> Type
   | rule1 (x y z w : NodeSet S)
       (disjoint : FourWayDisjoint x y z w)
       (separated :
@@ -243,16 +243,22 @@ inductive DoRuleApplication (G : ObservedGraph S) : Kernel S -> Kernel S -> Prop
 
 /-- Expressions generated from kernels by finite probability algebra. -/
 inductive ProbabilityTerm (S : ObservedSignature) where
+  | zero : ProbabilityTerm S
   | kernel : Kernel S -> ProbabilityTerm S
   | marginalize : NodeSet S -> ProbabilityTerm S -> ProbabilityTerm S
+  | evaluateAt : S.Assignment -> ProbabilityTerm S -> ProbabilityTerm S
+  | add : ProbabilityTerm S -> ProbabilityTerm S -> ProbabilityTerm S
   | multiply : ProbabilityTerm S -> ProbabilityTerm S -> ProbabilityTerm S
   | divide : ProbabilityTerm S -> ProbabilityTerm S -> ProbabilityTerm S
 
 namespace ProbabilityTerm
 
 def ActionFree : ProbabilityTerm S -> Prop
+  | zero => True
   | kernel K => forall i, K.action i = false
   | marginalize _ term => term.ActionFree
+  | evaluateAt _ term => term.ActionFree
+  | add left right => left.ActionFree /\ right.ActionFree
   | multiply left right => left.ActionFree /\ right.ActionFree
   | divide numerator denominator => numerator.ActionFree /\ denominator.ActionFree
 
@@ -296,6 +302,14 @@ inductive DoCalculusDerivation (G : ObservedGraph S) :
   | marginalizeCongr (nodes : NodeSet S) {left right} :
       DoCalculusDerivation G left right ->
       DoCalculusDerivation G (.marginalize nodes left) (.marginalize nodes right)
+  | evaluateAtCongr (assignment : S.Assignment) {left right} :
+      DoCalculusDerivation G left right ->
+      DoCalculusDerivation G
+        (.evaluateAt assignment left) (.evaluateAt assignment right)
+  | addCongr {left left' right right'} :
+      DoCalculusDerivation G left left' ->
+      DoCalculusDerivation G right right' ->
+      DoCalculusDerivation G (.add left right) (.add left' right')
   | multiplyCongr {left left' right right'} :
       DoCalculusDerivation G left left' ->
       DoCalculusDerivation G right right' ->

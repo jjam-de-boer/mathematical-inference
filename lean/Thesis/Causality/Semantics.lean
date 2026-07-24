@@ -241,6 +241,14 @@ theorem singleton_project_event (nodes : NodeSet S)
         (agreesOn_iff_project_eq nodes reference sample).mp agreement
       simp [FiniteProbRecord.singletonEvent, same]
 
+theorem agreesOn_full (reference sample : S.Assignment) :
+    agreesOn (NodeSet.full : NodeSet S) reference sample =
+      FiniteProbRecord.singletonEvent reference sample := by
+  symm
+  simpa [ObservedSignature.project, NodeSet.full] using
+    (singleton_project_event (S := S) (NodeSet.full : NodeSet S)
+      reference sample)
+
 def numeratorEvent (kernel : Kernel S) (reference sample : S.Assignment) : Bool :=
   agreesOn kernel.outcome reference sample &&
     agreesOn kernel.condition reference sample
@@ -329,21 +337,98 @@ def marginalAssignments (S : ObservedSignature) (nodes : NodeSet S)
   marginalAssignmentsUpTo S nodes reference S.count (Nat.le_refl S.count)
 
 /-- Partial denotation of a probability expression in one finite SCM. -/
-noncomputable def denote (model : FiniteLatentSCM S) (term : ProbabilityTerm S)
-    : S.Assignment -> ProbabilityResult.Result :=
-  ProbabilityTerm.rec
-    (motive := fun _ => S.Assignment -> ProbabilityResult.Result)
-    (fun kernel assignment => kernel.denote model assignment)
-    (fun nodes _ innerDenote assignment =>
+noncomputable def denote (model : FiniteLatentSCM S) :
+    ProbabilityTerm S -> S.Assignment -> ProbabilityResult.Result
+  | .zero, _ => some QProb.zero
+  | .kernel K, assignment => K.denote model assignment
+  | .marginalize nodes inner, assignment =>
       ProbabilityResult.sum
-        ((marginalAssignments S nodes assignment).map innerDenote))
-    (fun _ _ leftDenote rightDenote assignment =>
+        ((marginalAssignments S nodes assignment).map
+          (fun variant => denote model inner variant))
+  | .evaluateAt fixed inner, _ => denote model inner fixed
+  | .add left right, assignment =>
+      ProbabilityResult.add
+        (denote model left assignment) (denote model right assignment)
+  | .multiply left right, assignment =>
       ProbabilityResult.multiply
-        (leftDenote assignment) (rightDenote assignment))
-    (fun _ _ numeratorDenote denominatorDenote assignment =>
+        (denote model left assignment) (denote model right assignment)
+  | .divide numerator denominator, assignment =>
       ProbabilityResult.divide
-        (numeratorDenote assignment) (denominatorDenote assignment))
-    term
+        (denote model numerator assignment) (denote model denominator assignment)
+
+/-- The probability mass of one complete observed assignment. -/
+def singletonMassTerm (S : ObservedSignature) (assignment : S.Assignment) :
+    ProbabilityTerm S :=
+  .evaluateAt assignment
+    (.kernel ⟨NodeSet.full, NodeSet.empty, NodeSet.empty⟩)
+
+/-- Sum the masses of a finite list of complete observed assignments. -/
+def eventTermFrom (S : ObservedSignature) :
+    List S.Assignment -> ProbabilityTerm S
+  | [] => .zero
+  | assignment :: assignments =>
+      .add (singletonMassTerm S assignment) (eventTermFrom S assignments)
+
+/-- Compile any decidable event on a finite observed signature to a term. -/
+def eventTerm (S : ObservedSignature) (event : S.Assignment -> Bool) :
+    ProbabilityTerm S :=
+  eventTermFrom S (S.assignmentEnumeration.filter event)
+
+noncomputable def singletonMassTerm_denote
+    (model : FiniteLatentSCM S) (reference assignment : S.Assignment) :
+    ProbabilityResult.Equivalent
+      ((singletonMassTerm S assignment).denote model reference)
+      (some (model.observationalDist.probVal
+        (FiniteProbRecord.singletonEvent assignment))) := by
+  have noAction :
+      (Kernel.mk (NodeSet.full : NodeSet S) NodeSet.empty
+        NodeSet.empty).hasAction = false := by
+    apply (finAny_eq_false_iff _).mpr
+    intro i
+    rfl
+  have cylinder :=
+    Kernel.unconditionalDenote model (NodeSet.full : NodeSet S)
+      NodeSet.empty assignment
+  have cylinder' : ProbabilityResult.Equivalent
+      ((singletonMassTerm S assignment).denote model reference)
+      (some (model.observationalDist.probVal
+        (Kernel.agreesOn NodeSet.full assignment))) := by
+    simpa only [singletonMassTerm, denote, Kernel.distribution, noAction,
+      Bool.false_eq_true, ↓reduceIte] using cylinder
+  exact ProbabilityResult.trans cylinder'
+    (.value (FiniteProbRecord.probVal_congr model.observationalDist _ _
+      (fun sample => Kernel.agreesOn_full assignment sample)))
+
+noncomputable def eventTermFrom_denote
+    (model : FiniteLatentSCM S) (reference : S.Assignment) :
+    forall assignments : List S.Assignment,
+      ProbabilityResult.Equivalent
+        ((eventTermFrom S assignments).denote model reference)
+        (some (QProb.listSum (assignments.map (fun assignment =>
+          model.observationalDist.probVal
+            (FiniteProbRecord.singletonEvent assignment)))))
+  | [] => ProbabilityResult.refl _
+  | assignment :: assignments => by
+      simpa only [eventTermFrom, denote, List.map_cons, QProb.listSum] using
+        ProbabilityResult.add_congr
+          (singletonMassTerm_denote model reference assignment)
+          (eventTermFrom_denote model reference assignments)
+
+/-- The compiled term denotes exactly the probability of its Boolean event. -/
+noncomputable def eventTerm_denote
+    (model : FiniteLatentSCM S) (reference : S.Assignment)
+    (event : S.Assignment -> Bool) :
+    ProbabilityResult.Equivalent
+      ((eventTerm S event).denote model reference)
+      (some (model.observationalDist.probVal event)) := by
+  unfold eventTerm
+  exact ProbabilityResult.trans
+    (eventTermFrom_denote model reference
+      (S.assignmentEnumeration.filter event))
+    (.value (QProb.equiv_symm
+      (FiniteProbRecord.probVal_equiv_listSum_singletons
+        model.observationalDist S.assignmentEnumeration
+        S.assignmentEnumeration_nodup S.assignmentEnumeration_complete event)))
 
 /-- Support and equality at one finite valuation, used by partial kernels. -/
 def SupportedAt (model : FiniteLatentSCM S) (term : ProbabilityTerm S)
@@ -385,6 +470,7 @@ noncomputable def actionFree_invariant
         (term.denote left assignment) (term.denote right assignment) := by
   intro assignment
   induction term generalizing assignment with
+  | zero => exact ProbabilityResult.refl _
   | kernel kernel =>
       have noAction := actionFree_hasAction_false kernel actionFree
       simp only [denote, Kernel.denote, Kernel.distribution, noAction,
@@ -399,14 +485,23 @@ noncomputable def actionFree_invariant
           (fun variant => term.denote left variant)
           (fun variant => term.denote right variant)
           (fun variant => ih actionFree variant))
+  | evaluateAt fixed term ih =>
+      exact ih actionFree fixed
+  | add first second firstIH secondIH =>
+      simpa only [denote] using
+        ProbabilityResult.add_congr
+          (firstIH actionFree.1 assignment)
+          (secondIH actionFree.2 assignment)
   | multiply first second firstIH secondIH =>
-      exact ProbabilityResult.multiply_congr
-        (firstIH actionFree.1 assignment)
-        (secondIH actionFree.2 assignment)
+      simpa only [denote] using
+        ProbabilityResult.multiply_congr
+          (firstIH actionFree.1 assignment)
+          (secondIH actionFree.2 assignment)
   | divide numerator denominator numeratorIH denominatorIH =>
-      exact ProbabilityResult.divide_congr
-        (numeratorIH actionFree.1 assignment)
-        (denominatorIH actionFree.2 assignment)
+      simpa only [denote] using
+        ProbabilityResult.divide_congr
+          (numeratorIH actionFree.1 assignment)
+          (denominatorIH actionFree.2 assignment)
 
 end ProbabilityTerm
 
@@ -478,6 +573,11 @@ def LocalDerivationSupport (model : FiniteLatentSCM S)
           forall variant,
             variant ∈ ProbabilityTerm.marginalAssignments S nodes assignment ->
               LocalDerivationSupport model variant inner
+      | .evaluateAtCongr fixed inner =>
+          LocalDerivationSupport model fixed inner
+      | .addCongr first second =>
+          LocalDerivationSupport model assignment first ×
+            LocalDerivationSupport model assignment second
       | .multiplyCongr first second =>
           LocalDerivationSupport model assignment first ×
             LocalDerivationSupport model assignment second
@@ -519,6 +619,12 @@ noncomputable def DoCalculusDerivation.denotational_soundAt
       apply ProbabilityTerm.marginalize_congrAt
       intro variant member
       exact ih (supported.2.2 variant member)
+  | evaluateAtCongr fixed derivation ih =>
+      exact ih supported.2.2
+  | addCongr leftDerivation rightDerivation leftIH rightIH =>
+      simpa only [ProbabilityTerm.denote] using
+        ProbabilityResult.add_congr
+          (leftIH supported.2.2.1) (rightIH supported.2.2.2)
   | multiplyCongr leftDerivation rightDerivation leftIH rightIH =>
       simpa only [ProbabilityTerm.denote] using
         ProbabilityResult.multiply_congr

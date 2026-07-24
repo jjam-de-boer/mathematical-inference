@@ -251,6 +251,77 @@ def evalUnder (M : FiniteLatentSCM S)
 def eval (M : FiniteLatentSCM S) (u : M.latent.Assignment) : S.Assignment :=
   M.evalUnder (noIntervention S) u
 
+/-- With no intervention, interventional evaluation is factual evaluation. -/
+theorem evalUnder_noIntervention (M : FiniteLatentSCM S)
+    (u : M.latent.Assignment) :
+    M.evalUnder (noIntervention S) u = M.eval u :=
+  rfl
+
+/-- Effectiveness: an intervened variable takes the selected value. -/
+theorem evalUnder_effectiveness (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (u : M.latent.Assignment) (child : Fin S.count) (value : S.Value child)
+    (selected : target child = some value) :
+    M.evalUnder target u child = value := by
+  unfold evalUnder
+  rw [evalNodeUnder]
+  simp [equationUnder, selected]
+
+/--
+Composition at one node: extending an intervention by values already produced
+under the base intervention does not change the resulting potential outcome.
+-/
+theorem evalNodeUnder_composition (M : FiniteLatentSCM S)
+    (base extension : (i : Fin S.count) -> Option (S.Value i))
+    (u : M.latent.Assignment)
+    (keeps : forall i, extension i = none -> base i = none)
+    (agrees : forall i value, extension i = some value ->
+      M.evalUnder base u i = value)
+    (child : Fin S.count) :
+    M.evalNodeUnder extension u child = M.evalNodeUnder base u child := by
+  rw [evalNodeUnder, evalNodeUnder]
+  unfold equationUnder
+  cases selected : extension child with
+  | some value =>
+      have agreement := agrees child value selected
+      unfold evalUnder at agreement
+      rw [evalNodeUnder] at agreement
+      exact agreement.symm
+  | none =>
+      have baseNone := keeps child selected
+      simp only [baseNone]
+      congr 1
+      funext parent edge
+      exact M.evalNodeUnder_composition base extension u keeps agrees parent
+termination_by child.val
+decreasing_by
+  exact S.directed_earlier edge
+
+/-- Assignment-level composition for a proof-carrying intervention extension. -/
+theorem evalUnder_composition (M : FiniteLatentSCM S)
+    (base extension : (i : Fin S.count) -> Option (S.Value i))
+    (u : M.latent.Assignment)
+    (keeps : forall i, extension i = none -> base i = none)
+    (agrees : forall i value, extension i = some value ->
+      M.evalUnder base u i = value) :
+    M.evalUnder extension u = M.evalUnder base u := by
+  funext child
+  exact M.evalNodeUnder_composition base extension u keeps agrees child
+
+/--
+Consistency: setting any variables to their factual values leaves the complete
+unit-level observed assignment unchanged.
+-/
+theorem evalUnder_consistency (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (u : M.latent.Assignment)
+    (agrees : forall i value, target i = some value -> M.eval u i = value) :
+    M.evalUnder target u = M.eval u := by
+  exact M.evalUnder_composition (noIntervention S) target u
+    (fun _ _ => rfl) (by
+      intro i value selected
+      simpa [eval] using agrees i value selected)
+
 def observationalDist (M : FiniteLatentSCM S) :
     FiniteProbRecord S.Assignment :=
   M.prior.map M.eval

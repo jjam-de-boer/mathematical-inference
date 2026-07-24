@@ -1,5 +1,6 @@
-import Thesis.Causality.Modalities
 import Thesis.Causality.Reductions
+import Thesis.Causality.ModalCounterfactual
+import Thesis.CausalTransport.ModalCounterfactual
 
 namespace Thesis
 namespace Causality
@@ -264,7 +265,7 @@ def setFirstTransition : CausalTransition twoBoolSignature :=
   CausalTransition.setting "observational" "do-first" sharedInitial
     firstNode true
 
-theorem setting_transition_is_proof_carrying :
+def setting_transition_is_proof_carrying :
     CausalRecordStep setFirstTransition.label
       setFirstTransition.source.record setFirstTransition.target.record :=
   setFirstTransition.valid
@@ -276,14 +277,6 @@ theorem setting_changes_the_equation_override :
 theorem setting_preserves_epistemic_belief :
     setFirstTransition.target.record.belief = sharedInitial.belief := by
   rfl
-
-def epistemicEdge : EpistemicRelation twoBoolSignature :=
-  (firstNode, secondNode)
-
-theorem relating_is_noncausal_metadata :
-    ((sharedInitial.relate epistemicEdge).unrelate epistemicEdge) =
-      sharedInitial :=
-  sharedInitial.unrelate_relate_cancel epistemicEdge
 
 namespace TenureTrack
 
@@ -811,6 +804,29 @@ theorem counterfactual_offer_do_prestige_given_evidence :
         ((QProb.equiv_num_pos_iff denominator).mpr (by decide)) (by decide))
       (by decide))
 
+def prestigeTwin : TwinNetwork signature :=
+  model.twinNetwork setPrestigeTrue.value
+
+theorem twin_counterfactual_offer_do_prestige_given_evidence :
+    QProb.Equiv
+      (prestigeTwin.abductedCounterfactualValue
+        noPrestigeGoodNoOfferEvent evidence_positive offerEvent)
+      (ratio 1 2 (by decide)) := by
+  exact QProb.equiv_trans
+    (prestigeTwin.abductedCounterfactualValue_eq_counterfactualValue
+      noPrestigeGoodNoOfferEvent evidence_positive offerEvent)
+    counterfactual_offer_do_prestige_given_evidence
+
+theorem prestigeTwin_intervention_cuts_incoming
+    (parent : Fin signature.count) :
+    prestigeTwin.directed (.counterfactual parent)
+      (.counterfactual prestigeNode) = false := by
+  have selected : prestigeTwin.intervention prestigeNode = some true := by
+    simpa [prestigeTwin, FiniteLatentSCM.twinNetwork, setPrestigeTrue] using
+      ((HardIntervention.empty signature).set_at_target prestigeNode true)
+  exact prestigeTwin.intervention_cuts_counterfactual_directed prestigeNode true
+    selected parent
+
 theorem counterfactual_offer_do_fit_given_evidence :
     QProb.Equiv
       (model.counterfactualValue noPrestigeGoodNoOfferEvent evidence_positive
@@ -840,36 +856,62 @@ theorem counterfactual_offer_do_fit_given_evidence :
         ((QProb.equiv_num_pos_iff denominator).mpr (by decide)) (by decide))
       (by decide))
 
-def initial : CausalEpistemicRecord signature :=
-  CausalEpistemicRecord.initial model
+/-- The principal counterfactual query used by the modal multiworld example. -/
+def prestigeCounterfactualQuery : CounterfactualQuery signature :=
+  CounterfactualQuery.singleAction noPrestigeGoodNoOfferEvent
+    setPrestigeTrue.value offerEvent
 
-def conditionOnEvidence : CausalTransition signature :=
-  CausalTransition.conditioning "observational" "evidence" initial
-    (fun u => noPrestigeGoodNoOfferEvent (model.eval u)) (by
-      simpa [initial, CausalEpistemicRecord.initial,
-        FiniteLatentSCM.CounterfactualSupported,
-        FiniteLatentSCM.observationalDist, FiniteProbRecord.EventPositive,
-        FiniteProbRecord.map, FiniteProbRecord.eventMass_map_labels] using
-          evidence_positive)
+/--
+Both atomic construction routes execute the occurrence-indexed SCM for the
+principal query.
+-/
+noncomputable def prestigeModalCombinedConstruction :
+    ModalCombinedCounterfactualConstruction
+      (AbductionActionPrediction.initialMode model)
+      prestigeCounterfactualQuery :=
+  ModalCombinedCounterfactualConstruction.canonical
+    (AbductionActionPrediction.initialMode model)
+    prestigeCounterfactualQuery
 
-def setPrestigeTransition : CausalTransition signature :=
-  CausalTransition.setting "evidence" "do-prestige"
-    conditionOnEvidence.target.record prestigeNode true
+/-- The executed atomic endpoint has the query language's semantics. -/
+noncomputable def prestigeModalCombinedConstruction_semantics :
+    ProbabilityResult.Equivalent
+      prestigeModalCombinedConstruction.endpointDenote
+      (prestigeCounterfactualQuery.denote model) :=
+  prestigeModalCombinedConstruction.semanticAgreement
 
-theorem modal_counterfactual_offer_do_prestige :
+/-- The actual executed endpoint computes the principal value `1/2`. -/
+noncomputable def prestigeModalCombinedConstruction_value :
+    ProbabilityResult.Equivalent
+      prestigeModalCombinedConstruction.endpointDenote
+      (some (ratio 1 2 (by decide))) :=
+  ProbabilityResult.trans
+    (ModalCombinedCounterfactualConstruction.singleAction_semantics_eq_twinNetwork
+      (AbductionActionPrediction.initialMode model)
+      noPrestigeGoodNoOfferEvent evidence_positive setPrestigeTrue.value
+      offerEvent prestigeModalCombinedConstruction)
+    (.value twin_counterfactual_offer_do_prestige_given_evidence)
+
+/-- The structural modal AAP sequence performs the principal counterfactual. -/
+theorem modal_aap_counterfactual_offer_do_prestige :
     QProb.Equiv
-      (setPrestigeTransition.target.record.observedDist.probVal offerEvent)
+      (AbductionActionPrediction.prediction model
+        noPrestigeGoodNoOfferEvent evidence_positive setPrestigeTrue.value
+        offerEvent)
       (ratio 1 2 (by decide)) := by
-  simp only [setPrestigeTransition, conditionOnEvidence, initial,
-    CausalTransition.setting, CausalTransition.conditioning,
-    CausalEpistemicRecord.setVariable, CausalEpistemicRecord.conditionLatent,
-    CausalEpistemicRecord.initial, CausalEpistemicRecord.observedDist]
   exact QProb.equiv_trans
-    (FiniteProbRecord.map_probVal _ _ offerEvent)
-    (by
-      simpa [FiniteLatentSCM.counterfactualValue, setPrestigeTrue,
-        HardIntervention.set, HardIntervention.empty] using
-          counterfactual_offer_do_prestige_given_evidence)
+    (AbductionActionPrediction.prediction_eq_counterfactualValue model
+      noPrestigeGoodNoOfferEvent evidence_positive setPrestigeTrue.value
+      offerEvent)
+    counterfactual_offer_do_prestige_given_evidence
+
+/-- Support of the example query is neither stronger nor weaker than evidence positivity. -/
+theorem prestigeSingleAction_supported_iff :
+    Nonempty ((CounterfactualQuery.singleAction noPrestigeGoodNoOfferEvent
+      setPrestigeTrue.value offerEvent).SupportedAt model) <->
+      model.CounterfactualSupported noPrestigeGoodNoOfferEvent :=
+  CounterfactualQuery.singleAction_supportedAt_iff model
+    noPrestigeGoodNoOfferEvent setPrestigeTrue.value offerEvent
 
 end TenureTrack
 

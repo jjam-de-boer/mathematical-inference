@@ -413,6 +413,26 @@ theorem map_probVal (R : FiniteProbRecord Ω) (f : Ω → X)
       (R.probVal (fun omega => event (f omega))) := by
   simp [QProb.Equiv, map, probVal, eventMass_map_labels]
 
+/-- Construct the independent product of two finite probability records. -/
+def product (left : FiniteProbRecord Ω) (right : FiniteProbRecord X) :
+    FiniteProbRecord (Ω × X) where
+  atoms := weightedCartesian left.atoms right.atoms
+  den := left.den * right.den
+  den_pos := Nat.mul_pos left.den_pos right.den_pos
+  total_mass := by
+    rw [totalMass_weightedCartesian, left.total_mass, right.total_mass]
+
+/-- Rectangular events in the product have the product of their probabilities. -/
+theorem product_probVal (left : FiniteProbRecord Ω)
+    (right : FiniteProbRecord X) (leftEvent : Event Ω)
+    (rightEvent : Event X) :
+    QProb.Equiv
+      ((left.product right).probVal
+        (fun pair => leftEvent pair.1 && rightEvent pair.2))
+      (QProb.mul (left.probVal leftEvent) (right.probVal rightEvent)) := by
+  simp [QProb.Equiv, product, probVal, QProb.mul,
+    eventMass_weightedCartesian, Nat.mul_assoc]
+
 /-- Bayesian conditioning with a proof-carrying finite support witness. -/
 def conditionOn (R : FiniteProbRecord Ω) (evidence : Event Ω)
     (hEvidence : R.EventPositive evidence) : FiniteProbRecord Ω where

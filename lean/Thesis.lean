@@ -1,14 +1,4 @@
 import Thesis.Probability
-import Thesis.Causality.Graph
-import Thesis.Causality.Derivation
-import Thesis.Causality.Model
-import Thesis.Causality.Reductions
-import Thesis.Causality.Semantics
-import Thesis.CausalTransport.DSeparation
-import Thesis.CausalTransport.Correspondence
-import Thesis.CausalTransport.FiniteSource
-import Thesis.CausalTransport.HiddenDAGModel
-import Thesis.CausalTransport.HiddenDAG
-import Thesis.CausalTransport.Construction
-import Thesis.Causality.Modalities
+import Thesis.Causality
+import Thesis.CausalTransport
 import Thesis.Examples.TenureTrack
