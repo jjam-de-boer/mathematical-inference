@@ -3,6 +3,17 @@ import Thesis.Probability.Core
 namespace Thesis
 namespace Probability
 
+/-!
+Finite urn probability and the qualitative urn-ratio reconstruction.
+
+`UrnProb` is the direct counting presentation: a positive finite number of
+equally weighted cells is mapped to outcome labels. Its probability of a
+Boolean event is the event-cell count divided by the number of cells. The later
+`UrnRatio` section records the rescaling assumptions used in the finite
+Clayton--Waddington-style route described in the thesis.
+-/
+
+/-- A nonempty finite urn whose cells may share outcome labels. -/
 structure UrnProb (X : Type u) where
   n : Nat
   pos : 0 < n
@@ -26,14 +37,17 @@ theorem support_ofList (xs : List X) (h : 0 < xs.length) :
     (ofList xs h).support = xs := by
   simp [ofList, support]
 
+/-- The number of urn cells whose outcome satisfies the event. -/
 def probNum (μ : UrnProb X) (E : Event X) : Nat :=
   count μ.support E
 
+/-- The event-cell count as a finite rational probability. -/
 def probVal (μ : UrnProb X) (E : Event X) : QProb where
   num := μ.probNum E
   den := μ.n
   den_pos := μ.pos
 
+/-- Conditional probability, defined only with a positive conditioning count. -/
 def condVal (μ : UrnProb X) (E F : Event X)
     (hF : 0 < μ.probNum F) : QProb where
   num := μ.probNum (inter E F)

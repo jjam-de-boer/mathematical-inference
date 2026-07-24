@@ -5,7 +5,17 @@ namespace Causality
 
 open Probability
 
-/-! Endogenous-variable and exogenous-root creation with provenance-guided destruction. -/
+/-!
+Endogenous-variable and exogenous-root creation with provenance-guided
+destruction.
+
+There are two deliberately different extensions.  Endogenous learning appends
+a terminal observed variable, retaining the old root family and old equations.
+Exogenous learning appends a fresh independent root, retaining the observed
+signature and rebuilding the product prior.  Both constructions expose the
+old/new coordinate maps used by later provenance and deletion operations;
+they are not merely cardinality-changing records.
+-/
 
 /-! ## Endogenous-variable creation and provenance-guided destruction -/
 
@@ -35,7 +45,12 @@ instance {S : ObservedSignature} {R : CausalEpistemicRecord S}
     (spec : EndogenousVariableSpec R) : DecidableEq spec.Value :=
   spec.valueDecidableEq
 
-/-- The observed-signature component of endogenous learning. -/
+/--
+The observed-signature component of endogenous learning.  It supplies the
+generic terminal-variable machinery with the value data and observed-parent
+mask; latent inputs are handled separately below because they refer to the
+current model rather than just its signature.
+-/
 def terminalSpec {S : ObservedSignature} {R : CausalEpistemicRecord S}
     (spec : EndogenousVariableSpec R) : TerminalVariableSpec S where
   Value := spec.Value
@@ -92,6 +107,11 @@ def extendLatent {S : ObservedSignature} {R : CausalEpistemicRecord S}
       R.model.latent.incident source child := by
   simp [extendLatent, oldNode]
 
+/--
+Reinterpret the new node's parent tuple as the tuple demanded by `spec`.
+This is a dependent-coordinate adapter: it has no semantic content beyond
+following the old-parent embedding in the extended signature.
+-/
 def learnedParentValues {S : ObservedSignature}
     {R : CausalEpistemicRecord S} (spec : EndogenousVariableSpec R)
     (parents : spec.extendSignature.ParentValues spec.newNode) :
@@ -105,6 +125,7 @@ def learnedLatentInputs {S : ObservedSignature}
       R.model.latent.Value source :=
   fun source incident => latents source (by simpa using incident)
 
+/-- Recover an old node's parent tuple after the terminal extension. -/
 def oldParentValues {S : ObservedSignature}
     {R : CausalEpistemicRecord S} (spec : EndogenousVariableSpec R)
     {child : Fin S.count}
@@ -119,7 +140,11 @@ def oldLatentInputs {S : ObservedSignature}
     R.model.latent.Inputs child :=
   fun source incident => latents source (by simpa using incident)
 
-/-- Old equations are retained; the fresh equation receives its declared inputs. -/
+/--
+Old equations are retained; the fresh equation receives exactly its declared
+observed parents and latent inputs.  `terminalCases` is the central case split:
+the final coordinate is new, and every `castSucc` coordinate is old.
+-/
 def extendMechanism {S : ObservedSignature}
     {R : CausalEpistemicRecord S} (spec : EndogenousVariableSpec R) :
     (child : Fin spec.extendSignature.count) ->
@@ -139,6 +164,10 @@ def extendMechanism {S : ObservedSignature}
           (spec.oldLatentInputs latents)))
     child
 
+/--
+Install the extended signature, latent interface, and mechanisms while keeping
+the old product prior.  No new root has been introduced in this construction.
+-/
 def extendModel {S : ObservedSignature} {R : CausalEpistemicRecord S}
     (spec : EndogenousVariableSpec R) :
     ExactModel spec.extendSignature where
@@ -148,6 +177,11 @@ def extendModel {S : ObservedSignature} {R : CausalEpistemicRecord S}
   product_law := R.model.product_law
   mechanism := spec.extendMechanism
 
+/--
+The record-level endpoint of endogenous learning.  The latent assignment type
+and hence the existing belief are retained; any current hard intervention is lifted
+along the old-observed-coordinate embedding.
+-/
 def learnRecord {S : ObservedSignature} {R : CausalEpistemicRecord S}
     (spec : EndogenousVariableSpec R) :
     CausalEpistemicRecord spec.extendSignature where
@@ -159,6 +193,11 @@ end EndogenousVariableSpec
 
 /-! ## Exogenous-root creation and provenance-guided destruction -/
 
+/--
+Data for a fresh independent root.  Unlike `EndogenousVariableSpec`, this
+does not name a mechanism or observed parents: it changes only the latent
+product space and is initially disconnected from all observed coordinates.
+-/
 structure ExogenousVariableSpec where
   Value : Type
   valueEnumeration : List Value
@@ -171,12 +210,20 @@ namespace ExogenousVariableSpec
 instance (spec : ExogenousVariableSpec) : DecidableEq spec.Value :=
   spec.valueDecidableEq
 
+/-- One uniform package used to describe either the new root or an old root. -/
 structure FiniteLatentData where
   Value : Type
   enumeration : List Value
   complete : forall value, value ∈ enumeration
   valueDecidableEq : DecidableEq Value
   factor : FiniteProbRecord Value
+
+/-!
+The next projections make the dependent `(old root) ⊎ (new root)` family
+available in the separate fields expected by `LatentExtension`.  Keeping the
+case split in `extendedData` makes the subsequent definitions definitionally
+coherent.
+-/
 
 def extendedData (spec : ExogenousVariableSpec) (M : ExactModel S) :
     Fin (M.latent.count + 1) -> FiniteLatentData :=
@@ -265,6 +312,11 @@ def oldSource (spec : ExogenousVariableSpec) (M : ExactModel S)
       M.latent.incident source child := by
   simp [extendLatent, oldSource]
 
+/--
+Extend an old latent assignment by a value for the new root.  The simp lemmas
+immediately below are the coordinate facts used when transport proofs later
+recover the old and fresh components.
+-/
 def extendAssignment (spec : ExogenousVariableSpec) (M : ExactModel S)
     (old : M.latent.Assignment) (fresh : spec.Value) :
     (spec.extendLatent M).Assignment :=
@@ -295,12 +347,20 @@ def extendAssignment (spec : ExogenousVariableSpec) (M : ExactModel S)
   exact TerminalVariableSpec.cast_symm_cast
     (spec.extendLatent_value_old M source) (old source)
 
+/--
+Form the new belief by the independent product of the old belief and the
+fresh factor, then reindex each pair as an extended dependent assignment.
+-/
 def extendBelief (spec : ExogenousVariableSpec)
     (R : CausalEpistemicRecord S) :
     FiniteProbRecord (spec.extendLatent R.model).Assignment := by
   exact (R.belief.product spec.factor).map
     (fun pair => spec.extendAssignment R.model pair.1 pair.2)
 
+/--
+Extend the model with the fresh root while preserving every observed equation:
+the equation simply ignores the new, initially disconnected input.
+-/
 def extendModel (spec : ExogenousVariableSpec) (M : ExactModel S) :
     ExactModel S where
   latent := spec.extendLatent M
@@ -317,6 +377,7 @@ def extendModel (spec : ExogenousVariableSpec) (M : ExactModel S) :
         (latents (spec.oldSource M source) (by
           simpa using incident)))
 
+/-- The record-level endpoint combines the extended model and product belief. -/
 def learnRecord (spec : ExogenousVariableSpec)
     (R : CausalEpistemicRecord S) : CausalEpistemicRecord S where
   model := spec.extendModel R.model

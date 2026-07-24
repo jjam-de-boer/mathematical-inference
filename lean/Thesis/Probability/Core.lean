@@ -13,20 +13,26 @@ keeps the development inside Lean's standard library while still checking the
 finite Kolmogorov and Bayes calculations used in the prose proof.
 -/
 
+/-- A decidable event on `X`, represented by an executable Boolean predicate. -/
 abbrev Event (X : Type u) := X → Bool
 
+/-- The event containing every value of the finite sample space. -/
 def topEvent : Event X :=
   fun _ => true
 
+/-- Boolean union of two decidable events. -/
 def union (E F : Event X) : Event X :=
   fun x => E x || F x
 
+/-- Boolean intersection of two decidable events. -/
 def inter (E F : Event X) : Event X :=
   fun x => E x && F x
 
+/-- Disjointness is stated propositionally, but only for Boolean events. -/
 def disjoint (E F : Event X) : Prop :=
   ∀ x, E x = true → F x = true → False
 
+/-- Count the members of a finite list satisfying a decidable event. -/
 def count (xs : List X) (E : Event X) : Nat :=
   xs.countP E
 
@@ -142,6 +148,7 @@ theorem list_ofFn_get {α : Type u} (xs : List α) :
   | cons _ _ _ =>
       simp
 
+/-- The three finite-inspection outcomes used for proposition-status events. -/
 inductive Status where
   | proved
   | refuted
@@ -197,6 +204,7 @@ structure Inspection (S : Type u) (A : S → Sort v) where
 
 namespace Inspection
 
+/-- The decidable event on states whose inspection returned `proved`. -/
 def provedEvent (I : Inspection S A) : Event S :=
   fun s => Status.isProved (I.status s)
 

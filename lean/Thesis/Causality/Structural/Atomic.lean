@@ -5,7 +5,16 @@ namespace Causality
 
 open Probability
 
-/-! Atomic compilation and semantic realization of finite hard interventions. -/
+/-!
+Atomic compilation and semantic realization of finite hard interventions.
+
+The compiler replaces each selected mechanism by a constant and removes its
+incoming directed and latent inputs one at a time. It deliberately keeps this
+long path distinct from the compact hard-intervention evaluator: the main
+result proves that the generated target record has the compact evaluator's
+unit-level semantics, rather than defining one presentation in terms of the
+other.
+-/
 
 /-! ## Atomic compilation of finite hard interventions -/
 
@@ -304,7 +313,13 @@ theorem fixed_after_latent_cut_other (mode : CausalMode S)
     different]
   exact fixed _ _
 
-/-! ### Coordinate-preserving compiled prefixes -/
+/-!
+### Coordinate-preserving compiled prefixes
+
+Every structural edit may change the dependent signature. This section records
+the coordinate maps explicitly, so later endpoint comparisons are stated after
+transport rather than relying on ill-typed definitional equality.
+-/
 
 /-- The target has the same node coordinates and value types as the source. -/
 structure NodeEquiv (S T : ObservedSignature) where
@@ -1045,7 +1060,13 @@ def directedCoordinates (S : ObservedSignature)
       assignment := by
   rfl
 
-/-! ### Structural constant-setting phase -/
+/-!
+### Structural constant-setting phase
+
+For each selected node, first replace its mechanism by the requested constant.
+The phase preserves all other mechanisms and keeps the compact intervention
+field empty; incoming edges are removed only in the following two phases.
+-/
 
 def setMode (mode : CausalMode S) (action : Action S) :
     List (Fin S.count) -> CausalMode S
@@ -1340,7 +1361,13 @@ theorem setMode_eval_exists (mode : CausalMode S) (action : Action S)
   let realized := setMode_eval_data mode action nodes nodup u
   exact ⟨realized.1, realized.2⟩
 
-/-! ### Directed-cut phase -/
+/-!
+### Directed-cut phase
+
+After constant setting, delete every incoming observed-parent edge of each
+selected node. The replacement equation remains constant, so the recursive
+evaluation proof shows that deleting each now-unused input preserves values.
+-/
 
 theorem directedCut_preserves_realizesAction (mode : CausalMode S)
     (action : Action S) (parent child : Fin S.count)
@@ -1608,7 +1635,14 @@ def directedExecutionFixed (mode : CausalMode S) (action : Action S)
       · rw [directedExecution, dif_neg parentInBounds]
         exact directedExecutionFixed mode action fixed rest
 
-/-! ### Latent-input-cut phase -/
+/-!
+### Latent-input-cut phase
+
+Finally remove every incoming latent-root incidence into selected nodes. This
+is the latent analogue of the directed-cut phase and completes graph surgery:
+selected nodes have constant equations with no incoming directed or latent
+inputs.
+-/
 
 def latentExecution (mode : CausalMode S) (action : Action S)
     : List (Nat × Nat) -> Execution mode

@@ -5,7 +5,17 @@ namespace Causality
 
 open Probability
 
-/-! Eventwise and query-level agreement of the two independently executed routes. -/
+/-!
+Eventwise and query-level agreement of the two independently executed routes.
+
+`FromFactual` starts from a factual source mode, whereas `FromEmpty` obtains
+an endpoint by literal root/node creation whose evaluator and event
+probabilities agree after coordinate transport.  Their dependent signatures
+need not be definitionally equal, so every comparison first transports observed
+assignments back through the route's `coordinates` witness.  The file proves
+pointwise evaluator agreement and then derives event, numerator, and
+denominator probability agreement.
+-/
 
 /-! ## Agreement of the two independently executed routes -/
 
@@ -29,7 +39,8 @@ theorem executedRoutes_endpoint_eval_agree
 /--
 The independently executed from-factual and from-empty routes assign the same
 probability to every occurrence-world event, not only to a query's designated
-numerator and denominator.
+numerator and denominator.  Both sides are first reduced to the same reference
+event probability by their respective endpoint-record theorems.
 -/
 theorem executedRoutes_eventProbability_equiv
     (fromFactual : ExecutedOccurrenceConstruction mode event)
@@ -45,6 +56,7 @@ theorem executedRoutes_eventProbability_equiv
     (QProb.equiv_symm
       (fromEmpty.endpointRecord_observedValue predicate))
 
+/-- The two routes therefore have extensionally equal evidence probabilities. -/
 theorem executedRoutes_denominator_equiv
     (fromFactual :
       ExecutedOccurrenceConstruction mode query.combinedEvent)
@@ -54,6 +66,7 @@ theorem executedRoutes_denominator_equiv
   QProb.equiv_trans fromFactual.denominator_equiv
     (QProb.equiv_symm fromEmpty.denominator_equiv)
 
+/-- The two routes likewise have extensionally equal queried-event probabilities. -/
 theorem executedRoutes_numerator_equiv
     (fromFactual :
       ExecutedOccurrenceConstruction mode query.combinedEvent)

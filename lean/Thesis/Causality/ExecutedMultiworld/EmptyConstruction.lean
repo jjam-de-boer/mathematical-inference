@@ -5,9 +5,30 @@ namespace Causality
 
 open Probability
 
-/-! Literal exogenous-root and occurrence-world construction from an empty mode. -/
+/-!
+Literal exogenous-root and occurrence-world construction from an empty mode.
+
+Unlike the from-factual route, this construction begins with zero observed and
+zero latent coordinates. It explicitly learns every required source root and
+occurrence node before linking, configuring, and reindexing them. Its purpose
+is to show that the multiworld endpoint can be obtained by literal typed edits,
+not merely by extending a pre-existing copy of the source model.
+
+Reading order: first construct the literal empty mode; then append one root
+for every source latent coordinate; then append isolated observed occurrence
+nodes and install their directed and latent links; finally install copied
+mechanisms, reindex the source belief, and prove agreement with the reference
+occurrence-multiworld evaluator.  The apparently numerous coordinate maps are
+necessary because each typed edit changes a dependent signature.
+-/
 
 /-! ## Literal construction from an empty causal mode -/
+
+/-!
+`EmptyCausalMode` is deliberately a genuine zero-coordinate SCM rather than
+an abbreviation for an arbitrary source mode.  Consequently every later root
+and observed node has an explicit provenance-producing creation transition.
+-/
 
 namespace EmptyCausalMode
 
@@ -52,6 +73,7 @@ theorem mode_noActiveIntervention :
 
 end EmptyCausalMode
 
+/-- Extract the creation data for one existing root of a source model. -/
 def FiniteLatentSCM.exogenousSpec (M : ExactModel S)
     (root : Fin M.latent.count) : ExogenousVariableSpec where
   Value := M.latent.Value root
@@ -60,9 +82,13 @@ def FiniteLatentSCM.exogenousSpec (M : ExactModel S)
   valueDecidableEq := M.latent.valueDecidableEq root
   factor := M.factor root
 
+/-! ## Recreating the source latent roots -/
+
 /--
 Append one fresh exogenous variable for every source-root occurrence.  This is
 an actual path of `learningExogenous` edits, not a pre-populated latent record.
+Besides the endpoint and path, the structure records exactly where old and
+new root coordinates land after the recursive construction.
 -/
 structure SourceRootsConstruction
     (M : ExactModel template) {S : ObservedSignature}
@@ -89,6 +115,11 @@ structure SourceRootsConstruction
 
 namespace SourceRootsConstruction
 
+/--
+Recursive root creation.  The empty case is the identity path.  The cons case
+creates the head root and then interprets the tail's coordinate invariants in
+the one-root-larger target signature.
+-/
 def build (M : ExactModel template) {S : ObservedSignature}
     (source : CausalMode S) :
     (roots : List (Fin M.latent.count)) ->
@@ -175,6 +206,7 @@ theorem build_noActiveIntervention
       dsimp only
       exact build_noActiveIntervention M transition.target stepEmpty rest
 
+/-- The special case that recreates every source root in its canonical order. -/
 abbrev All (M : ExactModel template) :=
   SourceRootsConstruction M EmptyCausalMode.mode
     (List.finRange M.latent.count)
@@ -215,6 +247,11 @@ theorem all_count_eq (built : All M) :
     EmptyCausalMode.model,
     EmptyCausalMode.latent] using built.count_eq
 
+/--
+The all-roots construction has exactly the source's root count, hence its
+recorded forward map is a finite-index equivalence rather than only an
+embedding.
+-/
 def sourceRootEquiv (built : All M) :
     AtomicIntervention.FinIndexEquiv M.latent.count
       built.target.record.model.latent.count where
@@ -234,6 +271,15 @@ end SourceRootsConstruction
 
 namespace EmptyOccurrenceConstruction
 
+/-! ## Allocating isolated occurrence coordinates -/
+
+/-!
+The reference occurrence multiworld has one encoded coordinate for each
+world/node pair.  Here those coordinates are first learned as terminal
+endogenous variables with no edges; the next section computes the edges that
+must subsequently be installed.
+-/
+
 abbrev World (M : ExactModel S) (event : CounterfactualEvent S) :=
   M.occurrenceMultiworld event
 
@@ -247,6 +293,7 @@ abbrev Nodes (M : ExactModel S) (event : CounterfactualEvent S)
     (EncodingSignature M event).isolatedNodeFamily roots.target
     (List.finRange (EncodingSignature M event).count)
 
+/-- Create one isolated endpoint node for every encoded occurrence coordinate. -/
 def buildNodes (M : ExactModel S) (event : CounterfactualEvent S)
     (roots : SourceRootsConstruction.All M) : Nodes M event roots :=
   TerminalListConstruction.build
@@ -282,6 +329,13 @@ theorem nodeValue_eq (nodes : Nodes M event roots)
     (congrArg (EncodingSignature M event).Value
       (finRange_get_position index))
 
+/-! ## Reinstating the reference multiworld graph -/
+
+/--
+The directed edge test before interventions are compiled.  It retains a source
+edge only when both encoded coordinates belong to the same world, which is why
+the resulting graph has no directed cross-world edges.
+-/
 def untreatedDirected (M : ExactModel S) (event : CounterfactualEvent S)
     (parent child : Fin (EncodingSignature M event).count) : Bool :=
   if _same :
@@ -336,6 +390,7 @@ def directedEdge (nodes : Nodes M event roots)
     rw [node_val, node_val]
     exact untreatedDirected_earlier edge
 
+/-- Enumerate the within-world source directed edges that must be installed. -/
 def directedEdges (nodes : Nodes M event roots) :
     List (DirectedEdge nodes.signature) :=
   (List.finRange (EncodingSignature M event).count).flatMap fun child =>
@@ -376,6 +431,10 @@ def latentEdge
   source := rootBeforeLatent roots nodes directed root
   child := directed.node (node nodes child)
 
+/--
+Enumerate source-root incidences for every occurrence node.  Roots are shared
+between worlds; only their target incidence is duplicated.
+-/
 def latentEdges
     (roots : SourceRootsConstruction.All M)
     (nodes : Nodes M event roots)
@@ -411,6 +470,8 @@ theorem latentEdge_mem
 /--
 Every occurrence coordinate and every source root is created from the empty
 mode before its causal links are installed by genuine `relate` transitions.
+The four fields correspond to the four construction phases and retain their
+individual paths and coordinate witnesses for later composition.
 -/
 structure Linked (M : ExactModel S) (event : CounterfactualEvent S) where
   roots : SourceRootsConstruction.All M
@@ -430,6 +491,15 @@ def Linked.build (M : ExactModel S) (event : CounterfactualEvent S) :
   ⟨roots, nodes, directed, latent⟩
 
 namespace Linked
+
+/-! ## Assembling and transporting the linked endpoint -/
+
+/-!
+This namespace packages the four phase results as one causal-edit path.  The
+next group of lemmas proves that the endpoint's coordinate and root maps have
+the same finite shape and value types as the reference encoding.  These facts
+are prerequisites for copying mechanisms and beliefs without unsafe casts.
+-/
 
 abbrev signature (linked : Linked M event) : ObservedSignature :=
   linked.directed.signature
@@ -459,6 +529,7 @@ theorem build_noActiveIntervention (M : ExactModel S)
   exact LatentLinksConstruction.build_noActiveIntervention directed.target
     directedEmpty (latentEdges roots nodes directed)
 
+/-- Concatenate root creation, node creation, directed linking, and latent linking. -/
 def path (linked : Linked M event) :
     CausalEditPath EmptyCausalMode.mode linked.target :=
   linked.roots.path.append
@@ -536,6 +607,12 @@ theorem incident (linked : Linked M event)
     (latentEdge_mem linked.roots linked.nodes linked.directed
       root child incident)
 
+/--
+The bijection from encoded reference coordinates to the endpoint coordinates.
+It follows from equality of finite counts.  `coordinates` below pairs this
+index equivalence with the separately proved value-type equality needed for
+transport.
+-/
 def nodeEquiv (linked : Linked M event) :
     AtomicIntervention.NodeEquiv (EncodingSignature M event)
       linked.signature where
@@ -577,6 +654,17 @@ def sameRoots (linked : Linked mode.record.model event) :
   rootEquiv := linked.sourceRootEquiv
   value_eq := fun root => (linked.sourceRootValue_eq root).symm
 
+/-! ## Installing copied equations and reindexing belief -/
+
+/-!
+At this point the endpoint has the right graph but its creation-time equations
+are placeholders.  A `Fiber` decodes each endpoint coordinate back to its
+world/node occurrence so `representedMechanism` can install the corresponding
+source equation.  The source belief is then transported along the accumulated
+root equivalence.
+-/
+
+/-- Transport one source latent assignment to the roots created by this route. -/
 def rootAssignment (linked : Linked mode.record.model event)
     (assignment : mode.record.model.latent.Assignment) :
     linked.target.record.model.latent.Assignment :=
@@ -640,7 +728,11 @@ theorem worldNode_incident (linked : Linked M event)
   apply linked.incident
   simpa using incident
 
-/-- A decoded occurrence coordinate represented by one actual endpoint node. -/
+/--
+A decoded occurrence coordinate represented by one actual endpoint node.  The
+`represented` equality is the local dependent-type bridge used to ask the
+endpoint for values at that coordinate.
+-/
 structure Fiber (linked : Linked M event)
     (child : Fin linked.signature.count) where
   occurrence : OccurrenceNode S event
@@ -691,6 +783,10 @@ theorem decodedFiber_eq_worldFiber (linked : Linked M event)
           cases representedEq
           rfl
 
+/--
+Read the original source mechanism through a decoded fiber.  Parent and latent
+inputs are transported back along the coordinate and root maps, respectively.
+-/
 def representedMechanism (linked : Linked M event)
     {child : Fin linked.signature.count}
     (fiber : Fiber linked child)
@@ -737,6 +833,7 @@ def sourceMechanism (linked : Linked M event)
     linked.signature.Value child :=
   linked.fiberMechanism child parents latents (linked.decodedFiber child)
 
+/-- Replace all placeholder mechanisms by their decoded source mechanisms. -/
 def configureOperation (linked : Linked M event) :
     StructuralMechanismReplacement.Operation linked.target.record where
   replacement := linked.sourceMechanism
@@ -755,6 +852,10 @@ def configureTransition (linked : Linked mode.record.model event) :
   operation := .replacingMechanisms linked.configureOperation
   realized := rfl
 
+/--
+Reindex the source prior onto the newly created roots.  The reference evaluator
+is supplied explicitly so the operation carries its semantic provenance.
+-/
 def reindexBeliefOperation (linked : Linked mode.record.model event) :
     BeliefReindexing.CertifiedOperation
       linked.configureTransition.target.record where
@@ -855,6 +956,14 @@ theorem combinedAction_worldNode_some (linked : Linked M event)
     (linked.fiberAction (linked.worldNode world node)) fiberEq]
   simp [fiberAction, worldFiber, selected]
 
+/-! ## Semantic comparison with the reference multiworld -/
+
+/--
+At one world/node coordinate, the configured endpoint evaluator equals the
+source evaluator under that world's action.  The induction follows source
+topological order; selected nodes use `combinedAction`, while unselected nodes
+reuse the transported parent and root inputs.
+-/
 theorem configured_evalUnder_worldNode
     (linked : Linked mode.record.model event)
     (assignment : mode.record.model.latent.Assignment)
@@ -888,6 +997,11 @@ termination_by child.val
 decreasing_by
   exact S.directed_earlier edge
 
+/--
+Assemble the coordinatewise comparison into equality with the encoded
+reference multiworld assignment.  This is the endpoint-level result consumed
+by the from-empty execution route.
+-/
 theorem configured_evalUnder_eq_reference
     (linked : Linked mode.record.model event)
     (assignment : mode.record.model.latent.Assignment) :
@@ -936,6 +1050,16 @@ theorem configured_evalUnder_eq_reference
         linked.coordinates actual).symm
     _ = linked.coordinates.transportObserved reference :=
       congrArg linked.coordinates.transportObserved back
+
+/-- Package the from-empty route's configured state for route-independent clients. -/
+def configuration (linked : Linked mode.record.model event) :
+    MultiworldConfiguration mode.record.model event where
+  signature := linked.signature
+  record := linked.configureRecord
+  coordinates := linked.coordinates
+  rootAssignment := linked.rootAssignment
+  action := linked.combinedAction
+  evaluatesAsReference := linked.configured_evalUnder_eq_reference
 
 end Linked
 

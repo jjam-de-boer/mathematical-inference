@@ -1,11 +1,20 @@
 import Thesis.Causality.ExecutedMultiworld.Linking
+import Thesis.Causality.ExecutedMultiworld.Endpoint
 
 namespace Thesis
 namespace Causality
 
 open Probability
 
-/-! Equation installation and complete execution from an existing factual mode. -/
+/-!
+Equation installation and complete execution from an existing factual mode.
+
+The first section configures copied occurrence worlds and reindexes the source
+belief. The second section runs the atomic intervention compiler and reads
+probabilities from its actual endpoint record. Keeping those steps separate
+matters: the occurrence multiworld remains an independent semantic reference,
+not a pre-installed target model.
+-/
 
 /-! ## Executable equation installation -/
 
@@ -346,7 +355,26 @@ theorem LinkedOccurrenceCopies.configured_evalUnder_eq_reference
     _ = linked.coordinates.transportObserved reference :=
       congrArg linked.coordinates.transportObserved back
 
-/-! ## Complete from-factual execution -/
+/-- Package the from-factual route's configured state for route-independent clients. -/
+def LinkedOccurrenceCopies.configuration
+    {event : CounterfactualEvent template}
+    (linked : LinkedOccurrenceCopies template source event.atoms) :
+    MultiworldConfiguration source.record.model event where
+  signature := linked.signature
+  record := linked.configureRecord
+  coordinates := linked.coordinates
+  rootAssignment := linked.rootAssignment
+  action := linked.combinedAction
+  evaluatesAsReference := linked.configured_evalUnder_eq_reference
+
+/-!
+## Complete from-factual execution
+
+This route starts from a fresh factual copy of the source model, creates the
+additional occurrence worlds, installs their equations, transports the belief,
+and only then compiles the combined action. Endpoint equalities below are
+therefore semantic statements about a recorded edit path.
+-/
 
 /--
 Counterfactual construction starts from a fresh factual epistemic mode: the same
@@ -664,8 +692,18 @@ theorem endpointRecord_observedValue
           (fun assignment =>
             construction.configuredEvent_eval predicate assignment))
         (QProb.equiv_symm
-          (FiniteProbRecord.map_probVal mode.record.model.prior
-            construction.World.eval predicate))))
+      (FiniteProbRecord.map_probVal mode.record.model.prior
+        construction.World.eval predicate))))
+
+/-- The route-specific endpoint exposed through the shared multiworld interface. -/
+noncomputable def sharedEndpoint
+    (construction : ExecutedOccurrenceConstruction mode event) :
+    MultiworldEndpoint mode.record.model event where
+  signature := construction.signature
+  record := construction.endpointRecord
+  coordinates := construction.coordinates
+  eventAt := construction.endpointEvent
+  observedValue := construction.endpointRecord_observedValue
 
 /-! ## Query probabilities read from the executed endpoint -/
 
@@ -675,66 +713,39 @@ variable {S : ObservedSignature} {mode : CausalMode S}
 noncomputable def denominator
     (construction :
       ExecutedOccurrenceConstruction mode query.combinedEvent) : QProb :=
-  construction.endpointRecord.observedValue
-    (construction.endpointEvent
-      (query.combinedConditionPredicate construction.World))
+  MultiworldEndpoint.denominator query construction.sharedEndpoint
 
 noncomputable def numerator
     (construction :
       ExecutedOccurrenceConstruction mode query.combinedEvent) : QProb :=
-  construction.endpointRecord.observedValue
-    (construction.endpointEvent
-      (query.combinedNumeratorPredicate construction.World))
+  MultiworldEndpoint.numerator query construction.sharedEndpoint
 
 noncomputable def denote
     (construction :
       ExecutedOccurrenceConstruction mode query.combinedEvent) :
     ProbabilityResult.Result :=
-  ProbabilityResult.divide (some construction.numerator)
-    (some construction.denominator)
+  MultiworldEndpoint.denote query construction.sharedEndpoint
 
 theorem denominator_equiv
     (construction :
       ExecutedOccurrenceConstruction mode query.combinedEvent) :
     QProb.Equiv construction.denominator
-      (query.denominator mode.record.model) := by
-  exact QProb.equiv_trans
-    (construction.endpointRecord_observedValue
-      (query.combinedConditionPredicate construction.World))
-    (QProb.equiv_trans
-      (FiniteProbRecord.map_probVal mode.record.model.prior
-        construction.World.eval
-        (query.combinedConditionPredicate construction.World))
-      (FiniteProbRecord.probVal_congr mode.record.model.prior _ _
-        (fun assignment =>
-          query.combinedConditionPredicate_eval
-            construction.World assignment)))
+      (query.denominator mode.record.model) :=
+  MultiworldEndpoint.denominator_equiv query construction.sharedEndpoint
 
 theorem numerator_equiv
     (construction :
       ExecutedOccurrenceConstruction mode query.combinedEvent) :
     QProb.Equiv construction.numerator
-      (query.numerator mode.record.model) := by
-  exact QProb.equiv_trans
-    (construction.endpointRecord_observedValue
-      (query.combinedNumeratorPredicate construction.World))
-    (QProb.equiv_trans
-      (FiniteProbRecord.map_probVal mode.record.model.prior
-        construction.World.eval
-        (query.combinedNumeratorPredicate construction.World))
-      (FiniteProbRecord.probVal_congr mode.record.model.prior _ _
-        (fun assignment =>
-          query.combinedNumeratorPredicate_eval
-            construction.World assignment)))
+      (query.numerator mode.record.model) :=
+  MultiworldEndpoint.numerator_equiv query construction.sharedEndpoint
 
 noncomputable def semanticAgreement
     (construction :
       ExecutedOccurrenceConstruction mode query.combinedEvent) :
     ProbabilityResult.Equivalent construction.denote
       (query.denote mode.record.model) :=
-  ProbabilityResult.divide_congr
-    (.value construction.numerator_equiv)
-    (.value construction.denominator_equiv)
+  MultiworldEndpoint.semanticAgreement query construction.sharedEndpoint
 
 end ExecutedOccurrenceConstruction
 

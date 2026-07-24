@@ -6,12 +6,34 @@ namespace Causality
 
 open Probability
 
-/-! Transport certificates enriched with executable modal realizations. -/
+/-!
+Transport certificates enriched with executable modal realizations.
+
+Joint and conditional kernel queries share the same operation-realization
+payload once their source term and operation kernel are fixed.  The generic
+structures below carry that payload once; the established joint/conditional
+names remain public structures with their original constructors. Explicit
+adapters connect those stable records to the generic implementation.
+-/
 
 /--
-A transported joint certificate whose source kernel and every Pearl-rule leaf
+An identification certificate whose source kernel and every Pearl-rule leaf
 are tied to executable record operations in every compatible target model.
 -/
+structure OperationRealizedCertificate
+    (sound : PublishedSoundness S G) (sourceTerm : ProbabilityTerm S)
+    (operationKernel : Kernel S) where
+  certificate : IdentificationCertificate G sourceTerm
+  trace : ModalDerivationTrace G certificate.derivation
+  realized : forall (model : ExactModel S) (compatible : Compatible model G)
+      (assignment : S.Assignment)
+      (sourceSupported : sourceTerm.SupportedAt model assignment),
+    let supportTree := certificate.supported model compatible assignment
+      sourceSupported
+    KernelOperationRealization model operationKernel assignment ×
+      trace.OperationRealizations assignment
+        (sound.primitive model compatible) supportTree
+
 structure OperationRealizedJointCertificate
     (sound : PublishedSoundness S G) (query : JointKernelQuery S) where
   certificate : JointIdentificationCertificate G query
@@ -25,7 +47,6 @@ structure OperationRealizedJointCertificate
       trace.OperationRealizations assignment
         (sound.primitive model compatible) supportTree
 
-/-- Conditional counterpart of `OperationRealizedJointCertificate`. -/
 structure OperationRealizedConditionalCertificate
     (sound : PublishedSoundness S G) (query : ConditionalKernelQuery S) where
   certificate : ConditionalIdentificationCertificate G query
@@ -39,19 +60,39 @@ structure OperationRealizedConditionalCertificate
       trace.OperationRealizations assignment
         (sound.primitive model compatible) supportTree
 
+def OperationRealizedJointCertificate.toGeneric
+    (certificate : OperationRealizedJointCertificate sound query) :
+    OperationRealizedCertificate sound query.sourceTerm query.operationKernel where
+  certificate := certificate.certificate.toGeneric
+  trace := certificate.trace
+  realized := certificate.realized
+
+def OperationRealizedConditionalCertificate.toGeneric
+    (certificate : OperationRealizedConditionalCertificate sound query) :
+    OperationRealizedCertificate sound query.sourceTerm query.operationKernel where
+  certificate := certificate.certificate.toGeneric
+  trace := certificate.trace
+  realized := certificate.realized
+
 /--
-An operation-realized joint certificate indexed by a concrete compatible
-epistemic mode.  The underlying certificate remains uniform over all
-compatible models; `atMode` below specializes it to the model stored at this
-mode.
+An operation-realized certificate indexed by a concrete compatible epistemic
+mode.  The underlying certificate remains uniform over all compatible models;
+the joint/conditional `atMode` wrappers below specialize it to the stored
+model.
 -/
+structure ModeIndexedOperationRealizedCertificate
+    (mode : CausalMode S) (G : ObservedGraph S)
+    (sound : PublishedSoundness S G) (sourceTerm : ProbabilityTerm S)
+    (operationKernel : Kernel S) where
+  compatible : mode.CompatibleWith G
+  certificate : OperationRealizedCertificate sound sourceTerm operationKernel
+
 structure ModeIndexedOperationRealizedJointCertificate
     (mode : CausalMode S) (G : ObservedGraph S)
     (sound : PublishedSoundness S G) (query : JointKernelQuery S) where
   compatible : mode.CompatibleWith G
   certificate : OperationRealizedJointCertificate sound query
 
-/-- Conditional counterpart of `ModeIndexedOperationRealizedJointCertificate`. -/
 structure ModeIndexedOperationRealizedConditionalCertificate
     (mode : CausalMode S) (G : ObservedGraph S)
     (sound : PublishedSoundness S G) (query : ConditionalKernelQuery S) where
@@ -174,7 +215,7 @@ variable {S : ObservedSignature} {G : ObservedGraph S}
 theorem identifiable
     (realized : OperationRealizedJointCertificate sound query) :
     TypeTheoreticIdentifiable G query :=
-  realized.certificate.identifiable sound
+  JointIdentificationCertificate.identifiable sound realized.certificate
 
 end OperationRealizedJointCertificate
 
@@ -186,7 +227,7 @@ variable {S : ObservedSignature} {G : ObservedGraph S}
 theorem identifiable
     (realized : OperationRealizedConditionalCertificate sound query) :
     TypeTheoreticConditionalIdentifiable G query :=
-  realized.certificate.identifiable sound
+  ConditionalIdentificationCertificate.identifiable sound realized.certificate
 
 end OperationRealizedConditionalCertificate
 

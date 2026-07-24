@@ -285,6 +285,16 @@ The complete eight-variable running example, rebuilt on the theorem-facing
 finite probability, latent-SCM, intervention, and modal APIs.
 -/
 
+/-!
+The observed coordinates, in topological order, are prestige, quality, topic,
+committee expertise, fit, shortlist, funding, and offer. The six latent
+coordinates are respectively a shared background cause of prestige and
+quality, private prestige and quality seeds, private topic and committee seeds,
+and a private funding seed. The declarations below first make this finite model
+explicit, then reduce its named events to predicates on the latent assignment,
+and finally ask Lean to calculate the resulting finite rational probabilities.
+-/
+
 def signature : ObservedSignature where
   count := 8
   Value := fun _ => Bool
@@ -348,6 +358,7 @@ def latent : LatentExtension signature where
       (source.val = 4 /\ child.val = 3) \/
       (source.val = 5 /\ child.val = 6))
 
+/-- The six independent Bernoulli factors, ordered by the latent names below. -/
 def factor (source : Fin latent.count) : FiniteProbRecord Bool :=
   match source.val with
   | 0 => bernoulli 1 2 (by decide)
@@ -413,6 +424,11 @@ theorem remaining_child_is_offer (child : Fin signature.count)
     shortlistNode, fundingNode, offerNode, node, signature] at h0 h1 h2 h3 h4 h5 h6 ⊢
   omega
 
+/--
+The complete tenure-track SCM. The ordered conditional chain in this definition
+is exactly the structural-equation display in the thesis; every branch is
+selected by the documented coordinate names above.
+-/
 def model : ExactModel signature where
   latent := latent
   factor := factor
@@ -467,6 +483,9 @@ theorem background_projects_to_confounding :
     model.observedGraph.bidirected prestigeNode qualityNode = true := by
   decide
 
+/-! ## Events and their latent reductions -/
+
+/-- The observational event that institutional prestige is true. -/
 def prestigeEvent (assignment : signature.Assignment) : Bool :=
   assignment prestigeNode
 
@@ -488,6 +507,7 @@ def fitAndOfferEvent (assignment : signature.Assignment) : Bool :=
 def noPrestigeGoodNoOfferEvent (assignment : signature.Assignment) : Bool :=
   !prestigeEvent assignment && qualityEvent assignment && !offerEvent assignment
 
+/-- A convenient unreduced rational literal for the displayed example values. -/
 def ratio (num den : Nat) (positive : 0 < den) : QProb :=
   ⟨num, den, positive⟩
 
@@ -529,6 +549,14 @@ def latentOfferDoPrestige (u : model.latent.Assignment) : Bool :=
 
 def latentOfferDoFit (u : model.latent.Assignment) : Bool :=
   latentQuality u && latentFunding u
+
+/-!
+## Structural evaluation lemmas
+
+These lemmas connect each named observed event to a Boolean predicate on the
+six independent latent bits. They are the bridge between the structural
+equations above and the closed finite computations below.
+-/
 
 theorem eval_prestige (u : model.latent.Assignment) :
     prestigeEvent (model.eval u) = latentPrestige u := by
@@ -596,6 +624,15 @@ theorem eval_offer_doFit (u : model.latent.Assignment) :
     prestigeNode, qualityNode, topicNode, committeeNode, fitNode,
     shortlistNode, fundingNode, offerNode, node, signature]
 
+/-!
+## Closed finite probability calculations
+
+Each theorem in this block is discharged by kernel reduction over the finite
+six-bit latent sample space. The local recursion-depth setting only permits
+that normalisation to finish; it changes neither the model nor the statement
+being checked.
+-/
+
 set_option maxRecDepth 100000 in
 theorem prior_prestige :
     QProb.Equiv (model.prior.probVal latentPrestige)
@@ -646,6 +683,15 @@ set_option maxRecDepth 100000 in
 theorem prior_evidenceAndOfferDoFit :
     QProb.Equiv (model.prior.probVal latentEvidenceAndOfferDoFit)
       (ratio 3 64 (by decide)) := by decide
+
+/-!
+## Lift latent calculations to observed and interventional queries
+
+The next two reusable lemmas are intentionally not computational: they state
+the general pushforward step that turns an evaluation equality plus one checked
+latent probability into a probability of an SCM event. The named probability
+theorems following them are short applications of this bridge.
+-/
 
 theorem observational_from_prior
     (event : signature.Assignment -> Bool)
@@ -762,6 +808,15 @@ theorem evidence_positive :
     FiniteLatentSCM.observationalValue, FiniteProbRecord.probVal] using
       ((QProb.equiv_num_pos_iff evidence_probability).mpr (by decide))
 
+/-!
+## Counterfactual, twin-network, and modal endpoint checks
+
+The posterior conditions the shared latent prior on the displayed evidence.
+The next results compute the same counterfactual first through direct SCM
+semantics, then through the independent twin network, and finally through the
+two executed modal construction routes.
+-/
+
 def posterior : FiniteProbRecord model.latent.Assignment :=
   model.prior.conditionOn
     (fun u => noPrestigeGoodNoOfferEvent (model.eval u)) (by
@@ -855,6 +910,14 @@ theorem counterfactual_offer_do_fit_given_evidence :
       (QProb.div_congr numerator denominator
         ((QProb.equiv_num_pos_iff denominator).mpr (by decide)) (by decide))
       (by decide))
+
+/-!
+## Principal modal query
+
+This final block packages the prestige intervention as the query consumed by
+the generic occurrence-indexed construction and connects its actual endpoint
+record to the displayed value one half.
+-/
 
 /-- The principal counterfactual query used by the modal multiworld example. -/
 def prestigeCounterfactualQuery : CounterfactualQuery signature :=

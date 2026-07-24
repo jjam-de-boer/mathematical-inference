@@ -27,9 +27,18 @@ end ObservedSignature
 
 namespace ProbabilityResult
 
+/--
+The partial result of evaluating a probability expression. `none` means that
+the expression has no value at this assignment—for example because a
+conditioning denominator is zero. It never means the rational number zero.
+-/
 abbrev Result := Option QProb
 
-/-- Partial rational values agree only when both are unsupported or equivalent. -/
+/--
+Extensional equality for partial results. A supported result may only agree
+with another supported result, and their rational values agree by
+cross-multiplication through `QProb.Equiv`.
+-/
 inductive Equivalent : Result -> Result -> Type
   | unsupported : Equivalent none none
   | value {left right : QProb} :
@@ -58,6 +67,7 @@ def trans {left middle right : Result}
       | value hmrValue =>
           exact .value (QProb.equiv_trans hlmValue hmrValue)
 
+/-- Addition is defined only when both summands are supported. -/
 def add (left right : Result) : Result :=
   match left with
   | none => none
@@ -66,6 +76,7 @@ def add (left right : Result) : Result :=
       | none => none
       | some rightValue => some (QProb.add leftValue rightValue)
 
+/-- Multiplication is defined only when both factors are supported. -/
 def multiply (left right : Result) : Result :=
   match left with
   | none => none
@@ -74,6 +85,11 @@ def multiply (left right : Result) : Result :=
       | none => none
       | some rightValue => some (QProb.mul leftValue rightValue)
 
+/--
+Division propagates failed support and additionally checks that the displayed
+denominator has positive numerator. This is the single point at which a
+conditional probability can become `none`.
+-/
 def divide (numerator denominator : Result) : Result :=
   match numerator with
   | none => none
@@ -86,6 +102,7 @@ def divide (numerator denominator : Result) : Result :=
           else
             none
 
+/-- A finite sum is supported exactly when every listed summand is supported. -/
 def sum : List Result -> Result
   | [] => some QProb.zero
   | value :: values => add value (sum values)
@@ -430,7 +447,13 @@ noncomputable def eventTerm_denote
         model.observationalDist S.assignmentEnumeration
         S.assignmentEnumeration_nodup S.assignmentEnumeration_complete event)))
 
-/-- Support and equality at one finite valuation, used by partial kernels. -/
+/--
+Support and equality at one finite valuation, used by partial kernels.
+
+The witness lives in `Type`, not merely `Prop`, because later certificate
+constructions need the computed rational value as well as the fact that the
+expression is defined.
+-/
 def SupportedAt (model : FiniteLatentSCM S) (term : ProbabilityTerm S)
     (assignment : S.Assignment) : Type :=
   Sigma fun value =>
@@ -553,7 +576,11 @@ structure LocalPrimitiveSoundness (G : ObservedGraph S)
           (.kernel ⟨y, x, NodeSet.union z w⟩)
           (.kernel ⟨z, x, w⟩)) assignment
 
-/-- Recursive support evidence for one valuation of one derivation. -/
+/--
+Recursive support evidence for one valuation of one derivation. The first two
+components certify the endpoints. The final component mirrors the syntax tree
+and carries precisely the subexpression support needed by each proof rule.
+-/
 def LocalDerivationSupport (model : FiniteLatentSCM S)
     (assignment : S.Assignment) {left right : ProbabilityTerm S}
     (derivation : DoCalculusDerivation G left right) : Type :=
@@ -597,6 +624,11 @@ noncomputable def DoCalculusDerivation.denotational_soundAt
     (derivation : DoCalculusDerivation G left right)
     (supported : LocalDerivationSupport model assignment derivation) :
     ProbabilityTerm.EquivalentAt model left right assignment := by
+  /-
+  The proof follows the certificate syntax exactly: primitive leaves use the
+  supplied local laws, while congruence constructors recurse into their
+  independently supported subderivations.
+  -/
   induction derivation generalizing assignment with
   | refl => exact ProbabilityResult.refl _
   | symm derivation ih =>

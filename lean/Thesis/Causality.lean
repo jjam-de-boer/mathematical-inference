@@ -19,4 +19,12 @@ import Thesis.Causality.EndpointAgreement
 
 /-!
 Stable facade for the finite causal, modal, and counterfactual development.
+
+Suggested reading order for a reader familiar with the thesis but new to the
+source is `Graph`, `Model`, `Semantics`, and `Identification`; then
+`Modalities` and `Structural`; then `Counterfactual`, `Multiworld`, and the
+modules below `ExecutedMultiworld`.  `ModalRealization` and
+`ModalCounterfactual` connect the executable edit paths back to query
+semantics.  The facade deliberately excludes the external completeness
+interfaces; those begin in `Thesis.CausalTransport`.
 -/

@@ -14,6 +14,12 @@ The executable operation changes the record.  The transition is the modal
 separator that records its source, target, and realization proof.  Directed
 and latent links are the two constructors of one causal `relate` family; no
 second metadata graph is maintained.
+
+This module is the public composition layer for structural edits, despite the
+historic `Core` filename. The lower-level data transformations are defined in
+`Links`, `Learning`, and `SurgeryCore`, which it imports above. Keeping the
+composition here gives every public edit the same `CausalEditOperation` and
+`CausalEditTransition` interface.
 -/
 
 inductive CausalLinkKind where

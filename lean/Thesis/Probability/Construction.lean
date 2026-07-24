@@ -3,6 +3,17 @@ import Thesis.Probability.FiniteRecord
 namespace Thesis
 namespace Probability
 
+/-!
+Finite dependent-product constructions for probability records.
+
+This module turns independently specified finite coordinate records into one
+record on their dependent product.  The recursive implementation works from
+the terminal coordinate backwards because that gives a constructively explicit
+enumeration and avoids assuming a homogeneous value type.  The resulting
+record is used as the latent product prior of a finite SCM.
+-/
+
+/-- Remove repeated values while retaining one representative of each value. -/
 def deduplicate [DecidableEq X] : List X -> List X
   | [] => []
   | value :: values =>
@@ -41,6 +52,7 @@ theorem deduplicate_nodup [DecidableEq X] (values : List X) :
 
 namespace FiniteProduct
 
+/-- A dependent assignment chooses one value for every finite coordinate. -/
 abbrev Assignment (n : Nat) (Value : Fin n -> Type u) :=
   (i : Fin n) -> Value i
 

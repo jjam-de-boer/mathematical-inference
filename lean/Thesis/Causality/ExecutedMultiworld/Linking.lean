@@ -5,9 +5,27 @@ namespace Causality
 
 open Probability
 
-/-! Executable directed and latent linking with occurrence-coordinate equivalences. -/
+/-!
+Executable directed and latent linking with occurrence-coordinate equivalences.
 
-/-! ## Executable linking -/
+The preceding creation phase produces isolated observed-node copies and any
+needed latent roots.  This file installs the missing graph edges through real
+`relate` transitions.  Its reading order is: generic recursive installers for
+directed and latent edge lists; enumeration of the links required by every
+occurrence copy; composition of those installers; then coordinate and root
+equivalences with the semantic occurrence-multiworld encoding.  The last
+equivalences are what let later code compare an executable endpoint with the
+reference multiworld model without identifying their dependent signatures.
+-/
+
+/-! ## Generic executable linking -/
+
+/-!
+Both builders below carry more than a target mode.  Their `roots`, `node`,
+`preserves`, and `installs` fields are induction invariants: each recursive
+`relate` step may change a dependent signature, so later steps need explicit
+maps back to the original coordinates.
+-/
 
 /-- A rank-respecting directed edge to be installed by a real `relate` edit. -/
 structure DirectedEdge (S : ObservedSignature) where
@@ -48,10 +66,16 @@ structure DirectedLinksConstruction {S : ObservedSignature}
 
 namespace DirectedLinksConstruction
 
+/-- Turn one edge specification into the primitive directed-link operation. -/
 def operation (_mode : CausalMode S) (edge : DirectedEdge S) :
     DirectedLink.RelateOperation S edge.parent edge.child edge.earlier where
   replacement := fun _ _ _ => S.defaultValue edge.child
 
+/--
+Install the list from left to right.  In the recursive branch, `afterAdd`
+reinterprets each remaining edge in the just-extended signature; the resulting
+invariants compose the one-step preservation facts with the tail's facts.
+-/
 def build {S : ObservedSignature} (source : CausalMode S) :
     (edges : List (DirectedEdge S)) -> DirectedLinksConstruction source edges
   | [] =>
@@ -145,10 +169,16 @@ structure LatentLinksConstruction {S : ObservedSignature}
 
 namespace LatentLinksConstruction
 
+/-- Turn one root-to-node specification into the primitive latent-link operation. -/
 def operation (mode : CausalMode S) (edge : LatentEdge mode) :
     LatentLink.RelateOperation mode.record edge.source edge.child where
   replacement := fun _ _ => S.defaultValue edge.child
 
+/--
+The latent analogue of `DirectedLinksConstruction.build`.  It preserves the
+observed signature, but still transports root coordinates after each edit so
+the final `installs` theorem has the source-root type expected by clients.
+-/
 def build {S : ObservedSignature} (source : CausalMode S) :
     (edges : List (LatentEdge source)) -> LatentLinksConstruction source edges
   | [] =>
@@ -216,7 +246,14 @@ decreasing_by simp
 
 end LatentLinksConstruction
 
-/-! ## Linking every copied occurrence -/
+/-! ## Links required by occurrence copies -/
+
+/-!
+`OccurrenceCopiesConstruction` has already allocated a factual copy and one
+copy per counterfactual atom, but its copies are isolated.  The following two
+finite lists enumerate exactly the source directed and latent edges to restore
+inside every copied world.  No edges are installed between distinct worlds.
+-/
 
 def occurrenceDirectedEdge
     (copies : OccurrenceCopiesConstruction template source atoms)
@@ -229,6 +266,11 @@ def occurrenceDirectedEdge
     rw [copies.copiedNode_val, copies.copiedNode_val]
     exact Nat.add_lt_add_left (template.directed_earlier edge) _
 
+/--
+Enumerate every directed source edge once for each counterfactual occurrence.
+The nested finite ranges are an executable finite traversal; `filterMap`
+retains precisely those pairs whose Boolean edge test succeeds.
+-/
 def occurrenceDirectedEdges
     (copies : OccurrenceCopiesConstruction template source atoms) :
     List (DirectedEdge copies.signature) :=
@@ -252,6 +294,7 @@ theorem occurrenceDirectedEdge_mem
   refine ⟨parent, List.mem_finRange parent, ?_⟩
   simp [edge]
 
+/-- Transport a source root through copy creation and directed-link installation. -/
 def copiedRoot
     (copies : OccurrenceCopiesConstruction template source atoms)
     (directed : DirectedLinksConstruction copies.target
@@ -284,6 +327,11 @@ def occurrenceLatentEdge
   source := copiedRoot copies directed root
   child := directed.node (copies.copiedNode occurrence child)
 
+/--
+Enumerate every latent incidence once for each copied occurrence.  The factual
+copy's old incidences are already preserved by creation, so this list covers
+only the additional worlds.
+-/
 def occurrenceLatentEdges
     {source : CausalMode template}
     (copies : OccurrenceCopiesConstruction template source atoms)
@@ -316,7 +364,11 @@ theorem occurrenceLatentEdge_mem
   refine ⟨child, List.mem_finRange child, ?_⟩
   simp [incident]
 
-/-- Isolated copies followed by actual directed and latent `relate` edits. -/
+/--
+Isolated copies followed by actual directed and latent `relate` edits.  The
+three fields are intentionally retained separately, so their paths and
+coordinate-transport certificates remain available to subsequent proofs.
+-/
 structure LinkedOccurrenceCopies (template : ObservedSignature)
     (source : CausalMode template)
     (atoms : List (CounterfactualAtom template)) where
@@ -328,6 +380,10 @@ structure LinkedOccurrenceCopies (template : ObservedSignature)
 
 namespace LinkedOccurrenceCopies
 
+/--
+Build the executable multiworld in the same order used by the theory:
+allocate copies, restore directed edges, then restore latent incidences.
+-/
 def build (template : ObservedSignature) (source : CausalMode template)
     (atoms : List (CounterfactualAtom template)) :
     LinkedOccurrenceCopies template source atoms :=
@@ -499,6 +555,15 @@ end LinkedOccurrenceCopies
 
 /-! ## Coordinate equivalence with occurrence syntax -/
 
+/-!
+The executable construction orders its nodes by creation history, while the
+reference semantics uses `OccurrenceMultiworld.Encoding`.  The definitions
+below prove that these are two presentations of the same finite coordinates:
+factual nodes map to the old copy and counterfactual nodes map to their
+corresponding occurrence copy.  They also transport the shared source-root
+assignment through the accumulated edits.
+-/
+
 def LinkedOccurrenceCopies.worldNode
     {event : CounterfactualEvent template}
     (linked : LinkedOccurrenceCopies template source event.atoms)
@@ -563,6 +628,11 @@ theorem LinkedOccurrenceCopies.worldNode_incident
   | counterfactual occurrence =>
       exact linked.copied_incident occurrence sourceRoot child incident
 
+/--
+The bijection from semantic occurrence indices to the endpoint's dependent
+coordinates.  The inverse is a `Fin.cast` because the preceding count theorem
+shows the two finite index ranges have equal cardinality.
+-/
 def LinkedOccurrenceCopies.nodeEquiv
     {event : CounterfactualEvent template}
     (linked : LinkedOccurrenceCopies template source event.atoms) :
@@ -634,6 +704,11 @@ theorem LinkedOccurrenceCopies.coordinates_invFun_worldNode
     (⟨world, node⟩ : OccurrenceNode template event)]
   exact linked.coordinates.nodeEquiv.left_inv _
 
+/--
+Compose the root-preservation witnesses from all three construction phases.
+This is the root analogue of `coordinates`; it permits a source latent
+assignment to be evaluated at the executable endpoint.
+-/
 def LinkedOccurrenceCopies.roots
     (linked : LinkedOccurrenceCopies template source atoms) :
     AtomicIntervention.SameRoots source linked.target :=

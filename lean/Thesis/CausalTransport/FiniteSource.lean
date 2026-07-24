@@ -6,15 +6,23 @@ namespace Causality
 open Probability
 
 /-!
-An independently declared finite classical source presentation.
+An independently declared finite coded source presentation.
 
 Observed value spaces are cardinalities and their values are table indices.
 The interpretation turns those indices into an intrinsic dependent observed
 signature.  Source probabilities are finite sums over exogenous assignments;
 the target semantics forms finite pushforward distributions.  The agreement
 theorems below connect those independently stated semantics pointwise.
+
+Reading order: finite source data and its intrinsic re-presentation; independent
+node, kernel, and expression evaluation; identifiability equivalence; recursive
+source derivation support; then explicit packages for published finite results.
+`interpret` and `ofExact` are intentionally transparent re-presentations of
+the same finite data. The semantic content lies in agreement of the independent
+recursive evaluators, not in pretending the two record encodings are unrelated.
 -/
 
+/-- A finite coded observed signature used by the source-table presentation. -/
 structure FiniteTableSignature where
   count : Nat
   arity : Fin count -> Nat
@@ -119,7 +127,11 @@ theorem interpret_canonical_iff (L : FiniteTableLatent T) :
 
 end FiniteTableLatent
 
-/-- A graph table over the source node codes. -/
+/--
+A graph table over the source node codes. Directed edges are held by the
+signature; this structure contains only the bidirected projection and its two
+graph invariants.
+-/
 structure FiniteTableGraph (T : FiniteTableSignature) where
   bidirected : Fin T.count -> Fin T.count -> Bool
   bidirected_symmetric : forall {i j},
@@ -153,6 +165,7 @@ structure FiniteTableSCM (T : FiniteTableSignature) where
 
 namespace FiniteTableSCM
 
+/-- Re-present a finite table SCM as the intrinsic theorem-facing exact model. -/
 def interpret (M : FiniteTableSCM T) : ExactModel T.toObserved where
   latent := M.latent.interpret
   factor := M.factor
@@ -160,6 +173,7 @@ def interpret (M : FiniteTableSCM T) : ExactModel T.toObserved where
   product_law := M.product_law
   mechanism := M.table
 
+/-- Re-present any intrinsic exact model on this signature as finite source data. -/
 def ofExact (M : ExactModel T.toObserved) : FiniteTableSCM T where
   latent := FiniteTableLatent.ofIntrinsic M.latent
   factor := M.factor
@@ -452,6 +466,11 @@ theorem ofExact_interpret_agrees (M : FiniteTableSCM T) :
 
 end FiniteTableSCM
 
+/--
+Compatibility of a source model with a source ADMG. Canonical
+semi-Markovianity constrains each latent root to at most two distinct observed
+children; the second field fixes its projected bidirected graph exactly.
+-/
 def FiniteSourceCompatible (M : FiniteTableSCM T)
     (G : FiniteTableGraph T) : Prop :=
   M.latent.CanonicalSemiMarkovian /\
@@ -612,6 +631,12 @@ theorem finiteSourceConditionalKernelEquivalent_iff
         (ProbabilityResult.symm
           (N.kernelDenote_preserved kernel assignment)))⟩
 
+/--
+Source-table identifiability quantifies over source models compatible with the
+same graph and observational table. The following equivalence theorems show
+that this is neither stronger nor weaker than intrinsic identifiability after
+interpretation.
+-/
 def FiniteSourceIdentifiable (G : FiniteTableGraph T)
     (query : JointKernelQuery T.toObserved) : Prop :=
   forall (M N : FiniteTableSCM T),
@@ -735,7 +760,13 @@ noncomputable def FiniteSourceCounterexample.toTarget
     simpa [JointKernelQuery.sourceTerm, JointKernelQuery.sourceKernel] using
       targetEquivalent
 
-/-! ## Source-native expression and derivation semantics -/
+/-!
+## Source-native expression and derivation semantics
+
+This section intentionally repeats the target-side support-tree structure.
+Doing so prevents a source certificate from silently invoking intrinsic target
+semantics before the explicit preservation map is applied.
+-/
 
 /-- Action-free expressions depend only on the source observational table. -/
 noncomputable def finiteSource_actionFree_invariant
@@ -1057,7 +1088,12 @@ noncomputable def FiniteSourcePathPrimitiveSoundness.toTarget
       (model.termSupportedAt_of_target _ _ leftSupported)
       (model.termSupportedAt_of_target _ _ rightSupported)
 
-/-- Published certificate with source-native support and shared finite syntax. -/
+/--
+Published certificate with source-native support and shared finite syntax.
+The formula and derivation are inspectable Lean data. The `supported` field is
+stronger than a bare external derivability predicate: it supplies the local
+support tree needed to evaluate every primitive and intermediate expression.
+-/
 structure FiniteSourceJointCertificate (G : FiniteTableGraph T)
     (correct : DSeparationCorrectness G.interpret)
     (query : JointKernelQuery T.toObserved) where
@@ -1129,7 +1165,11 @@ structure PublishedFiniteSourceCompleteness (T : FiniteTableSignature)
   hedge_counterexample : forall query,
     HedgeWitness G.interpret query -> FiniteSourceCounterexample G query
 
-/-- Source-native finite specialization of the published primitive soundness laws. -/
+/--
+Source-native finite specialization of the published primitive soundness laws.
+This is an explicit boundary: Lean checks how these laws are consumed and
+transported, but does not manufacture an inhabitant from the cited literature.
+-/
 structure PublishedFiniteSourceSoundness (T : FiniteTableSignature)
     (G : FiniteTableGraph T) where
   dseparation : DSeparationCorrectness G.interpret

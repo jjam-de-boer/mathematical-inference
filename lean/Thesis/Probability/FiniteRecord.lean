@@ -3,8 +3,23 @@ import Thesis.Probability.Urn
 namespace Thesis
 namespace Probability
 
+/-!
+Finite common-denominator probability records.
+
+The low-level `atoms` representation is a list of labelled natural weights.
+It deliberately permits repeated labels: probabilities are obtained by adding
+all weights of atoms whose label satisfies the Boolean event.  This makes
+finite pushforwards, conditioning, and product constructions executable while
+retaining extensional rational equality through `QProb.Equiv`.
+
+The first namespace proves list-level mass identities.  The public
+`FiniteProbRecord` structure below packages a nonempty total mass and its
+normalisation proof.
+-/
+
 namespace FiniteProbRecord
 
+/-- Total natural weight carried by a finite list of weighted atoms. -/
 def totalMass : List (Ω × Nat) → Nat
   | [] => 0
   | (_, w) :: atoms => w + totalMass atoms
@@ -27,6 +42,7 @@ theorem eventMass_congr (atoms : List (Ω × Nat)) (E F : Event Ω)
               (if F value then weight + eventMass atoms F else eventMass atoms F)
           rw [h value, ih]
 
+/-- Expand a weighted list into its equivalent unit-cell urn presentation. -/
 def expand : List (Ω × Nat) → List Ω
   | [] => []
   | (ω, w) :: atoms => List.replicate w ω ++ expand atoms

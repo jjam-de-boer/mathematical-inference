@@ -1,11 +1,20 @@
 import Thesis.Causality.ExecutedMultiworld.EmptyConstruction
+import Thesis.Causality.ExecutedMultiworld.Endpoint
 
 namespace Thesis
 namespace Causality
 
 open Probability
 
-/-! Complete probability-bearing multiworld execution from an empty mode. -/
+/-!
+Complete probability-bearing multiworld execution from an empty mode.
+
+`EmptyOccurrenceConstruction.Linked` builds the required finite model from
+`EmptyCausalMode.mode`; this module closes that construction with the same
+atomic action compiler used by the from-factual route. The endpoint is an
+actual causal record with its own dependent signature, so comparisons with the
+other route use explicit coordinate transport.
+-/
 
 /--
 The complete empty-origin execution.  Its endpoint is obtained solely by the
@@ -302,8 +311,18 @@ theorem endpointRecord_observedValue
           (fun assignment =>
             construction.configuredEvent_eval predicate assignment))
         (QProb.equiv_symm
-          (FiniteProbRecord.map_probVal mode.record.model.prior
-            construction.World.eval predicate))))
+      (FiniteProbRecord.map_probVal mode.record.model.prior
+        construction.World.eval predicate))))
+
+/-- The route-specific endpoint exposed through the shared multiworld interface. -/
+noncomputable def sharedEndpoint
+    (construction : FromEmptyExecutedOccurrenceConstruction mode event) :
+    MultiworldEndpoint mode.record.model event where
+  signature := construction.signature
+  record := construction.endpointRecord
+  coordinates := construction.coordinates
+  eventAt := construction.endpointEvent
+  observedValue := construction.endpointRecord_observedValue
 
 variable {S : ObservedSignature} {mode : CausalMode S}
   {query : CounterfactualQuery S}
@@ -312,67 +331,40 @@ noncomputable def denominator
     (construction :
       FromEmptyExecutedOccurrenceConstruction mode query.combinedEvent) :
     QProb :=
-  construction.endpointRecord.observedValue
-    (construction.endpointEvent
-      (query.combinedConditionPredicate construction.World))
+  MultiworldEndpoint.denominator query construction.sharedEndpoint
 
 noncomputable def numerator
     (construction :
       FromEmptyExecutedOccurrenceConstruction mode query.combinedEvent) :
     QProb :=
-  construction.endpointRecord.observedValue
-    (construction.endpointEvent
-      (query.combinedNumeratorPredicate construction.World))
+  MultiworldEndpoint.numerator query construction.sharedEndpoint
 
 noncomputable def denote
     (construction :
       FromEmptyExecutedOccurrenceConstruction mode query.combinedEvent) :
     ProbabilityResult.Result :=
-  ProbabilityResult.divide (some construction.numerator)
-    (some construction.denominator)
+  MultiworldEndpoint.denote query construction.sharedEndpoint
 
 theorem denominator_equiv
     (construction :
       FromEmptyExecutedOccurrenceConstruction mode query.combinedEvent) :
     QProb.Equiv construction.denominator
-      (query.denominator mode.record.model) := by
-  exact QProb.equiv_trans
-    (construction.endpointRecord_observedValue
-      (query.combinedConditionPredicate construction.World))
-    (QProb.equiv_trans
-      (FiniteProbRecord.map_probVal mode.record.model.prior
-        construction.World.eval
-        (query.combinedConditionPredicate construction.World))
-      (FiniteProbRecord.probVal_congr mode.record.model.prior _ _
-        (fun assignment =>
-          query.combinedConditionPredicate_eval
-            construction.World assignment)))
+      (query.denominator mode.record.model) :=
+  MultiworldEndpoint.denominator_equiv query construction.sharedEndpoint
 
 theorem numerator_equiv
     (construction :
       FromEmptyExecutedOccurrenceConstruction mode query.combinedEvent) :
     QProb.Equiv construction.numerator
-      (query.numerator mode.record.model) := by
-  exact QProb.equiv_trans
-    (construction.endpointRecord_observedValue
-      (query.combinedNumeratorPredicate construction.World))
-    (QProb.equiv_trans
-      (FiniteProbRecord.map_probVal mode.record.model.prior
-        construction.World.eval
-        (query.combinedNumeratorPredicate construction.World))
-      (FiniteProbRecord.probVal_congr mode.record.model.prior _ _
-        (fun assignment =>
-          query.combinedNumeratorPredicate_eval
-            construction.World assignment)))
+      (query.numerator mode.record.model) :=
+  MultiworldEndpoint.numerator_equiv query construction.sharedEndpoint
 
 noncomputable def semanticAgreement
     (construction :
       FromEmptyExecutedOccurrenceConstruction mode query.combinedEvent) :
     ProbabilityResult.Equivalent construction.denote
       (query.denote mode.record.model) :=
-  ProbabilityResult.divide_congr
-    (.value construction.numerator_equiv)
-    (.value construction.denominator_equiv)
+  MultiworldEndpoint.semanticAgreement query construction.sharedEndpoint
 
 end FromEmptyExecutedOccurrenceConstruction
 

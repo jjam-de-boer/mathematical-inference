@@ -1,5 +1,4 @@
-import Thesis.Causality.Identification
-import Thesis.CausalTransport.DSeparation
+import Thesis.CausalTransport.Certificates
 
 namespace Thesis
 namespace Causality
@@ -12,16 +11,23 @@ External completeness and soundness interfaces with checked certificate transpor
 The published identification theorem is deliberately represented by explicit
 parameters.  Internal query semantics and identifiability live in
 `Thesis.Causality.Identification`.
+
+This file is the generic, graph-indexed boundary. It does not depend on the
+finite source-table encoding: `FiniteSource` specializes these interfaces only
+after independently defining source evaluation and its preservation map. A
+reader looking for what Lean assumes should begin with `PublishedCompleteness`
+and `PublishedSoundness`; a reader looking for what Lean proves should follow
+the certificate compilation and transport theorems below.
 -/
 
 /-! ## Explicit external theorem interface and checked transport -/
 
-/--
-An inspectable identification certificate for an ordinary interventional
-query.  The formula contains no remaining interventions and the derivation
-connects the query kernel to that formula through the concrete rules in
-`CausalDerivation`.
+/-!
+The generic records in `Certificates` are implementation cores.  The following
+public structures deliberately retain their original fields, constructors, and
+recursors so imports predating this refactor remain source-compatible.
 -/
+
 structure JointIdentificationCertificate (G : ObservedGraph S)
     (q : JointKernelQuery S) where
   formula : ProbabilityTerm S
@@ -31,7 +37,6 @@ structure JointIdentificationCertificate (G : ObservedGraph S)
     forall assignment, q.sourceTerm.SupportedAt model assignment ->
       LocalDerivationSupport model assignment derivation
 
-/-- The corresponding certificate for a conditional interventional query. -/
 structure ConditionalIdentificationCertificate (G : ObservedGraph S)
     (q : ConditionalKernelQuery S) where
   formula : ProbabilityTerm S
@@ -41,7 +46,6 @@ structure ConditionalIdentificationCertificate (G : ObservedGraph S)
     forall assignment, q.sourceTerm.SupportedAt model assignment ->
       LocalDerivationSupport model assignment derivation
 
-/-- Published certificate before active-path conditions are compiled. -/
 structure PublishedJointCertificate (G : ObservedGraph S)
     (correct : DSeparationCorrectness G) (q : JointKernelQuery S) where
   formula : ProbabilityTerm S
@@ -60,21 +64,63 @@ structure PublishedConditionalCertificate (G : ObservedGraph S)
     forall assignment, q.sourceTerm.SupportedAt model assignment ->
       LocalDerivationSupport model assignment (derivation.compile correct)
 
-def PublishedJointCertificate.compile
-    (certificate : PublishedJointCertificate G correct q) :
+def JointIdentificationCertificate.toGeneric
+    (certificate : JointIdentificationCertificate G q) :
+    IdentificationCertificate G q.sourceTerm where
+  formula := certificate.formula
+  actionFree := certificate.actionFree
+  derivation := certificate.derivation
+  supported := certificate.supported
+
+def ConditionalIdentificationCertificate.toGeneric
+    (certificate : ConditionalIdentificationCertificate G q) :
+    IdentificationCertificate G q.sourceTerm where
+  formula := certificate.formula
+  actionFree := certificate.actionFree
+  derivation := certificate.derivation
+  supported := certificate.supported
+
+def JointIdentificationCertificate.ofGeneric
+    (certificate : IdentificationCertificate G q.sourceTerm) :
     JointIdentificationCertificate G q where
   formula := certificate.formula
   actionFree := certificate.actionFree
-  derivation := certificate.derivation.compile correct
+  derivation := certificate.derivation
   supported := certificate.supported
 
-def PublishedConditionalCertificate.compile
-    (certificate : PublishedConditionalCertificate G correct q) :
+def ConditionalIdentificationCertificate.ofGeneric
+    (certificate : IdentificationCertificate G q.sourceTerm) :
     ConditionalIdentificationCertificate G q where
   formula := certificate.formula
   actionFree := certificate.actionFree
-  derivation := certificate.derivation.compile correct
+  derivation := certificate.derivation
   supported := certificate.supported
+
+def PublishedJointCertificate.toGeneric
+    (certificate : PublishedJointCertificate G correct q) :
+    PublishedIdentificationCertificate G correct q.sourceTerm where
+  formula := certificate.formula
+  actionFree := certificate.actionFree
+  derivation := certificate.derivation
+  supported := certificate.supported
+
+def PublishedConditionalCertificate.toGeneric
+    (certificate : PublishedConditionalCertificate G correct q) :
+    PublishedIdentificationCertificate G correct q.sourceTerm where
+  formula := certificate.formula
+  actionFree := certificate.actionFree
+  derivation := certificate.derivation
+  supported := certificate.supported
+
+def PublishedJointCertificate.compile
+    (certificate : PublishedJointCertificate G correct q) :
+    JointIdentificationCertificate G q :=
+  JointIdentificationCertificate.ofGeneric certificate.toGeneric.compile
+
+def PublishedConditionalCertificate.compile
+    (certificate : PublishedConditionalCertificate G correct q) :
+    ConditionalIdentificationCertificate G q :=
+  ConditionalIdentificationCertificate.ofGeneric certificate.toGeneric.compile
 
 /--
 Formal interface to the published classical result.  An inhabitant is passed

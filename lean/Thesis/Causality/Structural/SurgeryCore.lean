@@ -5,16 +5,33 @@ namespace Causality
 
 open Probability
 
-/-! Executable compact structural surgery, independent of transition packaging. -/
+/-!
+Executable compact structural surgery, independent of transition packaging.
+
+This is the short, reference presentation of a hard intervention.  Starting
+with an `ExactModel M` and an action, the file (1) changes the observed graph
+and latent-incidence mask, (2) replaces selected structural equations by
+constants, (3) proves by well-founded recursion that the resulting evaluator
+agrees with `M.evalUnder action`, and (4) packages the model as an epistemic
+record with no residual compact intervention.  `Atomic` gives the longer edit
+program; `SurgeryEquivalence` proves that the two presentations agree at the
+unit level.
+-/
 
 namespace SurgicalIntervention
+
+/-! ## The mutilated signature and latent interface -/
 
 abbrev signature (M : ExactModel S)
     (action : (node : Fin S.count) -> Option (S.Value node)) :
     ObservedSignature :=
   M.mutilatedSignature action
 
-/-- Remove latent inputs into every node fixed by the action. -/
+/--
+Remove latent inputs into every node fixed by the action.  The latent roots
+themselves and their value spaces are retained; only their incident edges into
+selected observed coordinates are cut.
+-/
 def latent (M : ExactModel S)
     (action : (node : Fin S.count) -> Option (S.Value node)) :
     LatentExtension (signature M action) where
@@ -42,6 +59,12 @@ theorem latent_cut (M : ExactModel S)
     (latent M action).incident source child = false := by
   simp [latent, FiniteLatentSCM.cutOf, selected]
 
+/--
+Evaluate one equation in the surgically modified model.  The selected branch
+returns the requested constant.  In the unselected branch, every remaining
+parent and latent-input proof is transported back to the corresponding input
+of `M`.
+-/
 def mechanism (M : ExactModel S)
     (action : (node : Fin S.count) -> Option (S.Value node))
     (child : Fin (signature M action).count)
@@ -62,7 +85,11 @@ def mechanism (M : ExactModel S)
       (fun source incident => latents source (by
         simpa [latent, FiniteLatentSCM.cutOf, actionNone] using incident))
 
-/-- The graph-changing SCM whose selected equations are constant. -/
+/--
+The graph-changing SCM whose selected equations are constant.  Its latent
+prior and factor records are unchanged, because an intervention changes
+structural equations and incoming arrows, not exogenous randomness.
+-/
 def model (M : ExactModel S)
     (action : (node : Fin S.count) -> Option (S.Value node)) :
     ExactModel (signature M action) where
@@ -72,6 +99,12 @@ def model (M : ExactModel S)
   product_law := M.product_law
   mechanism := mechanism M action
 
+/--
+The local semantic comparison.  Recursion follows the original topological
+order: after the selected-node case, every recursive call concerns a strictly
+earlier parent.  This is the substantive bridge from graph surgery to the
+existing `evalUnder` semantics.
+-/
 theorem evalNode_eq (M : ExactModel S)
     (action : (node : Fin S.count) -> Option (S.Value node))
     (u : M.latent.Assignment) (child : Fin S.count) :
@@ -95,7 +128,11 @@ decreasing_by
     simpa [signature, FiniteLatentSCM.mutilatedSignature,
       mutilatedDirected, FiniteLatentSCM.cutOf, selected] using edge)
 
-/-- Structural surgery and equation override have the same unit-level outcome. -/
+/--
+Structural surgery and equation override have the same full unit-level
+outcome.  Extensionality reduces the assignment equality to `evalNode_eq` at
+each observed coordinate.
+-/
 theorem eval_eq_evalUnder (M : ExactModel S)
     (action : (node : Fin S.count) -> Option (S.Value node))
     (u : M.latent.Assignment) :
@@ -103,6 +140,10 @@ theorem eval_eq_evalUnder (M : ExactModel S)
   funext child
   exact evalNode_eq M action u child
 
+/--
+Package the surgically modified model as a record.  The compact intervention
+field is reset to empty because its effect is now compiled into the model.
+-/
 def apply (R : CausalEpistemicRecord S)
     (action : (node : Fin S.count) -> Option (S.Value node)) :
     CausalEpistemicRecord (signature R.model action) where

@@ -9,7 +9,17 @@ open Probability
 
 universe u
 
-/-! Mode-indexed transport for finite counterfactual semantics. -/
+/-!
+Mode-indexed transport for finite counterfactual semantics.
+
+This is the final bridge from an external finite-source completeness package to
+the executable modal counterfactual endpoint.  It first isolates the concrete
+support condition for one-action queries.  It then bundles four independent
+ingredients at a current causal mode: graph compatibility, a transported
+source derivation, a modal trace, and an executed multiworld construction.  No
+new external theorem is assumed here; the final equivalence merely packages
+the certificate supplied by `PublishedFiniteCounterfactualCompleteness`.
+-/
 
 /-! ## Support is exactly factual-evidence positivity for one-action queries -/
 
@@ -48,6 +58,19 @@ theorem CounterfactualQuery.singleAction_supportedAt_iff
 
 /-! ## Counterfactual transport indexed by a causal mode and its modal worlds -/
 
+/-!
+The theorem above concerns support of the direct query language.  The rest of
+the file retains the stronger operational information required by the thesis:
+the same query is represented both by a source derivation and by an actually
+executed modal multiworld endpoint.
+-/
+
+/--
+A counterfactual certificate anchored at a concrete epistemic mode.  `encoded`
+is the finite-source proof object; `modalTrace` explains its locked query
+contexts; `combinedConstruction` is the executable realization whose endpoint
+is compared to the derived observational formula below.
+-/
 structure ModeIndexedCounterfactualDerivation
     {T : FiniteTableSignature} {G : FiniteTableGraph T}
     (mode : CausalMode T.toObserved)
@@ -74,6 +97,7 @@ noncomputable def ModeIndexedCounterfactualDerivation.endpointReduction
     (derivation.encoded.toTarget.reduction mode.record.model
       derivation.compatible)
 
+/-- Support witness read at the actual combined-construction endpoint. -/
 def CombinedCounterfactualSupportedAt
     (construction : ModalCombinedCounterfactualConstruction mode query) : Type :=
   Sigma fun value =>
@@ -89,7 +113,12 @@ theorem ModeIndexedCounterfactualDerivation.endpointSupportedAt
   exact ⟨⟨supported.1, ProbabilityResult.trans
     derivation.combinedConstruction.semanticAgreement supported.2⟩⟩
 
-/-- Counterfactual completeness transport retaining every modal action world. -/
+/--
+Counterfactual completeness transport retaining every modal action world.
+The forward direction obtains the external source certificate and equips it
+with canonical executable/modal data.  The reverse direction deliberately
+forgets that extra data, recovering the underlying finite-source equivalence.
+-/
 theorem finiteSource_modeIndexed_transported_counterfactual_iff
     {T : FiniteTableSignature} {G : FiniteTableGraph T}
     (mode : CausalMode T.toObserved)
