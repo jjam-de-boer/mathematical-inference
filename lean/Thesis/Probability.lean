@@ -1,4 +1,5 @@
 import Thesis.Probability.Core
+import Thesis.Probability.FiniteCellProduct
 import Thesis.Probability.Urn
 import Thesis.Probability.FiniteRecord
 import Thesis.Probability.Construction
@@ -13,10 +14,12 @@ Reading order:
 
 1. `Core` defines Boolean decidable events, finite inspection, and elementary
    finite counting;
-2. `Urn` presents probability as a finite urn and proves its elementary laws;
-3. `FiniteRecord` gives weighted, common-denominator finite distributions and
+2. `FiniteCellProduct` constructs finite product cells and verifies rectangular
+   event counts;
+3. `Urn` presents probability as a finite urn and proves its elementary laws;
+4. `FiniteRecord` gives weighted, common-denominator finite distributions and
    conditioning; and
-4. `Construction` builds finite dependent products and the rational
+5. `Construction` builds finite dependent products and the rational
    constructions used by causal models.
 
 No result here concerns countable additivity or arbitrary propositions:

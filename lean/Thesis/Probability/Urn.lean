@@ -1,4 +1,4 @@
-import Thesis.Probability.Core
+import Thesis.Probability.FiniteCellProduct
 
 namespace Thesis
 namespace Probability
@@ -295,6 +295,18 @@ theorem product_rule (u v : UrnRatio) :
   simp [QProb.Equiv, QProb.mul, toQProb, product,
     Nat.mul_comm, Nat.mul_left_comm]
 
+/-- The selected-cell field of the ratio product is realized by the encoded
+rectangular event on the explicitly constructed product cell type. -/
+theorem product_selectedCells (u v : UrnRatio)
+    (E : Event (Fin u.N)) (F : Event (Fin v.N))
+    (hE : count (FiniteCellProduct.cells u.N) E = u.k)
+    (hF : count (FiniteCellProduct.cells v.N) F = v.k) :
+    count (FiniteCellProduct.cells (u.N * v.N))
+        (FiniteCellProduct.encodedRectangularEvent v.pos E F) =
+      (u.product v).k := by
+  simpa [product] using
+    FiniteCellProduct.selectedCells_product v.pos E F hE hF
+
 theorem rescaling_is_k_over_N (u : UrnRatio) :
     QProb.Equiv u.toQProb
       { num := u.k, den := u.N, den_pos := u.pos } := by
@@ -318,6 +330,8 @@ structure QualitativeUrnScale where
   eqv_refl : ∀ a, eqv a a
   eqv_symm : ∀ {a b}, eqv a b → eqv b a
   eqv_trans : ∀ {a b c}, eqv a b → eqv b c → eqv a c
+  lt_irrefl : ∀ a, lt a a → False
+  lt_trans : ∀ {a b c}, lt a b → lt b c → lt a c
   same_counts_eqv :
     ∀ u v, u.N = v.N → u.k = v.k → eqv (plaus u) (plaus v)
   refinement_eqv :
@@ -332,10 +346,20 @@ structure QualitativeUrnScale where
         (plaus { N := N, k := l, pos := hN, le := hl })
   lt_respects_eqv :
     ∀ {a b c d}, eqv a c → eqv b d → lt a b → lt c d
-  eqv_lt_false :
-    ∀ {a b}, eqv a b → lt a b → False
 
 namespace QualitativeUrnScale
+
+theorem lt_asymm (Q : QualitativeUrnScale)
+    {a b : Q.Plaus} (hab : Q.lt a b) (hba : Q.lt b a) :
+    False := by
+  exact Q.lt_irrefl a (Q.lt_trans hab hba)
+
+theorem eqv_lt_false (Q : QualitativeUrnScale)
+    {a b : Q.Plaus} (hab : Q.eqv a b) (hlt : Q.lt a b) :
+    False := by
+  have haa : Q.lt a a :=
+    Q.lt_respects_eqv (Q.eqv_refl a) (Q.eqv_symm hab) hlt
+  exact Q.lt_irrefl a haa
 
 def commonLeft (u v : UrnRatio) : UrnRatio where
   N := v.N * u.N
@@ -420,6 +444,22 @@ theorem eqv_iff_sameRatio (Q : QualitativeUrnScale)
     Q.eqv (Q.plaus u) (Q.plaus v) ↔ sameRatio u v :=
   ⟨Q.eqv_implies_sameRatio, Q.sameRatio_implies_eqv⟩
 
+theorem lt_implies_ratio_lt (Q : QualitativeUrnScale)
+    {u v : UrnRatio} (h : Q.lt (Q.plaus u) (Q.plaus v)) :
+    u.k * v.N < v.k * u.N := by
+  rcases Nat.lt_trichotomy (u.k * v.N) (v.k * u.N) with hlt | heq | hgt
+  · exact hlt
+  · exact False.elim (Q.eqv_lt_false (Q.sameRatio_implies_eqv heq) h)
+  · have hrev : Q.lt (Q.plaus v) (Q.plaus u) :=
+      Q.ratio_lt_implies_lt hgt
+    exact False.elim (Q.lt_asymm h hrev)
+
+theorem lt_iff_ratio_lt (Q : QualitativeUrnScale)
+    (u v : UrnRatio) :
+    Q.lt (Q.plaus u) (Q.plaus v) ↔
+      u.k * v.N < v.k * u.N :=
+  ⟨Q.lt_implies_ratio_lt, Q.ratio_lt_implies_lt⟩
+
 /--
 The qualitative representation theorem: the rational value `k/N` is a
 well-defined rescaling of primitive qualitative plausibility classes.
@@ -430,13 +470,28 @@ theorem rational_rescaling_well_defined (Q : QualitativeUrnScale)
   exact sameRatio_toQProb (Q.eqv_implies_sameRatio h)
 
 /--
-The same rescaling is order-preserving: strict qualitative increase follows
-from strict increase of the represented rational urn ratio.
+The rational rescaling is order-preserving on represented qualitative values:
+strict qualitative increase implies strict increase of the represented ratio.
 -/
 theorem rational_rescaling_order_preserving (Q : QualitativeUrnScale)
+    {u v : UrnRatio} (h : Q.lt (Q.plaus u) (Q.plaus v)) :
+    u.k * v.N < v.k * u.N := by
+  exact Q.lt_implies_ratio_lt h
+
+/--
+The rational rescaling also reflects strict order: strict increase of the
+represented ratio implies strict qualitative increase.
+-/
+theorem rational_rescaling_order_reflecting (Q : QualitativeUrnScale)
     {u v : UrnRatio} (h : u.k * v.N < v.k * u.N) :
     Q.lt (Q.plaus u) (Q.plaus v) := by
   exact Q.ratio_lt_implies_lt h
+
+theorem rational_rescaling_order_iff (Q : QualitativeUrnScale)
+    (u v : UrnRatio) :
+    Q.lt (Q.plaus u) (Q.plaus v) ↔
+      u.k * v.N < v.k * u.N :=
+  Q.lt_iff_ratio_lt u v
 
 end QualitativeUrnScale
 

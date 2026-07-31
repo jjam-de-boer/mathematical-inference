@@ -68,6 +68,11 @@ theorem count_congr {xs : List X} {E F : Event X}
       change List.countP E (x :: xs) = List.countP F (x :: xs)
       rw [List.countP_cons, List.countP_cons, ih', h x]
 
+/-- Reordering a finite enumeration does not change an event count. -/
+theorem count_reindex {xs ys : List X} (h : xs.Perm ys) (E : Event X) :
+    count xs E = count ys E := by
+  exact h.countP_eq E
+
 theorem count_inter_comm (xs : List X) (E F : Event X) :
     count xs (inter E F) = count xs (inter F E) := by
   apply count_congr
