@@ -50,6 +50,58 @@ theorem deduplicate_nodup [DecidableEq X] (values : List X) :
       · rw [if_neg duplicate]
         exact List.nodup_cons.mpr ⟨duplicate, ih⟩
 
+/-- A finite presentation explicitly identifies a type with `Fin card`. -/
+structure FiniteWitness (X : Type u) where
+  card : Nat
+  encode : X -> Fin card
+  decode : Fin card -> X
+  decode_encode : forall x, decode (encode x) = x
+  encode_decode : forall i, encode (decode i) = i
+
+theorem idxOf_get_of_nodup [DecidableEq X]
+    (values : List X) (nodup : values.Nodup) (i : Fin values.length) :
+    values.idxOf (values.get i) = i.val := by
+  induction values with
+  | nil => exact Fin.elim0 i
+  | cons head tail ih =>
+      have parts := List.nodup_cons.mp nodup
+      refine Fin.cases ?_ (fun j => ?_) i
+      · simp
+      · change List.idxOf (tail.get j) (head :: tail) = j.val + 1
+        rw [List.idxOf_cons]
+        have different : (head == tail.get j) = false := by
+          apply beq_eq_false_iff_ne.mpr
+          intro same
+          apply parts.1
+          rw [same]
+          exact List.get_mem tail j
+        rw [different]
+        simp only [cond_false]
+        rw [ih parts.2 j]
+
+/-- An exhaustive duplicate-free list gives an explicit finite presentation. -/
+def FiniteWitness.ofList [DecidableEq X]
+    (values : List X) (complete : forall x, x ∈ values)
+    (nodup : values.Nodup) : FiniteWitness X where
+  card := values.length
+  encode := fun x =>
+    ⟨values.idxOf x, List.idxOf_lt_length_of_mem (complete x)⟩
+  decode := fun i => values.get i
+  decode_encode := by
+    intro x
+    apply beq_iff_eq.mp
+    change (values.get ⟨values.idxOf x,
+      List.idxOf_lt_length_of_mem (complete x)⟩ == x) = true
+    simpa [List.get_eq_getElem, List.idxOf] using
+      (List.findIdx_getElem
+        (p := fun value => value == x)
+        (xs := values)
+        (w := List.idxOf_lt_length_of_mem (complete x)))
+  encode_decode := by
+    intro i
+    apply Fin.ext
+    exact idxOf_get_of_nodup values nodup i
+
 namespace FiniteProduct
 
 /-- A dependent assignment chooses one value for every finite coordinate. -/
@@ -205,6 +257,21 @@ theorem enumeration_complete (n : Nat) (Value : Fin n -> Type u)
         · change extend last initial earlier.castSucc = initial earlier
           exact extend_castSucc last initial earlier
       exact hAssignment ▸ hFlat
+
+/-- A finite dependent assignment type has an explicit finite presentation. -/
+def finiteWitness (n : Nat) (Value : Fin n -> Type u)
+    (values : (i : Fin n) -> List (Value i))
+    (complete : forall i value, value ∈ values i)
+    (decEq : (i : Fin n) -> DecidableEq (Value i)) :
+    FiniteWitness (Assignment n Value) := by
+  letI : DecidableEq (Assignment n Value) :=
+    assignmentDecidableEq n Value decEq
+  exact FiniteWitness.ofList
+    (deduplicate (enumeration n Value values))
+    (fun assignment =>
+      (mem_deduplicate assignment (enumeration n Value values)).2
+        (enumeration_complete n Value values complete assignment))
+    (deduplicate_nodup (enumeration n Value values))
 
 def natProduct : (n : Nat) -> (Fin n -> Nat) -> Nat
   | 0, _ => 1

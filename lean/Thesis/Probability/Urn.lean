@@ -37,6 +37,16 @@ theorem support_ofList (xs : List X) (h : 0 < xs.length) :
     (ofList xs h).support = xs := by
   simp [ofList, support]
 
+/-- Push an urn assignment forward by relabelling each cell. -/
+def map (μ : UrnProb X) (f : X → Y) : UrnProb Y where
+  n := μ.n
+  pos := μ.pos
+  draw := fun i => f (μ.draw i)
+
+theorem support_map (μ : UrnProb X) (f : X → Y) :
+    (μ.map f).support = μ.support.map f := by
+  simp [map, support, Function.comp_def]
+
 /-- The number of urn cells whose outcome satisfies the event. -/
 def probNum (μ : UrnProb X) (E : Event X) : Nat :=
   count μ.support E
@@ -47,12 +57,96 @@ def probVal (μ : UrnProb X) (E : Event X) : QProb where
   den := μ.n
   den_pos := μ.pos
 
+theorem probNum_map (μ : UrnProb X) (f : X → Y) (E : Event Y) :
+    (μ.map f).probNum E = μ.probNum (fun x => E (f x)) := by
+  simp [probNum, support_map, count, Function.comp_def]
+
+theorem probVal_map (μ : UrnProb X) (f : X → Y) (E : Event Y) :
+    QProb.Equiv ((μ.map f).probVal E)
+      (μ.probVal (fun x => E (f x))) := by
+  unfold QProb.Equiv probVal
+  rw [probNum_map]
+  rfl
+
+/-- The rectangular product of two events on outcome labels. -/
+def productEvent (E : Event X) (F : Event Y) : Event (X × Y) :=
+  fun pair => E pair.1 && F pair.2
+
+/-- The independent product urn, enumerated in row-major cell order. -/
+def product (μ : UrnProb X) (ν : UrnProb Y) : UrnProb (X × Y) where
+  n := μ.n * ν.n
+  pos := Nat.mul_pos μ.pos ν.pos
+  draw := fun index =>
+    let cell := FiniteCellProduct.decode ν.pos index
+    (μ.draw cell.1, ν.draw cell.2)
+
+theorem probNum_eq_cellCount (μ : UrnProb X) (E : Event X) :
+    μ.probNum E =
+      count (FiniteCellProduct.cells μ.n) (fun i => E (μ.draw i)) := by
+  change List.countP E (List.ofFn μ.draw) =
+    List.countP (E ∘ μ.draw) (List.ofFn id)
+  rw [← List.countP_map]
+  simp [Function.comp_def]
+
+theorem product_probNum (μ : UrnProb X) (ν : UrnProb Y)
+    (E : Event X) (F : Event Y) :
+    (μ.product ν).probNum (productEvent E F) =
+      μ.probNum E * ν.probNum F := by
+  rw [probNum_eq_cellCount, μ.probNum_eq_cellCount, ν.probNum_eq_cellCount]
+  simpa [product, productEvent, FiniteCellProduct.encodedRectangularEvent,
+    FiniteCellProduct.rectangularEvent] using
+    (FiniteCellProduct.count_canonicalRectangularEvent ν.pos
+      (fun i => E (μ.draw i)) (fun j => F (ν.draw j)))
+
+theorem product_probVal (μ : UrnProb X) (ν : UrnProb Y)
+    (E : Event X) (F : Event Y) :
+    QProb.Equiv ((μ.product ν).probVal (productEvent E F))
+      (QProb.mul (μ.probVal E) (ν.probVal F)) := by
+  unfold QProb.Equiv probVal QProb.mul
+  rw [product_probNum]
+  rfl
+
 /-- Conditional probability, defined only with a positive conditioning count. -/
 def condVal (μ : UrnProb X) (E F : Event X)
     (hF : 0 < μ.probNum F) : QProb where
   num := μ.probNum (inter E F)
   den := μ.probNum F
   den_pos := hF
+
+/--
+Condition an urn on a positive Boolean event by retaining exactly the selected
+cells. Repeated outcome labels remain repeated cells in the posterior urn.
+-/
+def conditionOn (μ : UrnProb X) (E : Event X)
+    (hE : 0 < μ.probNum E) : UrnProb X :=
+  ofList (μ.support.filter E) (by
+    rw [← List.countP_eq_length_filter]
+    simpa [probNum, count] using hE)
+
+theorem conditionOn_support (μ : UrnProb X) (E : Event X)
+    (hE : 0 < μ.probNum E) :
+    (μ.conditionOn E hE).support = μ.support.filter E := by
+  simp [conditionOn, support_ofList]
+
+theorem conditionOn_probNum (μ : UrnProb X) (E F : Event X)
+    (hE : 0 < μ.probNum E) :
+    (μ.conditionOn E hE).probNum F = μ.probNum (inter E F) := by
+  rw [probNum, conditionOn_support, probNum]
+  unfold count
+  rw [List.countP_filter]
+  exact count_congr (fun x => Bool.and_comm (F x) (E x))
+
+/-- The filtered posterior urn computes the corresponding conditional value. -/
+theorem conditionOn_probVal (μ : UrnProb X) (E F : Event X)
+    (hE : 0 < μ.probNum E) :
+    QProb.Equiv ((μ.conditionOn E hE).probVal F) (μ.condVal F E hE) := by
+  have hn : (μ.conditionOn E hE).n = μ.probNum E := by
+    change (μ.support.filter E).length = μ.probNum E
+    rw [← List.countP_eq_length_filter]
+    rfl
+  have hcomm : μ.probNum (inter E F) = μ.probNum (inter F E) :=
+    count_inter_comm μ.support E F
+  simp [QProb.Equiv, probVal, condVal, conditionOn_probNum, hn, hcomm]
 
 theorem probNum_nonneg (μ : UrnProb X) (E : Event X) :
     0 ≤ μ.probNum E := by
@@ -70,6 +164,11 @@ theorem probNum_top (μ : UrnProb X) :
 theorem normalization (μ : UrnProb X) :
     QProb.Equiv (μ.probVal topEvent) QProb.one := by
   simp [QProb.Equiv, QProb.one, probVal, probNum_top]
+
+theorem conditionOn_normalization (μ : UrnProb X) (E : Event X)
+    (hE : 0 < μ.probNum E) :
+    QProb.Equiv ((μ.conditionOn E hE).probVal topEvent) QProb.one :=
+  (μ.conditionOn E hE).normalization
 
 theorem finite_additivity_num (μ : UrnProb X) (E F : Event X)
     (h : disjoint E F) :
@@ -128,6 +227,99 @@ theorem product_rule_for_conditioning (μ : UrnProb X) (E F : Event X)
       (μ.probVal (inter E F)) := by
   simp [QProb.Equiv, QProb.mul, condVal, probVal,
     Nat.mul_assoc, Nat.mul_comm]
+
+/-- Under positive conditioning, the product and left-conditional forms of
+unconditional independence are equivalent. -/
+theorem independent_iff_condVal_left (μ : UrnProb X) (A B : Event X)
+    (hB : 0 < μ.probNum B) :
+    QProb.Equiv
+        (μ.probVal (inter A B))
+        (QProb.mul (μ.probVal A) (μ.probVal B)) ↔
+      QProb.Equiv (μ.condVal A B hB) (μ.probVal A) := by
+  simp only [QProb.Equiv, probVal, QProb.mul, condVal]
+  constructor
+  · intro h
+    apply Nat.eq_of_mul_eq_mul_right μ.pos
+    simpa [Nat.mul_assoc] using h
+  · intro h
+    simpa [Nat.mul_assoc] using congrArg (fun value => value * μ.n) h
+
+/-- Under positive conditioning, the product and right-conditional forms of
+unconditional independence are equivalent. -/
+theorem independent_iff_condVal_right (μ : UrnProb X) (A B : Event X)
+    (hA : 0 < μ.probNum A) :
+    QProb.Equiv
+        (μ.probVal (inter A B))
+        (QProb.mul (μ.probVal A) (μ.probVal B)) ↔
+      QProb.Equiv (μ.condVal B A hA) (μ.probVal B) := by
+  have hInter : μ.probNum (inter B A) = μ.probNum (inter A B) :=
+    (count_inter_comm μ.support A B).symm
+  simp only [QProb.Equiv, probVal, QProb.mul, condVal]
+  rw [hInter]
+  constructor
+  · intro h
+    apply Nat.eq_of_mul_eq_mul_right μ.pos
+    simpa [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using h
+  · intro h
+    simpa [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using
+      congrArg (fun value => value * μ.n) h
+
+/-- Under positive conditioning, the denominator-free product equation for
+conditional independence is equivalent to the product of conditional values. -/
+theorem conditionalIndependent_iff_condProduct
+    (μ : UrnProb X) (A B C : Event X)
+    (hC : 0 < μ.probNum C) :
+    QProb.Equiv
+        (QProb.mul (μ.probVal (inter (inter A B) C)) (μ.probVal C))
+        (QProb.mul (μ.probVal (inter A C)) (μ.probVal (inter B C))) ↔
+      QProb.Equiv
+        (μ.condVal (inter A B) C hC)
+        (QProb.mul (μ.condVal A C hC) (μ.condVal B C hC)) := by
+  simp only [QProb.Equiv, probVal, QProb.mul, condVal]
+  constructor
+  · intro h
+    have hCore :
+        μ.probNum (inter (inter A B) C) * μ.probNum C =
+          μ.probNum (inter A C) * μ.probNum (inter B C) := by
+      apply Nat.eq_of_mul_eq_mul_right (Nat.mul_pos μ.pos μ.pos)
+      simpa [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using h
+    simpa [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using
+      congrArg (fun value => value * μ.probNum C) hCore
+  · intro h
+    have hCore :
+        μ.probNum (inter (inter A B) C) * μ.probNum C =
+          μ.probNum (inter A C) * μ.probNum (inter B C) := by
+      apply Nat.eq_of_mul_eq_mul_right hC
+      simpa [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using h
+    simpa [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using
+      congrArg (fun value => value * (μ.n * μ.n)) hCore
+
+/-- Under positive conditioning, the denominator-free product equation for
+conditional independence is equivalent to invariance after additionally
+conditioning on `B`. -/
+theorem conditionalIndependent_iff_condVal
+    (μ : UrnProb X) (A B C : Event X)
+    (hC : 0 < μ.probNum C) (hBC : 0 < μ.probNum (inter B C)) :
+    QProb.Equiv
+        (QProb.mul (μ.probVal (inter (inter A B) C)) (μ.probVal C))
+        (QProb.mul (μ.probVal (inter A C)) (μ.probVal (inter B C))) ↔
+      QProb.Equiv
+        (μ.condVal A (inter B C) hBC)
+        (μ.condVal A C hC) := by
+  have hAssoc :
+      μ.probNum (inter A (inter B C)) =
+        μ.probNum (inter (inter A B) C) := by
+    unfold probNum
+    exact count_congr (fun x => (Bool.and_assoc (A x) (B x) (C x)).symm)
+  simp only [QProb.Equiv, probVal, QProb.mul, condVal]
+  rw [hAssoc]
+  constructor
+  · intro h
+    apply Nat.eq_of_mul_eq_mul_right (Nat.mul_pos μ.pos μ.pos)
+    simpa [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using h
+  · intro h
+    simpa [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using
+      congrArg (fun value => value * (μ.n * μ.n)) h
 
 theorem bayes_product_rule (μ : UrnProb X) (E F : Event X)
     (hE : 0 < μ.probNum E) (hF : 0 < μ.probNum F) :
@@ -189,17 +381,10 @@ theorem inclusion_exclusion (μ : UrnProb X) (E F : Event X) :
   simp only [← Nat.add_mul]
   rw [hcount]
 
-/--
-The Bayesian update probability of `F` given conditioning event `E`, computed
-directly from the formula `p_E(ω) := 𝟙_E(ω)·p(ω) / P(E)` of the appendix
-definition `def:bayesian-update`. In the urn presentation this is the count of
-cells satisfying both `E` and `F`, divided by the count of cells satisfying `E`.
--/
+/-- Evaluate an event in the posterior urn obtained by positive conditioning. -/
 def bayesianUpdateProb (μ : UrnProb X) (E F : Event X)
-    (hE : 0 < μ.probNum E) : QProb where
-  num := μ.probNum (inter E F)
-  den := μ.probNum E
-  den_pos := hE
+    (hE : 0 < μ.probNum E) : QProb :=
+  (μ.conditionOn E hE).probVal F
 
 /--
 Consistency of Bayesian update with conditional probability: when the
@@ -209,10 +394,8 @@ conditioning event has positive count, the update value `P_E(F)` equals
 -/
 theorem bayesian_update_consistency (μ : UrnProb X) (E F : Event X)
     (hE : 0 < μ.probNum E) :
-    QProb.Equiv (μ.bayesianUpdateProb E F hE) (μ.condVal F E hE) := by
-  have hcomm : μ.probNum (inter E F) = μ.probNum (inter F E) :=
-    count_inter_comm μ.support E F
-  simp [QProb.Equiv, bayesianUpdateProb, condVal, hcomm]
+    QProb.Equiv (μ.bayesianUpdateProb E F hE) (μ.condVal F E hE) :=
+  μ.conditionOn_probVal E F hE
 
 /--
 The Bayesian update induced by a positive event is normalized: the updated
@@ -220,13 +403,8 @@ probability of the total event is one.
 -/
 theorem bayesian_update_normalization (μ : UrnProb X) (E : Event X)
     (hE : 0 < μ.probNum E) :
-    QProb.Equiv (μ.bayesianUpdateProb E topEvent hE) QProb.one := by
-  have htop : μ.probNum (inter E topEvent) = μ.probNum E := by
-    unfold probNum
-    apply count_congr
-    intro x
-    cases h : E x <;> simp [inter, topEvent, h]
-  simp [QProb.Equiv, bayesianUpdateProb, QProb.one, htop]
+    QProb.Equiv (μ.bayesianUpdateProb E topEvent hE) QProb.one :=
+  μ.conditionOn_normalization E hE
 
 end UrnProb
 namespace ClaytonWaddington

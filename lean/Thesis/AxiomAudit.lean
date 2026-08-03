@@ -15,6 +15,7 @@ The source tree is separately searched for `Classical.*` and `native_decide`.
 #print axioms Thesis.Probability.FiniteCellProduct.encodedCells_perm_cells
 #print axioms Thesis.Probability.FiniteCellProduct.count_canonicalRectangularEvent
 #print axioms Thesis.Probability.FiniteCellProduct.selectedCells_product
+#print axioms Thesis.Probability.FiniteProduct.finiteWitness
 #print axioms Thesis.Probability.ClaytonWaddington.UrnRatio.product_selectedCells
 #print axioms Thesis.Causality.ProbabilityTerm.eventTerm_denote
 #print axioms Thesis.Causality.FiniteLatentSCM.evalUnder_noIntervention
