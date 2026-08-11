@@ -354,6 +354,162 @@ theorem toSCM_preserves_row (C : FiniteRationalCPT S)
       ((C.row child (C.encode child parents)).toRecord.probVal event) := by
   exact C.responseFactor_preserves_row child parents event
 
+/--
+The response-table event that makes one observed node take its value in a
+fixed complete assignment.  The parent configuration is read from that same
+assignment.
+-/
+def responseSingletonEvent (C : FiniteRationalCPT S)
+    (assignment : S.Assignment) (child : Fin S.count) :
+    C.ResponseSeed child -> Bool :=
+  fun seed => FiniteProbRecord.singletonEvent (assignment child)
+    (C.responseMechanism child
+      (fun parent _ => assignment parent) seed)
+
+/-- If every selected response agrees with an assignment, SCM evaluation does. -/
+theorem toSCM_evalNode_eq_of_responseSingletons
+    (C : FiniteRationalCPT S)
+    (seeds : C.toSCM.latent.Assignment) (assignment : S.Assignment)
+    (agreements : forall child,
+      C.responseMechanism child (fun parent _ => assignment parent)
+        (seeds child) = assignment child)
+    (child : Fin S.count) :
+    C.toSCM.evalNodeUnder (FiniteLatentSCM.noIntervention S) seeds child =
+      assignment child := by
+  rw [FiniteLatentSCM.evalNodeUnder]
+  simp only [FiniteLatentSCM.equationUnder,
+    FiniteLatentSCM.noIntervention]
+  change C.responseMechanism child
+      (fun parent edge =>
+        C.toSCM.evalNodeUnder (FiniteLatentSCM.noIntervention S) seeds parent)
+      (seeds child) = assignment child
+  have parentsAgree :
+      (fun (parent : Fin S.count)
+          (_edge : S.directed parent child = true) =>
+          C.toSCM.evalNodeUnder (FiniteLatentSCM.noIntervention S) seeds parent) =
+        (fun (parent : Fin S.count)
+          (_edge : S.directed parent child = true) => assignment parent) := by
+    funext parent edge
+    exact C.toSCM_evalNode_eq_of_responseSingletons
+      seeds assignment agreements parent
+  rw [parentsAgree]
+  exact agreements child
+termination_by child.val
+decreasing_by
+  exact S.directed_earlier edge
+
+/-- Complete SCM evaluation agrees with an assignment exactly when every
+selected response-table coordinate agrees with it. -/
+theorem toSCM_eval_eq_iff_responseSingletons
+    (C : FiniteRationalCPT S)
+    (seeds : C.toSCM.latent.Assignment) (assignment : S.Assignment) :
+    C.toSCM.eval seeds = assignment <->
+      forall child,
+        C.responseMechanism child (fun parent _ => assignment parent)
+          (seeds child) = assignment child := by
+  constructor
+  · intro evaluated child
+    have childEq := congrFun evaluated child
+    unfold FiniteLatentSCM.eval FiniteLatentSCM.evalUnder at childEq
+    rw [FiniteLatentSCM.evalNodeUnder] at childEq
+    simp only [FiniteLatentSCM.equationUnder,
+      FiniteLatentSCM.noIntervention] at childEq
+    change C.responseMechanism child
+        (fun parent edge =>
+          C.toSCM.evalNodeUnder (FiniteLatentSCM.noIntervention S) seeds parent)
+        (seeds child) = assignment child at childEq
+    have parentsAgree :
+        (fun (parent : Fin S.count)
+            (_edge : S.directed parent child = true) =>
+          C.toSCM.evalNodeUnder (FiniteLatentSCM.noIntervention S) seeds parent) =
+          (fun (parent : Fin S.count)
+            (_edge : S.directed parent child = true) => assignment parent) := by
+      funext parent edge
+      exact congrFun evaluated parent
+    rw [parentsAgree] at childEq
+    exact childEq
+  · intro agreements
+    funext child
+    exact C.toSCM_evalNode_eq_of_responseSingletons
+      seeds assignment agreements child
+
+/-- The preimage of an observed singleton is the corresponding rectangular
+event on the independent response-function seeds. -/
+theorem observationalSingleton_preimage_eq_rectangular
+    (C : FiniteRationalCPT S) (assignment : S.Assignment) :
+    (fun seeds =>
+      FiniteProbRecord.singletonEvent assignment (C.toSCM.eval seeds)) =
+      C.toSCM.latent.rectangularEvent
+        (C.responseSingletonEvent assignment) := by
+  funext seeds
+  rw [LatentExtension.rectangularEvent,
+    finiteProduct_rectangular_eq_finAll]
+  apply Bool.eq_iff_iff.mpr
+  constructor
+  · intro observed
+    have evaluated : C.toSCM.eval seeds = assignment := by
+      simpa [FiniteProbRecord.singletonEvent] using observed
+    apply (finAll_eq_true_iff _).2
+    intro child
+    have agreement :=
+      (C.toSCM_eval_eq_iff_responseSingletons seeds assignment).1
+        evaluated child
+    simp [responseSingletonEvent, FiniteProbRecord.singletonEvent, agreement]
+  · intro rectangular
+    have agreements : forall child,
+        C.responseMechanism child (fun parent _ => assignment parent)
+          (seeds child) = assignment child := by
+      intro child
+      have selected := (finAll_eq_true_iff _).1 rectangular child
+      simpa [responseSingletonEvent, FiniteProbRecord.singletonEvent] using
+        selected
+    have evaluated :=
+      (C.toSCM_eval_eq_iff_responseSingletons seeds assignment).2 agreements
+    simp [FiniteProbRecord.singletonEvent, evaluated]
+
+/--
+The observational singleton law of the functionalized SCM is exactly the
+Bayesian-network product of the original conditional-table rows.
+-/
+theorem toSCM_observational_singleton_factorizes
+    (C : FiniteRationalCPT S) (assignment : S.Assignment) :
+    QProb.Equiv
+      (C.toSCM.observationalValue
+        (FiniteProbRecord.singletonEvent assignment))
+      (FiniteProduct.qProduct S.count (fun child =>
+        (C.rowRecord child
+          (C.encode child (fun parent _ => assignment parent))).probVal
+            (FiniteProbRecord.singletonEvent (assignment child)))) := by
+  have mapped := C.toSCM.observationalValue_eq
+    (FiniteProbRecord.singletonEvent assignment)
+  have reexpressed : QProb.Equiv
+      (C.toSCM.prior.probVal (fun seeds =>
+        FiniteProbRecord.singletonEvent assignment (C.toSCM.eval seeds)))
+      (C.toSCM.prior.probVal
+        (C.toSCM.latent.rectangularEvent
+          (C.responseSingletonEvent assignment))) :=
+    FiniteProbRecord.probVal_congr C.toSCM.prior _ _ (fun seeds =>
+      congrFun (C.observationalSingleton_preimage_eq_rectangular assignment)
+        seeds)
+  have independent := C.toSCM.product_law
+    (C.responseSingletonEvent assignment)
+  have rows : QProb.Equiv
+      (FiniteProduct.qProduct S.count (fun child =>
+        (C.toSCM.factor child).probVal
+          (C.responseSingletonEvent assignment child)))
+      (FiniteProduct.qProduct S.count (fun child =>
+        (C.rowRecord child
+          (C.encode child (fun parent _ => assignment parent))).probVal
+            (FiniteProbRecord.singletonEvent (assignment child)))) := by
+    apply FiniteProduct.qProduct_congr
+    intro child
+    simpa [responseSingletonEvent] using
+      C.toSCM_preserves_row child (fun parent _ => assignment parent)
+        (FiniteProbRecord.singletonEvent (assignment child))
+  exact QProb.equiv_trans mapped
+    (QProb.equiv_trans reexpressed
+      (QProb.equiv_trans independent rows))
+
 end FiniteRationalCPT
 
 end Causality

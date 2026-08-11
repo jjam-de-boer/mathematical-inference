@@ -1,35 +1,62 @@
-# Thesis
+# Mathematical inference: science and logic
 
-This repository is organized into three working areas:
+This repository accompanies Jelmer de Boer's 2026 Master’s thesis in
+Artificial Intelligence, *Mathematical inference: science and logic*.
 
-- `lean/`: Lean source and Lake project files. Lean source/configuration is tracked by git; downloaded dependencies, build outputs, and Lake cache state are ignored.
-- `latex/`: LaTeX working directory. The local source/build files are ignored; `latex/main.pdf` is the tracked final thesis PDF.
-- `papers/`: local scientific paper library. The extracted paper folders are ignored by git. The `fraud.zip` and `fraud_two.zip` archives are merged locally into `papers/fraud/`.
+The thesis develops a finite, constructive account of mathematical inference.
+It brings together Jaynes-style probability, Pearl-style structural causal
+models, and explicit changes in epistemic state, with selected constructions
+and proofs checked in Lean 4. It also considers the scientific practices and
+institutions in which inference is performed.
 
-Zip archives are not tracked.
+## Read the thesis
+
+The complete thesis is available as a [PDF](latex/main.pdf).
 
 ## Lean formalisation
 
-The Lean project is self-contained apart from the pinned Lean toolchain and
-Lean's `Std` library; `lean/lake-manifest.json` declares no third-party
-packages.  The three stable entry points are:
+The Lean development formalises selected finite constructions from the thesis.
+Its public entry points are:
 
-- `Thesis.Probability` for finite constructive probability;
-- `Thesis.Causality` for intrinsic finite SCMs, modal edits, and
-  counterfactual semantics; and
-- `Thesis.CausalTransport` for the finite-source correspondence and the
-  explicit interfaces to externally published causal results.
+- `Thesis.Probability` — finite constructive probability;
+- `Thesis.Causality` — finite structural causal models, interventions, modal
+  edits, and counterfactual semantics; and
+- `Thesis.CausalTransport` — finite-source correspondence and explicit
+  interfaces to externally established causal results.
 
-From `lean/`, run `lake build` to check the public development.  The focused
-constructive-extensional audit is intentionally separate, because it prints
-its results rather than supplying program code:
+The complete development also includes a tenure-track example that combines
+these components.
+
+```mermaid
+flowchart LR
+  P[Finite constructive probability] --> C[Finite causal semantics]
+  C --> T[Finite-source causal transport]
+  C --> E[Tenure-track example]
+  T --> E
+```
+
+### Verification
+
+The project uses Lean `v4.30.0-rc2` and has no third-party Lake dependencies.
+To build the development:
 
 ```sh
+cd lean
+lake build
+```
+
+For an optional audit of the representative theorem surface, run:
+
+```sh
+cd lean
 lake env lean Thesis/AxiomAudit.lean
 ```
 
-The audit checks representative probability, causal, transport, modal, and
-example declarations.  It is expected to report only `propext` and
-`Quot.sound` (or no axioms) for that surface.  It does not turn external
-completeness, global-Markov, or d-separation-equivalence results into Lean
-axioms: those results are explicit parameters in the transport interfaces.
+The audit reports the axioms used by selected probability, causal, transport,
+modal, and example declarations. Its accepted boundary is `propext` and
+`Quot.sound` (or no axioms); results such as completeness, global Markov, and
+d-separation equivalence remain explicit parameters at the transport
+interfaces rather than Lean axioms.
+
+Continuous probability, general measure theory, and a complete formalisation
+of every philosophical or sociological claim are outside this project's scope.
