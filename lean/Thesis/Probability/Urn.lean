@@ -357,6 +357,19 @@ theorem monotonicity (μ : UrnProb X) {E F : Event X}
   count_mono h
 
 /--
+Rational monotonicity: a sub-event has rational probability at most that of
+the larger event.  Both presentations use the same positive urn size as
+denominator, so the selected-cell inequality of `monotonicity` is exactly
+`QProb.le_of_same_den`.
+-/
+theorem monotonicity_probVal (μ : UrnProb X) {E F : Event X}
+    (h : ∀ x, E x = true → F x = true) :
+    QProb.LE (μ.probVal E) (μ.probVal F) := by
+  have hnum := μ.monotonicity h
+  have hden : (μ.probVal E).den = (μ.probVal F).den := rfl
+  exact QProb.le_of_same_den hden hnum
+
+/--
 Two-event count form of inclusion–exclusion: the sum of cells in `E ∪ F` and in
 `E ∩ F` equals the sum of cells in `E` and in `F`. This generalises
 `finite_additivity_num` to events that need not be disjoint.

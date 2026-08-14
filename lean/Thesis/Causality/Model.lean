@@ -226,11 +226,9 @@ def evalPrefixUnder (M : FiniteLatentSCM S)
         previous ⟨parent.val, S.directed_earlier hEdge⟩
       let latents : M.latent.Inputs child := fun l _ => u l
       let value := M.equationUnder target child parents latents
-      fun i =>
-        Fin.lastCases
-          (by simpa [child] using value)
-          (fun j => by simpa using previous j)
-          i
+      FiniteProduct.extend
+        (by simpa [child] using value)
+        (fun j => by simpa using previous j)
 
 /-- Direct well-founded evaluation, avoiding extensional prefix equality. -/
 def evalNodeUnder (M : FiniteLatentSCM S)
@@ -247,6 +245,53 @@ def evalUnder (M : FiniteLatentSCM S)
     (target : (i : Fin S.count) -> Option (S.Value i))
     (u : M.latent.Assignment) : S.Assignment :=
   fun child => M.evalNodeUnder target u child
+
+/-- Prefix recursion and direct well-founded evaluation agree pointwise. -/
+theorem evalPrefixUnder_eq_evalNodeUnder (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (u : M.latent.Assignment) (k : Nat) (hk : k <= S.count) (i : Fin k) :
+    M.evalPrefixUnder target u k hk i =
+      M.evalNodeUnder target u
+        ⟨i.val, Nat.lt_of_lt_of_le i.isLt hk⟩ := by
+  induction k with
+  | zero => exact Fin.elim0 i
+  | succ k ih =>
+      let hkPrev : k <= S.count := Nat.le_trans (Nat.le_succ k) hk
+      let child : Fin S.count := ⟨k, Nat.lt_of_succ_le hk⟩
+      refine Fin.lastCases ?_ (fun j => ?_) i
+      · simp only [evalPrefixUnder, FiniteProduct.extend_last]
+        change
+          M.equationUnder target child
+              (fun parent hEdge =>
+                M.evalPrefixUnder target u k hkPrev
+                  ⟨parent.val, S.directed_earlier hEdge⟩)
+              (fun latent _ => u latent) =
+            M.evalNodeUnder target u child
+        rw [evalNodeUnder]
+        have parentsAgree :
+            (fun (parent : Fin S.count)
+                (hEdge : S.directed parent child = true) =>
+              M.evalPrefixUnder target u k hkPrev
+                ⟨parent.val, S.directed_earlier hEdge⟩) =
+            (fun (parent : Fin S.count)
+                (_edge : S.directed parent child = true) =>
+              M.evalNodeUnder target u parent) := by
+          funext parent edge
+          exact ih hkPrev ⟨parent.val, S.directed_earlier edge⟩
+        rw [parentsAgree]
+      · simpa [evalPrefixUnder, hkPrev,
+          FiniteProduct.extend_castSucc] using ih hkPrev j
+
+/-- A complete prefix is the assignment produced by direct evaluation. -/
+theorem evalPrefixUnder_full_eq_evalUnder (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (u : M.latent.Assignment) :
+    M.evalPrefixUnder target u S.count (Nat.le_refl S.count) =
+      M.evalUnder target u := by
+  funext i
+  simpa [evalUnder] using
+    M.evalPrefixUnder_eq_evalNodeUnder target u S.count
+      (Nat.le_refl S.count) i
 
 def eval (M : FiniteLatentSCM S) (u : M.latent.Assignment) : S.Assignment :=
   M.evalUnder (noIntervention S) u
@@ -334,6 +379,28 @@ def interventionalDist (M : FiniteLatentSCM S)
     (target : (i : Fin S.count) -> Option (S.Value i)) :
     FiniteProbRecord S.Assignment :=
   M.prior.map (M.evalUnder target)
+
+/-- Interventional pushforward through prefix evaluation is the same record. -/
+theorem interventionalDist_eq_prefixPushforward (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i)) :
+    M.interventionalDist target =
+      M.prior.map (fun u =>
+        M.evalPrefixUnder target u S.count (Nat.le_refl S.count)) := by
+  unfold interventionalDist
+  congr 1
+  funext u
+  exact (M.evalPrefixUnder_full_eq_evalUnder target u).symm
+
+/-- The observational record is the pushforward through complete prefixes. -/
+theorem observationalDist_eq_prefixPushforward (M : FiniteLatentSCM S) :
+    M.observationalDist =
+      M.prior.map (fun u =>
+        M.evalPrefixUnder (noIntervention S) u S.count
+          (Nat.le_refl S.count)) := by
+  unfold observationalDist eval
+  congr 1
+  funext u
+  exact (M.evalPrefixUnder_full_eq_evalUnder (noIntervention S) u).symm
 
 def interventionalValue (M : FiniteLatentSCM S)
     (target : (i : Fin S.count) -> Option (S.Value i))

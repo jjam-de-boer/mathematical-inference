@@ -1,4 +1,5 @@
 import Thesis.Probability.Core
+import Thesis.Probability.Reindexing
 import Thesis.Probability.FiniteCellProduct
 import Thesis.Probability.Urn
 import Thesis.Probability.FiniteRecord
@@ -12,14 +13,16 @@ The implementation is split by responsibility while existing imports of
 
 Reading order:
 
-1. `Core` defines Boolean decidable events, finite inspection, and elementary
-   finite counting;
-2. `FiniteCellProduct` constructs finite product cells and verifies rectangular
+1. `Core` defines Boolean decidable events, finite inspection, elementary
+   finite counting, and the cross-multiplication order on `QProb`;
+2. `Reindexing` records the additive-carrier finite-sum permutation theorem
+   and its `Nat` and `QProb` specializations;
+3. `FiniteCellProduct` constructs finite product cells and verifies rectangular
    event counts;
-3. `Urn` presents probability as a finite urn and proves its elementary laws;
-4. `FiniteRecord` gives weighted, common-denominator finite distributions and
+4. `Urn` presents probability as a finite urn and proves its elementary laws;
+5. `FiniteRecord` gives weighted, common-denominator finite distributions and
    conditioning; and
-5. `Construction` builds finite dependent products and the rational
+6. `Construction` builds finite dependent products and the rational
    constructions used by causal models.
 
 No result here concerns countable additivity or arbitrary propositions:

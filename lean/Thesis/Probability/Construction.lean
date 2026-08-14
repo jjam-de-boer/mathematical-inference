@@ -294,6 +294,33 @@ def rectangularEvent : (n : Nat) ->
       rectangularEvent n (fun i => Value i.castSucc)
           (fun i => events i.castSucc) (fun i => assignment i.castSucc)
 
+/-- A rectangular event holds exactly when every coordinate event holds. -/
+theorem rectangularEvent_eq_true_iff (n : Nat)
+    (Value : Fin n -> Type u) (events : (i : Fin n) -> Value i -> Bool)
+    (assignment : Assignment n Value) :
+    rectangularEvent n Value events assignment = true <->
+      forall i, events i (assignment i) = true := by
+  induction n with
+  | zero =>
+      constructor
+      · intro _ i
+        exact Fin.elim0 i
+      · intro _
+        rfl
+  | succ n ih =>
+      constructor
+      · intro h i
+        have hparts := Bool.and_eq_true_iff.mp h
+        refine Fin.lastCases hparts.1 (fun j => ?_) i
+        exact (ih (fun i => Value i.castSucc) (fun i => events i.castSucc)
+          (fun i => assignment i.castSucc)).mp hparts.2 j
+      · intro h
+        exact Bool.and_eq_true_iff.mpr
+          ⟨h (Fin.last n),
+            (ih (fun i => Value i.castSucc) (fun i => events i.castSucc)
+              (fun i => assignment i.castSucc)).mpr
+                (fun i => h i.castSucc)⟩
+
 theorem rectangularEvent_assignment_congr (n : Nat)
     (Value : Fin n -> Type u) (events : (i : Fin n) -> Value i -> Bool)
     (left right : Assignment n Value)

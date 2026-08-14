@@ -147,6 +147,129 @@ theorem mem_selectedNodeList (nodes : NodeSet S) (node : Fin S.count) :
     node ∈ selectedNodeList S nodes <-> nodes node = true := by
   simp [selectedNodeList]
 
+/-- The number of nodes classified as true. -/
+def selectedNodeCount (nodes : NodeSet S) : Nat :=
+  (selectedNodeList S nodes).length
+
+/--
+The canonical embedding of the selected nodes, in ambient index order.
+This is the map \(j_S\) of the finite node-set selection proposition.
+-/
+def selectedEmbed (nodes : NodeSet S)
+    (i : Fin (selectedNodeCount nodes)) : Fin S.count :=
+  (selectedNodeList S nodes).get i
+
+theorem pairwise_get_of_lt {α : Type _} {R : α -> α -> Prop}
+    {values : List α} (h : values.Pairwise R)
+    (i j : Fin values.length) (hij : i.val < j.val) :
+    R (values.get i) (values.get j) := by
+  induction values with
+  | nil => exact Fin.elim0 i
+  | cons head tail ih =>
+      have parts := List.pairwise_cons.mp h
+      cases i using Fin.cases with
+      | zero =>
+          cases j using Fin.cases with
+          | zero => exact (Nat.lt_irrefl 0 hij).elim
+          | succ j' =>
+              exact parts.1 (tail.get j') (List.get_mem tail j')
+      | succ i' =>
+          cases j using Fin.cases with
+          | zero => exact (Nat.not_lt_zero _ hij).elim
+          | succ j' =>
+              exact ih parts.2 i' j' (Nat.succ_lt_succ_iff.mp hij)
+
+theorem finRange_pairwise_lt (n : Nat) :
+    (List.finRange n).Pairwise (fun a b => a.val < b.val) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+      rw [List.finRange_succ]
+      refine List.pairwise_cons.mpr ⟨?_, ?_⟩
+      · intro b hb
+        rcases List.mem_map.mp hb with ⟨k, _, eq⟩
+        cases eq
+        exact Nat.succ_pos k.val
+      · exact List.Pairwise.map Fin.succ
+          (fun _ _ hlt => Nat.succ_lt_succ hlt) ih
+
+theorem selectedNodeList_pairwise_lt (nodes : NodeSet S) :
+    (selectedNodeList S nodes).Pairwise
+      (fun a b => a.val < b.val) :=
+  (finRange_pairwise_lt S.count).filter (fun node => nodes node)
+
+theorem selectedNodeList_nodup (nodes : NodeSet S) :
+    (selectedNodeList S nodes).Nodup :=
+  (selectedNodeList_pairwise_lt nodes).imp
+    (fun hlt => Fin.ne_of_val_ne (Nat.ne_of_lt hlt))
+
+theorem selectedEmbed_mem (nodes : NodeSet S)
+    (i : Fin (selectedNodeCount nodes)) :
+    nodes (selectedEmbed nodes i) = true :=
+  (mem_selectedNodeList nodes (selectedEmbed nodes i)).mp
+    (List.get_mem (selectedNodeList S nodes) i)
+
+theorem selectedEmbed_strict_mono (nodes : NodeSet S)
+    {i j : Fin (selectedNodeCount nodes)}
+    (hij : i.val < j.val) :
+    (selectedEmbed nodes i).val < (selectedEmbed nodes j).val :=
+  pairwise_get_of_lt (selectedNodeList_pairwise_lt nodes) i j hij
+
+theorem selectedEmbed_inj (nodes : NodeSet S)
+    {i j : Fin (selectedNodeCount nodes)}
+    (h : selectedEmbed nodes i = selectedEmbed nodes j) : i = j := by
+  apply Fin.ext
+  rcases Nat.lt_trichotomy i.val j.val with hlt | heq | hgt
+  · have mono := selectedEmbed_strict_mono nodes hlt
+    rw [h] at mono
+    exact (Nat.lt_irrefl _ mono).elim
+  · exact heq
+  · have mono := selectedEmbed_strict_mono nodes hgt
+    rw [h] at mono
+    exact (Nat.lt_irrefl _ mono).elim
+
+theorem selectedEmbed_lt_reflect (nodes : NodeSet S)
+    {i j : Fin (selectedNodeCount nodes)}
+    (hlt : (selectedEmbed nodes i).val < (selectedEmbed nodes j).val) :
+    i.val < j.val := by
+  rcases Nat.lt_trichotomy i.val j.val with h | h | h
+  · exact h
+  · have same : i = j := Fin.ext h
+    rw [same] at hlt
+    exact (Nat.lt_irrefl _ hlt).elim
+  · have mono := selectedEmbed_strict_mono nodes h
+    exact (Nat.lt_asymm hlt mono).elim
+
+theorem exists_selectedEmbed_of_mem (nodes : NodeSet S)
+    {node : Fin S.count} (h : nodes node = true) :
+    Exists fun i : Fin (selectedNodeCount nodes) =>
+      selectedEmbed nodes i = node := by
+  have hmem : node ∈ selectedNodeList S nodes :=
+    (mem_selectedNodeList nodes node).mpr h
+  refine ⟨⟨(selectedNodeList S nodes).idxOf node,
+    List.idxOf_lt_length_of_mem hmem⟩, ?_⟩
+  apply beq_iff_eq.mp
+  change
+    ((selectedNodeList S nodes).get
+      ⟨(selectedNodeList S nodes).idxOf node,
+        List.idxOf_lt_length_of_mem hmem⟩ == node) = true
+  simpa [List.get_eq_getElem, List.idxOf] using
+    (List.findIdx_getElem
+      (p := fun value => value == node)
+      (xs := selectedNodeList S nodes)
+      (w := List.idxOf_lt_length_of_mem hmem))
+
+theorem mem_iff_exists_selectedEmbed (nodes : NodeSet S)
+    (node : Fin S.count) :
+    nodes node = true <->
+      Exists fun i : Fin (selectedNodeCount nodes) =>
+        selectedEmbed nodes i = node := by
+  constructor
+  · intro h
+    exact exists_selectedEmbed_of_mem nodes h
+  · intro ⟨i, hi⟩
+    simpa [hi] using selectedEmbed_mem nodes i
+
 theorem setVariablesSequentially_intervention_value
     (R : CausalEpistemicRecord S) (reference : S.Assignment)
     (nodes : List (Fin S.count)) (node : Fin S.count) :

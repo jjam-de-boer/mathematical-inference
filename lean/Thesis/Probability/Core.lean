@@ -432,6 +432,110 @@ theorem add_congr {p p' q q' : QProb}
         rw [Nat.mul_comm q.den p.den]
   rw [Nat.add_mul, Nat.add_mul, hleft, hright]
 
+/-- Addition of presentations is commutative up to cross multiplication. -/
+theorem add_comm (p q : QProb) :
+    Equiv (add p q) (add q p) := by
+  simp [Equiv, add, Nat.mul_comm, Nat.add_comm]
+
+/-- Adding the canonical zero presentation does not change a value. -/
+theorem add_zero (p : QProb) :
+    Equiv (add p zero) p := by
+  simp [Equiv, add, zero, Nat.mul_comm]
+
+/-- Addition of presentations is associative up to cross multiplication. -/
+theorem add_assoc (p q r : QProb) :
+    Equiv (add (add p q) r) (add p (add q r)) := by
+  have den_eq :
+      (p.den * q.den) * r.den = p.den * (q.den * r.den) :=
+    Nat.mul_assoc p.den q.den r.den
+  have num_eq :
+      (p.num * q.den + q.num * p.den) * r.den + r.num * (p.den * q.den) =
+        p.num * (q.den * r.den) +
+          (q.num * r.den + r.num * q.den) * p.den := by
+    have left_expand :
+        (p.num * q.den + q.num * p.den) * r.den + r.num * (p.den * q.den) =
+          p.num * q.den * r.den + q.num * p.den * r.den +
+            r.num * (p.den * q.den) := by
+      simp [Nat.add_mul, Nat.add_assoc]
+    have right_expand :
+        p.num * (q.den * r.den) +
+            (q.num * r.den + r.num * q.den) * p.den =
+          p.num * (q.den * r.den) + q.num * r.den * p.den +
+            r.num * q.den * p.den := by
+      simp [Nat.add_mul, Nat.add_assoc]
+    have left_comm :
+        p.num * q.den * r.den + q.num * p.den * r.den +
+            r.num * (p.den * q.den) =
+          p.num * (q.den * r.den) + q.num * r.den * p.den +
+            r.num * q.den * p.den := by
+      simp [Nat.mul_comm, Nat.mul_left_comm]
+    exact left_expand.trans (left_comm.trans right_expand.symm)
+  simp [Equiv, add, den_eq, num_eq]
+
+/--
+Cross-multiplication order on nonnegative rational presentations.
+This is the relation used by the displayed inequality \(P(E)\le P(F)\) in the
+finite monotonicity corollary: numerators are compared after clearing
+denominators, so the comparison does not depend on writing a probability as a
+reduced fraction.
+-/
+def LE (p q : QProb) : Prop :=
+  p.num * q.den ≤ q.num * p.den
+
+/--
+Same-denominator comparison reduces to a comparison of numerators.  Urn
+probabilities always share the urn size as denominator, so this is the step
+from a selected-cell inequality to a rational inequality.
+-/
+theorem le_of_same_den {p q : QProb}
+    (hden : p.den = q.den) (hnum : p.num ≤ q.num) :
+    LE p q := by
+  unfold LE
+  rw [hden]
+  exact Nat.mul_le_mul_right q.den hnum
+
+/-- The cross-multiplication order respects presentation equivalence. -/
+theorem le_congr {p p' q q' : QProb}
+    (hp : Equiv p p') (hq : Equiv q q') (hle : LE p q) :
+    LE p' q' := by
+  have hscaled :
+      p.num * q.den * (p'.den * q'.den) ≤
+        q.num * p.den * (p'.den * q'.den) :=
+    Nat.mul_le_mul_right (p'.den * q'.den) hle
+  have left :
+      p.num * q.den * (p'.den * q'.den) =
+        p'.num * q'.den * (p.den * q.den) := by
+    calc
+      p.num * q.den * (p'.den * q'.den) =
+          (p.num * p'.den) * (q.den * q'.den) :=
+        mul_reorder_four p.num q.den p'.den q'.den
+      _ = (p'.num * p.den) * (q.den * q'.den) := by rw [hp]
+      _ = (p'.num * p.den) * (q'.den * q.den) := by
+        rw [Nat.mul_comm q.den q'.den]
+      _ = p'.num * q'.den * (p.den * q.den) :=
+        mul_reorder_four p'.num p.den q'.den q.den
+  have right :
+      q.num * p.den * (p'.den * q'.den) =
+        q'.num * p'.den * (p.den * q.den) := by
+    calc
+      q.num * p.den * (p'.den * q'.den) =
+          (q.num * q'.den) * (p.den * p'.den) := by
+        rw [Nat.mul_comm p'.den q'.den]
+        exact mul_reorder_four q.num p.den q'.den p'.den
+      _ = (q'.num * q.den) * (p.den * p'.den) := by rw [hq]
+      _ = (q'.num * q.den) * (p'.den * p.den) := by
+        rw [Nat.mul_comm p.den p'.den]
+      _ = q'.num * p'.den * (q.den * p.den) :=
+        mul_reorder_four q'.num q.den p'.den p.den
+      _ = q'.num * p'.den * (p.den * q.den) := by
+        rw [Nat.mul_comm q.den p.den]
+  have hcleared :
+      p'.num * q'.den * (p.den * q.den) ≤
+        q'.num * p'.den * (p.den * q.den) := by
+    rw [← left, ← right]
+    exact hscaled
+  exact Nat.le_of_mul_le_mul_right hcleared (Nat.mul_pos p.den_pos q.den_pos)
+
 /-- Finite addition of rational probability values. -/
 def listSum : List QProb -> QProb
   | [] => zero

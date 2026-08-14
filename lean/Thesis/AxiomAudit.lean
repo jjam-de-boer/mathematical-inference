@@ -16,12 +16,17 @@ The source tree is separately searched for `Classical.*` and `native_decide`.
 #print axioms Thesis.Probability.FiniteCellProduct.count_canonicalRectangularEvent
 #print axioms Thesis.Probability.FiniteCellProduct.selectedCells_product
 #print axioms Thesis.Probability.FiniteProduct.finiteWitness
+#print axioms Thesis.Probability.FiniteProduct.rectangularEvent_eq_true_iff
 #print axioms Thesis.Probability.ClaytonWaddington.UrnRatio.product_selectedCells
 #print axioms Thesis.Causality.ProbabilityTerm.eventTerm_denote
 #print axioms Thesis.Causality.FiniteLatentSCM.evalUnder_noIntervention
 #print axioms Thesis.Causality.FiniteLatentSCM.evalUnder_effectiveness
 #print axioms Thesis.Causality.FiniteLatentSCM.evalUnder_consistency
 #print axioms Thesis.Causality.FiniteLatentSCM.evalUnder_composition
+#print axioms Thesis.Causality.FiniteLatentSCM.evalPrefixUnder_eq_evalNodeUnder
+#print axioms Thesis.Causality.FiniteLatentSCM.evalPrefixUnder_full_eq_evalUnder
+#print axioms Thesis.Causality.FiniteLatentSCM.interventionalDist_eq_prefixPushforward
+#print axioms Thesis.Causality.FiniteLatentSCM.observationalDist_eq_prefixPushforward
 #print axioms Thesis.Causality.FiniteLatentSCM.counterfactualValue_eq
 #print axioms Thesis.Causality.TwinNetwork.eval_satisfies_mechanism
 #print axioms Thesis.Causality.TwinNetwork.Encoding.model_eval_eq_encodeAssignment
@@ -71,6 +76,10 @@ The source tree is separately searched for `Classical.*` and `native_decide`.
 #print axioms Thesis.Causality.CausalTransition.jointIdentifiable_iff
 #print axioms Thesis.Causality.CausalTransition.compatibleWith_iff
 #print axioms Thesis.Causality.CausalEpistemicRecord.interveneNodes_eq_sequential
+#print axioms Thesis.Causality.CausalEpistemicRecord.selectedEmbed_inj
+#print axioms Thesis.Causality.CausalEpistemicRecord.mem_iff_exists_selectedEmbed
+#print axioms Thesis.Causality.CausalEpistemicRecord.selectedEmbed_strict_mono
+#print axioms Thesis.Causality.CausalEpistemicRecord.selectedEmbed_lt_reflect
 #print axioms Thesis.Causality.CausalEditOperation.ofRecordStep_result
 #print axioms Thesis.Causality.StructuralMechanismReplacement.Operation.apply_model_mechanism
 #print axioms Thesis.Causality.BeliefReindexing.Operation.apply
@@ -174,6 +183,17 @@ The source tree is separately searched for `Classical.*` and `native_decide`.
 #print axioms Thesis.Causality.Examples.TenureTrack.prestigeModalCombinedConstruction_value
 #print axioms Thesis.Causality.FiniteRationalCPT.toSCM_preserves_row
 #print axioms Thesis.Probability.CommonDenominator.FiniteQMass.toRecord_preserves
+#print axioms Thesis.Probability.AdditiveCarrier.finSum_reindex
+#print axioms Thesis.Probability.nat_finSum_reindex
+#print axioms Thesis.Probability.QProb.listSum_perm
+#print axioms Thesis.Probability.QProb.finSum_reindex
+#print axioms Thesis.Probability.QProb.le_of_same_den
+#print axioms Thesis.Probability.UrnProb.monotonicity_probVal
+#print axioms Thesis.Causality.pairRootExtension_projected
+#print axioms Thesis.Causality.pairRootExtension_canonical
+#print axioms Thesis.Causality.pairRootHiddenDAG_directed
+#print axioms Thesis.Causality.pairRootHiddenDAG_bidirected
+#print axioms Thesis.Causality.pairRootProjection_observedGraph
 
 /- `Nat.mul_assoc` demonstrates why literal axiom-freedom is not the boundary. -/
 #print axioms Nat.mul_assoc
