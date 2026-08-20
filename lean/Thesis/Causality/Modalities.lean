@@ -246,18 +246,8 @@ theorem exists_selectedEmbed_of_mem (nodes : NodeSet S)
       selectedEmbed nodes i = node := by
   have hmem : node ∈ selectedNodeList S nodes :=
     (mem_selectedNodeList nodes node).mpr h
-  refine ⟨⟨(selectedNodeList S nodes).idxOf node,
-    List.idxOf_lt_length_of_mem hmem⟩, ?_⟩
-  apply beq_iff_eq.mp
-  change
-    ((selectedNodeList S nodes).get
-      ⟨(selectedNodeList S nodes).idxOf node,
-        List.idxOf_lt_length_of_mem hmem⟩ == node) = true
-  simpa [List.get_eq_getElem, List.idxOf] using
-    (List.findIdx_getElem
-      (p := fun value => value == node)
-      (xs := selectedNodeList S nodes)
-      (w := List.idxOf_lt_length_of_mem hmem))
+  rcases List.get_of_mem hmem with ⟨i, hi⟩
+  exact ⟨i, hi⟩
 
 theorem mem_iff_exists_selectedEmbed (nodes : NodeSet S)
     (node : Fin S.count) :
