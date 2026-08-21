@@ -74,6 +74,7 @@ The source tree is separately searched for `Classical.*` and `native_decide`.
 #print axioms Thesis.Causality.CausalTransition.kernel_action_realized
 #print axioms Thesis.Causality.CausalTransition.intervening_adds_action_targets
 #print axioms Thesis.Causality.CausalTransition.jointIdentifiable_iff
+#print axioms Thesis.Causality.CausalTransition.conditionalIdentifiable_iff
 #print axioms Thesis.Causality.CausalTransition.compatibleWith_iff
 #print axioms Thesis.Causality.CausalEpistemicRecord.interveneNodes_eq_sequential
 #print axioms Thesis.Causality.CausalEpistemicRecord.selectedEmbed_inj
@@ -194,6 +195,9 @@ The source tree is separately searched for `Classical.*` and `native_decide`.
 #print axioms Thesis.Causality.pairRootHiddenDAG_directed
 #print axioms Thesis.Causality.pairRootHiddenDAG_bidirected
 #print axioms Thesis.Causality.pairRootProjection_observedGraph
+#print axioms Thesis.Causality.FiniteLatentSCM.markovian_projection_has_no_bidirected
+#print axioms Thesis.Causality.FiniteLatentProjection.observedGraph_directed_iff
+#print axioms Thesis.Causality.FiniteLatentProjection.observedGraph_bidirected_iff
 
 /- `Nat.mul_assoc` demonstrates why literal axiom-freedom is not the boundary. -/
 #print axioms Nat.mul_assoc
