@@ -23,9 +23,9 @@ the certificate compilation and transport theorems below.
 /-! ## Explicit external theorem interface and checked transport -/
 
 /-!
-The generic records in `Certificates` are implementation cores.  The following
-public structures deliberately retain their original fields, constructors, and
-recursors so imports predating this refactor remain source-compatible.
+The generic records in `Certificates` factor the shared certificate shape.
+The following query-indexed structures expose the joint and conditional fields
+directly; explicit adapters map them to the generic representation.
 -/
 
 structure JointIdentificationCertificate (G : ObservedGraph S)

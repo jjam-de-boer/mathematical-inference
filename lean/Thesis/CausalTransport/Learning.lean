@@ -37,7 +37,7 @@ theorem TerminalVariableSpec.liftJointQuery_identifiable
       (ProbabilityResult.symm
         (spec.liftJointQuery_denote right query assignment)))⟩
 
-/-- Conditional identifiability, including support, survives terminal learning. -/
+/-- Agreement on common support survives conservative terminal learning. -/
 theorem TerminalVariableSpec.liftConditionalQuery_identifiable
     (spec : TerminalVariableSpec S) (G : ObservedGraph S)
     (query : ConditionalKernelQuery S)

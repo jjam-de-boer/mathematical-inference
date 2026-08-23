@@ -12,8 +12,8 @@ Generic inspectable certificates for a source probability term.
 Both joint and conditional kernel queries reduce to a source
 `ProbabilityTerm`; their identification certificates differ only in which
 query supplies that term.  This module factors out that shared certificate
-shape.  `Correspondence` retains the established joint/conditional names as
-abbreviations, so existing theorem statements and imports remain unchanged.
+shape. `Correspondence` provides query-specific structures and explicit
+adapters to this generic representation.
 -/
 
 /--

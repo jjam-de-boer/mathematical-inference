@@ -46,15 +46,7 @@ theorem count_le_length (xs : List X) (E : Event X) :
 
 theorem count_top (xs : List X) :
     count xs topEvent = xs.length := by
-  induction xs with
-  | nil =>
-      rfl
-  | cons x xs ih =>
-      have ih' : List.countP topEvent xs = xs.length := by
-        simpa [count] using ih
-      change List.countP topEvent (x :: xs) = (x :: xs).length
-      rw [List.countP_cons, ih']
-      simp [topEvent]
+  simp [count, topEvent]
 
 theorem count_congr {xs : List X} {E F : Event X}
     (h : ∀ x, E x = F x) :
@@ -334,22 +326,11 @@ theorem equiv_symm {p q : QProb} (h : Equiv p q) :
 /-- Reassociate four natural factors while exchanging the middle pair. -/
 theorem mul_reorder_four (a b c d : Nat) :
     a * b * (c * d) = a * c * (b * d) := by
-  calc
-    a * b * (c * d) = a * (b * (c * d)) := Nat.mul_assoc a b (c * d)
-    _ = a * ((b * c) * d) :=
-      congrArg (fun value => a * value) (Nat.mul_assoc b c d).symm
-    _ = a * ((c * b) * d) := by rw [Nat.mul_comm b c]
-    _ = a * (c * (b * d)) :=
-      congrArg (fun value => a * value) (Nat.mul_assoc c b d)
-    _ = a * c * (b * d) := (Nat.mul_assoc a c (b * d)).symm
+  ac_rfl
 
 theorem mul_reorder_three (a b c : Nat) :
     a * b * c = a * c * b := by
-  calc
-    a * b * c = a * (b * c) := Nat.mul_assoc a b c
-    _ = a * (c * b) :=
-      congrArg (fun value => a * value) (Nat.mul_comm b c)
-    _ = a * c * b := (Nat.mul_assoc a c b).symm
+  ac_rfl
 
 theorem equiv_trans {p q r : QProb}
     (hpq : Equiv p q) (hqr : Equiv q r) :
@@ -445,32 +426,9 @@ theorem add_zero (p : QProb) :
 /-- Addition of presentations is associative up to cross multiplication. -/
 theorem add_assoc (p q r : QProb) :
     Equiv (add (add p q) r) (add p (add q r)) := by
-  have den_eq :
-      (p.den * q.den) * r.den = p.den * (q.den * r.den) :=
-    Nat.mul_assoc p.den q.den r.den
-  have num_eq :
-      (p.num * q.den + q.num * p.den) * r.den + r.num * (p.den * q.den) =
-        p.num * (q.den * r.den) +
-          (q.num * r.den + r.num * q.den) * p.den := by
-    have left_expand :
-        (p.num * q.den + q.num * p.den) * r.den + r.num * (p.den * q.den) =
-          p.num * q.den * r.den + q.num * p.den * r.den +
-            r.num * (p.den * q.den) := by
-      simp [Nat.add_mul, Nat.add_assoc]
-    have right_expand :
-        p.num * (q.den * r.den) +
-            (q.num * r.den + r.num * q.den) * p.den =
-          p.num * (q.den * r.den) + q.num * r.den * p.den +
-            r.num * q.den * p.den := by
-      simp [Nat.add_mul, Nat.add_assoc]
-    have left_comm :
-        p.num * q.den * r.den + q.num * p.den * r.den +
-            r.num * (p.den * q.den) =
-          p.num * (q.den * r.den) + q.num * r.den * p.den +
-            r.num * q.den * p.den := by
-      simp [Nat.mul_comm, Nat.mul_left_comm]
-    exact left_expand.trans (left_comm.trans right_expand.symm)
-  simp [Equiv, add, den_eq, num_eq]
+  simp only [Equiv, add]
+  simp only [Nat.add_mul]
+  ac_rfl
 
 /--
 Cross-multiplication order on nonnegative rational presentations.

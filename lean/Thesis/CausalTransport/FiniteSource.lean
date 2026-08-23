@@ -486,19 +486,16 @@ def FiniteSourceObservationallyEquivalent
   forall event : T.Assignment -> Bool,
     QProb.Equiv (M.observationalValue event) (N.observationalValue event)
 
-def JointKernelQuery.sourceKernel {T : FiniteTableSignature}
+/-- Source-facing name for the query's concrete operation kernel. -/
+abbrev JointKernelQuery.sourceKernel {T : FiniteTableSignature}
     (query : JointKernelQuery T.toObserved) :
-    Kernel T.toObserved :=
-  { outcome := query.outcome
-    action := query.action
-    condition := NodeSet.empty }
+    Kernel T.toObserved := query.operationKernel
 
-def ConditionalKernelQuery.sourceKernel
+/-- Source-facing name for the query's concrete conditional operation kernel. -/
+abbrev ConditionalKernelQuery.sourceKernel
     {T : FiniteTableSignature}
     (query : ConditionalKernelQuery T.toObserved) : Kernel T.toObserved :=
-  { outcome := query.outcome
-    action := query.action
-    condition := query.condition }
+  query.operationKernel
 
 /-- A joint source query is supported directly by finite-table normalization. -/
 noncomputable def JointKernelQuery.finiteSourceSupportedAt
@@ -517,7 +514,7 @@ noncomputable def JointKernelQuery.finiteSourceSupportedAt
         exact QProb.equiv_trans
           (FiniteProbRecord.probVal_congr model.prior _ Probability.topEvent
             (fun latent => by
-              simp [kernel, JointKernelQuery.sourceKernel,
+              simp [kernel, JointKernelQuery.operationKernel,
                 Kernel.conditionEvent, Kernel.agreesOn, NodeSet.empty,
                 finAll_true, Probability.topEvent]))
           model.prior.normalization
@@ -539,7 +536,7 @@ noncomputable def JointKernelQuery.finiteSourceSupportedAt
         exact QProb.equiv_trans
           (FiniteProbRecord.probVal_congr model.prior _ Probability.topEvent
             (fun latent => by
-              simp [kernel, JointKernelQuery.sourceKernel,
+              simp [kernel, JointKernelQuery.operationKernel,
                 Kernel.conditionEvent, Kernel.agreesOn, NodeSet.empty,
                 finAll_true, Probability.topEvent]))
           model.prior.normalization

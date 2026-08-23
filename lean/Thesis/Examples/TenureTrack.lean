@@ -281,7 +281,7 @@ theorem setting_preserves_epistemic_belief :
 namespace TenureTrack
 
 /-!
-The complete eight-variable running example, rebuilt on the theorem-facing
+The complete eight-variable running example uses the theorem-facing
 finite probability, latent-SCM, intervention, and modal APIs.
 -/
 
@@ -813,8 +813,8 @@ theorem evidence_positive :
 
 The posterior conditions the shared latent prior on the displayed evidence.
 The next results compute the same counterfactual first through direct SCM
-semantics, then through the independent twin network, and finally through the
-two executed modal construction routes.
+semantics, then through a separately materialized twin network, and finally
+through the two executed modal construction routes.
 -/
 
 def posterior : FiniteProbRecord model.latent.Assignment :=

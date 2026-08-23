@@ -129,7 +129,25 @@ def JointKernelQuery.ValueEquivalent (q : JointKernelQuery S)
       (q.sourceTerm.denote M assignment)
       (q.sourceTerm.denote N assignment))
 
-def ConditionalKernelQuery.ValueEquivalent (q : ConditionalKernelQuery S)
+/--
+Full equivalence of the partial conditional-kernel results.  Unlike agreement
+on common support, this also requires the two models to have the same support
+status at every assignment.
+-/
+def ConditionalKernelQuery.ResultEquivalent (q : ConditionalKernelQuery S)
+    (M N : ExactModel S) : Prop :=
+  forall assignment,
+    Nonempty (ProbabilityResult.Equivalent
+      (q.sourceTerm.denote M assignment)
+      (q.sourceTerm.denote N assignment))
+
+/--
+Agreement of conditional-kernel values at every assignment supported by both
+models.  This relation does not assert that either model supports a given
+assignment, nor that their support domains coincide.
+-/
+def ConditionalKernelQuery.AgreesOnCommonSupport
+    (q : ConditionalKernelQuery S)
     (M N : ExactModel S) : Prop :=
   forall assignment,
     q.sourceTerm.SupportedAt M assignment ->
@@ -137,6 +155,19 @@ def ConditionalKernelQuery.ValueEquivalent (q : ConditionalKernelQuery S)
     Nonempty (ProbabilityResult.Equivalent
       (q.sourceTerm.denote M assignment)
       (q.sourceTerm.denote N assignment))
+
+/-- Conditional value equivalence means agreement on common support. -/
+abbrev ConditionalKernelQuery.ValueEquivalent
+    (q : ConditionalKernelQuery S) (M N : ExactModel S) : Prop :=
+  q.AgreesOnCommonSupport M N
+
+/-- Full partial-result equivalence entails agreement on common support. -/
+theorem ConditionalKernelQuery.ResultEquivalent.agreesOnCommonSupport
+    {q : ConditionalKernelQuery S} {M N : ExactModel S}
+    (equivalent : q.ResultEquivalent M N) :
+    q.AgreesOnCommonSupport M N := by
+  intro assignment _ _
+  exact equivalent assignment
 
 def InterventionalQuery.distribution (q : InterventionalQuery S)
     (M : ExactModel S) : FiniteProbRecord S.Assignment :=
@@ -335,7 +366,7 @@ def Compatible (M : ExactModel S) (G : ObservedGraph S) : Prop :=
 def ObservationallyEquivalent (M N : ExactModel S) : Prop :=
   ProbabilityTerm.ObservationalAgreement M N
 
-/-- Event-level identifiability is retained as a derived application notion. -/
+/-- Event-level identifiability is the derived fixed-event application notion. -/
 def EventIdentifiable (G : ObservedGraph S) (q : InterventionalQuery S) : Prop :=
   forall (M N : ExactModel S),
     Compatible M G ->
@@ -366,6 +397,13 @@ def Identifiable (G : ObservedGraph S) (q : JointKernelQuery S) : Prop :=
     ObservationallyEquivalent M N ->
     q.ValueEquivalent M N
 
+/--
+A conditional kernel is identifiable when every pair of compatible,
+observationally equivalent models agrees at each assignment supported by both
+models.  This common-support notion does not require global support or equality
+of support domains; `ConditionalKernelQuery.ResultEquivalent` expresses the
+stronger full partial-result comparison.
+-/
 def ConditionalIdentifiable (G : ObservedGraph S)
     (q : ConditionalKernelQuery S) : Prop :=
   forall (M N : ExactModel S),

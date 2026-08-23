@@ -9,10 +9,11 @@ open Probability
 /-!
 Denotational semantics for the finite probability-expression language.
 
-The syntax in `CausalDerivation` is model-independent.  This module gives
-each term a partial finite-rational meaning in an explicit latent SCM.  A
-missing result records failed support, so division by a zero-probability
-condition is represented rather than silently assigned a value.
+The `ProbabilityTerm` syntax used by `DoCalculusDerivation` is
+model-independent. This module gives each term a partial finite-rational
+meaning in an explicit latent SCM. A missing result records failed support, so
+division by a zero-probability condition is represented rather than silently
+assigned a value.
 -/
 
 namespace ObservedSignature

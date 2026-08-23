@@ -18,7 +18,8 @@ Stable facade for external-theorem interfaces and their finite transports.
 `FiniteSource` then gives an independently executable finite-table source
 semantics and proves its preservation by the intrinsic causal semantics.
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
-counterfactual certificates across that boundary.  Thus importing this facade
+counterfactual certificates and identifiability results across that boundary.
+Thus importing this facade
 does not assert an identification theorem as an axiom: users must supply the
 relevant `Published...` package to invoke a completeness transport.
 -/

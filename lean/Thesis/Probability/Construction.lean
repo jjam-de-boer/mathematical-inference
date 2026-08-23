@@ -554,83 +554,94 @@ theorem rectangularEvent_true (n : Nat) (Value : Fin n -> Type u)
       simp [rectangularEvent,
         ih (fun i => Value i.castSucc) (fun i => assignment i.castSucc)]
 
+/--
+The rectangular event that constrains one dependent coordinate and leaves all
+other coordinates unrestricted.
+-/
+def singletonEvents (n : Nat) (Value : Fin n -> Type u)
+    (chosen : Fin n) (event : Value chosen -> Bool) :
+    (i : Fin n) -> Value i -> Bool :=
+  fun i value =>
+    if h : i = chosen then event (cast (congrArg Value h) value) else true
+
+/-- A dependent singleton rectangular event reads exactly its chosen coordinate. -/
+theorem rectangularEvent_singleton_dependent
+    (n : Nat) (Value : Fin n -> Type u)
+    (chosen : Fin n) (event : Value chosen -> Bool)
+    (assignment : Assignment n Value) :
+    rectangularEvent n Value (singletonEvents n Value chosen event) assignment =
+      event (assignment chosen) := by
+  apply Bool.eq_iff_iff.mpr
+  rw [rectangularEvent_eq_true_iff]
+  constructor
+  · intro all
+    simpa [singletonEvents] using all chosen
+  · intro selected i
+    by_cases equal : i = chosen
+    · subst i
+      simpa [singletonEvents] using selected
+    · simp [singletonEvents, equal]
+
 theorem rectangularEvent_singleton (n : Nat) (Outcome : Type u)
     (chosen : Fin n) (event : Outcome -> Bool)
     (assignment : Fin n -> Outcome) :
     rectangularEvent n (fun _ => Outcome)
         (fun i value => if i = chosen then event value else true) assignment =
       event (assignment chosen) := by
-  induction n with
-  | zero =>
-      exact Fin.elim0 chosen
-  | succ n ih =>
-      refine Fin.lastCases ?_ (fun earlier => ?_) chosen
-      · have hInitialEvents :
-            (fun (i : Fin n) (value : Outcome) =>
-              if i.castSucc = Fin.last n then event value else true) =
-            (fun _ _ => true) := by
-          funext i value
-          simp [castSucc_ne_last]
-        rw [rectangularEvent]
-        rw [if_pos rfl]
-        change
-          (event (assignment (Fin.last n)) &&
-              rectangularEvent n (fun _ => Outcome)
-                (fun i value =>
-                  if i.castSucc = Fin.last n then event value else true)
-                (fun i => assignment i.castSucc)) =
-            event (assignment (Fin.last n))
-        rw [hInitialEvents, rectangularEvent_true]
-        simp
-      · have hInitialEvents :
-            (fun (i : Fin n) (value : Outcome) =>
-              if i.castSucc = earlier.castSucc then event value else true) =
-            (fun i value => if i = earlier then event value else true) := by
-          funext i value
-          simp [Fin.ext_iff]
-        rw [rectangularEvent]
-        change
-          ((if Fin.last n = earlier.castSucc then
-              event (assignment (Fin.last n)) else true) &&
-              rectangularEvent n (fun _ => Outcome)
-                (fun i value =>
-                  if i.castSucc = earlier.castSucc then event value else true)
-                (fun i => assignment i.castSucc)) =
-            event (assignment earlier.castSucc)
-        rw [if_neg (last_ne_castSucc earlier), hInitialEvents,
-          ih earlier (fun i => assignment i.castSucc)]
-        simp
+  have eventFamily :
+      (fun i value => if i = chosen then event value else true) =
+        singletonEvents n (fun _ => Outcome) chosen event := by
+    funext i value
+    by_cases equal : i = chosen <;> simp [singletonEvents, equal]
+  rw [eventFamily]
+  exact rectangularEvent_singleton_dependent
+    n (fun _ => Outcome) chosen event assignment
 
-/-- A coordinate of the independent product has its declared marginal law. -/
+/-- A coordinate of a dependent independent product has its declared marginal law. -/
+theorem record_coordinate_probVal_dependent
+    (n : Nat) (Value : Fin n -> Type u)
+    (factors : (i : Fin n) -> FiniteProbRecord (Value i))
+    (chosen : Fin n) (event : Value chosen -> Bool) :
+    QProb.Equiv
+      ((record n Value factors).probVal
+        (fun assignment => event (assignment chosen)))
+      ((factors chosen).probVal event) := by
+  let events := singletonEvents n Value chosen event
+  have rectangular := record_rectangular_probVal n Value factors events
+  have eventEquality :
+      rectangularEvent n Value events =
+        (fun assignment => event (assignment chosen)) := by
+    funext assignment
+    exact rectangularEvent_singleton_dependent n Value chosen event assignment
+  rw [eventEquality] at rectangular
+  exact QProb.equiv_trans rectangular
+    (QProb.equiv_trans
+      (qProduct_congr n (fun i => by
+        by_cases equal : i = chosen
+        · subst i
+          have chosenEvents : events chosen = event := by
+            funext value
+            simp [events, singletonEvents]
+          rw [chosenEvents]
+          simp
+          exact QProb.equiv_refl _
+        · exact QProb.equiv_trans
+            (FiniteProbRecord.probVal_congr (factors i) _ topEvent
+              (fun value => by
+                simp [events, singletonEvents, equal, topEvent]))
+            (by simpa [events, singletonEvents, equal] using
+              (factors i).normalization)))
+      (qProduct_singleton n chosen ((factors chosen).probVal event)))
+
+/-- The homogeneous coordinate-marginal law is the constant-family specialization. -/
 theorem record_coordinate_probVal (n : Nat) (Outcome : Type u)
     (factors : Fin n -> FiniteProbRecord Outcome)
     (chosen : Fin n) (event : Outcome -> Bool) :
     QProb.Equiv
       ((record n (fun _ => Outcome) factors).probVal
         (fun assignment => event (assignment chosen)))
-      ((factors chosen).probVal event) := by
-  let events : (i : Fin n) -> Outcome -> Bool :=
-    fun i value => if i = chosen then event value else true
-  have hRectangular :=
-    record_rectangular_probVal n (fun _ => Outcome) factors events
-  have hEvent :
-      rectangularEvent n (fun _ => Outcome) events =
-        (fun assignment => event (assignment chosen)) := by
-    funext assignment
-    exact rectangularEvent_singleton n Outcome chosen event assignment
-  rw [hEvent] at hRectangular
-  exact QProb.equiv_trans hRectangular
-    (QProb.equiv_trans
-      (qProduct_congr n (fun i => by
-        by_cases h : i = chosen
-        · subst i
-          simpa [events] using
-            (QProb.equiv_refl ((factors chosen).probVal event))
-        · exact QProb.equiv_trans
-            (FiniteProbRecord.probVal_congr (factors i) _ topEvent
-              (fun value => by simp [events, h, topEvent]))
-            (by simpa [h] using (factors i).normalization)))
-      (qProduct_singleton n chosen ((factors chosen).probVal event)))
+      ((factors chosen).probVal event) :=
+  record_coordinate_probVal_dependent n (fun _ => Outcome) factors chosen event
 
 
 end FiniteProduct

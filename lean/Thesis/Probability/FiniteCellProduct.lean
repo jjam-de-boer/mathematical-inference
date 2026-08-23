@@ -1,4 +1,4 @@
-import Thesis.Probability.Core
+import Thesis.Probability.ConstructivePermutation
 
 namespace Thesis
 namespace Probability
@@ -218,74 +218,6 @@ private theorem count_encodedCells_singleton (hN : 0 < N)
   rw [count_encodedRectangularEvent, count_cells_singleton,
     count_cells_singleton]
 
-/- Reconstruct permutation evidence directly from decidable counts.  The
-standard `List.perm_iff_count` proof carries a `Classical.choice` dependency. -/
-private theorem perm_cons_erase_constructive {A : Type u}
-    [BEq A] [LawfulBEq A] {value : A} : forall {values : List A},
-    value ∈ values -> values.Perm (value :: values.erase value) := by
-  intro values member
-  induction values with
-  | nil => simp at member
-  | cons head tail ih =>
-      by_cases equal : (head == value) = true
-      · have headEqual : head = value := LawfulBEq.eq_of_beq equal
-        cases headEqual
-        rw [List.erase_cons_head]
-      · have tailMember : value ∈ tail := by
-          rcases List.mem_cons.mp member with headEqual | tailMember
-          · cases headEqual
-            exact False.elim (equal (beq_self_eq_true value))
-          · exact tailMember
-        rw [List.erase_cons_tail equal]
-        exact ((ih tailMember).cons head).trans
-          (List.Perm.swap value head (tail.erase value))
-
-private theorem nil_counts_impossible {A : Type u}
-    [BEq A] [LawfulBEq A] {value : A} {rest : List A}
-    (countsEqual : forall item,
-      List.count item [] = List.count item (value :: rest)) : False := by
-  have impossible := countsEqual value
-  rw [List.count_nil, List.count_cons_self] at impossible
-  omega
-
-private theorem member_from_counts {A : Type u}
-    [BEq A] [LawfulBEq A] {value : A} {rest right : List A}
-    (countsEqual : forall item,
-      List.count item (value :: rest) = List.count item right) :
-    value ∈ right := by
-  apply List.count_pos_iff.mp
-  rw [← countsEqual value]
-  simp
-
-private theorem cancel_front_counts {A : Type u}
-    [BEq A] [LawfulBEq A] {value other : A} {rest right : List A}
-    (equal : List.count other (value :: rest) = List.count other right)
-    (front : right.Perm (value :: right.erase value)) :
-    List.count other rest = List.count other (right.erase value) := by
-  rw [front.count_eq, List.count_cons, List.count_cons] at equal
-  exact Nat.add_right_cancel equal
-
-private theorem perm_of_count_eq_constructive {A : Type u}
-    [BEq A] [LawfulBEq A] : forall {left right : List A},
-    (forall value, List.count value left = List.count value right) ->
-      left.Perm right := by
-  intro left
-  induction left with
-  | nil =>
-      intro right countsEqual
-      cases right with
-      | nil => exact List.Perm.nil
-      | cons value rest =>
-          exact False.elim (nil_counts_impossible countsEqual)
-  | cons value rest ih =>
-      intro right countsEqual
-      have member := member_from_counts countsEqual
-      have front := perm_cons_erase_constructive member
-      have tailCounts : forall other,
-          List.count other rest = List.count other (right.erase value) :=
-        fun other => cancel_front_counts (countsEqual other) front
-      exact ((ih tailCounts).cons value).trans front.symm
-
 /-- Row-major encoding enumerates the same product cells as the canonical
 enumeration of `Fin (M * N)`, possibly in a different order. -/
 theorem encodedCells_perm_cells :
@@ -293,7 +225,7 @@ theorem encodedCells_perm_cells :
   cases N with
   | zero => simp [encodedCells, productCells, cells]
   | succ N =>
-      apply perm_of_count_eq_constructive
+      apply ConstructivePermutation.perm_of_count_eq
       intro index
       rw [List.count_eq_countP, List.count_eq_countP]
       change count (encodedCells M (N + 1)) (fun value => value == index) =

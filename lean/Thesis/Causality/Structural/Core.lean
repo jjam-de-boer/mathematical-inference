@@ -1,6 +1,7 @@
 import Thesis.Causality.Structural.Links
 import Thesis.Causality.Structural.Learning
 import Thesis.Causality.Structural.SurgeryCore
+import Thesis.Causality.Forgetting
 
 namespace Thesis
 namespace Causality
@@ -15,11 +16,10 @@ separator that records its source, target, and realization proof.  Directed
 and latent links are the two constructors of one causal `relate` family; no
 second metadata graph is maintained.
 
-This module is the public composition layer for structural edits, despite the
-historic `Core` filename. The lower-level data transformations are defined in
-`Links`, `Learning`, and `SurgeryCore`, which it imports above. Keeping the
-composition here gives every public edit the same `CausalEditOperation` and
-`CausalEditTransition` interface.
+This module is the public composition layer for structural edits. The
+lower-level data transformations are defined in `Links`, `Learning`, and
+`SurgeryCore`. Their composition here gives every public edit the same
+`CausalEditOperation` and `CausalEditTransition` interface.
 -/
 
 inductive CausalLinkKind where
@@ -27,7 +27,7 @@ inductive CausalLinkKind where
   | latentInput
   deriving DecidableEq, Repr
 
-/-- The two causally meaningful links available at one epistemic state. -/
+/-- Typed coordinates for directed and latent-input causal links. -/
 inductive CausalLink (R : CausalEpistemicRecord S) where
   | directed (parent child : Fin S.count)
       (earlier : parent.val < child.val)
@@ -276,12 +276,19 @@ inductive CausalEditOperation :
       (original : CausalEpistemicRecord S)
       (spec : EndogenousVariableSpec original) :
       CausalEditOperation spec.learnRecord S
+  | forgettingUnusedEndogenous {S : ObservedSignature}
+      {source : CausalEpistemicRecord S} (spec : ObservedDeletionSpec S) :
+      CausalEditOperation source spec.signature
   | learningExogenous {S : ObservedSignature}
       {source : CausalEpistemicRecord S} (spec : ExogenousVariableSpec) :
       CausalEditOperation source S
   | forgettingExogenous {S : ObservedSignature}
       (original : CausalEpistemicRecord S) (spec : ExogenousVariableSpec) :
       CausalEditOperation (spec.learnRecord original) S
+  | forgettingUnusedExogenous {S : ObservedSignature}
+      {source : CausalEpistemicRecord S}
+      (spec : ExogenousDeletionSpec source.model) :
+      CausalEditOperation source S
   | relatingDirected {S : ObservedSignature}
       {source : CausalEpistemicRecord S} {parent child : Fin S.count}
       {earlier : parent.val < child.val}
@@ -337,8 +344,10 @@ def result : CausalEditOperation source T -> CausalEpistemicRecord T
   | .forgettingTerminal original _ => original
   | .learningEndogenous spec => spec.learnRecord
   | .forgettingEndogenous original _ => original
+  | .forgettingUnusedEndogenous spec => spec.deleteRecord source
   | .learningExogenous spec => spec.learnRecord source
   | .forgettingExogenous original _ => original
+  | .forgettingUnusedExogenous spec => spec.deleteRecord
   | .relatingDirected operation => operation.apply source
   | .unrelatingDirected operation => operation.apply source
   | .relatingLatent operation => operation.apply
@@ -360,8 +369,10 @@ def label : CausalEditOperation source T -> CausalEditLabel
   | .learningEndogenous _ => .learningEndogenous
   | .forgettingTerminal _ _
   | .forgettingEndogenous _ _ => .forgettingEndogenous
+  | .forgettingUnusedEndogenous _ => .forgettingEndogenous
   | .learningExogenous _ => .learningExogenous
   | .forgettingExogenous _ _ => .forgettingExogenous
+  | .forgettingUnusedExogenous _ => .forgettingExogenous
   | .relatingDirected _ => .relating .directed
   | .unrelatingDirected _ => .unrelating .directed
   | .relatingLatent _ => .relating .latentInput
@@ -603,6 +614,15 @@ def forgetTransition {S : ObservedSignature} (mode : CausalMode S)
   operation := .forgettingEndogenous mode.record spec
   realized := rfl
 
+/-- Forget any directed sink, not only a node carrying learning provenance. -/
+def forgetUnusedTransition {S : ObservedSignature} (mode : CausalMode S)
+    (spec : ObservedDeletionSpec S) (targetName : String) :
+    CausalEditTransition S spec.signature where
+  source := mode
+  target := ⟨targetName, spec.deleteRecord mode.record⟩
+  operation := .forgettingUnusedEndogenous spec
+  realized := rfl
+
 @[simp] theorem learn_forget_record_roundTrip
     {S : ObservedSignature} (mode : CausalMode S)
     (spec : EndogenousVariableSpec mode.record)
@@ -628,6 +648,15 @@ def forgetTransition (spec : ExogenousVariableSpec) (mode : CausalMode S)
   source := (spec.learnTransition mode learnedName).target
   target := ⟨targetName, mode.record⟩
   operation := .forgettingExogenous mode.record spec
+  realized := rfl
+
+/-- Forget any latent root unused by every observed mechanism. -/
+def forgetUnusedTransition (mode : CausalMode S)
+    (spec : ExogenousDeletionSpec mode.record.model) (targetName : String) :
+    CausalEditTransition S S where
+  source := mode
+  target := ⟨targetName, spec.deleteRecord⟩
+  operation := .forgettingUnusedExogenous spec
   realized := rfl
 
 @[simp] theorem learn_forget_record_roundTrip

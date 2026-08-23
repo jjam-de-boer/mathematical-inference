@@ -26,9 +26,9 @@ structure ValueEquivalence (left : Type u) (right : Type v) where
   backward_forward : forall value, backward (forward value) = value
 
 /-!
-A structurally generated SCM over a full finite hidden DAG.
+An executable finite SCM record over a full finite hidden DAG.
 
-Every node has private exogenous noise.  Shared observed dependence is induced
+Every node has private exogenous noise. Shared observed dependence is induced
 by directed paths through explicit hidden nodes, not by arbitrary probability
 tables attached after projection.
 -/

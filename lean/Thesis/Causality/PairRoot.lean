@@ -42,7 +42,7 @@ def allObservedPairs (S : ObservedSignature) :
 /--
 The canonical pair-root list: one entry for every bidirected edge, written
 so that the first endpoint has strictly smaller rank.  Symmetry of the
-bidirected classifier makes this an exhaustive, duplicate-free selection.
+bidirected classifier makes the ordered membership test exhaustive.
 -/
 def pairRoots (G : ObservedGraph S) : List (Fin S.count × Fin S.count) :=
   (allObservedPairs S).filter fun pair =>

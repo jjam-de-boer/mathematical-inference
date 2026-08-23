@@ -11,9 +11,9 @@ Transport certificates enriched with executable modal realizations.
 
 Joint and conditional kernel queries share the same operation-realization
 payload once their source term and operation kernel are fixed.  The generic
-structures below carry that payload once; the established joint/conditional
-names remain public structures with their original constructors. Explicit
-adapters connect those stable records to the generic implementation.
+structure below carries that payload once. Query-specific public structures
+expose the joint and conditional indices, and explicit adapters connect them
+to the generic implementation.
 -/
 
 /--

@@ -1,4 +1,4 @@
-import Thesis.Probability.Core
+import Thesis.Probability.ConstructivePermutation
 
 namespace Thesis
 namespace Probability
@@ -15,9 +15,9 @@ associative, commutative and unital up to that equivalence.
 No result here is a statement about infinite series, unordered sums over
 arbitrary types, or quotient types.  The sum is the finite fold of the
 supplied addition, and a permutation is an explicitly inverted bijection of
-`Fin n`.  The count-form instance used by urn invariance remains
-`count_reindex` in `Core.lean`; this module supplies the named abstract
-theorem and its `Nat` and `QProb` specializations.
+`Fin n`.  The count-form instance used by urn invariance is `count_reindex` in
+`Core.lean`; this module supplies the named abstract theorem and its `Nat` and
+`QProb` specializations.
 -/
 
 /--
@@ -91,79 +91,12 @@ theorem listSum_perm (C : AdditiveCarrier M) {xs ys : List M}
 def finSum (C : AdditiveCarrier M) (n : Nat) (u : Fin n → M) : M :=
   listSum C ((List.finRange n).map u)
 
-/-!
-The following constructive permutation reconstruction is copied in spirit
-from `FiniteCellProduct`: the standard `List.perm_iff_count` proof in Lean's
-library inherits `Classical.choice`.  Here both lists are finite enumerations
-of `Fin n`, so decidable occurrence counts suffice.
--/
-
-private theorem perm_cons_erase_constructive {A : Type u}
-    [BEq A] [LawfulBEq A] {value : A} : ∀ {values : List A},
-    value ∈ values → values.Perm (value :: values.erase value) := by
-  intro values member
-  induction values with
-  | nil => simp at member
-  | cons head tail ih =>
-      by_cases equal : (head == value) = true
-      · have headEqual : head = value := LawfulBEq.eq_of_beq equal
-        cases headEqual
-        rw [List.erase_cons_head]
-      · have tailMember : value ∈ tail := by
-          rcases List.mem_cons.mp member with headEqual | tailMember
-          · cases headEqual
-            exact False.elim (equal (beq_self_eq_true value))
-          · exact tailMember
-        rw [List.erase_cons_tail equal]
-        exact ((ih tailMember).cons head).trans
-          (List.Perm.swap value head (tail.erase value))
-
-private theorem nil_counts_impossible {A : Type u}
-    [BEq A] [LawfulBEq A] {value : A} {rest : List A}
-    (countsEqual : ∀ item,
-      List.count item [] = List.count item (value :: rest)) : False := by
-  have impossible := countsEqual value
-  rw [List.count_nil, List.count_cons_self] at impossible
-  omega
-
-private theorem member_from_counts {A : Type u}
-    [BEq A] [LawfulBEq A] {value : A} {rest right : List A}
-    (countsEqual : ∀ item,
-      List.count item (value :: rest) = List.count item right) :
-    value ∈ right := by
-  apply List.count_pos_iff.mp
-  rw [← countsEqual value]
-  simp
-
-private theorem cancel_front_counts {A : Type u}
-    [BEq A] [LawfulBEq A] {value other : A} {rest right : List A}
-    (equal : List.count other (value :: rest) = List.count other right)
-    (front : right.Perm (value :: right.erase value)) :
-    List.count other rest = List.count other (right.erase value) := by
-  rw [front.count_eq, List.count_cons, List.count_cons] at equal
-  exact Nat.add_right_cancel equal
-
 /-- Reconstruct a list permutation from matching decidable occurrence counts. -/
 theorem perm_of_count_eq_constructive {A : Type u}
     [BEq A] [LawfulBEq A] : ∀ {left right : List A},
     (∀ value, List.count value left = List.count value right) →
-      left.Perm right := by
-  intro left
-  induction left with
-  | nil =>
-      intro right countsEqual
-      cases right with
-      | nil => exact List.Perm.nil
-      | cons value rest =>
-          exact False.elim (nil_counts_impossible countsEqual)
-  | cons value rest ih =>
-      intro right countsEqual
-      have member := member_from_counts countsEqual
-      have front := perm_cons_erase_constructive member
-      have tailCounts : ∀ other,
-          List.count other rest = List.count other (right.erase value) :=
-        fun other => cancel_front_counts (countsEqual other) front
-      exact ((ih tailCounts).cons value).trans front.symm
+      left.Perm right :=
+  ConstructivePermutation.perm_of_count_eq
 
 /-- Pointwise Boolean agreement, without function extensionality. -/
 private theorem countP_eq_of_pointwise {A : Type u}

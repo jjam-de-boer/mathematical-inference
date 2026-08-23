@@ -1,3 +1,4 @@
+import Thesis.Causality.ExecutedMultiworld.FromFactual
 import Thesis.Causality.ExecutedMultiworld.FromEmpty
 
 namespace Thesis
@@ -12,9 +13,9 @@ Eventwise and query-level agreement of the two independently executed routes.
 an endpoint by literal root/node creation whose evaluator and event
 probabilities agree after coordinate transport.  Their dependent signatures
 need not be definitionally equal, so every comparison first transports observed
-assignments back through the route's `coordinates` witness.  The file proves
-pointwise evaluator agreement and then derives event, numerator, and
-denominator probability agreement.
+assignments back through the route's `coordinates` witness. The file proves
+pointwise evaluator agreement and then derives event, numerator, denominator,
+and full partial-result agreement.
 -/
 
 /-! ## Agreement of the two independently executed routes -/
@@ -75,6 +76,19 @@ theorem executedRoutes_numerator_equiv
     QProb.Equiv fromFactual.numerator fromEmpty.numerator :=
   QProb.equiv_trans fromFactual.numerator_equiv
     (QProb.equiv_symm fromEmpty.numerator_equiv)
+
+/--
+The two executed routes give equivalent partial conditional-query results,
+including the unsupported case.
+-/
+noncomputable def executedRoutes_denote_equivalent
+    (fromFactual :
+      ExecutedOccurrenceConstruction mode query.combinedEvent)
+    (fromEmpty :
+      FromEmptyExecutedOccurrenceConstruction mode query.combinedEvent) :
+    ProbabilityResult.Equivalent fromFactual.denote fromEmpty.denote :=
+  ProbabilityResult.trans fromFactual.semanticAgreement
+    (ProbabilityResult.symm fromEmpty.semanticAgreement)
 
 end Causality
 end Thesis

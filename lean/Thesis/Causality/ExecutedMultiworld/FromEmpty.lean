@@ -145,16 +145,6 @@ noncomputable def probabilityExecution
   construction.realizes.canonicalExecution
     construction.endpointInterventionAbsorbed
 
-noncomputable def probabilityRealizes
-    (construction : FromEmptyExecutedOccurrenceConstruction mode event) :
-    AtomicIntervention.Execution.DeterministicRealizesEvaluation
-      construction.probabilityExecution
-      (fun assignment =>
-        construction.linked.configuredModel.evalUnder
-          construction.linked.combinedAction assignment) :=
-  construction.realizes.canonicalRealizes
-    construction.endpointInterventionAbsorbed
-
 noncomputable def probabilityTarget
     (construction : FromEmptyExecutedOccurrenceConstruction mode event) :
     CausalMode construction.signature :=

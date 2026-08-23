@@ -309,7 +309,7 @@ def abduction (M : ExactModel S) (evidence : S.Assignment -> Bool)
     (CausalEpistemicRecord.initial M) (fun u => evidence (M.eval u))
     (latentEvidencePositive M evidence hEvidence)
 
-/-- The compact, one-shot surgery retained as a reference implementation. -/
+/-- The compact, one-shot surgery used as the reference implementation. -/
 def compactAction (M : ExactModel S) (evidence : S.Assignment -> Bool)
     (hEvidence : M.CounterfactualSupported evidence)
     (intervention : (node : Fin S.count) -> Option (S.Value node)) :

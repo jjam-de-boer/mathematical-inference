@@ -88,9 +88,9 @@ end PathSpecification
 /--
 External correctness boundary for the finite Boolean implementation.
 
-An inhabitant is the standard ancestral-moralisation theorem specialized to
-the explicit-latent expansion used here.  It can later be replaced by an
-internal proof without changing the transport interface.
+An inhabitant supplies the standard ancestral-moralisation theorem specialized
+to the explicit-latent expansion used here. Keeping this boundary explicit
+separates the external graph theorem from the checked certificate transport.
 -/
 structure DSeparationCorrectness (G : ObservedGraph S) : Prop where
   algorithm_iff_active_path : forall mutilation left right conditioned,

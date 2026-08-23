@@ -6,6 +6,19 @@ namespace Causality
 
 open Probability
 
+/--
+The factual starting mode used by occurrence-world execution: it keeps the
+source structural model, uses its product prior as belief, and has no active
+compact intervention.
+-/
+def counterfactualBaseMode (mode : CausalMode S) : CausalMode S :=
+  ⟨"counterfactual-factual", CausalEpistemicRecord.initial mode.record.model⟩
+
+theorem counterfactualBaseMode_noActiveIntervention (mode : CausalMode S) :
+    AtomicIntervention.NoActiveIntervention (counterfactualBaseMode mode) := by
+  intro child
+  rfl
+
 theorem dependentApplyHEq {α : Type _} {β : α -> Type _}
     (f : (value : α) -> β value) {left right : α}
     (equal : left = right) :

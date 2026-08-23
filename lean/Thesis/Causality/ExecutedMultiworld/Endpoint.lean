@@ -1,4 +1,5 @@
-import Thesis.Causality.ExecutedMultiworld.Configuration
+import Thesis.Causality.Multiworld
+import Thesis.Causality.Structural.Atomic
 
 namespace Thesis
 namespace Causality

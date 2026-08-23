@@ -355,18 +355,6 @@ theorem LinkedOccurrenceCopies.configured_evalUnder_eq_reference
     _ = linked.coordinates.transportObserved reference :=
       congrArg linked.coordinates.transportObserved back
 
-/-- Package the from-factual route's configured state for route-independent clients. -/
-def LinkedOccurrenceCopies.configuration
-    {event : CounterfactualEvent template}
-    (linked : LinkedOccurrenceCopies template source event.atoms) :
-    MultiworldConfiguration source.record.model event where
-  signature := linked.signature
-  record := linked.configureRecord
-  coordinates := linked.coordinates
-  rootAssignment := linked.rootAssignment
-  action := linked.combinedAction
-  evaluatesAsReference := linked.configured_evalUnder_eq_reference
-
 /-!
 ## Complete from-factual execution
 
@@ -375,19 +363,6 @@ additional occurrence worlds, installs their equations, transports the belief,
 and only then compiles the combined action. Endpoint equalities below are
 therefore semantic statements about a recorded edit path.
 -/
-
-/--
-Counterfactual construction starts from a fresh factual epistemic mode: the same
-structural model, its product prior as belief, and no active intervention.
--/
-def counterfactualBaseMode (mode : CausalMode S) : CausalMode S :=
-  ⟨"counterfactual-factual", CausalEpistemicRecord.initial mode.record.model⟩
-
-theorem counterfactualBaseMode_noActiveIntervention (mode : CausalMode S) :
-    AtomicIntervention.NoActiveIntervention
-      (counterfactualBaseMode mode) := by
-  intro child
-  rfl
 
 /--
 The executable occurrence construction.  The direct occurrence model is not a
@@ -516,16 +491,6 @@ noncomputable def probabilityExecution
     AtomicIntervention.Execution
       construction.linked.reindexBeliefTransition.target :=
   construction.realizes.canonicalExecution
-    construction.endpointInterventionAbsorbed
-
-noncomputable def probabilityRealizes
-    (construction : ExecutedOccurrenceConstruction mode event) :
-    AtomicIntervention.Execution.DeterministicRealizesEvaluation
-      construction.probabilityExecution
-      (fun assignment =>
-        construction.linked.configuredModel.evalUnder
-          construction.linked.combinedAction assignment) :=
-  construction.realizes.canonicalRealizes
     construction.endpointInterventionAbsorbed
 
 noncomputable def probabilityTarget

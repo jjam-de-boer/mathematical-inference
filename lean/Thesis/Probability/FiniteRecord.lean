@@ -57,6 +57,17 @@ theorem length_expand (atoms : List (Ω × Nat)) :
       | mk ω w =>
           simp [expand, totalMass, ih]
 
+/-- Count a Boolean event over repeated copies without using choice. -/
+theorem countP_replicate_constructive (count : Nat) (value : Ω)
+    (E : Event Ω) :
+    List.countP E (List.replicate count value) =
+      if E value then count else 0 := by
+  induction count with
+  | zero => simp
+  | succ count ih =>
+      rw [List.replicate_succ, List.countP_cons, ih]
+      cases E value <;> simp
+
 theorem count_expand (atoms : List (Ω × Nat)) (E : Event Ω) :
     count (expand atoms) E = eventMass atoms E := by
   induction atoms with
@@ -66,7 +77,7 @@ theorem count_expand (atoms : List (Ω × Nat)) (E : Event Ω) :
       cases a with
       | mk ω w =>
           simp [expand, eventMass, count, List.countP_append,
-            List.countP_replicate]
+            countP_replicate_constructive]
           have ihc :
               List.countP E (expand atoms) = eventMass atoms E := by
             simpa [count] using ih
@@ -106,6 +117,16 @@ theorem eventMass_top (atoms : List (Ω × Nat)) :
   | cons atom atoms ih =>
       rcases atom with ⟨ω, weight⟩
       simp [eventMass, totalMass, topEvent, ih]
+
+/-- An event cannot carry more mass than the complete weighted support. -/
+theorem eventMass_le_totalMass (atoms : List (Ω × Nat)) (E : Event Ω) :
+    eventMass atoms E ≤ totalMass atoms := by
+  induction atoms with
+  | nil => exact Nat.le_refl 0
+  | cons atom atoms ih =>
+      rcases atom with ⟨value, weight⟩
+      cases h : E value <;>
+        simp [eventMass, totalMass, h] <;> omega
 
 theorem totalMass_filter_event (atoms : List (Ω × Nat))
     (evidence : Event Ω) :
@@ -292,6 +313,13 @@ def probVal (R : FiniteProbRecord Ω) (E : Event Ω) : QProb where
   num := eventMass R.atoms E
   den := R.den
   den_pos := R.den_pos
+
+/-- Every event probability in a finite probability record is at most one. -/
+theorem probVal_le_one (R : FiniteProbRecord Ω) (E : Event Ω) :
+    QProb.LE (R.probVal E) QProb.one := by
+  simp only [QProb.LE, probVal, QProb.one, Nat.mul_one, Nat.one_mul]
+  rw [← R.total_mass]
+  exact eventMass_le_totalMass R.atoms E
 
 theorem probVal_congr (R : FiniteProbRecord Ω) (E F : Event Ω)
     (pointwise : forall value, E value = F value) :

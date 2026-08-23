@@ -430,6 +430,25 @@ theorem transportAction_trans (first : SameCoordinates S T)
       exact HEq.trans (cast_heq _ _) (HEq.trans (cast_heq _ _)
         (cast_heq _ _).symm)
 
+/-- Transporting an action preserves whether an original coordinate is selected. -/
+theorem transportAction_isSome_toFun (coordinates : SameCoordinates S T)
+    (action : Action S) (child : Fin S.count) :
+    (coordinates.transportAction action
+        (coordinates.nodeEquiv.toFun child)).isSome =
+      (action child).isSome := by
+  have isSomeEq :
+      (action (coordinates.nodeEquiv.invFun
+        (coordinates.nodeEquiv.toFun child))).isSome =
+        (action child).isSome :=
+    congrArg (fun node => (action node).isSome)
+      (coordinates.nodeEquiv.left_inv child)
+  unfold transportAction
+  cases sourceSelected : action (coordinates.nodeEquiv.invFun
+      (coordinates.nodeEquiv.toFun child)) <;>
+    simp only [sourceSelected, Option.isSome_none, Option.isSome_some] at isSomeEq ⊢
+  · exact isSomeEq
+  · exact isSomeEq
+
 @[simp] theorem transportObserved_refl (assignment : S.Assignment) :
     (refl S).transportObserved assignment = assignment := by
   rfl
@@ -576,7 +595,7 @@ structure RealizesEvaluation {S : ObservedSignature} {source : CausalMode S}
 
 /--
 A constructive execution certificate.  Unlike `RealizesEvaluation`, it retains
-the target latent assignment as executable data rather than hiding it under
+the target latent assignment as explicit data rather than hiding it under
 `Exists`.  This is the form needed to push a finite belief through an edit
 program and compare event probabilities.
 -/
@@ -1000,6 +1019,22 @@ end DeterministicRealizesEvaluation
 
 end Execution
 
+/-- A source directed input is absent at an execution endpoint. -/
+def DirectedInputAbsent {S : ObservedSignature} {mode : CausalMode S}
+    (execution : Execution mode) (parent child : Fin S.count) : Prop :=
+  execution.signature.directed
+    (execution.coordinates.nodeEquiv.toFun parent)
+    (execution.coordinates.nodeEquiv.toFun child) = false
+
+/-- A source latent input is absent at an execution endpoint. -/
+def LatentInputAbsent {S : ObservedSignature} {mode : CausalMode S}
+    (execution : Execution mode)
+    (source : Fin mode.record.model.latent.count)
+    (child : Fin S.count) : Prop :=
+  execution.target.record.model.latent.incident
+    (execution.roots.rootEquiv.toFun source)
+    (execution.coordinates.nodeEquiv.toFun child) = false
+
 def settingRoots (mode : CausalMode S) (child : Fin S.count)
     (value : S.Value child) (targetName : String) :
     SameRoots mode
@@ -1188,46 +1223,6 @@ theorem setMode_fixes_member (mode : CausalMode S) (action : Action S)
               "atomic-do-set"
             simpa [setMode, setSelected, step] using ih step.target tail
 
-theorem setPhase_realizes_action (mode : CausalMode S) (action : Action S)
-    (child : Fin S.count) (value : S.Value child)
-    (selected : action child = some value) :
-    FixedAt
-      (setExecution mode action (List.finRange S.count)).target.record.model
-      child value := by
-  apply setMode_fixes_member mode action (List.finRange S.count) child value
-  · exact List.mem_finRange child
-  · exact selected
-
-theorem setMode_latent_eq (mode : CausalMode S) (action : Action S)
-    (nodes : List (Fin S.count)) :
-    (setMode mode action nodes).record.model.latent =
-      mode.record.model.latent := by
-  induction nodes generalizing mode with
-  | nil => simp [setMode]
-  | cons child rest ih =>
-      cases selected : action child with
-      | none => simpa [setMode, selected] using ih mode
-      | some value =>
-          let step := StructuralSetting.transition mode child value
-            "atomic-do-set"
-          simpa [setMode, selected, step] using
-            Eq.trans (ih step.target) (by rfl)
-
-def setModeAssignment (mode : CausalMode S) (action : Action S) :
-    (nodes : List (Fin S.count)) -> mode.record.model.latent.Assignment ->
-      (setMode mode action nodes).record.model.latent.Assignment
-  | [], assignment => by simpa [setMode] using assignment
-  | child :: rest, assignment => by
-      cases selected : action child with
-      | none =>
-          simpa [setMode, selected] using
-            setModeAssignment mode action rest assignment
-      | some value =>
-          let step := StructuralSetting.transition mode child value
-            "atomic-do-set"
-          simpa [setMode, selected, step] using
-            setModeAssignment step.target action rest assignment
-
 def insertAction (base : Action S) (target : Fin S.count)
     (value : S.Value target) : Action S :=
   (HardIntervention.set ⟨base⟩ target value).value
@@ -1351,16 +1346,6 @@ noncomputable def setMode_eval_data (mode : CausalMode S) (action : Action S)
           rw [setMode, selected, ← inserted]
           simpa only using witness
 
-theorem setMode_eval_exists (mode : CausalMode S) (action : Action S)
-    (nodes : List (Fin S.count)) (nodup : nodes.Nodup)
-    (u : mode.record.model.latent.Assignment) :
-    Exists fun targetU :
-        (setMode mode action nodes).record.model.latent.Assignment =>
-      (setMode mode action nodes).record.model.eval targetU =
-        mode.record.model.evalUnder (actionOn action nodes) u := by
-  let realized := setMode_eval_data mode action nodes nodup u
-  exact ⟨realized.1, realized.2⟩
-
 /-!
 ### Directed-cut phase
 
@@ -1389,22 +1374,6 @@ theorem directedCut_preserves_realizesAction (mode : CausalMode S)
   · exact fixed_after_directed_cut_other mode parent child node value
       fixedValue same (fixed node fixedValue sourceSelected)
 
-def directedCutSemantic (mode : CausalMode S)
-    (parent child : Fin S.count) (value : S.Value child)
-    (fixed : FixedAt mode.record.model child value) :
-    forall assignment : mode.record.model.latent.Assignment,
-      Exists fun targetAssignment :
-          (cutDirected mode parent child value
-            "atomic-do-cut-directed").target.record.model.latent.Assignment =>
-        (cutDirected mode parent child value
-            "atomic-do-cut-directed").target.record.model.eval targetAssignment =
-          (directedCoordinates S parent child).transportObserved
-            (mode.record.model.eval assignment) := by
-  intro assignment
-  refine ⟨assignment, ?_⟩
-  rw [directedCoordinates_transportObserved]
-  exact directed_cut_eval_eq mode parent child value fixed assignment
-
 /-- Removing one directed input preserves absence of a compact intervention. -/
 theorem directedCut_noActiveIntervention
     (mode : CausalMode S) (parent child : Fin S.count)
@@ -1416,105 +1385,54 @@ theorem directedCut_noActiveIntervention
   exact empty node
 
 def directedExecution (mode : CausalMode S) (action : Action S) :
-    List (Nat × Nat) -> Execution mode
+    List (Fin S.count × Fin S.count) -> Execution mode
   | [] => Execution.identity mode
-  | (parentIndex, childIndex) :: rest =>
-      if parentInBounds : parentIndex < S.count then
-        if childInBounds : childIndex < S.count then
-          let parent : Fin S.count := ⟨parentIndex, parentInBounds⟩
-          let child : Fin S.count := ⟨childIndex, childInBounds⟩
-          match action child with
-          | none => directedExecution mode action rest
-          | some value =>
-              let step := cutDirected mode parent child value
-                "atomic-do-cut-directed"
-              let coordinates := directedCoordinates S parent child
-              Execution.prepend step coordinates
-                (directedCutRoots mode parent child value
-                  "atomic-do-cut-directed")
-                (directedExecution step.target
-                  (coordinates.transportAction action) rest)
-        else
-          directedExecution mode action rest
-      else
-        directedExecution mode action rest
+  | (parent, child) :: rest =>
+      match action child with
+      | none => directedExecution mode action rest
+      | some value =>
+          let step := cutDirected mode parent child value
+            "atomic-do-cut-directed"
+          let coordinates := directedCoordinates S parent child
+          Execution.prepend step coordinates
+            (directedCutRoots mode parent child value
+              "atomic-do-cut-directed")
+            (directedExecution step.target
+              (coordinates.transportAction action) rest)
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
 
 /-- Every directed-cut worklist preserves absence of a compact intervention. -/
 theorem directedExecution_noActiveIntervention
     (mode : CausalMode S) (action : Action S)
     (empty : NoActiveIntervention mode) :
-    (pairs : List (Nat × Nat)) ->
+    (pairs : List (Fin S.count × Fin S.count)) ->
       NoActiveIntervention (directedExecution mode action pairs).target
   | [] => by
-      simpa [directedExecution] using empty
-  | (parentIndex, childIndex) :: rest => by
-      by_cases parentInBounds : parentIndex < S.count
-      · by_cases childInBounds : childIndex < S.count
-        · let parent : Fin S.count := ⟨parentIndex, parentInBounds⟩
-          let child : Fin S.count := ⟨childIndex, childInBounds⟩
-          cases selected : action child with
-          | none =>
-              rw [directedExecution, dif_pos parentInBounds,
-                dif_pos childInBounds]
-              dsimp only
-              rw [selected]
-              exact directedExecution_noActiveIntervention mode action empty rest
-          | some value =>
-              let step := cutDirected mode parent child value
-                "atomic-do-cut-directed"
-              let coordinates := directedCoordinates S parent child
-              have stepEmpty : NoActiveIntervention step.target :=
-                directedCut_noActiveIntervention mode parent child value empty
-              rw [directedExecution, dif_pos parentInBounds,
-                dif_pos childInBounds]
-              dsimp only
-              rw [selected]
-              exact directedExecution_noActiveIntervention step.target
-                (coordinates.transportAction action) stepEmpty rest
-        · rw [directedExecution, dif_pos parentInBounds,
-            dif_neg childInBounds]
+      rw [directedExecution.eq_1]
+      exact empty
+  | (parent, child) :: rest => by
+      cases selected : action child with
+      | none =>
+          rw [directedExecution.eq_2, selected]
           exact directedExecution_noActiveIntervention mode action empty rest
-      · rw [directedExecution, dif_neg parentInBounds]
-        exact directedExecution_noActiveIntervention mode action empty rest
-
-def directedExecutionSemantics (mode : CausalMode S) (action : Action S)
-    (fixed : RealizesAction mode action) :
-    (pairs : List (Nat × Nat)) ->
-      Execution.Semantics (directedExecution mode action pairs)
-  | [] => by simpa [directedExecution] using Execution.Semantics.identity mode
-  | (parentIndex, childIndex) :: rest => by
-      by_cases parentInBounds : parentIndex < S.count
-      · by_cases childInBounds : childIndex < S.count
-        · let parent : Fin S.count := ⟨parentIndex, parentInBounds⟩
-          let child : Fin S.count := ⟨childIndex, childInBounds⟩
-          cases selected : action child with
-          | none =>
-              simpa [directedExecution, parentInBounds, childInBounds, parent,
-                child, selected] using
-                directedExecutionSemantics mode action fixed rest
-          | some value =>
-              let step := cutDirected mode parent child value
-                "atomic-do-cut-directed"
-              let coordinates := directedCoordinates S parent child
-              have sourceFixed : FixedAt mode.record.model child value :=
-                fixed child value selected
-              have stepFixed := directedCut_preserves_realizesAction mode action
-                parent child value selected fixed
-              let tailExecution := directedExecution step.target
-                (coordinates.transportAction action) rest
-              have tailSemantic := directedExecutionSemantics step.target
-                (coordinates.transportAction action) stepFixed rest
-              have composed := Execution.Semantics.prepend step coordinates
-                (directedCutRoots mode parent child value
-                  "atomic-do-cut-directed") tailExecution
-                (directedCutSemantic mode parent child value sourceFixed)
-                tailSemantic
-              simpa [directedExecution, parentInBounds, childInBounds, parent,
-                child, selected, step, coordinates] using composed
-        · simpa [directedExecution, parentInBounds, childInBounds] using
-            directedExecutionSemantics mode action fixed rest
-      · simpa [directedExecution, parentInBounds] using
-          directedExecutionSemantics mode action fixed rest
+      | some value =>
+          let step := cutDirected mode parent child value
+            "atomic-do-cut-directed"
+          let coordinates := directedCoordinates S parent child
+          have stepEmpty : NoActiveIntervention step.target :=
+            directedCut_noActiveIntervention mode parent child value empty
+          rw [directedExecution.eq_2, selected]
+          exact directedExecution_noActiveIntervention step.target
+            (coordinates.transportAction action) stepEmpty rest
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
 
 /--
 Constructive directed-cut semantics.  Every cut retains the same latent unit,
@@ -1523,117 +1441,223 @@ and the recursive certificate records that unit at the final endpoint.
 noncomputable def directedExecutionDeterministicSemantics
     (mode : CausalMode S) (action : Action S)
     (fixed : RealizesAction mode action) :
-    (pairs : List (Nat × Nat)) ->
+    (pairs : List (Fin S.count × Fin S.count)) ->
       Execution.DeterministicRealizesEvaluation
         (directedExecution mode action pairs) mode.record.model.eval
   | [] => by
-      simpa [directedExecution] using
+      simpa only [directedExecution.eq_1] using
         Execution.DeterministicRealizesEvaluation.identity mode
-  | (parentIndex, childIndex) :: rest => by
-      by_cases parentInBounds : parentIndex < S.count
-      · by_cases childInBounds : childIndex < S.count
-        · let parent : Fin S.count := ⟨parentIndex, parentInBounds⟩
-          let child : Fin S.count := ⟨childIndex, childInBounds⟩
-          cases selected : action child with
-          | none =>
-              simpa [directedExecution, parentInBounds, childInBounds, parent,
-                child, selected] using
-                directedExecutionDeterministicSemantics mode action fixed rest
-          | some value =>
-              let step := cutDirected mode parent child value
-                "atomic-do-cut-directed"
-              let coordinates := directedCoordinates S parent child
-              have sourceFixed : FixedAt mode.record.model child value :=
-                fixed child value selected
-              have stepFixed := directedCut_preserves_realizesAction mode action
-                parent child value selected fixed
-              let tailExecution := directedExecution step.target
-                (coordinates.transportAction action) rest
-              have tailSemantic :=
-                directedExecutionDeterministicSemantics step.target
-                  (coordinates.transportAction action) stepFixed rest
-              have stepSemantic : forall assignment :
-                  mode.record.model.latent.Assignment,
-                  step.target.record.model.eval assignment =
-                    coordinates.transportObserved
-                      (mode.record.model.eval assignment) := by
-                intro assignment
-                rw [directedCoordinates_transportObserved]
-                exact directed_cut_eval_eq mode parent child value sourceFixed
-                  assignment
-              have composed :=
-                Execution.DeterministicRealizesEvaluation.prepend step
-                  coordinates
-                  (directedCutRoots mode parent child value
-                    "atomic-do-cut-directed")
-                  tailExecution (fun assignment => assignment) stepSemantic
-                  tailSemantic
-              simpa [directedExecution, parentInBounds, childInBounds, parent,
-                child, selected, step, coordinates] using composed
-        · simpa [directedExecution, parentInBounds, childInBounds] using
+  | (parent, child) :: rest => by
+      cases selected : action child with
+      | none =>
+          simpa only [directedExecution.eq_2, selected] using
             directedExecutionDeterministicSemantics mode action fixed rest
-      · simpa [directedExecution, parentInBounds] using
-          directedExecutionDeterministicSemantics mode action fixed rest
+      | some value =>
+          let step := cutDirected mode parent child value
+            "atomic-do-cut-directed"
+          let coordinates := directedCoordinates S parent child
+          have sourceFixed : FixedAt mode.record.model child value :=
+            fixed child value selected
+          have stepFixed := directedCut_preserves_realizesAction mode action
+            parent child value selected fixed
+          let tailExecution := directedExecution step.target
+            (coordinates.transportAction action) rest
+          have tailSemantic :=
+            directedExecutionDeterministicSemantics step.target
+              (coordinates.transportAction action) stepFixed rest
+          have stepSemantic : forall assignment :
+              mode.record.model.latent.Assignment,
+              step.target.record.model.eval assignment =
+                coordinates.transportObserved
+                  (mode.record.model.eval assignment) := by
+            intro assignment
+            rw [directedCoordinates_transportObserved]
+            exact directed_cut_eval_eq mode parent child value sourceFixed
+              assignment
+          have composed :=
+            Execution.DeterministicRealizesEvaluation.prepend step coordinates
+              (directedCutRoots mode parent child value
+                "atomic-do-cut-directed")
+              tailExecution (fun assignment => assignment) stepSemantic
+              tailSemantic
+          simpa only [directedExecution.eq_2, selected, step, coordinates] using composed
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
+
+/-- Existential directed-cut semantics, derived from the constructive certificate. -/
+def directedExecutionSemantics (mode : CausalMode S) (action : Action S)
+    (fixed : RealizesAction mode action)
+    (pairs : List (Fin S.count × Fin S.count)) :
+    Execution.Semantics (directedExecution mode action pairs) where
+  evaluate :=
+    (directedExecutionDeterministicSemantics mode action fixed pairs).toExistential.evaluate
 
 def directedExecutionFixed (mode : CausalMode S) (action : Action S)
     (fixed : RealizesAction mode action) :
-    (pairs : List (Nat × Nat)) ->
+    (pairs : List (Fin S.count × Fin S.count)) ->
       RealizesAction (directedExecution mode action pairs).target
         ((directedExecution mode action pairs).transportedAction action)
   | [] => by
+      rw [directedExecution.eq_1]
       change RealizesAction mode ((SameCoordinates.refl S).transportAction action)
       intro child value selected
       apply fixed child value
       rw [SameCoordinates.transportAction_refl] at selected
       exact selected
-  | (parentIndex, childIndex) :: rest => by
-      by_cases parentInBounds : parentIndex < S.count
-      · by_cases childInBounds : childIndex < S.count
-        · let parent : Fin S.count := ⟨parentIndex, parentInBounds⟩
-          let child : Fin S.count := ⟨childIndex, childInBounds⟩
-          cases selected : action child with
-          | none =>
-              rw [directedExecution, dif_pos parentInBounds,
-                dif_pos childInBounds]
-              dsimp only
-              rw [selected]
-              exact directedExecutionFixed mode action fixed rest
-          | some value =>
-              let step := cutDirected mode parent child value
-                "atomic-do-cut-directed"
-              let coordinates := directedCoordinates S parent child
-              let tailExecution := directedExecution step.target
-                (coordinates.transportAction action) rest
-              have stepFixed := directedCut_preserves_realizesAction mode action
-                parent child value selected fixed
-              have tailFixed := directedExecutionFixed step.target
-                (coordinates.transportAction action) stepFixed rest
-              have actionEq :
-                  (Execution.prepend step coordinates
-                    (directedCutRoots mode parent child value
-                      "atomic-do-cut-directed") tailExecution).transportedAction
-                      action =
-                    tailExecution.transportedAction
-                      (coordinates.transportAction action) := by
-                exact (SameCoordinates.transportAction_trans coordinates
-                  tailExecution.coordinates action).symm
-              rw [directedExecution, dif_pos parentInBounds,
-                dif_pos childInBounds]
-              dsimp only
-              rw [selected]
-              dsimp only
-              change RealizesAction tailExecution.target
-                ((Execution.prepend step coordinates
-                  (directedCutRoots mode parent child value
-                    "atomic-do-cut-directed") tailExecution).transportedAction
-                    action)
-              rw [actionEq]
-              exact tailFixed
-        · rw [directedExecution, dif_pos parentInBounds,
-            dif_neg childInBounds]
+  | (parent, child) :: rest => by
+      cases selected : action child with
+      | none =>
+          rw [directedExecution.eq_2, selected]
           exact directedExecutionFixed mode action fixed rest
-      · rw [directedExecution, dif_neg parentInBounds]
-        exact directedExecutionFixed mode action fixed rest
+      | some value =>
+          let step := cutDirected mode parent child value
+            "atomic-do-cut-directed"
+          let coordinates := directedCoordinates S parent child
+          let tailExecution := directedExecution step.target
+            (coordinates.transportAction action) rest
+          have stepFixed := directedCut_preserves_realizesAction mode action
+            parent child value selected fixed
+          have tailFixed := directedExecutionFixed step.target
+            (coordinates.transportAction action) stepFixed rest
+          have actionEq :
+              (Execution.prepend step coordinates
+                (directedCutRoots mode parent child value
+                  "atomic-do-cut-directed") tailExecution).transportedAction
+                  action =
+                tailExecution.transportedAction
+                  (coordinates.transportAction action) := by
+            exact (SameCoordinates.transportAction_trans coordinates
+              tailExecution.coordinates action).symm
+          rw [directedExecution.eq_2, selected]
+          dsimp only
+          change RealizesAction tailExecution.target
+            ((Execution.prepend step coordinates
+              (directedCutRoots mode parent child value
+                "atomic-do-cut-directed") tailExecution).transportedAction
+                action)
+          rw [actionEq]
+          exact tailFixed
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
+
+/-- Later directed cuts preserve any directed input already known to be absent. -/
+theorem directedExecution_preserves_absent
+    (mode : CausalMode S) (action : Action S)
+    (parent child : Fin S.count)
+    (absent : S.directed parent child = false) :
+    (pairs : List (Fin S.count × Fin S.count)) ->
+      DirectedInputAbsent (directedExecution mode action pairs) parent child
+  | [] => by
+      rw [directedExecution.eq_1]
+      exact absent
+  | (cutParent, cutChild) :: rest => by
+      cases selected : action cutChild with
+      | none =>
+          rw [directedExecution.eq_2, selected]
+          exact directedExecution_preserves_absent mode action parent child
+            absent rest
+      | some value =>
+          let step := cutDirected mode cutParent cutChild value
+            "atomic-do-cut-directed"
+          let coordinates := directedCoordinates S cutParent cutChild
+          have stepAbsent :
+              (DirectedLink.removeSignature S cutParent cutChild).directed
+                (coordinates.nodeEquiv.toFun parent)
+                (coordinates.nodeEquiv.toFun child) = false := by
+            change (DirectedLink.removeSignature S cutParent cutChild).directed
+              parent child = false
+            simp [DirectedLink.removeSignature, absent]
+          have tailAbsent := directedExecution_preserves_absent step.target
+            (coordinates.transportAction action)
+            (coordinates.nodeEquiv.toFun parent)
+            (coordinates.nodeEquiv.toFun child) stepAbsent rest
+          rw [directedExecution.eq_2, selected]
+          simpa [DirectedInputAbsent, Execution.prepend,
+            SameCoordinates.trans, NodeEquiv.trans, step, coordinates] using
+            tailAbsent
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
+
+/-- Processing a selected pair removes that directed input at the endpoint. -/
+theorem directedExecution_removes_member
+    (mode : CausalMode S) (action : Action S)
+    (parent child : Fin S.count) (value : S.Value child)
+    (selected : action child = some value) :
+    (pairs : List (Fin S.count × Fin S.count)) ->
+      (parent, child) ∈ pairs ->
+        DirectedInputAbsent (directedExecution mode action pairs) parent child
+  | [], member => by simp at member
+  | (cutParent, cutChild) :: rest, member => by
+      have memberCases : (parent, child) = (cutParent, cutChild) ∨
+          (parent, child) ∈ rest := by
+        simpa only [List.mem_cons] using member
+      cases cutSelected : action cutChild with
+      | none =>
+          rcases memberCases with same | tail
+          · have childEq : child = cutChild := congrArg Prod.snd same
+            subst cutChild
+            rw [cutSelected] at selected
+            contradiction
+          · rw [directedExecution.eq_2, cutSelected]
+            exact directedExecution_removes_member mode action parent child
+              value selected rest tail
+      | some cutValue =>
+          let step := cutDirected mode cutParent cutChild cutValue
+            "atomic-do-cut-directed"
+          let coordinates := directedCoordinates S cutParent cutChild
+          let tailExecution := directedExecution step.target
+            (coordinates.transportAction action) rest
+          have result : DirectedInputAbsent tailExecution
+              (coordinates.nodeEquiv.toFun parent)
+              (coordinates.nodeEquiv.toFun child) := by
+            rcases memberCases with same | tail
+            · have parentEq : parent = cutParent := congrArg Prod.fst same
+              have childEq : child = cutChild := congrArg Prod.snd same
+              subst parent
+              subst child
+              have stepAbsent :
+                  (DirectedLink.removeSignature S cutParent cutChild).directed
+                    (coordinates.nodeEquiv.toFun cutParent)
+                    (coordinates.nodeEquiv.toFun cutChild) = false := by
+                change (DirectedLink.removeSignature S cutParent cutChild).directed
+                  cutParent cutChild = false
+                exact DirectedLink.removedEdge S cutParent cutChild
+              exact directedExecution_preserves_absent step.target
+                (coordinates.transportAction action)
+                (coordinates.nodeEquiv.toFun cutParent)
+                (coordinates.nodeEquiv.toFun cutChild) stepAbsent rest
+            · have transportedSelected :
+                  (coordinates.transportAction action)
+                      (coordinates.nodeEquiv.toFun child) =
+                    some (cast (coordinates.value_eq child) value) := by
+                change (coordinates.transportAction action) child = some value
+                rw [show coordinates = directedCoordinates S cutParent cutChild
+                  from rfl, directedCoordinates_transportAction]
+                exact selected
+              exact directedExecution_removes_member step.target
+                (coordinates.transportAction action)
+                (coordinates.nodeEquiv.toFun parent)
+                (coordinates.nodeEquiv.toFun child)
+                (cast (coordinates.value_eq child) value)
+                transportedSelected rest tail
+          rw [directedExecution.eq_2, cutSelected]
+          simpa [DirectedInputAbsent, Execution.prepend,
+            SameCoordinates.trans, NodeEquiv.trans, step, coordinates,
+            tailExecution] using result
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
 
 /-!
 ### Latent-input-cut phase
@@ -1645,27 +1669,23 @@ inputs.
 -/
 
 def latentExecution (mode : CausalMode S) (action : Action S)
-    : List (Nat × Nat) -> Execution mode
+    : List (Fin mode.record.model.latent.count × Fin S.count) -> Execution mode
   | [] => Execution.identity mode
-  | (sourceIndex, childIndex) :: rest =>
-      if sourceInBounds : sourceIndex < mode.record.model.latent.count then
-        if childInBounds : childIndex < S.count then
-          let source : Fin mode.record.model.latent.count :=
-            ⟨sourceIndex, sourceInBounds⟩
-          let child : Fin S.count := ⟨childIndex, childInBounds⟩
-          match action child with
-          | none => latentExecution mode action rest
-          | some value =>
-              let step := cutLatent mode source child value
-                "atomic-do-cut-latent"
-              Execution.prepend step (SameCoordinates.refl S)
-                (latentCutRoots mode source child value
-                  "atomic-do-cut-latent")
-                (latentExecution step.target action rest)
-        else
-          latentExecution mode action rest
-      else
-        latentExecution mode action rest
+  | (source, child) :: rest =>
+      match action child with
+      | none => latentExecution mode action rest
+      | some value =>
+          let step := cutLatent mode source child value
+            "atomic-do-cut-latent"
+          Execution.prepend step (SameCoordinates.refl S)
+            (latentCutRoots mode source child value
+              "atomic-do-cut-latent")
+            (latentExecution step.target action rest)
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
 
 /-- Removing one latent input preserves absence of a compact intervention. -/
 theorem latentCut_noActiveIntervention
@@ -1682,40 +1702,28 @@ theorem latentCut_noActiveIntervention
 theorem latentExecution_noActiveIntervention
     (mode : CausalMode S) (action : Action S)
     (empty : NoActiveIntervention mode) :
-    (pairs : List (Nat × Nat)) ->
+    (pairs : List (Fin mode.record.model.latent.count × Fin S.count)) ->
       NoActiveIntervention (latentExecution mode action pairs).target
   | [] => by
-      simpa [latentExecution] using empty
-  | (sourceIndex, childIndex) :: rest => by
-      by_cases sourceInBounds :
-          sourceIndex < mode.record.model.latent.count
-      · by_cases childInBounds : childIndex < S.count
-        · let source : Fin mode.record.model.latent.count :=
-            ⟨sourceIndex, sourceInBounds⟩
-          let child : Fin S.count := ⟨childIndex, childInBounds⟩
-          cases selected : action child with
-          | none =>
-              rw [latentExecution, dif_pos sourceInBounds,
-                dif_pos childInBounds]
-              dsimp only
-              rw [selected]
-              exact latentExecution_noActiveIntervention mode action empty rest
-          | some value =>
-              let step := cutLatent mode source child value
-                "atomic-do-cut-latent"
-              have stepEmpty : NoActiveIntervention step.target :=
-                latentCut_noActiveIntervention mode source child value empty
-              rw [latentExecution, dif_pos sourceInBounds,
-                dif_pos childInBounds]
-              dsimp only
-              rw [selected]
-              exact latentExecution_noActiveIntervention step.target action
-                stepEmpty rest
-        · rw [latentExecution, dif_pos sourceInBounds,
-            dif_neg childInBounds]
+      rw [latentExecution.eq_1]
+      exact empty
+  | (source, child) :: rest => by
+      cases selected : action child with
+      | none =>
+          rw [latentExecution.eq_2, selected]
           exact latentExecution_noActiveIntervention mode action empty rest
-      · rw [latentExecution, dif_neg sourceInBounds]
-        exact latentExecution_noActiveIntervention mode action empty rest
+      | some value =>
+          let step := cutLatent mode source child value
+            "atomic-do-cut-latent"
+          have stepEmpty : NoActiveIntervention step.target :=
+            latentCut_noActiveIntervention mode source child value empty
+          rw [latentExecution.eq_2, selected]
+          exact latentExecution_noActiveIntervention step.target action stepEmpty rest
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
 
 theorem latentCut_preserves_realizesAction (mode : CausalMode S)
     (action : Action S) (source : Fin mode.record.model.latent.count)
@@ -1734,61 +1742,6 @@ theorem latentCut_preserves_realizesAction (mode : CausalMode S)
   · exact fixed_after_latent_cut_other mode source child node value
       fixedValue same (fixed node fixedValue targetSelected)
 
-def latentCutSemantic (mode : CausalMode S)
-    (source : Fin mode.record.model.latent.count) (child : Fin S.count)
-    (value : S.Value child) (fixed : FixedAt mode.record.model child value) :
-    forall assignment : mode.record.model.latent.Assignment,
-      Exists fun targetAssignment :
-          (cutLatent mode source child value
-            "atomic-do-cut-latent").target.record.model.latent.Assignment =>
-        (cutLatent mode source child value
-            "atomic-do-cut-latent").target.record.model.eval targetAssignment =
-          (SameCoordinates.refl S).transportObserved
-            (mode.record.model.eval assignment) := by
-  intro assignment
-  refine ⟨assignment, ?_⟩
-  rw [SameCoordinates.transportObserved_refl]
-  exact latent_cut_eval_eq mode source child value fixed assignment
-
-def latentExecutionSemantics (mode : CausalMode S) (action : Action S)
-    (fixed : RealizesAction mode action) :
-    (pairs : List (Nat × Nat)) ->
-      Execution.Semantics (latentExecution mode action pairs)
-  | [] => by simpa [latentExecution] using Execution.Semantics.identity mode
-  | (sourceIndex, childIndex) :: rest => by
-      by_cases sourceInBounds : sourceIndex < mode.record.model.latent.count
-      · by_cases childInBounds : childIndex < S.count
-        · let source : Fin mode.record.model.latent.count :=
-            ⟨sourceIndex, sourceInBounds⟩
-          let child : Fin S.count := ⟨childIndex, childInBounds⟩
-          cases selected : action child with
-          | none =>
-              simpa [latentExecution, sourceInBounds, childInBounds, source,
-                child, selected] using
-                latentExecutionSemantics mode action fixed rest
-          | some value =>
-              let step := cutLatent mode source child value
-                "atomic-do-cut-latent"
-              let tailExecution := latentExecution step.target action rest
-              have sourceFixed : FixedAt mode.record.model child value :=
-                fixed child value selected
-              have stepFixed := latentCut_preserves_realizesAction mode action
-                source child value selected fixed
-              have tailSemantic := latentExecutionSemantics step.target action
-                stepFixed rest
-              have composed := Execution.Semantics.prepend step
-                (SameCoordinates.refl S)
-                (latentCutRoots mode source child value
-                  "atomic-do-cut-latent") tailExecution
-                (latentCutSemantic mode source child value sourceFixed)
-                tailSemantic
-              simpa [latentExecution, sourceInBounds, childInBounds, source,
-                child, selected, step, tailExecution] using composed
-        · simpa [latentExecution, sourceInBounds, childInBounds] using
-            latentExecutionSemantics mode action fixed rest
-      · simpa [latentExecution, sourceInBounds] using
-          latentExecutionSemantics mode action fixed rest
-
 /--
 Constructive latent-cut semantics.  Cutting an incidence retains the same
 latent assignment and records it through the remaining edit path.
@@ -1796,69 +1749,268 @@ latent assignment and records it through the remaining edit path.
 noncomputable def latentExecutionDeterministicSemantics
     (mode : CausalMode S) (action : Action S)
     (fixed : RealizesAction mode action) :
-    (pairs : List (Nat × Nat)) ->
+    (pairs : List (Fin mode.record.model.latent.count × Fin S.count)) ->
       Execution.DeterministicRealizesEvaluation
         (latentExecution mode action pairs) mode.record.model.eval
   | [] => by
-      simpa [latentExecution] using
+      simpa only [latentExecution.eq_1] using
         Execution.DeterministicRealizesEvaluation.identity mode
-  | (sourceIndex, childIndex) :: rest => by
-      by_cases sourceInBounds :
-          sourceIndex < mode.record.model.latent.count
-      · by_cases childInBounds : childIndex < S.count
-        · let source : Fin mode.record.model.latent.count :=
-            ⟨sourceIndex, sourceInBounds⟩
-          let child : Fin S.count := ⟨childIndex, childInBounds⟩
-          cases selected : action child with
-          | none =>
-              simpa [latentExecution, sourceInBounds, childInBounds, source,
-                child, selected] using
-                latentExecutionDeterministicSemantics mode action fixed rest
-          | some value =>
-              let step := cutLatent mode source child value
-                "atomic-do-cut-latent"
-              let tailExecution := latentExecution step.target action rest
-              have sourceFixed : FixedAt mode.record.model child value :=
-                fixed child value selected
-              have stepFixed := latentCut_preserves_realizesAction mode action
-                source child value selected fixed
-              have tailSemantic :=
-                latentExecutionDeterministicSemantics step.target action
-                  stepFixed rest
-              have stepSemantic : forall assignment :
-                  mode.record.model.latent.Assignment,
-                  step.target.record.model.eval assignment =
-                    (SameCoordinates.refl S).transportObserved
-                      (mode.record.model.eval assignment) := by
-                intro assignment
-                rw [SameCoordinates.transportObserved_refl]
-                exact latent_cut_eval_eq mode source child value sourceFixed
-                  assignment
-              have composed :=
-                Execution.DeterministicRealizesEvaluation.prepend step
-                  (SameCoordinates.refl S)
-                  (latentCutRoots mode source child value
-                    "atomic-do-cut-latent")
-                  tailExecution (fun assignment => assignment) stepSemantic
-                  tailSemantic
-              simpa [latentExecution, sourceInBounds, childInBounds, source,
-                child, selected, step, tailExecution] using composed
-        · simpa [latentExecution, sourceInBounds, childInBounds] using
+  | (source, child) :: rest => by
+      cases selected : action child with
+      | none =>
+          simpa only [latentExecution.eq_2, selected] using
             latentExecutionDeterministicSemantics mode action fixed rest
-      · simpa [latentExecution, sourceInBounds] using
-          latentExecutionDeterministicSemantics mode action fixed rest
+      | some value =>
+          let step := cutLatent mode source child value
+            "atomic-do-cut-latent"
+          let tailExecution := latentExecution step.target action rest
+          have sourceFixed : FixedAt mode.record.model child value :=
+            fixed child value selected
+          have stepFixed := latentCut_preserves_realizesAction mode action
+            source child value selected fixed
+          have tailSemantic :=
+            latentExecutionDeterministicSemantics step.target action stepFixed rest
+          have stepSemantic : forall assignment :
+              mode.record.model.latent.Assignment,
+              step.target.record.model.eval assignment =
+                (SameCoordinates.refl S).transportObserved
+                  (mode.record.model.eval assignment) := by
+            intro assignment
+            rw [SameCoordinates.transportObserved_refl]
+            exact latent_cut_eval_eq mode source child value sourceFixed assignment
+          have composed :=
+            Execution.DeterministicRealizesEvaluation.prepend step
+              (SameCoordinates.refl S)
+              (latentCutRoots mode source child value "atomic-do-cut-latent")
+              tailExecution (fun assignment => assignment) stepSemantic
+              tailSemantic
+          simpa only [latentExecution.eq_2, selected, step, tailExecution] using composed
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
 
+/-- Existential latent-cut semantics, derived from the constructive certificate. -/
+def latentExecutionSemantics (mode : CausalMode S) (action : Action S)
+    (fixed : RealizesAction mode action)
+    (pairs : List (Fin mode.record.model.latent.count × Fin S.count)) :
+    Execution.Semantics (latentExecution mode action pairs) where
+  evaluate :=
+    (latentExecutionDeterministicSemantics mode action fixed pairs).toExistential.evaluate
+
+/-- Every latent cut preserves the constant equations already installed. -/
+def latentExecutionFixed (mode : CausalMode S) (action : Action S)
+    (fixed : RealizesAction mode action) :
+    (pairs : List (Fin mode.record.model.latent.count × Fin S.count)) ->
+      RealizesAction (latentExecution mode action pairs).target
+        ((latentExecution mode action pairs).transportedAction action)
+  | [] => by
+      rw [latentExecution.eq_1]
+      change RealizesAction mode ((SameCoordinates.refl S).transportAction action)
+      intro child value selected
+      apply fixed child value
+      rw [SameCoordinates.transportAction_refl] at selected
+      exact selected
+  | (source, child) :: rest => by
+      cases selected : action child with
+      | none =>
+          rw [latentExecution.eq_2, selected]
+          exact latentExecutionFixed mode action fixed rest
+      | some value =>
+          let step := cutLatent mode source child value
+            "atomic-do-cut-latent"
+          let coordinates := SameCoordinates.refl S
+          let tailExecution := latentExecution step.target action rest
+          have stepFixed := latentCut_preserves_realizesAction mode action
+            source child value selected fixed
+          have tailFixed := latentExecutionFixed step.target action stepFixed rest
+          have actionEq :
+              (Execution.prepend step coordinates
+                (latentCutRoots mode source child value
+                  "atomic-do-cut-latent") tailExecution).transportedAction action =
+                tailExecution.transportedAction
+                  (coordinates.transportAction action) := by
+            exact (SameCoordinates.transportAction_trans coordinates
+              tailExecution.coordinates action).symm
+          have reflAction : coordinates.transportAction action = action := by
+            funext node
+            exact SameCoordinates.transportAction_refl action node
+          rw [latentExecution.eq_2, selected]
+          dsimp only
+          change RealizesAction tailExecution.target
+            ((Execution.prepend step coordinates
+              (latentCutRoots mode source child value
+                "atomic-do-cut-latent") tailExecution).transportedAction action)
+          rw [actionEq, reflAction]
+          exact tailFixed
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
+
+/-- Latent-input cuts leave every absent directed input absent. -/
+theorem latentExecution_preserves_directed_absent
+    (mode : CausalMode S) (action : Action S)
+    (parent child : Fin S.count)
+    (absent : S.directed parent child = false) :
+    (pairs : List (Fin mode.record.model.latent.count × Fin S.count)) ->
+      DirectedInputAbsent (latentExecution mode action pairs) parent child
+  | [] => by
+      rw [latentExecution.eq_1]
+      exact absent
+  | (source, cutChild) :: rest => by
+      cases selected : action cutChild with
+      | none =>
+          rw [latentExecution.eq_2, selected]
+          exact latentExecution_preserves_directed_absent mode action
+            parent child absent rest
+      | some value =>
+          let step := cutLatent mode source cutChild value
+            "atomic-do-cut-latent"
+          let coordinates := SameCoordinates.refl S
+          have tailAbsent := latentExecution_preserves_directed_absent
+            step.target action parent child absent rest
+          rw [latentExecution.eq_2, selected]
+          simpa [DirectedInputAbsent, Execution.prepend,
+            SameCoordinates.trans, NodeEquiv.trans, step, coordinates] using
+            tailAbsent
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
+
+/-- Later latent cuts preserve any latent input already known to be absent. -/
+theorem latentExecution_preserves_absent
+    (mode : CausalMode S) (action : Action S)
+    (source : Fin mode.record.model.latent.count) (child : Fin S.count)
+    (absent : mode.record.model.latent.incident source child = false) :
+    (pairs : List (Fin mode.record.model.latent.count × Fin S.count)) ->
+      LatentInputAbsent (latentExecution mode action pairs) source child
+  | [] => by
+      rw [latentExecution.eq_1]
+      exact absent
+  | (cutSource, cutChild) :: rest => by
+      cases selected : action cutChild with
+      | none =>
+          rw [latentExecution.eq_2, selected]
+          exact latentExecution_preserves_absent mode action source child
+            absent rest
+      | some value =>
+          let step := cutLatent mode cutSource cutChild value
+            "atomic-do-cut-latent"
+          let coordinates := SameCoordinates.refl S
+          let roots := latentCutRoots mode cutSource cutChild value
+            "atomic-do-cut-latent"
+          have stepAbsent :
+              step.target.record.model.latent.incident
+                (roots.rootEquiv.toFun source)
+                (coordinates.nodeEquiv.toFun child) = false := by
+            change (LatentLink.removeExtension mode.record.model cutSource
+              cutChild).incident source child = false
+            simp [LatentLink.removeExtension, absent]
+          have tailAbsent := latentExecution_preserves_absent step.target action
+            (roots.rootEquiv.toFun source)
+            (coordinates.nodeEquiv.toFun child) stepAbsent rest
+          rw [latentExecution.eq_2, selected]
+          simpa [LatentInputAbsent, Execution.prepend, SameRoots.trans,
+            FinIndexEquiv.trans, SameCoordinates.trans, NodeEquiv.trans,
+            step, roots, coordinates] using tailAbsent
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
+
+/-- Processing a selected pair removes that latent input at the endpoint. -/
+theorem latentExecution_removes_member
+    (mode : CausalMode S) (action : Action S)
+    (source : Fin mode.record.model.latent.count) (child : Fin S.count)
+    (selected : (action child).isSome = true) :
+    (pairs : List (Fin mode.record.model.latent.count × Fin S.count)) ->
+      (source, child) ∈ pairs ->
+        LatentInputAbsent (latentExecution mode action pairs) source child
+  | [], member => by simp at member
+  | (cutSource, cutChild) :: rest, member => by
+      have memberCases : (source, child) = (cutSource, cutChild) ∨
+          (source, child) ∈ rest := by
+        simpa only [List.mem_cons] using member
+      cases cutSelected : action cutChild with
+      | none =>
+          rcases memberCases with same | tail
+          · have childEq : child = cutChild := congrArg Prod.snd same
+            subst cutChild
+            simp [cutSelected] at selected
+          · rw [latentExecution.eq_2, cutSelected]
+            exact latentExecution_removes_member mode action source child
+              selected rest tail
+      | some cutValue =>
+          let step := cutLatent mode cutSource cutChild cutValue
+            "atomic-do-cut-latent"
+          let coordinates := SameCoordinates.refl S
+          let roots := latentCutRoots mode cutSource cutChild cutValue
+            "atomic-do-cut-latent"
+          let tailExecution := latentExecution step.target action rest
+          have result : LatentInputAbsent tailExecution
+              (roots.rootEquiv.toFun source)
+              (coordinates.nodeEquiv.toFun child) := by
+            rcases memberCases with same | tail
+            · have sourceEq : source = cutSource := congrArg Prod.fst same
+              have childEq : child = cutChild := congrArg Prod.snd same
+              subst source
+              subst child
+              have stepAbsent :
+                  step.target.record.model.latent.incident
+                    (roots.rootEquiv.toFun cutSource)
+                    (coordinates.nodeEquiv.toFun cutChild) = false := by
+                change (LatentLink.removeExtension mode.record.model cutSource
+                  cutChild).incident cutSource cutChild = false
+                exact LatentLink.removedIncident mode.record.model cutSource
+                  cutChild
+              exact latentExecution_preserves_absent step.target action
+                (roots.rootEquiv.toFun cutSource)
+                (coordinates.nodeEquiv.toFun cutChild) stepAbsent rest
+            · exact latentExecution_removes_member step.target action
+                (roots.rootEquiv.toFun source)
+                (coordinates.nodeEquiv.toFun child) selected rest tail
+          rw [latentExecution.eq_2, cutSelected]
+          simpa [LatentInputAbsent, Execution.prepend, SameRoots.trans,
+            FinIndexEquiv.trans, SameCoordinates.trans, NodeEquiv.trans,
+            step, roots, coordinates, tailExecution] using result
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
+
+/-- Every observed node, used by the constant-setting phase. -/
 def nodeWorklist (S : ObservedSignature) : List (Fin S.count) :=
   List.finRange S.count
 
-def directedWorklist (S : ObservedSignature) : List (Nat × Nat) :=
-  (List.range S.count).flatMap fun child =>
-    (List.range S.count).map fun parent => (parent, child)
+/-- Every ordered observed-node pair, used by the directed-cut phase. -/
+def directedWorklist (S : ObservedSignature) :
+    List (Fin S.count × Fin S.count) :=
+  (List.finRange S.count).flatMap fun child =>
+    (List.finRange S.count).map fun parent => (parent, child)
 
-def latentWorklist (mode : CausalMode S) : List (Nat × Nat) :=
-  (List.range S.count).flatMap fun child =>
-    (List.range mode.record.model.latent.count).map fun source =>
+/-- Every latent-root/observed-node pair, used by the latent-cut phase. -/
+def latentWorklist (mode : CausalMode S) :
+    List (Fin mode.record.model.latent.count × Fin S.count) :=
+  (List.finRange S.count).flatMap fun child =>
+    (List.finRange mode.record.model.latent.count).map fun source =>
       (source, child)
+
+theorem mem_directedWorklist (S : ObservedSignature)
+    (parent child : Fin S.count) :
+    (parent, child) ∈ directedWorklist S := by
+  simp [directedWorklist]
+
+theorem mem_latentWorklist (mode : CausalMode S)
+    (source : Fin mode.record.model.latent.count) (child : Fin S.count) :
+    (source, child) ∈ latentWorklist mode := by
+  simp [latentWorklist]
 
 def setPhase (mode : CausalMode S) (action : Action S) : Execution mode :=
   setExecution mode action (nodeWorklist S)
@@ -1869,20 +2021,6 @@ theorem setPhase_noActiveIntervention
     NoActiveIntervention (setPhase mode action).target :=
   setMode_noActiveIntervention mode action empty (nodeWorklist S)
 
-def setPhaseRealizes (mode : CausalMode S) (action : Action S) :
-    Execution.RealizesEvaluation (setPhase mode action)
-      (fun assignment => mode.record.model.evalUnder action assignment) where
-  evaluate := by
-    intro assignment
-    rcases setMode_eval_exists mode action (List.finRange S.count)
-      (finRange_nodup S.count) assignment with ⟨targetAssignment, evaluated⟩
-    refine ⟨targetAssignment, ?_⟩
-    change (setMode mode action (List.finRange S.count)).record.model.eval
-        targetAssignment =
-      (SameCoordinates.refl S).transportObserved
-        (mode.record.model.evalUnder action assignment)
-    simpa [actionOn_all] using evaluated
-
 /--
 Constructive setting-phase semantics, retaining the target latent assignment
 used by the endpoint probability distribution.
@@ -1892,27 +2030,33 @@ noncomputable def setPhaseDeterministicRealizes
     Execution.DeterministicRealizesEvaluation (setPhase mode action)
       (fun assignment => mode.record.model.evalUnder action assignment) where
   assignment := fun assignment =>
-    (setMode_eval_data mode action (List.finRange S.count)
+    (setMode_eval_data mode action (nodeWorklist S)
       (finRange_nodup S.count) assignment).1
   evaluate := by
     intro assignment
-    change (setMode mode action (List.finRange S.count)).record.model.eval
+    change (setMode mode action (nodeWorklist S)).record.model.eval
         _ =
       (SameCoordinates.refl S).transportObserved
         (mode.record.model.evalUnder action assignment)
-    simpa [actionOn_all] using
-      (setMode_eval_data mode action (List.finRange S.count)
+    simpa [nodeWorklist, actionOn_all] using
+      (setMode_eval_data mode action (nodeWorklist S)
         (finRange_nodup S.count) assignment).2
+
+/-- Existential setting semantics, derived from the constructive certificate. -/
+def setPhaseRealizes (mode : CausalMode S) (action : Action S) :
+    Execution.RealizesEvaluation (setPhase mode action)
+      (fun assignment => mode.record.model.evalUnder action assignment) :=
+  (setPhaseDeterministicRealizes mode action).toExistential
 
 def setPhaseFixed (mode : CausalMode S) (action : Action S) :
     RealizesAction (setPhase mode action).target
       ((setPhase mode action).transportedAction action) := by
   change RealizesAction
-    (setMode mode action (List.finRange S.count))
+    (setMode mode action (nodeWorklist S))
     ((SameCoordinates.refl S).transportAction action)
   intro child value selected
   rw [SameCoordinates.transportAction_refl] at selected
-  exact setMode_fixes_member mode action (List.finRange S.count) child value
+  exact setMode_fixes_member mode action (nodeWorklist S) child value
     (List.mem_finRange child) selected
 
 def directedPhase (mode : CausalMode S) (action : Action S) :
@@ -1962,14 +2106,6 @@ theorem setAndDirected_noActiveIntervention
   directedPhase_noActiveIntervention mode action
     (setPhase_noActiveIntervention mode action empty)
 
-def setAndDirectedRealizes (mode : CausalMode S) (action : Action S) :
-    Execution.RealizesEvaluation (setAndDirected mode action)
-      (fun assignment => mode.record.model.evalUnder action assignment) :=
-  Execution.RealizesEvaluation.appendSemantics (setPhase mode action)
-    (directedPhase mode action)
-    (fun assignment => mode.record.model.evalUnder action assignment)
-    (setPhaseRealizes mode action) (directedPhaseSemantics mode action)
-
 noncomputable def setAndDirectedDeterministicRealizes
     (mode : CausalMode S) (action : Action S) :
     Execution.DeterministicRealizesEvaluation (setAndDirected mode action)
@@ -1980,6 +2116,12 @@ noncomputable def setAndDirectedDeterministicRealizes
     (setPhaseDeterministicRealizes mode action)
     (directedPhaseDeterministicSemantics mode action).assignment
     (directedPhaseDeterministicSemantics mode action).evaluate
+
+/-- Existential set-and-cut semantics, derived from the constructive certificate. -/
+def setAndDirectedRealizes (mode : CausalMode S) (action : Action S) :
+    Execution.RealizesEvaluation (setAndDirected mode action)
+      (fun assignment => mode.record.model.evalUnder action assignment) :=
+  (setAndDirectedDeterministicRealizes mode action).toExistential
 
 def setAndDirectedFixed (mode : CausalMode S) (action : Action S) :
     RealizesAction (setAndDirected mode action).target
@@ -1992,6 +2134,23 @@ def setAndDirectedFixed (mode : CausalMode S) (action : Action S) :
       (directedPhase mode action).coordinates action).symm
   rw [actionEq]
   exact directedPhaseFixed mode action
+
+/-- The directed phase removes every incoming observed input of a selected node. -/
+theorem setAndDirected_directedRemoved (mode : CausalMode S)
+    (action : Action S) (parent child : Fin S.count)
+    (value : S.Value child) (selected : action child = some value) :
+    DirectedInputAbsent (setAndDirected mode action) parent child := by
+  let set := setPhase mode action
+  have childSelected : set.transportedAction action child = some value := by
+    rw [show set.transportedAction action child = action child from
+      SameCoordinates.transportAction_refl action child]
+    exact selected
+  have phaseAbsent := directedExecution_removes_member set.target
+    (set.transportedAction action) parent child value childSelected
+    (directedWorklist S) (mem_directedWorklist S parent child)
+  simpa [DirectedInputAbsent, setAndDirected, directedPhase, set,
+    Execution.append, SameCoordinates.trans, NodeEquiv.trans,
+    setPhase, setExecution] using phaseAbsent
 
 def latentPhase (mode : CausalMode S) (action : Action S) :
     Execution (setAndDirected mode action).target :=
@@ -2024,6 +2183,16 @@ noncomputable def latentPhaseDeterministicSemantics
     (setAndDirectedFixed mode action)
     (latentWorklist (setAndDirected mode action).target)
 
+/-- The latent phase preserves every selected constant equation. -/
+def latentPhaseFixed (mode : CausalMode S) (action : Action S) :
+    RealizesAction (latentPhase mode action).target
+      ((latentPhase mode action).transportedAction
+        ((setAndDirected mode action).transportedAction action)) :=
+  latentExecutionFixed (setAndDirected mode action).target
+    ((setAndDirected mode action).transportedAction action)
+    (setAndDirectedFixed mode action)
+    (latentWorklist (setAndDirected mode action).target)
+
 /--
 The finite `do` program: structurally set every selected equation, then remove
 every directed and latent input into those selected nodes one at a time.
@@ -2039,15 +2208,6 @@ theorem compile_noActiveIntervention
   latentPhase_noActiveIntervention mode action
     (setAndDirected_noActiveIntervention mode action empty)
 
-/-- The atomically compiled path has exactly the compact hard-intervention semantics. -/
-def compileRealizes (mode : CausalMode S) (action : Action S) :
-    Execution.RealizesEvaluation (compile mode action)
-      (fun assignment => mode.record.model.evalUnder action assignment) :=
-  Execution.RealizesEvaluation.appendSemantics (setAndDirected mode action)
-    (latentPhase mode action)
-    (fun assignment => mode.record.model.evalUnder action assignment)
-    (setAndDirectedRealizes mode action) (latentPhaseSemantics mode action)
-
 /--
 The fully compiled atomic intervention, with a constructive endpoint assignment
 for every source latent unit.
@@ -2062,6 +2222,98 @@ noncomputable def compileDeterministicRealizes
     (setAndDirectedDeterministicRealizes mode action)
     (latentPhaseDeterministicSemantics mode action).assignment
     (latentPhaseDeterministicSemantics mode action).evaluate
+
+/--
+The atomically compiled path has the compact hard-intervention semantics. This
+existential view is projected from `compileDeterministicRealizes`.
+-/
+def compileRealizes (mode : CausalMode S) (action : Action S) :
+    Execution.RealizesEvaluation (compile mode action)
+      (fun assignment => mode.record.model.evalUnder action assignment) :=
+  (compileDeterministicRealizes mode action).toExistential
+
+/-- Every selected equation remains constant through the complete compilation. -/
+def compileFixed (mode : CausalMode S) (action : Action S) :
+    RealizesAction (compile mode action).target
+      ((compile mode action).transportedAction action) := by
+  have actionEq : (compile mode action).transportedAction action =
+      (latentPhase mode action).transportedAction
+        ((setAndDirected mode action).transportedAction action) := by
+    exact (SameCoordinates.transportAction_trans
+      (setAndDirected mode action).coordinates
+      (latentPhase mode action).coordinates action).symm
+  rw [actionEq]
+  exact latentPhaseFixed mode action
+
+/-- Every directed input into a selected node is absent at the compiled endpoint. -/
+theorem compile_directedRemoved (mode : CausalMode S) (action : Action S)
+    (parent child : Fin S.count) (value : S.Value child)
+    (selected : action child = some value) :
+    (compile mode action).signature.directed
+        ((compile mode action).coordinates.nodeEquiv.toFun parent)
+        ((compile mode action).coordinates.nodeEquiv.toFun child) = false := by
+  let built := setAndDirected mode action
+  have builtAbsent := setAndDirected_directedRemoved mode action parent child
+    value selected
+  have phaseAbsent := latentExecution_preserves_directed_absent built.target
+    (built.transportedAction action)
+    (built.coordinates.nodeEquiv.toFun parent)
+    (built.coordinates.nodeEquiv.toFun child) builtAbsent
+    (latentWorklist built.target)
+  simpa [DirectedInputAbsent, compile, latentPhase, built, Execution.append,
+    SameCoordinates.trans, NodeEquiv.trans] using phaseAbsent
+
+/-- Every latent input into a selected node is absent at the compiled endpoint. -/
+theorem compile_latentRemoved (mode : CausalMode S) (action : Action S)
+    (source : Fin mode.record.model.latent.count) (child : Fin S.count)
+    (value : S.Value child) (selected : action child = some value) :
+    (compile mode action).target.record.model.latent.incident
+        ((compile mode action).roots.rootEquiv.toFun source)
+        ((compile mode action).coordinates.nodeEquiv.toFun child) = false := by
+  let built := setAndDirected mode action
+  have builtSelected :
+      ((built.transportedAction action)
+        (built.coordinates.nodeEquiv.toFun child)).isSome = true := by
+    change (built.coordinates.transportAction action
+      (built.coordinates.nodeEquiv.toFun child)).isSome = true
+    rw [SameCoordinates.transportAction_isSome_toFun]
+    simp [selected]
+  have phaseAbsent := latentExecution_removes_member built.target
+    (built.transportedAction action)
+    (built.roots.rootEquiv.toFun source)
+    (built.coordinates.nodeEquiv.toFun child) builtSelected
+    (latentWorklist built.target)
+    (mem_latentWorklist built.target
+      (built.roots.rootEquiv.toFun source)
+      (built.coordinates.nodeEquiv.toFun child))
+  simpa [LatentInputAbsent, compile, latentPhase, built, Execution.append,
+    SameRoots.trans, FinIndexEquiv.trans, SameCoordinates.trans,
+    NodeEquiv.trans] using phaseAbsent
+
+/--
+The structural certificate for the atomic finite `do` compiler. At the
+transported endpoint, each selected mechanism is constant at its transported
+chosen value and has no incoming directed or latent inputs.
+-/
+structure Plan (mode : CausalMode S) (action : Action S) : Prop where
+  fixed : RealizesAction (compile mode action).target
+    ((compile mode action).transportedAction action)
+  directedRemoved : forall parent child value,
+    action child = some value ->
+      (compile mode action).signature.directed
+        ((compile mode action).coordinates.nodeEquiv.toFun parent)
+        ((compile mode action).coordinates.nodeEquiv.toFun child) = false
+  latentRemoved : forall source child value,
+    action child = some value ->
+      (compile mode action).target.record.model.latent.incident
+        ((compile mode action).roots.rootEquiv.toFun source)
+        ((compile mode action).coordinates.nodeEquiv.toFun child) = false
+
+/-- Atomic compilation satisfies its complete structural certificate. -/
+def plan (mode : CausalMode S) (action : Action S) : Plan mode action where
+  fixed := compileFixed mode action
+  directedRemoved := compile_directedRemoved mode action
+  latentRemoved := compile_latentRemoved mode action
 
 /--
 For an initially empty compact intervention, atomic compilation supplies the

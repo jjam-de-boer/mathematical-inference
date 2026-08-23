@@ -1,4 +1,4 @@
-import Thesis.Causality.ExecutedMultiworld.FromFactual
+import Thesis.Causality.ExecutedMultiworld.Linking
 
 namespace Thesis
 namespace Causality
@@ -657,7 +657,8 @@ def sameRoots (linked : Linked mode.record.model event) :
 /-! ## Installing copied equations and reindexing belief -/
 
 /-!
-At this point the endpoint has the right graph but its creation-time equations
+At this point the directed edges and latent incidences required by the
+occurrence construction have been installed, while its creation-time equations
 are placeholders.  A `Fiber` decodes each endpoint coordinate back to its
 world/node occurrence so `representedMechanism` can install the corresponding
 source equation.  The source belief is then transported along the accumulated
@@ -1050,16 +1051,6 @@ theorem configured_evalUnder_eq_reference
         linked.coordinates actual).symm
     _ = linked.coordinates.transportObserved reference :=
       congrArg linked.coordinates.transportObserved back
-
-/-- Package the from-empty route's configured state for route-independent clients. -/
-def configuration (linked : Linked mode.record.model event) :
-    MultiworldConfiguration mode.record.model event where
-  signature := linked.signature
-  record := linked.configureRecord
-  coordinates := linked.coordinates
-  rootAssignment := linked.rootAssignment
-  action := linked.combinedAction
-  evaluatesAsReference := linked.configured_evalUnder_eq_reference
 
 end Linked
 
