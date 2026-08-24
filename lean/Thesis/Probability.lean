@@ -3,6 +3,7 @@ import Thesis.Probability.ConstructivePermutation
 import Thesis.Probability.Reindexing
 import Thesis.Probability.FiniteCellProduct
 import Thesis.Probability.Urn
+import Thesis.Probability.QualitativeUrn
 import Thesis.Probability.FiniteRecord
 import Thesis.Probability.Construction
 
@@ -23,9 +24,11 @@ Reading order:
 4. `FiniteCellProduct` constructs finite product cells and verifies rectangular
    event counts;
 5. `Urn` presents probability as a finite urn and proves its elementary laws;
-6. `FiniteRecord` gives weighted, common-denominator finite distributions and
+6. `QualitativeUrn` derives the finite qualitative ratio representation from
+   an event-level plausibility interface;
+7. `FiniteRecord` gives weighted, common-denominator finite distributions and
    conditioning; and
-7. `Construction` builds finite dependent products and the rational
+8. `Construction` builds finite dependent products and the rational
    constructions used by causal models.
 
 No result here concerns countable additivity or arbitrary propositions:

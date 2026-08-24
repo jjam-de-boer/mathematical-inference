@@ -29,88 +29,49 @@ directly; explicit adapters map them to the generic representation.
 -/
 
 structure JointIdentificationCertificate (G : ObservedGraph S)
-    (q : JointKernelQuery S) where
-  formula : ProbabilityTerm S
-  actionFree : formula.ActionFree
-  derivation : DoCalculusDerivation G q.sourceTerm formula
-  supported : forall model : ExactModel S, (compatible : Compatible model G) ->
-    forall assignment, q.sourceTerm.SupportedAt model assignment ->
-      LocalDerivationSupport model assignment derivation
+    (q : JointKernelQuery S) extends IdentificationCertificate G q.sourceTerm
 
 structure ConditionalIdentificationCertificate (G : ObservedGraph S)
-    (q : ConditionalKernelQuery S) where
-  formula : ProbabilityTerm S
-  actionFree : formula.ActionFree
-  derivation : DoCalculusDerivation G q.sourceTerm formula
-  supported : forall model : ExactModel S, (compatible : Compatible model G) ->
-    forall assignment, q.sourceTerm.SupportedAt model assignment ->
-      LocalDerivationSupport model assignment derivation
+    (q : ConditionalKernelQuery S) extends
+      IdentificationCertificate G q.sourceTerm
 
 structure PublishedJointCertificate (G : ObservedGraph S)
-    (correct : DSeparationCorrectness G) (q : JointKernelQuery S) where
-  formula : ProbabilityTerm S
-  actionFree : formula.ActionFree
-  derivation : PathDoCalculusDerivation G q.sourceTerm formula
-  supported : forall model : ExactModel S, (compatible : Compatible model G) ->
-    forall assignment, q.sourceTerm.SupportedAt model assignment ->
-      LocalDerivationSupport model assignment (derivation.compile correct)
+    (correct : DSeparationCorrectness G) (q : JointKernelQuery S) extends
+      PublishedIdentificationCertificate G correct q.sourceTerm
 
 structure PublishedConditionalCertificate (G : ObservedGraph S)
-    (correct : DSeparationCorrectness G) (q : ConditionalKernelQuery S) where
-  formula : ProbabilityTerm S
-  actionFree : formula.ActionFree
-  derivation : PathDoCalculusDerivation G q.sourceTerm formula
-  supported : forall model : ExactModel S, (compatible : Compatible model G) ->
-    forall assignment, q.sourceTerm.SupportedAt model assignment ->
-      LocalDerivationSupport model assignment (derivation.compile correct)
+    (correct : DSeparationCorrectness G) (q : ConditionalKernelQuery S) extends
+      PublishedIdentificationCertificate G correct q.sourceTerm
 
 def JointIdentificationCertificate.toGeneric
     (certificate : JointIdentificationCertificate G q) :
-    IdentificationCertificate G q.sourceTerm where
-  formula := certificate.formula
-  actionFree := certificate.actionFree
-  derivation := certificate.derivation
-  supported := certificate.supported
+    IdentificationCertificate G q.sourceTerm :=
+  certificate.toIdentificationCertificate
 
 def ConditionalIdentificationCertificate.toGeneric
     (certificate : ConditionalIdentificationCertificate G q) :
-    IdentificationCertificate G q.sourceTerm where
-  formula := certificate.formula
-  actionFree := certificate.actionFree
-  derivation := certificate.derivation
-  supported := certificate.supported
+    IdentificationCertificate G q.sourceTerm :=
+  certificate.toIdentificationCertificate
 
 def JointIdentificationCertificate.ofGeneric
     (certificate : IdentificationCertificate G q.sourceTerm) :
     JointIdentificationCertificate G q where
-  formula := certificate.formula
-  actionFree := certificate.actionFree
-  derivation := certificate.derivation
-  supported := certificate.supported
+  toIdentificationCertificate := certificate
 
 def ConditionalIdentificationCertificate.ofGeneric
     (certificate : IdentificationCertificate G q.sourceTerm) :
     ConditionalIdentificationCertificate G q where
-  formula := certificate.formula
-  actionFree := certificate.actionFree
-  derivation := certificate.derivation
-  supported := certificate.supported
+  toIdentificationCertificate := certificate
 
 def PublishedJointCertificate.toGeneric
     (certificate : PublishedJointCertificate G correct q) :
-    PublishedIdentificationCertificate G correct q.sourceTerm where
-  formula := certificate.formula
-  actionFree := certificate.actionFree
-  derivation := certificate.derivation
-  supported := certificate.supported
+    PublishedIdentificationCertificate G correct q.sourceTerm :=
+  certificate.toPublishedIdentificationCertificate
 
 def PublishedConditionalCertificate.toGeneric
     (certificate : PublishedConditionalCertificate G correct q) :
-    PublishedIdentificationCertificate G correct q.sourceTerm where
-  formula := certificate.formula
-  actionFree := certificate.actionFree
-  derivation := certificate.derivation
-  supported := certificate.supported
+    PublishedIdentificationCertificate G correct q.sourceTerm :=
+  certificate.toPublishedIdentificationCertificate
 
 def PublishedJointCertificate.compile
     (certificate : PublishedJointCertificate G correct q) :
@@ -271,11 +232,11 @@ theorem ConditionalIdentificationCertificate.identifiable
 /-- Encoded derivation certificate; the finite derivation data is preserved. -/
 structure EncodedJointDerivation
     (G : ObservedGraph S) (q : JointKernelQuery S) where
-  classical : JointIdentificationCertificate G q
+  certificate : JointIdentificationCertificate G q
 
 structure EncodedConditionalDerivation
     (G : ObservedGraph S) (q : ConditionalKernelQuery S) where
-  classical : ConditionalIdentificationCertificate G q
+  certificate : ConditionalIdentificationCertificate G q
 
 def transport_joint_completeness
     (P : PublishedCompleteness S G) (q : JointKernelQuery S)
@@ -294,7 +255,7 @@ theorem transport_joint_soundness
     (P : PublishedSoundness S G) (q : JointKernelQuery S)
     (certificate : EncodedJointDerivation G q) :
     TypeTheoreticIdentifiable G q := by
-  exact certificate.classical.identifiable P
+  exact certificate.certificate.identifiable P
 
 /-- A sound distributional certificate also identifies each local event. -/
 theorem transport_joint_event_soundness
@@ -308,7 +269,7 @@ theorem transport_conditional_soundness
     (P : PublishedSoundness S G) (q : ConditionalKernelQuery S)
     (certificate : EncodedConditionalDerivation G q) :
     TypeTheoreticConditionalIdentifiable G q := by
-  exact certificate.classical.identifiable P
+  exact certificate.certificate.identifiable P
 
 theorem transported_joint_iff
     (complete : PublishedCompleteness S G)

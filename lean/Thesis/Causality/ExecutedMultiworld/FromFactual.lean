@@ -7,13 +7,14 @@ namespace Causality
 open Probability
 
 /-!
-Equation installation and complete execution from an existing factual mode.
+Equation installation and complete execution from a fresh factual record.
 
-The first section configures copied occurrence worlds and reindexes the source
-belief. The second section runs the atomic intervention compiler and reads
-probabilities from its actual endpoint record. Keeping those steps separate
-matters: the occurrence multiworld remains an independent semantic reference,
-not a pre-installed target model.
+The route retains the source structural model but starts from its initial
+product prior with no active intervention. The first section configures copied
+occurrence worlds and reindexes that prior. The second section runs the atomic
+intervention compiler and reads probabilities from its actual endpoint record.
+Keeping those steps separate matters: the occurrence multiworld remains an
+independent semantic reference, not a pre-installed target model.
 -/
 
 /-! ## Executable equation installation -/
@@ -498,7 +499,7 @@ noncomputable def probabilityTarget
     CausalMode construction.signature :=
   construction.probabilityExecution.target
 
-/-- The complete modal path now ends at the record used for probabilities. -/
+/-- The complete modal path ends at the record used for probabilities. -/
 noncomputable def probabilityPath
     (construction : ExecutedOccurrenceConstruction mode event) :
     CausalEditPath (counterfactualBaseMode mode)
@@ -668,6 +669,26 @@ noncomputable def sharedEndpoint
   record := construction.endpointRecord
   coordinates := construction.coordinates
   eventAt := construction.endpointEvent
+  eventAt_coordinates := by
+    intro predicate assignment
+    unfold endpointEvent configuredEvent
+    change predicate
+        (OccurrenceMultiworld.Encoding.decodeAssignment construction.World
+          (construction.linked.coordinates.untransportObserved
+            (construction.atomic.coordinates.untransportObserved assignment))) =
+      predicate
+        (OccurrenceMultiworld.Encoding.decodeAssignment construction.World
+          (construction.coordinates.untransportObserved assignment))
+    rw [show construction.coordinates =
+        construction.linked.coordinates.trans construction.atomic.coordinates
+      from rfl]
+    exact congrArg
+      (fun encoded => predicate
+        (OccurrenceMultiworld.Encoding.decodeAssignment construction.World
+          encoded))
+      (AtomicIntervention.SameCoordinates.untransportObserved_trans
+        construction.linked.coordinates construction.atomic.coordinates
+        assignment).symm
   observedValue := construction.endpointRecord_observedValue
 
 /-! ## Query probabilities read from the executed endpoint -/

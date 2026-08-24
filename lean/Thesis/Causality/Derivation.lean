@@ -218,28 +218,77 @@ structure FourWayDisjoint (x y z w : NodeSet S) : Prop where
   yw : NodeSet.Disjoint y w
   zw : NodeSet.Disjoint z w
 
-/-- One checked application of one of Pearl's three rules. -/
-inductive DoRuleApplication (G : ObservedGraph S) : Kernel S -> Kernel S -> Type
+/-- The graph-separation judgement carried by a family of do-rule steps. -/
+abbrev SeparationCondition (S : ObservedSignature) :=
+  GraphMutilation S -> NodeSet S -> NodeSet S -> NodeSet S -> Prop
+
+/-- The separation condition computed by the finite Boolean implementation. -/
+abbrev ExecutableSeparation (G : ObservedGraph S) : SeparationCondition S :=
+  fun mutilation left right conditioned =>
+    G.dSeparated mutilation left right conditioned = true
+
+/-- A selectable separation judgement for the shared do-calculus syntax. -/
+class RuleSeparation (G : ObservedGraph S) where
+  holds : SeparationCondition S
+
+/-- The default rule syntax uses the executable Boolean separation check. -/
+instance executableRuleSeparation (G : ObservedGraph S) : RuleSeparation G where
+  holds := ExecutableSeparation G
+
+/--
+One application of one of Pearl's three rules, parameterized by the separation
+judgement used in its side condition.  Omitting the final parameter selects the
+executable Boolean judgement; active-path syntax supplies another specialization.
+-/
+inductive DoRuleApplication (G : ObservedGraph S)
+    [separation : RuleSeparation G] :
+    Kernel S -> Kernel S -> Type
   | rule1 (x y z w : NodeSet S)
       (disjoint : FourWayDisjoint x y z w)
-      (separated :
-        G.dSeparated (.bar x) y z (NodeSet.union x w) = true) :
-      DoRuleApplication G (rule1Left x y z w) (rule1Right x y z w)
+      (sideCondition : separation.holds (.bar x) y z (NodeSet.union x w)) :
+      DoRuleApplication G (separation := separation)
+        (rule1Left x y z w) (rule1Right x y z w)
   | rule2 (x y z w : NodeSet S)
       (disjoint : FourWayDisjoint x y z w)
-      (separated :
-        G.dSeparated (.barUnderline x z) y z (NodeSet.union x w) = true) :
-      DoRuleApplication G (rule2Left x y z w) (rule2Right x y z w)
+      (sideCondition : separation.holds (.barUnderline x z) y z (NodeSet.union x w)) :
+      DoRuleApplication G (separation := separation)
+        (rule2Left x y z w) (rule2Right x y z w)
   | rule3 (x y z w : NodeSet S)
       (disjoint : FourWayDisjoint x y z w)
-      (separated :
+      (sideCondition :
         let base := GraphMutilation.bar x
         let removable := G.nonAncestorsOf base z w
-        G.dSeparated
+        separation.holds
           { removeIncoming := NodeSet.union x removable,
             removeOutgoing := NodeSet.empty }
-          y z (NodeSet.union x w) = true) :
-      DoRuleApplication G (rule3Left x y z w) (rule3Right x y z w)
+          y z (NodeSet.union x w)) :
+      DoRuleApplication G (separation := separation)
+        (rule3Left x y z w) (rule3Right x y z w)
+
+/-- Transport all three do-rule constructors along a separation implication. -/
+def DoRuleApplication.mapSeparation
+    {S : ObservedSignature} {G : ObservedGraph S}
+    {source target : RuleSeparation G} {left right : Kernel S}
+    (translate : forall (mutilation : GraphMutilation S)
+      (left right conditioned : NodeSet S),
+      source.holds mutilation left right conditioned ->
+        target.holds mutilation left right conditioned)
+    (application : DoRuleApplication G (separation := source) left right) :
+    DoRuleApplication G (separation := target) left right := by
+  cases application with
+  | rule1 x y z w disjoint sideCondition =>
+      exact .rule1 (separation := target) x y z w disjoint
+        (translate (.bar x) y z (NodeSet.union x w) sideCondition)
+  | rule2 x y z w disjoint sideCondition =>
+      exact .rule2 (separation := target) x y z w disjoint
+        (translate (.barUnderline x z) y z (NodeSet.union x w) sideCondition)
+  | rule3 x y z w disjoint sideCondition =>
+      exact .rule3 (separation := target) x y z w disjoint
+        (translate
+          { removeIncoming := NodeSet.union x
+              (G.nonAncestorsOf (.bar x) z w)
+            removeOutgoing := NodeSet.empty }
+          y z (NodeSet.union x w) sideCondition)
 
 /-- Expressions generated from kernels by finite probability algebra. -/
 inductive ProbabilityTerm (S : ObservedSignature) where
@@ -265,59 +314,120 @@ def ActionFree : ProbabilityTerm S -> Prop
 end ProbabilityTerm
 
 /--
-A derivation is concrete syntax: do-calculus steps carry computed separation
-proofs, while marginalization and conditioning are explicit algebraic steps.
+The common derivation skeleton for a chosen do-rule relation.  Probability
+algebra is independent of whether rule leaves use executable or active-path
+separation evidence.
 -/
-inductive DoCalculusDerivation (G : ObservedGraph S) :
+inductive DoCalculusDerivation (G : ObservedGraph S)
+    [separation : RuleSeparation G] :
     ProbabilityTerm S -> ProbabilityTerm S -> Type
-  | refl (term) : DoCalculusDerivation G term term
+  | refl (term) : DoCalculusDerivation G (separation := separation) term term
   | symm {left right} :
-      DoCalculusDerivation G left right -> DoCalculusDerivation G right left
+      DoCalculusDerivation G (separation := separation) left right ->
+        DoCalculusDerivation G (separation := separation) right left
   | trans {left middle right} :
-      DoCalculusDerivation G left middle ->
-      DoCalculusDerivation G middle right ->
-      DoCalculusDerivation G left right
+      DoCalculusDerivation G (separation := separation) left middle ->
+      DoCalculusDerivation G (separation := separation) middle right ->
+      DoCalculusDerivation G (separation := separation) left right
   | doRule {left right} :
-      DoRuleApplication G left right ->
-      DoCalculusDerivation G (.kernel left) (.kernel right)
+      DoRuleApplication G (separation := separation) left right ->
+      DoCalculusDerivation G (separation := separation)
+        (.kernel left) (.kernel right)
   | marginalization (x y z w : NodeSet S)
       (disjoint : FourWayDisjoint x y z w) :
-      DoCalculusDerivation G
+      DoCalculusDerivation G (separation := separation)
         (.kernel ⟨y, x, w⟩)
         (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩))
   | conditioning (x y z w : NodeSet S)
       (disjoint : FourWayDisjoint x y z w) :
-      DoCalculusDerivation G
+      DoCalculusDerivation G (separation := separation)
         (.kernel ⟨y, x, NodeSet.union z w⟩)
         (.divide
           (.kernel ⟨NodeSet.union y z, x, w⟩)
           (.kernel ⟨z, x, w⟩))
   | chain (x y z w : NodeSet S)
       (disjoint : FourWayDisjoint x y z w) :
-      DoCalculusDerivation G
+      DoCalculusDerivation G (separation := separation)
         (.kernel ⟨NodeSet.union y z, x, w⟩)
         (.multiply
           (.kernel ⟨y, x, NodeSet.union z w⟩)
           (.kernel ⟨z, x, w⟩))
   | marginalizeCongr (nodes : NodeSet S) {left right} :
-      DoCalculusDerivation G left right ->
-      DoCalculusDerivation G (.marginalize nodes left) (.marginalize nodes right)
+      DoCalculusDerivation G (separation := separation) left right ->
+      DoCalculusDerivation G (separation := separation)
+        (.marginalize nodes left) (.marginalize nodes right)
   | evaluateAtCongr (assignment : S.Assignment) {left right} :
-      DoCalculusDerivation G left right ->
-      DoCalculusDerivation G
+      DoCalculusDerivation G (separation := separation) left right ->
+      DoCalculusDerivation G (separation := separation)
         (.evaluateAt assignment left) (.evaluateAt assignment right)
   | addCongr {left left' right right'} :
-      DoCalculusDerivation G left left' ->
-      DoCalculusDerivation G right right' ->
-      DoCalculusDerivation G (.add left right) (.add left' right')
+      DoCalculusDerivation G (separation := separation) left left' ->
+      DoCalculusDerivation G (separation := separation) right right' ->
+      DoCalculusDerivation G (separation := separation)
+        (.add left right) (.add left' right')
   | multiplyCongr {left left' right right'} :
-      DoCalculusDerivation G left left' ->
-      DoCalculusDerivation G right right' ->
-      DoCalculusDerivation G (.multiply left right) (.multiply left' right')
+      DoCalculusDerivation G (separation := separation) left left' ->
+      DoCalculusDerivation G (separation := separation) right right' ->
+      DoCalculusDerivation G (separation := separation)
+        (.multiply left right) (.multiply left' right')
   | divideCongr {left left' right right'} :
-      DoCalculusDerivation G left left' ->
-      DoCalculusDerivation G right right' ->
-      DoCalculusDerivation G (.divide left right) (.divide left' right')
+      DoCalculusDerivation G (separation := separation) left left' ->
+      DoCalculusDerivation G (separation := separation) right right' ->
+      DoCalculusDerivation G (separation := separation)
+        (.divide left right) (.divide left' right')
+
+/-- Map only the do-rule leaves of a derivation. -/
+def DoCalculusDerivation.mapRules
+    {S : ObservedSignature} {G : ObservedGraph S}
+    {source target : RuleSeparation G}
+    {left right : ProbabilityTerm S}
+    (translate : forall {left right : Kernel S},
+      DoRuleApplication G (separation := source) left right ->
+        DoRuleApplication G (separation := target) left right)
+    : DoCalculusDerivation G (separation := source) left right ->
+      DoCalculusDerivation G (separation := target) left right
+  | @DoCalculusDerivation.refl _ _ source term =>
+      @DoCalculusDerivation.refl S G target term
+  | @DoCalculusDerivation.symm _ _ source first second derivation =>
+      @DoCalculusDerivation.symm S G target first second
+        (derivation.mapRules (source := source) (target := target) translate)
+  | @DoCalculusDerivation.trans _ _ source first middle last
+      firstDerivation secondDerivation =>
+      @DoCalculusDerivation.trans S G target first middle last
+        (firstDerivation.mapRules (source := source) (target := target) translate)
+        (secondDerivation.mapRules (source := source) (target := target) translate)
+  | @DoCalculusDerivation.doRule _ _ source first second application =>
+      @DoCalculusDerivation.doRule S G target first second
+        (translate application)
+  | @DoCalculusDerivation.marginalization _ _ source x y z w disjoint =>
+      @DoCalculusDerivation.marginalization S G target x y z w disjoint
+  | @DoCalculusDerivation.conditioning _ _ source x y z w disjoint =>
+      @DoCalculusDerivation.conditioning S G target x y z w disjoint
+  | @DoCalculusDerivation.chain _ _ source x y z w disjoint =>
+      @DoCalculusDerivation.chain S G target x y z w disjoint
+  | @DoCalculusDerivation.marginalizeCongr _ _ source nodes first second
+      derivation =>
+      @DoCalculusDerivation.marginalizeCongr S G target nodes first second
+        (derivation.mapRules (source := source) (target := target) translate)
+  | @DoCalculusDerivation.evaluateAtCongr _ _ source assignment first second
+      derivation =>
+      @DoCalculusDerivation.evaluateAtCongr S G target assignment first second
+        (derivation.mapRules (source := source) (target := target) translate)
+  | @DoCalculusDerivation.addCongr _ _ source first first' second second'
+      firstDerivation secondDerivation =>
+      @DoCalculusDerivation.addCongr S G target first first' second second'
+        (firstDerivation.mapRules (source := source) (target := target) translate)
+        (secondDerivation.mapRules (source := source) (target := target) translate)
+  | @DoCalculusDerivation.multiplyCongr _ _ source first first' second second'
+      firstDerivation secondDerivation =>
+      @DoCalculusDerivation.multiplyCongr S G target first first' second second'
+        (firstDerivation.mapRules (source := source) (target := target) translate)
+        (secondDerivation.mapRules (source := source) (target := target) translate)
+  | @DoCalculusDerivation.divideCongr _ _ source first first' second second'
+      firstDerivation secondDerivation =>
+      @DoCalculusDerivation.divideCongr S G target first first' second second'
+        (firstDerivation.mapRules (source := source) (target := target) translate)
+        (secondDerivation.mapRules (source := source) (target := target) translate)
 
 end Causality
 end Thesis

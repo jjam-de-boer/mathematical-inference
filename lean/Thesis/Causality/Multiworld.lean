@@ -191,6 +191,14 @@ theorem factual_not_mem_counterfactualEnumeration
 
 end OccurrenceNode
 
+/-- Apply a dependent function along an equality of its indices. -/
+theorem dependentApplyHEq {α : Type _} {β : α -> Type _}
+    (f : (value : α) -> β value) {left right : α}
+    (equal : left = right) :
+    f left ≍ f right := by
+  cases equal
+  rfl
+
 /-! ## Direct combined multiworld model -/
 
 structure OccurrenceMultiworld (S : ObservedSignature.{u})
@@ -368,13 +376,6 @@ theorem eventProbability (W : OccurrenceMultiworld S event) :
 /-! ## Materialization as an ordinary finite-indexed SCM -/
 
 namespace Encoding
-
-private theorem dependent_apply_heq {α : Type _} {β : α -> Type _}
-    (f : (value : α) -> β value) {left right : α}
-    (equal : left = right) :
-    f left ≍ f right := by
-  cases equal
-  rfl
 
 def encode {S : ObservedSignature} {event : CounterfactualEvent S}
     (node : OccurrenceNode S event) :
@@ -615,7 +616,7 @@ theorem model_eval (W : OccurrenceMultiworld S event)
       W.eval u (decode (encode parent)) at recursive
     have evaluatedHEq :
         W.eval u (decode (encode parent)) ≍ W.eval u parent := by
-      exact dependent_apply_heq (fun node => W.eval u node)
+      exact dependentApplyHEq (fun node => W.eval u node)
         (decode_encode parent)
     apply eq_of_heq
     exact (cast_heq _ _).trans

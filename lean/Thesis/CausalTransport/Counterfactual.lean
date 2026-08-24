@@ -367,7 +367,10 @@ structure PublishedFiniteCounterfactualCompleteness
       Sigma fun reduction : FiniteSourceCounterfactualReduction G query =>
         FiniteSourceCounterfactualObservationalization sound reduction
 
-/-- The transported object retains both source derivation layers. -/
+/--
+The transported object retains the source-native semantic multiworld reduction
+and its inspectable do-calculus observationalization.
+-/
 structure EncodedCounterfactualDerivation
     {T : FiniteTableSignature} {G : FiniteTableGraph T}
     (sound : PublishedFiniteSourceSoundness T G)

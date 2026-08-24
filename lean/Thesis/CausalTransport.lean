@@ -14,12 +14,14 @@ import Thesis.CausalTransport.ModalCounterfactual
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
 
-`Correspondence` defines the explicit boundary to published results.
-`FiniteSource` then gives an independently executable finite-table source
-semantics and proves its preservation by the intrinsic causal semantics.
-The remaining modules transport ordinary, modal, learning, hidden-DAG, and
-counterfactual certificates and identifiability results across that boundary.
-Thus importing this facade
-does not assert an identification theorem as an axiom: users must supply the
-relevant `Published...` package to invoke a completeness transport.
+`Certificates` gives the shared certificate shapes, while `Correspondence`
+states the graph-indexed external boundary. `FiniteSource` supplies an
+independently executable finite-table semantics, proves its preservation by
+the intrinsic semantics, and exposes its own published source interfaces.
+`Counterfactual` separately records the source-native multiworld boundary, and
+`HiddenDAG` records the latent-projection boundary for a selected model family.
+The remaining modules transport these ordinary, modal, learning, hidden-DAG,
+and counterfactual certificates. Importing this facade introduces no
+identification theorem as an axiom: a caller must supply the relevant
+`Published...` package before applying a completeness transport.
 -/

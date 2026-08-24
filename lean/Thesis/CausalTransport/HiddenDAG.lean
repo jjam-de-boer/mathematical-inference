@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.HiddenDAGModel
+import Thesis.Causality.Identification
 
 namespace Thesis
 namespace Causality
@@ -91,10 +92,46 @@ theorem KernelResultEquivalent.agreesOnCommonSupport
   intro assignment _ _
   exact equivalent assignment
 
-/-- Constructive support for one kernel at every assignment. -/
+/-- Pointwise support for one kernel at every assignment. -/
 def KernelSupportedEverywhere (H : HiddenDAGModelFamily S P)
     (model : H.Model) (kernel : Kernel S) : Prop :=
-  Nonempty (forall assignment, H.KernelSupportedAt model kernel assignment)
+  forall assignment, Nonempty (H.KernelSupportedAt model kernel assignment)
+
+/-- Assemble a dependent function from pointwise inhabitants over a finite list. -/
+private theorem finiteNonemptyPiOfList
+    {α : Type u} [DecidableEq α] (items : List α) (fiber : α -> Type v)
+    (pointwise : forall item, Nonempty (fiber item)) :
+    Nonempty (forall item, item ∈ items -> fiber item) := by
+  induction items with
+  | nil =>
+      exact ⟨fun item member => by simp at member⟩
+  | cons head tail inductionHypothesis =>
+      rcases pointwise head with ⟨atHead⟩
+      rcases inductionHypothesis with ⟨atTail⟩
+      refine ⟨fun item member => ?_⟩
+      by_cases equal : item = head
+      · subst item
+        exact atHead
+      · exact atTail item ((List.mem_cons.mp member).resolve_left equal)
+
+/--
+For a finite observed signature, pointwise truncated support is constructively
+equivalent to one truncated function selecting support at every assignment.
+-/
+theorem kernelSupportedEverywhere_iff_globalWitness
+    (H : HiddenDAGModelFamily S P) (model : H.Model) (kernel : Kernel S) :
+    H.KernelSupportedEverywhere model kernel <->
+      Nonempty (forall assignment,
+        H.KernelSupportedAt model kernel assignment) := by
+  constructor
+  · intro supported
+    rcases finiteNonemptyPiOfList S.assignmentEnumeration
+        (fun assignment => H.KernelSupportedAt model kernel assignment)
+        supported with ⟨onEnumeration⟩
+    exact ⟨fun assignment => onEnumeration assignment
+      (S.assignmentEnumeration_complete assignment)⟩
+  · rintro ⟨supported⟩ assignment
+    exact ⟨supported assignment⟩
 
 /-- Joint-kernel identifiability within the selected hidden-DAG family. -/
 def JointIdentifiable (H : HiddenDAGModelFamily S P)
@@ -151,10 +188,10 @@ theorem uniformConditionalIdentifiable_iff
   · rintro ⟨supported, identifiable⟩
     refine ⟨supported, ?_⟩
     intro left right observational assignment
-    rcases supported left with ⟨leftSupported⟩
-    rcases supported right with ⟨rightSupported⟩
+    rcases supported left assignment with ⟨leftSupported⟩
+    rcases supported right assignment with ⟨rightSupported⟩
     exact identifiable left right observational assignment
-      (leftSupported assignment) (rightSupported assignment)
+      leftSupported rightSupported
 
 end HiddenDAGModelFamily
 

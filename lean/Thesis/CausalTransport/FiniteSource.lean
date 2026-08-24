@@ -343,7 +343,7 @@ semantics inside a source certificate.
 -/
 
 /-- Source-native partial denotation of a finite probability expression. -/
-noncomputable def termDenote (M : FiniteTableSCM T) :
+def termDenote (M : FiniteTableSCM T) :
     ProbabilityTerm T.toObserved -> T.Assignment -> ProbabilityResult.Result
   | .zero, _ => some QProb.zero
   | .kernel K, assignment => M.kernelDenote K assignment

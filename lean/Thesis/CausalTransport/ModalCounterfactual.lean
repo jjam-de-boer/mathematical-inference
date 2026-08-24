@@ -116,10 +116,33 @@ theorem ModeIndexedCounterfactualDerivation.endpointSupportedAt
 /--
 Counterfactual completeness transport retaining every modal action world.
 The forward direction obtains the external source certificate and equips it
-with canonical executable/modal data.  The reverse direction deliberately
-forgets that extra data, recovering the underlying finite-source equivalence.
+with compatibility and canonical executable/modal data.  The reverse direction
+recovers compatibility together with the underlying finite-source properties.
 -/
 theorem finiteSource_modeIndexed_transported_counterfactual_iff
+    {T : FiniteTableSignature} {G : FiniteTableGraph T}
+    (mode : CausalMode T.toObserved)
+    (sound : PublishedFiniteSourceSoundness T G)
+    (published : PublishedFiniteCounterfactualCompleteness T G sound)
+    (query : CounterfactualQuery T.toObserved) :
+    (mode.CompatibleWith G.interpret /\
+      CounterfactualIdentifiable G.interpret query /\
+      CounterfactualSupported G.interpret query) <->
+      Nonempty (ModeIndexedCounterfactualDerivation mode sound query) := by
+  constructor
+  · rintro ⟨currentCompatible, properties⟩
+    rcases (finiteSource_transported_counterfactual_iff published query).mp
+      properties with ⟨encoded⟩
+    exact ⟨⟨currentCompatible, encoded,
+      ModalCounterfactualQueryTrace.canonical mode query,
+      ModalCombinedCounterfactualConstruction.canonical mode query⟩⟩
+  · rintro ⟨indexed⟩
+    exact ⟨indexed.compatible,
+      (finiteSource_transported_counterfactual_iff published query).mpr
+        ⟨indexed.encoded⟩⟩
+
+/-- Compatibility-specialized form of the mode-indexed counterfactual equivalence. -/
+theorem finiteSource_modeIndexed_transported_counterfactual_iff_of_compatible
     {T : FiniteTableSignature} {G : FiniteTableGraph T}
     (mode : CausalMode T.toObserved)
     (currentCompatible : mode.CompatibleWith G.interpret)
@@ -131,14 +154,11 @@ theorem finiteSource_modeIndexed_transported_counterfactual_iff
       Nonempty (ModeIndexedCounterfactualDerivation mode sound query) := by
   constructor
   · intro properties
-    rcases (finiteSource_transported_counterfactual_iff published query).mp
-      properties with ⟨encoded⟩
-    exact ⟨⟨currentCompatible, encoded,
-      ModalCounterfactualQueryTrace.canonical mode query,
-      ModalCombinedCounterfactualConstruction.canonical mode query⟩⟩
-  · rintro ⟨indexed⟩
-    exact (finiteSource_transported_counterfactual_iff published query).mpr
-      ⟨indexed.encoded⟩
+    exact (finiteSource_modeIndexed_transported_counterfactual_iff
+      mode sound published query).mp ⟨currentCompatible, properties⟩
+  · intro certificate
+    exact ((finiteSource_modeIndexed_transported_counterfactual_iff
+      mode sound published query).mpr certificate).2
 
 end Causality
 end Thesis

@@ -216,21 +216,7 @@ def model (operation : RelateOperation S parent child earlier)
 def apply (operation : RelateOperation S parent child earlier)
     (R : CausalEpistemicRecord S) :
     CausalEpistemicRecord (addSignature S parent child earlier) where
-  model :=
-    { latent := addLatent R.model parent child earlier
-      factor := R.model.factor
-      prior := R.model.prior
-      product_law := R.model.product_law
-      mechanism := by
-        intro node parents latents
-        by_cases selected : node = child
-        · subst node
-          exact operation.replacement R.model parents latents
-        · exact R.model.mechanism node
-            (fun candidate oldEdge =>
-              parents candidate
-                (DirectedLink.oldEdge S parent child earlier oldEdge))
-            latents }
+  model := operation.model R.model
   belief := R.belief
   intervention := liftIntervention R.intervention
 

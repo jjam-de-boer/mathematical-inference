@@ -1,7 +1,7 @@
 import Thesis.Causality.Structural.Links
 import Thesis.Causality.Structural.Learning
 import Thesis.Causality.Structural.SurgeryCore
-import Thesis.Causality.Forgetting
+import Thesis.Causality.Forgetting.Basic
 
 namespace Thesis
 namespace Causality
@@ -34,14 +34,15 @@ inductive CausalLink (R : CausalEpistemicRecord S) where
   | latentInput (source : Fin R.model.latent.count)
       (child : Fin S.count)
 
+/-- Context-independent markers for structural transitions. Learning and
+forgetting use one label each; their typed operation constructors retain the
+endogenous or exogenous data that realizes the announced edit. -/
 inductive CausalEditLabel where
   | conditioning
   | compactSetting
   | compactUnsetting
-  | learningEndogenous
-  | forgettingEndogenous
-  | learningExogenous
-  | forgettingExogenous
+  | learning
+  | forgetting
   | relating (kind : CausalLinkKind)
   | unrelating (kind : CausalLinkKind)
   | settingMechanism
@@ -366,13 +367,13 @@ def label : CausalEditOperation source T -> CausalEditLabel
   | .compactIntervening _ _ => .compactSetting
   | .compactUnsetting _ => .compactUnsetting
   | .learningTerminal _
-  | .learningEndogenous _ => .learningEndogenous
+  | .learningEndogenous _
+  | .learningExogenous _ => .learning
   | .forgettingTerminal _ _
-  | .forgettingEndogenous _ _ => .forgettingEndogenous
-  | .forgettingUnusedEndogenous _ => .forgettingEndogenous
-  | .learningExogenous _ => .learningExogenous
-  | .forgettingExogenous _ _ => .forgettingExogenous
-  | .forgettingUnusedExogenous _ => .forgettingExogenous
+  | .forgettingEndogenous _ _
+  | .forgettingExogenous _ _
+  | .forgettingUnusedEndogenous _
+  | .forgettingUnusedExogenous _ => .forgetting
   | .relatingDirected _ => .relating .directed
   | .unrelatingDirected _ => .unrelating .directed
   | .relatingLatent _ => .relating .latentInput

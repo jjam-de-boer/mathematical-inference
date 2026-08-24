@@ -20,6 +20,10 @@ abbrev Event (X : Type u) := X → Bool
 def topEvent : Event X :=
   fun _ => true
 
+/-- The event containing no values. -/
+def bottomEvent : Event X :=
+  fun _ => false
+
 /-- Boolean union of two decidable events. -/
 def union (E F : Event X) : Event X :=
   fun x => E x || F x
@@ -27,6 +31,15 @@ def union (E F : Event X) : Event X :=
 /-- Boolean intersection of two decidable events. -/
 def inter (E F : Event X) : Event X :=
   fun x => E x && F x
+
+/-- Boolean complement of a decidable event. -/
+def complement (E : Event X) : Event X :=
+  fun x => !E x
+
+/-- Boolean union of a finite list of decidable events. -/
+def unionList : List (Event X) → Event X
+  | [] => bottomEvent
+  | event :: events => union event (unionList events)
 
 /-- Disjointness is stated propositionally, but only for Boolean events. -/
 def disjoint (E F : Event X) : Prop :=
@@ -48,17 +61,25 @@ theorem count_top (xs : List X) :
     count xs topEvent = xs.length := by
   simp [count, topEvent]
 
+/-- The empty event selects no entries of a finite enumeration. -/
+theorem count_bottom (xs : List X) :
+    count xs bottomEvent = 0 := by
+  induction xs with
+  | nil => rfl
+  | cons value values ih =>
+      change List.countP (fun _ : X => false) (value :: values) = 0
+      rw [List.countP_cons]
+      simp only [Bool.false_eq_true, ↓reduceIte, Nat.add_zero]
+      exact ih
+
+/-- Pointwise-equal Boolean events have equal finite counts. -/
 theorem count_congr {xs : List X} {E F : Event X}
     (h : ∀ x, E x = F x) :
     count xs E = count xs F := by
-  induction xs with
-  | nil =>
-      rfl
-  | cons x xs ih =>
-      have ih' : List.countP E xs = List.countP F xs := by
-        simpa [count] using ih
-      change List.countP E (x :: xs) = List.countP F (x :: xs)
-      rw [List.countP_cons, List.countP_cons, ih', h x]
+  unfold count
+  apply List.countP_congr
+  intro x _
+  rw [h x]
 
 /-- Reordering a finite enumeration does not change an event count. -/
 theorem count_reindex {xs ys : List X} (h : xs.Perm ys) (E : Event X) :
@@ -93,30 +114,57 @@ theorem count_union_disjoint (xs : List X) (E F : Event X)
         omega
       · exact False.elim (h x hE hF)
 
+/-- An event and its Boolean complement partition every finite enumeration. -/
+theorem count_add_count_complement (xs : List X) (E : Event X) :
+    count xs E + count xs (complement E) = xs.length := by
+  simpa [count, complement] using
+    (List.length_eq_countP_add_countP E (l := xs)).symm
+
+/-- A Boolean event is disjoint from its complement. -/
+theorem disjoint_complement (E : Event X) :
+    disjoint E (complement E) := by
+  intro x hE hComplement
+  simp [complement, hE] at hComplement
+
+/-- An event and its complement cover the total event pointwise. -/
+theorem union_complement (E : Event X) :
+    union E (complement E) = topEvent := by
+  funext x
+  cases E x <;> simp [union, complement, topEvent]
+
+/-- Disjointness from every member implies disjointness from their finite union. -/
+theorem disjoint_unionList {E : Event X} : ∀ {events : List (Event X)},
+    (∀ F ∈ events, disjoint E F) → disjoint E (unionList events)
+  | [], _ => by
+      simp [disjoint, unionList, bottomEvent]
+  | F :: events, h => by
+      intro x hE hUnion
+      simp only [unionList, union, Bool.or_eq_true] at hUnion
+      rcases hUnion with hF | hTail
+      · exact h F (by simp) x hE hF
+      · exact disjoint_unionList
+          (fun G hG => h G (by simp [hG])) x hE hTail
+
+/-- A finite pairwise-disjoint union has the sum of its member counts. -/
+theorem count_unionList_pairwise (xs : List X) : ∀ {events : List (Event X)},
+    events.Pairwise disjoint →
+      count xs (unionList events) = (events.map (count xs)).sum
+  | [], _ => count_bottom xs
+  | E :: events, pairwise => by
+      rw [unionList,
+        count_union_disjoint xs E (unionList events)
+          (disjoint_unionList (List.pairwise_cons.mp pairwise).1),
+        count_unionList_pairwise xs (List.pairwise_cons.mp pairwise).2]
+      rfl
+
+/-- Event inclusion is monotone for finite counts. -/
 theorem count_mono {xs : List X} {E F : Event X}
     (h : ∀ x, E x = true → F x = true) :
     count xs E ≤ count xs F := by
-  induction xs with
-  | nil =>
-      simp [count]
-  | cons x xs ih =>
-      have ih' : List.countP E xs ≤ List.countP F xs := by
-        simpa [count] using ih
-      change List.countP E (x :: xs) ≤ List.countP F (x :: xs)
-      rw [List.countP_cons, List.countP_cons]
-      cases hE : E x with
-      | true =>
-          have hF : F x = true := h x hE
-          simp [hF]
-          omega
-      | false =>
-          cases hF : F x with
-          | true =>
-              simp
-              omega
-          | false =>
-              simp
-              exact ih'
+  unfold count
+  apply List.countP_mono_left
+  intro x _ hx
+  exact h x hx
 
 theorem count_union_inter (xs : List X) (E F : Event X) :
     count xs (union E F) + count xs (inter E F) =
@@ -144,6 +192,26 @@ theorem list_ofFn_get {α : Type u} (xs : List α) :
       simp
   | cons _ _ _ =>
       simp
+
+/-- The canonical enumeration of `Fin n` contains no duplicate indices. -/
+theorem finRange_nodup : ∀ n, (List.finRange n).Nodup := by
+  intro n
+  induction n with
+  | zero => simp
+  | succ n ih =>
+      rw [List.finRange_succ]
+      exact List.nodup_cons.mpr ⟨by
+        intro member
+        rcases List.mem_map.mp member with ⟨value, _, equal⟩
+        exact Fin.succ_ne_zero value equal,
+        List.Pairwise.map Fin.succ (fun left right different equal =>
+          different (Fin.succ_inj.mp equal)) ih⟩
+
+/-- Every index occurs exactly once in the canonical `Fin n` enumeration. -/
+theorem count_finRange (n : Nat) (j : Fin n) :
+    (List.finRange n).count j = 1 := by
+  rw [(finRange_nodup n).count]
+  simp
 
 /-- The three finite-inspection outcomes used for proposition-status events. -/
 inductive Status where
@@ -439,6 +507,10 @@ reduced fraction.
 -/
 def LE (p q : QProb) : Prop :=
   p.num * q.den ≤ q.num * p.den
+
+/-- Every nonnegative rational presentation is above the canonical zero. -/
+theorem zero_le (p : QProb) : LE zero p := by
+  simp [LE, zero]
 
 /--
 Same-denominator comparison reduces to a comparison of numerators.  Urn

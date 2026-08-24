@@ -314,12 +314,23 @@ def probVal (R : FiniteProbRecord Ω) (E : Event Ω) : QProb where
   den := R.den
   den_pos := R.den_pos
 
+/-- Every event probability in a finite probability record is nonnegative. -/
+theorem probVal_nonneg (R : FiniteProbRecord Ω) (E : Event Ω) :
+    QProb.LE QProb.zero (R.probVal E) :=
+  QProb.zero_le _
+
 /-- Every event probability in a finite probability record is at most one. -/
 theorem probVal_le_one (R : FiniteProbRecord Ω) (E : Event Ω) :
     QProb.LE (R.probVal E) QProb.one := by
   simp only [QProb.LE, probVal, QProb.one, Nat.mul_one, Nat.one_mul]
   rw [← R.total_mass]
   exact eventMass_le_totalMass R.atoms E
+
+/-- The closed-unit-interval bounds for a finite-record event probability. -/
+theorem probVal_bounds (R : FiniteProbRecord Ω) (E : Event Ω) :
+    QProb.LE QProb.zero (R.probVal E) ∧
+      QProb.LE (R.probVal E) QProb.one :=
+  ⟨R.probVal_nonneg E, R.probVal_le_one E⟩
 
 theorem probVal_congr (R : FiniteProbRecord Ω) (E F : Event Ω)
     (pointwise : forall value, E value = F value) :
@@ -435,7 +446,7 @@ theorem probVal_extensional_of_singletons [DecidableEq Ω]
       (QProb.equiv_symm
         (probVal_equiv_listSum_singletons right values nodup complete event)))
 
-/-- Constructive positivity of a finite event, stated before quotient rationals. -/
+/-- Constructive positivity of a finite event, stated at natural event-mass level. -/
 def EventPositive (R : FiniteProbRecord Ω) (event : Event Ω) : Prop :=
   0 < eventMass R.atoms event
 

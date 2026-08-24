@@ -8,9 +8,9 @@ namespace Probability
 
 The appendix treats a finite sum as a recursive fold over `Fin n`, taken in
 an additive carrier whose equality is an explicit equivalence relation rather
-than judgemental identity.  The carrier records exactly the data used in the
-adjacent-swap argument: addition respects the equivalence, and it is
-associative, commutative and unital up to that equivalence.
+than judgemental identity.  The carrier is a direct presentation of the
+commutative-monoid laws needed for finite sums: addition respects the
+equivalence and is associative, commutative and unital up to that equivalence.
 
 No result here is a statement about infinite series, unordered sums over
 arbitrary types, or quotient types.  The sum is the finite fold of the
@@ -50,6 +50,11 @@ variable {M : Type u}
 def listSum (C : AdditiveCarrier M) : List M → M
   | [] => C.zero
   | value :: values => C.add value (listSum C values)
+
+/-- A one-term finite sum agrees with its sole term. -/
+theorem listSum_singleton (C : AdditiveCarrier M) (x : M) :
+    C.Equiv (listSum C [x]) x :=
+  C.add_zero x
 
 /-- An adjacent transposition changes the sum only by commutativity. -/
 theorem listSum_swap (C : AdditiveCarrier M) (x y : M) (values : List M) :
@@ -100,85 +105,21 @@ theorem perm_of_count_eq_constructive {A : Type u}
 
 /-- Pointwise Boolean agreement, without function extensionality. -/
 private theorem countP_eq_of_pointwise {A : Type u}
-    (p q : A → Bool) : ∀ (values : List A),
-    (∀ value, p value = q value) →
-      values.countP p = values.countP q
-  | [], _ => rfl
-  | value :: values, h => by
-      simp [List.countP_cons, h value, countP_eq_of_pointwise p q values h]
-
-/-- Mapping preserves an already constructed list permutation. -/
-private theorem perm_map_constructive {A : Type u} {B : Type v}
-    (f : A → B) {xs ys : List A} (h : xs.Perm ys) :
-    (xs.map f).Perm (ys.map f) := by
-  induction h with
-  | nil => exact List.Perm.nil
-  | cons _ _ ih => exact ih.cons (f _)
-  | swap x y values => exact List.Perm.swap (f x) (f y) (values.map f)
-  | trans _ _ ih ih' => exact ih.trans ih'
-
-theorem mem_finRange_self {n : Nat} (j : Fin n) :
-    j ∈ List.finRange n :=
-  List.mem_finRange j
-
-theorem count_finRange (n : Nat) (j : Fin n) :
-    (List.finRange n).count j = 1 := by
-  induction n with
-  | zero => exact Fin.elim0 j
-  | succ n ih =>
-      rw [List.finRange_succ_last, List.count_append]
-      refine Fin.lastCases ?_ (fun i => ?_) j
-      · have hleft :
-            ((List.finRange n).map Fin.castSucc).count (Fin.last n) = 0 := by
-          rw [List.count_eq_zero]
-          intro hmem
-          rcases List.mem_map.mp hmem with ⟨k, _, hk⟩
-          have hlt : k.castSucc.val < n := Fin.castSucc_lt_last k
-          have heq : k.castSucc.val = n := by
-            rw [hk]
-            rfl
-          exact (Nat.ne_of_lt hlt) heq
-        have hright : [Fin.last n].count (Fin.last n) = 1 :=
-          List.count_singleton_self
-        simp [hleft, hright]
-      · have hright : [Fin.last n].count i.castSucc = 0 := by
-          rw [List.count_eq_zero]
-          intro hmem
-          have heq : i.castSucc = Fin.last n := List.mem_singleton.mp hmem
-          have hlt : i.castSucc.val < n := Fin.castSucc_lt_last i
-          have hval : i.castSucc.val = n := by
-            rw [heq]
-            rfl
-          exact (Nat.ne_of_lt hlt) hval
-        have hleft :
-            ((List.finRange n).map Fin.castSucc).count i.castSucc = 1 := by
-          rw [List.count_eq_countP, List.countP_map]
-          change (List.finRange n).countP (fun k => k.castSucc == i.castSucc) = 1
-          have hpoint :
-              (fun k : Fin n => k.castSucc == i.castSucc) =
-                fun k => k == i := by
-            funext k
-            apply Bool.eq_iff_iff.mpr
-            constructor
-            · intro h
-              exact beq_iff_eq.mpr
-                (Fin.castSucc_inj.mp (beq_iff_eq.mp h))
-            · intro h
-              exact beq_iff_eq.mpr
-                (Fin.castSucc_inj.mpr (beq_iff_eq.mp h))
-          rw [hpoint, ← List.count_eq_countP]
-          exact ih i
-        simp [hleft, hright]
+    (p q : A → Bool) (values : List A)
+    (pointwise : ∀ value, p value = q value) :
+    values.countP p = values.countP q := by
+  apply List.countP_congr
+  intro value _
+  rw [pointwise value]
 
 /-- Mapping a list and then counting a value is counting the preimage predicate. -/
 private theorem count_map_eq_countP {A : Type u} {B : Type v} [BEq B]
     (f : A → B) (target : B) :
     ∀ values : List A,
       (values.map f).count target = values.countP (fun value => f value == target)
-  | [] => rfl
-  | value :: values => by
-      simp [List.count_cons, List.countP_cons,
-        count_map_eq_countP f target values]
+  | values => by
+      rw [List.count_eq_countP, List.countP_map]
+      rfl
 
 /-- A bijection of `Fin n` merely reorders the canonical enumeration. -/
 private theorem fin_beq_of_bijective {n : Nat}
@@ -237,7 +178,7 @@ theorem finSum_reindex (C : AdditiveCarrier M) (n : Nat) (u : Fin n → M)
   have hperm :
       ((List.finRange n).map (u ∘ σ)).Perm ((List.finRange n).map u) := by
     have hσ := finRange_map_bijective_perm σ τ left_inv right_inv
-    have hmap := perm_map_constructive u hσ
+    have hmap := hσ.map u
     rwa [List.map_map] at hmap
   exact listSum_perm C hperm
 

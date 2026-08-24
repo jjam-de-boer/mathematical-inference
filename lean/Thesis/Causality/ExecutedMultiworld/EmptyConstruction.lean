@@ -329,6 +329,39 @@ theorem nodeValue_eq (nodes : Nodes M event roots)
     (congrArg (EncodingSignature M event).Value
       (finRange_get_position index))
 
+/-- Node creation introduces no directed edge into the empty observed graph. -/
+theorem node_directed_false (nodes : Nodes M event roots)
+    (parent child : Fin (EncodingSignature M event).count) :
+    nodes.signature.directed (node nodes parent) (node nodes child) = false := by
+  cases edge : nodes.signature.directed
+      (node nodes parent) (node nodes child) with
+  | false => rfl
+  | true =>
+      exfalso
+      rcases nodes.directedReflects (node nodes parent) (node nodes child)
+          edge with
+        ⟨sourceParent, _sourceChild, _parentEq, _childEq, _sourceEdge⟩
+      exact Fin.elim0 sourceParent
+
+/-- Node creation introduces no latent incidence into the empty observed graph. -/
+theorem node_incident_false
+    (roots : SourceRootsConstruction.All M)
+    (nodes : Nodes M event roots) (root : Fin M.latent.count)
+    (child : Fin (EncodingSignature M event).count) :
+    nodes.target.record.model.latent.incident
+        (nodes.roots.rootEquiv.toFun (roots.sourceRoot root))
+        (node nodes child) = false := by
+  cases incident : nodes.target.record.model.latent.incident
+      (nodes.roots.rootEquiv.toFun (roots.sourceRoot root))
+      (node nodes child) with
+  | false => rfl
+  | true =>
+      exfalso
+      rcases nodes.incidentReflects (roots.sourceRoot root)
+          (node nodes child) incident with
+        ⟨sourceChild, _childEq, _sourceIncident⟩
+      exact Fin.elim0 sourceChild
+
 /-! ## Reinstating the reference multiworld graph -/
 
 /--
@@ -410,6 +443,35 @@ theorem directedEdge_mem (nodes : Nodes M event roots)
   refine ⟨parent, List.mem_finRange parent, ?_⟩
   simp [edge]
 
+/-- A listed directed edge can only be the encoded source edge at its endpoints. -/
+theorem directedEdges_reflect
+    (nodes : Nodes M event roots) (listed : DirectedEdge nodes.signature)
+    (member : listed ∈ directedEdges nodes)
+    (parent child : Fin (EncodingSignature M event).count)
+    (parentEq : listed.parent = node nodes parent)
+    (childEq : listed.child = node nodes child) :
+    untreatedDirected M event parent child = true := by
+  simp only [directedEdges, List.mem_flatMap] at member
+  rcases member with ⟨listedChild, _childMember, member⟩
+  simp only [List.mem_filterMap] at member
+  rcases member with ⟨listedParent, _parentMember, itemEq⟩
+  split at itemEq
+  · rename_i edge
+    have listedEq :
+        directedEdge nodes listedParent listedChild edge = listed :=
+      Option.some.inj itemEq
+    subst listed
+    have decodedParentEq : listedParent = parent := by
+      apply Fin.ext
+      have values := congrArg Fin.val parentEq
+      simpa [directedEdge, node_val] using values
+    have decodedChildEq : listedChild = child := by
+      apply Fin.ext
+      have values := congrArg Fin.val childEq
+      simpa [directedEdge, node_val] using values
+    simpa [decodedParentEq, decodedChildEq] using edge
+  · simp at itemEq
+
 def rootBeforeLatent
     (roots : SourceRootsConstruction.All M)
     (nodes : Nodes M event roots)
@@ -466,6 +528,54 @@ theorem latentEdge_mem
   simp only [List.mem_filterMap]
   refine ⟨child, List.mem_finRange child, ?_⟩
   simp [incident]
+
+private theorem finIndexEquiv_toFun_injective
+    (equiv : AtomicIntervention.FinIndexEquiv left right) :
+    Function.Injective equiv.toFun := by
+  intro first second equal
+  rw [← equiv.left_inv first, ← equiv.left_inv second, equal]
+
+/-- A listed latent edge can only be the encoded source incidence at its endpoints. -/
+theorem latentEdges_reflect
+    (roots : SourceRootsConstruction.All M)
+    (nodes : Nodes M event roots)
+    (directed : DirectedLinksConstruction nodes.target
+      (directedEdges nodes))
+    (listed : LatentEdge directed.target)
+    (member : listed ∈ latentEdges roots nodes directed)
+    (root : Fin M.latent.count)
+    (child : Fin (EncodingSignature M event).count)
+    (rootEq : listed.source = rootBeforeLatent roots nodes directed root)
+    (childEq : listed.child = directed.node (node nodes child)) :
+    M.latent.incident root
+        (OccurrenceMultiworld.Encoding.decode child).node = true := by
+  simp only [latentEdges, List.mem_flatMap] at member
+  rcases member with ⟨listedRoot, _rootMember, member⟩
+  simp only [List.mem_filterMap] at member
+  rcases member with ⟨listedChild, _childMember, itemEq⟩
+  split at itemEq
+  · rename_i incident
+    have listedEq :
+        latentEdge roots nodes directed listedRoot listedChild = listed :=
+      Option.some.inj itemEq
+    subst listed
+    have createdRootEq : roots.sourceRoot listedRoot = roots.sourceRoot root := by
+      apply finIndexEquiv_toFun_injective nodes.roots.rootEquiv
+      apply finIndexEquiv_toFun_injective directed.roots.rootEquiv
+      exact rootEq
+    have decodedRootEq : listedRoot = root := by
+      apply finIndexEquiv_toFun_injective roots.sourceRootEquiv
+      exact createdRootEq
+    have decodedChildEq : listedChild = child := by
+      apply Fin.ext
+      have values := congrArg Fin.val childEq
+      change
+        (directed.node (node nodes listedChild)).val =
+          (directed.node (node nodes child)).val at values
+      rw [directed.node_val, directed.node_val, node_val, node_val] at values
+      exact values
+    simpa [decodedRootEq, decodedChildEq] using incident
+  · simp at itemEq
 
 /--
 Every occurrence coordinate and every source root is created from the empty
@@ -606,6 +716,75 @@ theorem incident (linked : Linked M event)
     (latentEdge linked.roots linked.nodes linked.directed root child)
     (latentEdge_mem linked.roots linked.nodes linked.directed
       root child incident)
+
+/-- Before action compilation, the linked endpoint has exactly the encoded directed graph. -/
+theorem directed_eq_untreated (linked : Linked M event)
+    (parent child : Fin (EncodingSignature M event).count) :
+    linked.signature.directed
+        (linked.encodedNode parent) (linked.encodedNode child) =
+      untreatedDirected M event parent child := by
+  cases sourceEdge : untreatedDirected M event parent child with
+  | true =>
+      exact linked.directedInstalled parent child sourceEdge
+  | false =>
+      cases finalEdge : linked.signature.directed
+          (linked.encodedNode parent) (linked.encodedNode child) with
+      | false => rfl
+      | true =>
+          exfalso
+          have reflected := linked.directed.reflects
+            (node linked.nodes parent) (node linked.nodes child) (by
+              simpa [signature, encodedNode] using finalEdge)
+          rcases reflected with sourcePresent | installed
+          · have sourceAbsent := node_directed_false linked.nodes parent child
+            rw [sourceAbsent] at sourcePresent
+            contradiction
+          · rcases installed with
+              ⟨listed, member, parentEq, childEq⟩
+            have impossible := directedEdges_reflect linked.nodes listed member
+              parent child parentEq childEq
+            rw [sourceEdge] at impossible
+            contradiction
+
+/-- Before action compilation, the linked endpoint has exactly the encoded latent graph. -/
+theorem incident_eq_source (linked : Linked M event)
+    (root : Fin M.latent.count)
+    (child : Fin (EncodingSignature M event).count) :
+    linked.target.record.model.latent.incident
+        (linked.sourceRoot root) (linked.encodedNode child) =
+      M.latent.incident root
+        (OccurrenceMultiworld.Encoding.decode child).node := by
+  cases sourceIncident : M.latent.incident root
+      (OccurrenceMultiworld.Encoding.decode child).node with
+  | true =>
+      exact linked.incident root child sourceIncident
+  | false =>
+      cases finalIncident : linked.target.record.model.latent.incident
+          (linked.sourceRoot root) (linked.encodedNode child) with
+      | false => rfl
+      | true =>
+          exfalso
+          have reflected := linked.latent.reflects
+            (rootBeforeLatent linked.roots linked.nodes linked.directed root)
+            (linked.directed.node (node linked.nodes child)) (by
+              simpa [target, sourceRoot, encodedNode, rootBeforeLatent] using
+                finalIncident)
+          rcases reflected with sourcePresent | installed
+          · have nodePresent := linked.directed.latentReflects
+              (linked.nodes.roots.rootEquiv.toFun
+                (linked.roots.sourceRoot root))
+              (node linked.nodes child) (by
+                simpa [rootBeforeLatent] using sourcePresent)
+            have nodeAbsent := node_incident_false linked.roots linked.nodes
+              root child
+            rw [nodeAbsent] at nodePresent
+            contradiction
+          · rcases installed with
+              ⟨listed, member, rootEq, childEq⟩
+            have impossible := latentEdges_reflect linked.roots linked.nodes
+              linked.directed listed member root child rootEq childEq
+            rw [sourceIncident] at impossible
+            contradiction
 
 /--
 The bijection from encoded reference coordinates to the endpoint coordinates.
@@ -956,6 +1135,59 @@ theorem combinedAction_worldNode_some (linked : Linked M event)
   rw [congrArg
     (linked.fiberAction (linked.worldNode world node)) fiberEq]
   simp [fiberAction, worldFiber, selected]
+
+theorem combinedAction_encodedNode_isSome (linked : Linked M event)
+    (child : Fin (EncodingSignature M event).count) :
+    (linked.combinedAction (linked.encodedNode child)).isSome =
+      ((OccurrenceMultiworld.Encoding.decode child).world.action
+        (OccurrenceMultiworld.Encoding.decode child).node).isSome := by
+  cases selected : (OccurrenceMultiworld.Encoding.decode child).world.action
+      (OccurrenceMultiworld.Encoding.decode child).node with
+  | none =>
+      have actionNone := linked.combinedAction_worldNode_none
+        (OccurrenceMultiworld.Encoding.decode child).world
+        (OccurrenceMultiworld.Encoding.decode child).node selected
+      change linked.combinedAction
+        (linked.encodedNode
+          (OccurrenceMultiworld.Encoding.encode
+            (OccurrenceMultiworld.Encoding.decode child))) = none at actionNone
+      rw [OccurrenceMultiworld.Encoding.encode_decode] at actionNone
+      exact congrArg Option.isSome actionNone
+  | some value =>
+      have actionSome := linked.combinedAction_worldNode_some
+        (OccurrenceMultiworld.Encoding.decode child).world
+        (OccurrenceMultiworld.Encoding.decode child).node value selected
+      have actionSomeIs := congrArg Option.isSome actionSome
+      change (linked.combinedAction
+        (linked.encodedNode
+          (OccurrenceMultiworld.Encoding.encode
+            (OccurrenceMultiworld.Encoding.decode child)))).isSome = true
+              at actionSomeIs
+      rw [OccurrenceMultiworld.Encoding.encode_decode] at actionSomeIs
+      simpa using actionSomeIs
+
+theorem world_directed_encoded_eq (M : ExactModel S)
+    (event : CounterfactualEvent S)
+    (parent child : Fin (EncodingSignature M event).count) :
+    (World M event).directed
+        (OccurrenceMultiworld.Encoding.decode parent)
+        (OccurrenceMultiworld.Encoding.decode child) =
+      if ((OccurrenceMultiworld.Encoding.decode child).world.action
+          (OccurrenceMultiworld.Encoding.decode child).node).isSome then false
+      else untreatedDirected M event parent child := by
+  unfold OccurrenceMultiworld.directed untreatedDirected
+  split <;> simp [OccurrenceMultiworld.action, mutilatedDirected,
+    FiniteLatentSCM.cutOf]
+
+theorem world_incident_encoded_eq (M : ExactModel S)
+    (event : CounterfactualEvent S) (root : Fin M.latent.count)
+    (child : Fin (EncodingSignature M event).count) :
+    (World M event).incident root (OccurrenceMultiworld.Encoding.decode child) =
+      if ((OccurrenceMultiworld.Encoding.decode child).world.action
+          (OccurrenceMultiworld.Encoding.decode child).node).isSome then false
+      else M.latent.incident root
+        (OccurrenceMultiworld.Encoding.decode child).node := by
+  rfl
 
 /-! ## Semantic comparison with the reference multiworld -/
 

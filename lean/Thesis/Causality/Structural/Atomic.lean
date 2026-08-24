@@ -10,10 +10,9 @@ Atomic compilation and semantic realization of finite hard interventions.
 
 The compiler replaces each selected mechanism by a constant and removes its
 incoming directed and latent inputs one at a time. It deliberately keeps this
-long path distinct from the compact hard-intervention evaluator: the main
-result proves that the generated target record has the compact evaluator's
-unit-level semantics, rather than defining one presentation in terms of the
-other.
+long path distinct from the compact hard-intervention evaluator. The final
+results identify both its unit-level evaluation and its exact directed and
+latent classifiers: precisely the inputs of selected children are removed.
 -/
 
 /-! ## Atomic compilation of finite hard interventions -/
@@ -460,6 +459,13 @@ theorem transportObserved_trans (first : SameCoordinates S T)
   funext node
   simp [transportObserved, trans, NodeEquiv.trans]
 
+theorem untransportObserved_trans (first : SameCoordinates S T)
+    (second : SameCoordinates T U) (assignment : U.Assignment) :
+    (first.trans second).untransportObserved assignment =
+      first.untransportObserved (second.untransportObserved assignment) := by
+  funext node
+  simp [untransportObserved, trans, NodeEquiv.trans]
+
 end SameCoordinates
 
 /-- A constructive equivalence between two finite index sets. -/
@@ -490,6 +496,27 @@ def trans (first : FinIndexEquiv left middle)
 
 end FinIndexEquiv
 
+private structure LatentCoordinates (source target : LatentExtension S) where
+  rootEquiv : FinIndexEquiv source.count target.count
+  value_eq : forall root : Fin source.count,
+    source.Value root = target.Value (rootEquiv.toFun root)
+
+private def LatentCoordinates.ofEq (source target : LatentExtension S)
+    (equal : target = source) : LatentCoordinates source target := by
+  subst target
+  exact {
+    rootEquiv := FinIndexEquiv.refl source.count
+    value_eq := fun _ => rfl
+  }
+
+private theorem LatentCoordinates.ofEq_incident
+    (source target : LatentExtension S) (equal : target = source)
+    (root : Fin source.count) (child : Fin S.count) :
+    target.incident ((LatentCoordinates.ofEq source target equal).rootEquiv.toFun
+      root) child = source.incident root child := by
+  subst target
+  rfl
+
 /-- The latent roots and their value types are unchanged by a compiled `do`. -/
 structure SameRoots {S T : ObservedSignature}
     (source : CausalMode S) (target : CausalMode T) where
@@ -500,6 +527,24 @@ structure SameRoots {S T : ObservedSignature}
       target.record.model.latent.Value (rootEquiv.toFun root)
 
 namespace SameRoots
+
+/-- Build the canonical root correspondence when two modes have equal latent records. -/
+def ofLatentEq {source target : CausalMode S}
+    (equal : target.record.model.latent = source.record.model.latent) :
+    SameRoots source target :=
+  let coordinates := LatentCoordinates.ofEq
+    source.record.model.latent target.record.model.latent equal
+  { rootEquiv := coordinates.rootEquiv
+    value_eq := coordinates.value_eq }
+
+theorem ofLatentEq_incident {source target : CausalMode S}
+    (equal : target.record.model.latent = source.record.model.latent)
+    (root : Fin source.record.model.latent.count) (child : Fin S.count) :
+    target.record.model.latent.incident
+        ((ofLatentEq equal).rootEquiv.toFun root) child =
+      source.record.model.latent.incident root child :=
+  LatentCoordinates.ofEq_incident source.record.model.latent
+    target.record.model.latent equal root child
 
 def refl (mode : CausalMode S) : SameRoots mode mode where
   rootEquiv := FinIndexEquiv.refl mode.record.model.latent.count
@@ -1128,19 +1173,42 @@ def setPath (mode : CausalMode S) (action : Action S) :
           simpa [setMode, selected, step] using
             CausalEditPath.cons step (setPath step.target action rest)
 
-def setRoots (mode : CausalMode S) (action : Action S) :
-    (nodes : List (Fin S.count)) -> SameRoots mode (setMode mode action nodes)
-  | [] => by simpa [setMode] using SameRoots.refl mode
+/-- Constant-setting edits leave the complete latent record unchanged. -/
+theorem setMode_latent (mode : CausalMode S) (action : Action S) :
+    (nodes : List (Fin S.count)) ->
+      (setMode mode action nodes).record.model.latent =
+        mode.record.model.latent
+  | [] => rfl
   | child :: rest => by
       cases selected : action child with
       | none =>
-          simpa [setMode, selected] using setRoots mode action rest
+          simpa [setMode, selected] using setMode_latent mode action rest
       | some value =>
           let step := StructuralSetting.transition mode child value
             "atomic-do-set"
-          simpa [setMode, selected, step] using
-            (settingRoots mode child value "atomic-do-set").trans
-              (setRoots step.target action rest)
+          have tail := setMode_latent step.target action rest
+          simpa [setMode, selected, step, StructuralSetting.transition,
+            StructuralSetting.applyConstant,
+            StructuralSetting.constantOperation,
+            StructuralSetting.Operation.apply] using tail
+termination_by nodes => nodes.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
+
+/-- The canonical root correspondence for the constant-setting phase. -/
+def setRoots (mode : CausalMode S) (action : Action S)
+    (nodes : List (Fin S.count)) : SameRoots mode (setMode mode action nodes) :=
+  SameRoots.ofLatentEq (setMode_latent mode action nodes)
+
+theorem setRoots_incident (mode : CausalMode S) (action : Action S)
+    (nodes : List (Fin S.count))
+    (source : Fin mode.record.model.latent.count) (child : Fin S.count) :
+    (setMode mode action nodes).record.model.latent.incident
+        ((setRoots mode action nodes).rootEquiv.toFun source) child =
+      mode.record.model.latent.incident source child :=
+  SameRoots.ofLatentEq_incident (setMode_latent mode action nodes) source child
 
 def setExecution (mode : CausalMode S) (action : Action S)
     (nodes : List (Fin S.count)) : Execution mode where
@@ -1272,20 +1340,6 @@ theorem actionOn_all (action : Action S) :
     actionOn action (List.finRange S.count) = action := by
   funext node
   simp [actionOn, List.mem_finRange]
-
-theorem finRange_nodup : forall count, (List.finRange count).Nodup := by
-  intro count
-  induction count with
-  | zero => simp
-  | succ count ih =>
-      rw [List.finRange_succ]
-      exact List.nodup_cons.mpr ⟨by
-        intro member
-        rcases List.mem_map.mp member with ⟨value, _, equal⟩
-        have impossible := congrArg Fin.val equal
-        simp at impossible,
-        List.Pairwise.map Fin.succ (fun left right different equal =>
-          different (Fin.ext (Nat.succ.inj (congrArg Fin.val equal)))) ih⟩
 
 /--
 Constructive setting-phase semantics.  The dependent pair retains the target
@@ -1587,6 +1641,101 @@ decreasing_by
     change rest.length < rest.length + 1
     omega
 
+/-- Directed cuts preserve an existing edge whose child is not selected. -/
+theorem directedExecution_preserves_present_unselected
+    (mode : CausalMode S) (action : Action S)
+    (parent child : Fin S.count)
+    (present : S.directed parent child = true)
+    (unselected : action child = none) :
+    (pairs : List (Fin S.count × Fin S.count)) ->
+      (directedExecution mode action pairs).signature.directed
+        ((directedExecution mode action pairs).coordinates.nodeEquiv.toFun parent)
+        ((directedExecution mode action pairs).coordinates.nodeEquiv.toFun child) = true
+  | [] => by
+      rw [directedExecution.eq_1]
+      exact present
+  | (cutParent, cutChild) :: rest => by
+      cases selected : action cutChild with
+      | none =>
+          rw [directedExecution.eq_2, selected]
+          exact directedExecution_preserves_present_unselected mode action
+            parent child present unselected rest
+      | some value =>
+          let step := cutDirected mode cutParent cutChild value
+            "atomic-do-cut-directed"
+          let coordinates := directedCoordinates S cutParent cutChild
+          have differentChild : child ≠ cutChild := by
+            intro same
+            subst cutChild
+            rw [selected] at unselected
+            contradiction
+          have stepPresent :
+              (DirectedLink.removeSignature S cutParent cutChild).directed
+                (coordinates.nodeEquiv.toFun parent)
+                (coordinates.nodeEquiv.toFun child) = true := by
+            change (DirectedLink.removeSignature S cutParent cutChild).directed
+              parent child = true
+            exact DirectedLink.remainingEdge S cutParent cutChild
+              differentChild present
+          have transportedUnselected :
+              coordinates.transportAction action
+                  (coordinates.nodeEquiv.toFun child) = none := by
+            change coordinates.transportAction action child = none
+            rw [directedCoordinates_transportAction]
+            exact unselected
+          have tailPresent :=
+            directedExecution_preserves_present_unselected step.target
+              (coordinates.transportAction action)
+              (coordinates.nodeEquiv.toFun parent)
+              (coordinates.nodeEquiv.toFun child) stepPresent
+              transportedUnselected rest
+          rw [directedExecution.eq_2, selected]
+          simpa [Execution.prepend, SameCoordinates.trans, NodeEquiv.trans,
+            step, coordinates] using tailPresent
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
+
+/-- Directed cuts leave the latent-incidence classifier unchanged. -/
+theorem directedExecution_preserves_latent_incident
+    (mode : CausalMode S) (action : Action S)
+    (source : Fin mode.record.model.latent.count) (child : Fin S.count) :
+    (pairs : List (Fin S.count × Fin S.count)) ->
+      (directedExecution mode action pairs).target.record.model.latent.incident
+          ((directedExecution mode action pairs).roots.rootEquiv.toFun source)
+          ((directedExecution mode action pairs).coordinates.nodeEquiv.toFun child) =
+        mode.record.model.latent.incident source child
+  | [] => by
+      rw [directedExecution.eq_1]
+      rfl
+  | (cutParent, cutChild) :: rest => by
+      cases selected : action cutChild with
+      | none =>
+          rw [directedExecution.eq_2, selected]
+          exact directedExecution_preserves_latent_incident mode action
+            source child rest
+      | some value =>
+          let step := cutDirected mode cutParent cutChild value
+            "atomic-do-cut-directed"
+          let coordinates := directedCoordinates S cutParent cutChild
+          let roots := directedCutRoots mode cutParent cutChild value
+            "atomic-do-cut-directed"
+          have tail := directedExecution_preserves_latent_incident
+            step.target (coordinates.transportAction action)
+            (roots.rootEquiv.toFun source)
+            (coordinates.nodeEquiv.toFun child) rest
+          rw [directedExecution.eq_2, selected]
+          simpa [Execution.prepend, SameRoots.trans, FinIndexEquiv.trans,
+            SameCoordinates.trans, NodeEquiv.trans, step, roots,
+            coordinates] using tail
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
+
 /-- Processing a selected pair removes that directed input at the endpoint. -/
 theorem directedExecution_removes_member
     (mode : CausalMode S) (action : Action S)
@@ -1882,6 +2031,39 @@ decreasing_by
     change rest.length < rest.length + 1
     omega
 
+/-- Latent cuts leave the directed-edge classifier unchanged. -/
+theorem latentExecution_preserves_directed
+    (mode : CausalMode S) (action : Action S)
+    (parent child : Fin S.count) :
+    (pairs : List (Fin mode.record.model.latent.count × Fin S.count)) ->
+      (latentExecution mode action pairs).signature.directed
+          ((latentExecution mode action pairs).coordinates.nodeEquiv.toFun parent)
+          ((latentExecution mode action pairs).coordinates.nodeEquiv.toFun child) =
+        S.directed parent child
+  | [] => by
+      rw [latentExecution.eq_1]
+      rfl
+  | (cutSource, cutChild) :: rest => by
+      cases selected : action cutChild with
+      | none =>
+          rw [latentExecution.eq_2, selected]
+          exact latentExecution_preserves_directed mode action parent child rest
+      | some value =>
+          let step := cutLatent mode cutSource cutChild value
+            "atomic-do-cut-latent"
+          let coordinates := SameCoordinates.refl S
+          have tail := latentExecution_preserves_directed step.target action
+            (coordinates.nodeEquiv.toFun parent)
+            (coordinates.nodeEquiv.toFun child) rest
+          rw [latentExecution.eq_2, selected]
+          simpa [Execution.prepend, SameCoordinates.trans, NodeEquiv.trans,
+            step, coordinates] using tail
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
+
 /-- Later latent cuts preserve any latent input already known to be absent. -/
 theorem latentExecution_preserves_absent
     (mode : CausalMode S) (action : Action S)
@@ -1918,6 +2100,57 @@ theorem latentExecution_preserves_absent
           simpa [LatentInputAbsent, Execution.prepend, SameRoots.trans,
             FinIndexEquiv.trans, SameCoordinates.trans, NodeEquiv.trans,
             step, roots, coordinates] using tailAbsent
+termination_by pairs => pairs.length
+decreasing_by
+  all_goals
+    change rest.length < rest.length + 1
+    omega
+
+/-- Latent cuts preserve an existing incidence whose child is not selected. -/
+theorem latentExecution_preserves_present_unselected
+    (mode : CausalMode S) (action : Action S)
+    (source : Fin mode.record.model.latent.count) (child : Fin S.count)
+    (present : mode.record.model.latent.incident source child = true)
+    (unselected : action child = none) :
+    (pairs : List (Fin mode.record.model.latent.count × Fin S.count)) ->
+      (latentExecution mode action pairs).target.record.model.latent.incident
+        ((latentExecution mode action pairs).roots.rootEquiv.toFun source)
+        ((latentExecution mode action pairs).coordinates.nodeEquiv.toFun child) = true
+  | [] => by
+      rw [latentExecution.eq_1]
+      exact present
+  | (cutSource, cutChild) :: rest => by
+      cases selected : action cutChild with
+      | none =>
+          rw [latentExecution.eq_2, selected]
+          exact latentExecution_preserves_present_unselected mode action
+            source child present unselected rest
+      | some value =>
+          let step := cutLatent mode cutSource cutChild value
+            "atomic-do-cut-latent"
+          let coordinates := SameCoordinates.refl S
+          let roots := latentCutRoots mode cutSource cutChild value
+            "atomic-do-cut-latent"
+          have differentChild : child ≠ cutChild := by
+            intro same
+            subst cutChild
+            rw [selected] at unselected
+            contradiction
+          have stepPresent :
+              step.target.record.model.latent.incident
+                (roots.rootEquiv.toFun source)
+                (coordinates.nodeEquiv.toFun child) = true := by
+            change (LatentLink.removeExtension mode.record.model cutSource
+              cutChild).incident source child = true
+            exact LatentLink.remainingIncident mode.record.model cutSource cutChild
+              differentChild present
+          have tailPresent := latentExecution_preserves_present_unselected
+            step.target action (roots.rootEquiv.toFun source)
+            (coordinates.nodeEquiv.toFun child) stepPresent unselected rest
+          rw [latentExecution.eq_2, selected]
+          simpa [Execution.prepend, SameRoots.trans, FinIndexEquiv.trans,
+            SameCoordinates.trans, NodeEquiv.trans, step, roots,
+            coordinates] using tailPresent
 termination_by pairs => pairs.length
 decreasing_by
   all_goals
@@ -2031,7 +2264,7 @@ noncomputable def setPhaseDeterministicRealizes
       (fun assignment => mode.record.model.evalUnder action assignment) where
   assignment := fun assignment =>
     (setMode_eval_data mode action (nodeWorklist S)
-      (finRange_nodup S.count) assignment).1
+      (Probability.finRange_nodup S.count) assignment).1
   evaluate := by
     intro assignment
     change (setMode mode action (nodeWorklist S)).record.model.eval
@@ -2040,7 +2273,7 @@ noncomputable def setPhaseDeterministicRealizes
         (mode.record.model.evalUnder action assignment)
     simpa [nodeWorklist, actionOn_all] using
       (setMode_eval_data mode action (nodeWorklist S)
-        (finRange_nodup S.count) assignment).2
+        (Probability.finRange_nodup S.count) assignment).2
 
 /-- Existential setting semantics, derived from the constructive certificate. -/
 def setPhaseRealizes (mode : CausalMode S) (action : Action S) :
@@ -2290,10 +2523,164 @@ theorem compile_latentRemoved (mode : CausalMode S) (action : Action S)
     SameRoots.trans, FinIndexEquiv.trans, SameCoordinates.trans,
     NodeEquiv.trans] using phaseAbsent
 
+/-- Atomic compilation removes exactly the directed inputs of selected children. -/
+theorem compile_directed_eq (mode : CausalMode S) (action : Action S)
+    (parent child : Fin S.count) :
+    (compile mode action).signature.directed
+        ((compile mode action).coordinates.nodeEquiv.toFun parent)
+        ((compile mode action).coordinates.nodeEquiv.toFun child) =
+      if (action child).isSome then false else S.directed parent child := by
+  cases selected : action child with
+  | some value =>
+      simpa [selected] using
+        compile_directedRemoved mode action parent child value selected
+  | none =>
+      let set := setPhase mode action
+      have setUnselected :
+          set.transportedAction action
+              (set.coordinates.nodeEquiv.toFun child) = none := by
+        change (SameCoordinates.refl S).transportAction action child = none
+        rw [SameCoordinates.transportAction_refl]
+        exact selected
+      have phaseEq :
+          (setAndDirected mode action).signature.directed
+              ((setAndDirected mode action).coordinates.nodeEquiv.toFun parent)
+              ((setAndDirected mode action).coordinates.nodeEquiv.toFun child) =
+            S.directed parent child := by
+        cases sourceEdge : S.directed parent child with
+        | false =>
+            have absent := directedExecution_preserves_absent set.target
+              (set.transportedAction action)
+              (set.coordinates.nodeEquiv.toFun parent)
+              (set.coordinates.nodeEquiv.toFun child) sourceEdge
+              (directedWorklist S)
+            simpa [DirectedInputAbsent, setAndDirected, directedPhase, set,
+              Execution.append, SameCoordinates.trans, NodeEquiv.trans,
+              setPhase, setExecution] using absent
+        | true =>
+            have present := directedExecution_preserves_present_unselected
+              set.target (set.transportedAction action)
+              (set.coordinates.nodeEquiv.toFun parent)
+              (set.coordinates.nodeEquiv.toFun child) sourceEdge
+              setUnselected (directedWorklist S)
+            simpa [setAndDirected, directedPhase, set, Execution.append,
+              SameCoordinates.trans, NodeEquiv.trans, setPhase, setExecution]
+              using present
+      let built := setAndDirected mode action
+      have finalEq := latentExecution_preserves_directed built.target
+        (built.transportedAction action)
+        (built.coordinates.nodeEquiv.toFun parent)
+        (built.coordinates.nodeEquiv.toFun child)
+        (latentWorklist built.target)
+      have transportedEq :
+          (compile mode action).signature.directed
+              ((compile mode action).coordinates.nodeEquiv.toFun parent)
+              ((compile mode action).coordinates.nodeEquiv.toFun child) =
+            built.signature.directed
+              (built.coordinates.nodeEquiv.toFun parent)
+              (built.coordinates.nodeEquiv.toFun child) := by
+        simpa [compile, latentPhase, built, Execution.append,
+          SameCoordinates.trans, NodeEquiv.trans] using finalEq
+      simp only [Option.isSome_none]
+      exact transportedEq.trans phaseEq
+
+/-- Atomic compilation removes exactly the latent inputs of selected children. -/
+theorem compile_latent_incident_eq (mode : CausalMode S) (action : Action S)
+    (source : Fin mode.record.model.latent.count) (child : Fin S.count) :
+    (compile mode action).target.record.model.latent.incident
+        ((compile mode action).roots.rootEquiv.toFun source)
+        ((compile mode action).coordinates.nodeEquiv.toFun child) =
+      if (action child).isSome then false
+      else mode.record.model.latent.incident source child := by
+  cases selected : action child with
+  | some value =>
+      simpa [selected] using
+        compile_latentRemoved mode action source child value selected
+  | none =>
+      let set := setPhase mode action
+      have phaseEq :
+          (setAndDirected mode action).target.record.model.latent.incident
+              ((setAndDirected mode action).roots.rootEquiv.toFun source)
+              ((setAndDirected mode action).coordinates.nodeEquiv.toFun child) =
+            mode.record.model.latent.incident source child := by
+        have setEq := setRoots_incident mode action (nodeWorklist S) source child
+        have preserved := directedExecution_preserves_latent_incident
+          set.target (set.transportedAction action)
+          (set.roots.rootEquiv.toFun source)
+          (set.coordinates.nodeEquiv.toFun child) (directedWorklist S)
+        have combined := preserved.trans setEq
+        simpa [setAndDirected, directedPhase, set, Execution.append,
+          SameRoots.trans, FinIndexEquiv.trans, SameCoordinates.trans,
+          NodeEquiv.trans, setPhase, setExecution] using combined
+      let built := setAndDirected mode action
+      have builtUnselected :
+          built.transportedAction action
+              (built.coordinates.nodeEquiv.toFun child) = none := by
+        have isSomeEq := SameCoordinates.transportAction_isSome_toFun
+          built.coordinates action child
+        change (built.transportedAction action
+          (built.coordinates.nodeEquiv.toFun child)).isSome =
+            (action child).isSome at isSomeEq
+        rw [selected] at isSomeEq
+        cases transported : built.transportedAction action
+            (built.coordinates.nodeEquiv.toFun child) with
+        | none => rfl
+        | some value => simp [transported] at isSomeEq
+      have finalEq :
+          (compile mode action).target.record.model.latent.incident
+              ((compile mode action).roots.rootEquiv.toFun source)
+              ((compile mode action).coordinates.nodeEquiv.toFun child) =
+            built.target.record.model.latent.incident
+              (built.roots.rootEquiv.toFun source)
+              (built.coordinates.nodeEquiv.toFun child) := by
+        cases builtIncident : built.target.record.model.latent.incident
+            (built.roots.rootEquiv.toFun source)
+            (built.coordinates.nodeEquiv.toFun child) with
+        | false =>
+            have absent := latentExecution_preserves_absent built.target
+              (built.transportedAction action)
+              (built.roots.rootEquiv.toFun source)
+              (built.coordinates.nodeEquiv.toFun child) builtIncident
+              (latentWorklist built.target)
+            simpa [LatentInputAbsent, compile, latentPhase, built,
+              Execution.append, SameRoots.trans, FinIndexEquiv.trans,
+              SameCoordinates.trans, NodeEquiv.trans] using absent
+        | true =>
+            have present := latentExecution_preserves_present_unselected
+              built.target (built.transportedAction action)
+              (built.roots.rootEquiv.toFun source)
+              (built.coordinates.nodeEquiv.toFun child) builtIncident
+              builtUnselected (latentWorklist built.target)
+            simpa [compile, latentPhase, built, Execution.append,
+              SameRoots.trans, FinIndexEquiv.trans, SameCoordinates.trans,
+              NodeEquiv.trans] using present
+      simp only [Option.isSome_none]
+      exact finalEq.trans phaseEq
+
+theorem compile_directed_eq_true_iff (mode : CausalMode S)
+    (action : Action S) (parent child : Fin S.count) :
+    (compile mode action).signature.directed
+          ((compile mode action).coordinates.nodeEquiv.toFun parent)
+          ((compile mode action).coordinates.nodeEquiv.toFun child) = true ↔
+      S.directed parent child = true ∧ action child = none := by
+  rw [compile_directed_eq]
+  cases action child <;> simp
+
+theorem compile_latent_incident_eq_true_iff (mode : CausalMode S)
+    (action : Action S)
+    (source : Fin mode.record.model.latent.count) (child : Fin S.count) :
+    (compile mode action).target.record.model.latent.incident
+          ((compile mode action).roots.rootEquiv.toFun source)
+          ((compile mode action).coordinates.nodeEquiv.toFun child) = true ↔
+      mode.record.model.latent.incident source child = true ∧
+        action child = none := by
+  rw [compile_latent_incident_eq]
+  cases action child <;> simp
+
 /--
 The structural certificate for the atomic finite `do` compiler. At the
-transported endpoint, each selected mechanism is constant at its transported
-chosen value and has no incoming directed or latent inputs.
+transported endpoint, selected mechanisms are constant, and the exact edge and
+incidence classifiers retain precisely the inputs of unselected children.
 -/
 structure Plan (mode : CausalMode S) (action : Action S) : Prop where
   fixed : RealizesAction (compile mode action).target
@@ -2308,12 +2695,25 @@ structure Plan (mode : CausalMode S) (action : Action S) : Prop where
       (compile mode action).target.record.model.latent.incident
         ((compile mode action).roots.rootEquiv.toFun source)
         ((compile mode action).coordinates.nodeEquiv.toFun child) = false
+  directedClassifier : forall parent child,
+    (compile mode action).signature.directed
+        ((compile mode action).coordinates.nodeEquiv.toFun parent)
+        ((compile mode action).coordinates.nodeEquiv.toFun child) =
+      if (action child).isSome then false else S.directed parent child
+  latentClassifier : forall source child,
+    (compile mode action).target.record.model.latent.incident
+        ((compile mode action).roots.rootEquiv.toFun source)
+        ((compile mode action).coordinates.nodeEquiv.toFun child) =
+      if (action child).isSome then false
+      else mode.record.model.latent.incident source child
 
 /-- Atomic compilation satisfies its complete structural certificate. -/
 def plan (mode : CausalMode S) (action : Action S) : Plan mode action where
   fixed := compileFixed mode action
   directedRemoved := compile_directedRemoved mode action
   latentRemoved := compile_latentRemoved mode action
+  directedClassifier := compile_directed_eq mode action
+  latentClassifier := compile_latent_incident_eq mode action
 
 /--
 For an initially empty compact intervention, atomic compilation supplies the

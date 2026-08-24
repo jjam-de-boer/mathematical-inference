@@ -6,6 +6,16 @@ namespace Causality
 
 open Probability
 
+/-!
+Creation primitives for executable occurrence-indexed multiworld models.
+
+The opening definitions select a fresh factual record and provide the
+dependent coordinate-transport lemmas used throughout the construction. The
+subsequent sections append isolated terminal nodes, assemble occurrence-world
+copies, and retain genuine edit paths to every resulting epistemic endpoint.
+The direct occurrence model remains an independent semantic reference.
+-/
+
 /--
 The factual starting mode used by occurrence-world execution: it keeps the
 source structural model, uses its product prior as belief, and has no active
@@ -17,13 +27,6 @@ def counterfactualBaseMode (mode : CausalMode S) : CausalMode S :=
 theorem counterfactualBaseMode_noActiveIntervention (mode : CausalMode S) :
     AtomicIntervention.NoActiveIntervention (counterfactualBaseMode mode) := by
   intro child
-  rfl
-
-theorem dependentApplyHEq {α : Type _} {β : α -> Type _}
-    (f : (value : α) -> β value) {left right : α}
-    (equal : left = right) :
-    f left ≍ f right := by
-  cases equal
   rfl
 
 namespace AtomicIntervention.SameRoots
@@ -61,14 +64,6 @@ theorem transportObserved_untransportObserved
         rw [coordinates.nodeEquiv.right_inv]))
 
 end AtomicIntervention.SameCoordinates
-
-/-!
-Execution-derived occurrence-indexed multiworld SCMs.
-
-Every construction in this module has a
-genuine `CausalMode` endpoint and a dependent-signature `CausalEditPath` from its
-source.  The direct occurrence model remains an independent semantic reference.
--/
 
 /-! ## Repeated terminal creation -/
 
@@ -119,10 +114,22 @@ structure TerminalListConstruction
   oldDirected : forall parent child,
     S.directed parent child = true ->
       signature.directed (oldNode parent) (oldNode child) = true
+  directedReflects : forall parent child,
+    signature.directed parent child = true ->
+      Exists fun sourceParent : Fin S.count =>
+        Exists fun sourceChild : Fin S.count =>
+          parent = oldNode sourceParent ∧ child = oldNode sourceChild ∧
+            S.directed sourceParent sourceChild = true
   oldIncident : forall sourceRoot child,
     source.record.model.latent.incident sourceRoot child = true ->
       target.record.model.latent.incident
         (roots.rootEquiv.toFun sourceRoot) (oldNode child) = true
+  incidentReflects : forall sourceRoot child,
+    target.record.model.latent.incident
+        (roots.rootEquiv.toFun sourceRoot) child = true ->
+      Exists fun sourceChild : Fin S.count =>
+        child = oldNode sourceChild ∧
+          source.record.model.latent.incident sourceRoot sourceChild = true
   itemNode : Fin items.length -> Fin signature.count
   itemNode_val : forall index,
     (itemNode index).val = S.count + index.val
@@ -144,7 +151,11 @@ def build {α : Type} (family : IsolatedNodeFamily α)
         oldNode_val := fun _ => rfl
         oldValue_eq := fun _ => rfl
         oldDirected := fun _ _ edge => edge
+        directedReflects := fun parent child edge =>
+          ⟨parent, child, rfl, rfl, edge⟩
         oldIncident := fun _ _ incident => incident
+        incidentReflects := fun _ child incident =>
+          ⟨child, rfl, incident⟩
         itemNode := fun index => Fin.elim0 index
         itemNode_val := fun index => Fin.elim0 index
         itemValue_eq := fun index => Fin.elim0 index }
@@ -180,6 +191,59 @@ def build {α : Type} (family : IsolatedNodeFamily α)
                 (spec.oldNode parent) (spec.oldNode child) = true
               simpa [EndogenousVariableSpec.extendSignature,
                 EndogenousVariableSpec.oldNode] using edge)
+        directedReflects := fun parent child edge => by
+          rcases tail.directedReflects parent child edge with
+            ⟨stepParent, stepChild, parentEq, childEq, stepEdge⟩
+          change spec.terminalSpec.extendedDirected stepParent stepChild = true
+            at stepEdge
+          have reflected :
+              Exists fun sourceParent : Fin S.count =>
+                Exists fun sourceChild : Fin S.count =>
+                  stepParent = sourceParent.castSucc ∧
+                    stepChild = sourceChild.castSucc ∧
+                      S.directed sourceParent sourceChild = true := by
+            refine TerminalVariableSpec.terminalCases
+              (motive := fun candidateChild =>
+                spec.terminalSpec.extendedDirected stepParent
+                    candidateChild = true ->
+                  Exists fun sourceParent : Fin S.count =>
+                    Exists fun sourceChild : Fin S.count =>
+                      stepParent = sourceParent.castSucc ∧
+                        candidateChild = sourceChild.castSucc ∧
+                          S.directed sourceParent sourceChild = true)
+              ?_ (fun sourceChild sourceEdge => ?_) stepChild stepEdge
+            · refine TerminalVariableSpec.terminalCases
+                (motive := fun candidateParent =>
+                  spec.terminalSpec.extendedDirected candidateParent
+                      (Fin.last S.count) = true ->
+                    Exists fun sourceParent : Fin S.count =>
+                      Exists fun sourceChild : Fin S.count =>
+                        candidateParent = sourceParent.castSucc ∧
+                          Fin.last S.count = sourceChild.castSucc ∧
+                            S.directed sourceParent sourceChild = true)
+                ?_ (fun sourceParent impossible => ?_) stepParent
+              · simp [TerminalVariableSpec.extendedDirected]
+              · simp [TerminalVariableSpec.extendedDirected, spec,
+                  EndogenousVariableSpec.terminalSpec,
+                  IsolatedNodeFamily.spec, NodeSet.empty] at impossible
+            · refine TerminalVariableSpec.terminalCases
+                (motive := fun candidateParent =>
+                  spec.terminalSpec.extendedDirected candidateParent
+                      sourceChild.castSucc = true ->
+                    Exists fun sourceParent : Fin S.count =>
+                      Exists fun oldChild : Fin S.count =>
+                        candidateParent = sourceParent.castSucc ∧
+                          sourceChild.castSucc = oldChild.castSucc ∧
+                            S.directed sourceParent oldChild = true)
+                ?_ (fun sourceParent oldEdge => ?_) stepParent sourceEdge
+              · simp [TerminalVariableSpec.extendedDirected]
+              · exact ⟨sourceParent, sourceChild, rfl, rfl,
+                  by simpa [TerminalVariableSpec.extendedDirected] using oldEdge⟩
+          rcases reflected with
+            ⟨sourceParent, sourceChild, stepParentEq, stepChildEq, sourceEdge⟩
+          exact ⟨sourceParent, sourceChild,
+            parentEq.trans (congrArg tail.oldNode stepParentEq),
+            childEq.trans (congrArg tail.oldNode stepChildEq), sourceEdge⟩
         oldIncident := fun sourceRoot child incident => by
           have firstIncident :
               transition.target.record.model.latent.incident sourceRoot
@@ -190,6 +254,22 @@ def build {α : Type} (family : IsolatedNodeFamily α)
           simpa [stepRoots, AtomicIntervention.SameRoots.trans,
             AtomicIntervention.FinIndexEquiv.trans] using
             tail.oldIncident sourceRoot (spec.oldNode child) firstIncident
+        incidentReflects := fun sourceRoot child incident => by
+          have tailIncident :
+              tail.target.record.model.latent.incident
+                  (tail.roots.rootEquiv.toFun sourceRoot) child = true := by
+            simpa [stepRoots, AtomicIntervention.SameRoots.trans,
+              AtomicIntervention.FinIndexEquiv.trans] using incident
+          rcases tail.incidentReflects sourceRoot child tailIncident with
+            ⟨stepChild, childEq, stepIncident⟩
+          change (spec.terminalSpec.extendLatent
+            source.record.model.latent).incident sourceRoot stepChild = true
+              at stepIncident
+          rcases spec.terminalSpec.extendLatent_incident_true_is_old
+              source.record.model.latent sourceRoot stepChild stepIncident with
+            ⟨sourceChild, stepChildEq, sourceIncident⟩
+          exact ⟨sourceChild,
+            childEq.trans (congrArg tail.oldNode stepChildEq), sourceIncident⟩
         itemNode := fun index =>
           Fin.cases (tail.oldNode spec.newNode)
             (fun restIndex => tail.itemNode restIndex) index

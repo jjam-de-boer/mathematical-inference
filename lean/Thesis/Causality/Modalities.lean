@@ -6,6 +6,16 @@ namespace Causality
 
 open Probability
 
+/-!
+Causal epistemic records and their executable modal transitions.
+
+The opening utilities assemble dependent hard interventions from selected
+nodes. The main development then defines epistemic records and modes, followed
+by the concrete conditioning, intervention, and transition interfaces that
+act on them. Conditioning changes the current belief rather than the model's
+product prior.
+-/
+
 namespace HardIntervention
 
 /-- Extend a dependent intervention by setting every selected node. -/
@@ -61,14 +71,7 @@ theorem setVariablesSequentially_value
 
 end HardIntervention
 
-/-!
-Proof-carrying epistemic transitions for the graph-aware causal model.
-
-Operations are ordinary executable record transformations.  A transition does
-not perform an operation by inspecting a context; it stores source and target
-modes together with a proof that the named operation relates their records.
-Conditioning updates `belief`, not the model's product prior.
--/
+/-! ## Proof-carrying epistemic records and transitions -/
 
 structure CausalEpistemicRecord (S : ObservedSignature) where
   model : ExactModel S

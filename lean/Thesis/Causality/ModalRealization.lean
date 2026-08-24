@@ -653,6 +653,9 @@ variable {S : ObservedSignature} {G : ObservedGraph S}
 Recursive operation realizations for every Pearl-rule leaf of a modal trace.
 Probability-algebra constructors retain their existing support tree; only
 kernel-to-kernel rule cells generate executable endpoint obligations.
+This traversal intentionally follows the already constructed trace: it consumes
+the matching local-support subtree to produce a payload indexed by that explicit,
+inspectable modal annotation.
 -/
 noncomputable def OperationRealizations
     (assignment : S.Assignment)

@@ -49,28 +49,16 @@ theorem enumeration_complete (node : TwinNode S) :
 
 theorem enumeration_nodup (S : ObservedSignature) :
     (enumeration S).Nodup := by
-  have finRangeNodup : forall n, (List.finRange n).Nodup := by
-    intro n
-    induction n with
-    | zero => simp
-    | succ n ih =>
-        rw [List.finRange_succ]
-        exact List.nodup_cons.mpr ⟨by
-          intro member
-          rcases List.mem_map.mp member with ⟨value, _, equal⟩
-          have impossible := congrArg Fin.val equal
-          simp at impossible,
-          List.Pairwise.map Fin.succ (fun left right different equal =>
-            different (Fin.ext (Nat.succ.inj (congrArg Fin.val equal)))) ih⟩
   rw [enumeration, List.nodup_append]
   constructor
   · exact List.Pairwise.map factual (fun left right different equal =>
-      different (TwinNode.factual.inj equal)) (finRangeNodup S.count)
+      different (TwinNode.factual.inj equal))
+      (Probability.finRange_nodup S.count)
   constructor
   · exact List.Pairwise.map counterfactual
       (fun left right different equal =>
         different (TwinNode.counterfactual.inj equal))
-      (finRangeNodup S.count)
+      (Probability.finRange_nodup S.count)
   · intro node factualMember other counterfactualMember worldsEqual
     rcases List.mem_map.mp factualMember with ⟨i, _, nodeEqual⟩
     cases nodeEqual

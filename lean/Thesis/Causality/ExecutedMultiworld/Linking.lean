@@ -59,10 +59,19 @@ structure DirectedLinksConstruction {S : ObservedSignature}
       signature.directed (node parent) (node child) = true
   installs : forall edge, edge ∈ edges ->
     signature.directed (node edge.parent) (node edge.child) = true
+  reflects : forall parent child,
+    signature.directed (node parent) (node child) = true ->
+      S.directed parent child = true ∨
+        Exists fun edge : DirectedEdge S =>
+          edge ∈ edges ∧ edge.parent = parent ∧ edge.child = child
   latentPreserves : forall sourceRoot child,
     source.record.model.latent.incident sourceRoot child = true ->
       target.record.model.latent.incident
         (roots.rootEquiv.toFun sourceRoot) (node child) = true
+  latentReflects : forall sourceRoot child,
+    target.record.model.latent.incident
+        (roots.rootEquiv.toFun sourceRoot) (node child) = true ->
+      source.record.model.latent.incident sourceRoot child = true
 
 namespace DirectedLinksConstruction
 
@@ -89,7 +98,9 @@ def build {S : ObservedSignature} (source : CausalMode S) :
         value_eq := fun _ => rfl
         preserves := fun _ _ edge => edge
         installs := fun _ absent => by simp at absent
-        latentPreserves := fun _ _ incident => incident }
+        reflects := fun _ _ edge => Or.inl edge
+        latentPreserves := fun _ _ incident => incident
+        latentReflects := fun _ _ incident => incident }
   | edge :: rest =>
       let step := (operation source edge).transition source "relate-directed"
       let tail := build step.target (rest.map (fun later => later.afterAdd edge))
@@ -117,10 +128,35 @@ def build {S : ObservedSignature} (source : CausalMode S) :
               (DirectedLink.addedEdge S edge.parent edge.child edge.earlier)
           · exact tail.installs (requested.afterAdd edge)
               (List.mem_map_of_mem later)
+        reflects := fun parent child finalEdge => by
+          rcases tail.reflects parent child finalEdge with
+            stepEdge | installed
+          · change (DirectedLink.addSignature S edge.parent edge.child
+                edge.earlier).directed parent child = true at stepEdge
+            simp only [DirectedLink.addSignature, Bool.or_eq_true] at stepEdge
+            rcases stepEdge with oldEdge | addedEdge
+            · exact Or.inl oldEdge
+            · right
+              have parts := Bool.and_eq_true_iff.mp addedEdge
+              have parentEq : parent = edge.parent := by simpa using parts.1
+              have childEq : child = edge.child := by simpa using parts.2
+              exact ⟨edge, by simp, parentEq.symm, childEq.symm⟩
+          · rcases installed with
+              ⟨laterEdge, laterMem, parentEq, childEq⟩
+            rcases List.mem_map.mp laterMem with
+              ⟨sourceEdge, sourceMem, sourceEq⟩
+            subst laterEdge
+            exact Or.inr ⟨sourceEdge, List.mem_cons_of_mem edge sourceMem,
+              parentEq, childEq⟩
         latentPreserves := fun sourceRoot child incident => by
           simpa [stepRoots, AtomicIntervention.SameRoots.trans,
             AtomicIntervention.FinIndexEquiv.trans] using
-            tail.latentPreserves sourceRoot child incident }
+            tail.latentPreserves sourceRoot child incident
+        latentReflects := fun sourceRoot child incident => by
+          have reflected := tail.latentReflects sourceRoot child (by
+            simpa [stepRoots, AtomicIntervention.SameRoots.trans,
+              AtomicIntervention.FinIndexEquiv.trans] using incident)
+          exact reflected }
 termination_by edges => edges.length
 decreasing_by simp
 
@@ -166,6 +202,12 @@ structure LatentLinksConstruction {S : ObservedSignature}
   installs : forall edge, edge ∈ edges ->
     target.record.model.latent.incident
       (roots.rootEquiv.toFun edge.source) edge.child = true
+  reflects : forall sourceRoot child,
+    target.record.model.latent.incident
+        (roots.rootEquiv.toFun sourceRoot) child = true ->
+      source.record.model.latent.incident sourceRoot child = true ∨
+        Exists fun edge : LatentEdge source =>
+          edge ∈ edges ∧ edge.source = sourceRoot ∧ edge.child = child
 
 namespace LatentLinksConstruction
 
@@ -186,7 +228,8 @@ def build {S : ObservedSignature} (source : CausalMode S) :
         path := .nil source
         roots := AtomicIntervention.SameRoots.refl source
         preserves := fun _ _ incident => incident
-        installs := fun _ absent => by simp at absent }
+        installs := fun _ absent => by simp at absent
+        reflects := fun _ _ incident => Or.inl incident }
   | edge :: rest =>
       let step := (operation source edge).transition source "relate-latent"
       let tail := build step.target (rest.map (fun later => by
@@ -215,7 +258,34 @@ def build {S : ObservedSignature} (source : CausalMode S) :
           · exact tail.installs
               { source := requested.source
                 child := requested.child }
-              (List.mem_map_of_mem later) }
+              (List.mem_map_of_mem later)
+        reflects := fun sourceRoot child finalIncident => by
+          have tailIncident :
+              tail.target.record.model.latent.incident
+                (tail.roots.rootEquiv.toFun sourceRoot) child = true := by
+            simpa [stepRoots, AtomicIntervention.SameRoots.trans,
+              AtomicIntervention.FinIndexEquiv.trans] using finalIncident
+          rcases tail.reflects sourceRoot child tailIncident with
+            stepIncident | installed
+          · change (LatentLink.addExtension source.record.model
+                edge.source edge.child).incident sourceRoot child = true
+                at stepIncident
+            simp only [LatentLink.addExtension, Bool.or_eq_true]
+              at stepIncident
+            rcases stepIncident with oldIncident | addedIncident
+            · exact Or.inl oldIncident
+            · right
+              have parts := Bool.and_eq_true_iff.mp addedIncident
+              have sourceEq : sourceRoot = edge.source := by simpa using parts.1
+              have childEq : child = edge.child := by simpa using parts.2
+              exact ⟨edge, by simp, sourceEq.symm, childEq.symm⟩
+          · rcases installed with
+              ⟨laterEdge, laterMem, sourceEq, childEq⟩
+            rcases List.mem_map.mp laterMem with
+              ⟨sourceEdge, sourceMem, edgeEq⟩
+            subst laterEdge
+            exact Or.inr ⟨sourceEdge, List.mem_cons_of_mem edge sourceMem,
+              sourceEq, childEq⟩ }
 termination_by edges => edges.length
 decreasing_by simp
 

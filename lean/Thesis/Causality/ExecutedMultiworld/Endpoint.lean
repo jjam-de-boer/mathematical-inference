@@ -9,14 +9,20 @@ open Probability
 /-!
 Route-independent endpoint interface for an executed occurrence multiworld.
 
-This interface deliberately compares endpoints extensionally.  A route need
-only supply its final record, the transport from reference occurrence
-coordinates, and the theorem that every occurrence-world predicate has the
-reference joint probability.  The shared query definitions below then give
-the same numerator, denominator, and conditional-denotation layer to both
-from-factual and from-empty executions.
+This interface deliberately compares endpoints extensionally. An endpoint
+records its final causal record and a transport from the reference occurrence
+coordinates. Its event interpretation is required to be exactly the reference
+predicate pulled back along that transport, and its probability certificate
+identifies every such coordinate-transported image with the reference joint
+probability. The shared query definitions below then give the same numerator,
+denominator, and conditional-denotation layer to both from-factual and
+from-empty executions.
 -/
 
+/--
+An endpoint record together with its coordinate-induced images of reference
+occurrence-world events and their probability-agreement certificate.
+-/
 structure MultiworldEndpoint (M : ExactModel S)
     (event : CounterfactualEvent S) where
   signature : ObservedSignature
@@ -26,11 +32,30 @@ structure MultiworldEndpoint (M : ExactModel S)
     signature
   eventAt : ((M.occurrenceMultiworld event).Assignment -> Bool) ->
     signature.Assignment -> Bool
+  eventAt_coordinates : forall predicate assignment,
+    eventAt predicate assignment =
+      predicate
+        (OccurrenceMultiworld.Encoding.decodeAssignment
+          (M.occurrenceMultiworld event)
+          (coordinates.untransportObserved assignment))
   observedValue : forall predicate,
     QProb.Equiv (record.observedValue (eventAt predicate))
       ((M.occurrenceMultiworld event).jointDist.probVal predicate)
 
 namespace MultiworldEndpoint
+
+/--
+Any two endpoints agree on the coordinate-transported images of every
+reference occurrence-world event.
+-/
+theorem eventProbability_equiv
+    (left right : MultiworldEndpoint M event)
+    (predicate : (M.occurrenceMultiworld event).Assignment -> Bool) :
+    QProb.Equiv
+      (left.record.observedValue (left.eventAt predicate))
+      (right.record.observedValue (right.eventAt predicate)) :=
+  QProb.equiv_trans (left.observedValue predicate)
+    (QProb.equiv_symm (right.observedValue predicate))
 
 noncomputable def denominator
     (query : CounterfactualQuery S)
@@ -96,6 +121,30 @@ noncomputable def semanticAgreement
   ProbabilityResult.divide_congr
     (.value (numerator_equiv query endpoint))
     (.value (denominator_equiv query endpoint))
+
+/-- Any two endpoints over one query agree on its evidence probability. -/
+theorem pair_denominator_equiv
+    (query : CounterfactualQuery S)
+    (left right : MultiworldEndpoint M query.combinedEvent) :
+    QProb.Equiv (denominator query left) (denominator query right) :=
+  QProb.equiv_trans (denominator_equiv query left)
+    (QProb.equiv_symm (denominator_equiv query right))
+
+/-- Any two endpoints over one query agree on its numerator probability. -/
+theorem pair_numerator_equiv
+    (query : CounterfactualQuery S)
+    (left right : MultiworldEndpoint M query.combinedEvent) :
+    QProb.Equiv (numerator query left) (numerator query right) :=
+  QProb.equiv_trans (numerator_equiv query left)
+    (QProb.equiv_symm (numerator_equiv query right))
+
+/-- Any two endpoints over one query have equivalent complete partial results. -/
+noncomputable def pair_denote_equivalent
+    (query : CounterfactualQuery S)
+    (left right : MultiworldEndpoint M query.combinedEvent) :
+    ProbabilityResult.Equivalent (denote query left) (denote query right) :=
+  ProbabilityResult.trans (semanticAgreement query left)
+    (ProbabilityResult.symm (semanticAgreement query right))
 
 end MultiworldEndpoint
 

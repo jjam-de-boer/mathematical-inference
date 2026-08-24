@@ -98,147 +98,46 @@ structure DSeparationCorrectness (G : ObservedGraph S) : Prop where
       PathSpecification.PathDSeparated
         G mutilation left right conditioned
 
+/-- The active-path specialization of the common rule-side-condition interface. -/
+@[reducible] def pathRuleSeparation (G : ObservedGraph S) : RuleSeparation G where
+  holds := PathSpecification.PathDSeparated G
+
 /-- A published do-rule step stated with the standard active-path criterion. -/
-inductive PathDoRuleApplication (G : ObservedGraph S) :
-    Kernel S -> Kernel S -> Type
-  | rule1 (x y z w : NodeSet S)
-      (disjoint : FourWayDisjoint x y z w)
-      (separated :
-        PathSpecification.PathDSeparated G (.bar x)
-          y z (NodeSet.union x w)) :
-      PathDoRuleApplication G (rule1Left x y z w) (rule1Right x y z w)
-  | rule2 (x y z w : NodeSet S)
-      (disjoint : FourWayDisjoint x y z w)
-      (separated :
-        PathSpecification.PathDSeparated G (.barUnderline x z)
-          y z (NodeSet.union x w)) :
-      PathDoRuleApplication G (rule2Left x y z w) (rule2Right x y z w)
-  | rule3 (x y z w : NodeSet S)
-      (disjoint : FourWayDisjoint x y z w)
-      (separated :
-        let base := GraphMutilation.bar x
-        let removable := G.nonAncestorsOf base z w
-        PathSpecification.PathDSeparated G
-          { removeIncoming := NodeSet.union x removable
-            removeOutgoing := NodeSet.empty }
-          y z (NodeSet.union x w)) :
-      PathDoRuleApplication G (rule3Left x y z w) (rule3Right x y z w)
+abbrev PathDoRuleApplication (G : ObservedGraph S) :=
+  DoRuleApplication G (separation := pathRuleSeparation G)
 
 def PathDoRuleApplication.compile (correct : DSeparationCorrectness G)
     (application : PathDoRuleApplication G left right) :
-    DoRuleApplication G left right := by
-  cases application with
-  | rule1 x y z w disjoint separated =>
-      exact .rule1 x y z w disjoint
-        ((correct.algorithm_iff_active_path (.bar x) y z
-          (NodeSet.union x w)).mpr separated)
-  | rule2 x y z w disjoint separated =>
-      exact .rule2 x y z w disjoint
-        ((correct.algorithm_iff_active_path (.barUnderline x z) y z
-          (NodeSet.union x w)).mpr separated)
-  | rule3 x y z w disjoint separated =>
-      exact .rule3 x y z w disjoint
-        ((correct.algorithm_iff_active_path
-          { removeIncoming := NodeSet.union x
-              (G.nonAncestorsOf (.bar x) z w)
-            removeOutgoing := NodeSet.empty }
-          y z (NodeSet.union x w)).mpr separated)
+    DoRuleApplication G left right :=
+  DoRuleApplication.mapSeparation
+    (source := pathRuleSeparation G)
+    (target := executableRuleSeparation G)
+    (fun mutilation first second conditioned separated =>
+      (correct.algorithm_iff_active_path mutilation first second conditioned).mpr
+        separated)
+    application
 
 def DoRuleApplication.toPath (correct : DSeparationCorrectness G)
     (application : DoRuleApplication G left right) :
-    PathDoRuleApplication G left right := by
-  cases application with
-  | rule1 x y z w disjoint separated =>
-      exact .rule1 x y z w disjoint
-        ((correct.algorithm_iff_active_path (.bar x) y z
-          (NodeSet.union x w)).mp separated)
-  | rule2 x y z w disjoint separated =>
-      exact .rule2 x y z w disjoint
-        ((correct.algorithm_iff_active_path (.barUnderline x z) y z
-          (NodeSet.union x w)).mp separated)
-  | rule3 x y z w disjoint separated =>
-      exact .rule3 x y z w disjoint
-        ((correct.algorithm_iff_active_path
-          { removeIncoming := NodeSet.union x
-              (G.nonAncestorsOf (.bar x) z w)
-            removeOutgoing := NodeSet.empty }
-          y z (NodeSet.union x w)).mp separated)
+    PathDoRuleApplication G left right :=
+  DoRuleApplication.mapSeparation
+    (source := executableRuleSeparation G)
+    (target := pathRuleSeparation G)
+    (fun mutilation first second conditioned separated =>
+      (correct.algorithm_iff_active_path mutilation first second conditioned).mp
+        separated)
+    application
 
 /-- Published derivation syntax whose causal side conditions use active paths. -/
-inductive PathDoCalculusDerivation (G : ObservedGraph S) :
-    ProbabilityTerm S -> ProbabilityTerm S -> Type
-  | refl (term) : PathDoCalculusDerivation G term term
-  | symm {left right} :
-      PathDoCalculusDerivation G left right ->
-        PathDoCalculusDerivation G right left
-  | trans {left middle right} :
-      PathDoCalculusDerivation G left middle ->
-      PathDoCalculusDerivation G middle right ->
-      PathDoCalculusDerivation G left right
-  | doRule {left right} :
-      PathDoRuleApplication G left right ->
-      PathDoCalculusDerivation G (.kernel left) (.kernel right)
-  | marginalization (x y z w : NodeSet S)
-      (disjoint : FourWayDisjoint x y z w) :
-      PathDoCalculusDerivation G
-        (.kernel ⟨y, x, w⟩)
-        (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩))
-  | conditioning (x y z w : NodeSet S)
-      (disjoint : FourWayDisjoint x y z w) :
-      PathDoCalculusDerivation G
-        (.kernel ⟨y, x, NodeSet.union z w⟩)
-        (.divide
-          (.kernel ⟨NodeSet.union y z, x, w⟩)
-          (.kernel ⟨z, x, w⟩))
-  | chain (x y z w : NodeSet S)
-      (disjoint : FourWayDisjoint x y z w) :
-      PathDoCalculusDerivation G
-        (.kernel ⟨NodeSet.union y z, x, w⟩)
-        (.multiply
-          (.kernel ⟨y, x, NodeSet.union z w⟩)
-          (.kernel ⟨z, x, w⟩))
-  | marginalizeCongr (nodes : NodeSet S) {left right} :
-      PathDoCalculusDerivation G left right ->
-      PathDoCalculusDerivation G (.marginalize nodes left) (.marginalize nodes right)
-  | evaluateAtCongr (assignment : S.Assignment) {left right} :
-      PathDoCalculusDerivation G left right ->
-      PathDoCalculusDerivation G
-        (.evaluateAt assignment left) (.evaluateAt assignment right)
-  | addCongr {left left' right right'} :
-      PathDoCalculusDerivation G left left' ->
-      PathDoCalculusDerivation G right right' ->
-      PathDoCalculusDerivation G (.add left right) (.add left' right')
-  | multiplyCongr {left left' right right'} :
-      PathDoCalculusDerivation G left left' ->
-      PathDoCalculusDerivation G right right' ->
-      PathDoCalculusDerivation G (.multiply left right) (.multiply left' right')
-  | divideCongr {left left' right right'} :
-      PathDoCalculusDerivation G left left' ->
-      PathDoCalculusDerivation G right right' ->
-      PathDoCalculusDerivation G (.divide left right) (.divide left' right')
+abbrev PathDoCalculusDerivation (G : ObservedGraph S) :=
+  DoCalculusDerivation G (separation := pathRuleSeparation G)
 
 def PathDoCalculusDerivation.compile (correct : DSeparationCorrectness G) :
-    PathDoCalculusDerivation G left right -> DoCalculusDerivation G left right
-  | .refl term => .refl term
-  | .symm derivation => .symm (derivation.compile correct)
-  | .trans first second =>
-      .trans (first.compile correct) (second.compile correct)
-  | .doRule application => .doRule (application.compile correct)
-  | .marginalization x y z w disjoint =>
-      .marginalization x y z w disjoint
-  | .conditioning x y z w disjoint =>
-      .conditioning x y z w disjoint
-  | .chain x y z w disjoint => .chain x y z w disjoint
-  | .marginalizeCongr nodes derivation =>
-      .marginalizeCongr nodes (derivation.compile correct)
-  | .evaluateAtCongr assignment derivation =>
-      .evaluateAtCongr assignment (derivation.compile correct)
-  | .addCongr first second =>
-      .addCongr (first.compile correct) (second.compile correct)
-  | .multiplyCongr first second =>
-      .multiplyCongr (first.compile correct) (second.compile correct)
-  | .divideCongr first second =>
-      .divideCongr (first.compile correct) (second.compile correct)
+    PathDoCalculusDerivation G left right -> DoCalculusDerivation G left right :=
+  DoCalculusDerivation.mapRules
+    (source := pathRuleSeparation G)
+    (target := executableRuleSeparation G)
+    (PathDoRuleApplication.compile correct)
 
 end Causality
 end Thesis

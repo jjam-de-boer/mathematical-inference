@@ -13,7 +13,10 @@ Complete probability-bearing multiworld execution from an empty mode.
 `EmptyCausalMode.mode`; this module closes that construction with the same
 atomic action compiler used by the from-factual route. The endpoint is an
 actual causal record with its own dependent signature, so comparisons with the
-other route use explicit coordinate transport.
+reference use explicit coordinate transport. Besides evaluator and probability
+agreement, the construction proves that both its atomic target and its final
+probability-bearing target have exactly the reference directed and latent
+classifiers, with no additional edges or incidences.
 -/
 
 /--
@@ -108,6 +111,130 @@ def coordinates
       construction.signature :=
   construction.linked.coordinates.trans construction.atomic.coordinates
 
+/-- The source-root equivalence through recreation and atomic compilation. -/
+def rootEquiv
+    (construction : FromEmptyExecutedOccurrenceConstruction mode event) :
+    AtomicIntervention.FinIndexEquiv mode.record.model.latent.count
+      construction.target.record.model.latent.count :=
+  construction.linked.sourceRootEquiv.trans construction.atomic.roots.rootEquiv
+
+/-- Transport a recreated source root through the final atomic program. -/
+def sourceRoot
+    (construction : FromEmptyExecutedOccurrenceConstruction mode event)
+    (root : Fin mode.record.model.latent.count) :
+    Fin construction.target.record.model.latent.count :=
+  construction.rootEquiv.toFun root
+
+theorem sourceRoot_surjective
+    (construction : FromEmptyExecutedOccurrenceConstruction mode event)
+    (targetRoot : Fin construction.target.record.model.latent.count) :
+    Exists fun root : Fin mode.record.model.latent.count =>
+      construction.sourceRoot root = targetRoot :=
+  ⟨construction.rootEquiv.invFun targetRoot,
+    construction.rootEquiv.right_inv targetRoot⟩
+
+/-- The actual from-empty atomic target has exactly the reference directed graph. -/
+theorem target_directed_eq_reference
+    (construction : FromEmptyExecutedOccurrenceConstruction mode event)
+    (parent child : Fin
+      (OccurrenceMultiworld.Encoding.signature construction.World).count) :
+    construction.signature.directed
+        (construction.coordinates.nodeEquiv.toFun parent)
+        (construction.coordinates.nodeEquiv.toFun child) =
+      construction.World.directed
+        (OccurrenceMultiworld.Encoding.decode parent)
+        (OccurrenceMultiworld.Encoding.decode child) := by
+  have compiled := AtomicIntervention.compile_directed_eq
+    construction.linked.reindexBeliefTransition.target
+    construction.linked.combinedAction
+    (construction.linked.coordinates.nodeEquiv.toFun parent)
+    (construction.linked.coordinates.nodeEquiv.toFun child)
+  rw [← construction.atomic_eq] at compiled
+  have actionEq := construction.linked.combinedAction_encodedNode_isSome child
+  have sourceEq := construction.linked.directed_eq_untreated parent child
+  have referenceEq := EmptyOccurrenceConstruction.Linked.world_directed_encoded_eq
+    mode.record.model event parent child
+  change construction.atomic.signature.directed
+      (construction.atomic.coordinates.nodeEquiv.toFun
+        (construction.linked.encodedNode parent))
+      (construction.atomic.coordinates.nodeEquiv.toFun
+        (construction.linked.encodedNode child)) =
+    if (construction.linked.combinedAction
+        (construction.linked.encodedNode child)).isSome then false
+    else construction.linked.signature.directed
+      (construction.linked.encodedNode parent)
+      (construction.linked.encodedNode child) at compiled
+  rw [actionEq, sourceEq] at compiled
+  change construction.atomic.signature.directed
+      (construction.atomic.coordinates.nodeEquiv.toFun
+        (construction.linked.encodedNode parent))
+      (construction.atomic.coordinates.nodeEquiv.toFun
+        (construction.linked.encodedNode child)) = _
+  exact compiled.trans referenceEq.symm
+
+/-- The actual from-empty atomic target has exactly the reference latent graph. -/
+theorem target_incident_eq_reference
+    (construction : FromEmptyExecutedOccurrenceConstruction mode event)
+    (root : Fin mode.record.model.latent.count)
+    (child : Fin
+      (OccurrenceMultiworld.Encoding.signature construction.World).count) :
+    construction.target.record.model.latent.incident
+        (construction.sourceRoot root)
+        (construction.coordinates.nodeEquiv.toFun child) =
+      construction.World.incident root
+        (OccurrenceMultiworld.Encoding.decode child) := by
+  have compiled := AtomicIntervention.compile_latent_incident_eq
+    construction.linked.reindexBeliefTransition.target
+    construction.linked.combinedAction
+    (construction.linked.sourceRoot root)
+    (construction.linked.coordinates.nodeEquiv.toFun child)
+  rw [← construction.atomic_eq] at compiled
+  have actionEq := construction.linked.combinedAction_encodedNode_isSome child
+  have sourceEq := construction.linked.incident_eq_source root child
+  have referenceEq := EmptyOccurrenceConstruction.Linked.world_incident_encoded_eq
+    mode.record.model event root child
+  change construction.atomic.target.record.model.latent.incident
+      (construction.atomic.roots.rootEquiv.toFun
+        (construction.linked.sourceRoot root))
+      (construction.atomic.coordinates.nodeEquiv.toFun
+        (construction.linked.encodedNode child)) =
+    if (construction.linked.combinedAction
+        (construction.linked.encodedNode child)).isSome then false
+    else construction.linked.target.record.model.latent.incident
+      (construction.linked.sourceRoot root)
+      (construction.linked.encodedNode child) at compiled
+  rw [actionEq, sourceEq] at compiled
+  change construction.atomic.target.record.model.latent.incident
+      (construction.atomic.roots.rootEquiv.toFun
+        (construction.linked.sourceRoot root))
+      (construction.atomic.coordinates.nodeEquiv.toFun
+        (construction.linked.encodedNode child)) = _
+  exact compiled.trans referenceEq.symm
+
+theorem target_directed_eq_true_iff
+    (construction : FromEmptyExecutedOccurrenceConstruction mode event)
+    (parent child : Fin
+      (OccurrenceMultiworld.Encoding.signature construction.World).count) :
+    construction.signature.directed
+          (construction.coordinates.nodeEquiv.toFun parent)
+          (construction.coordinates.nodeEquiv.toFun child) = true ↔
+      construction.World.directed
+          (OccurrenceMultiworld.Encoding.decode parent)
+          (OccurrenceMultiworld.Encoding.decode child) = true := by
+  rw [construction.target_directed_eq_reference]
+
+theorem target_incident_eq_true_iff
+    (construction : FromEmptyExecutedOccurrenceConstruction mode event)
+    (root : Fin mode.record.model.latent.count)
+    (child : Fin
+      (OccurrenceMultiworld.Encoding.signature construction.World).count) :
+    construction.target.record.model.latent.incident
+          (construction.sourceRoot root)
+          (construction.coordinates.nodeEquiv.toFun child) = true ↔
+      construction.World.incident root
+          (OccurrenceMultiworld.Encoding.decode child) = true := by
+  rw [construction.target_incident_eq_reference]
+
 noncomputable def realizes
     (construction : FromEmptyExecutedOccurrenceConstruction mode event) :
     AtomicIntervention.Execution.DeterministicRealizesEvaluation
@@ -149,6 +276,39 @@ noncomputable def probabilityTarget
     (construction : FromEmptyExecutedOccurrenceConstruction mode event) :
     CausalMode construction.signature :=
   construction.probabilityExecution.target
+
+/-- Probability closure changes only belief and the compact-intervention field. -/
+@[simp] theorem probabilityTarget_model_eq_target
+    (construction : FromEmptyExecutedOccurrenceConstruction mode event) :
+    construction.probabilityTarget.record.model =
+      construction.target.record.model :=
+  rfl
+
+/-- The probability-bearing endpoint retains the exact reference directed graph. -/
+theorem probabilityTarget_directed_eq_reference
+    (construction : FromEmptyExecutedOccurrenceConstruction mode event)
+    (parent child : Fin
+      (OccurrenceMultiworld.Encoding.signature construction.World).count) :
+    construction.signature.directed
+        (construction.coordinates.nodeEquiv.toFun parent)
+        (construction.coordinates.nodeEquiv.toFun child) =
+      construction.World.directed
+        (OccurrenceMultiworld.Encoding.decode parent)
+        (OccurrenceMultiworld.Encoding.decode child) :=
+  construction.target_directed_eq_reference parent child
+
+/-- The probability-bearing endpoint retains the exact reference latent graph. -/
+theorem probabilityTarget_incident_eq_reference
+    (construction : FromEmptyExecutedOccurrenceConstruction mode event)
+    (root : Fin mode.record.model.latent.count)
+    (child : Fin
+      (OccurrenceMultiworld.Encoding.signature construction.World).count) :
+    construction.probabilityTarget.record.model.latent.incident
+        (construction.sourceRoot root)
+        (construction.coordinates.nodeEquiv.toFun child) =
+      construction.World.incident root
+        (OccurrenceMultiworld.Encoding.decode child) :=
+  construction.target_incident_eq_reference root child
 
 noncomputable def probabilityPath
     (construction : FromEmptyExecutedOccurrenceConstruction mode event) :
@@ -312,6 +472,26 @@ noncomputable def sharedEndpoint
   record := construction.endpointRecord
   coordinates := construction.coordinates
   eventAt := construction.endpointEvent
+  eventAt_coordinates := by
+    intro predicate assignment
+    unfold endpointEvent configuredEvent
+    change predicate
+        (OccurrenceMultiworld.Encoding.decodeAssignment construction.World
+          (construction.linked.coordinates.untransportObserved
+            (construction.atomic.coordinates.untransportObserved assignment))) =
+      predicate
+        (OccurrenceMultiworld.Encoding.decodeAssignment construction.World
+          (construction.coordinates.untransportObserved assignment))
+    rw [show construction.coordinates =
+        construction.linked.coordinates.trans construction.atomic.coordinates
+      from rfl]
+    exact congrArg
+      (fun encoded => predicate
+        (OccurrenceMultiworld.Encoding.decodeAssignment construction.World
+          encoded))
+      (AtomicIntervention.SameCoordinates.untransportObserved_trans
+        construction.linked.coordinates construction.atomic.coordinates
+        assignment).symm
   observedValue := construction.endpointRecord_observedValue
 
 variable {S : ObservedSignature} {mode : CausalMode S}

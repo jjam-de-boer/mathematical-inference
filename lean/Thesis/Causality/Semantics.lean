@@ -355,7 +355,7 @@ def marginalAssignments (S : ObservedSignature) (nodes : NodeSet S)
   marginalAssignmentsUpTo S nodes reference S.count (Nat.le_refl S.count)
 
 /-- Partial denotation of a probability expression in one finite SCM. -/
-noncomputable def denote (model : FiniteLatentSCM S) :
+def denote (model : FiniteLatentSCM S) :
     ProbabilityTerm S -> S.Assignment -> ProbabilityResult.Result
   | .zero, _ => some QProb.zero
   | .kernel K, assignment => K.denote model assignment

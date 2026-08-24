@@ -7,13 +7,12 @@ namespace Causality
 open Probability
 
 /-!
-Learning and forgetting for dependent finite causal signatures.
+Conservative learning for dependent finite causal signatures.
 
-The general transition layer accepts an explicit semantic extension witness;
-it does not claim that arbitrary new information preserves identifiability.
 The concrete construction appends a terminal variable determined solely by
-already observed parents and gives it no latent incidence.  That restricted
-construction is conservative for events and interventions on the old nodes.
+already observed parents and gives it no latent incidence. That restricted
+construction is conservative for events and interventions on the old nodes;
+no preservation claim is made for arbitrary causal extensions.
 -/
 
 /-- Data for a terminal observed variable learned conservatively. -/
@@ -35,9 +34,9 @@ instance (spec : TerminalVariableSpec S) : DecidableEq spec.Value :=
 
 /--
 Constructive elimination of `Fin (n + 1)` into its terminal point or an old
-point. The library's `Fin.lastCases_castSucc` reduction theorem currently
-inherits `Classical.choice`; this local eliminator keeps the learning bridge
-inside the project's constructive-extensional axiom boundary.
+point. Using the library's `Fin.lastCases_castSucc` reduction theorem introduces
+`Classical.choice` into the audited dependency set; this local eliminator keeps
+the learning bridge inside the project's constructive-extensional axiom boundary.
 -/
 def terminalCases {n : Nat} {motive : Fin (n + 1) -> Sort u}
     (lastCase : motive (Fin.last n))

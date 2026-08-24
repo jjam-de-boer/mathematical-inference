@@ -1,4 +1,4 @@
-import Thesis.CausalTransport.Correspondence
+import Thesis.Causality.Core
 import Thesis.Causality.Reductions
 
 namespace Thesis

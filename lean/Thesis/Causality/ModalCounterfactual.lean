@@ -10,12 +10,13 @@ universe u
 /-!
 Modal construction for finite counterfactual semantics.
 
-The direct `TwinNetwork` remains the independent reference semantics. This
-module supplies the proof-carrying modal construction around it: structural
-intervention transitions for every potential-outcome occurrence, two ordered
-executions ending in actual epistemic records, and an
-abduction-action-prediction theorem connecting those records to both query and
-twin-network semantics.
+The occurrence-indexed multiworld is the independent reference semantics for
+arbitrary finite Boolean counterfactual queries. This module supplies the
+proof-carrying modal construction around it: structural intervention
+transitions for every potential-outcome occurrence, two ordered executions
+ending in actual epistemic records, and an abduction-action-prediction theorem.
+For supported one-action queries, the resulting semantics is also compared
+with the independently defined `TwinNetwork`.
 -/
 
 /-! ## Modal traces for arbitrary finite counterfactual events -/
@@ -25,8 +26,6 @@ structure ModalCounterfactualAtomTrace {S : ObservedSignature}
     (atom : CounterfactualAtom S) where
   execution : AtomicIntervention.Execution mode
   realizes : execution = AtomicIntervention.compile mode atom.action
-  semantics : AtomicIntervention.Execution.RealizesEvaluation execution
-    (fun assignment => mode.record.model.evalUnder atom.action assignment)
   deterministicSemantics :
     AtomicIntervention.Execution.DeterministicRealizesEvaluation execution
       (fun assignment => mode.record.model.evalUnder atom.action assignment)
@@ -41,7 +40,6 @@ noncomputable def ModalCounterfactualAtomTrace.canonical (mode : CausalMode S)
     ModalCounterfactualAtomTrace mode atom where
   execution := AtomicIntervention.compile mode atom.action
   realizes := rfl
-  semantics := AtomicIntervention.compileRealizes mode atom.action
   deterministicSemantics :=
     AtomicIntervention.compileDeterministicRealizes mode atom.action
   referenceTransition := SurgicalIntervention.transition mode atom.action
@@ -359,6 +357,24 @@ noncomputable def actedRecord
       (atomicAction M evidence hEvidence intervention).signature :=
   (atomicActionDeterministicRealizes M evidence hEvidence intervention).endpointRecord
 
+/--
+The canonical latent assignment supplied by atomic AAP evaluates exactly as
+the compact surgical action on the same source latent unit.
+-/
+theorem atomicActionDeterministicRealizes_evaluate_compactAction
+    (M : ExactModel S) (evidence : S.Assignment -> Bool)
+    (hEvidence : M.CounterfactualSupported evidence)
+    (intervention : (node : Fin S.count) -> Option (S.Value node))
+    (assignment : M.latent.Assignment) :
+    (atomicAction M evidence hEvidence intervention).target.record.model.eval
+        ((atomicActionDeterministicRealizes M evidence hEvidence intervention).assignment
+          assignment) =
+      (atomicAction M evidence hEvidence intervention).transportedObserved
+        ((compactAction M evidence hEvidence intervention).target.record.model.eval
+          assignment) :=
+  AtomicIntervention.compileDeterministicRealizes_evaluate_surgery
+    (abduction M evidence hEvidence).target intervention assignment
+
 /-- The compact surgery is semantically equivalent to the primary atomic action. -/
 theorem action_semanticallyEquivalent_compactAction
     (M : ExactModel S) (evidence : S.Assignment -> Bool)
@@ -371,9 +387,12 @@ theorem action_semanticallyEquivalent_compactAction
           targetAssignment =
         (atomicAction M evidence hEvidence intervention).transportedObserved
           ((compactAction M evidence hEvidence intervention).target.record.model.eval
-            assignment) :=
-  AtomicIntervention.compile_semanticallyEquivalent_surgery
-    (abduction M evidence hEvidence).target intervention assignment
+            assignment) := by
+  exact
+    ⟨(atomicActionDeterministicRealizes M evidence hEvidence intervention).assignment
+        assignment,
+      atomicActionDeterministicRealizes_evaluate_compactAction M evidence hEvidence
+        intervention assignment⟩
 
 /-- Probability read from the compact one-shot reference constructor. -/
 def compactPrediction (M : ExactModel S) (evidence : S.Assignment -> Bool)

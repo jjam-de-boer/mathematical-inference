@@ -78,22 +78,12 @@ def cells (N : Nat) : List (Fin N) :=
 theorem cells_nodup : forall N, (cells N).Nodup := by
   intro N
   change (List.finRange N).Nodup
-  induction N with
-  | zero => simp
-  | succ N ih =>
-      rw [List.finRange_succ]
-      exact List.nodup_cons.mpr ⟨by
-        intro member
-        rcases List.mem_map.mp member with ⟨value, _, equal⟩
-        exact Fin.succ_ne_zero value equal,
-        List.Pairwise.map Fin.succ (fun left right different equal =>
-          different ((Fin.succ_inj).mp equal)) ih⟩
+  exact finRange_nodup N
 
 private theorem count_cells_singleton (index : Fin N) :
     count (cells N) (fun value => value == index) = 1 := by
-  change List.count index (cells N) = 1
-  rw [(cells_nodup N).count]
-  simp [cells]
+  change (List.finRange N).count index = 1
+  exact count_finRange N index
 
 /-- Row-major enumeration of all pairs of cells. -/
 def productCells (M N : Nat) : List (Fin M × Fin N) :=

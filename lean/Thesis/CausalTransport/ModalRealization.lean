@@ -6,15 +6,36 @@ namespace Causality
 
 open Probability
 
+universe u
+
 /-!
 Transport certificates enriched with executable modal realizations.
 
 Joint and conditional kernel queries share the same operation-realization
-payload once their source term and operation kernel are fixed.  The generic
-structure below carries that payload once. Query-specific public structures
-expose the joint and conditional indices, and explicit adapters connect them
-to the generic implementation.
+payload once their source term, operation kernel, and underlying identification
+certificate are fixed. `OperationRealizedCertificateCore` carries that payload
+once. The generic, joint, and conditional public structures extend this core,
+while their promoted `certificate` fields retain the query-specific types.
 -/
+
+/--
+Shared operation-realization payload for an underlying identification
+certificate presentation.
+-/
+structure OperationRealizedCertificateCore
+    (sound : PublishedSoundness S G) (sourceTerm : ProbabilityTerm S)
+    (operationKernel : Kernel S) (Certificate : Type u)
+    (toIdentification : Certificate -> IdentificationCertificate G sourceTerm) where
+  certificate : Certificate
+  trace : ModalDerivationTrace G (toIdentification certificate).derivation
+  realized : forall (model : ExactModel S) (compatible : Compatible model G)
+      (assignment : S.Assignment)
+      (sourceSupported : sourceTerm.SupportedAt model assignment),
+    let supportTree := (toIdentification certificate).supported model compatible
+      assignment sourceSupported
+    KernelOperationRealization model operationKernel assignment ×
+      trace.OperationRealizations assignment
+        (sound.primitive model compatible) supportTree
 
 /--
 An identification certificate whose source kernel and every Pearl-rule leaf
@@ -22,43 +43,21 @@ are tied to executable record operations in every compatible target model.
 -/
 structure OperationRealizedCertificate
     (sound : PublishedSoundness S G) (sourceTerm : ProbabilityTerm S)
-    (operationKernel : Kernel S) where
-  certificate : IdentificationCertificate G sourceTerm
-  trace : ModalDerivationTrace G certificate.derivation
-  realized : forall (model : ExactModel S) (compatible : Compatible model G)
-      (assignment : S.Assignment)
-      (sourceSupported : sourceTerm.SupportedAt model assignment),
-    let supportTree := certificate.supported model compatible assignment
-      sourceSupported
-    KernelOperationRealization model operationKernel assignment ×
-      trace.OperationRealizations assignment
-        (sound.primitive model compatible) supportTree
+    (operationKernel : Kernel S) extends
+      OperationRealizedCertificateCore sound sourceTerm operationKernel
+        (IdentificationCertificate G sourceTerm) (fun certificate => certificate)
 
 structure OperationRealizedJointCertificate
-    (sound : PublishedSoundness S G) (query : JointKernelQuery S) where
-  certificate : JointIdentificationCertificate G query
-  trace : ModalDerivationTrace G certificate.derivation
-  realized : forall (model : ExactModel S) (compatible : Compatible model G)
-      (assignment : S.Assignment)
-      (sourceSupported : query.sourceTerm.SupportedAt model assignment),
-    let supportTree := certificate.supported model compatible assignment
-      sourceSupported
-    KernelOperationRealization model query.operationKernel assignment ×
-      trace.OperationRealizations assignment
-        (sound.primitive model compatible) supportTree
+    (sound : PublishedSoundness S G) (query : JointKernelQuery S) extends
+      OperationRealizedCertificateCore sound query.sourceTerm query.operationKernel
+        (JointIdentificationCertificate G query)
+        (fun certificate => certificate.toGeneric)
 
 structure OperationRealizedConditionalCertificate
-    (sound : PublishedSoundness S G) (query : ConditionalKernelQuery S) where
-  certificate : ConditionalIdentificationCertificate G query
-  trace : ModalDerivationTrace G certificate.derivation
-  realized : forall (model : ExactModel S) (compatible : Compatible model G)
-      (assignment : S.Assignment)
-      (sourceSupported : query.sourceTerm.SupportedAt model assignment),
-    let supportTree := certificate.supported model compatible assignment
-      sourceSupported
-    KernelOperationRealization model query.operationKernel assignment ×
-      trace.OperationRealizations assignment
-        (sound.primitive model compatible) supportTree
+    (sound : PublishedSoundness S G) (query : ConditionalKernelQuery S) extends
+      OperationRealizedCertificateCore sound query.sourceTerm query.operationKernel
+        (ConditionalIdentificationCertificate G query)
+        (fun certificate => certificate.toGeneric)
 
 def OperationRealizedJointCertificate.toGeneric
     (certificate : OperationRealizedJointCertificate sound query) :
@@ -80,30 +79,44 @@ mode.  The underlying certificate remains uniform over all compatible models;
 the joint/conditional `atMode` wrappers below specialize it to the stored
 model.
 -/
+structure ModeIndexedOperationRealizedCertificateCore
+    (mode : CausalMode S) (G : ObservedGraph S) (Certificate : Type u) where
+  compatible : mode.CompatibleWith G
+  certificate : Certificate
+
 structure ModeIndexedOperationRealizedCertificate
     (mode : CausalMode S) (G : ObservedGraph S)
     (sound : PublishedSoundness S G) (sourceTerm : ProbabilityTerm S)
-    (operationKernel : Kernel S) where
-  compatible : mode.CompatibleWith G
-  certificate : OperationRealizedCertificate sound sourceTerm operationKernel
+    (operationKernel : Kernel S) extends
+      ModeIndexedOperationRealizedCertificateCore mode G
+        (OperationRealizedCertificate sound sourceTerm operationKernel)
 
 structure ModeIndexedOperationRealizedJointCertificate
     (mode : CausalMode S) (G : ObservedGraph S)
-    (sound : PublishedSoundness S G) (query : JointKernelQuery S) where
-  compatible : mode.CompatibleWith G
-  certificate : OperationRealizedJointCertificate sound query
+    (sound : PublishedSoundness S G) (query : JointKernelQuery S) extends
+      ModeIndexedOperationRealizedCertificateCore mode G
+        (OperationRealizedJointCertificate sound query)
 
 structure ModeIndexedOperationRealizedConditionalCertificate
     (mode : CausalMode S) (G : ObservedGraph S)
-    (sound : PublishedSoundness S G) (query : ConditionalKernelQuery S) where
-  compatible : mode.CompatibleWith G
-  certificate : OperationRealizedConditionalCertificate sound query
+    (sound : PublishedSoundness S G) (query : ConditionalKernelQuery S) extends
+      ModeIndexedOperationRealizedCertificateCore mode G
+        (OperationRealizedConditionalCertificate sound query)
 
 namespace ModeIndexedOperationRealizedJointCertificate
 
 variable {S : ObservedSignature} {G : ObservedGraph S}
   {sound : PublishedSoundness S G} {query : JointKernelQuery S}
   {mode : CausalMode S}
+
+/-- Forget the joint query wrapper while retaining mode compatibility. -/
+def toGeneric
+    (indexed : ModeIndexedOperationRealizedJointCertificate
+      mode G sound query) :
+    ModeIndexedOperationRealizedCertificate mode G sound query.sourceTerm
+      query.operationKernel where
+  compatible := indexed.compatible
+  certificate := indexed.certificate.toGeneric
 
 /-- Forget executable realizations while retaining the compatible modal index. -/
 def toModeIndexedDerivation
@@ -137,6 +150,15 @@ namespace ModeIndexedOperationRealizedConditionalCertificate
 variable {S : ObservedSignature} {G : ObservedGraph S}
   {sound : PublishedSoundness S G} {query : ConditionalKernelQuery S}
   {mode : CausalMode S}
+
+/-- Forget the conditional query wrapper while retaining mode compatibility. -/
+def toGeneric
+    (indexed : ModeIndexedOperationRealizedConditionalCertificate
+      mode G sound query) :
+    ModeIndexedOperationRealizedCertificate mode G sound query.sourceTerm
+      query.operationKernel where
+  compatible := indexed.compatible
+  certificate := indexed.certificate.toGeneric
 
 /-- Forget executable realizations while retaining the compatible modal index. -/
 def toModeIndexedDerivation
@@ -269,9 +291,52 @@ theorem finiteSource_operationRealized_conditional_iff
 
 /--
 The operation-realized joint transport with compatibility and executable
-realizations combined in one mode-indexed certificate.
+realizations combined in one mode-indexed certificate.  Compatibility is part
+of both sides of the equivalence because the certificate stores its witness.
 -/
 theorem finiteSource_modeIndexedOperationRealized_joint_iff
+    (mode : CausalMode T.toObserved) (G : FiniteTableGraph T)
+    (complete : PublishedFiniteSourceCompleteness T G)
+    (sound : PublishedFiniteSourceSoundness T G)
+    (query : JointKernelQuery T.toObserved) :
+    (mode.CompatibleWith G.interpret /\
+      mode.JointIdentifiableOn G.interpret query) <->
+      Nonempty
+        (ModeIndexedOperationRealizedJointCertificate mode G.interpret
+          sound.toPublished query) := by
+  constructor
+  · rintro ⟨currentCompatible, identifiable⟩
+    rcases (finiteSource_operationRealized_joint_iff complete sound query).mp
+        identifiable with ⟨certificate⟩
+    exact ⟨⟨currentCompatible, certificate⟩⟩
+  · rintro ⟨indexed⟩
+    exact ⟨indexed.compatible,
+      (finiteSource_operationRealized_joint_iff complete sound query).mpr
+        ⟨indexed.certificate⟩⟩
+
+/-- Conditional counterpart of the exact mode-indexed operation-realized package. -/
+theorem finiteSource_modeIndexedOperationRealized_conditional_iff
+    (mode : CausalMode T.toObserved) (G : FiniteTableGraph T)
+    (complete : PublishedFiniteSourceCompleteness T G)
+    (sound : PublishedFiniteSourceSoundness T G)
+    (query : ConditionalKernelQuery T.toObserved) :
+    (mode.CompatibleWith G.interpret /\
+      mode.ConditionalIdentifiableOn G.interpret query) <->
+      Nonempty
+        (ModeIndexedOperationRealizedConditionalCertificate mode G.interpret
+          sound.toPublished query) := by
+  constructor
+  · rintro ⟨currentCompatible, identifiable⟩
+    rcases (finiteSource_operationRealized_conditional_iff complete sound query).mp
+        identifiable with ⟨certificate⟩
+    exact ⟨⟨currentCompatible, certificate⟩⟩
+  · rintro ⟨indexed⟩
+    exact ⟨indexed.compatible,
+      (finiteSource_operationRealized_conditional_iff complete sound query).mpr
+        ⟨indexed.certificate⟩⟩
+
+/-- Compatibility-specialized form of the mode-indexed joint equivalence. -/
+theorem finiteSource_modeIndexedOperationRealized_joint_iff_of_compatible
     (mode : CausalMode T.toObserved) (G : FiniteTableGraph T)
     (currentCompatible : mode.CompatibleWith G.interpret)
     (complete : PublishedFiniteSourceCompleteness T G)
@@ -283,16 +348,14 @@ theorem finiteSource_modeIndexedOperationRealized_joint_iff
           sound.toPublished query) := by
   constructor
   · intro identifiable
-    rcases (finiteSource_operationRealized_joint_iff complete sound query).mp
-        identifiable with ⟨certificate⟩
-    exact ⟨⟨currentCompatible, certificate⟩⟩
-  · intro indexed
-    rcases indexed with ⟨indexed⟩
-    exact (finiteSource_operationRealized_joint_iff complete sound query).mpr
-      ⟨indexed.certificate⟩
+    exact (finiteSource_modeIndexedOperationRealized_joint_iff
+      mode G complete sound query).mp ⟨currentCompatible, identifiable⟩
+  · intro certificate
+    exact ((finiteSource_modeIndexedOperationRealized_joint_iff
+      mode G complete sound query).mpr certificate).2
 
-/-- Conditional counterpart of the mode-indexed operation-realized transport. -/
-theorem finiteSource_modeIndexedOperationRealized_conditional_iff
+/-- Compatibility-specialized form of the mode-indexed conditional equivalence. -/
+theorem finiteSource_modeIndexedOperationRealized_conditional_iff_of_compatible
     (mode : CausalMode T.toObserved) (G : FiniteTableGraph T)
     (currentCompatible : mode.CompatibleWith G.interpret)
     (complete : PublishedFiniteSourceCompleteness T G)
@@ -304,13 +367,11 @@ theorem finiteSource_modeIndexedOperationRealized_conditional_iff
           sound.toPublished query) := by
   constructor
   · intro identifiable
-    rcases (finiteSource_operationRealized_conditional_iff complete sound query).mp
-        identifiable with ⟨certificate⟩
-    exact ⟨⟨currentCompatible, certificate⟩⟩
-  · intro indexed
-    rcases indexed with ⟨indexed⟩
-    exact (finiteSource_operationRealized_conditional_iff complete sound query).mpr
-      ⟨indexed.certificate⟩
+    exact (finiteSource_modeIndexedOperationRealized_conditional_iff
+      mode G complete sound query).mp ⟨currentCompatible, identifiable⟩
+  · intro certificate
+    exact ((finiteSource_modeIndexedOperationRealized_conditional_iff
+      mode G complete sound query).mpr certificate).2
 
 end Causality
 end Thesis

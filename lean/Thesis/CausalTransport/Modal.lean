@@ -27,24 +27,24 @@ structure ModalEncodedConditionalDerivation
 def EncodedJointDerivation.toModal
     (encoded : EncodedJointDerivation G query) :
     ModalEncodedJointDerivation G query where
-  certificate := encoded.classical
-  trace := encoded.classical.derivation.toModalTrace
+  certificate := encoded.certificate
+  trace := encoded.certificate.derivation.toModalTrace
 
 def EncodedConditionalDerivation.toModal
     (encoded : EncodedConditionalDerivation G query) :
     ModalEncodedConditionalDerivation G query where
-  certificate := encoded.classical
-  trace := encoded.classical.derivation.toModalTrace
+  certificate := encoded.certificate
+  trace := encoded.certificate.derivation.toModalTrace
 
 def ModalEncodedJointDerivation.erase
     (encoded : ModalEncodedJointDerivation G query) :
     EncodedJointDerivation G query where
-  classical := encoded.certificate
+  certificate := encoded.certificate
 
 def ModalEncodedConditionalDerivation.erase
     (encoded : ModalEncodedConditionalDerivation G query) :
     EncodedConditionalDerivation G query where
-  classical := encoded.certificate
+  certificate := encoded.certificate
 
 theorem ModalEncodedJointDerivation.identifiable
     (sound : PublishedSoundness S G)
@@ -117,7 +117,47 @@ theorem transported_conditional_iff (mode : CausalMode S)
     rcases encoded with ⟨encoded⟩
     exact encoded.identifiable sound
 
+/--
+For the finite source, compatibility and joint identifiability are exactly the
+data packaged by a mode-indexed transported derivation.
+-/
 theorem finiteSource_transported_joint_iff
+    (mode : CausalMode T.toObserved) (G : FiniteTableGraph T)
+    (complete : PublishedFiniteSourceCompleteness T G)
+    (sound : PublishedFiniteSourceSoundness T G)
+    (query : JointKernelQuery T.toObserved) :
+    (mode.CompatibleWith G.interpret /\
+      mode.JointIdentifiableOn G.interpret query) <->
+      Nonempty (ModeIndexedJointDerivation mode G.interpret query) := by
+  constructor
+  · rintro ⟨currentCompatible, identifiable⟩
+    have encoded := transport_joint_completeness complete.toPublished
+      query identifiable
+    exact ⟨⟨currentCompatible, encoded.toModal⟩⟩
+  · rintro ⟨indexed⟩
+    exact ⟨indexed.compatible,
+      indexed.encoded.identifiable sound.toPublished⟩
+
+/-- Conditional counterpart of the exact mode-indexed finite-source package. -/
+theorem finiteSource_transported_conditional_iff
+    (mode : CausalMode T.toObserved) (G : FiniteTableGraph T)
+    (complete : PublishedFiniteSourceCompleteness T G)
+    (sound : PublishedFiniteSourceSoundness T G)
+    (query : ConditionalKernelQuery T.toObserved) :
+    (mode.CompatibleWith G.interpret /\
+      mode.ConditionalIdentifiableOn G.interpret query) <->
+      Nonempty (ModeIndexedConditionalDerivation mode G.interpret query) := by
+  constructor
+  · rintro ⟨currentCompatible, identifiable⟩
+    have encoded := transport_conditional_completeness complete.toPublished
+      query identifiable
+    exact ⟨⟨currentCompatible, encoded.toModal⟩⟩
+  · rintro ⟨indexed⟩
+    exact ⟨indexed.compatible,
+      indexed.encoded.identifiable sound.toPublished⟩
+
+/-- Compatibility-specialized form of `finiteSource_transported_joint_iff`. -/
+theorem finiteSource_transported_joint_iff_of_compatible
     (mode : CausalMode T.toObserved) (G : FiniteTableGraph T)
     (currentCompatible : mode.CompatibleWith G.interpret)
     (complete : PublishedFiniteSourceCompleteness T G)
@@ -127,14 +167,14 @@ theorem finiteSource_transported_joint_iff
       Nonempty (ModeIndexedJointDerivation mode G.interpret query) := by
   constructor
   · intro identifiable
-    have encoded := transport_joint_completeness complete.toPublished
-      query identifiable
-    exact ⟨⟨currentCompatible, encoded.toModal⟩⟩
-  · intro indexed
-    rcases indexed with ⟨indexed⟩
-    exact indexed.encoded.identifiable sound.toPublished
+    exact (finiteSource_transported_joint_iff mode G complete sound query).mp
+      ⟨currentCompatible, identifiable⟩
+  · intro certificate
+    exact ((finiteSource_transported_joint_iff mode G complete sound query).mpr
+      certificate).2
 
-theorem finiteSource_transported_conditional_iff
+/-- Compatibility-specialized form of `finiteSource_transported_conditional_iff`. -/
+theorem finiteSource_transported_conditional_iff_of_compatible
     (mode : CausalMode T.toObserved) (G : FiniteTableGraph T)
     (currentCompatible : mode.CompatibleWith G.interpret)
     (complete : PublishedFiniteSourceCompleteness T G)
@@ -144,12 +184,11 @@ theorem finiteSource_transported_conditional_iff
       Nonempty (ModeIndexedConditionalDerivation mode G.interpret query) := by
   constructor
   · intro identifiable
-    have encoded := transport_conditional_completeness complete.toPublished
-      query identifiable
-    exact ⟨⟨currentCompatible, encoded.toModal⟩⟩
-  · intro indexed
-    rcases indexed with ⟨indexed⟩
-    exact indexed.encoded.identifiable sound.toPublished
+    exact (finiteSource_transported_conditional_iff mode G complete sound query).mp
+      ⟨currentCompatible, identifiable⟩
+  · intro certificate
+    exact ((finiteSource_transported_conditional_iff mode G complete sound query).mpr
+      certificate).2
 
 /-- Completeness transport with both a compatible mode index and modal traces. -/
 theorem finiteSource_modal_completeness_transport
