@@ -14,3 +14,6 @@ jobs:
       - uses: leanprover/lean-action@v1
         with:
           lake-package-directory: lean
+      - name: Enforce kernel-axiom policy
+        working-directory: lean
+        run: lake build Thesis.AxiomAudit
