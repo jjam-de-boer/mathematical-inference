@@ -1094,6 +1094,7 @@ def learnRecord (spec : TerminalVariableSpec S) (R : CausalEpistemicRecord S) :
   model := spec.extendModel R.model
   belief := R.belief
   intervention := spec.liftIntervention R.intervention
+  locks := R.acrossLocks .learnTerminal
 
 @[simp] theorem learnRecord_model (spec : TerminalVariableSpec S)
     (R : CausalEpistemicRecord S) :

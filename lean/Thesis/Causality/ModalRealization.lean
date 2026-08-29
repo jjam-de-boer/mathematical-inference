@@ -195,6 +195,18 @@ noncomputable def atomicEvent (model : ExactModel S) (kernel : Kernel S)
   AtomicIntervention.Execution.DeterministicRealizesEvaluation.endpointEvent
     (kernel.atomicExecution model reference) event
 
+/-- Numerator mass at the structurally edited atomic endpoint. -/
+noncomputable def atomicNumerator (model : ExactModel S) (kernel : Kernel S)
+    (reference : S.Assignment) : QProb :=
+  (kernel.atomicRecord model reference).observedValue
+    (kernel.atomicEvent model reference (kernel.numeratorEvent reference))
+
+/-- Denominator mass at the structurally edited atomic endpoint. -/
+noncomputable def atomicDenominator (model : ExactModel S) (kernel : Kernel S)
+    (reference : S.Assignment) : QProb :=
+  (kernel.atomicRecord model reference).observedValue
+    (kernel.atomicEvent model reference (kernel.conditionEvent reference))
+
 end Kernel
 
 /--
@@ -209,8 +221,10 @@ theorem Kernel.atomicRecord_probability
         (kernel.atomicEvent model reference event))
       ((kernel.distribution model reference).probVal event) := by
   exact QProb.equiv_trans
-    (AtomicIntervention.Execution.DeterministicRealizesEvaluation.endpointRecord_observedValue
-      (kernel.atomicDeterministicRealizes model reference) event)
+    (AtomicIntervention.Execution.DeterministicRealizesEvaluation.canonicalExecution_target_observedValue
+      (kernel.atomicBaseDeterministicRealizes model reference)
+      (kernel.atomicBaseEndpointInterventionAbsorbed model reference)
+      event)
     (by
       change QProb.Equiv
         (model.prior.probVal
@@ -221,6 +235,22 @@ theorem Kernel.atomicRecord_probability
         (QProb.equiv_symm
           ((kernel.actionRecord model reference).observedDist_probVal event))
         (kernel.actionRecord_probability model reference event))
+
+theorem Kernel.atomicNumerator_probability
+    (model : ExactModel S) (kernel : Kernel S) (reference : S.Assignment) :
+    QProb.Equiv (kernel.atomicNumerator model reference)
+      ((kernel.distribution model reference).probVal
+        (kernel.numeratorEvent reference)) :=
+  kernel.atomicRecord_probability model reference
+    (kernel.numeratorEvent reference)
+
+theorem Kernel.atomicDenominator_probability
+    (model : ExactModel S) (kernel : Kernel S) (reference : S.Assignment) :
+    QProb.Equiv (kernel.atomicDenominator model reference)
+      ((kernel.distribution model reference).probVal
+        (kernel.conditionEvent reference)) :=
+  kernel.atomicRecord_probability model reference
+    (kernel.conditionEvent reference)
 
 /--
 A kernel action certificate whose execution is definitionally the canonical
@@ -244,27 +274,6 @@ noncomputable def canonical (model : ExactModel S) (kernel : Kernel S)
     (reference : S.Assignment) :
     AtomicKernelActionRealization model kernel reference where
   deterministic := kernel.atomicDeterministicRealizes model reference
-
-theorem probability
-    (realization : AtomicKernelActionRealization model kernel reference)
-    (event : S.Assignment -> Bool) :
-    QProb.Equiv
-      (realization.deterministic.endpointRecord.observedValue
-        (kernel.atomicEvent model reference event))
-      ((kernel.distribution model reference).probVal event) := by
-  exact QProb.equiv_trans
-    (AtomicIntervention.Execution.DeterministicRealizesEvaluation.endpointRecord_observedValue
-      realization.deterministic event)
-    (by
-      change QProb.Equiv
-        (model.prior.probVal
-          (fun assignment =>
-            event (model.evalUnder (kernel.intervention reference) assignment)))
-        ((kernel.distribution model reference).probVal event)
-      exact QProb.equiv_trans
-        (QProb.equiv_symm
-          ((kernel.actionRecord model reference).observedDist_probVal event))
-        (kernel.actionRecord_probability model reference event))
 
 end AtomicKernelActionRealization
 
@@ -466,35 +475,9 @@ noncomputable def ofSupported
     | value equivalent => exact equivalent
   exact QProb.equiv_trans operationToRatio ratioToValue
 
-/-- Numerator mass read from the actual structurally edited endpoint. -/
-noncomputable def atomicNumerator
-    (realization : KernelOperationRealization model kernel reference) : QProb :=
-  realization.atomicAction.deterministic.endpointRecord.observedValue
-    (kernel.atomicEvent model reference (kernel.numeratorEvent reference))
-
-/-- Denominator mass read from the actual structurally edited endpoint. -/
-noncomputable def atomicDenominator
-    (realization : KernelOperationRealization model kernel reference) : QProb :=
-  realization.atomicAction.deterministic.endpointRecord.observedValue
-    (kernel.atomicEvent model reference (kernel.conditionEvent reference))
-
-theorem atomicNumerator_probability
-    (realization : KernelOperationRealization model kernel reference) :
-    QProb.Equiv realization.atomicNumerator
-      ((kernel.distribution model reference).probVal
-        (kernel.numeratorEvent reference)) :=
-  realization.atomicAction.probability (kernel.numeratorEvent reference)
-
-theorem atomicDenominator_probability
-    (realization : KernelOperationRealization model kernel reference) :
-    QProb.Equiv realization.atomicDenominator
-      ((kernel.distribution model reference).probVal
-        (kernel.conditionEvent reference)) :=
-  realization.atomicAction.probability (kernel.conditionEvent reference)
-
 theorem atomicDenominator_positive
     (realization : KernelOperationRealization model kernel reference) :
-    0 < realization.atomicDenominator.num := by
+    0 < (kernel.atomicDenominator model reference).num := by
   have distributionPositive :
       0 < ((kernel.distribution model reference).probVal
         (kernel.conditionEvent reference)).num := by
@@ -506,7 +489,8 @@ theorem atomicDenominator_positive
     simpa [FiniteProbRecord.EventPositive, FiniteProbRecord.probVal]
       using positive
   exact (QProb.equiv_num_pos_iff
-    realization.atomicDenominator_probability).mpr distributionPositive
+    (kernel.atomicDenominator_probability model reference)).mpr
+      distributionPositive
 
 /--
 The value carried by a kernel certificate is the conditional ratio computed
@@ -515,7 +499,8 @@ from the atomically edited endpoint, not merely from the compact override.
 theorem atomicConditionedValue
     (realization : KernelOperationRealization model kernel reference) :
     QProb.Equiv
-      (QProb.div realization.atomicNumerator realization.atomicDenominator
+      (QProb.div (kernel.atomicNumerator model reference)
+        (kernel.atomicDenominator model reference)
         realization.atomicDenominator_positive)
       realization.value := by
   have distributionPositive :
@@ -530,7 +515,8 @@ theorem atomicConditionedValue
       using positive
   have endpointToDistribution :
       QProb.Equiv
-        (QProb.div realization.atomicNumerator realization.atomicDenominator
+        (QProb.div (kernel.atomicNumerator model reference)
+          (kernel.atomicDenominator model reference)
           realization.atomicDenominator_positive)
         (QProb.div
           ((kernel.distribution model reference).probVal
@@ -538,8 +524,9 @@ theorem atomicConditionedValue
           ((kernel.distribution model reference).probVal
             (kernel.conditionEvent reference))
           distributionPositive) :=
-    QProb.div_congr realization.atomicNumerator_probability
-      realization.atomicDenominator_probability
+    QProb.div_congr
+      (kernel.atomicNumerator_probability model reference)
+      (kernel.atomicDenominator_probability model reference)
       realization.atomicDenominator_positive distributionPositive
   have distributionToValue :
       QProb.Equiv

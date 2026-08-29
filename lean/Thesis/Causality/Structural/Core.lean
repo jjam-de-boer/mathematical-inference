@@ -41,6 +41,7 @@ inductive CausalEditLabel where
   | conditioning
   | compactSetting
   | compactUnsetting
+  | unsetting
   | learning
   | forgetting
   | relating (kind : CausalLinkKind)
@@ -80,6 +81,7 @@ def apply {S : ObservedSignature} {R : CausalEpistemicRecord S}
     match operation.interventionPolicy with
     | .preserve => R.intervention
     | .clear => HardIntervention.empty S
+  locks := R.executedLocks .reindexBelief
 
 end Operation
 
@@ -263,6 +265,16 @@ inductive CausalEditOperation :
   | compactUnsetting {S : ObservedSignature}
       {source : CausalEpistemicRecord S}
       (target : Fin S.count) : CausalEditOperation source S
+  | unsetting {S : ObservedSignature}
+      {source : CausalEpistemicRecord S}
+      (target : Fin S.count)
+      (h : source.UnsetReady target) : CausalEditOperation source S
+  | observing {S : ObservedSignature}
+      {source : CausalEpistemicRecord S}
+      (nodes : NodeSet S) (reference : S.Assignment)
+      (hEvidence : source.belief.EventPositive
+        (source.nodeObservationEvidence nodes reference)) :
+      CausalEditOperation source S
   | learningTerminal {S : ObservedSignature}
       {source : CausalEpistemicRecord S} (spec : TerminalVariableSpec S) :
       CausalEditOperation source spec.extendSignature
@@ -340,7 +352,10 @@ def result : CausalEditOperation source T -> CausalEpistemicRecord T
   | .compactSetting target value => source.setVariable target value
   | .compactIntervening nodes reference =>
       source.interveneNodes nodes reference
-  | .compactUnsetting target => source.unsetVariable target
+  | .compactUnsetting target => source.clearVariable target
+  | .unsetting target h => source.unsetVariable target h
+  | .observing nodes reference hEvidence =>
+      source.observeNodes nodes reference hEvidence
   | .learningTerminal spec => spec.learnRecord source
   | .forgettingTerminal original _ => original
   | .learningEndogenous spec => spec.learnRecord
@@ -366,6 +381,8 @@ def label : CausalEditOperation source T -> CausalEditLabel
   | .compactSetting _ _ => .compactSetting
   | .compactIntervening _ _ => .compactSetting
   | .compactUnsetting _ => .compactUnsetting
+  | .unsetting _ _ => .unsetting
+  | .observing _ _ _ => .conditioning
   | .learningTerminal _
   | .learningEndogenous _
   | .learningExogenous _ => .learning
@@ -392,9 +409,11 @@ def ofRecordStep
     CausalEditOperation source S :=
   match step with
   | .conditioning _ evidence hEvidence => .conditioning evidence hEvidence
+  | .observing _ nodes reference hEvidence =>
+      .observing nodes reference hEvidence
   | .setting _ selected value => .compactSetting selected value
   | .intervening _ nodes reference => .compactIntervening nodes reference
-  | .unsetting _ selected => .compactUnsetting selected
+  | .unsetting _ selected h => .unsetting selected h
 
 @[simp] theorem ofRecordStep_result
     {S : ObservedSignature} {source target : CausalEpistemicRecord S}

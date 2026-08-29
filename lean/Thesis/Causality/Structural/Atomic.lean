@@ -466,6 +466,12 @@ theorem untransportObserved_trans (first : SameCoordinates S T)
   funext node
   simp [untransportObserved, trans, NodeEquiv.trans]
 
+@[simp] theorem untransportObserved_refl (S : ObservedSignature)
+    (assignment : S.Assignment) :
+    (refl S).untransportObserved assignment = assignment := by
+  funext node
+  rfl
+
 end SameCoordinates
 
 /-- A constructive equivalence between two finite index sets. -/
@@ -840,6 +846,9 @@ end EndpointInterventionAbsorbed
 Transport the current epistemic belief through a constructive edit execution.
 The resulting record uses the actual endpoint SCM and no residual compact
 intervention override.
+
+Call this builder once, when installing the reindex step. After that step is
+the path target, the endpoint is `execution.target.record` — do not rebuild.
 -/
 def endpointRecord {S : ObservedSignature} {source : CausalMode S}
     {execution : Execution source} {reference :
@@ -849,6 +858,7 @@ def endpointRecord {S : ObservedSignature} {source : CausalMode S}
   model := execution.target.record.model
   belief := source.record.belief.map realizes.assignment
   intervention := HardIntervention.empty execution.signature
+  locks := execution.target.record.executedLocks .reindexBelief
 
 /-- Intrinsic belief reindexing data for the canonical probability endpoint. -/
 def endpointReindexing {S : ObservedSignature} {source : CausalMode S}
@@ -953,15 +963,11 @@ noncomputable def canonicalRealizes
       realizes.endpointRecord :=
   rfl
 
-@[simp] theorem canonicalRealizes_endpointRecord
-    {S : ObservedSignature} {source : CausalMode S}
-    {execution : Execution source} {reference :
-      source.record.model.latent.Assignment -> S.Assignment}
-    (realizes : DeterministicRealizesEvaluation execution reference)
-    (absorbed : EndpointInterventionAbsorbed realizes) :
-    (realizes.canonicalRealizes absorbed).endpointRecord =
-      (realizes.canonicalExecution absorbed).target.record :=
-  rfl
+/--
+After canonicalization, the probability endpoint is the path target
+(`canonicalExecution_target_record`).  Do not call `endpointRecord` on
+`canonicalRealizes`; that would stamp `.reindexBelief` again.
+-/
 
 def endpointEvent {S : ObservedSignature} {source : CausalMode S}
     (execution : Execution source) (event : S.Assignment -> Bool) :
@@ -999,6 +1005,40 @@ theorem endpointRecord_observedValue
           rw [realizes.evaluate]
           unfold transportedObserved
           rw [SameCoordinates.untransportObserved_transportObserved])))
+
+theorem endpointEvent_canonicalExecution
+    {S : ObservedSignature} {source : CausalMode S}
+    {execution : Execution source} {reference :
+      source.record.model.latent.Assignment -> S.Assignment}
+    (realizes : DeterministicRealizesEvaluation execution reference)
+    (absorbed : EndpointInterventionAbsorbed realizes)
+    (event : S.Assignment -> Bool) :
+    endpointEvent (realizes.canonicalExecution absorbed) event =
+      endpointEvent execution event := by
+  funext assignment
+  unfold endpointEvent canonicalExecution Execution.append endpointExecution
+  rw [SameCoordinates.untransportObserved_trans,
+    SameCoordinates.untransportObserved_refl]
+
+/--
+After the reindex step is the path target, read that record. Do not call
+`endpointRecord` on `canonicalRealizes`.
+-/
+theorem canonicalExecution_target_observedValue
+    {S : ObservedSignature} {source : CausalMode S}
+    {execution : Execution source} {reference :
+      source.record.model.latent.Assignment -> S.Assignment}
+    (realizes : DeterministicRealizesEvaluation execution reference)
+    (absorbed : EndpointInterventionAbsorbed realizes)
+    (event : S.Assignment -> Bool) :
+    QProb.Equiv
+      ((realizes.canonicalExecution absorbed).target.record.observedValue
+        (endpointEvent (realizes.canonicalExecution absorbed) event))
+      (source.record.belief.probVal
+        (fun assignment => event (reference assignment))) := by
+  simpa [canonicalExecution_target_record,
+    endpointEvent_canonicalExecution realizes absorbed event] using
+    (endpointRecord_observedValue realizes event)
 
 /--
 The two probability-bearing fields needed to identify the canonical endpoint

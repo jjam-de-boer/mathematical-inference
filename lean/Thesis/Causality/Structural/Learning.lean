@@ -188,6 +188,7 @@ def learnRecord {S : ObservedSignature} {R : CausalEpistemicRecord S}
   model := spec.extendModel
   belief := R.belief
   intervention := spec.terminalSpec.liftIntervention R.intervention
+  locks := R.acrossLocks .learnEndogenous
 
 end EndogenousVariableSpec
 
@@ -383,6 +384,7 @@ def learnRecord (spec : ExogenousVariableSpec)
   model := spec.extendModel R.model
   belief := spec.extendBelief R
   intervention := R.intervention
+  locks := R.executedLocks .learnExogenous
 
 end ExogenousVariableSpec
 

@@ -96,10 +96,8 @@ namespace CausalEpistemicRecord
 /-- Execute one later action while retaining the current model and belief. -/
 def executeAction (record : CausalEpistemicRecord S)
     (action : (node : Fin S.count) -> Option (S.Value node)) :
-    CausalEpistemicRecord S where
-  model := record.model
-  belief := record.belief
-  intervention := record.intervention.overlay action
+    CausalEpistemicRecord S :=
+  { record with intervention := record.intervention.overlay action }
 
 @[simp] theorem executeAction_model (record : CausalEpistemicRecord S)
     (action : (node : Fin S.count) -> Option (S.Value node)) :
@@ -114,6 +112,7 @@ def executeAction (record : CausalEpistemicRecord S)
 @[simp] theorem executeAction_noIntervention
     (record : CausalEpistemicRecord S) :
     record.executeAction (FiniteLatentSCM.noIntervention S) = record := by
+  cases record
   unfold executeAction
   rw [HardIntervention.overlay_noIntervention]
 

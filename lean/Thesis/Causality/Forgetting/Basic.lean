@@ -809,6 +809,7 @@ def deleteRecord (spec : ObservedDeletionSpec S)
   model := spec.restrictModel record.model
   belief := record.belief
   intervention := spec.restrictIntervention record.intervention
+  locks := record.acrossLocks .forgetUnusedEndogenous
 
 theorem deleteRecord_observedValue (spec : ObservedDeletionSpec S)
     (record : CausalEpistemicRecord S)
@@ -1480,6 +1481,7 @@ def deleteRecord {record : CausalEpistemicRecord S}
   model := spec.reduceModel
   belief := record.belief.map spec.restrictLatentAssignment
   intervention := record.intervention
+  locks := record.executedLocks .forgetUnusedExogenous
 
 theorem deleteRecord_observedValue
     (record : CausalEpistemicRecord S)
