@@ -34,82 +34,82 @@ inductive CanCommit :
       (h : CanCommitPearl R) : CanCommit R S
   | learnTerminal {S : ObservedSignature} {R : CausalEpistemicRecord S}
       (spec : TerminalVariableSpec S) :
-      LockStack.topPendingEq R.locks .learnTerminal →
+      ModalStack.topPendingEq R.stack .learnTerminal →
         CanCommit R spec.extendSignature
   | learnEndogenous {S : ObservedSignature} {R : CausalEpistemicRecord S}
       (spec : EndogenousVariableSpec R.baseOfCommit) :
-      LockStack.topPendingEq R.locks .learnEndogenous →
+      ModalStack.topPendingEq R.stack .learnEndogenous →
         CanCommit R spec.extendSignature
   | forgetTerminal {S : ObservedSignature}
       (original : CausalEpistemicRecord S) (spec : TerminalVariableSpec S)
       {R : CausalEpistemicRecord spec.extendSignature} :
-      LockStack.topPendingEq R.locks .forgetTerminal →
-        R.baseOfCommit.locks = original.acrossLocks .learnTerminal →
+      ModalStack.topPendingEq R.stack .forgetTerminal →
+        R.baseOfCommit.stack = original.acrossStack .learnTerminal →
         CanCommit R S
   | forgetEndogenous {S : ObservedSignature}
       (original : CausalEpistemicRecord S)
       (spec : EndogenousVariableSpec original)
       {R : CausalEpistemicRecord spec.extendSignature} :
-      LockStack.topPendingEq R.locks .forgetEndogenous →
+      ModalStack.topPendingEq R.stack .forgetEndogenous →
         R.baseOfCommit = spec.learnRecord →
         CanCommit R S
   | forgetUnusedEndogenous {S : ObservedSignature}
       {R : CausalEpistemicRecord S} (spec : ObservedDeletionSpec S) :
-      LockStack.topPendingEq R.locks .forgetUnusedEndogenous →
+      ModalStack.topPendingEq R.stack .forgetUnusedEndogenous →
         CanCommit R spec.signature
   | learnExogenous {S : ObservedSignature} {R : CausalEpistemicRecord S}
       (spec : ExogenousVariableSpec) :
-      LockStack.topUncommittedEq R.locks .learnExogenous →
+      ModalStack.topUncommittedEq R.stack .learnExogenous →
         CanCommit R S
   | forgetExogenous {S : ObservedSignature} {R : CausalEpistemicRecord S} :
-      LockStack.topUncommittedEq R.locks .forgetExogenous →
+      ModalStack.topUncommittedEq R.stack .forgetExogenous →
         ForgetExogenousReady R.baseOfCommit →
         CanCommit R S
   | forgetUnusedExogenous {S : ObservedSignature}
       {R : CausalEpistemicRecord S}
       (spec : ExogenousDeletionSpec R.baseOfCommit.model) :
-      LockStack.topUncommittedEq R.locks .forgetUnusedExogenous →
+      ModalStack.topUncommittedEq R.stack .forgetUnusedExogenous →
         CanCommit R S
   | relatingDirected {S : ObservedSignature} {R : CausalEpistemicRecord S}
       {parent child : Fin S.count} {earlier : parent.val < child.val}
       (operation : DirectedLink.RelateOperation S parent child earlier) :
-      LockStack.topPendingEq R.locks .relateDirected →
+      ModalStack.topPendingEq R.stack .relateDirected →
         CanCommit R (DirectedLink.addSignature S parent child earlier)
   | unrelatingDirected {S : ObservedSignature} {R : CausalEpistemicRecord S}
       {parent child : Fin S.count}
       (operation : DirectedLink.UnrelateOperation S parent child) :
-      LockStack.topPendingEq R.locks .unrelateDirected →
+      ModalStack.topPendingEq R.stack .unrelateDirected →
         CanCommit R (DirectedLink.removeSignature S parent child)
   | relatingLatent {S : ObservedSignature} {R : CausalEpistemicRecord S}
       {source : Fin R.baseOfCommit.model.latent.count} {child : Fin S.count}
       (operation : LatentLink.RelateOperation R.baseOfCommit source child) :
-      LockStack.topUncommittedEq R.locks .relateLatent →
+      ModalStack.topUncommittedEq R.stack .relateLatent →
         CanCommit R S
   | unrelatingLatent {S : ObservedSignature} {R : CausalEpistemicRecord S}
       {source : Fin R.baseOfCommit.model.latent.count} {child : Fin S.count}
       (operation : LatentLink.UnrelateOperation R.baseOfCommit source child) :
-      LockStack.topUncommittedEq R.locks .unrelateLatent →
+      ModalStack.topUncommittedEq R.stack .unrelateLatent →
         CanCommit R S
   | replaceMechanismAt {S : ObservedSignature} {R : CausalEpistemicRecord S}
       {target : Fin S.count}
       (operation : StructuralSetting.Operation R.baseOfCommit target) :
-      LockStack.topUncommittedEq R.locks .replaceMechanism →
+      ModalStack.topUncommittedEq R.stack .replaceMechanism →
         CanCommit R S
   | replaceMechanisms {S : ObservedSignature} {R : CausalEpistemicRecord S}
       (operation : StructuralMechanismReplacement.Operation R.baseOfCommit) :
-      LockStack.topUncommittedEq R.locks .replaceMechanism →
+      ModalStack.topUncommittedEq R.stack .replaceMechanism →
         CanCommit R S
   | settingMechanism {S : ObservedSignature} {R : CausalEpistemicRecord S}
       (target : Fin S.count) (value : S.Value target) :
-      LockStack.topUncommittedEq R.locks .replaceMechanism →
+      ModalStack.topUncommittedEq R.stack .replaceMechanism →
         CanCommit R S
   | reindexingBelief {S : ObservedSignature} {R : CausalEpistemicRecord S}
       (operation : BeliefReindexing.CertifiedOperation R.baseOfCommit) :
-      LockStack.topUncommittedEq R.locks .reindexBelief →
+      ModalStack.topUncommittedEq R.stack .reindexBelief →
         CanCommit R S
   | surgery {S : ObservedSignature} {R : CausalEpistemicRecord S}
       (action : (node : Fin S.count) -> Option (S.Value node)) :
-      LockStack.topPendingEq R.locks .surgery →
+      ModalStack.topPendingEq R.stack .surgery →
         CanCommit R (SurgicalIntervention.signature R.baseOfCommit.model action)
 
 /--
@@ -216,12 +216,12 @@ theorem forgetRecord_eq_announce_commit (spec : ExogenousVariableSpec)
           (by
             simp [CausalEpistemicRecord.baseOfCommit_announce,
               CausalEpistemicRecord.ForgetExogenousReady,
-              LockStack.forgetExogenousReady, learnRecord,
-              CausalEpistemicRecord.executedLocks])) := by
+              ModalStack.forgetExogenousReady, learnRecord,
+              CausalEpistemicRecord.executedStack])) := by
   cases original
   simp [CausalEpistemicRecord.commit, CausalEpistemicRecord.announce,
     CausalEpistemicRecord.baseOfCommit, learnRecord,
-    CausalEpistemicRecord.executedLocks, CausalEpistemicRecord.restoreTop]
+    CausalEpistemicRecord.executedStack, CausalEpistemicRecord.restoreTop]
 
 end ExogenousVariableSpec
 

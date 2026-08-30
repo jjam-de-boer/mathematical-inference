@@ -150,7 +150,7 @@ def apply (R : CausalEpistemicRecord S)
   model := model R.model action
   belief := R.belief
   intervention := HardIntervention.empty (signature R.model action)
-  locks := R.acrossLocks .surgery
+  stack := R.acrossStack .surgery
 
 /--
 The three constituent obligations of a finite `do` construction: remove every

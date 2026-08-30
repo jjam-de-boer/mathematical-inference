@@ -1,0 +1,13 @@
+---
+description: Thesis figures and tables — one idea, cite or introduce
+globs: latex/**/*.{tex,sty}
+alwaysApply: false
+---
+
+# Figures and tables
+
+- **Figures** carry one idea. Draw in `\sffamily`. Keep captions short: do not restate numbers already on the graphic.
+- **Tables** are routes, inventories, or comparisons. Do not recast a correspondence diagram (e.g. Curry--Howard) as a numbered table; leave it a figure.
+- **Main text** only needs the figures the argument uses. An appendix may repeat a graph if the local definition is opaque without it; the caption should name the main-text figure it matches.
+- **Every figure and table** is `\cref`'d from the argument or explicitly introduced in the sentence that precedes it. A caption pointing at a definition does not replace that introduction.
+- Mira endogenous nodes share circle style (`\sffamily`, `inner sep`, fill, arrow tips). Observed SCM drawings (5.2, A.1) stay `\small` / 8 mm; explicit-latent drawings (A.3, A.4) stay `\scriptsize` / 7 mm with rectangular exogenous roots.

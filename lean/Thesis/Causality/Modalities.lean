@@ -9,7 +9,7 @@ open Probability
 /-!
 Causal epistemic records and their executable modal transitions.
 
-Records carry a lock stack indexed by the current signature.
+Records carry a modal stack indexed by the current signature.
 `announce` pushes an uncommitted same-`S` marker; `announceAcross` pushes a
 `pending` across marker still at the old `S`. `pop` aborts that top frame
 (uncommitted or pending). Pearl realisation is `commitPearl`; the indexed
@@ -82,7 +82,7 @@ end HardIntervention
 /--
 Same-signature modal markers.  Announcing pushes an uncommitted frame;
 committing stores the pre-commit payloads on a `committed` constructor.
-Signature-changing edits use `AcrossKind` on `LockStack.across`.
+Signature-changing edits use `AcrossKind` on `ModalStack.across`.
 -/
 inductive ModalMarker (S : ObservedSignature) where
   | condition
@@ -101,7 +101,7 @@ inductive ModalMarker (S : ObservedSignature) where
   | forgetExogenous
   | forgetUnusedExogenous
 
-/-- Signature-changing stack frames.  The destination index is `LockStack`'s. -/
+/-- Signature-changing stack frames.  The destination index is `ModalStack`'s. -/
 inductive AcrossKind where
   | learnTerminal
   | learnEndogenous
@@ -114,100 +114,100 @@ inductive AcrossKind where
   deriving DecidableEq, Repr
 
 /--
-Lock stack indexed by the current observed signature.  `uncommitted` and
-`pending` are held locks still at `S` (`pending` is a signature-changing
+Modal stack indexed by the current observed signature.  `uncommitted` and
+`pending` are held frames still at `S` (`pending` is a signature-changing
 marker that has not yet been realised).  `committed` stays at `S`.  `across`
 is the executed snapshot at the new signature; payloads are stored rather
 than nested records so the family is not nested.
 -/
-inductive LockStack : ObservedSignature -> Type 1 where
-  | nil {S : ObservedSignature} : LockStack S
+inductive ModalStack : ObservedSignature -> Type 1 where
+  | nil {S : ObservedSignature} : ModalStack S
   | uncommitted {S : ObservedSignature} (marker : ModalMarker S)
-      (rest : LockStack S) : LockStack S
+      (rest : ModalStack S) : ModalStack S
   | pending {S : ObservedSignature} (kind : AcrossKind)
-      (rest : LockStack S) : LockStack S
+      (rest : ModalStack S) : ModalStack S
   | committed {S : ObservedSignature} (marker : ModalMarker S)
       (model : ExactModel S)
       (belief : FiniteProbRecord model.latent.Assignment)
       (intervention : HardIntervention S)
-      (snapLocks : LockStack S)
-      (rest : LockStack S) : LockStack S
+      (snapStack : ModalStack S)
+      (rest : ModalStack S) : ModalStack S
   | across {S T : ObservedSignature} (kind : AcrossKind)
       (model : ExactModel S)
       (belief : FiniteProbRecord model.latent.Assignment)
       (intervention : HardIntervention S)
-      (oldLocks : LockStack S)
-      (rest : LockStack T) : LockStack T
+      (oldStack : ModalStack S)
+      (rest : ModalStack T) : ModalStack T
 
-namespace LockStack
+namespace ModalStack
 
-def tail {S : ObservedSignature} : LockStack S -> LockStack S
+def tail {S : ObservedSignature} : ModalStack S -> ModalStack S
   | .nil => .nil
   | .uncommitted _ rest => rest
   | .pending _ rest => rest
   | .committed _ _ _ _ _ rest => rest
   | .across _ _ _ _ _ rest => rest
 
-@[simp] theorem tail_uncommitted (marker : ModalMarker S) (rest : LockStack S) :
+@[simp] theorem tail_uncommitted (marker : ModalMarker S) (rest : ModalStack S) :
     (uncommitted marker rest).tail = rest :=
   rfl
 
-@[simp] theorem tail_pending (kind : AcrossKind) (rest : LockStack S) :
+@[simp] theorem tail_pending (kind : AcrossKind) (rest : ModalStack S) :
     (pending kind rest).tail = rest :=
   rfl
 
 @[simp] theorem tail_committed (marker : ModalMarker S) (model : ExactModel S)
     (belief : FiniteProbRecord model.latent.Assignment)
-    (intervention : HardIntervention S) (snapLocks rest : LockStack S) :
-    (committed marker model belief intervention snapLocks rest).tail = rest :=
+    (intervention : HardIntervention S) (snapStack rest : ModalStack S) :
+    (committed marker model belief intervention snapStack rest).tail = rest :=
   rfl
 
-def topUncommittedEq {S : ObservedSignature} (locks : LockStack S)
+def topUncommittedEq {S : ObservedSignature} (stack : ModalStack S)
     (marker : ModalMarker S) : Prop :=
-  match locks with
+  match stack with
   | .uncommitted m _ => m = marker
   | _ => False
 
 @[simp] theorem topUncommittedEq_uncommitted (marker : ModalMarker S)
-    (rest : LockStack S) :
+    (rest : ModalStack S) :
     topUncommittedEq (uncommitted marker rest) marker :=
   rfl
 
-def topPendingEq {S : ObservedSignature} (locks : LockStack S)
+def topPendingEq {S : ObservedSignature} (stack : ModalStack S)
     (kind : AcrossKind) : Prop :=
-  match locks with
+  match stack with
   | .pending k _ => k = kind
   | _ => False
 
-@[simp] theorem topPendingEq_pending (kind : AcrossKind) (rest : LockStack S) :
+@[simp] theorem topPendingEq_pending (kind : AcrossKind) (rest : ModalStack S) :
     topPendingEq (pending kind rest) kind :=
   rfl
 
-def unconditionReady {S : ObservedSignature} (locks : LockStack S) : Prop :=
-  match locks with
+def unconditionReady {S : ObservedSignature} (stack : ModalStack S) : Prop :=
+  match stack with
   | .committed (.observe _ _) _ _ _ _ _ => True
   | .committed .condition _ _ _ _ _ => True
   | _ => False
 
-def restoreMechanismReady {S : ObservedSignature} (locks : LockStack S) : Prop :=
-  match locks with
+def restoreMechanismReady {S : ObservedSignature} (stack : ModalStack S) : Prop :=
+  match stack with
   | .committed .replaceMechanism _ _ _ _ _ => True
   | _ => False
 
-def forgetExogenousReady {S : ObservedSignature} (locks : LockStack S) : Prop :=
-  match locks with
+def forgetExogenousReady {S : ObservedSignature} (stack : ModalStack S) : Prop :=
+  match stack with
   | .committed .learnExogenous _ _ _ _ _ => True
   | _ => False
 
-def undoReady {S : ObservedSignature} (locks : LockStack S) : Prop :=
-  match locks with
+def undoReady {S : ObservedSignature} (stack : ModalStack S) : Prop :=
+  match stack with
   | .committed _ _ _ _ _ _ => True
   | _ => False
 
-end LockStack
+end ModalStack
 
 /--
-Epistemic state.  `locks` is the signature-indexed lock stack: `announce`
+Epistemic state.  `stack` is the signature-indexed modal stack: `announce`
 and `announceAcross` push, `pop` drops an uncommitted or pending top frame,
 `commitPearl` realises a same-`S` Pearl marker.  The public indexed `commit`
 is in `Structural.Commit`.
@@ -216,7 +216,7 @@ structure CausalEpistemicRecord (S : ObservedSignature) where
   model : ExactModel S
   belief : FiniteProbRecord model.latent.Assignment
   intervention : HardIntervention S
-  locks : LockStack S
+  stack : ModalStack S
 
 namespace CausalEpistemicRecord
 
@@ -224,32 +224,32 @@ def initial (model : ExactModel S) : CausalEpistemicRecord S where
   model := model
   belief := model.prior
   intervention := HardIntervention.empty S
-  locks := .nil
+  stack := .nil
 
 /-- Same-`S` executed frame whose snapshot is this record. -/
-def executedLocks (R : CausalEpistemicRecord S) (marker : ModalMarker S) :
-    LockStack S :=
-  .committed marker R.model R.belief R.intervention R.locks R.locks
+def executedStack (R : CausalEpistemicRecord S) (marker : ModalMarker S) :
+    ModalStack S :=
+  .committed marker R.model R.belief R.intervention R.stack R.stack
 
 /-- Signature-changing executed frame whose snapshot is this record. -/
-def acrossLocks (R : CausalEpistemicRecord S) (kind : AcrossKind)
-    {T : ObservedSignature} : LockStack T :=
-  .across kind R.model R.belief R.intervention R.locks .nil
+def acrossStack (R : CausalEpistemicRecord S) (kind : AcrossKind)
+    {T : ObservedSignature} : ModalStack T :=
+  .across kind R.model R.belief R.intervention R.stack .nil
 
 /-- Push an uncommitted marker.  Payloads are unchanged. -/
 def announce (R : CausalEpistemicRecord S) (marker : ModalMarker S) :
     CausalEpistemicRecord S :=
-  { R with locks := .uncommitted marker R.locks }
+  { R with stack := .uncommitted marker R.stack }
 
 /-- Push a pending signature-changing marker.  Payloads are unchanged. -/
 def announceAcross (R : CausalEpistemicRecord S) (kind : AcrossKind) :
     CausalEpistemicRecord S :=
-  { R with locks := .pending kind R.locks }
+  { R with stack := .pending kind R.stack }
 
 /-- The top frame exists and is not yet committed or executed
 (`.uncommitted` or `.pending`). -/
 def TopUncommitted (R : CausalEpistemicRecord S) : Prop :=
-  match R.locks with
+  match R.stack with
   | .uncommitted _ _ => True
   | .pending _ _ => True
   | _ => False
@@ -266,18 +266,18 @@ theorem announceAcross_topUncommitted (R : CausalEpistemicRecord S)
 
 @[simp] theorem announce_topUncommittedEq (R : CausalEpistemicRecord S)
     (marker : ModalMarker S) :
-    LockStack.topUncommittedEq (R.announce marker).locks marker :=
+    ModalStack.topUncommittedEq (R.announce marker).stack marker :=
   rfl
 
 @[simp] theorem announceAcross_topPendingEq (R : CausalEpistemicRecord S)
     (kind : AcrossKind) :
-    LockStack.topPendingEq (R.announceAcross kind).locks kind :=
+    ModalStack.topPendingEq (R.announceAcross kind).stack kind :=
   rfl
 
 /-- Abort an uncommitted or pending top announce.  Not a flag on commit. -/
 def pop (R : CausalEpistemicRecord S) (_h : TopUncommitted R) :
     CausalEpistemicRecord S :=
-  { R with locks := R.locks.tail }
+  { R with stack := R.stack.tail }
 
 theorem pop_announce (R : CausalEpistemicRecord S) (marker : ModalMarker S) :
     pop (R.announce marker) (announce_topUncommitted R marker) = R := by
@@ -291,7 +291,7 @@ theorem pop_announceAcross (R : CausalEpistemicRecord S) (kind : AcrossKind) :
 
 /-- Drop the uncommitted or pending top; payloads unchanged. -/
 def baseOfCommit (R : CausalEpistemicRecord S) : CausalEpistemicRecord S :=
-  { R with locks := R.locks.tail }
+  { R with stack := R.stack.tail }
 
 @[simp] theorem baseOfCommit_announce (R : CausalEpistemicRecord S)
     (marker : ModalMarker S) :
@@ -307,12 +307,12 @@ def baseOfCommit (R : CausalEpistemicRecord S) : CausalEpistemicRecord S :=
 
 /-- Reload the snapshot on the last committed same-`S` frame. -/
 def restoreTop (R : CausalEpistemicRecord S) : CausalEpistemicRecord S :=
-  match R.locks with
-  | .committed _ model belief intervention snapLocks _ =>
+  match R.stack with
+  | .committed _ model belief intervention snapStack _ =>
       { model := model
         belief := belief
         intervention := intervention
-        locks := snapLocks }
+        stack := snapStack }
   | _ => R
 
 /-- The latent event implementing observation of selected nodes at a valuation. -/
@@ -323,23 +323,23 @@ def nodeObservationEvidence (R : CausalEpistemicRecord S)
     (R.model.evalUnder R.intervention.value u)
 
 def UnsetReady (R : CausalEpistemicRecord S) (target : Fin S.count) : Prop :=
-  match R.locks with
+  match R.stack with
   | .committed (.set t _) model _ _ _ _ => t = target ∧ model = R.model
   | .committed (.intervene nodes _) model _ _ _ _ =>
       nodes target = true ∧ model = R.model
   | _ => False
 
 def UnconditionReady (R : CausalEpistemicRecord S) : Prop :=
-  LockStack.unconditionReady R.locks
+  ModalStack.unconditionReady R.stack
 
 def RestoreMechanismReady (R : CausalEpistemicRecord S) : Prop :=
-  LockStack.restoreMechanismReady R.locks
+  ModalStack.restoreMechanismReady R.stack
 
 def ForgetExogenousReady (R : CausalEpistemicRecord S) : Prop :=
-  LockStack.forgetExogenousReady R.locks
+  ModalStack.forgetExogenousReady R.stack
 
 def UndoReady (R : CausalEpistemicRecord S) : Prop :=
-  LockStack.undoReady R.locks
+  ModalStack.undoReady R.stack
 
 @[simp] theorem UnsetReady_baseOfCommit_announce
     (R : CausalEpistemicRecord S) (marker : ModalMarker S)
@@ -372,34 +372,34 @@ def UndoReady (R : CausalEpistemicRecord S) : Prop :=
 /-- Side conditions for realising the current uncommitted top marker. -/
 inductive CanCommitPearl (R : CausalEpistemicRecord S) : Type where
   | set (target : Fin S.count) (value : S.Value target) :
-      LockStack.topUncommittedEq R.locks (.set target value) →
+      ModalStack.topUncommittedEq R.stack (.set target value) →
         CanCommitPearl R
   | intervene (nodes : NodeSet S) (reference : S.Assignment) :
-      LockStack.topUncommittedEq R.locks (.intervene nodes reference) →
+      ModalStack.topUncommittedEq R.stack (.intervene nodes reference) →
         CanCommitPearl R
   | observe (nodes : NodeSet S) (reference : S.Assignment) :
-      LockStack.topUncommittedEq R.locks (.observe nodes reference) →
+      ModalStack.topUncommittedEq R.stack (.observe nodes reference) →
         R.belief.EventPositive
           (R.nodeObservationEvidence nodes reference) →
         CanCommitPearl R
   | condition (evidence : R.model.latent.Assignment -> Bool)
       (hEvidence : R.belief.EventPositive evidence) :
-      LockStack.topUncommittedEq R.locks .condition →
+      ModalStack.topUncommittedEq R.stack .condition →
         CanCommitPearl R
   | unset (target : Fin S.count) :
-      LockStack.topUncommittedEq R.locks (.unset target) →
+      ModalStack.topUncommittedEq R.stack (.unset target) →
         UnsetReady R.baseOfCommit target →
         CanCommitPearl R
   | uncondition :
-      LockStack.topUncommittedEq R.locks .uncondition →
+      ModalStack.topUncommittedEq R.stack .uncondition →
         UnconditionReady R.baseOfCommit →
         CanCommitPearl R
   | restoreMechanism :
-      LockStack.topUncommittedEq R.locks .restoreMechanism →
+      ModalStack.topUncommittedEq R.stack .restoreMechanism →
         RestoreMechanismReady R.baseOfCommit →
         CanCommitPearl R
   | undo :
-      LockStack.topUncommittedEq R.locks .undo →
+      ModalStack.topUncommittedEq R.stack .undo →
         UndoReady R.baseOfCommit →
         CanCommitPearl R
 
@@ -412,12 +412,12 @@ def commitPearl (R : CausalEpistemicRecord S) (h : CanCommitPearl R) :
       { model := base.model
         belief := base.belief
         intervention := base.intervention.set target value
-        locks := base.executedLocks (.set target value) }
+        stack := base.executedStack (.set target value) }
   | .intervene nodes reference _ =>
       { model := base.model
         belief := base.belief
         intervention := base.intervention.setNodes nodes reference
-        locks := base.executedLocks (.intervene nodes reference) }
+        stack := base.executedStack (.intervene nodes reference) }
   | .observe nodes reference _ positive =>
       { model := base.model
         belief :=
@@ -425,13 +425,13 @@ def commitPearl (R : CausalEpistemicRecord S) (h : CanCommitPearl R) :
             (base.nodeObservationEvidence nodes reference) (by
               simpa [baseOfCommit, nodeObservationEvidence] using positive)
         intervention := base.intervention
-        locks := base.executedLocks (.observe nodes reference) }
+        stack := base.executedStack (.observe nodes reference) }
   | .condition evidence hEvidence _ =>
       { model := base.model
         belief :=
           base.belief.conditionOn evidence (by simpa [baseOfCommit] using hEvidence)
         intervention := base.intervention
-        locks := base.executedLocks .condition }
+        stack := base.executedStack .condition }
   | .unset _ _ _ => restoreTop base
   | .uncondition _ _ => restoreTop base
   | .restoreMechanism _ _ => restoreTop base
@@ -452,7 +452,7 @@ def conditionLatent (R : CausalEpistemicRecord S)
   model := R.model
   belief := R.belief.conditionOn evidence hEvidence
   intervention := R.intervention
-  locks := R.executedLocks .condition
+  stack := R.executedStack .condition
 
 def conditionObservation (R : CausalEpistemicRecord S)
     (evidence : S.Assignment -> Bool)
@@ -474,7 +474,7 @@ def observeNodes (R : CausalEpistemicRecord S) (nodes : NodeSet S)
   belief :=
     R.belief.conditionOn (R.nodeObservationEvidence nodes reference) hEvidence
   intervention := R.intervention
-  locks := R.executedLocks (.observe nodes reference)
+  stack := R.executedStack (.observe nodes reference)
 
 def setVariable (R : CausalEpistemicRecord S)
     (target : Fin S.count) (value : S.Value target) :
@@ -482,7 +482,7 @@ def setVariable (R : CausalEpistemicRecord S)
   model := R.model
   belief := R.belief
   intervention := R.intervention.set target value
-  locks := R.executedLocks (.set target value)
+  stack := R.executedStack (.set target value)
 
 theorem setVariable_eq_announce_commit
     (R : CausalEpistemicRecord S) (target : Fin S.count)
@@ -491,7 +491,7 @@ theorem setVariable_eq_announce_commit
       (R.announce (.set target value)).commitPearl
         (.set target value (announce_topUncommittedEq R _)) := by
   cases R
-  simp [setVariable, announce, commitPearl, baseOfCommit, executedLocks]
+  simp [setVariable, announce, commitPearl, baseOfCommit, executedStack]
 
 /-- Execute a simultaneous finite hard intervention at a reference valuation. -/
 def interveneNodes (R : CausalEpistemicRecord S) (nodes : NodeSet S)
@@ -499,7 +499,7 @@ def interveneNodes (R : CausalEpistemicRecord S) (nodes : NodeSet S)
   model := R.model
   belief := R.belief
   intervention := R.intervention.setNodes nodes reference
-  locks := R.executedLocks (.intervene nodes reference)
+  stack := R.executedStack (.intervene nodes reference)
 
 theorem interveneNodes_eq_announce_commit
     (R : CausalEpistemicRecord S) (nodes : NodeSet S)
@@ -508,7 +508,7 @@ theorem interveneNodes_eq_announce_commit
       (R.announce (.intervene nodes reference)).commitPearl
         (.intervene nodes reference (announce_topUncommittedEq R _)) := by
   cases R
-  simp [interveneNodes, announce, commitPearl, baseOfCommit, executedLocks]
+  simp [interveneNodes, announce, commitPearl, baseOfCommit, executedStack]
 
 /-- Execute a list of single-node interventions from left to right. -/
 def setVariablesSequentially (R : CausalEpistemicRecord S)
@@ -667,7 +667,7 @@ theorem interveneNodesSequentially_intervention_value
 
 /--
 Simultaneous finite intervention agrees with sequential setting on the
-payload.  The lock stacks differ: simultaneous records one `intervene` frame.
+payload.  The modal stacks differ: simultaneous records one `intervene` frame.
 -/
 theorem interveneNodes_eq_sequential
     (R : CausalEpistemicRecord S) (nodes : NodeSet S)
@@ -705,7 +705,7 @@ theorem unsetVariable_eq_announce_commit
 theorem setVariable_UnsetReady (R : CausalEpistemicRecord S)
     (target : Fin S.count) (value : S.Value target) :
     (R.setVariable target value).UnsetReady target := by
-  simp [setVariable, UnsetReady, executedLocks]
+  simp [setVariable, UnsetReady, executedStack]
 
 /-- Provenance unset after set restores the pre-set record.  A 1-cell equation. -/
 theorem setVariable_unsetVariable (R : CausalEpistemicRecord S)
@@ -714,7 +714,7 @@ theorem setVariable_unsetVariable (R : CausalEpistemicRecord S)
       (setVariable_UnsetReady R target value) = R := by
   cases R
   simp [setVariable, unsetVariable, announce, commitPearl, baseOfCommit,
-    executedLocks, restoreTop]
+    executedStack, restoreTop]
 
 /-- Modal inverse of a LIFO `observe`/`condition` frame. -/
 def uncondition (R : CausalEpistemicRecord S)
@@ -723,7 +723,7 @@ def uncondition (R : CausalEpistemicRecord S)
     (.uncondition (announce_topUncommittedEq R _) (by
       simpa using h))
 
-/-- Restore the last executed same-`S` lock, whatever it was. -/
+/-- Restore the last executed same-`S` frame, whatever it was. -/
 def undo (R : CausalEpistemicRecord S)
     (h : R.UndoReady) : CausalEpistemicRecord S :=
   (R.announce .undo).commitPearl
@@ -785,23 +785,23 @@ theorem observedDist_probVal (R : CausalEpistemicRecord S)
 theorem restoreTop_model_of_unsetReady (R : CausalEpistemicRecord S)
     (target : Fin S.count) (h : R.UnsetReady target) :
     R.restoreTop.model = R.model := by
-  cases hlock : R.locks with
-  | committed marker model belief intervention snapLocks rest =>
+  cases hstack : R.stack with
+  | committed marker model belief intervention snapStack rest =>
       cases marker with
       | set t _ =>
           have : t = target ∧ model = R.model := by
-            simpa [UnsetReady, hlock] using h
-          simp [restoreTop, hlock]
+            simpa [UnsetReady, hstack] using h
+          simp [restoreTop, hstack]
           exact this.2
       | intervene nodes _ =>
           have : nodes target = true ∧ model = R.model := by
-            simpa [UnsetReady, hlock] using h
-          simp [restoreTop, hlock]
+            simpa [UnsetReady, hstack] using h
+          simp [restoreTop, hstack]
           exact this.2
       | _ =>
-          simp [UnsetReady, hlock] at h
+          simp [UnsetReady, hstack] at h
   | _ =>
-      simp [UnsetReady, hlock] at h
+      simp [UnsetReady, hstack] at h
 
 theorem unsetVariable_keeps_model (R : CausalEpistemicRecord S)
     (target : Fin S.count) (h : R.UnsetReady target) :

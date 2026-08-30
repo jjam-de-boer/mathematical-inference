@@ -81,7 +81,7 @@ def apply {S : ObservedSignature} {R : CausalEpistemicRecord S}
     match operation.interventionPolicy with
     | .preserve => R.intervention
     | .clear => HardIntervention.empty S
-  locks := R.executedLocks .reindexBelief
+  stack := R.executedStack .reindexBelief
 
 end Operation
 

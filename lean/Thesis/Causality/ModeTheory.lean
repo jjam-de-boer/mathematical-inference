@@ -41,13 +41,13 @@ def ofRecord {S : ObservedSignature} (R : CausalEpistemicRecord S) :
   belief := R.belief
   intervention := R.intervention
 
-/-- Pack the three fields as a record with an empty lock stack. -/
+/-- Pack the three fields as a record with an empty modal stack. -/
 def toRecord {S : ObservedSignature} (σ : CurrentState S) :
     CausalEpistemicRecord S where
   model := σ.model
   belief := σ.belief
   intervention := σ.intervention
-  locks := .nil
+  stack := .nil
 
 @[simp] theorem ofRecord_toRecord {S : ObservedSignature}
     (σ : CurrentState S) :
@@ -56,7 +56,7 @@ def toRecord {S : ObservedSignature} (σ : CurrentState S) :
 
 @[simp] theorem toRecord_ofRecord {S : ObservedSignature}
     (R : CausalEpistemicRecord S) :
-    (ofRecord R).toRecord = { R with locks := .nil } :=
+    (ofRecord R).toRecord = { R with stack := .nil } :=
   rfl
 
 /-- Posterior from the three fields agrees with the record. -/

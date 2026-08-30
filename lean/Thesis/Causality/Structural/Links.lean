@@ -35,7 +35,7 @@ def apply {S : ObservedSignature} {R : CausalEpistemicRecord S}
         · exact R.model.mechanism child parents latents }
   belief := R.belief
   intervention := R.intervention
-  locks := R.executedLocks .replaceMechanism
+  stack := R.executedStack .replaceMechanism
 
 end Operation
 
@@ -109,7 +109,7 @@ def apply {S : ObservedSignature} {R : CausalEpistemicRecord S}
       mechanism := operation.replacement }
   belief := R.belief
   intervention := R.intervention
-  locks := R.executedLocks .replaceMechanism
+  stack := R.executedStack .replaceMechanism
 
 @[simp] theorem apply_model_mechanism
     {S : ObservedSignature} {R : CausalEpistemicRecord S}
@@ -221,7 +221,7 @@ def apply (operation : RelateOperation S parent child earlier)
   model := operation.model R.model
   belief := R.belief
   intervention := liftIntervention R.intervention
-  locks := R.acrossLocks .relateDirected
+  stack := R.acrossStack .relateDirected
 
 end RelateOperation
 
@@ -298,7 +298,7 @@ def apply (operation : UnrelateOperation S parent child)
             latents }
   belief := R.belief
   intervention := liftIntervention R.intervention
-  locks := R.acrossLocks .unrelateDirected
+  stack := R.acrossStack .unrelateDirected
 
 end UnrelateOperation
 
@@ -358,7 +358,7 @@ def apply {S : ObservedSignature} {R : CausalEpistemicRecord S}
                 (LatentLink.oldIncident R.model source child oldIncident)) }
   belief := R.belief
   intervention := R.intervention
-  locks := R.executedLocks .relateLatent
+  stack := R.executedStack .relateLatent
 
 end RelateOperation
 
@@ -417,7 +417,7 @@ def apply {S : ObservedSignature} {R : CausalEpistemicRecord S}
                   selected oldIncident)) }
   belief := R.belief
   intervention := R.intervention
-  locks := R.executedLocks .unrelateLatent
+  stack := R.executedStack .unrelateLatent
 
 end UnrelateOperation
 

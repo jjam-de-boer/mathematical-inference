@@ -858,7 +858,7 @@ def endpointRecord {S : ObservedSignature} {source : CausalMode S}
   model := execution.target.record.model
   belief := source.record.belief.map realizes.assignment
   intervention := HardIntervention.empty execution.signature
-  locks := execution.target.record.executedLocks .reindexBelief
+  stack := execution.target.record.executedStack .reindexBelief
 
 /-- Intrinsic belief reindexing data for the canonical probability endpoint. -/
 def endpointReindexing {S : ObservedSignature} {source : CausalMode S}
