@@ -19,6 +19,7 @@ import Thesis.Causality.ExecutedMultiworld
 import Thesis.Causality.ModalRealization
 import Thesis.Causality.ModalCounterfactual
 import Thesis.Causality.EndpointAgreement
+import Thesis.Causality.ModeTheory
 
 /-!
 Stable facade for the finite causal, modal, and counterfactual development.
@@ -29,6 +30,8 @@ source is `Graph`, `Derivation`, `Model`, `Core`, `Reductions`,
 `Modalities` and `Structural`; then
 `Counterfactual`, `Multiworld`, and the modules below `ExecutedMultiworld`.
 `ModalRealization` and `ModalCounterfactual` connect the executable edit paths
-back to query semantics. The facade excludes the external completeness
+back to query semantics. `ModeTheory` names the existing one-shots as
+morphisms and the edit paths as a 1-category of named states.
+The facade excludes the external completeness
 interfaces; those begin in `Thesis.CausalTransport`.
 -/

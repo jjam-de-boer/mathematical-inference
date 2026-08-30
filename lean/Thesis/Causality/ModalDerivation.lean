@@ -139,9 +139,8 @@ def DoRuleApplication.toModalCell
 /-!
 The annotation is indexed by the ordinary derivation that it explains. Its
 `doRule` constructor carries a modal rule cell; the remaining constructors
-record composition and probability-algebra structure. The rule cell is a
-thesis-specific indexed annotation, not a formal 2-cell in an instantiated
-Gratzer mode theory.
+record composition and probability-algebra structure. The rule cell is an
+indexed annotation of a do-calculus derivation.
 -/
 inductive ModalDerivationTrace (G : ObservedGraph S) :
     {left right : ProbabilityTerm S} ->

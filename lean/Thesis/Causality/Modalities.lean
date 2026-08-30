@@ -9,7 +9,7 @@ open Probability
 /-!
 Causal epistemic records and their executable modal transitions.
 
-Records carry a Gratzer-style lock stack indexed by the current signature.
+Records carry a lock stack indexed by the current signature.
 `announce` pushes an uncommitted same-`S` marker; `announceAcross` pushes a
 `pending` across marker still at the old `S`. `pop` aborts that top frame
 (uncommitted or pending). Pearl realisation is `commitPearl`; the indexed
@@ -114,7 +114,7 @@ inductive AcrossKind where
   deriving DecidableEq, Repr
 
 /--
-Gratzer stack indexed by the current observed signature.  `uncommitted` and
+Lock stack indexed by the current observed signature.  `uncommitted` and
 `pending` are held locks still at `S` (`pending` is a signature-changing
 marker that has not yet been realised).  `committed` stays at `S`.  `across`
 is the executed snapshot at the new signature; payloads are stored rather
@@ -207,7 +207,7 @@ def undoReady {S : ObservedSignature} (locks : LockStack S) : Prop :=
 end LockStack
 
 /--
-Epistemic state.  `locks` is the signature-indexed Gratzer stack: `announce`
+Epistemic state.  `locks` is the signature-indexed lock stack: `announce`
 and `announceAcross` push, `pop` drops an uncommitted or pending top frame,
 `commitPearl` realises a same-`S` Pearl marker.  The public indexed `commit`
 is in `Structural.Commit`.
@@ -700,6 +700,21 @@ theorem unsetVariable_eq_announce_commit
         (.unset target (announce_topUncommittedEq R _) (by
           simpa using h)) :=
   rfl
+
+/-- After a one-shot set, the matching unset frame is legal. -/
+theorem setVariable_UnsetReady (R : CausalEpistemicRecord S)
+    (target : Fin S.count) (value : S.Value target) :
+    (R.setVariable target value).UnsetReady target := by
+  simp [setVariable, UnsetReady, executedLocks]
+
+/-- Provenance unset after set restores the pre-set record.  A 1-cell equation. -/
+theorem setVariable_unsetVariable (R : CausalEpistemicRecord S)
+    (target : Fin S.count) (value : S.Value target) :
+    (R.setVariable target value).unsetVariable target
+      (setVariable_UnsetReady R target value) = R := by
+  cases R
+  simp [setVariable, unsetVariable, announce, commitPearl, baseOfCommit,
+    executedLocks, restoreTop]
 
 /-- Modal inverse of a LIFO `observe`/`condition` frame. -/
 def uncondition (R : CausalEpistemicRecord S)
