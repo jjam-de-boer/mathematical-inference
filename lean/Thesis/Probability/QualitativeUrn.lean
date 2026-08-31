@@ -221,6 +221,90 @@ structure QualitativeUrnScale where
   lt_respects_eqv :
     ∀ {a b c d}, eqv a c → eqv b d → lt a b → lt c d
 
+/-! ## A canonical jointly satisfying scale -/
+
+/--
+The rational plausibility assigned to an event by counting selected cells.
+The empty cell type is assigned zero because `QProb` presentations require a
+positive denominator; every qualitative urn axiom involving a ratio already
+carries a positive-size witness.
+-/
+def rationalEventPlaus (N : Nat) (event : Event (Fin N)) : QProb :=
+  if hN : 0 < N then
+    { num := count (FiniteCellProduct.cells N) event
+      den := N
+      den_pos := hN }
+  else
+    QProb.zero
+
+/-- On a positive cell type, the rational event assignment is its count ratio. -/
+theorem rationalEventPlaus_of_pos (N : Nat) (hN : 0 < N)
+    (event : Event (Fin N)) :
+    rationalEventPlaus N event =
+      { num := count (FiniteCellProduct.cells N) event
+        den := N
+        den_pos := hN } := by
+  simp [rationalEventPlaus, hN]
+
+/--
+The cell-count rational scale is an explicit model of all qualitative urn
+assumptions.  It supplies a non-vacuity witness for the assumptions of the
+representation theorem: equivalence and strict comparison are ordinary cross
+multiplication.
+-/
+def rationalScale : QualitativeUrnScale where
+  Plaus := QProb
+  plaus := rationalEventPlaus
+  eqv := QProb.Equiv
+  lt := QProb.LT
+  eqv_refl := QProb.equiv_refl
+  eqv_symm := QProb.equiv_symm
+  eqv_trans := QProb.equiv_trans
+  lt_irrefl := QProb.lt_irrefl
+  lt_trans := QProb.lt_trans
+  count_invariant := by
+    intro N E F sameCount
+    by_cases hN : 0 < N
+    · simp only [rationalEventPlaus, hN, dif_pos, QProb.Equiv]
+      rw [sameCount]
+    · simp [rationalEventPlaus, hN, QProb.equiv_refl]
+  refinement_eqv := by
+    intro ratio c hc
+    have hrefined : 0 < (ratio.refine c hc).N :=
+      (ratio.refine c hc).pos
+    change QProb.Equiv
+      (rationalEventPlaus (ratio.refine c hc).N
+        (ratio.refine c hc).canonicalEvent)
+      (rationalEventPlaus ratio.N ratio.canonicalEvent)
+    rw [rationalEventPlaus_of_pos _ hrefined,
+      rationalEventPlaus_of_pos _ ratio.pos]
+    have refinedCount := canonicalEvent_count (ratio.refine c hc)
+    have originalCount := canonicalEvent_count ratio
+    simp only [QProb.Equiv]
+    rw [refinedCount, originalCount]
+    simp only [refine]
+    ac_rfl
+  strict_mono_same_urn := by
+    intro N hN k l hk hl hkl
+    let lower : UrnRatio := { N := N, k := k, pos := hN, le := hk }
+    let upper : UrnRatio := { N := N, k := l, pos := hN, le := hl }
+    change QProb.LT
+      (rationalEventPlaus N lower.canonicalEvent)
+      (rationalEventPlaus N upper.canonicalEvent)
+    rw [rationalEventPlaus_of_pos _ hN,
+      rationalEventPlaus_of_pos _ hN]
+    unfold QProb.LT
+    rw [canonicalEvent_count lower, canonicalEvent_count upper]
+    exact Nat.mul_lt_mul_of_pos_right hkl hN
+  lt_respects_eqv := by
+    intro a b c d hac hbd hab
+    exact QProb.lt_congr hac hbd hab
+
+/-- The four qualitative urn assumptions are jointly satisfiable. -/
+theorem qualitativeUrnScale_nonempty :
+    Nonempty (QualitativeUrnScale.{0}) :=
+  ⟨rationalScale⟩
+
 namespace QualitativeUrnScale
 
 /-- The plausibility of the canonical event represented by `k/N`. -/

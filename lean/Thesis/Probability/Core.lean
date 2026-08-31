@@ -508,6 +508,89 @@ reduced fraction.
 def LE (p q : QProb) : Prop :=
   p.num * q.den ≤ q.num * p.den
 
+/--
+Strict cross-multiplication order on nonnegative rational presentations.
+As with `LE`, this compares represented fractions without choosing reduced
+representatives.
+-/
+def LT (p q : QProb) : Prop :=
+  p.num * q.den < q.num * p.den
+
+/-- No rational presentation is strictly below itself. -/
+theorem lt_irrefl (p : QProb) : LT p p → False := by
+  simp [LT]
+
+/-- Strict cross-multiplication order is transitive. -/
+theorem lt_trans {p q r : QProb} (hpq : LT p q) (hqr : LT q r) :
+    LT p r := by
+  have hcleared :
+      p.num * r.den * q.den < r.num * p.den * q.den := by
+    calc
+      p.num * r.den * q.den = p.num * q.den * r.den := by ac_rfl
+      _ < q.num * p.den * r.den :=
+        Nat.mul_lt_mul_of_pos_right hpq r.den_pos
+      _ = q.num * r.den * p.den := by ac_rfl
+      _ < r.num * q.den * p.den :=
+        Nat.mul_lt_mul_of_pos_right hqr p.den_pos
+      _ = r.num * p.den * q.den := by ac_rfl
+  rcases Nat.lt_or_ge (p.num * r.den) (r.num * p.den) with h | h
+  · exact h
+  · exact False.elim
+      ((Nat.not_lt_of_ge (Nat.mul_le_mul_right q.den h)) hcleared)
+
+/-- Same-denominator strict comparison reduces to numerator comparison. -/
+theorem lt_of_same_den {p q : QProb}
+    (hden : p.den = q.den) (hnum : p.num < q.num) :
+    LT p q := by
+  unfold LT
+  rw [hden]
+  exact Nat.mul_lt_mul_of_pos_right hnum q.den_pos
+
+/-- Strict cross-multiplication order respects presentation equivalence. -/
+theorem lt_congr {p p' q q' : QProb}
+    (hp : Equiv p p') (hq : Equiv q q') (hlt : LT p q) :
+    LT p' q' := by
+  have hscaled :
+      p.num * q.den * (p'.den * q'.den) <
+        q.num * p.den * (p'.den * q'.den) :=
+    Nat.mul_lt_mul_of_pos_right hlt (Nat.mul_pos p'.den_pos q'.den_pos)
+  have left :
+      p.num * q.den * (p'.den * q'.den) =
+        p'.num * q'.den * (p.den * q.den) := by
+    calc
+      p.num * q.den * (p'.den * q'.den) =
+          (p.num * p'.den) * (q.den * q'.den) :=
+        mul_reorder_four p.num q.den p'.den q'.den
+      _ = (p'.num * p.den) * (q.den * q'.den) := by rw [hp]
+      _ = (p'.num * p.den) * (q'.den * q.den) := by
+        rw [Nat.mul_comm q.den q'.den]
+      _ = p'.num * q'.den * (p.den * q.den) :=
+        mul_reorder_four p'.num p.den q'.den q.den
+  have right :
+      q.num * p.den * (p'.den * q'.den) =
+        q'.num * p'.den * (p.den * q.den) := by
+    calc
+      q.num * p.den * (p'.den * q'.den) =
+          (q.num * q'.den) * (p.den * p'.den) := by
+        rw [Nat.mul_comm p'.den q'.den]
+        exact mul_reorder_four q.num p.den q'.den p'.den
+      _ = (q'.num * q.den) * (p.den * p'.den) := by rw [hq]
+      _ = (q'.num * q.den) * (p'.den * p.den) := by
+        rw [Nat.mul_comm p.den p'.den]
+      _ = q'.num * p'.den * (q.den * p.den) :=
+        mul_reorder_four q'.num q.den p'.den p.den
+      _ = q'.num * p'.den * (p.den * q.den) := by
+        rw [Nat.mul_comm q.den p.den]
+  have hcleared :
+      p'.num * q'.den * (p.den * q.den) <
+        q'.num * p'.den * (p.den * q.den) := by
+    rw [← left, ← right]
+    exact hscaled
+  rcases Nat.lt_or_ge (p'.num * q'.den) (q'.num * p'.den) with h | h
+  · exact h
+  · exact False.elim
+      ((Nat.not_lt_of_ge (Nat.mul_le_mul_right (p.den * q.den) h)) hcleared)
+
 /-- Every nonnegative rational presentation is above the canonical zero. -/
 theorem zero_le (p : QProb) : LE zero p := by
   simp [LE, zero]

@@ -92,6 +92,12 @@ theorem intervention_cut_d_separates_shared_cause :
       (.bar firstNodeSet) firstNodeSet secondNodeSet NodeSet.empty = true := by
   decide
 
+/-- The same executable separation fact with the queried node sets reversed. -/
+theorem intervention_cut_d_separates_shared_cause_reverse :
+    sharedCauseModel.observedGraph.dSeparated
+      (.bar firstNodeSet) secondNodeSet firstNodeSet NodeSet.empty = true := by
+  decide
+
 /-- Embed the two observed nodes after two hidden nodes. -/
 def hiddenPathObservedNode (i : Fin twoBoolSignature.count) : Fin 4 :=
   ⟨i.val + 2, by
@@ -237,6 +243,204 @@ def observationalSecondQuery : JointKernelQuery twoBoolSignature where
   action_outcome_disjoint := by
     intro i impossible
     simp [NodeSet.empty] at impossible
+
+/-- The distributional query `P(Y | do(X))` in the two-node shared-cause graph. -/
+def secondAfterFirstQuery : JointKernelQuery twoBoolSignature where
+  outcome := secondNodeSet
+  action := firstNodeSet
+  action_outcome_disjoint := by
+    intro i selected
+    by_cases first : i = firstNode
+    · subst i
+      decide
+    · simp [firstNodeSet, NodeSet.singleton, first] at selected
+
+/--
+The executable rule-3 step deletes the intervention on `X` after the incoming
+edges at `X` have been cut.  This is an inspectable non-observational
+derivation; its semantic use below is proved directly for this graph rather
+than obtained from the general external soundness interface.
+-/
+def secondAfterFirstDerivation :
+    DoCalculusDerivation sharedCauseModel.observedGraph
+      secondAfterFirstQuery.sourceTerm observationalSecondQuery.sourceTerm := by
+  exact .doRule (.rule3 NodeSet.empty secondNodeSet firstNodeSet NodeSet.empty
+    { xy := by intro _ selected; simp [NodeSet.empty] at selected
+      xz := by intro _ selected; simp [NodeSet.empty] at selected
+      xw := by intro _ selected; simp [NodeSet.empty] at selected
+      yz := by
+        intro node secondSelected
+        by_cases first : node = firstNode
+        · subst node
+          simp [secondNodeSet, NodeSet.singleton, secondNode, firstNode] at secondSelected
+        · simp [firstNodeSet, NodeSet.singleton, first]
+      yw := by intro _ _; rfl
+      zw := by intro _ _; rfl }
+    (by
+      have removable :
+          sharedCauseModel.observedGraph.nonAncestorsOf
+              (.bar NodeSet.empty) firstNodeSet NodeSet.empty =
+            firstNodeSet := by
+        funext node
+        simp [ObservedGraph.nonAncestorsOf, ObservedGraph.observedAncestorOf,
+          NodeSet.empty]
+      dsimp only
+      rw [removable]
+      simpa [NodeSet.union, GraphMutilation.bar] using
+        intervention_cut_d_separates_shared_cause_reverse))
+
+/-- Intervening on the first parentless node leaves the second node unchanged. -/
+theorem evalSecond_interveneFirst_eq (M : ExactModel twoBoolSignature)
+    (reference : twoBoolSignature.Assignment) (u : M.latent.Assignment) :
+    M.evalUnder
+        ((Kernel.mk secondNodeSet firstNodeSet NodeSet.empty).intervention
+          reference)
+        u secondNode =
+      M.eval u secondNode := by
+  unfold FiniteLatentSCM.eval
+  unfold FiniteLatentSCM.evalUnder
+  unfold FiniteLatentSCM.evalNodeUnder
+  unfold FiniteLatentSCM.equationUnder
+  have targetNone :
+      (Kernel.mk secondNodeSet firstNodeSet NodeSet.empty).intervention
+          reference secondNode = none := by
+    simp [Kernel.intervention, firstNodeSet, NodeSet.singleton,
+      secondNode, firstNode]
+  simp only [targetNone, FiniteLatentSCM.noIntervention]
+  congr 1
+  funext parent edge
+  simp [twoBoolSignature] at edge
+
+/--
+For every model over the two-node signature, the interventional `Y` kernel is
+the observational `Y` kernel.  This direct semantic lemma supplies the local
+soundness needed by the example without assuming general do-calculus
+soundness.
+-/
+noncomputable def secondAfterFirst_semantic_reduction
+    (M : ExactModel twoBoolSignature)
+    (reference : twoBoolSignature.Assignment) :
+    ProbabilityResult.Equivalent
+      (secondAfterFirstQuery.sourceTerm.denote M reference)
+      (observationalSecondQuery.sourceTerm.denote M reference) := by
+  let interventionKernel : Kernel twoBoolSignature :=
+    ⟨secondNodeSet, firstNodeSet, NodeSet.empty⟩
+  let observationalKernel : Kernel twoBoolSignature :=
+    ⟨secondNodeSet, NodeSet.empty, NodeSet.empty⟩
+  have interventionHasAction : interventionKernel.hasAction = true := by
+    decide
+  have observationHasNoAction : observationalKernel.hasAction = false := by
+    decide
+  have eventAgreement : forall u : M.latent.Assignment,
+      Kernel.agreesOn secondNodeSet reference
+          (M.evalUnder (interventionKernel.intervention reference) u) =
+        Kernel.agreesOn secondNodeSet reference (M.eval u) := by
+    intro u
+    unfold Kernel.agreesOn
+    apply finAll_congr
+    intro node
+    by_cases selected : node = secondNode
+    · subst node
+      dsimp [interventionKernel]
+      rw [evalSecond_interveneFirst_eq M reference u]
+    · have notSelected : secondNodeSet node = false := by
+        simp [secondNodeSet, NodeSet.singleton, selected]
+      simp [notSelected]
+  have probabilityAgreement : QProb.Equiv
+      ((interventionKernel.distribution M reference).probVal
+        (Kernel.agreesOn secondNodeSet reference))
+      ((observationalKernel.distribution M reference).probVal
+        (Kernel.agreesOn secondNodeSet reference)) := by
+    simp only [Kernel.distribution, interventionHasAction,
+      observationHasNoAction, ↓reduceIte,
+      Bool.false_eq_true]
+    exact QProb.equiv_trans
+      (FiniteProbRecord.map_probVal M.prior
+        (M.evalUnder (interventionKernel.intervention reference))
+        (Kernel.agreesOn secondNodeSet reference))
+      (QProb.equiv_trans
+        (FiniteProbRecord.probVal_congr M.prior _ _ eventAgreement)
+        (QProb.equiv_symm
+          (FiniteProbRecord.map_probVal M.prior M.eval
+            (Kernel.agreesOn secondNodeSet reference))))
+  exact ProbabilityResult.trans
+    (Kernel.unconditionalDenote M secondNodeSet firstNodeSet reference)
+    (ProbabilityResult.trans
+      (.value probabilityAgreement)
+      (ProbabilityResult.symm
+        (Kernel.unconditionalDenote M secondNodeSet NodeSet.empty reference)))
+
+/--
+The non-observational query `P(Y | do(X))` is identifiable throughout the
+compatible shared-cause model class because each model reduces internally to
+the same observational `P(Y)` kernel.
+-/
+theorem secondAfterFirst_identifiable :
+    Identifiable sharedCauseModel.observedGraph secondAfterFirstQuery := by
+  intro left right _leftCompatible _rightCompatible observational reference
+  exact ⟨ProbabilityResult.trans
+    (secondAfterFirst_semantic_reduction left reference)
+    (ProbabilityResult.trans
+      (ProbabilityTerm.actionFree_invariant left right observational
+        observationalSecondQuery.sourceTerm (by
+          intro _
+          rfl) reference)
+      (ProbabilityResult.symm
+        (secondAfterFirst_semantic_reduction right reference)))⟩
+
+/-- The observational event `X = true` in the two-node model. -/
+def firstTrueEvent : Event twoBoolSignature.Assignment :=
+  fun assignment => assignment firstNode
+
+/-- The event `Y = true` in the two-node model. -/
+def secondTrueEvent : Event twoBoolSignature.Assignment :=
+  fun assignment => assignment secondNode
+
+/-- The concrete shared-cause model assigns positive mass to `X = true`. -/
+theorem shared_firstTrue_positive :
+    sharedCauseModel.observationalDist.EventPositive firstTrueEvent := by
+  simp [FiniteLatentSCM.observationalDist, sharedCauseModel, sharedPrior,
+    fairBool, FiniteProbRecord.map, FiniteProbRecord.EventPositive,
+    FiniteProbRecord.eventMass, firstTrueEvent, firstNode,
+    FiniteLatentSCM.eval, FiniteLatentSCM.evalUnder,
+    FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.equationUnder,
+    FiniteLatentSCM.noIntervention, sharedLatent]
+
+/-- In the concrete confounded model, observing `X = true` determines `Y`. -/
+theorem shared_observational_conditional_secondTrue :
+    QProb.Equiv
+      ((sharedCauseModel.observationalDist.conditionOn firstTrueEvent
+        shared_firstTrue_positive).probVal secondTrueEvent)
+      QProb.one := by
+  simp [FiniteLatentSCM.observationalDist, sharedCauseModel, sharedPrior,
+    fairBool, FiniteProbRecord.map, FiniteProbRecord.conditionOn,
+    FiniteProbRecord.probVal, FiniteProbRecord.eventMass,
+    firstTrueEvent, secondTrueEvent, firstNode, secondNode,
+    FiniteLatentSCM.eval, FiniteLatentSCM.evalUnder,
+    FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.equationUnder,
+    FiniteLatentSCM.noIntervention, sharedLatent, QProb.Equiv, QProb.one]
+
+/-- In the same model, setting `X = true` leaves the fair outcome `Y` unchanged. -/
+theorem shared_interventional_secondTrue :
+    QProb.Equiv
+      (secondTrueAfterFirstTrue.value sharedCauseModel)
+      { num := 1, den := 2, den_pos := by decide } := by
+  unfold InterventionalQuery.value InterventionalQuery.distribution
+  simp only [show finAny twoBoolSignature.count
+      secondTrueAfterFirstTrue.intervention.targets = true by decide,
+    ↓reduceIte]
+  exact QProb.equiv_trans
+    (FiniteLatentSCM.interventionalValue_eq sharedCauseModel
+      secondTrueAfterFirstTrue.intervention.value
+      secondTrueAfterFirstTrue.event)
+    (by
+      simp [sharedCauseModel, sharedPrior, fairBool, FiniteProbRecord.map,
+        FiniteProbRecord.probVal, FiniteProbRecord.eventMass,
+        secondTrueAfterFirstTrue, setFirstTrue, HardIntervention.set,
+        HardIntervention.empty, firstNode, secondNode, sharedSource,
+        FiniteLatentSCM.evalUnder, FiniteLatentSCM.evalNodeUnder,
+        FiniteLatentSCM.equationUnder, FiniteLatentSCM.noIntervention,
+        sharedLatent, QProb.Equiv])
 
 /-- A concrete certificate whose recursive support witness reaches Lean's kernel. -/
 noncomputable def observationalSecondCertificate :

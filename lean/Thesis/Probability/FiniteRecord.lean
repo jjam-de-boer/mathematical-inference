@@ -518,6 +518,28 @@ theorem conditionOn_normalization (R : FiniteProbRecord Ω)
       QProb.one :=
   (R.conditionOn evidence hEvidence).normalization
 
+/--
+Bayes' theorem for finite common-denominator records.  Both event-positivity
+witnesses are explicit because the two conditional probabilities and the
+final division each require a positive denominator.
+-/
+theorem bayes_formula (R : FiniteProbRecord Ω) (E F : Event Ω)
+    (hE : R.EventPositive E) (hF : R.EventPositive F) :
+    QProb.Equiv
+      ((R.conditionOn F hF).probVal E)
+      (QProb.div
+        (QProb.mul ((R.conditionOn E hE).probVal F) (R.probVal E))
+        (R.probVal F)
+        hF) := by
+  have hInter :
+      eventMass R.atoms (fun value => F value && E value) =
+        eventMass R.atoms (fun value => E value && F value) :=
+    eventMass_congr R.atoms _ _ (fun value => Bool.and_comm _ _)
+  simp only [conditionOn, probVal, eventMass_filter_event, QProb.Equiv,
+    QProb.mul, QProb.div]
+  rw [hInter]
+  ac_rfl
+
 def toUrn (R : FiniteProbRecord Ω) : UrnProb Ω :=
   UrnProb.ofList (expand R.atoms) (by
     rw [length_expand, R.total_mass]
@@ -543,6 +565,22 @@ theorem toUrn_agrees (R : FiniteProbRecord Ω) :
   have hn : R.toUrn.n = R.den := by
     simp [toUrn, UrnProb.ofList, length_expand, R.total_mass]
   simp [probVal, UrnProb.probVal, QProb.Equiv, hcount, hn]
+
+/--
+Finite additivity for an arbitrary finite pairwise-disjoint family.  The proof
+passes through the extensionally equivalent unit-cell urn, so the record and
+urn presentations expose the same finite-additivity law.
+-/
+theorem finite_additivity_family (R : FiniteProbRecord Ω)
+    (events : List (Event Ω)) (pairwise : events.Pairwise disjoint) :
+    QProb.Equiv (R.probVal (unionList events))
+      (QProb.listSum (events.map R.probVal)) := by
+  exact QProb.equiv_trans
+    (R.toUrn_agrees (unionList events))
+    (QProb.equiv_trans
+      (R.toUrn.finite_additivity_family events pairwise)
+      (QProb.listSum_map_congr events R.toUrn.probVal R.probVal
+        (fun event => QProb.equiv_symm (R.toUrn_agrees event))))
 
 theorem ofUrn_agrees (μ : UrnProb Ω) :
     AgreesWith (ofUrn μ) μ := by
