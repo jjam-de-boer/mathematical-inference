@@ -1,21 +1,26 @@
 # Mathematical inference: science and logic
 
-This repository accompanies Jelmer de Boer's 2026 Master’s thesis in
-Artificial Intelligence, *Mathematical inference: science and logic*.
+This repository holds Jelmer de Boer's *Mathematical inference: science and
+logic*: the Master's thesis in Artificial Intelligence submitted to the Open
+University in 2026, and a book manuscript based on that thesis.
 
-The thesis develops a finite, constructive account of mathematical inference.
+The work develops a finite, constructive account of mathematical inference.
 It brings together Jaynes-style probability, Pearl-style structural causal
 models, and explicit changes in epistemic state, with selected constructions
 and proofs checked in Lean 4. It also considers the scientific practices and
 institutions in which inference is performed.
 
-## Read the thesis
+## Read the texts
 
-The complete thesis is available as a [PDF](latex/main.pdf).
+- The submitted thesis is available as a [PDF](latex/Thesis_Jelmer_de_Boer.pdf).
+- The book manuscript is available as a [PDF](latex/mathematical_inference.pdf).
+
+The two documents currently have the same contents. The book will diverge in
+later revisions.
 
 ## Lean formalisation
 
-The Lean development formalises selected finite constructions from the thesis.
+The Lean development formalises selected finite constructions from the work.
 Its public entry points are:
 
 - `Thesis.Probability` — finite constructive probability;

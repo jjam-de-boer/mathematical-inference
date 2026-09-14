@@ -3,9 +3,10 @@
 /lean/.lake/
 /lean/lake-packages/
 
-# LaTeX workspace: keep local sources/build products, track only the final PDF.
+# LaTeX workspace: keep local sources/build products, track only the final PDFs.
 /latex/*
-!/latex/main.pdf
+!/latex/Thesis_Jelmer_de_Boer.pdf
+!/latex/mathematical_inference.pdf
 !/latex/story.txt
 
 # Paper library
