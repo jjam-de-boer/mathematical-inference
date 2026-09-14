@@ -15,9 +15,6 @@ institutions in which inference is performed.
 - The submitted thesis is available as a [PDF](latex/Thesis_Jelmer_de_Boer.pdf).
 - The book manuscript is available as a [PDF](latex/mathematical_inference.pdf).
 
-The two documents currently have the same contents. The book will diverge in
-later revisions.
-
 ## Lean formalisation
 
 The Lean development formalises selected finite constructions from the work.
