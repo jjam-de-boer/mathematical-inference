@@ -1,4 +1,4 @@
-import Thesis.Causality.Forgetting.Basic
+import Thesis.Causality.Forgetting.ObservedSink
 import Thesis.Causality.PairRoot
 
 namespace Thesis
@@ -11,7 +11,7 @@ open CausalEpistemicRecord
 Two-way identifiability for observed directed-sink deletion.
 
 The executable restriction and its semantic preservation live in
-`Forgetting.Basic`. This module adds the converse model-class construction:
+`Forgetting.ObservedSink`. This module adds the converse model-class construction:
 it extends arbitrary reduced models by a deterministic sink and deterministic
 pair roots, then uses that section together with restriction to transport joint
 and common-support conditional identifiability in both directions.

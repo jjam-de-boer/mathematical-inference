@@ -1,4 +1,4 @@
-import Thesis.Causality.Learning
+import Thesis.Causality.ConservativeLearning
 
 namespace Thesis
 namespace Causality

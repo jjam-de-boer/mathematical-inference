@@ -13,6 +13,135 @@ keeps the development inside Lean's standard library while still checking the
 finite Kolmogorov and Bayes calculations used in the prose proof.
 -/
 
+/-- Boolean conjunction over a finite index type. -/
+def finAll : (n : Nat) -> (Fin n -> Bool) -> Bool
+  | 0, _ => true
+  | n + 1, p => finAll n (fun i => p i.castSucc) && p (Fin.last n)
+
+/-- Boolean disjunction over a finite index type. -/
+def finAny : (n : Nat) -> (Fin n -> Bool) -> Bool
+  | 0, _ => false
+  | n + 1, p => finAny n (fun i => p i.castSucc) || p (Fin.last n)
+
+theorem natBeq_comm (left right : Nat) :
+    Nat.beq left right = Nat.beq right left := by
+  induction left generalizing right with
+  | zero => cases right <;> rfl
+  | succ left ih =>
+      cases right with
+      | zero => rfl
+      | succ right => exact ih right
+
+theorem natBeq_refl (value : Nat) : Nat.beq value value = true := by
+  induction value with
+  | zero => rfl
+  | succ value ih => exact ih
+
+def finBeq {n : Nat} (left right : Fin n) : Bool :=
+  Nat.beq left.val right.val
+
+theorem finAll_true (n : Nat) :
+    finAll n (fun _ => true) = true := by
+  induction n with
+  | zero => rfl
+  | succ n ih => simp [finAll, ih]
+
+theorem finAll_congr {n : Nat} {p q : Fin n -> Bool}
+    (h : forall i, p i = q i) : finAll n p = finAll n q := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+      simp only [finAll]
+      rw [ih (fun i => h i.castSucc), h (Fin.last n)]
+
+theorem finAll_eq_true_iff {n : Nat} (p : Fin n -> Bool) :
+    finAll n p = true <-> forall i, p i = true := by
+  induction n with
+  | zero =>
+      constructor
+      · intro _ i
+        exact Fin.elim0 i
+      · intro _
+        rfl
+  | succ n ih =>
+      constructor
+      · intro h i
+        have hparts :
+            finAll n (fun j => p j.castSucc) = true /\
+              p (Fin.last n) = true := by
+          exact Bool.and_eq_true_iff.mp h
+        refine Fin.lastCases hparts.2 (fun j => ?_) i
+        exact (ih (fun j => p j.castSucc)).mp hparts.1 j
+      · intro h
+        exact Bool.and_eq_true_iff.mpr
+          ⟨(ih (fun j => p j.castSucc)).mpr (fun j => h j.castSucc),
+            h (Fin.last n)⟩
+
+theorem finAny_congr {n : Nat} {p q : Fin n -> Bool}
+    (h : forall i, p i = q i) : finAny n p = finAny n q := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+      simp only [finAny]
+      rw [ih (fun i => h i.castSucc), h (Fin.last n)]
+
+theorem finAny_eq_false_iff {n : Nat} (p : Fin n -> Bool) :
+    finAny n p = false <-> forall i, p i = false := by
+  induction n with
+  | zero =>
+      constructor
+      · intro _ i
+        exact Fin.elim0 i
+      · intro _
+        rfl
+  | succ n ih =>
+      constructor
+      · intro h i
+        have hleft : finAny n (fun j => p j.castSucc) = false := by
+          cases ha : finAny n (fun j => p j.castSucc) <;>
+            cases hb : p (Fin.last n) <;> simp [finAny, ha, hb] at h ⊢
+        have hright : p (Fin.last n) = false := by
+          cases ha : finAny n (fun j => p j.castSucc) <;>
+            cases hb : p (Fin.last n) <;> simp [finAny, ha, hb] at h ⊢
+        refine Fin.lastCases hright (fun j => ?_) i
+        exact (ih (fun j => p j.castSucc)).mp hleft j
+      · intro h
+        have hleft : finAny n (fun j => p j.castSucc) = false :=
+          (ih (fun j => p j.castSucc)).mpr (fun j => h j.castSucc)
+        simp [finAny, hleft, h (Fin.last n)]
+
+theorem finAny_eq_true_of {n : Nat} (p : Fin n -> Bool)
+    (i : Fin n) (hi : p i = true) : finAny n p = true := by
+  cases hAny : finAny n p with
+  | false =>
+      have hall := (finAny_eq_false_iff p).mp hAny
+      rw [hall i] at hi
+      contradiction
+  | true => rfl
+
+theorem finAny_eq_true_iff {n : Nat} (p : Fin n -> Bool) :
+    finAny n p = true <-> Exists fun i => p i = true := by
+  induction n with
+  | zero =>
+      constructor
+      · intro impossible
+        simp [finAny] at impossible
+      · intro witness
+        rcases witness with ⟨i, _⟩
+        exact Fin.elim0 i
+  | succ n ih =>
+      constructor
+      · intro h
+        simp only [finAny, Bool.or_eq_true] at h
+        cases h with
+        | inl earlier =>
+            rcases (ih (fun i => p i.castSucc)).mp earlier with ⟨i, hi⟩
+            exact ⟨i.castSucc, hi⟩
+        | inr last => exact ⟨Fin.last n, last⟩
+      · intro witness
+        rcases witness with ⟨i, hi⟩
+        exact finAny_eq_true_of p i hi
+
 /-- A decidable event on `X`, represented by an executable Boolean predicate. -/
 abbrev Event (X : Type u) := X → Bool
 
@@ -654,6 +783,27 @@ def listSum : List QProb -> QProb
   | [] => zero
   | value :: values => add value (listSum values)
 
+/-- Division by a common positive denominator distributes over addition. -/
+theorem div_add_same_denominator (first second denominator : QProb)
+    (positive : 0 < denominator.num) :
+    Equiv (div (add first second) denominator positive)
+      (add (div first denominator positive) (div second denominator positive)) := by
+  simp only [Equiv, div, add, Nat.add_mul]
+  ac_rfl
+
+/-- Division by a common positive denominator distributes over a finite sum. -/
+theorem div_listSum_same_denominator (values : List QProb)
+    (denominator : QProb) (positive : 0 < denominator.num) :
+    Equiv (div (listSum values) denominator positive)
+      (listSum (values.map (fun value => div value denominator positive))) := by
+  induction values with
+  | nil =>
+      simp [listSum, div, Equiv, zero]
+  | cons value values ih =>
+      exact equiv_trans
+        (div_add_same_denominator value (listSum values) denominator positive)
+        (add_congr (equiv_refl _) ih)
+
 /-- Pointwise fraction equivalence is preserved by a finite sum. -/
 theorem listSum_map_congr (values : List X) (left right : X -> QProb)
     (pointwise : forall value, Equiv (left value) (right value)) :
@@ -662,6 +812,28 @@ theorem listSum_map_congr (values : List X) (left right : X -> QProb)
   | nil => exact equiv_refl zero
   | cons value values ih =>
       exact add_congr (pointwise value) ih
+
+/-- A finite rational sum over an appended list is the sum of the two
+component sums. -/
+theorem listSum_append (left right : List QProb) :
+    Equiv (listSum (left ++ right))
+      (add (listSum left) (listSum right)) := by
+  induction left with
+  | nil => simp [listSum, Equiv, add, zero]
+  | cons value values ih =>
+      exact equiv_trans (add_congr (equiv_refl _) ih)
+        (equiv_symm (add_assoc value (listSum values) (listSum right)))
+
+/-- Flattening a finite family of lists does not change its iterated rational
+sum. -/
+theorem listSum_flatMap (values : List X) (family : X -> List QProb) :
+    Equiv (listSum (values.flatMap family))
+      (listSum (values.map (fun value => listSum (family value)))) := by
+  induction values with
+  | nil => exact equiv_refl zero
+  | cons value values ih =>
+      exact equiv_trans (listSum_append (family value)
+        (values.flatMap family)) (add_congr (equiv_refl _) ih)
 
 theorem mul_congr {p p' q q' : QProb}
     (hp : Equiv p p') (hq : Equiv q q') :
@@ -676,6 +848,67 @@ theorem mul_congr {p p' q q' : QProb}
     _ = (p'.num * p.den) * (q'.num * q.den) := by rw [hp, hq]
     _ = p'.num * q'.num * (p.den * q.den) :=
       (mul_reorder_four p'.num q'.num p.den q.den).symm
+
+theorem mul_comm (left right : QProb) :
+    Equiv (mul left right) (mul right left) := by
+  simp only [Equiv, mul]
+  ac_rfl
+
+theorem mul_assoc (first second third : QProb) :
+    Equiv (mul (mul first second) third)
+      (mul first (mul second third)) := by
+  simp only [Equiv, mul]
+  ac_rfl
+
+theorem mul_one (value : QProb) :
+    Equiv (mul value one) value := by
+  simp [Equiv, mul, one]
+
+theorem one_mul (value : QProb) :
+    Equiv (mul one value) value := by
+  exact equiv_trans (mul_comm one value) (mul_one value)
+
+theorem mul_add_distrib (factor left right : QProb) :
+    Equiv (mul factor (add left right))
+      (add (mul factor left) (mul factor right)) := by
+  simp only [Equiv, mul, add, Nat.mul_add, Nat.add_mul]
+  ac_rfl
+
+theorem add_mul_distrib (left right factor : QProb) :
+    Equiv (mul (add left right) factor)
+      (add (mul left factor) (mul right factor)) := by
+  simp only [Equiv, mul, add, Nat.add_mul]
+  ac_rfl
+
+theorem mul_listSum (factor : QProb) (values : List QProb) :
+    Equiv (mul factor (listSum values))
+      (listSum (values.map (fun value => mul factor value))) := by
+  induction values with
+  | nil => simp [listSum, Equiv, mul, zero]
+  | cons value values ih =>
+      exact equiv_trans (mul_add_distrib factor value (listSum values))
+        (add_congr (equiv_refl _) ih)
+
+theorem listSum_mul (values : List QProb) (factor : QProb) :
+    Equiv (mul (listSum values) factor)
+      (listSum (values.map (fun value => mul value factor))) := by
+  induction values with
+  | nil => simp [listSum, Equiv, mul, zero]
+  | cons value values ih =>
+      exact equiv_trans (add_mul_distrib value (listSum values) factor)
+        (add_congr (equiv_refl _) ih)
+
+theorem listSum_mul_listSum (left right : List QProb) :
+    Equiv (mul (listSum left) (listSum right))
+      (listSum (left.map (fun leftValue =>
+        listSum (right.map (fun rightValue =>
+          mul leftValue rightValue))))) := by
+  induction left with
+  | nil => simp [listSum, Equiv, mul, zero]
+  | cons value values ih =>
+      exact equiv_trans
+        (add_mul_distrib value (listSum values) (listSum right))
+        (add_congr (mul_listSum value right) ih)
 
 theorem div_congr {p p' q q' : QProb}
     (hp : Equiv p p') (hq : Equiv q q')
@@ -697,6 +930,37 @@ theorem div_congr {p p' q q' : QProb}
     _ = (p'.num * p.den) * (q'.den * q.num) := by rw [hq']
     _ = p'.num * q'.den * (p.den * q.num) :=
       mul_reorder_four p'.num p.den q'.den q.num
+
+/-- A denominator-free cross-product identity yields equality of two ratios. -/
+theorem div_equiv_of_cross {leftNumerator leftDenominator
+    rightNumerator rightDenominator : QProb}
+    (leftPositive : 0 < leftDenominator.num)
+    (rightPositive : 0 < rightDenominator.num)
+    (cross : Equiv
+      (mul leftNumerator rightDenominator)
+      (mul rightNumerator leftDenominator)) :
+    Equiv
+      (div leftNumerator leftDenominator leftPositive)
+      (div rightNumerator rightDenominator rightPositive) := by
+  change
+    leftNumerator.num * leftDenominator.den *
+        (rightNumerator.den * rightDenominator.num) =
+      rightNumerator.num * rightDenominator.den *
+        (leftNumerator.den * leftDenominator.num)
+  change
+    leftNumerator.num * rightDenominator.num *
+        (rightNumerator.den * leftDenominator.den) =
+      rightNumerator.num * leftDenominator.num *
+        (leftNumerator.den * rightDenominator.den) at cross
+  calc
+    leftNumerator.num * leftDenominator.den *
+        (rightNumerator.den * rightDenominator.num) =
+      leftNumerator.num * rightDenominator.num *
+        (rightNumerator.den * leftDenominator.den) := by ac_rfl
+    _ = rightNumerator.num * leftDenominator.num *
+        (leftNumerator.den * rightDenominator.den) := cross
+    _ = rightNumerator.num * rightDenominator.den *
+        (leftNumerator.den * leftDenominator.num) := by ac_rfl
 
 theorem div_equiv_of_den_equiv_one (numerator denominator : QProb)
     (positive : 0 < denominator.num) (normalized : Equiv denominator one) :

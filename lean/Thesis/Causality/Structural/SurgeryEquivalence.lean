@@ -1,5 +1,5 @@
 import Thesis.Causality.Structural.Core
-import Thesis.Causality.Structural.Atomic
+import Thesis.Causality.Structural.AtomicExecution
 
 namespace Thesis
 namespace Causality

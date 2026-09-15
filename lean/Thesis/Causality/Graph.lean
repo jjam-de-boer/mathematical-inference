@@ -1,7 +1,13 @@
 import Std
+import Thesis.Probability.Core
 
 namespace Thesis
 namespace Causality
+
+open Probability
+export Probability (finAll finAny finBeq natBeq_comm natBeq_refl finAll_true
+  finAll_congr finAll_eq_true_iff finAny_congr finAny_eq_false_iff
+  finAny_eq_true_of finAny_eq_true_iff)
 
 /-!
 Finite graph data used by the theorem-facing causal formalization.
@@ -11,133 +17,6 @@ roots.  A directed-and-bidirected graph over observed variables is derived
 from that representation.  The directed relation is Boolean so all edge
 tests are computational; structural properties are proof fields.
 -/
-
-def finAll : (n : Nat) -> (Fin n -> Bool) -> Bool
-  | 0, _ => true
-  | n + 1, p => finAll n (fun i => p i.castSucc) && p (Fin.last n)
-
-def finAny : (n : Nat) -> (Fin n -> Bool) -> Bool
-  | 0, _ => false
-  | n + 1, p => finAny n (fun i => p i.castSucc) || p (Fin.last n)
-
-theorem natBeq_comm (left right : Nat) :
-    Nat.beq left right = Nat.beq right left := by
-  induction left generalizing right with
-  | zero => cases right <;> rfl
-  | succ left ih =>
-      cases right with
-      | zero => rfl
-      | succ right => exact ih right
-
-theorem natBeq_refl (value : Nat) : Nat.beq value value = true := by
-  induction value with
-  | zero => rfl
-  | succ value ih => exact ih
-
-def finBeq {n : Nat} (left right : Fin n) : Bool :=
-  Nat.beq left.val right.val
-
-theorem finAll_true (n : Nat) :
-    finAll n (fun _ => true) = true := by
-  induction n with
-  | zero => rfl
-  | succ n ih => simp [finAll, ih]
-
-theorem finAll_congr {n : Nat} {p q : Fin n -> Bool}
-    (h : forall i, p i = q i) : finAll n p = finAll n q := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-      simp only [finAll]
-      rw [ih (fun i => h i.castSucc), h (Fin.last n)]
-
-theorem finAll_eq_true_iff {n : Nat} (p : Fin n -> Bool) :
-    finAll n p = true <-> forall i, p i = true := by
-  induction n with
-  | zero =>
-      constructor
-      · intro _ i
-        exact Fin.elim0 i
-      · intro _
-        rfl
-  | succ n ih =>
-      constructor
-      · intro h i
-        have hparts :
-            finAll n (fun j => p j.castSucc) = true /\
-              p (Fin.last n) = true := by
-          exact Bool.and_eq_true_iff.mp h
-        refine Fin.lastCases hparts.2 (fun j => ?_) i
-        exact (ih (fun j => p j.castSucc)).mp hparts.1 j
-      · intro h
-        exact Bool.and_eq_true_iff.mpr
-          ⟨(ih (fun j => p j.castSucc)).mpr (fun j => h j.castSucc),
-            h (Fin.last n)⟩
-
-theorem finAny_congr {n : Nat} {p q : Fin n -> Bool}
-    (h : forall i, p i = q i) : finAny n p = finAny n q := by
-  induction n with
-  | zero => rfl
-  | succ n ih =>
-      simp only [finAny]
-      rw [ih (fun i => h i.castSucc), h (Fin.last n)]
-
-theorem finAny_eq_false_iff {n : Nat} (p : Fin n -> Bool) :
-    finAny n p = false <-> forall i, p i = false := by
-  induction n with
-  | zero =>
-      constructor
-      · intro _ i
-        exact Fin.elim0 i
-      · intro _
-        rfl
-  | succ n ih =>
-      constructor
-      · intro h i
-        have hleft : finAny n (fun j => p j.castSucc) = false := by
-          cases ha : finAny n (fun j => p j.castSucc) <;>
-            cases hb : p (Fin.last n) <;> simp [finAny, ha, hb] at h ⊢
-        have hright : p (Fin.last n) = false := by
-          cases ha : finAny n (fun j => p j.castSucc) <;>
-            cases hb : p (Fin.last n) <;> simp [finAny, ha, hb] at h ⊢
-        refine Fin.lastCases hright (fun j => ?_) i
-        exact (ih (fun j => p j.castSucc)).mp hleft j
-      · intro h
-        have hleft : finAny n (fun j => p j.castSucc) = false :=
-          (ih (fun j => p j.castSucc)).mpr (fun j => h j.castSucc)
-        simp [finAny, hleft, h (Fin.last n)]
-
-theorem finAny_eq_true_of {n : Nat} (p : Fin n -> Bool)
-    (i : Fin n) (hi : p i = true) : finAny n p = true := by
-  cases hAny : finAny n p with
-  | false =>
-      have hall := (finAny_eq_false_iff p).mp hAny
-      rw [hall i] at hi
-      contradiction
-  | true => rfl
-
-theorem finAny_eq_true_iff {n : Nat} (p : Fin n -> Bool) :
-    finAny n p = true <-> Exists fun i => p i = true := by
-  induction n with
-  | zero =>
-      constructor
-      · intro impossible
-        simp [finAny] at impossible
-      · intro witness
-        rcases witness with ⟨i, _⟩
-        exact Fin.elim0 i
-  | succ n ih =>
-      constructor
-      · intro h
-        simp only [finAny, Bool.or_eq_true] at h
-        cases h with
-        | inl earlier =>
-            rcases (ih (fun i => p i.castSucc)).mp earlier with ⟨i, hi⟩
-            exact ⟨i.castSucc, hi⟩
-        | inr last => exact ⟨Fin.last n, last⟩
-      · intro witness
-        rcases witness with ⟨i, hi⟩
-        exact finAny_eq_true_of p i hi
 
 /--
 Observed variables, their value types, and the acyclic directed causal graph.

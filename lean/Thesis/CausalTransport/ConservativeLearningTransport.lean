@@ -1,4 +1,4 @@
-import Thesis.Causality.Learning
+import Thesis.Causality.ConservativeLearning
 import Thesis.CausalTransport.ModalRealization
 
 namespace Thesis
@@ -9,7 +9,7 @@ open Probability
 /-!
 Certificate transport for conservative terminal learning.
 
-The low-level signature/model extension remains in `Learning`; this module is
+The low-level signature/model extension remains in `ConservativeLearning`; this module is
 the separate bridge to published completeness and operation-realized modal
 certificates.
 -/

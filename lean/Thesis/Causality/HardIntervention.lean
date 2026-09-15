@@ -6,10 +6,10 @@ namespace Causality
 open Probability
 
 /-!
-Core theorem-facing causal types shared by structural execution and transport.
+Hard interventions and the exact-model alias used by structural execution.
 
-Keeping these definitions below `CausalTransport` prevents intrinsic model and
-intervention code from depending on the external completeness interfaces.
+These definitions live in the intrinsic causal development so model and
+intervention code does not depend on the external completeness interfaces.
 -/
 
 /-- The correspondence keeps observed and latent finite values in one universe. -/

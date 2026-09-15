@@ -1,7 +1,8 @@
 import Thesis.Causality.Structural.Links
 import Thesis.Causality.Structural.Learning
 import Thesis.Causality.Structural.SurgeryCore
-import Thesis.Causality.Forgetting.Basic
+import Thesis.Causality.Forgetting.ObservedSink
+import Thesis.Causality.Forgetting.ExogenousRoot
 
 namespace Thesis
 namespace Causality

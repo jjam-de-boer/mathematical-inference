@@ -24,7 +24,32 @@ def replace (S : ObservedSignature) (assignment : S.Assignment)
   fun i =>
     if h : i = target then h.symm ▸ value else assignment i
 
+@[simp] theorem replace_at (S : ObservedSignature) (assignment : S.Assignment)
+    (target : Fin S.count) (value : S.Value target) :
+    S.replace assignment target value target = value := by
+  simp [replace]
+
+theorem replace_ne (S : ObservedSignature) (assignment : S.Assignment)
+    (target i : Fin S.count) (value : S.Value target) (different : i ≠ target) :
+    S.replace assignment target value i = assignment i := by
+  simp [replace, different]
+
 end ObservedSignature
+
+namespace NodeSet
+
+/-- Boolean node-set disjointness is symmetric. -/
+theorem Disjoint.symm {left right : NodeSet S}
+    (disjoint : Disjoint left right) : Disjoint right left := by
+  intro i rightSelected
+  cases leftSelected : left i with
+  | false => rfl
+  | true =>
+      have impossible := disjoint i leftSelected
+      rw [rightSelected] at impossible
+      contradiction
+
+end NodeSet
 
 namespace ProbabilityResult
 
@@ -44,6 +69,10 @@ inductive Equivalent : Result -> Result -> Type
   | unsupported : Equivalent none none
   | value {left right : QProb} :
       QProb.Equiv left right -> Equivalent (some left) (some right)
+
+/-- Evidence that a partial probability result has a rational value. -/
+def Supported (result : Result) : Type :=
+  Sigma fun value => Equivalent result (some value)
 
 def refl (result : Result) : Equivalent result result := by
   cases result with
@@ -67,6 +96,13 @@ def trans {left middle right : Result}
       cases hmr with
       | value hmrValue =>
           exact .value (QProb.equiv_trans hlmValue hmrValue)
+
+/-- Support transports across extensional equality of partial results. -/
+noncomputable def Supported.transport {left right : Result}
+    (equivalent : Equivalent left right) (supported : Supported left) :
+    Supported right := by
+  rcases supported with ⟨value, hasValue⟩
+  exact ⟨value, trans (symm equivalent) hasValue⟩
 
 /-- Addition is defined only when both summands are supported. -/
 def add (left right : Result) : Result :=
@@ -155,6 +191,63 @@ def divide_congr {left left' right right' : Result}
             simp only [divide, dif_neg hpos, dif_neg hpos']
             exact .unsupported
 
+/-- Dividing two ratios with the same supported denominator cancels it. -/
+noncomputable def divide_divide_cancel (numerator middle denominator : QProb)
+    (leftSupported : Supported (divide (some numerator) (some middle)))
+    (rightSupported : Supported
+      (divide
+        (divide (some numerator) (some denominator))
+        (divide (some middle) (some denominator)))) :
+    Equivalent
+      (divide (some numerator) (some middle))
+      (divide
+        (divide (some numerator) (some denominator))
+        (divide (some middle) (some denominator))) := by
+  by_cases middlePositive : 0 < middle.num
+  · by_cases denominatorPositive : 0 < denominator.num
+    · have dividedMiddlePositive :
+          0 < (QProb.div middle denominator denominatorPositive).num :=
+        Nat.mul_pos middlePositive denominator.den_pos
+      simp only [divide, dif_pos middlePositive,
+        dif_pos denominatorPositive, dif_pos dividedMiddlePositive]
+      apply Equivalent.value
+      simp only [QProb.Equiv, QProb.div]
+      ac_rfl
+    · simp only [divide, dif_neg denominatorPositive] at rightSupported
+      rcases rightSupported with ⟨_, impossible⟩
+      cases impossible
+  · simp only [divide, dif_neg middlePositive] at leftSupported
+    rcases leftSupported with ⟨_, impossible⟩
+    cases impossible
+
+/-- The supported product of two adjacent conditional ratios is their chain. -/
+noncomputable def divide_multiply_chain
+    (numerator middle denominator : QProb)
+    (leftSupported : Supported
+      (divide (some numerator) (some denominator)))
+    (rightSupported : Supported
+      (multiply
+        (divide (some numerator) (some middle))
+        (divide (some middle) (some denominator)))) :
+    Equivalent
+      (divide (some numerator) (some denominator))
+      (multiply
+        (divide (some numerator) (some middle))
+        (divide (some middle) (some denominator))) := by
+  by_cases denominatorPositive : 0 < denominator.num
+  · by_cases middlePositive : 0 < middle.num
+    · simp only [divide, dif_pos denominatorPositive,
+        dif_pos middlePositive, multiply]
+      apply Equivalent.value
+      simp only [QProb.Equiv, QProb.div, QProb.mul]
+      ac_rfl
+    · simp only [divide, dif_neg middlePositive, multiply] at rightSupported
+      rcases rightSupported with ⟨_, impossible⟩
+      cases impossible
+  · simp only [divide, dif_neg denominatorPositive] at leftSupported
+    rcases leftSupported with ⟨_, impossible⟩
+    cases impossible
+
 noncomputable def sum_map_congr (values : List X) (left right : X -> Result)
     (h : forall value, Equivalent (left value) (right value)) :
     Equivalent (sum (values.map left)) (sum (values.map right)) := by
@@ -172,6 +265,31 @@ noncomputable def sum_map_congr_mem (values : List X)
   | cons value values ih =>
       exact add_congr (h value (by simp))
         (ih (fun member memberIn => h member (by simp [memberIn])))
+
+theorem sum_some_map (values : List X) (value : X -> QProb) :
+    sum (values.map (fun item => some (value item))) =
+      some (QProb.listSum (values.map value)) := by
+  induction values with
+  | nil => rfl
+  | cons head tail ih =>
+      simp only [List.map_cons, sum, add, QProb.listSum]
+      rw [ih]
+
+/-- A finite sum of ratios with one supported denominator is their summed ratio. -/
+noncomputable def divide_listSum_same_denominator
+    (values : List QProb) (denominator : QProb)
+    (supported : Supported
+      (divide (some (QProb.listSum values)) (some denominator))) :
+    Equivalent
+      (divide (some (QProb.listSum values)) (some denominator))
+      (sum (values.map (fun value => divide (some value) (some denominator)))) := by
+  by_cases positive : 0 < denominator.num
+  · simp only [divide, dif_pos positive]
+    rw [sum_some_map values (fun value => QProb.div value denominator positive)]
+    exact .value (QProb.div_listSum_same_denominator values denominator positive)
+  · simp only [divide, dif_neg positive] at supported
+    rcases supported with ⟨_, impossible⟩
+    cases impossible
 
 def add_supported {left right : Result}
     (leftSupported : Sigma fun value => Equivalent left (some value))
@@ -214,6 +332,45 @@ def intervention (kernel : Kernel S) (reference : S.Assignment) :
 def agreesOn (nodes : NodeSet S) (reference sample : S.Assignment) : Bool :=
   finAll S.count (fun i =>
     if nodes i then decide (sample i = reference i) else true)
+
+private theorem finAll_and {n : Nat} (left right : Fin n -> Bool) :
+    finAll n (fun i => left i && right i) =
+      (finAll n left && finAll n right) := by
+  induction n with
+  | zero => rfl
+  | succ n inductionHypothesis =>
+      simp only [finAll]
+      rw [inductionHypothesis]
+      cases finAll n (fun i => left i.castSucc) <;>
+        cases finAll n (fun i => right i.castSucc) <;>
+        cases left (Fin.last n) <;> cases right (Fin.last n) <;> rfl
+
+/-- Agreement on a union is the conjunction of the two cylinder agreements. -/
+theorem agreesOn_union (left right : NodeSet S)
+    (reference sample : S.Assignment) :
+    agreesOn (NodeSet.union left right) reference sample =
+      (agreesOn left reference sample &&
+        agreesOn right reference sample) := by
+  unfold agreesOn
+  rw [← finAll_and]
+  apply finAll_congr
+  intro i
+  cases hleft : left i <;> cases hright : right i <;>
+    simp [NodeSet.union, hleft, hright]
+
+/-- Changing a reference outside the selected nodes does not change agreement. -/
+theorem agreesOn_reference_congr (nodes : NodeSet S)
+    (first second sample : S.Assignment)
+    (agree : ∀ i, nodes i = true -> first i = second i) :
+    agreesOn nodes first sample = agreesOn nodes second sample := by
+  unfold agreesOn
+  apply finAll_congr
+  intro i
+  cases selected : nodes i with
+  | false => rfl
+  | true =>
+      simp only [↓reduceIte]
+      rw [agree i selected]
 
 theorem agreesOn_iff_project_eq (nodes : NodeSet S)
     (reference sample : S.Assignment) :
@@ -282,6 +439,34 @@ def distribution (model : FiniteLatentSCM S) (kernel : Kernel S)
   if kernel.hasAction then
     model.interventionalDist (kernel.intervention reference)
   else model.observationalDist
+
+/-- Kernel distributions depend on the action field, not outcome or condition. -/
+theorem distribution_eq_of_action (model : FiniteLatentSCM S)
+    (firstOutcome secondOutcome action firstCondition secondCondition : NodeSet S)
+    (reference : S.Assignment) :
+    (Kernel.mk firstOutcome action firstCondition).distribution model reference =
+    (Kernel.mk secondOutcome action secondCondition).distribution model reference := by
+  rfl
+
+/-- Kernel distributions agree when the intervention references agree on actions. -/
+theorem distribution_eq_of_action_reference
+    (model : FiniteLatentSCM S)
+    (firstOutcome secondOutcome action firstCondition secondCondition : NodeSet S)
+    (firstReference secondReference : S.Assignment)
+    (agree : ∀ i, action i = true -> firstReference i = secondReference i) :
+    (Kernel.mk firstOutcome action firstCondition).distribution model firstReference =
+      (Kernel.mk secondOutcome action secondCondition).distribution model secondReference := by
+  simp only [distribution, hasAction]
+  split
+  · congr 1
+    funext i
+    unfold intervention
+    cases selected : action i with
+    | false => simp [selected]
+    | true =>
+        simp only [selected, ↓reduceIte]
+        rw [agree i selected]
+  · rfl
 
 /-- Interpret `P(outcome | do(action), condition)` at one full valuation. -/
 def denote (model : FiniteLatentSCM S) (kernel : Kernel S)
@@ -353,6 +538,218 @@ def marginalAssignmentsUpTo (S : ObservedSignature) (nodes : NodeSet S)
 def marginalAssignments (S : ObservedSignature) (nodes : NodeSet S)
     (reference : S.Assignment) : List S.Assignment :=
   marginalAssignmentsUpTo S nodes reference S.count (Nat.le_refl S.count)
+
+def MarginalVariantUpTo (S : ObservedSignature) (nodes : NodeSet S)
+    (reference variant : S.Assignment) (k : Nat) : Prop :=
+  (∀ i : Fin S.count, i.val < k -> nodes i = false -> variant i = reference i) ∧
+    (∀ i : Fin S.count, k ≤ i.val -> variant i = reference i)
+
+theorem mem_marginalAssignmentsUpTo_iff
+    (S : ObservedSignature) (nodes : NodeSet S) (reference variant : S.Assignment) :
+    ∀ (k : Nat) (hk : k ≤ S.count),
+      variant ∈ marginalAssignmentsUpTo S nodes reference k hk ↔
+        MarginalVariantUpTo S nodes reference variant k := by
+  intro k
+  induction k generalizing variant with
+  | zero =>
+      intro hk
+      simp only [marginalAssignmentsUpTo, List.mem_singleton]
+      constructor
+      · intro same
+        subst variant
+        exact ⟨fun _ impossible => (Nat.not_lt_zero _ impossible).elim,
+          fun _ _ => rfl⟩
+      · intro invariant
+        funext i
+        exact invariant.2 i (Nat.zero_le _)
+  | succ k ih =>
+      intro hk
+      let node : Fin S.count := ⟨k, Nat.lt_of_succ_le hk⟩
+      simp only [marginalAssignmentsUpTo]
+      split <;> rename_i selected
+      · change nodes node = true at selected
+        simp only [List.mem_flatMap, List.mem_map]
+        constructor
+        · intro member
+          rcases member with ⟨previous, previousMember, value, valueMember, replaced⟩
+          subst variant
+          have previousInvariant :=
+            (ih previous (Nat.le_trans (Nat.le_succ k) hk)).mp previousMember
+          constructor
+          · intro i ilt notSelected
+            by_cases same : i = node
+            · subst i
+              simp [selected] at notSelected
+            · have valueDifferent : i.val ≠ k := by
+                intro equality
+                exact same (Fin.ext equality)
+              exact (S.replace_ne previous node i value same).trans
+                (previousInvariant.1 i (by omega) notSelected)
+          · intro i outside
+            have different : i ≠ node := by
+              intro same
+              have sameValue : i.val = node.val := congrArg Fin.val same
+              change i.val = k at sameValue
+              omega
+            exact (S.replace_ne previous node i value different).trans
+              (previousInvariant.2 i (by omega))
+        · intro invariant
+          let previous := S.replace variant node (reference node)
+          have previousInvariant :
+              MarginalVariantUpTo S nodes reference previous k := by
+            constructor
+            · intro i ilt notSelected
+              have different : i ≠ node := by
+                intro same
+                have sameValue : i.val = node.val := congrArg Fin.val same
+                change i.val = k at sameValue
+                omega
+              simp only [previous]
+              rw [S.replace_ne variant node i (reference node) different]
+              exact invariant.1 i (Nat.lt_trans ilt (Nat.lt_succ_self k)) notSelected
+            · intro i outside
+              by_cases same : i = node
+              · subst i
+                exact S.replace_at variant node (reference node)
+              · simp only [previous]
+                rw [S.replace_ne variant node i (reference node) same]
+                have valueDifferent : i.val ≠ k := by
+                  intro equality
+                  exact same (Fin.ext equality)
+                exact invariant.2 i (by omega)
+          refine ⟨previous, (ih previous (Nat.le_trans (Nat.le_succ k) hk)).mpr previousInvariant,
+            variant node, S.value_complete node (variant node), ?_⟩
+          change S.replace previous node (variant node) = variant
+          funext i
+          by_cases same : i = node
+          · subst i
+            exact S.replace_at previous node (variant node)
+          · rw [S.replace_ne previous node i (variant node) same]
+            simp only [previous]
+            exact S.replace_ne variant node i (reference node) same
+      · change ¬ nodes node = true at selected
+        have notSelected : nodes node = false := by
+          cases value : nodes node <;> simp_all
+        rw [ih variant (Nat.le_trans (Nat.le_succ k) hk)]
+        constructor
+        · intro previousInvariant
+          constructor
+          · intro i ilt iNotSelected
+            by_cases before : i.val < k
+            · exact previousInvariant.1 i before iNotSelected
+            · have atNode : i = node := by
+                apply Fin.ext
+                simp only [node]
+                omega
+              subst i
+              exact previousInvariant.2 node (by simp [node])
+          · intro i outside
+            exact previousInvariant.2 i (Nat.le_trans (Nat.le_succ k) outside)
+        · intro invariant
+          constructor
+          · intro i before iNotSelected
+            exact invariant.1 i (Nat.lt_trans before (Nat.lt_succ_self k)) iNotSelected
+          · intro i outside
+            by_cases equality : i.val = k
+            · have atNode : i = node := Fin.ext equality
+              subst i
+              exact invariant.1 node (by simp [node]) notSelected
+            · exact invariant.2 i (by omega)
+
+theorem marginalAssignmentsUpTo_nodup
+    (S : ObservedSignature) (nodes : NodeSet S) (reference : S.Assignment) :
+    ∀ (k : Nat) (hk : k ≤ S.count),
+      (marginalAssignmentsUpTo S nodes reference k hk).Nodup := by
+  intro k
+  induction k with
+  | zero =>
+      intro hk
+      simp [marginalAssignmentsUpTo]
+  | succ k ih =>
+      intro hk
+      let node : Fin S.count := ⟨k, Nat.lt_of_succ_le hk⟩
+      simp only [marginalAssignmentsUpTo]
+      split <;> rename_i selected
+      · change nodes node = true at selected
+        apply (List.pairwise_flatMap).mpr
+        constructor
+        · intro previous previousMember
+          apply (List.pairwise_map).mpr
+          change List.Pairwise
+            (fun first second =>
+              S.replace previous node first ≠ S.replace previous node second)
+            (S.valueEnumeration node)
+          exact (S.value_nodup node).imp (by
+            intro first second different equalReplacement
+            apply different
+            have atNode := congrFun equalReplacement node
+            simpa only [S.replace_at] using atNode)
+        · apply List.Pairwise.imp_of_mem (p :=
+              ih (Nat.le_trans (Nat.le_succ k) hk))
+          intro first second firstIn secondIn different
+          intro firstReplacement firstMember secondReplacement secondMember
+          simp only [List.mem_map] at firstMember secondMember
+          rcases firstMember with ⟨firstValue, _, firstEq⟩
+          rcases secondMember with ⟨secondValue, _, secondEq⟩
+          intro replacementsEqual
+          apply different
+          have firstInvariant :=
+            (mem_marginalAssignmentsUpTo_iff S nodes reference first k
+              (Nat.le_trans (Nat.le_succ k) hk)).mp firstIn
+          have secondInvariant :=
+            (mem_marginalAssignmentsUpTo_iff S nodes reference second k
+              (Nat.le_trans (Nat.le_succ k) hk)).mp secondIn
+          funext i
+          by_cases same : i = node
+          · subst i
+            exact (firstInvariant.2 node (by simp [node])).trans
+              (secondInvariant.2 node (by simp [node])).symm
+          · have atI := congrFun replacementsEqual i
+            rw [← firstEq, ← secondEq] at atI
+            change S.replace first node firstValue i =
+              S.replace second node secondValue i at atI
+            simpa only [S.replace_ne first node i firstValue same,
+              S.replace_ne second node i secondValue same] using atI
+      · exact ih (Nat.le_trans (Nat.le_succ k) hk)
+
+theorem mem_marginalAssignments_iff
+    (S : ObservedSignature) (nodes : NodeSet S)
+    (reference variant : S.Assignment) :
+    variant ∈ marginalAssignments S nodes reference ↔
+      ∀ i, nodes i = false -> variant i = reference i := by
+  rw [marginalAssignments,
+    mem_marginalAssignmentsUpTo_iff S nodes reference variant]
+  constructor
+  · intro invariant i notSelected
+    exact invariant.1 i i.isLt notSelected
+  · intro outside
+    constructor
+    · exact fun i _ => outside i
+    · intro i impossible
+      exact (Nat.not_le_of_lt i.isLt impossible).elim
+
+theorem marginalAssignments_nodup
+    (S : ObservedSignature) (nodes : NodeSet S) (reference : S.Assignment) :
+    (marginalAssignments S nodes reference).Nodup :=
+  marginalAssignmentsUpTo_nodup S nodes reference S.count (Nat.le_refl _)
+
+def marginalVariant (S : ObservedSignature) (nodes : NodeSet S)
+    (reference sample : S.Assignment) : S.Assignment :=
+  fun i => if nodes i then sample i else reference i
+
+theorem marginalVariant_mem (S : ObservedSignature) (nodes : NodeSet S)
+    (reference sample : S.Assignment) :
+    marginalVariant S nodes reference sample ∈
+      marginalAssignments S nodes reference := by
+  apply (mem_marginalAssignments_iff S nodes reference _).mpr
+  intro i notSelected
+  simp [marginalVariant, notSelected]
+
+theorem marginal_member_agrees_outside
+    {variant : S.Assignment}
+    (member : variant ∈ marginalAssignments S nodes reference)
+    (outside : nodes i = false) : variant i = reference i :=
+  (mem_marginalAssignments_iff S nodes reference variant).mp member i outside
 
 /-- Partial denotation of a probability expression in one finite SCM. -/
 def denote (model : FiniteLatentSCM S) :

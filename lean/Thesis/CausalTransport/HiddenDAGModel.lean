@@ -1,4 +1,4 @@
-import Thesis.Causality.Core
+import Thesis.Causality.HardIntervention
 import Thesis.Causality.Reductions
 
 namespace Thesis
