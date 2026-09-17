@@ -333,6 +333,14 @@ def agreesOn (nodes : NodeSet S) (reference sample : S.Assignment) : Bool :=
   finAll S.count (fun i =>
     if nodes i then decide (sample i = reference i) else true)
 
+/-- Every assignment agrees with itself on any selected node set. -/
+theorem agreesOn_refl (nodes : NodeSet S) (reference : S.Assignment) :
+    agreesOn nodes reference reference = true := by
+  unfold agreesOn
+  refine (finAll_eq_true_iff _).mpr ?_
+  intro i
+  cases nodes i <;> simp
+
 private theorem finAll_and {n : Nat} (left right : Fin n -> Bool) :
     finAll n (fun i => left i && right i) =
       (finAll n left && finAll n right) := by

@@ -3,6 +3,7 @@ import Thesis.Causality.Derivation
 import Thesis.Causality.Model
 import Thesis.Causality.HardIntervention
 import Thesis.Causality.Identification
+import Thesis.Causality.IdentificationSearch
 import Thesis.Causality.Reductions
 import Thesis.Causality.CompactHiddenDAG
 import Thesis.Causality.PairRoot
@@ -26,7 +27,8 @@ Stable facade for the finite causal, modal, and counterfactual development.
 
 Suggested reading order for a reader familiar with the thesis but new to the
 source is `Graph`, `Derivation`, `Model`, `HardIntervention`, `Reductions`,
-`CompactHiddenDAG`, `PairRoot`, `Semantics`, and `Identification`; then
+`CompactHiddenDAG`, `PairRoot`, `Semantics`, `Identification`, and
+`IdentificationSearch`; then
 `Modalities` and `Structural`; then
 `Counterfactual`, `Multiworld`, and the modules below `ExecutedMultiworld`.
 `ModalRealization` and `ModalCounterfactual` connect the executable edit paths

@@ -86,11 +86,11 @@ def PathDSeparated (G : ObservedGraph S) (mutilation : GraphMutilation S)
 end PathSpecification
 
 /--
-External correctness boundary for the finite Boolean implementation.
+Correctness interface for the finite Boolean d-separation implementation.
 
-An inhabitant supplies the standard ancestral-moralisation theorem specialized
-to the explicit-latent expansion used here. Keeping this boundary explicit
-separates the external graph theorem from the checked certificate transport.
+`ObservedGraph.dSeparationCorrectness` inhabits this with the ancestral-moral
+search coinciding with the active-path specification. The named structure
+keeps that correspondence explicit at certificate-transport boundaries.
 -/
 structure DSeparationCorrectness (G : ObservedGraph S) : Prop where
   algorithm_iff_active_path : forall mutilation left right conditioned,

@@ -49,6 +49,21 @@ def ParentValues (S : ObservedSignature) (child : Fin S.count) :=
   (parent : Fin S.count) ->
     S.directed parent child = true -> S.Value parent
 
+/--
+Constructive two-value richness of every observed coordinate.
+
+This is data, not a mere existence proof: hedge countermodels must pick two
+distinct values without invoking choice.  Completeness of identification is
+inhabited only after such a pair is supplied; unary coordinates make a
+graphical hedge fail to separate `P(Y | do(X))`.
+-/
+structure ValueRich (S : ObservedSignature) where
+  first : (i : Fin S.count) -> S.Value i
+  second : (i : Fin S.count) -> S.Value i
+  first_enumerated : forall i, first i ∈ S.valueEnumeration i
+  second_enumerated : forall i, second i ∈ S.valueEnumeration i
+  different : forall i, first i ≠ second i
+
 end ObservedSignature
 
 /-- A decidable set of observed nodes. -/
@@ -63,8 +78,21 @@ def full : NodeSet S := fun _ => true
 def singleton (node : Fin S.count) : NodeSet S :=
   fun i => decide (i = node)
 
+theorem singleton_eq_true_iff {S : ObservedSignature}
+    (node i : Fin S.count) :
+    singleton node i = true ↔ i = node := by
+  simp [singleton]
+
 def union (X Y : NodeSet S) : NodeSet S :=
   fun i => X i || Y i
+
+/-- Add one index to a selection. -/
+def insert (X : NodeSet S) (node : Fin S.count) : NodeSet S :=
+  union X (singleton node)
+
+theorem insert_eq_true_iff (X : NodeSet S) (node i : Fin S.count) :
+    insert X node i = true ↔ X i = true ∨ i = node := by
+  simp [insert, union, singleton]
 
 def inter (X Y : NodeSet S) : NodeSet S :=
   fun i => X i && Y i
@@ -75,11 +103,241 @@ def diff (X Y : NodeSet S) : NodeSet S :=
 def Subset (X Y : NodeSet S) : Prop :=
   forall i, X i = true -> Y i = true
 
+theorem Subset.trans {X Y Z : NodeSet S}
+    (hXY : Subset X Y) (hYZ : Subset Y Z) : Subset X Z :=
+  fun i hi => hYZ i (hXY i hi)
+
 def Disjoint (X Y : NodeSet S) : Prop :=
   forall i, X i = true -> Y i = false
 
 def Meets (X Y : NodeSet S) : Prop :=
   Exists fun i => X i = true /\ Y i = true
+
+/-- Every observed index, in topological `Fin` order. -/
+def enumerated (S : ObservedSignature) : List (Fin S.count) :=
+  List.ofFn (fun i : Fin S.count => i)
+
+/-- Members of a node set, still in topological order. -/
+def members (X : NodeSet S) : List (Fin S.count) :=
+  (enumerated S).filter (fun i => X i)
+
+/-- Boolean emptiness: no selected index. -/
+def isEmpty (X : NodeSet S) : Bool :=
+  (members X).isEmpty
+
+/-- Boolean overlap: some shared selected index. -/
+def meetsBool (X Y : NodeSet S) : Bool :=
+  !(isEmpty (inter X Y))
+
+/-- Boolean disjointness: no selected index of `X` lies in `Y`. -/
+def disjointBool (X Y : NodeSet S) : Bool :=
+  (members X).all (fun i => !Y i)
+
+/-- Boolean inclusion, decided by enumerating the smaller set. -/
+def subsetBool (X Y : NodeSet S) : Bool :=
+  (members X).all (fun i => Y i)
+
+/-- Boolean extensional equality of node sets. -/
+def equal (X Y : NodeSet S) : Bool :=
+  subsetBool X Y && subsetBool Y X
+
+theorem mem_enumerated (S : ObservedSignature) (i : Fin S.count) :
+    i ∈ enumerated S :=
+  (List.mem_ofFn).mpr ⟨i, rfl⟩
+
+theorem length_enumerated (S : ObservedSignature) :
+    (enumerated S).length = S.count :=
+  List.length_ofFn
+
+theorem mem_members_iff (X : NodeSet S) (i : Fin S.count) :
+    i ∈ members X ↔ X i = true := by
+  simp [members, List.mem_filter, mem_enumerated]
+
+/--
+Emptiness is decided by inspecting `members`, not by `List.filter_eq_nil_iff`.
+That Init lemma depends on `Classical.choice`; the nil/cons split does not.
+-/
+theorem isEmpty_eq_true_iff (X : NodeSet S) :
+    isEmpty X = true ↔ forall i, X i = false := by
+  constructor
+  · intro h i
+    unfold isEmpty at h
+    cases hm : members X with
+    | nil =>
+        have notMember : i ∉ members X := by simp [hm]
+        cases hX : X i
+        · rfl
+        · exact False.elim (notMember ((mem_members_iff X i).mpr hX))
+    | cons _head _tail =>
+        simp [hm] at h
+  · intro h
+    unfold isEmpty
+    cases hm : members X with
+    | nil => rfl
+    | cons head _tail =>
+        have hTrue : X head = true :=
+          (mem_members_iff X head).mp (by simp [hm])
+        exact False.elim (Bool.false_ne_true ((h head).symm.trans hTrue))
+
+theorem isEmpty_empty {S : ObservedSignature} :
+    isEmpty (empty : NodeSet S) = true :=
+  (isEmpty_eq_true_iff (empty : NodeSet S)).mpr (fun _i => rfl)
+
+theorem subsetBool_eq_true_iff (X Y : NodeSet S) :
+    subsetBool X Y = true ↔ Subset X Y := by
+  constructor
+  · intro h i hi
+    have mem := (mem_members_iff X i).mpr hi
+    have allTrue : forall j, j ∈ members X -> Y j = true :=
+      List.all_eq_true.mp h
+    exact allTrue i mem
+  · intro h
+    refine List.all_eq_true.mpr ?_
+    intro i hi
+    exact h i ((mem_members_iff X i).mp hi)
+
+theorem equal_eq_true_iff (X Y : NodeSet S) :
+    equal X Y = true ↔ X = Y := by
+  constructor
+  · intro h
+    have parts := Bool.and_eq_true_iff.mp h
+    have subsetXY : Subset X Y := (subsetBool_eq_true_iff X Y).mp parts.1
+    have subsetYX : Subset Y X := (subsetBool_eq_true_iff Y X).mp parts.2
+    funext i
+    cases hX : X i
+    · cases hY : Y i
+      · rfl
+      · exact False.elim (Bool.false_ne_true (hX.symm.trans (subsetYX i hY)))
+    · exact (subsetXY i hX).symm
+  · intro h
+    subst h
+    have reflSubset : Subset X X := fun _i hi => hi
+    exact Bool.and_eq_true_iff.mpr
+      ⟨(subsetBool_eq_true_iff X X).mpr reflSubset,
+        (subsetBool_eq_true_iff X X).mpr reflSubset⟩
+
+theorem inter_empty_left (X : NodeSet S) : inter empty X = empty := by
+  funext i
+  simp [inter, empty]
+
+theorem inter_full_right (X : NodeSet S) : inter X full = X := by
+  funext i
+  simp [inter, full]
+
+theorem disjoint_union_of {X Y Z : NodeSet S}
+    (disjointY : Disjoint X Y) (disjointZ : Disjoint X Z) :
+    Disjoint X (union Y Z) := by
+  intro i hi
+  simp [union, disjointY i hi, disjointZ i hi]
+
+theorem Disjoint.of_subset_left {X Y Z : NodeSet S}
+    (h : Disjoint Y Z) (sub : Subset X Y) : Disjoint X Z :=
+  fun i hi => h i (sub i hi)
+
+theorem Meets.of_mem {X Y : NodeSet S} {i : Fin S.count}
+    (hX : X i = true) (hY : Y i = true) : Meets X Y :=
+  ⟨i, hX, hY⟩
+
+theorem inter_subset_left (X Y : NodeSet S) : Subset (inter X Y) X := by
+  intro i hi
+  exact (Bool.and_eq_true_iff.mp hi).1
+
+theorem inter_subset_right (X Y : NodeSet S) : Subset (inter X Y) Y := by
+  intro i hi
+  exact (Bool.and_eq_true_iff.mp hi).2
+
+theorem diff_subset_left (X Y : NodeSet S) : Subset (diff X Y) X := by
+  intro i hi
+  exact (Bool.and_eq_true_iff.mp hi).1
+
+theorem Disjoint.diff_right (X Y : NodeSet S) : Disjoint (diff X Y) Y := by
+  intro i hi
+  have parts := Bool.and_eq_true_iff.mp hi
+  cases hY : Y i
+  · rfl
+  · have : (!Y i) = true := parts.2
+    simp [hY] at this
+
+/-- A set disjoint from `Z` and contained in `Y` lives in `Y \ Z`. -/
+theorem Subset.diff_of_subset_disjoint {X Y Z : NodeSet S}
+    (sub : Subset X Y) (disj : Disjoint X Z) : Subset X (diff Y Z) := by
+  intro i hi
+  refine Bool.and_eq_true_iff.mpr ⟨sub i hi, ?_⟩
+  have hZ : Z i = false := disj i hi
+  simp [hZ]
+
+/-- Preferred first selected index in topological order, if any. -/
+def firstMember (X : NodeSet S) : Option (Fin S.count) :=
+  (members X).head?
+
+theorem firstMember_mem {X : NodeSet S} {i : Fin S.count}
+    (h : firstMember X = some i) : X i = true := by
+  have hx : (members X).head? = some i := by
+    simpa [firstMember] using h
+  rcases (List.head?_eq_some_iff).mp hx with ⟨_tail, ht⟩
+  have mem : i ∈ members X := by simp [ht]
+  exact (mem_members_iff X i).mp mem
+
+theorem firstMember_of_not_empty {X : NodeSet S}
+    (h : isEmpty X = false) :
+    Exists fun i => firstMember X = some i := by
+  cases hfm : firstMember X with
+  | none =>
+      have emptyMembers : members X = [] :=
+        (List.head?_eq_none_iff).mp (by simpa [firstMember] using hfm)
+      have empty : isEmpty X = true := List.isEmpty_iff.mpr emptyMembers
+      exact False.elim (Bool.false_ne_true (h.symm.trans empty))
+  | some i => exact ⟨i, rfl⟩
+
+theorem isEmpty_eq_false_iff (X : NodeSet S) :
+    isEmpty X = false ↔ Exists fun i => X i = true := by
+  constructor
+  · intro h
+    rcases firstMember_of_not_empty h with ⟨i, hi⟩
+    exact ⟨i, firstMember_mem hi⟩
+  · intro h
+    rcases h with ⟨i, hi⟩
+    cases he : isEmpty X with
+    | true =>
+        have allFalse : X i = false := (isEmpty_eq_true_iff X).mp he i
+        exact False.elim (Bool.false_ne_true (allFalse.symm.trans hi))
+    | false => rfl
+
+theorem meetsBool_eq_true_iff (X Y : NodeSet S) :
+    meetsBool X Y = true ↔ Meets X Y := by
+  constructor
+  · intro h
+    have emptyFalse : isEmpty (inter X Y) = false := by
+      cases he : isEmpty (inter X Y) with
+      | false => rfl
+      | true =>
+          simp [meetsBool, he] at h
+    rcases (isEmpty_eq_false_iff (inter X Y)).mp emptyFalse with ⟨i, hi⟩
+    have parts := Bool.and_eq_true_iff.mp hi
+    exact ⟨i, parts.1, parts.2⟩
+  · intro h
+    rcases h with ⟨i, hX, hY⟩
+    have interTrue : inter X Y i = true :=
+      Bool.and_eq_true_iff.mpr ⟨hX, hY⟩
+    have emptyFalse : isEmpty (inter X Y) = false :=
+      (isEmpty_eq_false_iff (inter X Y)).mpr ⟨i, interTrue⟩
+    simp [meetsBool, emptyFalse]
+
+theorem disjointBool_eq_true_iff (X Y : NodeSet S) :
+    disjointBool X Y = true ↔ Disjoint X Y := by
+  constructor
+  · intro h i hi
+    have mem := (mem_members_iff X i).mpr hi
+    have notY : (!Y i) = true := (List.all_eq_true.mp h) i mem
+    cases hY : Y i
+    · rfl
+    · simp [hY] at notY
+  · intro h
+    refine List.all_eq_true.mpr ?_
+    intro i hi
+    have hiX : X i = true := (mem_members_iff X i).mp hi
+    have hY : Y i = false := h i hiX
+    simp [hY]
 
 theorem union_comm (X Y : NodeSet S) : union X Y = union Y X := by
   funext i

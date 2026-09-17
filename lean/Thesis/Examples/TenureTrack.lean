@@ -7,6 +7,7 @@ namespace Causality
 namespace Examples
 
 open Probability
+open Probability.Distros
 
 /-!
 Executable witnesses for the theorem-facing causal layer, including the full
@@ -444,7 +445,8 @@ theorem shared_interventional_secondTrue :
 
 /-- A concrete certificate whose recursive support witness reaches Lean's kernel. -/
 noncomputable def observationalSecondCertificate :
-    JointIdentificationCertificate sharedCauseModel.observedGraph
+    JointIdentificationCertificate (GraphModelClass.all
+      sharedCauseModel.observedGraph)
       observationalSecondQuery where
   formula := observationalSecondQuery.sourceTerm
   actionFree := by
@@ -491,12 +493,15 @@ finite probability, latent-SCM, intervention, and modal APIs.
 
 /-!
 The observed coordinates, in topological order, are prestige, quality, topic,
-committee expertise, fit, shortlist, funding, and offer. The six latent
-coordinates are respectively a shared background cause of prestige and
-quality, private prestige and quality seeds, private topic and committee seeds,
-and a private funding seed. The declarations below first make this finite model
-explicit, then reduce its named events to predicates on the latent assignment,
-and finally ask Lean to calculate the resulting finite rational probabilities.
+committee expertise, fit, shortlist, funding, and offer. Observed values remain
+Boolean. The six latent coordinates are a shared background bit for prestige
+and quality, a private prestige bit, a two-trial binomial quality seed, private
+topic and committee bits, and a two-trial binomial funding seed. Bits are
+Booleans; each binomial seed is a `Fin 3` count whose observed mechanism
+reads the at-least-one threshold. The declarations below first make this
+finite model explicit, then reduce its named events to predicates on the
+latent assignment, and finally ask Lean to calculate the resulting finite
+rational probabilities.
 -/
 
 def signature : ObservedSignature where
@@ -538,22 +543,67 @@ def shortlistNode : Fin signature.count := node 5 (by decide)
 def fundingNode : Fin signature.count := node 6 (by decide)
 def offerNode : Fin signature.count := node 7 (by decide)
 
-def bernoulli (trueWeight falseWeight : Nat)
-    (positive : 0 < falseWeight + trueWeight) : FiniteProbRecord Bool where
-  atoms := [(false, falseWeight), (true, trueWeight)]
-  den := falseWeight + trueWeight
-  den_pos := positive
-  total_mass := by
-    simp [FiniteProbRecord.totalMass, Nat.add_comm]
+/-- Quality and funding seeds are two-trial counts (`Fin 3`). Every other
+latent is a Boolean bit.  The carrier is defined by matching on the six
+`Fin` constructors so that `Bool` and `Fin 3` reduce on numerals; the
+overflow clause is `False.elim`. -/
+def latentCarrier : Fin 6 → Type
+  | ⟨0, _⟩ => Bool
+  | ⟨1, _⟩ => Bool
+  | ⟨2, _⟩ => Fin 3
+  | ⟨3, _⟩ => Bool
+  | ⟨4, _⟩ => Bool
+  | ⟨5, _⟩ => Fin 3
+  | ⟨n + 6, h⟩ => False.elim (Nat.not_lt.mpr (Nat.le_add_left 6 n) h)
+
+def latentEnum : (source : Fin 6) → List (latentCarrier source)
+  | ⟨0, _⟩ => [false, true]
+  | ⟨1, _⟩ => [false, true]
+  | ⟨2, _⟩ => List.finRange 3
+  | ⟨3, _⟩ => [false, true]
+  | ⟨4, _⟩ => [false, true]
+  | ⟨5, _⟩ => List.finRange 3
+  | ⟨n + 6, h⟩ => False.elim (Nat.not_lt.mpr (Nat.le_add_left 6 n) h)
+
+theorem mem_latentEnum :
+    forall source : Fin 6, forall value : latentCarrier source,
+      value ∈ latentEnum source
+  | ⟨0, _⟩, false => List.Mem.head _
+  | ⟨0, _⟩, true => List.Mem.tail _ (List.Mem.head _)
+  | ⟨1, _⟩, false => List.Mem.head _
+  | ⟨1, _⟩, true => List.Mem.tail _ (List.Mem.head _)
+  | ⟨2, _⟩, value => List.mem_finRange value
+  | ⟨3, _⟩, false => List.Mem.head _
+  | ⟨3, _⟩, true => List.Mem.tail _ (List.Mem.head _)
+  | ⟨4, _⟩, false => List.Mem.head _
+  | ⟨4, _⟩, true => List.Mem.tail _ (List.Mem.head _)
+  | ⟨5, _⟩, value => List.mem_finRange value
+  | ⟨n + 6, h⟩, _ => False.elim (Nat.not_lt.mpr (Nat.le_add_left 6 n) h)
+
+def latentDecEq : (source : Fin 6) → DecidableEq (latentCarrier source)
+  | ⟨0, _⟩ => (inferInstance : DecidableEq Bool)
+  | ⟨1, _⟩ => (inferInstance : DecidableEq Bool)
+  | ⟨2, _⟩ => (inferInstance : DecidableEq (Fin 3))
+  | ⟨3, _⟩ => (inferInstance : DecidableEq Bool)
+  | ⟨4, _⟩ => (inferInstance : DecidableEq Bool)
+  | ⟨5, _⟩ => (inferInstance : DecidableEq (Fin 3))
+  | ⟨n + 6, h⟩ => False.elim (Nat.not_lt.mpr (Nat.le_add_left 6 n) h)
+
+/-- Read a two-trial count as a Boolean: false at zero, true at every
+positive value.  This is the at-least-one threshold of a binomial seed. -/
+def asBit (k : Fin 3) : Bool :=
+  decide (0 < k.val)
+
+/-- Fair two-trial binomial on `{0,1,2}`, the quality and funding seeds. -/
+def countFactor : FiniteProbRecord (Fin 3) :=
+  (binomialDistro 2 1 1 (by decide)).record
 
 def latent : LatentExtension signature where
   count := 6
-  Value := fun _ => Bool
-  valueEnumeration := fun _ => [false, true]
-  value_complete := by
-    intro _ value
-    cases value <;> simp
-  valueDecidableEq := fun _ => inferInstance
+  Value := latentCarrier
+  valueEnumeration := latentEnum
+  value_complete := mem_latentEnum
+  valueDecidableEq := latentDecEq
   incident := fun source child => decide
     ((source.val = 0 /\ (child.val = 0 \/ child.val = 1)) \/
       (source.val = 1 /\ child.val = 0) \/
@@ -562,15 +612,16 @@ def latent : LatentExtension signature where
       (source.val = 4 /\ child.val = 3) \/
       (source.val = 5 /\ child.val = 6))
 
-/-- The six independent Bernoulli factors, ordered by the latent names below. -/
-def factor (source : Fin latent.count) : FiniteProbRecord Bool :=
-  match source.val with
-  | 0 => bernoulli 1 2 (by decide)
-  | 1 => bernoulli 1 3 (by decide)
-  | 2 => bernoulli 1 3 (by decide)
-  | 3 => bernoulli 1 1 (by decide)
-  | 4 => bernoulli 1 1 (by decide)
-  | _ => bernoulli 1 3 (by decide)
+/-- Independent latent factors: Boolean Bernoulli bits together with two
+binomial counts. -/
+def factor : (source : Fin latent.count) → FiniteProbRecord (latent.Value source)
+  | ⟨0, h⟩ => (bernoulliDistro 1 2 (by decide)).record
+  | ⟨1, h⟩ => (bernoulliDistro 1 3 (by decide)).record
+  | ⟨2, h⟩ => countFactor
+  | ⟨3, h⟩ => (bernoulliDistro 1 1 (by decide)).record
+  | ⟨4, h⟩ => (bernoulliDistro 1 1 (by decide)).record
+  | ⟨5, h⟩ => countFactor
+  | ⟨n + 6, h⟩ => False.elim (Nat.not_lt.mpr (Nat.le_add_left 6 n) h)
 
 def prior : FiniteProbRecord latent.Assignment :=
   FiniteProduct.record latent.count latent.Value factor
@@ -648,7 +699,7 @@ def model : ExactModel signature where
         latents prestigeSource (h0 ▸ prestige_prestige)
     else if h1 : child = qualityNode then
       latents backgroundSource (h1 ▸ background_quality) ||
-        latents qualitySource (h1 ▸ quality_quality)
+        asBit (latents qualitySource (h1 ▸ quality_quality))
     else if h2 : child = topicNode then
       latents topicSource (h2 ▸ topic_topic)
     else if h3 : child = committeeNode then
@@ -662,7 +713,7 @@ def model : ExactModel signature where
           parents fitNode (h5 ▸ fit_shortlist))
     else if h6 : child = fundingNode then
       parents topicNode (h6 ▸ topic_funding) ||
-        latents fundingSource (h6 ▸ funding_funding)
+        asBit (latents fundingSource (h6 ▸ funding_funding))
     else
       let h7 := remaining_child_is_offer child h0 h1 h2 h3 h4 h5 h6
       parents shortlistNode (h7 ▸ shortlist_offer) &&
@@ -725,7 +776,7 @@ def latentPrestige (u : model.latent.Assignment) : Bool :=
   u backgroundSource || u prestigeSource
 
 def latentQuality (u : model.latent.Assignment) : Bool :=
-  u backgroundSource || u qualitySource
+  u backgroundSource || asBit (u qualitySource)
 
 def latentFit (u : model.latent.Assignment) : Bool :=
   u topicSource && u committeeSource
@@ -734,7 +785,7 @@ def latentShortlist (u : model.latent.Assignment) : Bool :=
   latentQuality u && (latentPrestige u || latentFit u)
 
 def latentFunding (u : model.latent.Assignment) : Bool :=
-  u topicSource || u fundingSource
+  u topicSource || asBit (u fundingSource)
 
 def latentOffer (u : model.latent.Assignment) : Bool :=
   latentShortlist u && latentFunding u
@@ -758,8 +809,8 @@ def latentOfferDoFit (u : model.latent.Assignment) : Bool :=
 ## Structural evaluation lemmas
 
 These lemmas connect each named observed event to a Boolean predicate on the
-six independent latent bits. They are the bridge between the structural
-equations above and the closed finite computations below.
+latent assignment. They are the bridge between the structural equations above
+and the closed finite computations below.
 -/
 
 theorem eval_prestige (u : model.latent.Assignment) :
@@ -768,7 +819,7 @@ theorem eval_prestige (u : model.latent.Assignment) :
     FiniteLatentSCM.evalUnder, FiniteLatentSCM.evalNodeUnder,
     FiniteLatentSCM.equationUnder, FiniteLatentSCM.noIntervention, model,
     prestigeNode, qualityNode, topicNode, committeeNode, fitNode,
-    shortlistNode, fundingNode, offerNode, node, signature]
+    shortlistNode, fundingNode, offerNode, node, signature, asBit]
 
 theorem eval_quality (u : model.latent.Assignment) :
     qualityEvent (model.eval u) = latentQuality u := by
@@ -776,7 +827,7 @@ theorem eval_quality (u : model.latent.Assignment) :
     FiniteLatentSCM.evalUnder, FiniteLatentSCM.evalNodeUnder,
     FiniteLatentSCM.equationUnder, FiniteLatentSCM.noIntervention, model,
     prestigeNode, qualityNode, topicNode, committeeNode, fitNode,
-    shortlistNode, fundingNode, offerNode, node, signature]
+    shortlistNode, fundingNode, offerNode, node, signature, asBit]
 
 theorem eval_fit (u : model.latent.Assignment) :
     fitEvent (model.eval u) = latentFit u := by
@@ -784,7 +835,7 @@ theorem eval_fit (u : model.latent.Assignment) :
     FiniteLatentSCM.evalUnder, FiniteLatentSCM.evalNodeUnder,
     FiniteLatentSCM.equationUnder, FiniteLatentSCM.noIntervention, model,
     prestigeNode, qualityNode, topicNode, committeeNode, fitNode,
-    shortlistNode, fundingNode, offerNode, node, signature]
+    shortlistNode, fundingNode, offerNode, node, signature, asBit]
 
 theorem eval_offer (u : model.latent.Assignment) :
     offerEvent (model.eval u) = latentOffer u := by
@@ -793,7 +844,7 @@ theorem eval_offer (u : model.latent.Assignment) :
     FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.equationUnder,
     FiniteLatentSCM.noIntervention, model, prestigeNode, qualityNode,
     topicNode, committeeNode, fitNode, shortlistNode, fundingNode, offerNode,
-    node, signature]
+    node, signature, asBit]
 
 theorem eval_prestigeAndQuality (u : model.latent.Assignment) :
     prestigeAndQualityEvent (model.eval u) = latentPrestigeAndQuality u := by
@@ -817,7 +868,7 @@ theorem eval_offer_doPrestige (u : model.latent.Assignment) :
     FiniteLatentSCM.evalUnder, FiniteLatentSCM.evalNodeUnder,
     FiniteLatentSCM.equationUnder, FiniteLatentSCM.noIntervention, model,
     prestigeNode, qualityNode, topicNode, committeeNode, fitNode,
-    shortlistNode, fundingNode, offerNode, node, signature]
+    shortlistNode, fundingNode, offerNode, node, signature, asBit]
 
 theorem eval_offer_doFit (u : model.latent.Assignment) :
     offerEvent (model.evalUnder setFitTrue.value u) = latentOfferDoFit u := by
@@ -826,15 +877,15 @@ theorem eval_offer_doFit (u : model.latent.Assignment) :
     FiniteLatentSCM.evalUnder, FiniteLatentSCM.evalNodeUnder,
     FiniteLatentSCM.equationUnder, FiniteLatentSCM.noIntervention, model,
     prestigeNode, qualityNode, topicNode, committeeNode, fitNode,
-    shortlistNode, fundingNode, offerNode, node, signature]
+    shortlistNode, fundingNode, offerNode, node, signature, asBit]
 
 /-!
 ## Closed finite probability calculations
 
 Each theorem in this block is discharged by kernel reduction over the finite
-six-bit latent sample space. The local recursion-depth setting only permits
-that normalisation to finish; it changes neither the model nor the statement
-being checked.
+latent product, now with two three-valued binomial seeds. The local
+recursion-depth setting only permits that normalisation to finish; it changes
+neither the model nor the statement being checked.
 -/
 
 set_option maxRecDepth 100000 in
@@ -845,12 +896,12 @@ theorem prior_prestige :
 set_option maxRecDepth 100000 in
 theorem prior_quality :
     QProb.Equiv (model.prior.probVal latentQuality)
-      (ratio 1 2 (by decide)) := by decide
+      (ratio 5 6 (by decide)) := by decide
 
 set_option maxRecDepth 100000 in
 theorem prior_prestigeAndQuality :
     QProb.Equiv (model.prior.probVal latentPrestigeAndQuality)
-      (ratio 3 8 (by decide)) := by decide
+      (ratio 11 24 (by decide)) := by decide
 
 set_option maxRecDepth 100000 in
 theorem prior_fit :
@@ -860,17 +911,17 @@ theorem prior_fit :
 set_option maxRecDepth 100000 in
 theorem prior_fitAndOffer :
     QProb.Equiv (model.prior.probVal latentFitAndOffer)
-      (ratio 1 8 (by decide)) := by decide
+      (ratio 5 24 (by decide)) := by decide
 
 set_option maxRecDepth 100000 in
 theorem prior_offerDoFit :
     QProb.Equiv (model.prior.probVal latentOfferDoFit)
-      (ratio 5 16 (by decide)) := by decide
+      (ratio 35 48 (by decide)) := by decide
 
 set_option maxRecDepth 100000 in
 theorem prior_evidence :
     QProb.Equiv (model.prior.probVal latentEvidence)
-      (ratio 3 32 (by decide)) := by decide
+      (ratio 9 32 (by decide)) := by decide
 
 def latentEvidenceAndOfferDoPrestige (u : model.latent.Assignment) : Bool :=
   latentEvidence u && latentOfferDoPrestige u
@@ -881,12 +932,12 @@ def latentEvidenceAndOfferDoFit (u : model.latent.Assignment) : Bool :=
 set_option maxRecDepth 100000 in
 theorem prior_evidenceAndOfferDoPrestige :
     QProb.Equiv (model.prior.probVal latentEvidenceAndOfferDoPrestige)
-      (ratio 3 64 (by decide)) := by decide
+      (ratio 15 64 (by decide)) := by decide
 
 set_option maxRecDepth 100000 in
 theorem prior_evidenceAndOfferDoFit :
     QProb.Equiv (model.prior.probVal latentEvidenceAndOfferDoFit)
-      (ratio 3 64 (by decide)) := by decide
+      (ratio 15 64 (by decide)) := by decide
 
 /-!
 ## Lift latent calculations to observed and interventional queries
@@ -932,13 +983,13 @@ theorem prob_prestige_true :
 
 theorem prob_quality_true :
     QProb.Equiv (model.observationalValue qualityEvent)
-      (ratio 1 2 (by decide)) := by
+      (ratio 5 6 (by decide)) := by
   exact observational_from_prior qualityEvent latentQuality eval_quality _
     prior_quality
 
 theorem prob_prestige_and_quality_true :
     QProb.Equiv (model.observationalValue prestigeAndQualityEvent)
-      (ratio 3 8 (by decide)) := by
+      (ratio 11 24 (by decide)) := by
   exact observational_from_prior prestigeAndQualityEvent
     latentPrestigeAndQuality eval_prestigeAndQuality _
       prior_prestigeAndQuality
@@ -950,7 +1001,7 @@ theorem prob_fit_true :
 
 theorem prob_fit_and_offer_true :
     QProb.Equiv (model.observationalValue fitAndOfferEvent)
-      (ratio 1 8 (by decide)) := by
+      (ratio 5 24 (by decide)) := by
   exact observational_from_prior fitAndOfferEvent latentFitAndOffer
     eval_fitAndOffer _ prior_fitAndOffer
 
@@ -959,7 +1010,7 @@ theorem prob_quality_given_prestige :
       (QProb.div (model.observationalValue prestigeAndQualityEvent)
         (model.observationalValue prestigeEvent)
           ((QProb.equiv_num_pos_iff prob_prestige_true).mpr (by decide)))
-      (ratio 3 4 (by decide)) := by
+      (ratio 11 12 (by decide)) := by
   exact QProb.equiv_trans
     (QProb.div_congr prob_prestige_and_quality_true prob_prestige_true
       ((QProb.equiv_num_pos_iff prob_prestige_true).mpr (by decide))
@@ -969,7 +1020,7 @@ theorem prob_quality_given_prestige :
 theorem prob_quality_do_prestige_true :
     QProb.Equiv
       (model.interventionalValue setPrestigeTrue.value qualityEvent)
-      (ratio 1 2 (by decide)) := by
+      (ratio 5 6 (by decide)) := by
   apply interventional_from_prior setPrestigeTrue.value qualityEvent
     latentQuality
   · intro u
@@ -978,7 +1029,7 @@ theorem prob_quality_do_prestige_true :
       FiniteLatentSCM.evalUnder, FiniteLatentSCM.evalNodeUnder,
       FiniteLatentSCM.equationUnder, FiniteLatentSCM.noIntervention, model,
       prestigeNode, qualityNode, topicNode, committeeNode, fitNode,
-      shortlistNode, fundingNode, offerNode, node, signature]
+      shortlistNode, fundingNode, offerNode, node, signature, asBit]
   · exact prior_quality
 
 theorem prob_offer_given_fit :
@@ -986,7 +1037,7 @@ theorem prob_offer_given_fit :
       (QProb.div (model.observationalValue fitAndOfferEvent)
         (model.observationalValue fitEvent)
           ((QProb.equiv_num_pos_iff prob_fit_true).mpr (by decide)))
-      (ratio 1 2 (by decide)) := by
+      (ratio 5 6 (by decide)) := by
   exact QProb.equiv_trans
     (QProb.div_congr prob_fit_and_offer_true prob_fit_true
       ((QProb.equiv_num_pos_iff prob_fit_true).mpr (by decide))
@@ -996,13 +1047,13 @@ theorem prob_offer_given_fit :
 theorem prob_offer_do_fit_true :
     QProb.Equiv
       (model.interventionalValue setFitTrue.value offerEvent)
-      (ratio 5 16 (by decide)) := by
+      (ratio 35 48 (by decide)) := by
   exact interventional_from_prior setFitTrue.value offerEvent
     latentOfferDoFit eval_offer_doFit _ prior_offerDoFit
 
 theorem evidence_probability :
     QProb.Equiv (model.observationalValue noPrestigeGoodNoOfferEvent)
-      (ratio 3 32 (by decide)) := by
+      (ratio 9 32 (by decide)) := by
   exact observational_from_prior noPrestigeGoodNoOfferEvent latentEvidence
     eval_evidence _ prior_evidence
 
@@ -1037,12 +1088,12 @@ theorem counterfactual_offer_do_prestige_given_evidence :
     QProb.Equiv
       (model.counterfactualValue noPrestigeGoodNoOfferEvent evidence_positive
         setPrestigeTrue.value offerEvent)
-      (ratio 1 2 (by decide)) := by
+      (ratio 5 6 (by decide)) := by
   have numerator : QProb.Equiv
       (model.prior.probVal (fun u =>
         noPrestigeGoodNoOfferEvent (model.eval u) &&
           offerEvent (model.evalUnder setPrestigeTrue.value u)))
-      (ratio 3 64 (by decide)) :=
+      (ratio 15 64 (by decide)) :=
     QProb.equiv_trans
       (FiniteProbRecord.probVal_congr model.prior _ _ (fun u => by
         simp [latentEvidenceAndOfferDoPrestige, eval_evidence,
@@ -1051,7 +1102,7 @@ theorem counterfactual_offer_do_prestige_given_evidence :
   have denominator : QProb.Equiv
       (model.prior.probVal (fun u =>
         noPrestigeGoodNoOfferEvent (model.eval u)))
-      (ratio 3 32 (by decide)) :=
+      (ratio 9 32 (by decide)) :=
     QProb.equiv_trans
       (FiniteProbRecord.probVal_congr model.prior _ _ eval_evidence)
       prior_evidence
@@ -1070,7 +1121,7 @@ theorem twin_counterfactual_offer_do_prestige_given_evidence :
     QProb.Equiv
       (prestigeTwin.abductedCounterfactualValue
         noPrestigeGoodNoOfferEvent evidence_positive offerEvent)
-      (ratio 1 2 (by decide)) := by
+      (ratio 5 6 (by decide)) := by
   exact QProb.equiv_trans
     (prestigeTwin.abductedCounterfactualValue_eq_counterfactualValue
       noPrestigeGoodNoOfferEvent evidence_positive offerEvent)
@@ -1090,12 +1141,12 @@ theorem counterfactual_offer_do_fit_given_evidence :
     QProb.Equiv
       (model.counterfactualValue noPrestigeGoodNoOfferEvent evidence_positive
         setFitTrue.value offerEvent)
-      (ratio 1 2 (by decide)) := by
+      (ratio 5 6 (by decide)) := by
   have numerator : QProb.Equiv
       (model.prior.probVal (fun u =>
         noPrestigeGoodNoOfferEvent (model.eval u) &&
           offerEvent (model.evalUnder setFitTrue.value u)))
-      (ratio 3 64 (by decide)) :=
+      (ratio 15 64 (by decide)) :=
     QProb.equiv_trans
       (FiniteProbRecord.probVal_congr model.prior _ _ (fun u => by
         simp [latentEvidenceAndOfferDoFit, eval_evidence, eval_offer_doFit]))
@@ -1103,7 +1154,7 @@ theorem counterfactual_offer_do_fit_given_evidence :
   have denominator : QProb.Equiv
       (model.prior.probVal (fun u =>
         noPrestigeGoodNoOfferEvent (model.eval u)))
-      (ratio 3 32 (by decide)) :=
+      (ratio 9 32 (by decide)) :=
     QProb.equiv_trans
       (FiniteProbRecord.probVal_congr model.prior _ _ eval_evidence)
       prior_evidence
@@ -1120,7 +1171,7 @@ theorem counterfactual_offer_do_fit_given_evidence :
 
 This final block packages the prestige intervention as the query consumed by
 the generic occurrence-indexed construction and connects its actual endpoint
-record to the displayed value one half.
+record to the displayed value five sixths.
 -/
 
 /-- The principal counterfactual query used by the modal multiworld example. -/
@@ -1147,11 +1198,11 @@ noncomputable def prestigeModalCombinedConstruction_semantics :
       (prestigeCounterfactualQuery.denote model) :=
   prestigeModalCombinedConstruction.semanticAgreement
 
-/-- The actual executed endpoint computes the principal value `1/2`. -/
+/-- The actual executed endpoint computes the principal value `5/6`. -/
 noncomputable def prestigeModalCombinedConstruction_value :
     ProbabilityResult.Equivalent
       prestigeModalCombinedConstruction.endpointDenote
-      (some (ratio 1 2 (by decide))) :=
+      (some (ratio 5 6 (by decide))) :=
   ProbabilityResult.trans
     (ModalCombinedCounterfactualConstruction.singleAction_semantics_eq_twinNetwork
       (AbductionActionPrediction.initialMode model)
@@ -1165,7 +1216,7 @@ theorem modal_aap_counterfactual_offer_do_prestige :
       (AbductionActionPrediction.prediction model
         noPrestigeGoodNoOfferEvent evidence_positive setPrestigeTrue.value
         offerEvent)
-      (ratio 1 2 (by decide)) := by
+      (ratio 5 6 (by decide)) := by
   exact QProb.equiv_trans
     (AbductionActionPrediction.prediction_eq_counterfactualValue model
       noPrestigeGoodNoOfferEvent evidence_positive setPrestigeTrue.value

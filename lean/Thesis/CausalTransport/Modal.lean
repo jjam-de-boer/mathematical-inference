@@ -15,35 +15,38 @@ identification theorems.
 /-- A transported joint certificate retaining its operation-sensitive modal trace. -/
 structure ModalEncodedJointDerivation
     (G : ObservedGraph S) (query : JointKernelQuery S) where
-  certificate : JointIdentificationCertificate G query
+  certificate : JointIdentificationCertificate (GraphModelClass.all G) query
   trace : ModalDerivationTrace G certificate.derivation
 
 /-- Conditional counterpart of `ModalEncodedJointDerivation`. -/
 structure ModalEncodedConditionalDerivation
     (G : ObservedGraph S) (query : ConditionalKernelQuery S) where
-  certificate : ConditionalIdentificationCertificate G query
+  certificate : ConditionalIdentificationCertificate (GraphModelClass.all G)
+    query
   trace : ModalDerivationTrace G certificate.derivation
 
 def EncodedJointDerivation.toModal
-    (encoded : EncodedJointDerivation G query) :
+    {G : ObservedGraph S} {query : JointKernelQuery S}
+    (encoded : EncodedJointDerivation (GraphModelClass.all G) query) :
     ModalEncodedJointDerivation G query where
   certificate := encoded.certificate
   trace := encoded.certificate.derivation.toModalTrace
 
 def EncodedConditionalDerivation.toModal
-    (encoded : EncodedConditionalDerivation G query) :
+    {G : ObservedGraph S} {query : ConditionalKernelQuery S}
+    (encoded : EncodedConditionalDerivation (GraphModelClass.all G) query) :
     ModalEncodedConditionalDerivation G query where
   certificate := encoded.certificate
   trace := encoded.certificate.derivation.toModalTrace
 
 def ModalEncodedJointDerivation.erase
     (encoded : ModalEncodedJointDerivation G query) :
-    EncodedJointDerivation G query where
+    EncodedJointDerivation (GraphModelClass.all G) query where
   certificate := encoded.certificate
 
 def ModalEncodedConditionalDerivation.erase
     (encoded : ModalEncodedConditionalDerivation G query) :
-    EncodedConditionalDerivation G query where
+    EncodedConditionalDerivation (GraphModelClass.all G) query where
   certificate := encoded.certificate
 
 theorem ModalEncodedJointDerivation.identifiable
@@ -90,7 +93,8 @@ def ConditionalIdentifiableOn (_mode : CausalMode S)
   TypeTheoreticConditionalIdentifiable graph query
 
 theorem transported_joint_iff (mode : CausalMode S)
-    (complete : PublishedCompleteness S mode.record.model.observedGraph)
+    (complete : PublishedCompleteness
+      (GraphModelClass.all mode.record.model.observedGraph))
     (sound : PublishedSoundness S mode.record.model.observedGraph)
     (query : JointKernelQuery S) :
     mode.JointIdentifiable query <->
@@ -104,7 +108,8 @@ theorem transported_joint_iff (mode : CausalMode S)
     exact encoded.identifiable sound
 
 theorem transported_conditional_iff (mode : CausalMode S)
-    (complete : PublishedCompleteness S mode.record.model.observedGraph)
+    (complete : PublishedCompleteness
+      (GraphModelClass.all mode.record.model.observedGraph))
     (sound : PublishedSoundness S mode.record.model.observedGraph)
     (query : ConditionalKernelQuery S) :
     mode.ConditionalIdentifiable query <->

@@ -251,7 +251,11 @@ theorem bidirected_eq_true_of_shared_latent
   · have valueDifferent : left.val ≠ right.val := by
       intro equal
       exact different (Fin.ext equal)
-    exact beq_eq_false_iff_ne.mpr valueDifferent
+    cases hbeq : Nat.beq left.val right.val with
+    | true =>
+        exact (valueDifferent (Nat.eq_of_beq_eq_true hbeq)).elim
+    | false =>
+        rfl
   · apply finAny_eq_true_of _ root
     exact Bool.and_eq_true_iff.mpr ⟨leftIncident, rightIncident⟩
 
@@ -2257,10 +2261,10 @@ noncomputable def PathPrimitiveSoundness.ofDoRule
     exact ProbabilityTerm.chain_soundAt model x y z w assignment
       leftSupported rightSupported
 
-/--
-Compile path-based primitive semantics to executable rule syntax using the
-proved one-way correctness of the finite d-separation algorithm.  Full
-active-path/moral-graph equivalence is not needed for semantic soundness.
+/-- Compile path-based primitive semantics to executable rule syntax using the
+proved algorithm-to-path implication.  The converse (path to algorithm) is
+inhabited as `ObservedGraph.dSeparationCorrectness` and is used by
+`PublishedSoundness`, not by semantic soundness of an executable derivation.
 -/
 def PathPrimitiveSoundness.compileChecked
     {G : ObservedGraph S} {model : FiniteLatentSCM S}
@@ -2404,6 +2408,36 @@ noncomputable def PublishedSoundness.ofDSeparationPartitionWitnesses
   PublishedSoundness.ofDSeparationCrossProductLaws G correct
     (fun model compatible =>
       (witnesses model compatible).toProductCrossProductLaws.toDistributionLaws)
+
+/--
+Published soundness from a path do-rule, using the inhabited d-separation
+correctness theorem.  The remaining obligation is global-Markov soundness
+of the three rules on compatible models.
+-/
+noncomputable def PublishedSoundness.ofDoRule
+    (G : ObservedGraph S)
+    (doRuleSound : ∀ (model : ExactModel S), Compatible model G ->
+      ∀ {left right} (assignment : S.Assignment),
+        PathDoRuleApplication G left right ->
+          ProbabilityTerm.SupportedAt model (.kernel left) assignment ->
+          ProbabilityTerm.SupportedAt model (.kernel right) assignment ->
+          ProbabilityTerm.EquivalentAt model (.kernel left) (.kernel right)
+            assignment) :
+    PublishedSoundness S G :=
+  PublishedSoundness.ofDSeparationDoRule G G.dSeparationCorrectness doRuleSound
+
+/--
+Published soundness from graph-derived latent partitions, using the
+inhabited d-separation correctness theorem.  The remaining obligation is
+the three do-rule partition witnesses on compatible models.
+-/
+noncomputable def PublishedSoundness.ofPartitionWitnesses
+    (G : ObservedGraph S)
+    (witnesses : forall (model : ExactModel S), Compatible model G ->
+      PathDoRulePartitionWitnesses G model) :
+    PublishedSoundness S G :=
+  PublishedSoundness.ofDSeparationPartitionWitnesses G
+    G.dSeparationCorrectness witnesses
 
 /-- A generic soundness package specializes constructively to finite source tables. -/
 noncomputable def PublishedSoundness.toFiniteSource

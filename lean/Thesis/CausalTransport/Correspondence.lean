@@ -12,6 +12,11 @@ The published identification theorem is deliberately represented by explicit
 parameters.  Internal query semantics and identifiability live in
 `Thesis.Causality.Identification`.
 
+Completeness and certificates are indexed by a `GraphModelClass`, so positivity
+and other regularity hypotheses are specialisations rather than constraints on
+the SCM layer.  Primitive soundness remains stated for every compatible model
+under local support.
+
 This file is the generic, graph-indexed boundary. It does not depend on the
 finite source-table encoding: `FiniteSource` specializes these interfaces only
 after independently defining source evaluation and its preservation map. A
@@ -28,78 +33,102 @@ The following query-indexed structures expose the joint and conditional fields
 directly; explicit adapters map them to the generic representation.
 -/
 
-structure JointIdentificationCertificate (G : ObservedGraph S)
-    (q : JointKernelQuery S) extends IdentificationCertificate G q.sourceTerm
+structure JointIdentificationCertificate {S : ObservedSignature}
+    {G : ObservedGraph S} (C : GraphModelClass G)
+    (q : JointKernelQuery S) extends IdentificationCertificate C q.sourceTerm
 
-structure ConditionalIdentificationCertificate (G : ObservedGraph S)
+structure ConditionalIdentificationCertificate {S : ObservedSignature}
+    {G : ObservedGraph S} (C : GraphModelClass G)
     (q : ConditionalKernelQuery S) extends
-      IdentificationCertificate G q.sourceTerm
+      IdentificationCertificate C q.sourceTerm
 
-structure PublishedJointCertificate (G : ObservedGraph S)
+structure PublishedJointCertificate {S : ObservedSignature}
+    {G : ObservedGraph S} (C : GraphModelClass G)
     (correct : DSeparationCorrectness G) (q : JointKernelQuery S) extends
-      PublishedIdentificationCertificate G correct q.sourceTerm
+      PublishedIdentificationCertificate C correct q.sourceTerm
 
-structure PublishedConditionalCertificate (G : ObservedGraph S)
+structure PublishedConditionalCertificate {S : ObservedSignature}
+    {G : ObservedGraph S} (C : GraphModelClass G)
     (correct : DSeparationCorrectness G) (q : ConditionalKernelQuery S) extends
-      PublishedIdentificationCertificate G correct q.sourceTerm
+      PublishedIdentificationCertificate C correct q.sourceTerm
 
 def JointIdentificationCertificate.toGeneric
-    (certificate : JointIdentificationCertificate G q) :
-    IdentificationCertificate G q.sourceTerm :=
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {q : JointKernelQuery S}
+    (certificate : JointIdentificationCertificate C q) :
+    IdentificationCertificate C q.sourceTerm :=
   certificate.toIdentificationCertificate
 
 def ConditionalIdentificationCertificate.toGeneric
-    (certificate : ConditionalIdentificationCertificate G q) :
-    IdentificationCertificate G q.sourceTerm :=
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {q : ConditionalKernelQuery S}
+    (certificate : ConditionalIdentificationCertificate C q) :
+    IdentificationCertificate C q.sourceTerm :=
   certificate.toIdentificationCertificate
 
 def JointIdentificationCertificate.ofGeneric
-    (certificate : IdentificationCertificate G q.sourceTerm) :
-    JointIdentificationCertificate G q where
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {q : JointKernelQuery S}
+    (certificate : IdentificationCertificate C q.sourceTerm) :
+    JointIdentificationCertificate C q where
   toIdentificationCertificate := certificate
 
 def ConditionalIdentificationCertificate.ofGeneric
-    (certificate : IdentificationCertificate G q.sourceTerm) :
-    ConditionalIdentificationCertificate G q where
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {q : ConditionalKernelQuery S}
+    (certificate : IdentificationCertificate C q.sourceTerm) :
+    ConditionalIdentificationCertificate C q where
   toIdentificationCertificate := certificate
 
 def PublishedJointCertificate.toGeneric
-    (certificate : PublishedJointCertificate G correct q) :
-    PublishedIdentificationCertificate G correct q.sourceTerm :=
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {correct : DSeparationCorrectness G} {q : JointKernelQuery S}
+    (certificate : PublishedJointCertificate C correct q) :
+    PublishedIdentificationCertificate C correct q.sourceTerm :=
   certificate.toPublishedIdentificationCertificate
 
 def PublishedConditionalCertificate.toGeneric
-    (certificate : PublishedConditionalCertificate G correct q) :
-    PublishedIdentificationCertificate G correct q.sourceTerm :=
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {correct : DSeparationCorrectness G} {q : ConditionalKernelQuery S}
+    (certificate : PublishedConditionalCertificate C correct q) :
+    PublishedIdentificationCertificate C correct q.sourceTerm :=
   certificate.toPublishedIdentificationCertificate
 
 def PublishedJointCertificate.compile
-    (certificate : PublishedJointCertificate G correct q) :
-    JointIdentificationCertificate G q :=
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {correct : DSeparationCorrectness G} {q : JointKernelQuery S}
+    (certificate : PublishedJointCertificate C correct q) :
+    JointIdentificationCertificate C q :=
   JointIdentificationCertificate.ofGeneric certificate.toGeneric.compile
 
 def PublishedConditionalCertificate.compile
-    (certificate : PublishedConditionalCertificate G correct q) :
-    ConditionalIdentificationCertificate G q :=
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {correct : DSeparationCorrectness G} {q : ConditionalKernelQuery S}
+    (certificate : PublishedConditionalCertificate C correct q) :
+    ConditionalIdentificationCertificate C q :=
   ConditionalIdentificationCertificate.ofGeneric certificate.toGeneric.compile
 
 /--
-Formal interface to the published classical result.  An inhabitant is passed
-to the transport theorem explicitly; no axiom is declared in this module.
-Unlike an arbitrary `Derivable` predicate, each completeness field must return
-an inspectable do-calculus and probability-algebra derivation.
+Formal interface to identification completeness inside a selected model class.
+
+An inhabitant is passed to the transport theorem explicitly; no axiom is
+declared in this module.  Unlike an arbitrary `Derivable` predicate, each
+completeness field must return an inspectable do-calculus and
+probability-algebra derivation.  The classical Shpitser–Pearl specialisation
+is `PublishedCompleteness (GraphModelClass.positive G)` on a `ValueRich`
+signature.
 -/
-structure PublishedCompleteness (S : ObservedSignature)
-    (G : ObservedGraph S) where
+structure PublishedCompleteness {S : ObservedSignature} {G : ObservedGraph S}
+    (C : GraphModelClass G) where
   dseparation : DSeparationCorrectness G
   joint_complete : forall q,
-    Identifiable G q ->
-      PublishedJointCertificate G dseparation q
+    C.identifiable q ->
+      PublishedJointCertificate C dseparation q
   conditional_complete : forall q,
-    ConditionalIdentifiable G q ->
-      PublishedConditionalCertificate G dseparation q
+    C.conditionalIdentifiable q ->
+      PublishedConditionalCertificate C dseparation q
   hedge_counterexample : forall q,
-    HedgeWitness G q -> Counterexample G q
+    HedgeWitness G q -> CounterexampleIn C q
 
 /-- Primitive semantics stated with the standard path-blocking side condition. -/
 structure PathPrimitiveSoundness (G : ObservedGraph S)
@@ -174,33 +203,39 @@ def PublishedSoundness.primitive (sound : PublishedSoundness S G)
   (sound.pathPrimitive model compatible).compile sound.dseparation
 
 noncomputable def JointIdentificationCertificate.denotational_soundAt
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {q : JointKernelQuery S}
     (sound : PublishedSoundness S G)
-    (certificate : JointIdentificationCertificate G q)
-    (model : ExactModel S) (compatible : Compatible model G)
+    (certificate : JointIdentificationCertificate C q)
+    (model : ExactModel S) (member : C.Mem model)
     (assignment : S.Assignment)
     (sourceSupported : q.sourceTerm.SupportedAt model assignment) :
     ProbabilityTerm.EquivalentAt model q.sourceTerm certificate.formula
       assignment :=
   certificate.derivation.denotational_soundAt
-    (sound.primitive model compatible)
-    (certificate.supported model compatible assignment sourceSupported)
+    (sound.primitive model (C.mem_compatible model member))
+    (certificate.supported model member assignment sourceSupported)
 
 noncomputable def ConditionalIdentificationCertificate.denotational_soundAt
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {q : ConditionalKernelQuery S}
     (sound : PublishedSoundness S G)
-    (certificate : ConditionalIdentificationCertificate G q)
-    (model : ExactModel S) (compatible : Compatible model G)
+    (certificate : ConditionalIdentificationCertificate C q)
+    (model : ExactModel S) (member : C.Mem model)
     (assignment : S.Assignment)
     (sourceSupported : q.sourceTerm.SupportedAt model assignment) :
     ProbabilityTerm.EquivalentAt model q.sourceTerm certificate.formula
       assignment :=
   certificate.derivation.denotational_soundAt
-    (sound.primitive model compatible)
-    (certificate.supported model compatible assignment sourceSupported)
+    (sound.primitive model (C.mem_compatible model member))
+    (certificate.supported model member assignment sourceSupported)
 
 theorem JointIdentificationCertificate.identifiable
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {q : JointKernelQuery S}
     (sound : PublishedSoundness S G)
-    (certificate : JointIdentificationCertificate G q) :
-    Identifiable G q := by
+    (certificate : JointIdentificationCertificate C q) :
+    C.identifiable q := by
   intro M N hM hN observational assignment
   let supportedM := q.supportedAt M assignment
   let supportedN := q.supportedAt N assignment
@@ -215,9 +250,11 @@ theorem JointIdentificationCertificate.identifiable
       (ProbabilityResult.symm sourceToFormulaN))⟩
 
 theorem ConditionalIdentificationCertificate.identifiable
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {q : ConditionalKernelQuery S}
     (sound : PublishedSoundness S G)
-    (certificate : ConditionalIdentificationCertificate G q) :
-    ConditionalIdentifiable G q := by
+    (certificate : ConditionalIdentificationCertificate C q) :
+    C.conditionalIdentifiable q := by
   intro M N hM hN observational assignment supportedM supportedN
   let sourceToFormulaM := certificate.denotational_soundAt sound M hM
     assignment supportedM
@@ -230,51 +267,58 @@ theorem ConditionalIdentificationCertificate.identifiable
       (ProbabilityResult.symm sourceToFormulaN))⟩
 
 /-- Encoded derivation certificate; the finite derivation data is preserved. -/
-structure EncodedJointDerivation
-    (G : ObservedGraph S) (q : JointKernelQuery S) where
-  certificate : JointIdentificationCertificate G q
+structure EncodedJointDerivation {S : ObservedSignature} {G : ObservedGraph S}
+    (C : GraphModelClass G) (q : JointKernelQuery S) where
+  certificate : JointIdentificationCertificate C q
 
-structure EncodedConditionalDerivation
-    (G : ObservedGraph S) (q : ConditionalKernelQuery S) where
-  certificate : ConditionalIdentificationCertificate G q
+structure EncodedConditionalDerivation {S : ObservedSignature}
+    {G : ObservedGraph S} (C : GraphModelClass G)
+    (q : ConditionalKernelQuery S) where
+  certificate : ConditionalIdentificationCertificate C q
 
 def transport_joint_completeness
-    (P : PublishedCompleteness S G) (q : JointKernelQuery S)
-    (h : TypeTheoreticIdentifiable G q) : EncodedJointDerivation G q := by
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    (published : PublishedCompleteness C) (q : JointKernelQuery S)
+    (h : C.identifiable q) : EncodedJointDerivation C q := by
   constructor
-  exact (P.joint_complete q h).compile
+  exact (published.joint_complete q h).compile
 
 def transport_conditional_completeness
-    (P : PublishedCompleteness S G) (q : ConditionalKernelQuery S)
-    (h : TypeTheoreticConditionalIdentifiable G q) :
-    EncodedConditionalDerivation G q := by
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    (published : PublishedCompleteness C) (q : ConditionalKernelQuery S)
+    (h : C.conditionalIdentifiable q) :
+    EncodedConditionalDerivation C q := by
   constructor
-  exact (P.conditional_complete q h).compile
+  exact (published.conditional_complete q h).compile
 
 theorem transport_joint_soundness
-    (P : PublishedSoundness S G) (q : JointKernelQuery S)
-    (certificate : EncodedJointDerivation G q) :
-    TypeTheoreticIdentifiable G q := by
-  exact certificate.certificate.identifiable P
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    (sound : PublishedSoundness S G) (q : JointKernelQuery S)
+    (certificate : EncodedJointDerivation C q) :
+    C.identifiable q := by
+  exact certificate.certificate.identifiable sound
 
 /-- A sound distributional certificate also identifies each local event. -/
 theorem transport_joint_event_soundness
-    (P : PublishedSoundness S G) (q : InterventionalQuery S)
-    (certificate : EncodedJointDerivation G q.kernelQuery) :
-    TypeTheoreticEventIdentifiable G q :=
-  typeTheoretic_kernel_identifiable_implies_event G q
-    (transport_joint_soundness P q.kernelQuery certificate)
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    (sound : PublishedSoundness S G) (q : InterventionalQuery S)
+    (certificate : EncodedJointDerivation C q.kernelQuery) :
+    C.eventIdentifiable q :=
+  C.kernel_identifiable_implies_event q
+    (transport_joint_soundness sound q.kernelQuery certificate)
 
 theorem transport_conditional_soundness
-    (P : PublishedSoundness S G) (q : ConditionalKernelQuery S)
-    (certificate : EncodedConditionalDerivation G q) :
-    TypeTheoreticConditionalIdentifiable G q := by
-  exact certificate.certificate.identifiable P
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    (sound : PublishedSoundness S G) (q : ConditionalKernelQuery S)
+    (certificate : EncodedConditionalDerivation C q) :
+    C.conditionalIdentifiable q := by
+  exact certificate.certificate.identifiable sound
 
 theorem transported_joint_iff
-    (complete : PublishedCompleteness S G)
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    (complete : PublishedCompleteness C)
     (sound : PublishedSoundness S G) (q : JointKernelQuery S) :
-    TypeTheoreticIdentifiable G q <-> Nonempty (EncodedJointDerivation G q) := by
+    C.identifiable q <-> Nonempty (EncodedJointDerivation C q) := by
   constructor
   · intro identifiable
     exact ⟨transport_joint_completeness complete q identifiable⟩
@@ -283,10 +327,11 @@ theorem transported_joint_iff
     exact transport_joint_soundness sound q certificate
 
 theorem transported_conditional_iff
-    (complete : PublishedCompleteness S G)
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    (complete : PublishedCompleteness C)
     (sound : PublishedSoundness S G) (q : ConditionalKernelQuery S) :
-    TypeTheoreticConditionalIdentifiable G q <->
-      Nonempty (EncodedConditionalDerivation G q) := by
+    C.conditionalIdentifiable q <->
+      Nonempty (EncodedConditionalDerivation C q) := by
   constructor
   · intro identifiable
     exact ⟨transport_conditional_completeness complete q identifiable⟩
@@ -295,28 +340,26 @@ theorem transported_conditional_iff
     exact transport_conditional_soundness sound q certificate
 
 theorem transport_hedge_failure
-    (P : PublishedCompleteness S G) (q : JointKernelQuery S)
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    (published : PublishedCompleteness C) (q : JointKernelQuery S)
     (hedge : HedgeWitness G q) :
-    Not (TypeTheoreticIdentifiable G q) := by
-  let C := P.hedge_counterexample q hedge
-  intro h
-  exact C.query_separated
-    (h C.left C.right C.left_compatible C.right_compatible
-      C.observationally_equal)
+    Not (C.identifiable q) :=
+  (published.hedge_counterexample q hedge).not_identifiable
 
 /-- The combined finite-rational completeness transport used by the thesis. -/
 theorem finite_causal_completeness_transport
-    (P : PublishedCompleteness S G) :
-    (forall q, TypeTheoreticIdentifiable G q ->
-      Nonempty (EncodedJointDerivation G q)) /\
-    (forall q, TypeTheoreticConditionalIdentifiable G q ->
-      Nonempty (EncodedConditionalDerivation G q)) /\
-    (forall q, HedgeWitness G q -> Not (TypeTheoreticIdentifiable G q)) := by
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    (published : PublishedCompleteness C) :
+    (forall q, C.identifiable q ->
+      Nonempty (EncodedJointDerivation C q)) /\
+    (forall q, C.conditionalIdentifiable q ->
+      Nonempty (EncodedConditionalDerivation C q)) /\
+    (forall q, HedgeWitness G q -> Not (C.identifiable q)) := by
   exact ⟨fun q identifiable =>
-      ⟨transport_joint_completeness P q identifiable⟩,
+      ⟨transport_joint_completeness published q identifiable⟩,
     fun q identifiable =>
-      ⟨transport_conditional_completeness P q identifiable⟩,
-    transport_hedge_failure P⟩
+      ⟨transport_conditional_completeness published q identifiable⟩,
+    transport_hedge_failure published⟩
 
 end Causality
 end Thesis

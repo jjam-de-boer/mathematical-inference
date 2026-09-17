@@ -78,8 +78,8 @@ statement, then realize every resulting modal rule cell by record operations.
 -/
 noncomputable def liftJointQuery_operationRealized
     (spec : TerminalVariableSpec S) (G : ObservedGraph S)
-    (complete : PublishedCompleteness spec.extendSignature
-      (spec.extendObservedGraph G))
+    (complete : PublishedCompleteness
+      (GraphModelClass.all (spec.extendObservedGraph G)))
     (sound : PublishedSoundness spec.extendSignature
       (spec.extendObservedGraph G))
     (query : JointKernelQuery S)
@@ -91,8 +91,8 @@ noncomputable def liftJointQuery_operationRealized
 
 noncomputable def liftConditionalQuery_operationRealized
     (spec : TerminalVariableSpec S) (G : ObservedGraph S)
-    (complete : PublishedCompleteness spec.extendSignature
-      (spec.extendObservedGraph G))
+    (complete : PublishedCompleteness
+      (GraphModelClass.all (spec.extendObservedGraph G)))
     (sound : PublishedSoundness spec.extendSignature
       (spec.extendObservedGraph G))
     (query : ConditionalKernelQuery S)
@@ -158,8 +158,8 @@ structure TerminalLearningConditionalTransport
 noncomputable def terminalLearningJointTransport
     (mode : CausalMode S) (spec : TerminalVariableSpec S)
     (learnedName restoredName : String) (G : ObservedGraph S)
-    (complete : PublishedCompleteness spec.extendSignature
-      (spec.extendObservedGraph G))
+    (complete : PublishedCompleteness
+      (GraphModelClass.all (spec.extendObservedGraph G)))
     (sound : PublishedSoundness spec.extendSignature
       (spec.extendObservedGraph G))
     (query : JointKernelQuery S)
@@ -183,8 +183,8 @@ noncomputable def terminalLearningJointTransport
 noncomputable def terminalLearningConditionalTransport
     (mode : CausalMode S) (spec : TerminalVariableSpec S)
     (learnedName restoredName : String) (G : ObservedGraph S)
-    (complete : PublishedCompleteness spec.extendSignature
-      (spec.extendObservedGraph G))
+    (complete : PublishedCompleteness
+      (GraphModelClass.all (spec.extendObservedGraph G)))
     (sound : PublishedSoundness spec.extendSignature
       (spec.extendObservedGraph G))
     (query : ConditionalKernelQuery S)

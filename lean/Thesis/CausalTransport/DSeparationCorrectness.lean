@@ -99,6 +99,19 @@ theorem nodes_head {edge : α -> α -> Bool}
     walk.nodes.head? = some source := by
   cases walk <;> rfl
 
+theorem nodes_headD {edge : α -> α -> Bool}
+    {length : Nat} {source target default : α}
+    (walk : ExactWalk edge length source target) :
+    walk.nodes.headD default = source := by
+  have h := walk.nodes_head
+  cases hnodes : walk.nodes with
+  | nil =>
+      simp [hnodes] at h
+  | cons head tail =>
+      simp [hnodes] at h
+      subst head
+      simp [hnodes]
+
 theorem nodes_getLast {edge : α -> α -> Bool}
     {length : Nat} {source target : α}
     (walk : ExactWalk edge length source target) :
@@ -132,6 +145,28 @@ theorem nodes_consecutive {edge : α -> α -> Bool}
       | refl => exact ⟨first, by simp [PathSpecification.Consecutive]⟩
       | @step restLength _ next _ second tail =>
           exact ⟨first, by simpa [nodes] using ih⟩
+
+/-- Every occurrence in a walk is reached by a prefix walk from the source. -/
+theorem prefix_of_mem {edge : α -> α -> Bool}
+    {length : Nat} {source target node : α}
+    (walk : ExactWalk edge length source target)
+    (member : node ∈ walk.nodes) :
+    Exists fun prefixLength => prefixLength <= length /\
+      Nonempty (ExactWalk edge prefixLength source node) := by
+  induction walk with
+  | refl endpoint =>
+      simp only [nodes, List.mem_singleton] at member
+      subst node
+      exact ⟨0, Nat.zero_le _, ⟨.refl endpoint⟩⟩
+  | @step length source middle target first rest ih =>
+      simp only [nodes, List.mem_cons] at member
+      rcases member with same | later
+      · subst node
+        exact ⟨0, Nat.zero_le _, ⟨.refl source⟩⟩
+      · rcases ih later with ⟨prefixLength, bound, prefixWalk⟩
+        rcases prefixWalk with ⟨prefixWalk⟩
+        exact ⟨prefixLength + 1, Nat.add_le_add_right bound 1,
+          ⟨.step first prefixWalk⟩⟩
 
 /-- Every occurrence in a walk starts a suffix walk to the same target. -/
 theorem suffix_of_mem {edge : α -> α -> Bool}
@@ -179,6 +214,82 @@ theorem nodes_nodup_of_minimal {edge : α -> α -> Bool}
           ⟨.step first alternativeWalk⟩
         have minimum := minimal (alternative + 1) extended
         omega
+
+/-- Append one edge to an exact walk. -/
+def snoc {edge : α -> α -> Bool} {length : Nat}
+    {source middle target : α}
+    (walk : ExactWalk edge length source middle)
+    (last : edge middle target = true) :
+    ExactWalk edge (length + 1) source target :=
+  match walk with
+  | .refl _ => .step last (.refl target)
+  | .step first rest => .step first (rest.snoc last)
+
+/-- Reverse an exact walk along a symmetric edge relation. -/
+def reverse {edge : α -> α -> Bool}
+    (symmetric : forall left right,
+      edge left right = true -> edge right left = true)
+    {length : Nat} {source target : α} :
+    ExactWalk edge length source target ->
+    ExactWalk edge length target source
+  | .refl node => .refl node
+  | .step first rest =>
+      (reverse symmetric rest).snoc (symmetric _ _ first)
+
+/-- Reinterpret an exact walk along a coarser edge relation. -/
+def mapEdge {e1 e2 : α -> α -> Bool}
+    (included : forall left right, e1 left right = true -> e2 left right = true)
+    {length : Nat} {source target : α} :
+    ExactWalk e1 length source target -> ExactWalk e2 length source target
+  | .refl node => .refl node
+  | .step first rest => .step (included _ _ first) (mapEdge included rest)
+
+theorem nodes_ne_nil {edge : α -> α -> Bool} {length : Nat}
+    {source target : α} (walk : ExactWalk edge length source target) :
+    walk.nodes ≠ [] := by
+  cases walk <;> simp [nodes]
+
+/-- Concatenate two exact walks that meet at a common vertex. -/
+def append {edge : α -> α -> Bool}
+    {leftLength rightLength : Nat} {source middle target : α}
+    (leftWalk : ExactWalk edge leftLength source middle)
+    (rightWalk : ExactWalk edge rightLength middle target) :
+    ExactWalk edge (leftLength + rightLength) source target :=
+  match leftWalk with
+  | .refl _ => Eq.symm (Nat.zero_add rightLength) ▸ rightWalk
+  | .step first tail =>
+      (Eq.symm (Nat.add_right_comm _ 1 rightLength)) ▸
+        .step first (append tail rightWalk)
+
+/-- Rebuild an exact walk from a consecutive vertex list. -/
+def ofConsecutive {edge : α -> α -> Bool}
+    {source target : α} (nodes : List α)
+    (starts : nodes.head? = some source)
+    (finishes : nodes.getLast? = some target)
+    (consecutive : PathSpecification.Consecutive
+      (fun left right => edge left right = true) nodes) :
+    ExactWalk edge (nodes.length - 1) source target := by
+  match nodes with
+  | [] =>
+      simp at starts
+  | [node] =>
+      simp only [List.head?_cons, List.head?_nil, Option.some.injEq] at starts
+      simp only [List.getLast?_singleton, Option.some.injEq] at finishes
+      subst source
+      subst target
+      exact ExactWalk.refl (edge := edge) node
+  | left :: right :: rest =>
+      simp only [List.head?_cons, Option.some.injEq] at starts
+      subst source
+      have tailFinishes : (right :: rest).getLast? = some target := by
+        simpa using finishes
+      have tailWalk :=
+        ofConsecutive (right :: rest) rfl tailFinishes consecutive.2
+      have lengthEq :
+          (left :: right :: rest).length - 1 =
+            ((right :: rest).length - 1) + 1 := by
+        simp [List.length_cons]
+      exact lengthEq ▸ ExactWalk.step consecutive.1 tailWalk
 
 end ExactWalk
 
@@ -529,6 +640,146 @@ theorem exists_internal_neighbors_of_mem
   rw [← beforeSplit]
   simp [previous, List.append_assoc]
 
+/-- Dropping a left summand of known length is definitional once the list is
+written as an append.  Oxford overlap glue uses this to recover the suffix
+after the first shared vertex. -/
+theorem drop_append_length {α} (xs ys : List α) :
+    (xs ++ ys).drop xs.length = ys := by
+  induction xs with
+  | nil => simp
+  | cons _ rest ih =>
+      simp [ih]
+
+/-- The first success of a Boolean `find?` splits the list into earlier
+failures, the witness, and the unexamined suffix.  The construction is by
+induction on the list, so it does not invoke choice. -/
+theorem find?_eq_some_split {α} (p : α -> Bool) :
+    forall (xs : List α) (a : α), xs.find? p = some a ->
+      Exists fun before => Exists fun after =>
+        xs = before ++ a :: after /\
+          (forall x, x ∈ before -> p x = false) /\ p a = true
+  | [], a, h => by simp at h
+  | x :: xs, a, h => by
+      cases hp : p x with
+      | true =>
+          simp [List.find?, hp] at h
+          subst a
+          refine ⟨[], xs, rfl, ?_, hp⟩
+          intro _y mem
+          exact (List.not_mem_nil mem).elim
+      | false =>
+          simp [List.find?, hp] at h
+          rcases find?_eq_some_split p xs a h with
+            ⟨before, after, split, noneBefore, pa⟩
+          refine ⟨x :: before, after, by simp [split], ?_, pa⟩
+          intro y mem
+          simp only [List.mem_cons] at mem
+          rcases mem with same | later
+          · subst y
+            exact hp
+          · exact noneBefore y later
+
+/-- Concatenating two simple lists that share no vertex remains simple. -/
+theorem nodup_append_of_disjoint {α} {xs ys : List α}
+    (hx : xs.Nodup) (hy : ys.Nodup)
+    (disj : forall a, a ∈ xs -> a ∈ ys -> False) :
+    (xs ++ ys).Nodup := by
+  induction xs with
+  | nil => simpa using hy
+  | cons x rest ih =>
+      have parts := List.nodup_cons.mp hx
+      refine List.nodup_cons.mpr ⟨?_, ih parts.2 (fun a haRest haYs =>
+        disj a (List.mem_cons.mpr (Or.inr haRest)) haYs)⟩
+      intro mem
+      rcases List.mem_append.mp mem with inRest | inYs
+      · exact parts.1 inRest
+      · exact disj x (by simp) inYs
+
+/-- Reversing a simple list remains simple.  The proof is by induction and
+the disjoint-append lemma, so it does not depend on a library `Iff` form
+of `List.nodup_reverse`. -/
+theorem nodup_reverse_of {α} {xs : List α} (h : xs.Nodup) :
+    xs.reverse.Nodup := by
+  induction xs with
+  | nil => simp
+  | cons x xs ih =>
+      rw [List.reverse_cons]
+      have parts := List.nodup_cons.mp h
+      have ih' := ih parts.2
+      refine nodup_append_of_disjoint ih' (by simp) ?_
+      intro a haRev haSingleton
+      have same : a = x := List.mem_singleton.mp haSingleton
+      subst a
+      exact parts.1 (List.mem_reverse.mp haRev)
+
+/-- The head of a reversed list is the original last vertex. -/
+theorem head?_reverse_eq_getLast? {α} (xs : List α) :
+    xs.reverse.head? = xs.getLast? := by
+  have h := List.getLast?_reverse (l := xs.reverse)
+  rw [List.reverse_reverse] at h
+  exact h.symm
+
+/-- Splitting a simple list at a displayed vertex yields two simple sides
+that do not contain the vertex, and that share no vertex with each other. -/
+theorem nodup_of_split {α} {before : List α} {node : α} {after : List α}
+    (simple : (before ++ node :: after).Nodup) :
+    before.Nodup /\ node ∉ before /\ node ∉ after /\ after.Nodup /\
+      (forall x, x ∈ before -> x ∈ after -> False) := by
+  induction before with
+  | nil =>
+      have parts := List.nodup_cons.mp (by simpa using simple)
+      exact ⟨List.nodup_nil, fun mem => List.not_mem_nil mem, parts.1, parts.2,
+        fun _x mem => (List.not_mem_nil mem).elim⟩
+  | cons head tail ih =>
+      rw [List.cons_append] at simple
+      have parts := List.nodup_cons.mp simple
+      have rest := ih parts.2
+      refine ⟨List.nodup_cons.mpr ⟨?_, rest.1⟩, ?_, rest.2.2.1, rest.2.2.2.1,
+        ?_⟩
+      · intro mem
+        apply parts.1
+        exact List.mem_append.mpr (Or.inl mem)
+      · intro mem
+        simp only [List.mem_cons] at mem
+        rcases mem with same | later
+        · subst node
+          apply parts.1
+          exact List.mem_append.mpr (Or.inr (List.mem_cons.mpr (Or.inl rfl)))
+        · exact rest.2.1 later
+      · intro x memHeadOrTail memAfter
+        simp only [List.mem_cons] at memHeadOrTail
+        rcases memHeadOrTail with same | later
+        · subst x
+          apply parts.1
+          exact List.mem_append.mpr (Or.inr (List.mem_cons.mpr (Or.inr memAfter)))
+        · exact rest.2.2.2.2 x later memAfter
+
+/-- Cutting two simple lists at a shared vertex and concatenating the
+left prefix of the first with the right suffix of the second remains
+simple, provided no vertex of that left prefix appears anywhere in the
+second list.  That disjointness is exactly the first-success property of
+`firstSharedSeparation?`. -/
+theorem nodup_overlap_glue {α} {front back : List α} {v : α}
+    {frontBefore frontAfter backBefore backAfter : List α}
+    (frontSimple : front.Nodup) (backSimple : back.Nodup)
+    (frontSplit : front = frontBefore ++ v :: frontAfter)
+    (backSplit : back = backBefore ++ v :: backAfter)
+    (beforeDisjoint : forall x, x ∈ frontBefore -> x ∈ back -> False) :
+    (frontBefore ++ v :: backAfter).Nodup := by
+  have frontParts := nodup_of_split (by simpa [frontSplit] using frontSimple)
+  have backParts := nodup_of_split (by simpa [backSplit] using backSimple)
+  have tailSimple : (v :: backAfter).Nodup :=
+    List.nodup_cons.mpr ⟨backParts.2.2.1, backParts.2.2.2.1⟩
+  refine nodup_append_of_disjoint frontParts.1 tailSimple ?_
+  intro a haBefore haTail
+  simp only [List.mem_cons] at haTail
+  rcases haTail with same | later
+  · subst a
+    exact frontParts.2.1 haBefore
+  · exact beforeDisjoint a haBefore (by
+      rw [backSplit]
+      exact List.mem_append.mpr (Or.inr (List.mem_cons.mpr (Or.inr later))))
+
 namespace PathSpecification
 
 theorem InternalTriplesActive.tail
@@ -570,7 +821,870 @@ theorem Consecutive.pair_of_append {relation : α -> α -> Prop}
       | nil => exact consecutive.2.1
       | cons second rest => exact ih consecutive.2
 
+theorem Consecutive.prefix_append {relation : α -> α -> Prop}
+    (before : List α) (node : α) (after : List α)
+    (consecutive : Consecutive relation (before ++ node :: after)) :
+    Consecutive relation (before ++ [node]) := by
+  induction before with
+  | nil => simp [Consecutive]
+  | cons head tail ih =>
+      cases tail with
+      | nil => exact ⟨consecutive.1, by simp [Consecutive]⟩
+      | cons second rest => exact ⟨consecutive.1, ih consecutive.2⟩
+
+theorem Consecutive.snoc {relation : α -> α -> Prop}
+    {nodes : List α} {last : α}
+    (consecutive : Consecutive relation nodes)
+    (linked : forall previous, nodes.getLast? = some previous ->
+      relation previous last) :
+    Consecutive relation (nodes ++ [last]) := by
+  cases nodes with
+  | nil => simp [Consecutive]
+  | cons first tail =>
+      cases tail with
+      | nil =>
+          exact ⟨linked first rfl, by simp [Consecutive]⟩
+      | cons second rest =>
+          exact ⟨consecutive.1,
+            Consecutive.snoc (nodes := second :: rest) consecutive.2
+              (fun previous hprev => linked previous (by
+                simpa [List.getLast?_cons_cons] using hprev))⟩
+
+theorem Consecutive.drop {relation : α -> α -> Prop} :
+    forall (count : Nat) (nodes : List α),
+      Consecutive relation nodes -> Consecutive relation (nodes.drop count)
+  | 0, nodes, consecutive => by simpa using consecutive
+  | _ + 1, [], _consecutive => by simp [Consecutive]
+  | count + 1, _ :: tail, consecutive =>
+      Consecutive.drop count tail (by
+        cases tail with
+        | nil => simp [Consecutive]
+        | cons _ _ => exact consecutive.2)
+
+theorem Consecutive.append {relation : α -> α -> Prop} :
+    forall (left right : List α),
+      Consecutive relation left ->
+        Consecutive relation right ->
+          (forall previous next,
+            left.getLast? = some previous ->
+              right.head? = some next -> relation previous next) ->
+            Consecutive relation (left ++ right)
+  | [], right, _leftCons, rightCons, _join => by simpa using rightCons
+  | [previous], right, _leftCons, rightCons, join => by
+      cases right with
+      | nil => simp [Consecutive]
+      | cons next rest =>
+          exact ⟨join previous next rfl rfl, rightCons⟩
+  | previous :: middle :: rest, right, leftCons, rightCons, join =>
+      ⟨leftCons.1, Consecutive.append (middle :: rest) right leftCons.2 rightCons
+        (fun older newer olderLast newerHead =>
+          join older newer (by simpa using olderLast) newerHead)⟩
+
+theorem Consecutive.reverse {relation : α -> α -> Prop}
+    (symmetric : forall left right, relation left right -> relation right left) :
+    forall nodes : List α,
+      Consecutive relation nodes -> Consecutive relation nodes.reverse
+  | [], _consecutive => by simp [Consecutive]
+  | [_], _consecutive => by simp [Consecutive]
+  | previous :: next :: rest, consecutive => by
+      have tailReverse :=
+        Consecutive.reverse symmetric (next :: rest) consecutive.2
+      have reverseEq :
+          (previous :: next :: rest).reverse =
+            (next :: rest).reverse ++ [previous] := by
+        simp [List.reverse_cons]
+      rw [reverseEq]
+      apply Consecutive.snoc tailReverse
+      intro older olderLast
+      have lastEq : (next :: rest).reverse.getLast? = some next := by
+        simp [List.getLast?_reverse]
+      rw [lastEq] at olderLast
+      cases olderLast
+      exact symmetric previous next consecutive.1
+
+theorem Consecutive.mono {r s : α -> α -> Prop}
+    (included : forall left right, r left right -> s left right) :
+    forall nodes : List α,
+      Consecutive r nodes -> Consecutive s nodes
+  | [] => fun _ => by simp [Consecutive]
+  | [_] => fun _ => by simp [Consecutive]
+  | left :: right :: rest => fun consecutive =>
+      ⟨included left right consecutive.1,
+        Consecutive.mono included (right :: rest) consecutive.2⟩
+
+/-- Drop an internal vertex whose two neighbours are already related.
+Oxford uses this when a blocked non-collider sits between two DAG-adjacent
+vertices: the shorter walk remains a consecutive adjacency trail. -/
+theorem Consecutive.delete_middle {relation : α -> α -> Prop} :
+    forall (before : List α) (previous middle next : α) (after : List α),
+      Consecutive relation
+          (before ++ previous :: middle :: next :: after) ->
+        relation previous next ->
+          Consecutive relation (before ++ previous :: next :: after)
+  | [], previous, _middle, next, after, consecutive, bridge =>
+      ⟨bridge, consecutive.2.2⟩
+  | [head], previous, _middle, next, after, consecutive, bridge =>
+      ⟨consecutive.1, ⟨bridge, consecutive.2.2.2⟩⟩
+  | head :: second :: rest, previous, middle, next, after, consecutive,
+      bridge =>
+      ⟨consecutive.1,
+        Consecutive.delete_middle (second :: rest) previous middle next after
+          consecutive.2 bridge⟩
+
+theorem Adjacent.symm {G : ObservedGraph S} {mutilation : GraphMutilation S}
+    {left right : SeparationNode S}
+    (adjacent : Adjacent G mutilation left right) :
+    Adjacent G mutilation right left :=
+  Or.symm adjacent
+
+theorem IsCollider.symm {G : ObservedGraph S}
+    {mutilation : GraphMutilation S}
+    {previous middle next : SeparationNode S}
+    (collider : IsCollider G mutilation previous middle next) :
+    IsCollider G mutilation next middle previous :=
+  ⟨collider.2, collider.1⟩
+
+theorem TripleActive.symm {G : ObservedGraph S}
+    {mutilation : GraphMutilation S} {conditioned : NodeSet S}
+    {previous middle next : SeparationNode S}
+    (active : TripleActive G mutilation conditioned previous middle next) :
+    TripleActive G mutilation conditioned next middle previous := by
+  rcases active with colliderAndActivated | nonColliderAndOpen
+  · exact Or.inl ⟨colliderAndActivated.1.symm, colliderAndActivated.2⟩
+  · exact Or.inr ⟨fun collider => nonColliderAndOpen.1 collider.symm,
+      nonColliderAndOpen.2⟩
+
+theorem InternalTriplesActive.take {G : ObservedGraph S}
+    {mutilation : GraphMutilation S} {conditioned : NodeSet S}
+    {nodes : List (SeparationNode S)}
+    (active : InternalTriplesActive G mutilation conditioned nodes)
+    (count : Nat) :
+    InternalTriplesActive G mutilation conditioned (nodes.take count) := by
+  induction active generalizing count with
+  | nil =>
+      simp [List.take]
+      exact InternalTriplesActive.nil
+  | singleton node =>
+      cases count with
+      | zero =>
+          simp [List.take]
+          exact InternalTriplesActive.nil
+      | succ _ =>
+          simp [List.take]
+          exact InternalTriplesActive.singleton node
+  | pair left right =>
+      cases count with
+      | zero =>
+          simp [List.take]
+          exact InternalTriplesActive.nil
+      | succ rest =>
+          cases rest with
+          | zero =>
+              simp [List.take]
+              exact InternalTriplesActive.singleton left
+          | succ _ =>
+              simp [List.take]
+              exact InternalTriplesActive.pair left right
+  | @step previous middle next restNodes triple rest ih =>
+      cases count with
+      | zero =>
+          simp [List.take]
+          exact InternalTriplesActive.nil
+      | succ restCount =>
+          cases restCount with
+          | zero =>
+              simp [List.take]
+              exact InternalTriplesActive.singleton previous
+          | succ restCount' =>
+              cases restCount' with
+              | zero =>
+                  simp [List.take]
+                  exact InternalTriplesActive.pair previous middle
+              | succ remaining =>
+                  simp [List.take]
+                  exact InternalTriplesActive.step triple (ih (remaining + 2))
+
+def adjacentBool (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (left right : SeparationNode S) : Bool :=
+  G.expandedMutilatedEdge mutilation left right ||
+    G.expandedMutilatedEdge mutilation right left
+
+theorem Adjacent_iff_adjacentBool (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right : SeparationNode S) :
+    Adjacent G mutilation left right <->
+      adjacentBool G mutilation left right = true := by
+  simp [Adjacent, adjacentBool, Bool.or_eq_true]
+
+theorem adjacentBool_symm (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right : SeparationNode S) :
+    adjacentBool G mutilation left right =
+      adjacentBool G mutilation right left := by
+  simp [adjacentBool, Bool.or_comm]
+
+def isColliderBool (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (previous middle next : SeparationNode S) : Bool :=
+  G.expandedMutilatedEdge mutilation previous middle &&
+    G.expandedMutilatedEdge mutilation next middle
+
+theorem IsCollider_iff_isColliderBool (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    (previous middle next : SeparationNode S) :
+    IsCollider G mutilation previous middle next <->
+      isColliderBool G mutilation previous middle next = true := by
+  simp [IsCollider, isColliderBool, Bool.and_eq_true]
+
+def tripleActiveBool (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (conditioned : NodeSet S)
+    (previous middle next : SeparationNode S) : Bool :=
+  if isColliderBool G mutilation previous middle next then
+    G.ancestorOf mutilation conditioned middle
+  else
+    Bool.not (ObservedGraph.blockedBy conditioned middle)
+
+theorem TripleActive_iff_tripleActiveBool (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    (previous middle next : SeparationNode S) :
+    TripleActive G mutilation conditioned previous middle next <->
+      tripleActiveBool G mutilation conditioned previous middle next = true := by
+  unfold TripleActive tripleActiveBool ColliderActivated NonColliderOpen
+  cases colliderValue : isColliderBool G mutilation previous middle next with
+  | true =>
+      have collider :=
+        (IsCollider_iff_isColliderBool G mutilation previous middle next).mpr
+          colliderValue
+      simp [colliderValue]
+      constructor
+      · intro active
+        rcases active with colliderAndActivated | nonColliderAndOpen
+        · exact colliderAndActivated.2
+        · exact (nonColliderAndOpen.1 collider).elim
+      · intro activated
+        exact Or.inl ⟨collider, activated⟩
+  | false =>
+      have notCollider :
+          Not (IsCollider G mutilation previous middle next) := by
+        intro collider
+        have colliderTrue :=
+          (IsCollider_iff_isColliderBool G mutilation previous middle next).mp
+            collider
+        rw [colliderValue] at colliderTrue
+        contradiction
+      simp [colliderValue]
+      constructor
+      · intro active
+        rcases active with colliderAndActivated | nonColliderAndOpen
+        · exact (notCollider colliderAndActivated.1).elim
+        · exact nonColliderAndOpen.2
+      · intro openMiddle
+        exact Or.inr ⟨notCollider, openMiddle⟩
+
+/-- Count undirected DAG non-adjacencies along a moral walk. -/
+def marriedCount (G : ObservedGraph S) (mutilation : GraphMutilation S) :
+    List (SeparationNode S) -> Nat
+  | [] => 0
+  | [_] => 0
+  | left :: right :: rest =>
+      (if adjacentBool G mutilation left right then 0 else 1) +
+        marriedCount G mutilation (right :: rest)
+
+/-- Count internally inactive triples along a candidate active path. -/
+def inactiveColliderCount (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S) :
+    List (SeparationNode S) -> Nat
+  | [] => 0
+  | [_] => 0
+  | [_, _] => 0
+  | previous :: middle :: next :: rest =>
+      (if tripleActiveBool G mutilation conditioned previous middle next then
+        0 else 1) +
+        inactiveColliderCount G mutilation conditioned
+          (middle :: next :: rest)
+
+/-- Zero married count means every consecutive pair is already a DAG
+adjacency.  The Boolean count is computed from `adjacentBool` alone. -/
+theorem Consecutive.adjacent_of_marriedCount_zero
+    {G : ObservedGraph S} {mutilation : GraphMutilation S}
+    {nodes : List (SeparationNode S)}
+    (married : marriedCount G mutilation nodes = 0) :
+    Consecutive (Adjacent G mutilation) nodes := by
+  match nodes with
+  | [] => simp [Consecutive]
+  | [_] => simp [Consecutive]
+  | left :: right :: rest =>
+      simp [marriedCount] at married
+      cases adjacentValue :
+          adjacentBool G mutilation left right with
+      | false =>
+          simp [adjacentValue] at married
+      | true =>
+          simp [adjacentValue] at married
+          exact ⟨(Adjacent_iff_adjacentBool G mutilation left right).mpr
+              adjacentValue,
+            Consecutive.adjacent_of_marriedCount_zero married⟩
+
+theorem InternalTriplesActive.of_inactiveColliderCount_zero
+    {G : ObservedGraph S} {mutilation : GraphMutilation S}
+    {conditioned : NodeSet S} :
+    forall nodes : List (SeparationNode S),
+      inactiveColliderCount G mutilation conditioned nodes = 0 ->
+        InternalTriplesActive G mutilation conditioned nodes
+  | [] => fun _ => InternalTriplesActive.nil
+  | [_] => fun _ => InternalTriplesActive.singleton _
+  | [_, _] => fun _ => InternalTriplesActive.pair _ _
+  | previous :: middle :: next :: rest => by
+      intro inactive
+      simp [inactiveColliderCount] at inactive
+      cases activeValue :
+          tripleActiveBool G mutilation conditioned previous middle next with
+      | false =>
+          simp [activeValue] at inactive
+      | true =>
+          simp [activeValue] at inactive
+          exact InternalTriplesActive.step
+            ((TripleActive_iff_tripleActiveBool G mutilation conditioned
+              previous middle next).mpr activeValue)
+            (InternalTriplesActive.of_inactiveColliderCount_zero
+              (middle :: next :: rest) inactive)
+
+theorem marriedCount_cons_adjacent {G : ObservedGraph S}
+    {mutilation : GraphMutilation S}
+    {left right : SeparationNode S} {rest : List (SeparationNode S)}
+    (adjacent : adjacentBool G mutilation left right = true) :
+    marriedCount G mutilation (left :: right :: rest) =
+      marriedCount G mutilation (right :: rest) := by
+  simp [marriedCount, adjacent]
+
+theorem marriedCount_cons_married {G : ObservedGraph S}
+    {mutilation : GraphMutilation S}
+    {left right : SeparationNode S} {rest : List (SeparationNode S)}
+    (notAdjacent : adjacentBool G mutilation left right = false) :
+    marriedCount G mutilation (left :: right :: rest) =
+      marriedCount G mutilation (right :: rest) + 1 := by
+  simp [marriedCount, notAdjacent]
+  exact Nat.add_comm _ _
+
+theorem inactiveColliderCount_cons_active {G : ObservedGraph S}
+    {mutilation : GraphMutilation S} {conditioned : NodeSet S}
+    {previous middle next : SeparationNode S}
+    {rest : List (SeparationNode S)}
+    (active : tripleActiveBool G mutilation conditioned previous middle next =
+      true) :
+    inactiveColliderCount G mutilation conditioned
+        (previous :: middle :: next :: rest) =
+      inactiveColliderCount G mutilation conditioned
+        (middle :: next :: rest) := by
+  simp [inactiveColliderCount, active]
+
+theorem inactiveColliderCount_cons_inactive {G : ObservedGraph S}
+    {mutilation : GraphMutilation S} {conditioned : NodeSet S}
+    {previous middle next : SeparationNode S}
+    {rest : List (SeparationNode S)}
+    (inactive : tripleActiveBool G mutilation conditioned previous middle next =
+      false) :
+    inactiveColliderCount G mutilation conditioned
+        (previous :: middle :: next :: rest) =
+      inactiveColliderCount G mutilation conditioned
+        (middle :: next :: rest) + 1 := by
+  simp [inactiveColliderCount, inactive]
+  exact Nat.add_comm _ _
+
+
+/-- An internally active trail has inactive-count zero. -/
+theorem inactiveColliderCount_eq_zero_of_internal_active
+    {G : ObservedGraph S} {mutilation : GraphMutilation S}
+    {conditioned : NodeSet S} :
+    forall (nodes : List (SeparationNode S)),
+      InternalTriplesActive G mutilation conditioned nodes ->
+        inactiveColliderCount G mutilation conditioned nodes = 0
+  | _, InternalTriplesActive.nil => rfl
+  | _, InternalTriplesActive.singleton _ => rfl
+  | _, InternalTriplesActive.pair _ _ => rfl
+  | _, InternalTriplesActive.step triple rest => by
+      have tripleTrue :=
+        (TripleActive_iff_tripleActiveBool G mutilation conditioned
+          _ _ _).mp triple
+      simp [inactiveColliderCount, tripleTrue]
+      exact inactiveColliderCount_eq_zero_of_internal_active _ rest
+
+theorem take_append_two {α} (xs : List α) (a b : α) (cs : List α) :
+    (xs ++ a :: b :: cs).take (xs.length + 2) = xs ++ [a, b] := by
+  induction xs with
+  | nil => simp [List.take]
+  | cons x xs ih =>
+      simp [List.take, List.length_cons]
+      exact ih
+
+/-- The first inactive triple, together with the proof that every earlier
+window is active. -/
+theorem exists_inactive_split
+    {G : ObservedGraph S} {mutilation : GraphMutilation S}
+    {conditioned : NodeSet S} :
+    forall nodes : List (SeparationNode S),
+      0 < inactiveColliderCount G mutilation conditioned nodes ->
+        Exists fun before => Exists fun previous => Exists fun middle =>
+          Exists fun next => Exists fun after =>
+            nodes = before ++ previous :: middle :: next :: after /\
+              tripleActiveBool G mutilation conditioned previous middle next =
+                false /\
+                inactiveColliderCount G mutilation conditioned
+                  (before ++ previous :: [middle]) = 0
+  | [] => fun inactive => by simp [inactiveColliderCount] at inactive
+  | [_] => fun inactive => by simp [inactiveColliderCount] at inactive
+  | [_, _] => fun inactive => by simp [inactiveColliderCount] at inactive
+  | previous :: middle :: next :: rest => fun inactive => by
+      cases activeValue :
+          tripleActiveBool G mutilation conditioned previous middle next with
+      | false =>
+          exact ⟨[], previous, middle, next, rest, rfl, activeValue, by
+            simp [inactiveColliderCount]⟩
+      | true =>
+          have restInactive :
+              0 < inactiveColliderCount G mutilation conditioned
+                (middle :: next :: rest) := by
+            rw [inactiveColliderCount_cons_active activeValue] at inactive
+            exact inactive
+          rcases exists_inactive_split (middle :: next :: rest) restInactive with
+            ⟨before, laterPrev, laterMid, laterNext, after, split,
+              inactiveTriple, prefixZero⟩
+          refine ⟨previous :: before, laterPrev, laterMid, laterNext, after,
+            by simp [split], inactiveTriple, ?_⟩
+          cases hbefore : before with
+          | nil =>
+              have splitEq :
+                  middle :: next :: rest =
+                    laterPrev :: laterMid :: laterNext :: after := by
+                simpa [hbefore] using split
+              injection splitEq with eq1 rest1
+              subst laterPrev
+              injection rest1 with eq2 rest2
+              subst laterMid
+              simp [inactiveColliderCount, activeValue]
+          | cons head tail =>
+              have split' :
+                  middle :: next :: rest =
+                    head :: (tail ++ laterPrev :: laterMid ::
+                      laterNext :: after) := by
+                simpa [hbefore, List.cons_append] using split
+              injection split' with headEq restEq
+              subst head
+              have takeTwo :=
+                take_append_two tail laterPrev laterMid
+                  (laterNext :: after)
+              rw [← restEq] at takeTwo
+              have unfold :
+                  (next :: rest).take (tail.length + 2) =
+                    next :: rest.take (tail.length + 1) := by
+                change (next :: rest).take (Nat.succ (tail.length + 1)) = _
+                rfl
+              have takeEq :
+                  tail ++ [laterPrev, laterMid] =
+                    next :: rest.take (tail.length + 1) :=
+                takeTwo.symm.trans unfold
+              have nest :
+                  previous :: middle :: tail ++ [laterPrev, laterMid] =
+                    previous :: middle :: (tail ++ [laterPrev, laterMid]) := by
+                rw [List.cons_append, List.cons_append]
+              rw [nest, takeEq, inactiveColliderCount_cons_active activeValue]
+              have prefixZero' :
+                  inactiveColliderCount G mutilation conditioned
+                    (middle :: (tail ++ [laterPrev, laterMid])) = 0 := by
+                simpa [hbefore, List.cons_append] using prefixZero
+              simpa [takeEq] using prefixZero'
+
+/--
+Every consecutive window is either a collider or has an open middle.
+Expansions of moral walks satisfy this because original moral vertices are
+open and inserted common children appear exactly as collider middles.
+Cycle deletion preserves the property along DAG-adjacent trails: copied
+windows are original, and a splice at a blocked vertex reuses both
+original incoming parents.
+-/
+def TripleOpenOrCollider (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S) :
+    List (SeparationNode S) -> Prop
+  | [] => True
+  | [_] => True
+  | [_, _] => True
+  | previous :: middle :: next :: rest =>
+      (isColliderBool G mutilation previous middle next = true ∨
+        ObservedGraph.blockedBy conditioned middle = false) ∧
+      TripleOpenOrCollider G mutilation conditioned (middle :: next :: rest)
+
+theorem TripleOpenOrCollider.of_every_window {G : ObservedGraph S}
+    {mutilation : GraphMutilation S} {conditioned : NodeSet S} :
+    forall nodes : List (SeparationNode S),
+      (forall (before : List (SeparationNode S))
+        (previous middle next : SeparationNode S)
+        (after : List (SeparationNode S)),
+        nodes = before ++ previous :: middle :: next :: after ->
+          isColliderBool G mutilation previous middle next = true ∨
+            ObservedGraph.blockedBy conditioned middle = false) ->
+        TripleOpenOrCollider G mutilation conditioned nodes
+  | [], _every => trivial
+  | [_], _every => trivial
+  | [_, _], _every => trivial
+  | previous :: middle :: next :: rest, every =>
+      ⟨every [] previous middle next rest rfl,
+        TripleOpenOrCollider.of_every_window (middle :: next :: rest)
+          (fun before p m n after eq =>
+            every (previous :: before) p m n after (by
+              rw [eq, List.cons_append]))⟩
+
+theorem TripleOpenOrCollider.of_append {G : ObservedGraph S}
+    {mutilation : GraphMutilation S} {conditioned : NodeSet S} :
+    forall (before : List (SeparationNode S))
+      (previous middle next : SeparationNode S)
+      (after : List (SeparationNode S)),
+      TripleOpenOrCollider G mutilation conditioned
+          (before ++ previous :: middle :: next :: after) ->
+        isColliderBool G mutilation previous middle next = true ∨
+          ObservedGraph.blockedBy conditioned middle = false
+  | [], previous, middle, next, after, h => h.1
+  | head :: tail, previous, middle, next, after, h => by
+      have hcons : TripleOpenOrCollider G mutilation conditioned
+          (head :: (tail ++ previous :: middle :: next :: after)) := by
+        simpa [List.cons_append] using h
+      have three :
+          Exists fun m => Exists fun n => Exists fun more =>
+            tail ++ previous :: middle :: next :: after = m :: n :: more := by
+        cases tail with
+        | nil => exact ⟨previous, middle, next :: after, rfl⟩
+        | cons a as =>
+            cases as with
+            | nil =>
+                exact ⟨a, previous, middle :: next :: after, rfl⟩
+            | cons b bs =>
+                exact ⟨a, b, bs ++ previous :: middle :: next :: after, by
+                  simp [List.cons_append]⟩
+      rcases three with ⟨m, n, more, eq⟩
+      have h3 : TripleOpenOrCollider G mutilation conditioned
+          (head :: m :: n :: more) := by
+        simpa [eq] using hcons
+      exact TripleOpenOrCollider.of_append tail previous middle next after
+        (by simpa [eq] using h3.2)
+
+theorem TripleOpenOrCollider.tail {G : ObservedGraph S}
+    {mutilation : GraphMutilation S} {conditioned : NodeSet S}
+    {head : SeparationNode S} {nodes : List (SeparationNode S)}
+    (h : TripleOpenOrCollider G mutilation conditioned (head :: nodes)) :
+    TripleOpenOrCollider G mutilation conditioned nodes := by
+  cases nodes with
+  | nil => trivial
+  | cons _m rest =>
+      cases rest with
+      | nil => trivial
+      | cons _n _more => exact h.2
+
+theorem TripleOpenOrCollider.suffix_of_append {G : ObservedGraph S}
+    {mutilation : GraphMutilation S} {conditioned : NodeSet S} :
+    forall (before : List (SeparationNode S)) (node : SeparationNode S)
+      (after : List (SeparationNode S)),
+      TripleOpenOrCollider G mutilation conditioned
+          (before ++ node :: after) ->
+        TripleOpenOrCollider G mutilation conditioned (node :: after)
+  | [], node, after, h => by simpa using h
+  | head :: tail, node, after, h =>
+      TripleOpenOrCollider.suffix_of_append tail node after
+        (TripleOpenOrCollider.tail (by simpa [List.cons_append] using h))
+
+/-- Concatenate two internally active trails that share the displayed
+join triple `(previous, middle, next)`.  Induction on `before` avoids
+matching `InternalTriplesActive` against an unreduced `++`. -/
+theorem InternalTriplesActive.append_triple
+    {G : ObservedGraph S} {mutilation : GraphMutilation S}
+    {conditioned : NodeSet S}
+    (before : List (SeparationNode S))
+    (previous middle next : SeparationNode S)
+    (after : List (SeparationNode S))
+    (left : InternalTriplesActive G mutilation conditioned
+      (before ++ previous :: [middle]))
+    (join : TripleActive G mutilation conditioned previous middle next)
+    (right : InternalTriplesActive G mutilation conditioned
+      (middle :: next :: after)) :
+    InternalTriplesActive G mutilation conditioned
+      (before ++ previous :: middle :: next :: after) := by
+  induction before with
+  | nil =>
+      exact InternalTriplesActive.step join right
+  | cons head tail ih =>
+      have leftTail :
+          InternalTriplesActive G mutilation conditioned
+            (tail ++ previous :: [middle]) :=
+        InternalTriplesActive.tail (by
+          simpa [List.cons_append] using left)
+      have recActive := ih leftTail
+      cases hsplit : tail ++ previous :: [middle] with
+      | nil =>
+          have hlen := congrArg List.length hsplit
+          simp [List.length_append] at hlen
+      | cons second restNodes =>
+          have restLen : 0 < restNodes.length := by
+            have hlen := congrArg List.length hsplit
+            simp [List.length_append] at hlen
+            omega
+          cases hrest : restNodes with
+          | nil =>
+              simp [hrest] at restLen
+          | cons third more =>
+              have left3 :
+                  InternalTriplesActive G mutilation conditioned
+                    (head :: second :: third :: more) := by
+                have eq :
+                    head :: tail ++ previous :: [middle] =
+                      head :: second :: third :: more := by
+                  rw [List.cons_append, hsplit, hrest]
+                simpa [eq] using left
+              have first :=
+                InternalTriplesActive.triple_of_append [] more head second
+                  third left3
+              have full_tail :
+                  tail ++ previous :: middle :: next :: after =
+                    second :: third :: more ++ next :: after := by
+                have assoc :
+                    (tail ++ previous :: [middle]) ++ (next :: after) =
+                      tail ++ (previous :: [middle] ++ next :: after) :=
+                  List.append_assoc _ _ _
+                have inner :
+                    previous :: [middle] ++ next :: after =
+                      previous :: middle :: next :: after := rfl
+                calc
+                  tail ++ previous :: middle :: next :: after =
+                      tail ++ (previous :: middle :: next :: after) := rfl
+                  _ = tail ++ (previous :: [middle] ++ next :: after) := by
+                    rw [inner]
+                  _ = (tail ++ previous :: [middle]) ++ next :: after :=
+                    assoc.symm
+                  _ = second :: third :: more ++ next :: after := by
+                    rw [hsplit, hrest]
+              have rec' :
+                  InternalTriplesActive G mutilation conditioned
+                    (second :: third :: (more ++ next :: after)) := by
+                have eq :
+                    tail ++ previous :: middle :: next :: after =
+                      second :: third :: (more ++ next :: after) := by
+                  rw [full_tail, List.cons_append, List.cons_append]
+                simpa [eq] using recActive
+              have goalEq :
+                  head :: tail ++ previous :: middle :: next :: after =
+                    head :: second :: third :: (more ++ next :: after) := by
+                rw [List.cons_append, full_tail, List.cons_append,
+                  List.cons_append]
+              rw [goalEq]
+              exact InternalTriplesActive.step first rec'
+
+theorem InternalTriplesActive.reverse {G : ObservedGraph S}
+    {mutilation : GraphMutilation S} {conditioned : NodeSet S} :
+    forall nodes : List (SeparationNode S),
+      InternalTriplesActive G mutilation conditioned nodes ->
+        InternalTriplesActive G mutilation conditioned nodes.reverse
+  | [], _active => by
+      rw [List.reverse_nil]
+      exact InternalTriplesActive.nil
+  | [node], active => by
+      cases active
+      rw [List.reverse_cons, List.reverse_nil]
+      exact InternalTriplesActive.singleton node
+  | [leftNode, rightNode], active => by
+      cases active
+      rw [List.reverse_cons, List.reverse_cons, List.reverse_nil]
+      exact InternalTriplesActive.pair rightNode leftNode
+  | previous :: middle :: next :: rest, active => by
+      cases active with
+      | step triple restActive =>
+          have ih :=
+            InternalTriplesActive.reverse (middle :: next :: rest) restActive
+          have restRev :
+              (middle :: next :: rest).reverse =
+                rest.reverse ++ next :: [middle] := by
+            rw [List.reverse_cons, List.reverse_cons, List.append_assoc]
+            rfl
+          rw [List.reverse_cons, restRev]
+          have shape :
+              rest.reverse ++ next :: [middle] ++ [previous] =
+                rest.reverse ++ next :: middle :: previous :: [] := by
+            rw [List.append_assoc]
+            rfl
+          rw [shape]
+          exact InternalTriplesActive.append_triple rest.reverse next middle
+            previous [] (by simpa [restRev] using ih) triple.symm
+            (InternalTriplesActive.pair middle previous)
+
+theorem InternalTriplesActive.glue_at
+    {G : ObservedGraph S} {mutilation : GraphMutilation S}
+    {conditioned : NodeSet S}
+    (left : List (SeparationNode S)) (shared : SeparationNode S)
+    (rightTail : List (SeparationNode S))
+    (leftActive : InternalTriplesActive G mutilation conditioned
+      (left ++ [shared]))
+    (rightActive : InternalTriplesActive G mutilation conditioned
+      (shared :: rightTail))
+    (join : forall pred succ,
+      left.getLast? = some pred ->
+        rightTail.head? = some succ ->
+          TripleActive G mutilation conditioned pred shared succ) :
+    InternalTriplesActive G mutilation conditioned
+      (left ++ shared :: rightTail) := by
+  cases left with
+  | nil =>
+      simpa using rightActive
+  | cons head tail =>
+      cases rightTail with
+      | nil =>
+          simpa using leftActive
+      | cons succ rest =>
+          have predLast : Exists fun pred =>
+              (head :: tail).getLast? = some pred := by
+            clear leftActive rightActive join
+            induction tail generalizing head with
+            | nil => exact ⟨head, rfl⟩
+            | cons y ys ih => exact ih y
+          rcases predLast with ⟨pred, predEq⟩
+          have joinTriple := join pred succ predEq rfl
+          rcases List.getLast?_eq_some_iff.mp predEq with ⟨init, splitLeft⟩
+          have leftEq :
+              head :: tail ++ [shared] = init ++ pred :: [shared] := by
+            rw [splitLeft, List.append_assoc]
+            rfl
+          have leftActive' :
+              InternalTriplesActive G mutilation conditioned
+                (init ++ pred :: [shared]) := by
+            simpa [leftEq] using leftActive
+          have fullEq :
+              head :: tail ++ shared :: succ :: rest =
+                init ++ pred :: shared :: succ :: rest := by
+            rw [splitLeft, List.append_assoc]
+            rfl
+          rw [fullEq]
+          exact InternalTriplesActive.append_triple init pred shared succ rest
+            leftActive' joinTriple rightActive
+
+theorem InternalTriplesActive.suffix_append
+    {G : ObservedGraph S} {mutilation : GraphMutilation S}
+    {conditioned : NodeSet S} :
+    forall (before : List (SeparationNode S)) (node : SeparationNode S)
+      (after : List (SeparationNode S)),
+      InternalTriplesActive G mutilation conditioned
+          (before ++ node :: after) ->
+        InternalTriplesActive G mutilation conditioned (node :: after)
+  | [], node, after, active => by simpa using active
+  | head :: tail, node, after, active =>
+      InternalTriplesActive.suffix_append tail node after (by
+        simpa [List.cons_append] using active.tail)
+
+theorem Consecutive.overlap_glue {relation : α -> α -> Prop}
+    {front back : List α} {v : α}
+    {frontBefore frontAfter backBefore backAfter : List α}
+    (frontCons : Consecutive relation front)
+    (backCons : Consecutive relation back)
+    (frontSplit : front = frontBefore ++ v :: frontAfter)
+    (backSplit : back = backBefore ++ v :: backAfter) :
+    Consecutive relation (frontBefore ++ v :: backAfter) := by
+  have leftCons : Consecutive relation (frontBefore ++ [v]) := by
+    rw [frontSplit] at frontCons
+    exact Consecutive.prefix_append frontBefore v frontAfter frontCons
+  have suffixCons : Consecutive relation (v :: backAfter) := by
+    have dropped := Consecutive.drop backBefore.length back backCons
+    have dropEq : back.drop backBefore.length = v :: backAfter := by
+      rw [backSplit, drop_append_length]
+    simpa [dropEq] using dropped
+  have lastLeft : (frontBefore ++ [v]).getLast? = some v := by
+    induction frontBefore with
+    | nil => simp
+    | cons _head tail ih =>
+        cases tail with
+        | nil => simp
+        | cons _ _ => simpa [List.getLast?_cons] using ih
+  cases htail : backAfter with
+  | nil =>
+      simpa [htail] using leftCons
+  | cons succ more =>
+      have suffix' : Consecutive relation (v :: succ :: more) := by
+        simpa [htail] using suffixCons
+      have join : relation v succ := suffix'.1
+      have rightCons : Consecutive relation (succ :: more) := suffix'.2
+      have glued :
+          Consecutive relation (frontBefore ++ [v] ++ (succ :: more)) :=
+        Consecutive.append (frontBefore ++ [v]) (succ :: more) leftCons
+          rightCons
+          (fun previous newer prevLast newerHead => by
+            have prevEq : previous = v :=
+              Option.some.inj (prevLast.symm.trans lastLeft)
+            have newerEq : newer = succ :=
+              Option.some.inj (newerHead.symm.trans rfl)
+            rw [prevEq, newerEq]
+            exact join)
+      have glueEq :
+          frontBefore ++ [v] ++ (succ :: more) =
+            frontBefore ++ v :: succ :: more := by
+        rw [List.append_assoc]
+        rfl
+      simpa [glueEq] using glued
+
+def ActivePath.singleton (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    (node : SeparationNode S)
+    (openNode : ObservedGraph.blockedBy conditioned node = false) :
+    ActivePath G mutilation conditioned node node where
+  nodes := [node]
+  starts := rfl
+  finishes := rfl
+  simple := List.nodup_cons.mpr ⟨fun mem => List.not_mem_nil mem, List.nodup_nil⟩
+  adjacent := by simp [Consecutive]
+  source_open := openNode
+  target_open := openNode
+  internal_active := InternalTriplesActive.singleton node
+
+def ActivePath.ofPair (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {left right : SeparationNode S}
+    (adjacent : Adjacent G mutilation left right)
+    (different : left ≠ right)
+    (leftOpen : ObservedGraph.blockedBy conditioned left = false)
+    (rightOpen : ObservedGraph.blockedBy conditioned right = false) :
+    ActivePath G mutilation conditioned left right where
+  nodes := [left, right]
+  starts := rfl
+  finishes := rfl
+  simple := by
+    refine List.nodup_cons.mpr ⟨?_, by simp⟩
+    intro member
+    simp at member
+    exact different member
+  adjacent := ⟨adjacent, by simp [Consecutive]⟩
+  source_open := leftOpen
+  target_open := rightOpen
+  internal_active := InternalTriplesActive.pair left right
+
 end PathSpecification
+
+namespace FiniteReachability
+namespace ExactWalk
+
+/-- Reversing a directed walk yields consecutive reverse-edges.  Placed
+after `Consecutive.snoc` because the proof snoc-glues the reversed tail. -/
+theorem consecutive_reverse {edge : α -> α -> Bool}
+    {length : Nat} {source target : α}
+    (walk : ExactWalk edge length source target) :
+    PathSpecification.Consecutive
+      (fun left right => edge right left = true) walk.nodes.reverse := by
+  induction walk with
+  | refl node =>
+      simp [nodes, PathSpecification.Consecutive]
+  | @step length source middle target first rest ih =>
+      have revEq : (source :: rest.nodes).reverse =
+          rest.nodes.reverse ++ [source] := by
+        simp [List.reverse_cons]
+      rw [nodes_step, revEq]
+      apply PathSpecification.Consecutive.snoc ih
+      intro older olderLast
+      have lastEq : rest.nodes.reverse.getLast? = some middle := by
+        simpa [List.getLast?_reverse] using rest.nodes_head
+      rw [lastEq] at olderLast
+      cases olderLast
+      exact first
+
+end ExactWalk
+end FiniteReachability
 
 theorem FiniteReachability.Reachable.of_consecutive
     (edge : α -> α -> Bool) (nodes : List α) {source target : α}
@@ -739,6 +1853,54 @@ theorem mem_all (node : SeparationNode S) : node ∈ all S := by
 
 end SeparationNode
 
+/-- Membership in a `SeparationNode` list is a Boolean `any` of `beq`.
+Oxford overlap search uses this to stay inside executable `find?`. -/
+theorem any_beq_eq_true_iff (nodes : List (SeparationNode S))
+    (node : SeparationNode S) :
+    nodes.any (fun y => SeparationNode.beq y node) = true <-> node ∈ nodes := by
+  constructor
+  · intro h
+    rcases List.any_eq_true.mp h with ⟨y, hy, heq⟩
+    have same := (SeparationNode.beq_eq_true_iff y node).mp heq
+    subst node
+    exact hy
+  · intro h
+    exact List.any_eq_true.mpr
+      ⟨node, h, (SeparationNode.beq_eq_true_iff node node).mpr rfl⟩
+
+/-- First vertex of `front` that also occurs in `back`, if any. -/
+def firstSharedSeparation? (front back : List (SeparationNode S)) :
+    Option (SeparationNode S) :=
+  front.find? (fun v => back.any (fun y => SeparationNode.beq y v))
+
+theorem firstSharedSeparation?_eq_none_disjoint
+    {front back : List (SeparationNode S)}
+    (h : firstSharedSeparation? front back = none) :
+    forall v, v ∈ front -> v ∈ back -> False := by
+  intro v vFront vBack
+  have noneAll := List.find?_eq_none.mp h
+  have predFalse := noneAll v vFront
+  have predTrue : back.any (fun y => SeparationNode.beq y v) = true :=
+    (any_beq_eq_true_iff back v).mpr vBack
+  rw [predTrue] at predFalse
+  contradiction
+
+theorem firstSharedSeparation?_eq_some_split
+    {front back : List (SeparationNode S)} {v : SeparationNode S}
+    (h : firstSharedSeparation? front back = some v) :
+    Exists fun before => Exists fun after =>
+      front = before ++ v :: after /\
+        (forall x, x ∈ before -> Not (x ∈ back)) /\ v ∈ back := by
+  rcases find?_eq_some_split
+      (fun w => back.any (fun y => SeparationNode.beq y w)) front v h with
+    ⟨before, after, split, noneBefore, pred⟩
+  refine ⟨before, after, split, ?_, (any_beq_eq_true_iff back v).mp pred⟩
+  intro x hx xBack
+  have predFalse := noneBefore x hx
+  have predTrue := (any_beq_eq_true_iff back x).mpr xBack
+  rw [predTrue] at predFalse
+  contradiction
+
 namespace ObservedGraph
 
 theorem expandedMutilatedEdge_rank_lt (G : ObservedGraph S)
@@ -765,6 +1927,17 @@ theorem expandedMutilatedEdge_irreflexive (G : ObservedGraph S)
   | true =>
       exact (Nat.lt_irrefl node.rank
         (G.expandedMutilatedEdge_rank_lt mutilation edgeValue)).elim
+
+/-- Expanded DAG adjacency never loops: ranking is strictly increasing. -/
+theorem adjacent_irrefl (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (node : SeparationNode S) :
+    Not (PathSpecification.Adjacent G mutilation node node) := by
+  intro adjacent
+  rcases adjacent with forward | reverse
+  · rw [G.expandedMutilatedEdge_irreflexive mutilation node] at forward
+    contradiction
+  · rw [G.expandedMutilatedEdge_irreflexive mutilation node] at reverse
+    contradiction
 
 /-- The executable expanded-DAG search has the expected bounded-walk meaning. -/
 theorem expandedReachable_eq_true_iff (G : ObservedGraph S)
@@ -1088,6 +2261,3627 @@ theorem moralOpenEdge_symmetric (G : ObservedGraph S)
     ⟨Bool.and_eq_true_iff.mpr ⟨rightOpen, leftOpen⟩,
       G.ancestralMoralEdge_symmetric mutilation targets moral⟩
 
+theorem MoralOpenEdge.unpacked (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets conditioned : NodeSet S)
+    {left right : SeparationNode S}
+    (edge : G.MoralOpenEdge mutilation targets conditioned left right = true) :
+    blockedBy conditioned left = false /\
+      blockedBy conditioned right = false /\
+        G.ancestralMoralEdge mutilation targets left right = true := by
+  rcases Bool.and_eq_true_iff.mp edge with ⟨openEnds, moral⟩
+  rcases Bool.and_eq_true_iff.mp openEnds with ⟨leftOpen, rightOpen⟩
+  exact ⟨by simpa using leftOpen, by simpa using rightOpen, moral⟩
+
+theorem ancestralMoralEdge_cases (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets : NodeSet S)
+    {left right : SeparationNode S}
+    (moral : G.ancestralMoralEdge mutilation targets left right = true) :
+    PathSpecification.Adjacent G mutilation left right \/
+      Exists fun child : SeparationNode S =>
+        G.ancestorOf mutilation targets child = true /\
+          G.expandedMutilatedEdge mutilation left child = true /\
+            G.expandedMutilatedEdge mutilation right child = true := by
+  simp only [ancestralMoralEdge, Bool.and_eq_true, Bool.or_eq_true,
+    List.any_eq_true] at moral
+  rcases moral with ⟨⟨⟨_leftAncestor, _rightAncestor⟩, _different⟩, directOrMoral⟩
+  rcases directOrMoral with directOrReverse | common
+  · exact Or.inl directOrReverse
+  · rcases common with
+      ⟨child, _member, ⟨childAncestor, leftParent⟩, rightParent⟩
+    exact Or.inr ⟨child, childAncestor, leftParent, rightParent⟩
+
+theorem expandedMutilatedEdge_ne (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) {parent child : SeparationNode S}
+    (edge : G.expandedMutilatedEdge mutilation parent child = true) :
+    parent ≠ child := by
+  intro same
+  subst child
+  rw [G.expandedMutilatedEdge_irreflexive mutilation] at edge
+  contradiction
+
+theorem NodeSet.union_eq_true {S : ObservedSignature}
+    (X Y : NodeSet S) (i : Fin S.count) :
+    NodeSet.union X Y i = true <-> X i = true \/ Y i = true :=
+  Bool.or_eq_true_iff
+
+theorem blockedBy_false_of_not_conditioned_ancestor (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {length : Nat} {source node : SeparationNode S}
+    (walk : FiniteReachability.ExactWalk
+      (G.expandedMutilatedEdge mutilation) length source node)
+    (sourceNotActivated : G.ancestorOf mutilation conditioned source = false) :
+    blockedBy conditioned node = false := by
+  cases node with
+  | latentPair _left _right =>
+      simp [blockedBy]
+  | observed index =>
+      cases selected : conditioned index with
+      | false =>
+          simp [blockedBy, selected]
+      | true =>
+          have activated : G.ancestorOf mutilation conditioned source = true := by
+            apply (G.ancestorOf_eq_true_iff mutilation conditioned source).mpr
+            exact ⟨index, selected,
+              FiniteReachability.boundedWalk_of_reachable
+                SeparationNode.beq G.separationNodes
+                (G.expandedMutilatedEdge mutilation)
+                SeparationNode.beq_eq_true_iff SeparationNode.mem_all
+                ⟨length, ⟨walk⟩⟩⟩
+          rw [activated] at sourceNotActivated
+          contradiction
+
+theorem ancestorOf_of_exactWalk (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets : NodeSet S)
+    {length : Nat} {source node : SeparationNode S}
+    (walk : FiniteReachability.ExactWalk
+      (G.expandedMutilatedEdge mutilation) length source node)
+    (nodeAncestor : G.ancestorOf mutilation targets node = true) :
+    G.ancestorOf mutilation targets source = true := by
+  induction walk with
+  | refl => exact nodeAncestor
+  | step first rest ih =>
+      exact G.ancestorOf_prepend mutilation targets first (ih nodeAncestor)
+
+theorem ancestorOf_mem_exactWalk (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets : NodeSet S)
+    {length : Nat} {source node vertex : SeparationNode S}
+    (walk : FiniteReachability.ExactWalk
+      (G.expandedMutilatedEdge mutilation) length source node)
+    (member : vertex ∈ walk.nodes)
+    (nodeAncestor : G.ancestorOf mutilation targets node = true) :
+    G.ancestorOf mutilation targets vertex = true := by
+  rcases walk.suffix_of_mem member with ⟨_suffixLength, _bound, suffix⟩
+  rcases suffix with ⟨suffix⟩
+  exact G.ancestorOf_of_exactWalk mutilation targets suffix nodeAncestor
+
+theorem blockedBy_false_mem_exactWalk (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {length : Nat} {source node vertex : SeparationNode S}
+    (walk : FiniteReachability.ExactWalk
+      (G.expandedMutilatedEdge mutilation) length source node)
+    (sourceNotActivated : G.ancestorOf mutilation conditioned source = false)
+    (member : vertex ∈ walk.nodes) :
+    blockedBy conditioned vertex = false := by
+  rcases walk.prefix_of_mem member with ⟨_prefixLength, _bound, prefixWalk⟩
+  rcases prefixWalk with ⟨prefixWalk⟩
+  exact G.blockedBy_false_of_not_conditioned_ancestor mutilation conditioned
+    prefixWalk sourceNotActivated
+
+theorem exists_descendant_in_left_or_right (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {node : SeparationNode S}
+    (inLarge : G.ancestorOf mutilation
+      (NodeSet.union left (NodeSet.union right conditioned)) node = true)
+    (notConditionedAncestor :
+      G.ancestorOf mutilation conditioned node = false) :
+    Exists fun target : Fin S.count =>
+      (left target = true \/ right target = true) /\
+        conditioned target = false /\
+          FiniteReachability.BoundedWalk
+            (G.expandedMutilatedEdge mutilation)
+            G.separationNodes.length node (.observed target) := by
+  rcases (G.ancestorOf_eq_true_iff mutilation
+      (NodeSet.union left (NodeSet.union right conditioned)) node).mp
+      inLarge with ⟨target, selected, walk⟩
+  have selectedSplit :
+      left target = true \/ right target = true \/
+        conditioned target = true := by
+    rcases (NodeSet.union_eq_true left
+        (NodeSet.union right conditioned) target).mp selected with
+      inLeft | inRightOrCond
+    · exact Or.inl inLeft
+    · rcases (NodeSet.union_eq_true right conditioned target).mp
+          inRightOrCond with inRight | inCond
+      · exact Or.inr (Or.inl inRight)
+      · exact Or.inr (Or.inr inCond)
+  rcases selectedSplit with inLeft | inRight | inCond
+  · cases conditionedValue : conditioned target with
+    | false => exact ⟨target, Or.inl inLeft, conditionedValue, walk⟩
+    | true =>
+        have activated : G.ancestorOf mutilation conditioned node = true :=
+          (G.ancestorOf_eq_true_iff mutilation conditioned node).mpr
+            ⟨target, conditionedValue, walk⟩
+        rw [activated] at notConditionedAncestor
+        contradiction
+  · cases conditionedValue : conditioned target with
+    | false => exact ⟨target, Or.inr inRight, conditionedValue, walk⟩
+    | true =>
+        have activated : G.ancestorOf mutilation conditioned node = true :=
+          (G.ancestorOf_eq_true_iff mutilation conditioned node).mpr
+            ⟨target, conditionedValue, walk⟩
+        rw [activated] at notConditionedAncestor
+        contradiction
+  · have activated : G.ancestorOf mutilation conditioned node = true :=
+      (G.ancestorOf_eq_true_iff mutilation conditioned node).mpr
+        ⟨target, inCond, walk⟩
+    rw [activated] at notConditionedAncestor
+    contradiction
+
+theorem moralOpenEdge_of_directed (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets conditioned : NodeSet S)
+    {parent child : SeparationNode S}
+    (edge : G.expandedMutilatedEdge mutilation parent child = true)
+    (parentAncestor : G.ancestorOf mutilation targets parent = true)
+    (childAncestor : G.ancestorOf mutilation targets child = true)
+    (parentOpen : blockedBy conditioned parent = false)
+    (childOpen : blockedBy conditioned child = false) :
+    G.MoralOpenEdge mutilation targets conditioned parent child = true :=
+  G.moralOpenEdge_of_ancestral mutilation targets conditioned
+    parentOpen childOpen
+    (G.ancestralMoralEdge_of_adjacent mutilation targets
+      parentAncestor childAncestor (Or.inl edge))
+
+theorem not_collider_of_forward_edges (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    {previous middle next : SeparationNode S}
+    (intoMiddle : G.expandedMutilatedEdge mutilation previous middle = true)
+    (outOfMiddle : G.expandedMutilatedEdge mutilation middle next = true) :
+    Not (PathSpecification.IsCollider G mutilation previous middle next) := by
+  intro collider
+  have rankInto := G.expandedMutilatedEdge_rank_lt mutilation intoMiddle
+  have rankOut := G.expandedMutilatedEdge_rank_lt mutilation outOfMiddle
+  have rankBack := G.expandedMutilatedEdge_rank_lt mutilation collider.2
+  omega
+
+
+theorem nodup_prefix_append {α : Type _} {before : List α}
+    {node : α} {after : List α}
+    (simple : (before ++ node :: after).Nodup) :
+    (before ++ [node]).Nodup := by
+  induction before with
+  | nil => simp
+  | cons head tail ih =>
+      rw [List.cons_append] at simple
+      have parts := List.nodup_cons.mp simple
+      refine List.nodup_cons.mpr ⟨?_, ih parts.2⟩
+      intro member
+      apply parts.1
+      change head ∈ tail ++ [node] at member
+      rw [List.mem_append, List.mem_singleton] at member
+      rcases member with inTail | same
+      · exact List.mem_append.mpr (Or.inl inTail)
+      · subst node
+        exact List.mem_append.mpr (Or.inr (List.mem_cons.mpr (Or.inl rfl)))
+
+theorem take_prefix_append {α : Type _} (before : List α) (node : α)
+    (after : List α) :
+    (before ++ node :: after).take (before.length + 1) = before ++ [node] := by
+  induction before with
+  | nil => simp
+  | cons head tail ih =>
+      simp [ih]
+
+theorem getLast?_snoc {α : Type _} (before : List α) (node : α) :
+    (before ++ [node]).getLast? = some node := by
+  induction before with
+  | nil => simp
+  | cons head tail ih =>
+      cases tail with
+      | nil => simp
+      | cons _ _ => simpa [List.getLast?_cons] using ih
+
+def splitMemSeparation (node : SeparationNode S) :
+    (nodes : List (SeparationNode S)) → node ∈ nodes →
+      { p : List (SeparationNode S) × List (SeparationNode S) //
+        nodes = p.1 ++ node :: p.2 }
+  | [], member => False.elim (by cases member)
+  | head :: tail, member =>
+      if hbeq : SeparationNode.beq head node = true then
+        ⟨([], tail), by
+          have same := (SeparationNode.beq_eq_true_iff head node).mp hbeq
+          cases same
+          simp⟩
+      else
+        have later : node ∈ tail := by
+          simp only [List.mem_cons] at member
+          rcases member with same | later
+          · cases same
+            exact (hbeq ((SeparationNode.beq_eq_true_iff node node).mpr rfl)).elim
+          · exact later
+        let split := splitMemSeparation node tail later
+        ⟨(head :: split.val.1, split.val.2), by
+          simpa [List.cons_append] using
+            congrArg (List.cons head) split.property⟩
+
+def prefixActivePath (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    {conditioned : NodeSet S} {source target node : SeparationNode S}
+    (path : PathSpecification.ActivePath G mutilation conditioned source target)
+    (member : node ∈ path.nodes)
+    (openNode : blockedBy conditioned node = false) :
+    PathSpecification.ActivePath G mutilation conditioned source node :=
+  let split := splitMemSeparation node path.nodes member
+  let before := split.val.1
+  let after := split.val.2
+  have starts : (before ++ node :: after).head? = some source := by
+    rw [← split.property]
+    exact path.starts
+  have consecutiveFull : PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation)
+      (before ++ node :: after) := by
+    rw [← split.property]
+    exact path.adjacent
+  have activeFull : PathSpecification.InternalTriplesActive G mutilation
+      conditioned (before ++ node :: after) := by
+    rw [← split.property]
+    exact path.internal_active
+  have simpleFull : (before ++ node :: after).Nodup := by
+    rw [← split.property]
+    exact path.simple
+  { nodes := before ++ [node]
+    starts := by
+      cases hbefore : before with
+      | nil =>
+          simp only [hbefore, List.nil_append, List.head?_cons,
+            Option.some.injEq] at starts
+          subst node
+          simp
+      | cons head tail =>
+          simpa [hbefore, List.cons_append] using starts
+    finishes := getLast?_snoc before node
+    simple := nodup_prefix_append simpleFull
+    adjacent := PathSpecification.Consecutive.prefix_append before node after
+      consecutiveFull
+    source_open := path.source_open
+    target_open := openNode
+    internal_active := by
+      have takeEq := take_prefix_append before node after
+      have activeTake := PathSpecification.InternalTriplesActive.take activeFull
+        (before.length + 1)
+      simpa [takeEq] using activeTake }
+
+theorem consecutive_adjacent_of_marriedCount_zero (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    {nodes : List (SeparationNode S)}
+    (married : PathSpecification.marriedCount G mutilation nodes = 0) :
+    PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation) nodes :=
+  PathSpecification.Consecutive.adjacent_of_marriedCount_zero married
+
+def activePath_of_simpleMoralWalk (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    (targets conditioned : NodeSet S)
+    {source target : SeparationNode S}
+    (walk : FiniteReachability.SimpleWalk
+      (G.MoralOpenEdge mutilation targets conditioned) source target)
+    (married : PathSpecification.marriedCount G mutilation walk.walk.nodes = 0)
+    (inactive : PathSpecification.inactiveColliderCount G mutilation
+      conditioned walk.walk.nodes = 0)
+    (sourceOpen : blockedBy conditioned source = false)
+    (targetOpen : blockedBy conditioned target = false) :
+    PathSpecification.ActivePath G mutilation conditioned source target where
+  nodes := walk.walk.nodes
+  starts := walk.walk.nodes_head
+  finishes := walk.walk.nodes_getLast
+  simple := walk.simple
+  adjacent := G.consecutive_adjacent_of_marriedCount_zero mutilation married
+  source_open := sourceOpen
+  target_open := targetOpen
+  internal_active :=
+    PathSpecification.InternalTriplesActive.of_inactiveColliderCount_zero
+      walk.walk.nodes inactive
+
+/-- Computational witness for a moralised collider child. -/
+def commonChild? (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (targets : NodeSet S) (left right : SeparationNode S) :
+    Option (SeparationNode S) :=
+  G.separationNodes.find? (fun child =>
+    G.ancestorOf mutilation targets child &&
+      G.expandedMutilatedEdge mutilation left child &&
+        G.expandedMutilatedEdge mutilation right child)
+
+theorem commonChild?_eq_some (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets : NodeSet S)
+    {left right child : SeparationNode S}
+    (found : G.commonChild? mutilation targets left right = some child) :
+    G.ancestorOf mutilation targets child = true /\
+      G.expandedMutilatedEdge mutilation left child = true /\
+        G.expandedMutilatedEdge mutilation right child = true := by
+  have pred := List.find?_some found
+  rcases Bool.and_eq_true_iff.mp pred with ⟨leftAndAncestor, rightParent⟩
+  rcases Bool.and_eq_true_iff.mp leftAndAncestor with
+    ⟨childAncestor, leftParent⟩
+  exact ⟨childAncestor, leftParent, rightParent⟩
+
+theorem commonChild?_of_married (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets : NodeSet S)
+    {left right : SeparationNode S}
+    (moral : G.ancestralMoralEdge mutilation targets left right = true)
+    (notAdjacent :
+      PathSpecification.adjacentBool G mutilation left right = false) :
+    Exists fun child =>
+      G.commonChild? mutilation targets left right = some child := by
+  simp only [ancestralMoralEdge, Bool.and_eq_true, Bool.or_eq_true] at moral
+  rcases moral with ⟨⟨⟨_leftAncestor, _rightAncestor⟩, _different⟩, directOrMoral⟩
+  rcases directOrMoral with directOrReverse | commonAny
+  · have adjacentTrue :
+        PathSpecification.adjacentBool G mutilation left right = true := by
+      simpa [PathSpecification.adjacentBool, Bool.or_eq_true] using
+        directOrReverse
+    rw [notAdjacent] at adjacentTrue
+    contradiction
+  · cases found : G.commonChild? mutilation targets left right with
+    | none =>
+        have noneAll := List.find?_eq_none.mp found
+        rcases List.any_eq_true.mp commonAny with ⟨child, member, pred⟩
+        exact (noneAll child member pred).elim
+    | some child => exact ⟨child, rfl⟩
+
+/-- Expand married moral edges by inserting a witnessing collider child. -/
+def expandMoralNodes (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (targets conditioned : NodeSet S) :
+    {length : Nat} → {source target : SeparationNode S} →
+    FiniteReachability.ExactWalk
+      (G.MoralOpenEdge mutilation targets conditioned) length source target →
+    List (SeparationNode S)
+  | _, _, _, .refl node => [node]
+  | _, source, _target, .step first rest =>
+      let restNodes :=
+        expandMoralNodes G mutilation targets conditioned rest
+      if PathSpecification.adjacentBool G mutilation source
+          (rest.nodes.headD source) then
+        source :: restNodes
+      else
+        match G.commonChild? mutilation targets source
+            (rest.nodes.headD source) with
+        | some child => source :: child :: restNodes
+        | none => source :: restNodes
+
+theorem expandMoralNodes_head (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets conditioned : NodeSet S)
+    {length : Nat} {source target : SeparationNode S}
+    (walk : FiniteReachability.ExactWalk
+      (G.MoralOpenEdge mutilation targets conditioned) length source target) :
+    (G.expandMoralNodes mutilation targets conditioned walk).head? =
+      some source := by
+  match walk with
+  | .refl node => simp [expandMoralNodes]
+  | .step first rest =>
+      simp only [expandMoralNodes]
+      split
+      · simp
+      · split <;> simp
+
+theorem expandMoralNodes_ne_nil (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets conditioned : NodeSet S)
+    {length : Nat} {source target : SeparationNode S}
+    (walk : FiniteReachability.ExactWalk
+      (G.MoralOpenEdge mutilation targets conditioned) length source target) :
+    G.expandMoralNodes mutilation targets conditioned walk ≠ [] := by
+  have headEq := G.expandMoralNodes_head mutilation targets conditioned walk
+  intro empty
+  rw [empty] at headEq
+  simp at headEq
+
+theorem expandMoralNodes_getLast (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets conditioned : NodeSet S)
+    {length : Nat} {source target : SeparationNode S}
+    (walk : FiniteReachability.ExactWalk
+      (G.MoralOpenEdge mutilation targets conditioned) length source target) :
+    (G.expandMoralNodes mutilation targets conditioned walk).getLast? =
+      some target := by
+  match walk with
+  | .refl node => simp [expandMoralNodes]
+  | .step first rest =>
+      have restLast :=
+        G.expandMoralNodes_getLast mutilation targets conditioned rest
+      have restNe :=
+        G.expandMoralNodes_ne_nil mutilation targets conditioned rest
+      simp only [expandMoralNodes]
+      split
+      · cases hrest :
+            G.expandMoralNodes mutilation targets conditioned rest with
+        | nil => exact (restNe hrest).elim
+        | cons head tail =>
+            simpa [hrest, List.getLast?_cons] using restLast
+      · split
+        · cases hrest :
+              G.expandMoralNodes mutilation targets conditioned rest with
+          | nil => exact (restNe hrest).elim
+          | cons head tail =>
+              simpa [hrest, List.getLast?_cons] using restLast
+        · cases hrest :
+              G.expandMoralNodes mutilation targets conditioned rest with
+          | nil => exact (restNe hrest).elim
+          | cons head tail =>
+              simpa [hrest, List.getLast?_cons] using restLast
+
+theorem ancestorOf_of_ancestralMoralEdge (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets : NodeSet S)
+    {left right : SeparationNode S}
+    (moral : G.ancestralMoralEdge mutilation targets left right = true) :
+    G.ancestorOf mutilation targets left = true /\
+      G.ancestorOf mutilation targets right = true := by
+  simp only [ancestralMoralEdge, Bool.and_eq_true] at moral
+  exact ⟨moral.1.1.1, moral.1.1.2⟩
+
+theorem expandMoralNodes_consecutive_adjacent (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets conditioned : NodeSet S)
+    {length : Nat} {walkSource walkTarget : SeparationNode S}
+    (walk : FiniteReachability.ExactWalk
+      (G.MoralOpenEdge mutilation targets conditioned) length walkSource
+        walkTarget) :
+    PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation)
+      (G.expandMoralNodes mutilation targets conditioned walk) := by
+  induction walk with
+  | refl node => simp [expandMoralNodes, PathSpecification.Consecutive]
+  | @step length source middle target first rest ih =>
+      have restHead :=
+        G.expandMoralNodes_head mutilation targets conditioned rest
+      have restNe :=
+        G.expandMoralNodes_ne_nil mutilation targets conditioned rest
+      have unpacked :=
+        MoralOpenEdge.unpacked G mutilation targets conditioned first
+      have destHead := rest.nodes_headD (default := source)
+      have moralDest :
+          G.ancestralMoralEdge mutilation targets source
+            (rest.nodes.headD source) = true := by
+        rw [destHead]
+        exact unpacked.2.2
+      unfold expandMoralNodes
+      split
+      · rename_i adjacentTrue
+        cases hrest :
+            G.expandMoralNodes mutilation targets conditioned rest with
+        | nil => exact (restNe hrest).elim
+        | cons head tail =>
+            have headEq : head = rest.nodes.headD source := by
+              simp [hrest, Option.some.injEq] at restHead
+              exact restHead.trans destHead.symm
+            subst head
+            exact ⟨(PathSpecification.Adjacent_iff_adjacentBool G
+                mutilation source (rest.nodes.headD source)).mpr adjacentTrue,
+              by simpa [hrest] using ih⟩
+      · rename_i adjacentFalse
+        have notAdjacent :
+            PathSpecification.adjacentBool G mutilation source
+              (rest.nodes.headD source) = false :=
+          Bool.eq_false_iff.mpr adjacentFalse
+        split
+        · rename_i child found
+          have childEdges :=
+            G.commonChild?_eq_some mutilation targets found
+          cases hrest :
+              G.expandMoralNodes mutilation targets conditioned rest with
+          | nil => exact (restNe hrest).elim
+          | cons head tail =>
+              have headEq : head = rest.nodes.headD source := by
+                simp [hrest, Option.some.injEq] at restHead
+                exact restHead.trans destHead.symm
+              subst head
+              exact ⟨Or.inl childEdges.2.1,
+                ⟨Or.inr childEdges.2.2, by simpa [hrest] using ih⟩⟩
+        · rename_i foundNone
+          rcases G.commonChild?_of_married mutilation targets moralDest
+              notAdjacent with ⟨_child, someChild⟩
+          rw [foundNone] at someChild
+          cases someChild
+
+theorem expandMoralNodes_mem_ancestor (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets conditioned : NodeSet S)
+    {length : Nat} {walkSource walkTarget : SeparationNode S}
+    (walk : FiniteReachability.ExactWalk
+      (G.MoralOpenEdge mutilation targets conditioned) length walkSource
+        walkTarget)
+    (sourceAncestor : G.ancestorOf mutilation targets walkSource = true)
+    {node : SeparationNode S}
+    (member : node ∈ G.expandMoralNodes mutilation targets conditioned walk) :
+    G.ancestorOf mutilation targets node = true := by
+  induction walk generalizing node with
+  | refl endpoint =>
+      simp [expandMoralNodes] at member
+      subst node
+      exact sourceAncestor
+  | @step length source middle target first rest ih =>
+      have unpacked :=
+        MoralOpenEdge.unpacked G mutilation targets conditioned first
+      have destHead := rest.nodes_headD (default := source)
+      have middleAncestor :
+          G.ancestorOf mutilation targets middle = true :=
+        (G.ancestorOf_of_ancestralMoralEdge mutilation targets
+          unpacked.2.2).2
+      unfold expandMoralNodes at member
+      split at member
+      · rcases List.mem_cons.mp member with same | later
+        · subst node
+          exact sourceAncestor
+        · exact ih middleAncestor later
+      · split at member
+        · rcases List.mem_cons.mp member with same | later
+          · subst node
+            exact sourceAncestor
+          · rcases List.mem_cons.mp later with sameChild | laterRest
+            · subst node
+              rename_i child found
+              exact (G.commonChild?_eq_some mutilation targets found).1
+            · exact ih middleAncestor laterRest
+        · rcases List.mem_cons.mp member with same | later
+          · subst node
+            exact sourceAncestor
+          · exact ih middleAncestor later
+
+/--
+Every consecutive triple on an expansion is either a collider (the window
+around an inserted common child) or has an open middle (an original
+`MoralOpenEdge` vertex).  In particular a blocked non-collider cannot
+appear as the first inactive window of `expandMoralNodes`.
+-/
+theorem expandMoralNodes_middle_open_or_collider (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets conditioned : NodeSet S)
+    {length : Nat} {walkSource walkTarget : SeparationNode S}
+    (walk : FiniteReachability.ExactWalk
+      (G.MoralOpenEdge mutilation targets conditioned) length walkSource
+        walkTarget)
+    (before : List (SeparationNode S))
+    (previous middle next : SeparationNode S)
+    (after : List (SeparationNode S))
+    (expandEq : G.expandMoralNodes mutilation targets conditioned walk =
+      before ++ previous :: middle :: next :: after) :
+    PathSpecification.isColliderBool G mutilation previous middle next =
+      true ∨
+      blockedBy conditioned middle = false := by
+  induction walk generalizing before previous middle next after with
+  | refl node =>
+      simp [expandMoralNodes] at expandEq
+      have lenEq := congrArg List.length expandEq
+      simp [List.length_append, List.length_cons] at lenEq
+      omega
+  | @step length source dest target first rest ih =>
+      have restHead :=
+        G.expandMoralNodes_head mutilation targets conditioned rest
+      have restNe :=
+        G.expandMoralNodes_ne_nil mutilation targets conditioned rest
+      have unpacked :=
+        MoralOpenEdge.unpacked G mutilation targets conditioned first
+      have destHead := rest.nodes_headD (default := source)
+      have destOpen : blockedBy conditioned dest = false := unpacked.2.1
+      have moralDest :
+          G.ancestralMoralEdge mutilation targets source
+            (rest.nodes.headD source) = true := by
+        rw [destHead]
+        exact unpacked.2.2
+      unfold expandMoralNodes at expandEq
+      split at expandEq
+      · cases before with
+        | nil =>
+            injection expandEq with previousEq restEq
+            subst previous
+            cases hrest :
+                G.expandMoralNodes mutilation targets conditioned rest with
+            | nil => exact (restNe hrest).elim
+            | cons head tail =>
+                rw [hrest] at restEq restHead
+                injection restEq with middleEq afterEq
+                subst middle
+                simp only [List.head?_cons, Option.some.injEq] at restHead
+                subst head
+                exact Or.inr destOpen
+        | cons _front frontRest =>
+            simp [List.cons_append] at expandEq
+            rcases expandEq with ⟨rfl, restEq⟩
+            exact ih frontRest previous middle next after restEq
+      · rename_i adjacentFalse
+        have notAdjacent :
+            PathSpecification.adjacentBool G mutilation source
+              (rest.nodes.headD source) = false :=
+          Bool.eq_false_iff.mpr adjacentFalse
+        split at expandEq
+        · rename_i child found
+          have childEdges :=
+            G.commonChild?_eq_some mutilation targets found
+          cases before with
+          | nil =>
+              injection expandEq with previousEq restEq
+              subst previous
+              injection restEq with middleEq afterEq
+              subst middle
+              cases hrest :
+                  G.expandMoralNodes mutilation targets conditioned rest with
+              | nil => exact (restNe hrest).elim
+              | cons head tail =>
+                  rw [hrest] at afterEq restHead
+                  injection afterEq with nextEq _tailEq
+                  subst next
+                  simp only [List.head?_cons, Option.some.injEq] at restHead
+                  subst head
+                  refine Or.inl ?_
+                  simp [PathSpecification.isColliderBool]
+                  exact ⟨childEdges.2.1, by
+                    rw [← destHead]
+                    exact childEdges.2.2⟩
+          | cons _front frontRest =>
+              cases frontRest with
+              | nil =>
+                  simp [List.cons_append] at expandEq
+                  rcases expandEq with ⟨rfl, restEq⟩
+                  rcases restEq with ⟨rfl, afterEq⟩
+                  cases hrest :
+                      G.expandMoralNodes mutilation targets conditioned rest with
+                  | nil => exact (restNe hrest).elim
+                  | cons head tail =>
+                      rw [hrest] at afterEq restHead
+                      injection afterEq with middleEq _tailEq
+                      subst middle
+                      simp only [List.head?_cons, Option.some.injEq] at restHead
+                      subst head
+                      exact Or.inr destOpen
+              | cons _second later =>
+                  simp [List.cons_append] at expandEq
+                  rcases expandEq with ⟨rfl, restEq⟩
+                  rcases restEq with ⟨rfl, afterEq⟩
+                  exact ih later previous middle next after afterEq
+        · rename_i foundNone
+          rcases G.commonChild?_of_married mutilation targets moralDest
+              notAdjacent with ⟨_child, someChild⟩
+          rw [foundNone] at someChild
+          cases someChild
+
+/-- Every consecutive window of a moral expansion is a collider or has an
+open middle.  Direct from the window-wise expansion lemma. -/
+theorem expandMoralNodes_tripleOpenOrCollider (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets conditioned : NodeSet S)
+    {length : Nat} {walkSource walkTarget : SeparationNode S}
+    (walk : FiniteReachability.ExactWalk
+      (G.MoralOpenEdge mutilation targets conditioned) length walkSource
+        walkTarget) :
+    PathSpecification.TripleOpenOrCollider G mutilation conditioned
+      (G.expandMoralNodes mutilation targets conditioned walk) :=
+  PathSpecification.TripleOpenOrCollider.of_every_window _
+    (fun before previous middle next after eq =>
+      G.expandMoralNodes_middle_open_or_collider mutilation targets
+        conditioned walk before previous middle next after eq)
+
+theorem consecutive_adjacent_of_directedWalk (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    {length : Nat} {source target : SeparationNode S}
+    (walk : FiniteReachability.ExactWalk
+      (G.expandedMutilatedEdge mutilation) length source target) :
+    PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation) walk.nodes :=
+  PathSpecification.Consecutive.mono
+    (fun _left _right edge => Or.inl edge) walk.nodes
+    walk.nodes_consecutive
+
+theorem internal_active_of_directed_open (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {length : Nat} {walkSource walkTarget : SeparationNode S}
+    (walk : FiniteReachability.ExactWalk
+      (G.expandedMutilatedEdge mutilation) length walkSource walkTarget)
+    (openNodes : forall vertex, vertex ∈ walk.nodes ->
+      blockedBy conditioned vertex = false) :
+    PathSpecification.InternalTriplesActive G mutilation conditioned
+      walk.nodes := by
+  induction walk with
+  | refl node =>
+      simp [FiniteReachability.ExactWalk.nodes]
+      exact PathSpecification.InternalTriplesActive.singleton node
+  | @step length source middle target first rest ih =>
+      cases rest with
+      | refl _ =>
+          simp [FiniteReachability.ExactWalk.nodes]
+          exact PathSpecification.InternalTriplesActive.pair source middle
+      | @step restLength _ restNext _ second tail =>
+          have middleOpen := openNodes middle (by
+            simp [FiniteReachability.ExactWalk.nodes])
+          have notCollider :=
+            G.not_collider_of_forward_edges mutilation first second
+          have triple :
+              PathSpecification.TripleActive G mutilation conditioned
+                source middle restNext :=
+            Or.inr ⟨notCollider, middleOpen⟩
+          have tailSplit : Exists fun suffix =>
+              tail.nodes = restNext :: suffix := by
+            cases hnodes : tail.nodes with
+            | nil => exact (tail.nodes_ne_nil hnodes).elim
+            | cons head suffix =>
+                have headEq := tail.nodes_head
+                simp [hnodes] at headEq
+                subst head
+                exact ⟨suffix, rfl⟩
+          rcases tailSplit with ⟨suffix, split⟩
+          have restOpen : forall vertex,
+              vertex ∈ (FiniteReachability.ExactWalk.step second tail).nodes ->
+                blockedBy conditioned vertex = false := by
+            intro vertex member
+            have member' : vertex = middle ∨ vertex ∈ tail.nodes := by
+              simpa [FiniteReachability.ExactWalk.nodes] using member
+            exact openNodes vertex (by
+              simp [FiniteReachability.ExactWalk.nodes]
+              exact Or.inr member')
+          have restActive := ih restOpen
+          have restNodes :
+              (FiniteReachability.ExactWalk.step second tail).nodes =
+                middle :: restNext :: suffix := by
+            simp [FiniteReachability.ExactWalk.nodes, split]
+          rw [restNodes] at restActive
+          simpa [FiniteReachability.ExactWalk.nodes, split] using
+            PathSpecification.InternalTriplesActive.step triple restActive
+
+def nodupSeparation : List (SeparationNode S) -> Bool
+  | [] => true
+  | x :: xs =>
+      !(xs.any (fun y => SeparationNode.beq y x)) && nodupSeparation xs
+
+def cutCycle : List (SeparationNode S) -> List (SeparationNode S)
+  | [] => []
+  | x :: xs =>
+      match xs.findIdx? (fun y => SeparationNode.beq y x) with
+      | none => x :: cutCycle xs
+      | some idx => x :: xs.drop (idx + 1)
+
+theorem findIdx?_some_lt {α} {p : α → Bool} :
+    forall xs : List α, forall idx : Nat,
+      xs.findIdx? p = some idx -> idx < xs.length
+  | [], idx, h => by simp at h
+  | x :: xs, idx, h => by
+      rw [List.findIdx?_cons] at h
+      split at h
+      · cases h
+        exact Nat.zero_lt_succ _
+      · cases htail : xs.findIdx? p with
+        | none => simp [htail] at h
+        | some j =>
+            simp [htail] at h
+            cases h
+            exact Nat.succ_lt_succ (findIdx?_some_lt xs j htail)
+
+theorem findIdx?_of_any {α} {p : α → Bool} :
+    forall xs : List α, xs.any p = true ->
+      Exists fun idx => xs.findIdx? p = some idx
+  | [], h => by simp at h
+  | x :: xs, h => by
+      cases hx : p x with
+      | true =>
+          exact ⟨0, by simp [List.findIdx?_cons, hx]⟩
+      | false =>
+          have tailAny : xs.any p = true := by
+            simpa [List.any_cons, hx] using h
+          rcases findIdx?_of_any xs tailAny with ⟨j, hj⟩
+          refine ⟨j + 1, ?_⟩
+          simp [List.findIdx?_cons, hx, hj]
+
+theorem cutCycle_length_le :
+    forall nodes : List (SeparationNode S),
+      (cutCycle nodes).length <= nodes.length
+  | [] => by simp [cutCycle]
+  | x :: xs => by
+      cases hidx :
+          xs.findIdx? (fun y => SeparationNode.beq y x) with
+      | none =>
+          simpa [cutCycle, hidx] using cutCycle_length_le xs
+      | some idx =>
+          have idxBound : idx < xs.length := findIdx?_some_lt xs idx hidx
+          simp [cutCycle, hidx, List.length_drop]
+          try omega
+
+theorem cutCycle_length_lt :
+    forall nodes : List (SeparationNode S),
+      nodupSeparation nodes = false ->
+        (cutCycle nodes).length < nodes.length
+  | [] => by
+      intro h
+      simp [nodupSeparation] at h
+  | x :: xs => by
+      intro h
+      simp only [nodupSeparation] at h
+      cases hany : xs.any (fun y => SeparationNode.beq y x) with
+      | true =>
+          rcases findIdx?_of_any xs hany with ⟨idx, hidx⟩
+          have idxBound : idx < xs.length := findIdx?_some_lt xs idx hidx
+          simp [cutCycle, hidx, List.length_drop]
+          omega
+      | false =>
+          have tailFalse : nodupSeparation xs = false := by
+            simp [hany] at h
+            exact h
+          cases hidx :
+              xs.findIdx? (fun y => SeparationNode.beq y x) with
+          | none =>
+              simpa [cutCycle, hidx] using cutCycle_length_lt xs tailFalse
+          | some idx =>
+              have idxBound : idx < xs.length := findIdx?_some_lt xs idx hidx
+              simp [cutCycle, hidx, List.length_drop]
+              omega
+
+/-- Drop repeated vertices by iterating `cutCycle` at most `nodes.length` times. -/
+def simplifySeparation.go :
+    Nat → List (SeparationNode S) → List (SeparationNode S)
+  | 0, nodes => nodes
+  | n + 1, nodes =>
+      if nodupSeparation nodes = true then nodes
+      else simplifySeparation.go n (cutCycle nodes)
+
+def simplifySeparation (nodes : List (SeparationNode S)) :
+    List (SeparationNode S) :=
+  simplifySeparation.go nodes.length nodes
+
+/--
+A simple open moral walk that is already a DAG adjacency walk with every
+internal triple active is an active path between its observed endpoints.
+-/
+theorem exists_activePath_of_zero_measure (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {sourceIdx targetIdx : Fin S.count}
+    (walk : FiniteReachability.SimpleWalk
+      (G.MoralOpenEdge mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned)
+      (.observed sourceIdx) (.observed targetIdx))
+    (married : PathSpecification.marriedCount G mutilation walk.walk.nodes = 0)
+    (inactive : PathSpecification.inactiveColliderCount G mutilation
+      conditioned walk.walk.nodes = 0)
+    (sourceOpen : blockedBy conditioned (.observed sourceIdx) = false)
+    (targetOpen : blockedBy conditioned (.observed targetIdx) = false) :
+    Nonempty
+      (PathSpecification.ActivePath G mutilation conditioned
+        (.observed sourceIdx) (.observed targetIdx)) :=
+  ⟨G.activePath_of_simpleMoralWalk mutilation
+    (NodeSet.union left (NodeSet.union right conditioned)) conditioned
+    walk married inactive sourceOpen targetOpen⟩
+
+theorem cutCycle_head :
+    forall nodes : List (SeparationNode S),
+      nodes ≠ [] -> (cutCycle nodes).head? = nodes.head?
+  | [], ne => (ne rfl).elim
+  | x :: xs, _ne => by
+      cases hidx :
+          xs.findIdx? (fun y => SeparationNode.beq y x) with
+      | none => simp [cutCycle, hidx]
+      | some idx => simp [cutCycle, hidx]
+
+theorem cutCycle_ne_nil (nodes : List (SeparationNode S))
+    (ne : nodes ≠ []) : cutCycle nodes ≠ [] := by
+  have headEq := cutCycle_head nodes ne
+  cases hcut : cutCycle nodes with
+  | nil =>
+      simp [hcut] at headEq
+      cases nodes with
+      | nil => exact (ne rfl).elim
+      | cons _ _ => simp at headEq
+  | cons _ _ => intro h; cases h
+
+theorem findIdx?_some_pred {α} {p : α → Bool} {xs : List α} {idx : Nat}
+    (h : xs.findIdx? p = some idx) (bound : idx < xs.length) :
+    p xs[idx] = true := by
+  induction xs generalizing idx with
+  | nil => exact (Nat.not_lt_zero idx bound).elim
+  | cons x xs ih =>
+      rw [List.findIdx?_cons] at h
+      split at h
+      · cases h
+        assumption
+      · cases htail : xs.findIdx? p with
+        | none => simp [htail] at h
+        | some j =>
+            simp [htail] at h
+            cases h
+            have jbound : j < xs.length := findIdx?_some_lt xs j htail
+            simpa [List.getElem_cons_succ] using ih htail jbound
+
+theorem getLast?_drop_eq {α} {n : Nat} {xs : List α}
+    (bound : n < xs.length) :
+    (xs.drop n).getLast? = xs.getLast? := by
+  rw [List.getLast?_drop]
+  have : ¬ xs.length ≤ n := Nat.not_le.mpr bound
+  simp [this]
+
+theorem mem_cutCycle {node : SeparationNode S} :
+    forall nodes : List (SeparationNode S),
+      node ∈ cutCycle nodes -> node ∈ nodes
+  | [], member => by simp [cutCycle] at member
+  | x :: xs, member => by
+      cases hidx :
+          xs.findIdx? (fun y => SeparationNode.beq y x) with
+      | none =>
+          simp [cutCycle, hidx] at member
+          rcases member with same | later
+          · subst node
+            simp
+          · exact List.mem_cons_of_mem _ (mem_cutCycle xs later)
+      | some idx =>
+          simp [cutCycle, hidx] at member
+          rcases member with same | later
+          · subst node
+            simp
+          · exact List.mem_cons_of_mem _
+              (List.mem_of_mem_drop later)
+
+theorem nodupSeparation_eq_true_iff :
+    forall nodes : List (SeparationNode S),
+      nodupSeparation nodes = true <-> nodes.Nodup
+  | [] => by simp [nodupSeparation]
+  | x :: xs => by
+      simp only [nodupSeparation, Bool.and_eq_true, Bool.not_eq_true',
+        List.nodup_cons]
+      constructor
+      · intro ⟨notLater, tail⟩
+        constructor
+        · intro member
+          have later :
+              xs.any (fun y => SeparationNode.beq y x) = true := by
+            refine List.any_eq_true.mpr ⟨x, member, ?_⟩
+            exact (SeparationNode.beq_eq_true_iff x x).mpr rfl
+          rw [later] at notLater
+          contradiction
+        · exact (nodupSeparation_eq_true_iff xs).mp tail
+      · intro ⟨notLater, tail⟩
+        constructor
+        · cases hany : xs.any (fun y => SeparationNode.beq y x) with
+          | false => rfl
+          | true =>
+              rcases List.any_eq_true.mp hany with ⟨y, member, same⟩
+              have eqY : y = x :=
+                (SeparationNode.beq_eq_true_iff y x).mp same
+              subst y
+              exact (notLater member).elim
+        · exact (nodupSeparation_eq_true_iff xs).mpr tail
+
+theorem cutCycle_getLast :
+    forall nodes : List (SeparationNode S),
+      nodes ≠ [] -> (cutCycle nodes).getLast? = nodes.getLast?
+  | [], ne => (ne rfl).elim
+  | x :: xs, _ne => by
+      cases hidx :
+          xs.findIdx? (fun y => SeparationNode.beq y x) with
+      | none =>
+          cases xs with
+          | nil => simp [cutCycle, hidx]
+          | cons y ys =>
+              have tailLast :=
+                cutCycle_getLast (y :: ys) (List.cons_ne_nil _ _)
+              have cutEq : cutCycle (x :: y :: ys) =
+                  x :: cutCycle (y :: ys) := by
+                simp [cutCycle, hidx]
+              have cutNe :=
+                cutCycle_ne_nil (y :: ys) (List.cons_ne_nil _ _)
+              cases hcut : cutCycle (y :: ys) with
+              | nil => exact (cutNe hcut).elim
+              | cons z zs =>
+                  rw [cutEq, hcut]
+                  have tailLast' : (z :: zs).getLast? = (y :: ys).getLast? := by
+                    rw [← hcut]
+                    exact tailLast
+                  simpa [List.getLast?_cons_cons] using tailLast'
+      | some idx =>
+          have idxBound : idx < xs.length := findIdx?_some_lt xs idx hidx
+          have cutEq : cutCycle (x :: xs) = x :: xs.drop (idx + 1) := by
+            simp [cutCycle, hidx]
+          rw [cutEq]
+          cases hdrop : xs.drop (idx + 1) with
+          | nil =>
+              have duplicate :
+                  SeparationNode.beq xs[idx] x = true :=
+                findIdx?_some_pred hidx idxBound
+              have duplicateEq : xs[idx] = x :=
+                (SeparationNode.beq_eq_true_iff _ _).mp duplicate
+              have dropIdx :
+                  xs.drop idx = x :: xs.drop (idx + 1) := by
+                rw [List.drop_eq_getElem_cons idxBound, duplicateEq]
+              have lastAtDup : (xs.drop idx).getLast? = some x := by
+                simp [dropIdx, hdrop]
+              have lastXs : xs.getLast? = some x := by
+                have := getLast?_drop_eq idxBound
+                rw [← this]
+                exact lastAtDup
+              cases xs with
+              | nil => simp at idxBound
+              | cons _ _ =>
+                  simpa [List.getLast?_cons] using lastXs.symm
+          | cons z zs =>
+              have nlt : idx + 1 < xs.length := by
+                have dropLen : (xs.drop (idx + 1)).length =
+                    xs.length - (idx + 1) := by
+                  simp [List.length_drop]
+                simp [hdrop] at dropLen
+                omega
+              have dropLast := getLast?_drop_eq nlt
+              cases xs with
+              | nil => simp at hdrop
+              | cons _ _ =>
+                  simp [hdrop] at dropLast
+                  simpa [List.getLast?_cons_cons, List.getLast?_cons]
+                    using dropLast
+
+/-- Cycle deletion preserves consecutive relatedness: every remaining
+adjacent pair was already an edge of the original walk. -/
+theorem consecutive_cutCycle {relation : SeparationNode S → SeparationNode S → Prop}
+    (nodes : List (SeparationNode S))
+    (hcons : PathSpecification.Consecutive relation nodes) :
+    PathSpecification.Consecutive relation (cutCycle nodes) := by
+  match nodes with
+  | [] => simp [cutCycle, PathSpecification.Consecutive]
+  | [x] => simp [cutCycle, PathSpecification.Consecutive]
+  | x :: y :: rest =>
+      cases hidx :
+          (y :: rest).findIdx? (fun z => SeparationNode.beq z x) with
+      | none =>
+          have tailCut := consecutive_cutCycle (y :: rest) hcons.2
+          have headEq : (cutCycle (y :: rest)).head? = some y :=
+            cutCycle_head (y :: rest) (List.cons_ne_nil _ _)
+          cases hcut : cutCycle (y :: rest) with
+          | nil =>
+              exact (cutCycle_ne_nil (y :: rest) (List.cons_ne_nil _ _) hcut).elim
+          | cons z zs =>
+              have zEq : z = y := by
+                have : (cutCycle (y :: rest)).head? = some y := headEq
+                simp [hcut] at this
+                exact this
+              subst z
+              have cutEq : cutCycle (x :: y :: rest) = x :: y :: zs := by
+                simp only [cutCycle, hidx]
+                exact congrArg (List.cons x) hcut
+              rw [cutEq]
+              exact ⟨hcons.1, by simpa [hcut] using tailCut⟩
+      | some idx =>
+          have idxBound : idx < (y :: rest).length :=
+            findIdx?_some_lt (y :: rest) idx hidx
+          have duplicate :
+              SeparationNode.beq ((y :: rest)[idx]) x = true :=
+            findIdx?_some_pred hidx idxBound
+          have duplicateEq : (y :: rest)[idx] = x :=
+            (SeparationNode.beq_eq_true_iff _ _).mp duplicate
+          have dropCons := PathSpecification.Consecutive.drop (idx + 1)
+            (y :: rest) hcons.2
+          cases hdrop : (y :: rest).drop (idx + 1) with
+          | nil =>
+              simp [cutCycle, hidx, hdrop, PathSpecification.Consecutive]
+          | cons z zs =>
+              have pair : relation x z := by
+                have consYs := hcons.2
+                have split :
+                    y :: rest =
+                      (y :: rest).take idx ++ x :: z :: zs := by
+                  calc y :: rest
+                      = (y :: rest).take idx ++ (y :: rest).drop idx :=
+                          (List.take_append_drop idx (y :: rest)).symm
+                    _ = (y :: rest).take idx ++
+                          (y :: rest)[idx] :: (y :: rest).drop (idx + 1) := by
+                          rw [List.drop_eq_getElem_cons idxBound]
+                    _ = (y :: rest).take idx ++ x :: z :: zs := by
+                          rw [duplicateEq, hdrop]
+                rw [split] at consYs
+                exact PathSpecification.Consecutive.pair_of_append
+                  ((y :: rest).take idx) zs x z consYs
+              have cutEq : cutCycle (x :: y :: rest) = x :: z :: zs := by
+                simp [cutCycle, hidx, hdrop]
+              rw [cutEq]
+              exact ⟨pair, by simpa [hdrop] using dropCons⟩
+termination_by nodes.length
+
+/--
+Cycle deletion preserves collider-or-open middles along a DAG-adjacent
+trail.  Copied windows are original consecutive triples.  A splice
+`(x, y, w)` at a blocked `y` reuses the two original incoming parents:
+the first window supplies `x → y` and the window at the second copy of
+`y` supplies `w → y`.
+-/
+theorem cutCycle_tripleOpenOrCollider (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    (nodes : List (SeparationNode S))
+    (hcons : PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation) nodes)
+    (hopen : PathSpecification.TripleOpenOrCollider G mutilation
+      conditioned nodes) :
+    PathSpecification.TripleOpenOrCollider G mutilation conditioned
+      (cutCycle nodes) := by
+  match nodes with
+  | [] => trivial
+  | [_] => trivial
+  | x :: y :: rest =>
+      cases rest with
+      | nil =>
+          cases hidx :
+              [y].findIdx? (fun z => SeparationNode.beq z x) with
+          | none =>
+              simp [cutCycle, hidx]
+              trivial
+          | some idx =>
+              have idxBound : idx < [y].length :=
+                findIdx?_some_lt [y] idx hidx
+              have duplicate :
+                  SeparationNode.beq ([y][idx]) x = true :=
+                findIdx?_some_pred hidx idxBound
+              have yEq : y = x := by
+                have : idx = 0 := by simp at idxBound; exact idxBound
+                subst idx
+                exact (SeparationNode.beq_eq_true_iff y x).mp duplicate
+              subst y
+              exact (G.adjacent_irrefl mutilation x hcons.1).elim
+      | cons z0 rest' =>
+          have first := hopen.1
+          have tailOpen :
+              PathSpecification.TripleOpenOrCollider G mutilation
+                conditioned (y :: z0 :: rest') :=
+            hopen.2
+          cases hidx :
+              (y :: z0 :: rest').findIdx? (fun z => SeparationNode.beq z x)
+              with
+          | none =>
+              have tailCut :=
+                cutCycle_tripleOpenOrCollider G mutilation conditioned
+                  (y :: z0 :: rest') hcons.2 tailOpen
+              have headEq :
+                  (cutCycle (y :: z0 :: rest')).head? = some y :=
+                cutCycle_head (y :: z0 :: rest') (List.cons_ne_nil _ _)
+              cases hcut : cutCycle (y :: z0 :: rest') with
+              | nil =>
+                  exact (cutCycle_ne_nil (y :: z0 :: rest')
+                    (List.cons_ne_nil _ _) hcut).elim
+              | cons z zs =>
+                  have zEq : z = y := by
+                    simp [hcut] at headEq
+                    exact headEq
+                  subst z
+                  have cutEq :
+                      cutCycle (x :: y :: z0 :: rest') = x :: y :: zs := by
+                    simp only [cutCycle, hidx]
+                    exact congrArg (List.cons x) hcut
+                  rw [cutEq]
+                  cases zs with
+                  | nil => trivial
+                  | cons w more =>
+                      have tail' :
+                          PathSpecification.TripleOpenOrCollider G
+                            mutilation conditioned (y :: w :: more) := by
+                        simpa [hcut] using tailCut
+                      refine ⟨?_, tail'⟩
+                      cases openY : blockedBy conditioned y with
+                      | false => exact Or.inr rfl
+                      | true =>
+                          have origCollider :
+                              PathSpecification.isColliderBool G mutilation
+                                x y z0 = true := by
+                            rcases first with c | openMiddle
+                            · exact c
+                            · rw [openY] at openMiddle
+                              cases openMiddle
+                          cases hidxY :
+                              (z0 :: rest').findIdx?
+                                (fun z => SeparationNode.beq z y) with
+                          | none =>
+                              have cutDef :
+                                  cutCycle (y :: z0 :: rest') =
+                                    y :: cutCycle (z0 :: rest') := by
+                                simp [cutCycle, hidxY]
+                              rw [cutDef] at hcut
+                              injection hcut with _ restCut
+                              have wEq : w = z0 := by
+                                have hd :=
+                                  cutCycle_head (z0 :: rest')
+                                    (List.cons_ne_nil _ _)
+                                rw [restCut] at hd
+                                simp at hd
+                                exact hd
+                              subst w
+                              exact Or.inl origCollider
+                          | some idxY =>
+                              have cutDef :
+                                  cutCycle (y :: z0 :: rest') =
+                                    y :: (z0 :: rest').drop (idxY + 1) := by
+                                simp [cutCycle, hidxY]
+                              rw [cutDef] at hcut
+                              injection hcut with _ dropEq
+                              have idxBoundY :
+                                  idxY < (z0 :: rest').length :=
+                                findIdx?_some_lt (z0 :: rest') idxY hidxY
+                              have dupY :
+                                  SeparationNode.beq
+                                    ((z0 :: rest')[idxY]) y = true :=
+                                findIdx?_some_pred hidxY idxBoundY
+                              have dupEq : (z0 :: rest')[idxY] = y :=
+                                (SeparationNode.beq_eq_true_iff _ _).mp dupY
+                              cases idxY with
+                              | zero =>
+                                  have z0Eq : z0 = y := by
+                                    simpa using dupEq
+                                  subst z0
+                                  exact (G.adjacent_irrefl mutilation y
+                                    hcons.2.1).elim
+                              | succ k =>
+                                  have boundK1 :
+                                      k + 1 < (y :: z0 :: rest').length :=
+                                    Nat.lt_succ_of_lt idxBoundY
+                                  have dropTail :
+                                      (y :: z0 :: rest').drop (k + 2) =
+                                        y :: w :: more := by
+                                    have tdrop :
+                                        (y :: z0 :: rest').drop (k + 2) =
+                                          (z0 :: rest').drop (k + 1) := rfl
+                                    have dcons :
+                                        (z0 :: rest').drop (k + 1) =
+                                          (z0 :: rest')[k + 1]'idxBoundY ::
+                                            (z0 :: rest').drop (k + 2) :=
+                                      List.drop_eq_getElem_cons idxBoundY
+                                    have atY :
+                                        (z0 :: rest')[k + 1]'idxBoundY = y :=
+                                      dupEq
+                                    rw [tdrop, dcons, atY, dropEq]
+                                  have splitT :
+                                      y :: z0 :: rest' =
+                                        (y :: z0 :: rest').take (k + 1) ++
+                                          (y :: z0 :: rest')[k + 1]'boundK1 ::
+                                            y :: w :: more := by
+                                    have td :=
+                                      List.take_append_drop (k + 1)
+                                        (y :: z0 :: rest')
+                                    have dconsT :=
+                                      List.drop_eq_getElem_cons boundK1
+                                    calc y :: z0 :: rest'
+                                        = (y :: z0 :: rest').take (k + 1) ++
+                                            (y :: z0 :: rest').drop
+                                              (k + 1) := td.symm
+                                      _ = (y :: z0 :: rest').take (k + 1) ++
+                                            (y :: z0 :: rest')[k + 1]'boundK1 ::
+                                              (y :: z0 :: rest').drop
+                                                (k + 2) := by
+                                          rw [dconsT]
+                                      _ = (y :: z0 :: rest').take (k + 1) ++
+                                            (y :: z0 :: rest')[k + 1]'boundK1 ::
+                                              y :: w :: more := by
+                                          rw [dropTail]
+                                  have window :=
+                                    PathSpecification.TripleOpenOrCollider.of_append
+                                      ((y :: z0 :: rest').take (k + 1))
+                                      ((y :: z0 :: rest')[k + 1]'boundK1) y w
+                                      more
+                                      (by
+                                        rw [← splitT]
+                                        exact tailOpen)
+                                  have secondCollider :
+                                      PathSpecification.isColliderBool G
+                                        mutilation
+                                        ((y :: z0 :: rest')[k + 1]'boundK1) y w =
+                                          true := by
+                                    rcases window with c | openMiddle
+                                    · exact c
+                                    · rw [openY] at openMiddle
+                                      cases openMiddle
+                                  have xy :
+                                      G.expandedMutilatedEdge mutilation x y =
+                                        true :=
+                                    (Bool.and_eq_true_iff.mp origCollider).1
+                                  have wy :
+                                      G.expandedMutilatedEdge mutilation w y =
+                                        true :=
+                                    (Bool.and_eq_true_iff.mp secondCollider).2
+                                  refine Or.inl ?_
+                                  simp [PathSpecification.isColliderBool, xy, wy]
+          | some idx =>
+              have idxBound : idx < (y :: z0 :: rest').length :=
+                findIdx?_some_lt (y :: z0 :: rest') idx hidx
+              have duplicate :
+                  SeparationNode.beq ((y :: z0 :: rest')[idx]) x = true :=
+                findIdx?_some_pred hidx idxBound
+              have duplicateEq : (y :: z0 :: rest')[idx] = x :=
+                (SeparationNode.beq_eq_true_iff _ _).mp duplicate
+              cases idx with
+              | zero =>
+                  have yEq : y = x := by
+                    simpa using duplicateEq
+                  subst y
+                  exact (G.adjacent_irrefl mutilation x hcons.1).elim
+              | succ k =>
+                  cases hdrop :
+                      (y :: z0 :: rest').drop (k + 2) with
+                  | nil =>
+                      simp [cutCycle, hidx, hdrop]
+                      trivial
+                  | cons z zs =>
+                      cases zs with
+                      | nil =>
+                          simp [cutCycle, hidx, hdrop]
+                          trivial
+                      | cons w more =>
+                          have split :
+                              y :: z0 :: rest' =
+                                (y :: z0 :: rest').take (k + 1) ++
+                                  x :: z :: w :: more := by
+                            have td :=
+                              List.take_append_drop (k + 1)
+                                (y :: z0 :: rest')
+                            have de :
+                                (y :: z0 :: rest').drop (k + 1) =
+                                  x :: z :: w :: more := by
+                              have dcons :=
+                                List.drop_eq_getElem_cons idxBound
+                              calc (y :: z0 :: rest').drop (k + 1)
+                                  = (y :: z0 :: rest')[k + 1] ::
+                                      (y :: z0 :: rest').drop (k + 2) := dcons
+                                _ = x :: (y :: z0 :: rest').drop (k + 2) := by
+                                    rw [duplicateEq]
+                                _ = x :: z :: w :: more := by
+                                    rw [hdrop]
+                            calc y :: z0 :: rest'
+                                = (y :: z0 :: rest').take (k + 1) ++
+                                    (y :: z0 :: rest').drop (k + 1) :=
+                                  td.symm
+                              _ = (y :: z0 :: rest').take (k + 1) ++
+                                    x :: z :: w :: more := by
+                                  rw [de]
+                          have cutEq :
+                              cutCycle (x :: y :: z0 :: rest') =
+                                x :: z :: w :: more := by
+                            simp [cutCycle, hidx, hdrop]
+                          rw [cutEq]
+                          let front := (y :: z0 :: rest').take (k + 1)
+                          have split' :
+                              y :: z0 :: rest' =
+                                front ++ x :: z :: w :: more := split
+                          have full :
+                              x :: y :: z0 :: rest' =
+                                (x :: front) ++ x :: z :: w :: more := by
+                            calc x :: y :: z0 :: rest'
+                                = x :: (front ++ x :: z :: w :: more) := by
+                                  rw [split']
+                              _ = (x :: front) ++ x :: z :: w :: more := by
+                                  rw [List.cons_append]
+                          have firstWindow :=
+                            PathSpecification.TripleOpenOrCollider.of_append
+                              (x :: front) x z w more
+                              (by
+                                rw [← full]
+                                exact hopen)
+                          have full2 :
+                              x :: y :: z0 :: rest' =
+                                (x :: front ++ [x]) ++ z :: w :: more := by
+                            calc x :: y :: z0 :: rest'
+                                = (x :: front) ++ x :: z :: w :: more := full
+                              _ = (x :: front ++ [x]) ++ z :: w :: more :=
+                                  (List.append_assoc (x :: front) [x]
+                                    (z :: w :: more)).symm
+                          have suffixOpen :=
+                            PathSpecification.TripleOpenOrCollider.suffix_of_append
+                              (x :: front ++ [x]) z (w :: more)
+                              (by
+                                rw [← full2]
+                                exact hopen)
+                          exact ⟨firstWindow, suffixOpen⟩
+termination_by nodes.length
+
+theorem simplifySeparation.go_consecutive
+    {relation : SeparationNode S → SeparationNode S → Prop} :
+    forall (fuel : Nat) (nodes : List (SeparationNode S)),
+      PathSpecification.Consecutive relation nodes ->
+        PathSpecification.Consecutive relation
+          (simplifySeparation.go fuel nodes)
+  | 0, nodes, hcons => by
+      simpa [simplifySeparation.go] using hcons
+  | fuel + 1, nodes, hcons => by
+      simp only [simplifySeparation.go]
+      split
+      · exact hcons
+      · exact simplifySeparation.go_consecutive fuel (cutCycle nodes)
+          (consecutive_cutCycle nodes hcons)
+
+theorem simplifySeparation.go_nodup :
+    forall (fuel : Nat) (nodes : List (SeparationNode S)),
+      nodes.length <= fuel ->
+        (simplifySeparation.go fuel nodes).Nodup
+  | 0, nodes, bound => by
+      cases nodes with
+      | nil => simp [simplifySeparation.go]
+      | cons _ _ =>
+          simp [List.length_cons] at bound
+  | fuel + 1, nodes, bound => by
+      simp only [simplifySeparation.go]
+      split
+      · rename_i hnodup
+        exact (nodupSeparation_eq_true_iff nodes).mp hnodup
+      · rename_i hnot
+        have hfalse : nodupSeparation nodes = false :=
+          Bool.eq_false_iff.mpr hnot
+        have shorter := cutCycle_length_lt nodes hfalse
+        have boundCut : (cutCycle nodes).length <= fuel :=
+          Nat.lt_succ_iff.mp (Nat.lt_of_lt_of_le shorter bound)
+        exact simplifySeparation.go_nodup fuel (cutCycle nodes) boundCut
+
+theorem simplifySeparation.go_head :
+    forall (fuel : Nat) (nodes : List (SeparationNode S)),
+      nodes ≠ [] ->
+        (simplifySeparation.go fuel nodes).head? = nodes.head?
+  | 0, nodes, ne => by
+      simpa [simplifySeparation.go] using rfl
+  | fuel + 1, nodes, ne => by
+      simp only [simplifySeparation.go]
+      split
+      · rfl
+      · have cutNe := cutCycle_ne_nil nodes ne
+        have cutHead := cutCycle_head nodes ne
+        have ih := simplifySeparation.go_head fuel (cutCycle nodes) cutNe
+        exact ih.trans cutHead
+
+theorem simplifySeparation.go_getLast :
+    forall (fuel : Nat) (nodes : List (SeparationNode S)),
+      nodes ≠ [] ->
+        (simplifySeparation.go fuel nodes).getLast? = nodes.getLast?
+  | 0, nodes, ne => by
+      simpa [simplifySeparation.go] using rfl
+  | fuel + 1, nodes, ne => by
+      simp only [simplifySeparation.go]
+      split
+      · rfl
+      · have cutNe := cutCycle_ne_nil nodes ne
+        have cutLast := cutCycle_getLast nodes ne
+        have ih :=
+          simplifySeparation.go_getLast fuel (cutCycle nodes) cutNe
+        exact ih.trans cutLast
+
+theorem simplifySeparation_consecutive
+    {relation : SeparationNode S → SeparationNode S → Prop}
+    {nodes : List (SeparationNode S)}
+    (hcons : PathSpecification.Consecutive relation nodes) :
+    PathSpecification.Consecutive relation (simplifySeparation nodes) :=
+  simplifySeparation.go_consecutive nodes.length nodes hcons
+
+theorem simplifySeparation_nodup (nodes : List (SeparationNode S)) :
+    (simplifySeparation nodes).Nodup :=
+  simplifySeparation.go_nodup nodes.length nodes (Nat.le_refl _)
+
+theorem simplifySeparation_head {nodes : List (SeparationNode S)}
+    (ne : nodes ≠ []) :
+    (simplifySeparation nodes).head? = nodes.head? :=
+  simplifySeparation.go_head nodes.length nodes ne
+
+theorem simplifySeparation_getLast {nodes : List (SeparationNode S)}
+    (ne : nodes ≠ []) :
+    (simplifySeparation nodes).getLast? = nodes.getLast? :=
+  simplifySeparation.go_getLast nodes.length nodes ne
+
+theorem simplifySeparation.go_tripleOpenOrCollider
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (conditioned : NodeSet S) :
+    forall (fuel : Nat) (nodes : List (SeparationNode S)),
+      PathSpecification.Consecutive
+          (PathSpecification.Adjacent G mutilation) nodes ->
+        PathSpecification.TripleOpenOrCollider G mutilation conditioned
+            nodes ->
+          PathSpecification.TripleOpenOrCollider G mutilation conditioned
+            (simplifySeparation.go fuel nodes)
+  | 0, nodes, _hcons, hopen => by
+      simpa [simplifySeparation.go] using hopen
+  | fuel + 1, nodes, hcons, hopen => by
+      simp only [simplifySeparation.go]
+      split
+      · exact hopen
+      · exact simplifySeparation.go_tripleOpenOrCollider G mutilation
+          conditioned fuel (cutCycle nodes)
+          (consecutive_cutCycle nodes hcons)
+          (cutCycle_tripleOpenOrCollider G mutilation conditioned nodes
+            hcons hopen)
+
+theorem simplifySeparation_tripleOpenOrCollider (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {nodes : List (SeparationNode S)}
+    (hcons : PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation) nodes)
+    (hopen : PathSpecification.TripleOpenOrCollider G mutilation
+      conditioned nodes) :
+    PathSpecification.TripleOpenOrCollider G mutilation conditioned
+      (simplifySeparation nodes) :=
+  simplifySeparation.go_tripleOpenOrCollider G mutilation conditioned
+    nodes.length nodes hcons hopen
+
+theorem mem_simplifySeparation.go {node : SeparationNode S} :
+    forall (fuel : Nat) (nodes : List (SeparationNode S)),
+      node ∈ simplifySeparation.go fuel nodes -> node ∈ nodes
+  | 0, nodes, member => by
+      simpa [simplifySeparation.go] using member
+  | fuel + 1, nodes, member => by
+      simp only [simplifySeparation.go] at member
+      split at member
+      · exact member
+      · exact mem_cutCycle nodes
+          (mem_simplifySeparation.go fuel (cutCycle nodes) member)
+
+theorem mem_simplifySeparation {node : SeparationNode S}
+    {nodes : List (SeparationNode S)}
+    (member : node ∈ simplifySeparation nodes) :
+    node ∈ nodes :=
+  mem_simplifySeparation.go nodes.length nodes member
+
+/-- An internally active, simple DAG-adjacency walk is an active path. -/
+def activePath_of_adjacent_nodes (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {source target : SeparationNode S}
+    (nodes : List (SeparationNode S))
+    (starts : nodes.head? = some source)
+    (finishes : nodes.getLast? = some target)
+    (simple : nodes.Nodup)
+    (adjacent : PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation) nodes)
+    (inactive : PathSpecification.inactiveColliderCount G mutilation
+      conditioned nodes = 0)
+    (sourceOpen : blockedBy conditioned source = false)
+    (targetOpen : blockedBy conditioned target = false) :
+    PathSpecification.ActivePath G mutilation conditioned source target where
+  nodes := nodes
+  starts := starts
+  finishes := finishes
+  simple := simple
+  adjacent := adjacent
+  source_open := sourceOpen
+  target_open := targetOpen
+  internal_active :=
+    PathSpecification.InternalTriplesActive.of_inactiveColliderCount_zero
+      nodes inactive
+
+theorem ancestorOf_of_left_selected (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {sourceIdx : Fin S.count} (selected : left sourceIdx = true) :
+    G.ancestorOf mutilation
+      (NodeSet.union left (NodeSet.union right conditioned))
+      (.observed sourceIdx) = true :=
+  G.ancestorOf_target mutilation
+    (NodeSet.union left (NodeSet.union right conditioned))
+    ((NodeSet.union_eq_true left (NodeSet.union right conditioned)
+      sourceIdx).mpr (Or.inl selected))
+
+theorem ancestorOf_of_right_selected (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {targetIdx : Fin S.count} (selected : right targetIdx = true) :
+    G.ancestorOf mutilation
+      (NodeSet.union left (NodeSet.union right conditioned))
+      (.observed targetIdx) = true :=
+  G.ancestorOf_target mutilation
+    (NodeSet.union left (NodeSet.union right conditioned))
+    ((NodeSet.union_eq_true left (NodeSet.union right conditioned)
+      targetIdx).mpr (Or.inr ((NodeSet.union_eq_true right conditioned
+        targetIdx).mpr (Or.inl selected))))
+
+/-- Expansion of a simple moral walk is a DAG-adjacency walk.  When that walk
+is already simple and internally active, it is an active path on the original
+observed endpoints. -/
+theorem exists_activePath_of_expanded_zero (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {sourceIdx targetIdx : Fin S.count}
+    (walk : FiniteReachability.SimpleWalk
+      (G.MoralOpenEdge mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned)
+      (.observed sourceIdx) (.observed targetIdx))
+    (sourceOpen : blockedBy conditioned (.observed sourceIdx) = false)
+    (targetOpen : blockedBy conditioned (.observed targetIdx) = false)
+    (simple : (G.expandMoralNodes mutilation
+      (NodeSet.union left (NodeSet.union right conditioned))
+      conditioned walk.walk).Nodup)
+    (inactive : PathSpecification.inactiveColliderCount G mutilation
+      conditioned
+      (G.expandMoralNodes mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned walk.walk) = 0) :
+    Nonempty
+      (PathSpecification.ActivePath G mutilation conditioned
+        (.observed sourceIdx) (.observed targetIdx)) :=
+  let targets := NodeSet.union left (NodeSet.union right conditioned)
+  let expanded := G.expandMoralNodes mutilation targets conditioned walk.walk
+  ⟨G.activePath_of_adjacent_nodes mutilation conditioned expanded
+    (G.expandMoralNodes_head mutilation targets conditioned walk.walk)
+    (G.expandMoralNodes_getLast mutilation targets conditioned walk.walk)
+    simple
+    (G.expandMoralNodes_consecutive_adjacent mutilation targets
+      conditioned walk.walk)
+    inactive sourceOpen targetOpen⟩
+
+/-- A simple directed expanded-DAG walk whose vertices avoid `conditioned`
+is an active path: every internal vertex is a non-collider and is open. -/
+def activePath_of_directed_simple (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {source target : SeparationNode S}
+    (walk : FiniteReachability.SimpleWalk
+      (G.expandedMutilatedEdge mutilation) source target)
+    (openNodes : forall vertex, vertex ∈ walk.walk.nodes ->
+      blockedBy conditioned vertex = false) :
+    PathSpecification.ActivePath G mutilation conditioned source target :=
+  G.activePath_of_adjacent_nodes mutilation conditioned walk.walk.nodes
+    walk.walk.nodes_head walk.walk.nodes_getLast walk.simple
+    (G.consecutive_adjacent_of_directedWalk mutilation walk.walk)
+    (PathSpecification.inactiveColliderCount_eq_zero_of_internal_active
+      walk.walk.nodes
+      (G.internal_active_of_directed_open mutilation conditioned
+        walk.walk openNodes))
+    (openNodes source (by
+      rcases List.head?_eq_some_iff.mp walk.walk.nodes_head with ⟨_, split⟩
+      simp [split]))
+    (openNodes target (by
+      rcases List.getLast?_eq_some_iff.mp walk.walk.nodes_getLast with
+        ⟨_, split⟩
+      simp [split]))
+
+/-- Reverse a simple directed expanded-DAG walk: adjacency is symmetric,
+internal activity is orientation-independent, and every vertex remains
+open.  Oxford's left-endpoint glue uses this when the continuation from
+the collider is already an active path rather than the original suffix. -/
+def activePath_of_reverse_directed (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {source target : SeparationNode S}
+    (walk : FiniteReachability.SimpleWalk
+      (G.expandedMutilatedEdge mutilation) source target)
+    (openNodes : forall vertex, vertex ∈ walk.walk.nodes ->
+      blockedBy conditioned vertex = false) :
+    PathSpecification.ActivePath G mutilation conditioned target source :=
+  G.activePath_of_adjacent_nodes mutilation conditioned
+    walk.walk.nodes.reverse
+    (by
+      rw [head?_reverse_eq_getLast?]
+      exact walk.walk.nodes_getLast)
+    (by
+      simpa [List.getLast?_reverse] using walk.walk.nodes_head)
+    (nodup_reverse_of walk.simple)
+    (PathSpecification.Consecutive.reverse
+      (fun _left _right adj => PathSpecification.Adjacent.symm adj)
+      walk.walk.nodes
+      (G.consecutive_adjacent_of_directedWalk mutilation walk.walk))
+    (PathSpecification.inactiveColliderCount_eq_zero_of_internal_active
+      walk.walk.nodes.reverse
+      (PathSpecification.InternalTriplesActive.reverse
+        walk.walk.nodes
+        (G.internal_active_of_directed_open mutilation conditioned
+          walk.walk openNodes)))
+    (openNodes target (by
+      rcases List.getLast?_eq_some_iff.mp walk.walk.nodes_getLast with
+        ⟨_, split⟩
+      simp [split]))
+    (openNodes source (by
+      rcases List.head?_eq_some_iff.mp walk.walk.nodes_head with ⟨_, split⟩
+      simp [split]))
+
+theorem blockedBy_false_of_unactivated (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {node : SeparationNode S}
+    (unactivated : G.ancestorOf mutilation conditioned node = false) :
+    blockedBy conditioned node = false := by
+  cases node with
+  | latentPair _ _ =>
+      simp [blockedBy]
+  | observed index =>
+      cases selected : conditioned index with
+      | false => simp [blockedBy, selected]
+      | true =>
+          have activated : G.ancestorOf mutilation conditioned
+              (.observed index) = true :=
+            G.ancestorOf_target mutilation conditioned selected
+          rw [activated] at unactivated
+          contradiction
+
+theorem unactivated_of_inactive_collider (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {previous middle next : SeparationNode S}
+    (collider : PathSpecification.isColliderBool G mutilation
+      previous middle next = true)
+    (inactive : PathSpecification.tripleActiveBool G mutilation
+      conditioned previous middle next = false) :
+    G.ancestorOf mutilation conditioned middle = false := by
+  simp [PathSpecification.tripleActiveBool, collider] at inactive
+  exact inactive
+
+/-- An inactive non-collider is a blocked vertex: `tripleActiveBool` on a
+non-collider is exactly the negation of `blockedBy`. -/
+theorem blockedBy_of_inactive_noncollider (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {previous middle next : SeparationNode S}
+    (notCollider : PathSpecification.isColliderBool G mutilation
+      previous middle next = false)
+    (inactive : PathSpecification.tripleActiveBool G mutilation
+      conditioned previous middle next = false) :
+    blockedBy conditioned middle = true := by
+  simp [PathSpecification.tripleActiveBool, notCollider] at inactive
+  cases blocked : blockedBy conditioned middle with
+  | true => rfl
+  | false => simp [blocked] at inactive
+
+/-- An inactive window on a collider-or-open trail is necessarily a
+collider: a non-collider would have an open middle, contradicting
+inactivity. -/
+theorem isColliderBool_of_inactive_openOrCollider (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {nodes : List (SeparationNode S)}
+    {before : List (SeparationNode S)}
+    {previous middle next : SeparationNode S}
+    {after : List (SeparationNode S)}
+    (hopen : PathSpecification.TripleOpenOrCollider G mutilation
+      conditioned nodes)
+    (split : nodes = before ++ previous :: middle :: next :: after)
+    (inactiveTriple : PathSpecification.tripleActiveBool G mutilation
+      conditioned previous middle next = false) :
+    PathSpecification.isColliderBool G mutilation previous middle next =
+      true := by
+  have openOr :=
+    PathSpecification.TripleOpenOrCollider.of_append before previous
+      middle next after (by simpa [split] using hopen)
+  cases colliderValue :
+      PathSpecification.isColliderBool G mutilation previous middle next with
+  | true => rfl
+  | false =>
+      have blocked :=
+        G.blockedBy_of_inactive_noncollider mutilation conditioned
+          colliderValue inactiveTriple
+      rcases openOr with collider | openMiddle
+      · rw [colliderValue] at collider
+        cases collider
+      · rw [blocked] at openMiddle
+        cases openMiddle
+
+/--
+The first inactive window of an expansion is a collider.  Original moral
+vertices are open, and an inserted common child is introduced exactly as
+the middle of a collider triple.
+-/
+theorem isColliderBool_of_expanded_inactive (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (targets conditioned : NodeSet S)
+    {length : Nat} {walkSource walkTarget : SeparationNode S}
+    (walk : FiniteReachability.ExactWalk
+      (G.MoralOpenEdge mutilation targets conditioned) length walkSource
+        walkTarget)
+    (before : List (SeparationNode S))
+    (previous middle next : SeparationNode S)
+    (after : List (SeparationNode S))
+    (expandEq : G.expandMoralNodes mutilation targets conditioned walk =
+      before ++ previous :: middle :: next :: after)
+    (inactiveTriple : PathSpecification.tripleActiveBool G mutilation
+      conditioned previous middle next = false) :
+    PathSpecification.isColliderBool G mutilation previous middle next =
+      true := by
+  have openOr :=
+    G.expandMoralNodes_middle_open_or_collider mutilation targets
+      conditioned walk before previous middle next after expandEq
+  cases colliderValue :
+      PathSpecification.isColliderBool G mutilation previous middle next with
+  | true => rfl
+  | false =>
+      have blocked :=
+        G.blockedBy_of_inactive_noncollider mutilation conditioned
+          colliderValue inactiveTriple
+      rcases openOr with collider | openMiddle
+      · rw [colliderValue] at collider
+        cases collider
+      · rw [blocked] at openMiddle
+        cases openMiddle
+
+/-- An outgoing directed edge from `middle` forbids a collider at that
+vertex: the DAG ranking cannot decrease along the reverse of the same
+edge.  Oxford join triples are of this shape. -/
+theorem not_collider_of_outgoing (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    {previous middle next : SeparationNode S}
+    (out : G.expandedMutilatedEdge mutilation middle next = true) :
+    Not (PathSpecification.IsCollider G mutilation previous middle next) := by
+  intro collider
+  have rankOut := G.expandedMutilatedEdge_rank_lt mutilation out
+  have rankIn := G.expandedMutilatedEdge_rank_lt mutilation collider.2
+  omega
+
+/-- An outgoing edge `middle → previous` equally forbids a collider whose
+first parent is `previous`: the two directed ranks cannot both hold. -/
+theorem not_collider_of_outgoing_previous (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    {previous middle next : SeparationNode S}
+    (out : G.expandedMutilatedEdge mutilation middle previous = true) :
+    Not (PathSpecification.IsCollider G mutilation previous middle next) := by
+  intro collider
+  have rankOut := G.expandedMutilatedEdge_rank_lt mutilation out
+  have rankIn := G.expandedMutilatedEdge_rank_lt mutilation collider.1
+  omega
+
+/-- Every vertex of a directed walk from an unactivated source is open:
+a conditioned observed vertex on the walk would activate the source by
+ancestry. -/
+theorem blockedBy_false_of_directed_from_unactivated (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {length : Nat} {source target vertex : SeparationNode S}
+    (walk : FiniteReachability.ExactWalk
+      (G.expandedMutilatedEdge mutilation) length source target)
+    (unactivated : G.ancestorOf mutilation conditioned source = false)
+    (member : vertex ∈ walk.nodes) :
+    blockedBy conditioned vertex = false := by
+  rcases FiniteReachability.ExactWalk.prefix_of_mem walk member with
+    ⟨_prefixLength, _bound, prefixWalk⟩
+  rcases prefixWalk with ⟨prefixWalk⟩
+  exact G.blockedBy_false_of_not_conditioned_ancestor mutilation
+    conditioned prefixWalk unactivated
+
+theorem getLast?_suffix_append {α} {before : List α} {node target : α}
+    {after : List α}
+    (h : (before ++ node :: after).getLast? = some target) :
+    (node :: after).getLast? = some target := by
+  induction before with
+  | nil => simpa using h
+  | cons head tail ih =>
+      cases tail with
+      | nil =>
+          cases after with
+          | nil => simpa using h
+          | cons _ _ => simpa [List.getLast?_cons] using h
+      | cons _ _ =>
+          simpa [List.getLast?_cons] using ih (by
+            simpa [List.cons_append, List.getLast?_cons] using h)
+
+/--
+Oxford's right-endpoint reroute: the inactive-zero prefix ending at an
+unactivated collider, concatenated with a directed descendant walk to a
+vertex of `right`, is an active path (after cutting at the first shared
+vertex if the two trails overlap).  The join at the collider is a
+non-collider because the continuation is outgoing.
+-/
+theorem exists_activePath_oxford_right (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    (before : List (SeparationNode S))
+    (previous middle : SeparationNode S)
+    {source target : SeparationNode S}
+    (starts : (before ++ previous :: [middle]).head? = some source)
+    (simple : (before ++ previous :: [middle]).Nodup)
+    (adjacent : PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation)
+      (before ++ previous :: [middle]))
+    (inactive : PathSpecification.inactiveColliderCount G mutilation
+      conditioned (before ++ previous :: [middle]) = 0)
+    (sourceOpen : blockedBy conditioned source = false)
+    (intoMiddle : G.expandedMutilatedEdge mutilation previous middle = true)
+    (unactivated : G.ancestorOf mutilation conditioned middle = false)
+    (directed : FiniteReachability.SimpleWalk
+      (G.expandedMutilatedEdge mutilation) middle target) :
+    Nonempty
+      (PathSpecification.ActivePath G mutilation conditioned
+        source target) := by
+  let dest := target
+  let front := before ++ previous :: [middle]
+  have middleOpen : blockedBy conditioned middle = false :=
+    G.blockedBy_false_of_unactivated mutilation conditioned unactivated
+  have directedOpen : forall vertex, vertex ∈ directed.walk.nodes ->
+      blockedBy conditioned vertex = false :=
+    fun vertex member =>
+      G.blockedBy_false_of_directed_from_unactivated mutilation conditioned
+        directed.walk unactivated member
+  have targetOpen : blockedBy conditioned dest = false := by
+    change blockedBy conditioned target = false
+    rcases List.getLast?_eq_some_iff.mp directed.walk.nodes_getLast with
+      ⟨_, split⟩
+    exact directedOpen target (by simp [split])
+  have frontActive :
+      PathSpecification.InternalTriplesActive G mutilation conditioned front :=
+    PathSpecification.InternalTriplesActive.of_inactiveColliderCount_zero
+      front inactive
+  rcases directed with ⟨_length, walk, walkSimple⟩
+  cases walk with
+  | refl _node =>
+      have lastFront : front.getLast? = some dest := by
+        simpa [front, dest] using
+          getLast?_snoc (before ++ [previous]) middle
+      exact ⟨G.activePath_of_adjacent_nodes mutilation conditioned front
+        starts lastFront simple adjacent inactive sourceOpen targetOpen⟩
+  | @step restLength src child tgt firstEdge restWalk =>
+      let back := restWalk.nodes
+      have backSimple : back.Nodup := (List.nodup_cons.mp (by
+        simpa [FiniteReachability.ExactWalk.nodes] using walkSimple)).2
+      have backCons : PathSpecification.Consecutive
+          (PathSpecification.Adjacent G mutilation) back :=
+        G.consecutive_adjacent_of_directedWalk mutilation restWalk
+      have directedActive :
+          PathSpecification.InternalTriplesActive G mutilation conditioned
+            (middle :: back) := by
+        simpa [FiniteReachability.ExactWalk.nodes] using
+          G.internal_active_of_directed_open mutilation conditioned
+            (.step firstEdge restWalk) directedOpen
+      have backActive :
+          PathSpecification.InternalTriplesActive G mutilation conditioned
+            back := by
+        simpa using directedActive.tail
+      have lastBack : back.getLast? = some dest :=
+        restWalk.nodes_getLast
+      have headBack : back.head? = some child := restWalk.nodes_head
+      have joinEdge :
+          PathSpecification.Adjacent G mutilation middle child :=
+        Or.inl firstEdge
+      cases hshare : firstSharedSeparation? front back with
+      | none =>
+          have disjoint : forall v, v ∈ front -> v ∈ back -> False :=
+            firstSharedSeparation?_eq_none_disjoint hshare
+          have gluedSimple : (front ++ back).Nodup :=
+            nodup_append_of_disjoint simple backSimple disjoint
+          have gluedCons : PathSpecification.Consecutive
+              (PathSpecification.Adjacent G mutilation) (front ++ back) :=
+            PathSpecification.Consecutive.append front back adjacent backCons
+              (fun prev next prevLast nextHead => by
+                have lastFront :
+                    front.getLast? = some middle := by
+                  simpa [front] using
+                    getLast?_snoc (before ++ [previous]) middle
+                rw [lastFront] at prevLast
+                cases prevLast
+                rw [headBack] at nextHead
+                cases nextHead
+                exact joinEdge)
+          have childSuffix : Exists fun suffix => back = child :: suffix := by
+            cases hback : back with
+            | nil =>
+                exact (restWalk.nodes_ne_nil hback).elim
+            | cons head suffix =>
+                have headEq : head = child := by
+                  simp [hback] at headBack
+                  exact headBack
+                subst head
+                exact ⟨suffix, rfl⟩
+          rcases childSuffix with ⟨suffix, backEq⟩
+          have gluedActive :
+              PathSpecification.InternalTriplesActive G mutilation
+                conditioned (front ++ back) := by
+            have joinTriple :
+                PathSpecification.TripleActive G mutilation conditioned
+                  previous middle child :=
+              Or.inr ⟨G.not_collider_of_forward_edges mutilation
+                intoMiddle firstEdge, middleOpen⟩
+            have fullEq :
+                front ++ back =
+                  before ++ previous :: middle :: child :: suffix := by
+              simp [front, backEq]
+            rw [fullEq]
+            exact PathSpecification.InternalTriplesActive.append_triple
+              before previous middle child suffix
+              (by simpa [front] using frontActive) joinTriple
+              (by simpa [backEq] using directedActive)
+          have gluedStarts : (front ++ back).head? = some source := by
+            rcases List.head?_eq_some_iff.mp starts with ⟨tail, split⟩
+            simp [front, split]
+          have gluedFinishes : (front ++ back).getLast? = some dest := by
+            rcases List.getLast?_eq_some_iff.mp lastBack with ⟨pre, split⟩
+            simp [split]
+          exact ⟨G.activePath_of_adjacent_nodes mutilation conditioned
+            (front ++ back) gluedStarts gluedFinishes gluedSimple gluedCons
+            (PathSpecification.inactiveColliderCount_eq_zero_of_internal_active
+              _ gluedActive)
+            sourceOpen targetOpen⟩
+      | some v =>
+          rcases firstSharedSeparation?_eq_some_split hshare with
+            ⟨frontBefore, frontAfter, frontSplit, beforeDisjoint, vBack⟩
+          let splitBack := splitMemSeparation v back vBack
+          let backBefore := splitBack.val.1
+          let backAfter := splitBack.val.2
+          have backSplit : back = backBefore ++ v :: backAfter :=
+            splitBack.property
+          have gluedSimple : (frontBefore ++ v :: backAfter).Nodup :=
+            nodup_overlap_glue simple backSimple frontSplit backSplit
+              beforeDisjoint
+          have gluedCons : PathSpecification.Consecutive
+              (PathSpecification.Adjacent G mutilation)
+              (frontBefore ++ v :: backAfter) :=
+            PathSpecification.Consecutive.overlap_glue adjacent backCons
+              frontSplit backSplit
+          have leftActive :
+              PathSpecification.InternalTriplesActive G mutilation
+                conditioned (frontBefore ++ [v]) := by
+            have takeEq := take_prefix_append frontBefore v frontAfter
+            have taken := PathSpecification.InternalTriplesActive.take
+              (by simpa [frontSplit] using frontActive)
+              (frontBefore.length + 1)
+            simpa [takeEq] using taken
+          have rightActive :
+              PathSpecification.InternalTriplesActive G mutilation
+                conditioned (v :: backAfter) :=
+            PathSpecification.InternalTriplesActive.suffix_append
+              backBefore v backAfter (by simpa [backSplit] using backActive)
+          have vOpen : blockedBy conditioned v = false :=
+            directedOpen v (List.mem_cons.mpr (Or.inr vBack))
+          have gluedActive :
+              PathSpecification.InternalTriplesActive G mutilation
+                conditioned (frontBefore ++ v :: backAfter) :=
+            PathSpecification.InternalTriplesActive.glue_at
+              frontBefore v backAfter leftActive rightActive
+              (fun pred succ predLast succHead => by
+                have out : G.expandedMutilatedEdge mutilation v succ =
+                    true := by
+                  have directedBack :
+                      PathSpecification.Consecutive
+                        (fun left right =>
+                          G.expandedMutilatedEdge mutilation left right =
+                            true)
+                        back :=
+                    restWalk.nodes_consecutive
+                  rcases List.head?_eq_some_iff.mp succHead with
+                    ⟨more, succEq⟩
+                  have fullEq :
+                      back = backBefore ++ v :: succ :: more := by
+                    rw [backSplit, succEq]
+                  rw [fullEq] at directedBack
+                  exact PathSpecification.Consecutive.pair_of_append
+                    backBefore more v succ directedBack
+                exact Or.inr ⟨G.not_collider_of_outgoing mutilation out,
+                  vOpen⟩)
+          have gluedStarts : (frontBefore ++ v :: backAfter).head? =
+              some source := by
+            have headFront : front.head? = some source :=
+              starts
+            rw [frontSplit] at headFront
+            cases hbefore : frontBefore with
+            | nil =>
+                rw [hbefore] at headFront
+                simp only [List.nil_append, List.head?_cons,
+                  Option.some.injEq] at headFront
+                subst v
+                simp
+            | cons head tail =>
+                rw [hbefore] at headFront
+                simpa [hbefore, List.cons_append] using headFront
+          have gluedFinishes : (frontBefore ++ v :: backAfter).getLast? =
+              some dest := by
+            have lastEq :
+                (backBefore ++ v :: backAfter).getLast? = some dest := by
+              rw [← backSplit]
+              exact lastBack
+            have suffixLast : (v :: backAfter).getLast? = some dest :=
+              getLast?_suffix_append lastEq
+            rcases List.getLast?_eq_some_iff.mp suffixLast with ⟨pre, split⟩
+            simp [split]
+          exact ⟨G.activePath_of_adjacent_nodes mutilation conditioned
+            (frontBefore ++ v :: backAfter) gluedStarts gluedFinishes
+            gluedSimple gluedCons
+            (PathSpecification.inactiveColliderCount_eq_zero_of_internal_active
+              _ gluedActive)
+            sourceOpen targetOpen⟩
+
+/--
+Oxford's left-endpoint reroute: reverse a directed descendant walk from an
+unactivated collider to a vertex of `left`, then continue along the original
+suffix to the right endpoint.  The suffix is required to be internally
+active; later inactive windows are a shorter trail and are handled by
+induction on the expanded walk.
+-/
+theorem exists_activePath_oxford_left (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    (next : SeparationNode S)
+    (after : List (SeparationNode S))
+    (middle : SeparationNode S)
+    {u targetIdx : Fin S.count}
+    (suffixFinishes : (middle :: next :: after).getLast? =
+      some (.observed targetIdx))
+    (suffixSimple : (middle :: next :: after).Nodup)
+    (suffixAdjacent : PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation)
+      (middle :: next :: after))
+    (suffixInactive : PathSpecification.inactiveColliderCount G mutilation
+      conditioned (middle :: next :: after) = 0)
+    (targetOpen : blockedBy conditioned (.observed targetIdx) = false)
+    (unactivated : G.ancestorOf mutilation conditioned middle = false)
+    (directed : FiniteReachability.SimpleWalk
+      (G.expandedMutilatedEdge mutilation) middle (.observed u)) :
+    Nonempty
+      (PathSpecification.ActivePath G mutilation conditioned
+        (.observed u) (.observed targetIdx)) := by
+  have middleOpen : blockedBy conditioned middle = false :=
+    G.blockedBy_false_of_unactivated mutilation conditioned unactivated
+  have directedOpen : forall vertex, vertex ∈ directed.walk.nodes ->
+      blockedBy conditioned vertex = false :=
+    fun vertex member =>
+      G.blockedBy_false_of_directed_from_unactivated mutilation conditioned
+        directed.walk unactivated member
+  have uOpen : blockedBy conditioned (.observed u) = false := by
+    rcases List.getLast?_eq_some_iff.mp directed.walk.nodes_getLast with
+      ⟨_, split⟩
+    exact directedOpen _ (by simp [split])
+  have suffixActive :
+      PathSpecification.InternalTriplesActive G mutilation conditioned
+        (middle :: next :: after) :=
+    PathSpecification.InternalTriplesActive.of_inactiveColliderCount_zero
+      _ suffixInactive
+  have joinEdge : PathSpecification.Adjacent G mutilation middle next :=
+    suffixAdjacent.1
+  rcases directed with ⟨_length, walk, walkSimple⟩
+  cases walk with
+  | refl _node =>
+      exact ⟨G.activePath_of_adjacent_nodes mutilation conditioned
+        (.observed u :: next :: after) (by simp) suffixFinishes suffixSimple
+        suffixAdjacent suffixInactive uOpen targetOpen⟩
+  | @step restLength src child tgt firstEdge restWalk =>
+      let front := (middle :: restWalk.nodes).reverse
+      let back := next :: after
+      have frontSimple : front.Nodup :=
+        nodup_reverse_of (by
+          simpa [FiniteReachability.ExactWalk.nodes] using walkSimple)
+      have frontCons : PathSpecification.Consecutive
+          (PathSpecification.Adjacent G mutilation) front :=
+        PathSpecification.Consecutive.reverse
+          (fun _ _ adj => PathSpecification.Adjacent.symm adj)
+          (middle :: restWalk.nodes)
+          (G.consecutive_adjacent_of_directedWalk mutilation
+            (.step firstEdge restWalk))
+      have directedActive :
+          PathSpecification.InternalTriplesActive G mutilation conditioned
+            (middle :: restWalk.nodes) := by
+        simpa [FiniteReachability.ExactWalk.nodes] using
+          G.internal_active_of_directed_open mutilation conditioned
+            (.step firstEdge restWalk) directedOpen
+      have frontActive :
+          PathSpecification.InternalTriplesActive G mutilation conditioned
+            front := by
+        simpa [front] using
+          PathSpecification.InternalTriplesActive.reverse
+            (middle :: restWalk.nodes) directedActive
+      have lastFront : front.getLast? = some middle := by
+        simp [front, List.getLast?_reverse,
+          FiniteReachability.ExactWalk.nodes_head]
+      have startsFront : front.head? = some (.observed u) := by
+        have lastDirected : (middle :: restWalk.nodes).getLast? =
+            some (.observed u) :=
+          FiniteReachability.ExactWalk.nodes_getLast
+            (.step firstEdge restWalk)
+        rw [head?_reverse_eq_getLast?]
+        exact lastDirected
+      have backSimple : back.Nodup :=
+        (List.nodup_cons.mp suffixSimple).2
+      have backCons : PathSpecification.Consecutive
+          (PathSpecification.Adjacent G mutilation) back :=
+        suffixAdjacent.2
+      have backActive :
+          PathSpecification.InternalTriplesActive G mutilation conditioned
+            back := by
+        simpa using suffixActive.tail
+      have lastBack : back.getLast? = some (.observed targetIdx) :=
+        getLast?_suffix_append (before := [middle]) (node := next)
+          (after := after) (by
+            simpa [List.cons_append] using suffixFinishes)
+      cases hshare : firstSharedSeparation? front back with
+      | none =>
+          have disjoint : forall v, v ∈ front -> v ∈ back -> False :=
+            firstSharedSeparation?_eq_none_disjoint hshare
+          have gluedSimple : (front ++ back).Nodup :=
+            nodup_append_of_disjoint frontSimple backSimple disjoint
+          have gluedCons : PathSpecification.Consecutive
+              (PathSpecification.Adjacent G mutilation) (front ++ back) :=
+            PathSpecification.Consecutive.append front back frontCons backCons
+              (fun prev nxt prevLast nextHead => by
+                rw [lastFront] at prevLast
+                cases prevLast
+                simp [back] at nextHead
+                cases nextHead
+                exact joinEdge)
+          rcases List.getLast?_eq_some_iff.mp lastFront with
+            ⟨frontInit, frontEq⟩
+          have gluedActive :
+              PathSpecification.InternalTriplesActive G mutilation
+                conditioned (front ++ back) := by
+            have leftActive :
+                PathSpecification.InternalTriplesActive G mutilation
+                  conditioned (frontInit ++ [middle]) := by
+              simpa [frontEq] using frontActive
+            have fullEq : front ++ back =
+                frontInit ++ middle :: next :: after := by
+              simp [frontEq, back]
+            rw [fullEq]
+            exact PathSpecification.InternalTriplesActive.glue_at
+              frontInit middle (next :: after) leftActive suffixActive
+              (fun pred succ predLast succHead => by
+                have succEq : succ = next := by
+                  simp only [List.head?_cons, Option.some.injEq] at succHead
+                  exact succHead.symm
+                subst succ
+                have predEq : pred = child := by
+                  have revEq :
+                      front = restWalk.nodes.reverse ++ [middle] := by
+                    simp [front, List.reverse_cons]
+                  have concatEq :
+                      restWalk.nodes.reverse ++ [middle] =
+                        frontInit ++ [middle] := by
+                    rw [← revEq, frontEq]
+                  have initEq : restWalk.nodes.reverse = frontInit := by
+                    have lenEq : restWalk.nodes.reverse.length =
+                        frontInit.length := by
+                      have cong := congrArg List.length concatEq
+                      simpa using cong
+                    exact (List.append_inj concatEq lenEq).1
+                  have lastChild : restWalk.nodes.reverse.getLast? =
+                      some child := by
+                    simpa [List.getLast?_reverse] using restWalk.nodes_head
+                  rw [← initEq, lastChild] at predLast
+                  cases predLast
+                  rfl
+                subst pred
+                exact Or.inr
+                  ⟨G.not_collider_of_outgoing_previous mutilation firstEdge,
+                    middleOpen⟩)
+          have gluedStarts : (front ++ back).head? = some (.observed u) := by
+            rcases List.head?_eq_some_iff.mp startsFront with ⟨tail, split⟩
+            simp [split]
+          have gluedFinishes : (front ++ back).getLast? =
+              some (.observed targetIdx) := by
+            rcases List.getLast?_eq_some_iff.mp lastBack with ⟨pre, split⟩
+            simp [split]
+          exact ⟨G.activePath_of_adjacent_nodes mutilation conditioned
+            (front ++ back) gluedStarts gluedFinishes gluedSimple gluedCons
+            (PathSpecification.inactiveColliderCount_eq_zero_of_internal_active
+              _ gluedActive)
+            uOpen targetOpen⟩
+      | some v =>
+          rcases firstSharedSeparation?_eq_some_split hshare with
+            ⟨frontBefore, frontAfter, frontSplit, beforeDisjoint, vBack⟩
+          let splitBack := splitMemSeparation v back vBack
+          let backBefore := splitBack.val.1
+          let backAfter := splitBack.val.2
+          have backSplit : back = backBefore ++ v :: backAfter :=
+            splitBack.property
+          have gluedSimple : (frontBefore ++ v :: backAfter).Nodup :=
+            nodup_overlap_glue frontSimple backSimple frontSplit backSplit
+              beforeDisjoint
+          have gluedCons : PathSpecification.Consecutive
+              (PathSpecification.Adjacent G mutilation)
+              (frontBefore ++ v :: backAfter) :=
+            PathSpecification.Consecutive.overlap_glue frontCons backCons
+              frontSplit backSplit
+          have leftActive :
+              PathSpecification.InternalTriplesActive G mutilation
+                conditioned (frontBefore ++ [v]) := by
+            have takeEq := take_prefix_append frontBefore v frontAfter
+            have taken := PathSpecification.InternalTriplesActive.take
+              (by simpa [frontSplit] using frontActive)
+              (frontBefore.length + 1)
+            simpa [takeEq] using taken
+          have rightActive :
+              PathSpecification.InternalTriplesActive G mutilation
+                conditioned (v :: backAfter) :=
+            PathSpecification.InternalTriplesActive.suffix_append
+              backBefore v backAfter (by simpa [backSplit] using backActive)
+          have vOpen : blockedBy conditioned v = false :=
+            directedOpen v (by
+              have vFront : v ∈ front := by
+                rw [frontSplit]
+                exact List.mem_append.mpr
+                  (Or.inr (List.mem_cons.mpr (Or.inl rfl)))
+              have vDirected : v ∈ (middle :: restWalk.nodes) := by
+                rw [List.mem_reverse] at vFront
+                simpa [front] using vFront
+              exact vDirected)
+          have gluedActive :
+              PathSpecification.InternalTriplesActive G mutilation
+                conditioned (frontBefore ++ v :: backAfter) :=
+            PathSpecification.InternalTriplesActive.glue_at
+              frontBefore v backAfter leftActive rightActive
+              (fun pred succ predLast succHead => by
+                have revCons :
+                    PathSpecification.Consecutive
+                      (fun left right =>
+                        G.expandedMutilatedEdge mutilation right left = true)
+                      front := by
+                  simpa [front, FiniteReachability.ExactWalk.nodes] using
+                    FiniteReachability.ExactWalk.consecutive_reverse
+                      (.step firstEdge restWalk)
+                rcases List.getLast?_eq_some_iff.mp predLast with
+                  ⟨init, initEq⟩
+                have listEq :
+                    frontBefore ++ v :: frontAfter =
+                      init ++ pred :: v :: frontAfter := by
+                  rw [initEq]
+                  simp [List.append_assoc]
+                rw [frontSplit, listEq] at revCons
+                have out :
+                    G.expandedMutilatedEdge mutilation v pred = true :=
+                  PathSpecification.Consecutive.pair_of_append
+                    init frontAfter pred v revCons
+                exact Or.inr
+                  ⟨G.not_collider_of_outgoing_previous mutilation out,
+                    vOpen⟩)
+          have gluedStarts : (frontBefore ++ v :: backAfter).head? =
+              some (.observed u) := by
+            have headFront : front.head? = some (.observed u) :=
+              startsFront
+            rw [frontSplit] at headFront
+            cases hbefore : frontBefore with
+            | nil =>
+                rw [hbefore] at headFront
+                simp only [List.nil_append, List.head?_cons,
+                  Option.some.injEq] at headFront
+                subst v
+                simp
+            | cons head tail =>
+                rw [hbefore] at headFront
+                simpa [hbefore, List.cons_append] using headFront
+          have gluedFinishes : (frontBefore ++ v :: backAfter).getLast? =
+              some (.observed targetIdx) := by
+            have lastEq :
+                (backBefore ++ v :: backAfter).getLast? =
+                  some (.observed targetIdx) := by
+              rw [← backSplit]
+              exact lastBack
+            have suffixLast : (v :: backAfter).getLast? =
+                some (.observed targetIdx) :=
+              getLast?_suffix_append lastEq
+            rcases List.getLast?_eq_some_iff.mp suffixLast with ⟨pre, split⟩
+            simp [split]
+          exact ⟨G.activePath_of_adjacent_nodes mutilation conditioned
+            (frontBefore ++ v :: backAfter) gluedStarts gluedFinishes
+            gluedSimple gluedCons
+            (PathSpecification.inactiveColliderCount_eq_zero_of_internal_active
+              _ gluedActive)
+            uOpen targetOpen⟩
+
+/-- The inactive-zero prefix of a first-inactive split is a simple
+DAG-adjacency trail: it is the prefix of a simple consecutive trail. -/
+theorem prefix_adjacent_of_inactive_split (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    {before : List (SeparationNode S)}
+    {previous middle next : SeparationNode S}
+    {after : List (SeparationNode S)}
+    (simple : (before ++ previous :: middle :: next :: after).Nodup)
+    (adjacent : PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation)
+      (before ++ previous :: middle :: next :: after)) :
+    (before ++ previous :: [middle]).Nodup /\
+      PathSpecification.Consecutive
+        (PathSpecification.Adjacent G mutilation)
+        (before ++ previous :: [middle]) := by
+  have listEq :
+      before ++ previous :: middle :: next :: after =
+        (before ++ [previous]) ++ middle :: next :: after :=
+    (List.append_assoc before [previous] (middle :: next :: after)).symm
+  have prefixEq :
+      (before ++ [previous]) ++ [middle] = before ++ previous :: [middle] := by
+    rw [List.append_assoc]
+    rfl
+  have prefixSimple : (before ++ previous :: [middle]).Nodup := by
+    have taken := nodup_prefix_append (before := before ++ [previous])
+      (node := middle) (after := next :: after)
+      (by rw [← listEq]; exact simple)
+    rw [← prefixEq]
+    exact taken
+  have prefixAdjacent : PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation)
+      (before ++ previous :: [middle]) := by
+    have taken := PathSpecification.Consecutive.prefix_append
+      (before ++ [previous]) middle (next :: after)
+      (by rw [← listEq]; exact adjacent)
+    rw [← prefixEq]
+    exact taken
+  exact ⟨prefixSimple, prefixAdjacent⟩
+
+/-- Head of the inactive-zero prefix is the head of the split trail. -/
+theorem prefix_head_of_inactive_split {α}
+    {before : List α} {previous middle next : α} {after : List α}
+    {source : α}
+    (starts : (before ++ previous :: middle :: next :: after).head? =
+      some source) :
+    (before ++ previous :: [middle]).head? = some source := by
+  cases before with
+  | nil =>
+      simpa only [List.nil_append] using starts
+  | cons head tail =>
+      simpa only [List.cons_append, List.head?_cons] using starts
+
+/-- The suffix from the collider of a first-inactive split remains
+consecutive. -/
+theorem suffix_adjacent_of_inactive_split {relation : α -> α -> Prop}
+    {before : List α} {previous middle next : α} {after : List α}
+    (adjacent : PathSpecification.Consecutive relation
+      (before ++ previous :: middle :: next :: after)) :
+    PathSpecification.Consecutive relation (middle :: next :: after) := by
+  have dropped := PathSpecification.Consecutive.drop before.length
+    (before ++ previous :: middle :: next :: after) adjacent
+  have eq : (before ++ previous :: middle :: next :: after).drop
+      before.length = previous :: middle :: next :: after :=
+    drop_append_length before _
+  have atPrevious : PathSpecification.Consecutive relation
+      (previous :: middle :: next :: after) := by
+    simpa [eq] using dropped
+  exact PathSpecification.Consecutive.drop 1 _ atPrevious
+
+/-- The suffix from the collider of a first-inactive split remains simple. -/
+theorem suffix_nodup_of_inactive_split {α}
+    {before : List α} {previous middle next : α} {after : List α}
+    (simple : (before ++ previous :: middle :: next :: after).Nodup) :
+    (middle :: next :: after).Nodup := by
+  have listEq :
+      before ++ previous :: middle :: next :: after =
+        (before ++ [previous]) ++ middle :: next :: after :=
+    (List.append_assoc before [previous] (middle :: next :: after)).symm
+  have parts := nodup_of_split (before := before ++ [previous]) (node := middle)
+      (after := next :: after)
+      (by
+        rw [show (before ++ [previous]) ++ middle :: next :: after =
+              before ++ previous :: middle :: next :: after from listEq.symm]
+        exact simple)
+  exact List.nodup_cons.mpr ⟨parts.2.2.1, parts.2.2.2.1⟩
+
+/-- Reassociating a suffix split through a displayed predecessor. -/
+theorem cons_append_suffix_split {α}
+    (front : List α) (previous middle next : α) (after : List α)
+    (beforeS : List α) (prevS midS nextS : α) (afterS : List α)
+    (suffixSplit : middle :: next :: after =
+      beforeS ++ prevS :: midS :: nextS :: afterS) :
+    front ++ previous :: middle :: next :: after =
+      (front ++ previous :: beforeS) ++
+        prevS :: midS :: nextS :: afterS := by
+  have step :
+      previous :: middle :: next :: after =
+        (previous :: beforeS) ++ prevS :: midS :: nextS :: afterS := by
+    simp [List.cons_append, suffixSplit]
+  calc front ++ previous :: middle :: next :: after
+      = front ++
+          ((previous :: beforeS) ++ prevS :: midS :: nextS :: afterS) := by
+        rw [step]
+    _ = (front ++ previous :: beforeS) ++
+          prevS :: midS :: nextS :: afterS := by
+        simp [List.append_assoc, List.cons_append]
+
+/-- Nested collider suffixes are strictly shorter than the trail they
+split, so Oxford's left-endpoint recursion is well-founded on length. -/
+theorem nested_suffix_length_lt {α}
+    {nodes : List α} {before : List α}
+    {previous middle next : α} {after : List α}
+    (split : nodes = before ++ previous :: middle :: next :: after) :
+    (middle :: next :: after).length < nodes.length := by
+  rw [split]
+  simp [List.length_append, List.length_cons]
+  omega
+
+/--
+Oxford right-endpoint reroute on an expanded moral walk: the first inactive
+window is an unactivated collider, and a directed descendant in `right`
+yields an active path from the original left endpoint to that descendant.
+-/
+theorem exists_activePath_of_expanded_oxford_right (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {sourceIdx targetIdx : Fin S.count}
+    (walk : FiniteReachability.SimpleWalk
+      (G.MoralOpenEdge mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned)
+      (.observed sourceIdx) (.observed targetIdx))
+    (leftSelected : left sourceIdx = true)
+    (sourceOpen : blockedBy conditioned (.observed sourceIdx) = false)
+    (simple : (G.expandMoralNodes mutilation
+      (NodeSet.union left (NodeSet.union right conditioned))
+      conditioned walk.walk).Nodup)
+    (before : List (SeparationNode S))
+    (previous middle next : SeparationNode S)
+    (after : List (SeparationNode S))
+    (split : G.expandMoralNodes mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned walk.walk =
+      before ++ previous :: middle :: next :: after)
+    (inactiveTriple : PathSpecification.tripleActiveBool G mutilation
+      conditioned previous middle next = false)
+    (prefixZero : PathSpecification.inactiveColliderCount G mutilation
+      conditioned (before ++ previous :: [middle]) = 0)
+    (collider : PathSpecification.isColliderBool G mutilation
+      previous middle next = true)
+    {u : Fin S.count}
+    (inRight : right u = true)
+    (bounded : FiniteReachability.BoundedWalk
+      (G.expandedMutilatedEdge mutilation)
+      G.separationNodes.length middle (.observed u)) :
+    Nonempty
+      (PathSpecification.ActivePath G mutilation conditioned
+        (.observed sourceIdx) (.observed u)) := by
+  let targets := NodeSet.union left (NodeSet.union right conditioned)
+  let _ := leftSelected
+  let _ := inRight
+  have adjFull : PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation)
+      (before ++ previous :: middle :: next :: after) := by
+    have adjExpanded :=
+      G.expandMoralNodes_consecutive_adjacent mutilation targets
+        conditioned walk.walk
+    rw [split] at adjExpanded
+    exact adjExpanded
+  have simpleFull : (before ++ previous :: middle :: next :: after).Nodup := by
+    rw [← split]
+    exact simple
+  have prefixFacts := G.prefix_adjacent_of_inactive_split mutilation
+    simpleFull adjFull
+  have prefixStarts : (before ++ previous :: [middle]).head? =
+      some (.observed sourceIdx) :=
+    prefix_head_of_inactive_split (by
+      have headExpanded :=
+        G.expandMoralNodes_head mutilation targets conditioned walk.walk
+      rw [split] at headExpanded
+      exact headExpanded)
+  have intoMiddle : G.expandedMutilatedEdge mutilation previous middle =
+      true :=
+    ((PathSpecification.IsCollider_iff_isColliderBool G mutilation
+      previous middle next).mpr collider).1
+  have unactivated : G.ancestorOf mutilation conditioned middle = false :=
+    G.unactivated_of_inactive_collider mutilation conditioned collider
+      inactiveTriple
+  rcases FiniteReachability.nonempty_simpleWalk_of_boundedWalk
+      SeparationNode.beq G.separationNodes
+      (G.expandedMutilatedEdge mutilation)
+      SeparationNode.beq_eq_true_iff SeparationNode.mem_all bounded with
+    ⟨directed⟩
+  exact G.exists_activePath_oxford_right mutilation conditioned
+    before previous middle prefixStarts prefixFacts.1 prefixFacts.2
+    prefixZero sourceOpen intoMiddle unactivated directed
+
+/--
+From a simple expanded trail whose first inactive window is an unactivated
+collider, a descendant in `left ∪ right` is constructed computationally.
+The right-endpoint case is the Oxford reroute above.
+-/
+theorem exists_descendant_of_expanded_inactive_collider
+    (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {sourceIdx targetIdx : Fin S.count}
+    (walk : FiniteReachability.SimpleWalk
+      (G.MoralOpenEdge mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned)
+      (.observed sourceIdx) (.observed targetIdx))
+    (leftSelected : left sourceIdx = true)
+    (before : List (SeparationNode S))
+    (previous middle next : SeparationNode S)
+    (after : List (SeparationNode S))
+    (split : G.expandMoralNodes mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned walk.walk =
+      before ++ previous :: middle :: next :: after)
+    (inactiveTriple : PathSpecification.tripleActiveBool G mutilation
+      conditioned previous middle next = false)
+    (collider : PathSpecification.isColliderBool G mutilation
+      previous middle next = true) :
+    Exists fun u : Fin S.count =>
+      (left u = true \/ right u = true) /\
+        conditioned u = false /\
+          FiniteReachability.BoundedWalk
+            (G.expandedMutilatedEdge mutilation)
+            G.separationNodes.length middle (.observed u) := by
+  let targets := NodeSet.union left (NodeSet.union right conditioned)
+  have sourceAncestor :
+      G.ancestorOf mutilation targets (.observed sourceIdx) = true :=
+    G.ancestorOf_of_left_selected mutilation left right conditioned
+      leftSelected
+  have middleMem : middle ∈ G.expandMoralNodes mutilation targets
+      conditioned walk.walk := by
+    rw [split]
+    exact List.mem_append.mpr
+      (Or.inr (List.mem_cons.mpr (Or.inr (List.mem_cons.mpr (Or.inl rfl)))))
+  have inLarge : G.ancestorOf mutilation targets middle = true :=
+    G.expandMoralNodes_mem_ancestor mutilation targets conditioned
+      walk.walk sourceAncestor middleMem
+  have unactivated : G.ancestorOf mutilation conditioned middle = false :=
+    G.unactivated_of_inactive_collider mutilation conditioned collider
+      inactiveTriple
+  exact G.exists_descendant_in_left_or_right mutilation left right
+    conditioned inLarge unactivated
+
+/--
+Oxford left-endpoint reroute on an expanded moral walk: reverse a directed
+descendant in `left` and continue along an internally active suffix to the
+original right endpoint.
+-/
+theorem exists_activePath_of_expanded_oxford_left (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {sourceIdx targetIdx : Fin S.count}
+    (walk : FiniteReachability.SimpleWalk
+      (G.MoralOpenEdge mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned)
+      (.observed sourceIdx) (.observed targetIdx))
+    (_leftSelected : left sourceIdx = true)
+    (targetOpen : blockedBy conditioned (.observed targetIdx) = false)
+    (simple : (G.expandMoralNodes mutilation
+      (NodeSet.union left (NodeSet.union right conditioned))
+      conditioned walk.walk).Nodup)
+    (before : List (SeparationNode S))
+    (previous middle next : SeparationNode S)
+    (after : List (SeparationNode S))
+    (split : G.expandMoralNodes mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned walk.walk =
+      before ++ previous :: middle :: next :: after)
+    (inactiveTriple : PathSpecification.tripleActiveBool G mutilation
+      conditioned previous middle next = false)
+    (collider : PathSpecification.isColliderBool G mutilation
+      previous middle next = true)
+    (suffixInactive : PathSpecification.inactiveColliderCount G mutilation
+      conditioned (middle :: next :: after) = 0)
+    {u : Fin S.count}
+    (_uLeft : left u = true)
+    (bounded : FiniteReachability.BoundedWalk
+      (G.expandedMutilatedEdge mutilation)
+      G.separationNodes.length middle (.observed u)) :
+    Nonempty
+      (PathSpecification.ActivePath G mutilation conditioned
+        (.observed u) (.observed targetIdx)) := by
+  let targets := NodeSet.union left (NodeSet.union right conditioned)
+  have adjFull : PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation)
+      (before ++ previous :: middle :: next :: after) := by
+    have adjExpanded :=
+      G.expandMoralNodes_consecutive_adjacent mutilation targets
+        conditioned walk.walk
+    rw [split] at adjExpanded
+    exact adjExpanded
+  have simpleFull : (before ++ previous :: middle :: next :: after).Nodup := by
+    rw [← split]
+    exact simple
+  have suffixAdjacent := suffix_adjacent_of_inactive_split adjFull
+  have suffixSimple := suffix_nodup_of_inactive_split simpleFull
+  have suffixFinishes : (middle :: next :: after).getLast? =
+      some (.observed targetIdx) := by
+    have lastExpanded :=
+      G.expandMoralNodes_getLast mutilation targets conditioned walk.walk
+    rw [split] at lastExpanded
+    exact getLast?_suffix_append (before := before ++ [previous])
+      (node := middle) (after := next :: after) (by
+        have listEq :
+            before ++ previous :: middle :: next :: after =
+              (before ++ [previous]) ++ middle :: next :: after :=
+          (List.append_assoc before [previous] (middle :: next :: after)).symm
+        rw [← listEq]
+        exact lastExpanded)
+  have unactivated : G.ancestorOf mutilation conditioned middle = false :=
+    G.unactivated_of_inactive_collider mutilation conditioned collider
+      inactiveTriple
+  rcases FiniteReachability.nonempty_simpleWalk_of_boundedWalk
+      SeparationNode.beq G.separationNodes
+      (G.expandedMutilatedEdge mutilation)
+      SeparationNode.beq_eq_true_iff SeparationNode.mem_all bounded with
+    ⟨directed⟩
+  exact G.exists_activePath_oxford_left mutilation conditioned next after
+    middle suffixFinishes suffixSimple suffixAdjacent suffixInactive
+    targetOpen unactivated directed
+
+/-- Glue a reverse directed walk from an unactivated collider onto an
+already-constructed active continuation that starts at that collider. -/
+theorem exists_activePath_oxford_left_of_activePath (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {middle : SeparationNode S} {u targetIdx : Fin S.count}
+    (path : PathSpecification.ActivePath G mutilation conditioned
+      middle (.observed targetIdx))
+    (unactivated : G.ancestorOf mutilation conditioned middle = false)
+    (directed : FiniteReachability.SimpleWalk
+      (G.expandedMutilatedEdge mutilation) middle (.observed u)) :
+    Nonempty
+      (PathSpecification.ActivePath G mutilation conditioned
+        (.observed u) (.observed targetIdx)) := by
+  have directedOpen : forall vertex, vertex ∈ directed.walk.nodes ->
+      blockedBy conditioned vertex = false :=
+    fun vertex member =>
+      G.blockedBy_false_of_directed_from_unactivated mutilation conditioned
+        directed.walk unactivated member
+  rcases List.head?_eq_some_iff.mp path.starts with ⟨tail, nodesHead⟩
+  cases tail with
+  | nil =>
+      have lastEq : path.nodes.getLast? = some (.observed targetIdx) :=
+        path.finishes
+      rw [nodesHead] at lastEq
+      simp at lastEq
+      have reversePath :=
+        G.activePath_of_reverse_directed mutilation conditioned directed
+          directedOpen
+      cases lastEq
+      exact ⟨reversePath⟩
+  | cons next after =>
+      have nodesEq : path.nodes = middle :: next :: after := nodesHead
+      exact G.exists_activePath_oxford_left mutilation conditioned next after
+        middle
+        (by simpa [nodesEq] using path.finishes)
+        (by simpa [nodesEq] using path.simple)
+        (by simpa [nodesEq] using path.adjacent)
+        (by
+          simpa [nodesEq] using
+            PathSpecification.inactiveColliderCount_eq_zero_of_internal_active
+              path.nodes path.internal_active)
+        path.target_open unactivated directed
+
+/--
+Oxford recursion on a collider suffix of a simple expansion.  The suffix
+starts at an unactivated collider that has a directed descendant in
+`left`.  If the suffix is internally active, left-endpoint glue reaches
+the original right endpoint.  Otherwise the first inactive window of the
+suffix is again a collider, a right descendant is preferred, and a
+left-only nested collider is a strictly shorter suffix.
+-/
+theorem exists_activePath_of_collider_suffix (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {sourceIdx targetIdx : Fin S.count}
+    (walk : FiniteReachability.SimpleWalk
+      (G.MoralOpenEdge mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned)
+      (.observed sourceIdx) (.observed targetIdx))
+    (simple : (G.expandMoralNodes mutilation
+      (NodeSet.union left (NodeSet.union right conditioned))
+      conditioned walk.walk).Nodup)
+    (leftSelected : left sourceIdx = true)
+    (rightSelected : right targetIdx = true)
+    (targetOpen : blockedBy conditioned (.observed targetIdx) = false)
+    (front : List (SeparationNode S))
+    (previous middle next : SeparationNode S)
+    (after : List (SeparationNode S))
+    (expandEq : G.expandMoralNodes mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned walk.walk =
+      front ++ previous :: middle :: next :: after)
+    (inactiveTriple : PathSpecification.tripleActiveBool G mutilation
+      conditioned previous middle next = false)
+    (collider : PathSpecification.isColliderBool G mutilation
+      previous middle next = true)
+    {uLeft : Fin S.count}
+    (inLeft : left uLeft = true)
+    (boundedLeft : FiniteReachability.BoundedWalk
+      (G.expandedMutilatedEdge mutilation)
+      G.separationNodes.length middle (.observed uLeft)) :
+    Exists fun s : Fin S.count =>
+      Exists fun t : Fin S.count =>
+        left s = true /\ right t = true /\
+          Nonempty
+            (PathSpecification.ActivePath G mutilation conditioned
+              (.observed s) (.observed t)) := by
+  let targets := NodeSet.union left (NodeSet.union right conditioned)
+  let expanded :=
+    G.expandMoralNodes mutilation targets conditioned walk.walk
+  have unactivated : G.ancestorOf mutilation conditioned middle = false :=
+    G.unactivated_of_inactive_collider mutilation conditioned collider
+      inactiveTriple
+  have adjFull : PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation)
+      (front ++ previous :: middle :: next :: after) := by
+    have adjExpanded :=
+      G.expandMoralNodes_consecutive_adjacent mutilation targets
+        conditioned walk.walk
+    rw [expandEq] at adjExpanded
+    exact adjExpanded
+  have simpleFull : (front ++ previous :: middle :: next :: after).Nodup := by
+    rw [← expandEq]
+    exact simple
+  have suffixAdjacent := suffix_adjacent_of_inactive_split adjFull
+  have suffixSimple := suffix_nodup_of_inactive_split simpleFull
+  have suffixFinishes : (middle :: next :: after).getLast? =
+      some (.observed targetIdx) := by
+    have lastExpanded :=
+      G.expandMoralNodes_getLast mutilation targets conditioned walk.walk
+    rw [expandEq] at lastExpanded
+    exact getLast?_suffix_append (before := front ++ [previous])
+      (node := middle) (after := next :: after) (by
+        have listEq :
+            front ++ previous :: middle :: next :: after =
+              (front ++ [previous]) ++ middle :: next :: after :=
+          (List.append_assoc front [previous] (middle :: next :: after)).symm
+        rw [← listEq]
+        exact lastExpanded)
+  rcases FiniteReachability.nonempty_simpleWalk_of_boundedWalk
+      SeparationNode.beq G.separationNodes
+      (G.expandedMutilatedEdge mutilation)
+      SeparationNode.beq_eq_true_iff SeparationNode.mem_all boundedLeft with
+    ⟨directedLeft⟩
+  cases hcount : PathSpecification.inactiveColliderCount G mutilation
+      conditioned (middle :: next :: after) with
+  | zero =>
+      exact ⟨uLeft, targetIdx, inLeft, rightSelected,
+        G.exists_activePath_oxford_left mutilation conditioned next after
+          middle suffixFinishes suffixSimple suffixAdjacent hcount
+          targetOpen unactivated directedLeft⟩
+  | succ n =>
+      have inactivePos :
+          0 < PathSpecification.inactiveColliderCount G mutilation
+            conditioned (middle :: next :: after) := by
+        rw [hcount]
+        exact Nat.succ_pos _
+      rcases PathSpecification.exists_inactive_split
+          (middle :: next :: after) inactivePos with
+        ⟨beforeS, prevS, midS, nextS, afterS, splitS, inactiveS, prefixZeroS⟩
+      have expandNested :
+          G.expandMoralNodes mutilation targets conditioned walk.walk =
+            (front ++ previous :: beforeS) ++
+              prevS :: midS :: nextS :: afterS := by
+        rw [expandEq]
+        exact cons_append_suffix_split front previous middle next after
+          beforeS prevS midS nextS afterS splitS
+      have colliderS :
+          PathSpecification.isColliderBool G mutilation prevS midS nextS =
+            true :=
+        G.isColliderBool_of_expanded_inactive mutilation targets
+          conditioned walk.walk (front ++ previous :: beforeS) prevS midS
+          nextS afterS expandNested inactiveS
+      have unactivatedS :
+          G.ancestorOf mutilation conditioned midS = false :=
+        G.unactivated_of_inactive_collider mutilation conditioned colliderS
+          inactiveS
+      have sourceAncestor :
+          G.ancestorOf mutilation targets (.observed sourceIdx) = true :=
+        G.ancestorOf_of_left_selected mutilation left right conditioned
+          leftSelected
+      have midSMem : midS ∈ expanded := by
+        change midS ∈
+          G.expandMoralNodes mutilation targets conditioned walk.walk
+        rw [expandNested]
+        exact List.mem_append.mpr
+          (Or.inr (List.mem_cons.mpr
+            (Or.inr (List.mem_cons.mpr (Or.inl rfl)))))
+      have inLargeS : G.ancestorOf mutilation targets midS = true :=
+        G.expandMoralNodes_mem_ancestor mutilation targets conditioned
+          walk.walk sourceAncestor midSMem
+      have prefixFacts :=
+        G.prefix_adjacent_of_inactive_split mutilation
+          (by simpa [splitS] using suffixSimple)
+          (by simpa [splitS] using suffixAdjacent)
+      have prefixStarts : (beforeS ++ prevS :: [midS]).head? =
+          some middle :=
+        prefix_head_of_inactive_split (before := beforeS) (previous := prevS)
+          (middle := midS) (next := nextS) (after := afterS) (source := middle)
+          (by
+            have h : (middle :: next :: after).head? = some middle := by
+              simp
+            simpa [splitS] using h)
+      have middleOpen : blockedBy conditioned middle = false :=
+        G.blockedBy_false_of_unactivated mutilation conditioned unactivated
+      have intoMidS : G.expandedMutilatedEdge mutilation prevS midS = true :=
+        ((PathSpecification.IsCollider_iff_isColliderBool G mutilation
+          prevS midS nextS).mpr colliderS).1
+      cases hrightS : G.ancestorOf mutilation right midS with
+      | true =>
+          rcases (G.ancestorOf_eq_true_iff mutilation right midS).mp
+              hrightS with ⟨uRight, inRight, boundedRight⟩
+          cases condVal : conditioned uRight with
+          | true =>
+              have activated :
+                  G.ancestorOf mutilation conditioned midS = true :=
+                (G.ancestorOf_eq_true_iff mutilation conditioned midS).mpr
+                  ⟨uRight, condVal, boundedRight⟩
+              rw [activated] at unactivatedS
+              contradiction
+          | false =>
+              rcases FiniteReachability.nonempty_simpleWalk_of_boundedWalk
+                  SeparationNode.beq G.separationNodes
+                  (G.expandedMutilatedEdge mutilation)
+                  SeparationNode.beq_eq_true_iff SeparationNode.mem_all
+                  boundedRight with ⟨directedRight⟩
+              rcases G.exists_activePath_oxford_right mutilation
+                  conditioned beforeS prevS midS prefixStarts prefixFacts.1
+                  prefixFacts.2 prefixZeroS middleOpen intoMidS unactivatedS
+                  directedRight with ⟨pathMid⟩
+              exact ⟨uLeft, uRight, inLeft, inRight,
+                G.exists_activePath_oxford_left_of_activePath mutilation
+                  conditioned pathMid unactivated directedLeft⟩
+      | false =>
+          rcases G.exists_descendant_in_left_or_right mutilation left right
+              conditioned inLargeS unactivatedS with
+            ⟨uS, side, _uncond, boundedS⟩
+          rcases side with inLeftS | inRightS
+          · exact G.exists_activePath_of_collider_suffix mutilation left
+              right conditioned walk simple leftSelected rightSelected
+              targetOpen (front ++ previous :: beforeS) prevS midS nextS
+              afterS expandNested inactiveS colliderS inLeftS boundedS
+          · have ancestorRight :
+                G.ancestorOf mutilation right midS = true :=
+              (G.ancestorOf_eq_true_iff mutilation right midS).mpr
+                ⟨uS, inRightS, boundedS⟩
+            rw [hrightS] at ancestorRight
+            contradiction
+termination_by (middle :: next :: after).length
+decreasing_by
+  exact nested_suffix_length_lt splitS
+
+/--
+The three Oxford/zero cases in which a simple expansion of a moral walk
+already yields an active path between some pair of `left` and `right`.
+Remaining inactive suffixes and non-collider first windows are excluded
+until those reroutes are inhabited.
+-/
+inductive ExpandedActiveCase (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {sourceIdx targetIdx : Fin S.count}
+    (walk : FiniteReachability.SimpleWalk
+      (G.MoralOpenEdge mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned)
+      (.observed sourceIdx) (.observed targetIdx)) : Type
+  | internallyActive
+      (simple : (G.expandMoralNodes mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned walk.walk).Nodup)
+      (inactive : PathSpecification.inactiveColliderCount G mutilation
+        conditioned
+        (G.expandMoralNodes mutilation
+          (NodeSet.union left (NodeSet.union right conditioned))
+          conditioned walk.walk) = 0) :
+      ExpandedActiveCase G mutilation left right conditioned walk
+  | oxfordRight
+      (simple : (G.expandMoralNodes mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned walk.walk).Nodup)
+      (before : List (SeparationNode S))
+      (previous middle next : SeparationNode S)
+      (after : List (SeparationNode S))
+      (split : G.expandMoralNodes mutilation
+          (NodeSet.union left (NodeSet.union right conditioned))
+          conditioned walk.walk =
+        before ++ previous :: middle :: next :: after)
+      (inactiveTriple : PathSpecification.tripleActiveBool G mutilation
+        conditioned previous middle next = false)
+      (prefixZero : PathSpecification.inactiveColliderCount G mutilation
+        conditioned (before ++ previous :: [middle]) = 0)
+      (collider : PathSpecification.isColliderBool G mutilation
+        previous middle next = true)
+      (u : Fin S.count)
+      (inRight : right u = true)
+      (bounded : FiniteReachability.BoundedWalk
+        (G.expandedMutilatedEdge mutilation)
+        G.separationNodes.length middle (.observed u)) :
+      ExpandedActiveCase G mutilation left right conditioned walk
+  | oxfordLeft
+      (simple : (G.expandMoralNodes mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned walk.walk).Nodup)
+      (before : List (SeparationNode S))
+      (previous middle next : SeparationNode S)
+      (after : List (SeparationNode S))
+      (split : G.expandMoralNodes mutilation
+          (NodeSet.union left (NodeSet.union right conditioned))
+          conditioned walk.walk =
+        before ++ previous :: middle :: next :: after)
+      (inactiveTriple : PathSpecification.tripleActiveBool G mutilation
+        conditioned previous middle next = false)
+      (collider : PathSpecification.isColliderBool G mutilation
+        previous middle next = true)
+      (suffixInactive : PathSpecification.inactiveColliderCount G mutilation
+        conditioned (middle :: next :: after) = 0)
+      (u : Fin S.count)
+      (inLeft : left u = true)
+      (bounded : FiniteReachability.BoundedWalk
+        (G.expandedMutilatedEdge mutilation)
+        G.separationNodes.length middle (.observed u)) :
+      ExpandedActiveCase G mutilation left right conditioned walk
+
+/-- Extract an active-path witness in `left × right` from any of the three
+inhabited Oxford/zero cases. -/
+theorem exists_activePath_of_expanded_active_case (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {sourceIdx targetIdx : Fin S.count}
+    (walk : FiniteReachability.SimpleWalk
+      (G.MoralOpenEdge mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned)
+      (.observed sourceIdx) (.observed targetIdx))
+    (leftSelected : left sourceIdx = true)
+    (rightSelected : right targetIdx = true)
+    (sourceOpen : blockedBy conditioned (.observed sourceIdx) = false)
+    (targetOpen : blockedBy conditioned (.observed targetIdx) = false)
+    (c : ExpandedActiveCase G mutilation left right conditioned walk) :
+    Exists fun s : Fin S.count =>
+      Exists fun t : Fin S.count =>
+        left s = true /\ right t = true /\
+          Nonempty
+            (PathSpecification.ActivePath G mutilation conditioned
+              (.observed s) (.observed t)) := by
+  cases c with
+  | internallyActive simple inactive =>
+      exact ⟨sourceIdx, targetIdx, leftSelected, rightSelected,
+        G.exists_activePath_of_expanded_zero mutilation left right
+          conditioned walk sourceOpen targetOpen simple inactive⟩
+  | oxfordRight simple before previous middle next after split
+      inactiveTriple prefixZero collider u inRight bounded =>
+      exact ⟨sourceIdx, u, leftSelected, inRight,
+        G.exists_activePath_of_expanded_oxford_right mutilation left right
+          conditioned walk leftSelected sourceOpen simple before previous
+          middle next after split inactiveTriple prefixZero collider
+          inRight bounded⟩
+  | oxfordLeft simple before previous middle next after split
+      inactiveTriple collider suffixInactive u inLeft bounded =>
+      exact ⟨u, targetIdx, inLeft, rightSelected,
+        G.exists_activePath_of_expanded_oxford_left mutilation left right
+          conditioned walk leftSelected targetOpen simple before previous
+          middle next after split inactiveTriple collider suffixInactive
+          inLeft bounded⟩
+
+/-- From a simple expansion, the first inactive split (if any) is computed
+without choice.  Combined with a collider descendant in `right`, or in
+`left` with an active suffix, this inhabits `ExpandedActiveCase`. -/
+theorem expandedActiveCase_of_simple_split (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {sourceIdx targetIdx : Fin S.count}
+    (walk : FiniteReachability.SimpleWalk
+      (G.MoralOpenEdge mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned)
+      (.observed sourceIdx) (.observed targetIdx))
+    (_simple : (G.expandMoralNodes mutilation
+      (NodeSet.union left (NodeSet.union right conditioned))
+      conditioned walk.walk).Nodup) :
+    PathSpecification.inactiveColliderCount G mutilation conditioned
+        (G.expandMoralNodes mutilation
+          (NodeSet.union left (NodeSet.union right conditioned))
+          conditioned walk.walk) = 0 ∨
+      Exists fun before : List (SeparationNode S) =>
+        Exists fun previous : SeparationNode S =>
+          Exists fun middle : SeparationNode S =>
+            Exists fun next : SeparationNode S =>
+              Exists fun after : List (SeparationNode S) =>
+                G.expandMoralNodes mutilation
+                    (NodeSet.union left (NodeSet.union right conditioned))
+                    conditioned walk.walk =
+                  before ++ previous :: middle :: next :: after /\
+                  PathSpecification.tripleActiveBool G mutilation
+                    conditioned previous middle next = false /\
+                    PathSpecification.inactiveColliderCount G mutilation
+                      conditioned (before ++ previous :: [middle]) = 0 := by
+  let expanded :=
+    G.expandMoralNodes mutilation
+      (NodeSet.union left (NodeSet.union right conditioned))
+      conditioned walk.walk
+  cases hcount : PathSpecification.inactiveColliderCount G mutilation
+      conditioned expanded with
+  | zero =>
+      exact Or.inl (by simpa [expanded] using hcount)
+  | succ n =>
+      have inactivePos :
+          0 < PathSpecification.inactiveColliderCount G mutilation
+            conditioned expanded := by
+        rw [hcount]
+        exact Nat.succ_pos _
+      rcases PathSpecification.exists_inactive_split expanded inactivePos with
+        ⟨before, previous, middle, next, after, split, inactiveTriple,
+          prefixZero⟩
+      exact Or.inr ⟨before, previous, middle, next, after, split,
+        inactiveTriple, prefixZero⟩
+
+/--
+A simple expansion yields an active-path witness in `left × right`.
+Zero-inactive expansions and first-inactive colliders with a directed
+descendant in `right` are handled directly.  A left-only first collider
+is Oxford recursion on its suffix, well-founded on suffix length.
+-/
+theorem exists_activePath_of_simple_expanded (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {sourceIdx targetIdx : Fin S.count}
+    (walk : FiniteReachability.SimpleWalk
+      (G.MoralOpenEdge mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned)
+      (.observed sourceIdx) (.observed targetIdx))
+    (leftSelected : left sourceIdx = true)
+    (rightSelected : right targetIdx = true)
+    (sourceOpen : blockedBy conditioned (.observed sourceIdx) = false)
+    (targetOpen : blockedBy conditioned (.observed targetIdx) = false)
+    (simple : (G.expandMoralNodes mutilation
+      (NodeSet.union left (NodeSet.union right conditioned))
+      conditioned walk.walk).Nodup) :
+    Exists fun s : Fin S.count =>
+      Exists fun t : Fin S.count =>
+        left s = true /\ right t = true /\
+          Nonempty
+            (PathSpecification.ActivePath G mutilation conditioned
+              (.observed s) (.observed t)) := by
+  let targets := NodeSet.union left (NodeSet.union right conditioned)
+  let expanded :=
+    G.expandMoralNodes mutilation targets conditioned walk.walk
+  rcases G.expandedActiveCase_of_simple_split mutilation left right
+      conditioned walk simple with inactive0 | splitExists
+  · exact G.exists_activePath_of_expanded_active_case mutilation left
+      right conditioned walk leftSelected rightSelected sourceOpen
+      targetOpen (.internallyActive simple inactive0)
+  · rcases splitExists with
+      ⟨before, previous, middle, next, after, split, inactiveTriple,
+        prefixZero⟩
+    have collider :
+        PathSpecification.isColliderBool G mutilation previous middle
+          next = true :=
+      G.isColliderBool_of_expanded_inactive mutilation targets
+        conditioned walk.walk before previous middle next after split
+        inactiveTriple
+    have unactivated :
+        G.ancestorOf mutilation conditioned middle = false :=
+      G.unactivated_of_inactive_collider mutilation conditioned collider
+        inactiveTriple
+    have sourceAncestor :
+        G.ancestorOf mutilation targets (.observed sourceIdx) = true :=
+      G.ancestorOf_of_left_selected mutilation left right conditioned
+        leftSelected
+    have middleMem : middle ∈ expanded := by
+      change middle ∈
+        G.expandMoralNodes mutilation targets conditioned walk.walk
+      rw [split]
+      exact List.mem_append.mpr
+        (Or.inr (List.mem_cons.mpr
+          (Or.inr (List.mem_cons.mpr (Or.inl rfl)))))
+    have inLarge : G.ancestorOf mutilation targets middle = true :=
+      G.expandMoralNodes_mem_ancestor mutilation targets conditioned
+        walk.walk sourceAncestor middleMem
+    cases hright : G.ancestorOf mutilation right middle with
+    | true =>
+        rcases (G.ancestorOf_eq_true_iff mutilation right middle).mp
+            hright with ⟨u, inRight, bounded⟩
+        cases condVal : conditioned u with
+        | true =>
+            have activated :
+                G.ancestorOf mutilation conditioned middle = true :=
+              (G.ancestorOf_eq_true_iff mutilation conditioned
+                middle).mpr ⟨u, condVal, bounded⟩
+            rw [activated] at unactivated
+            contradiction
+        | false =>
+            exact G.exists_activePath_of_expanded_active_case
+              mutilation left right conditioned walk leftSelected
+              rightSelected sourceOpen targetOpen
+              (.oxfordRight simple before previous middle next after
+                split inactiveTriple prefixZero collider u inRight
+                bounded)
+    | false =>
+        rcases G.exists_descendant_in_left_or_right mutilation left
+            right conditioned inLarge unactivated with
+          ⟨u, side, _uncond, bounded⟩
+        rcases side with inLeft | inRight
+        · exact G.exists_activePath_of_collider_suffix mutilation left
+            right conditioned walk simple leftSelected rightSelected
+            targetOpen before previous middle next after split
+            inactiveTriple collider inLeft bounded
+        · have ancestorRight :
+              G.ancestorOf mutilation right middle = true :=
+            (G.ancestorOf_eq_true_iff mutilation right middle).mpr
+              ⟨u, inRight, bounded⟩
+          rw [hright] at ancestorRight
+          contradiction
+
+/--
+Cycle deletion on an expansion preserves endpoints and DAG adjacency.
+When the resulting simple trail is internally active, it is already an
+active path on the original observed endpoints.  `cutCycle` need not
+preserve the inactive count: a splice triple at a repeated vertex can
+be inactive even if every original window was active.
+-/
+theorem exists_activePath_of_simplified_zero (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {sourceIdx targetIdx : Fin S.count}
+    (walk : FiniteReachability.SimpleWalk
+      (G.MoralOpenEdge mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned)
+      (.observed sourceIdx) (.observed targetIdx))
+    (sourceOpen : blockedBy conditioned (.observed sourceIdx) = false)
+    (targetOpen : blockedBy conditioned (.observed targetIdx) = false)
+    (inactive : PathSpecification.inactiveColliderCount G mutilation
+      conditioned
+      (simplifySeparation
+        (G.expandMoralNodes mutilation
+          (NodeSet.union left (NodeSet.union right conditioned))
+          conditioned walk.walk)) = 0) :
+    Nonempty
+      (PathSpecification.ActivePath G mutilation conditioned
+        (.observed sourceIdx) (.observed targetIdx)) := by
+  let targets := NodeSet.union left (NodeSet.union right conditioned)
+  let expanded :=
+    G.expandMoralNodes mutilation targets conditioned walk.walk
+  let simplified := simplifySeparation expanded
+  have ne := G.expandMoralNodes_ne_nil mutilation targets conditioned
+    walk.walk
+  have starts : simplified.head? = some (.observed sourceIdx) := by
+    change (simplifySeparation expanded).head? = some (.observed sourceIdx)
+    rw [simplifySeparation_head ne]
+    exact G.expandMoralNodes_head mutilation targets conditioned walk.walk
+  have finishes : simplified.getLast? = some (.observed targetIdx) := by
+    change (simplifySeparation expanded).getLast? = some (.observed targetIdx)
+    rw [simplifySeparation_getLast ne]
+    exact G.expandMoralNodes_getLast mutilation targets conditioned walk.walk
+  have adjacent :
+      PathSpecification.Consecutive
+        (PathSpecification.Adjacent G mutilation) simplified :=
+    simplifySeparation_consecutive
+      (G.expandMoralNodes_consecutive_adjacent mutilation targets
+        conditioned walk.walk)
+  exact ⟨G.activePath_of_adjacent_nodes mutilation conditioned simplified
+    starts finishes (simplifySeparation_nodup expanded) adjacent inactive
+    sourceOpen targetOpen⟩
+
+/--
+Oxford recursion on a collider suffix of any simple DAG-adjacent trail
+that has collider-or-open middles.  Independent of how the trail was
+produced (expansion, cycle deletion, or a nested suffix).
+-/
+theorem exists_activePath_of_open_or_collider_suffix (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {targetIdx : Fin S.count}
+    (middle next : SeparationNode S)
+    (after : List (SeparationNode S))
+    (suffixSimple : (middle :: next :: after).Nodup)
+    (suffixAdjacent : PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation)
+      (middle :: next :: after))
+    (suffixFinishes : (middle :: next :: after).getLast? =
+      some (.observed targetIdx))
+    (openOr : PathSpecification.TripleOpenOrCollider G mutilation
+      conditioned (middle :: next :: after))
+    (ancestors : forall vertex, vertex ∈ middle :: next :: after ->
+      G.ancestorOf mutilation
+        (NodeSet.union left (NodeSet.union right conditioned)) vertex =
+          true)
+    (unactivated : G.ancestorOf mutilation conditioned middle = false)
+    {uLeft : Fin S.count}
+    (inLeft : left uLeft = true)
+    (boundedLeft : FiniteReachability.BoundedWalk
+      (G.expandedMutilatedEdge mutilation)
+      G.separationNodes.length middle (.observed uLeft))
+    (rightSelected : right targetIdx = true)
+    (targetOpen : blockedBy conditioned (.observed targetIdx) = false) :
+    Exists fun s : Fin S.count =>
+      Exists fun t : Fin S.count =>
+        left s = true /\ right t = true /\
+          Nonempty
+            (PathSpecification.ActivePath G mutilation conditioned
+              (.observed s) (.observed t)) := by
+  let targets := NodeSet.union left (NodeSet.union right conditioned)
+  rcases FiniteReachability.nonempty_simpleWalk_of_boundedWalk
+      SeparationNode.beq G.separationNodes
+      (G.expandedMutilatedEdge mutilation)
+      SeparationNode.beq_eq_true_iff SeparationNode.mem_all boundedLeft with
+    ⟨directedLeft⟩
+  cases hcount : PathSpecification.inactiveColliderCount G mutilation
+      conditioned (middle :: next :: after) with
+  | zero =>
+      exact ⟨uLeft, targetIdx, inLeft, rightSelected,
+        G.exists_activePath_oxford_left mutilation conditioned next after
+          middle suffixFinishes suffixSimple suffixAdjacent hcount
+          targetOpen unactivated directedLeft⟩
+  | succ n =>
+      have inactivePos :
+          0 < PathSpecification.inactiveColliderCount G mutilation
+            conditioned (middle :: next :: after) := by
+        rw [hcount]
+        exact Nat.succ_pos _
+      rcases PathSpecification.exists_inactive_split
+          (middle :: next :: after) inactivePos with
+        ⟨beforeS, prevS, midS, nextS, afterS, splitS, inactiveS, prefixZeroS⟩
+      have colliderS :
+          PathSpecification.isColliderBool G mutilation prevS midS nextS =
+            true :=
+        G.isColliderBool_of_inactive_openOrCollider mutilation conditioned
+          openOr splitS inactiveS
+      have unactivatedS :
+          G.ancestorOf mutilation conditioned midS = false :=
+        G.unactivated_of_inactive_collider mutilation conditioned colliderS
+          inactiveS
+      have midSMem : midS ∈ middle :: next :: after := by
+        rw [splitS]
+        exact List.mem_append.mpr
+          (Or.inr (List.mem_cons.mpr
+            (Or.inr (List.mem_cons.mpr (Or.inl rfl)))))
+      have inLargeS : G.ancestorOf mutilation targets midS = true :=
+        ancestors midS midSMem
+      have prefixFacts :=
+        G.prefix_adjacent_of_inactive_split mutilation
+          (by simpa [splitS] using suffixSimple)
+          (by simpa [splitS] using suffixAdjacent)
+      have prefixStarts : (beforeS ++ prevS :: [midS]).head? =
+          some middle :=
+        prefix_head_of_inactive_split (before := beforeS) (previous := prevS)
+          (middle := midS) (next := nextS) (after := afterS)
+          (source := middle)
+          (by
+            have h : (middle :: next :: after).head? = some middle := by
+              simp
+            simpa [splitS] using h)
+      have middleOpen : blockedBy conditioned middle = false :=
+        G.blockedBy_false_of_unactivated mutilation conditioned unactivated
+      have intoMidS : G.expandedMutilatedEdge mutilation prevS midS = true :=
+        ((PathSpecification.IsCollider_iff_isColliderBool G mutilation
+          prevS midS nextS).mpr colliderS).1
+      have nestedSimple :=
+        suffix_nodup_of_inactive_split
+          (by simpa [splitS] using suffixSimple)
+      have nestedAdjacent :=
+        suffix_adjacent_of_inactive_split
+          (by simpa [splitS] using suffixAdjacent)
+      have nestedFinishes : (midS :: nextS :: afterS).getLast? =
+          some (.observed targetIdx) := by
+        have listEq :
+            middle :: next :: after =
+              (beforeS ++ [prevS]) ++ midS :: nextS :: afterS := by
+          have : beforeS ++ prevS :: midS :: nextS :: afterS =
+              (beforeS ++ [prevS]) ++ midS :: nextS :: afterS :=
+            (List.append_assoc beforeS [prevS]
+              (midS :: nextS :: afterS)).symm
+          rw [← splitS] at this
+          exact this
+        exact getLast?_suffix_append (before := beforeS ++ [prevS])
+          (node := midS) (after := nextS :: afterS)
+          (by
+            rw [← listEq]
+            exact suffixFinishes)
+      have nestedOpen :
+          PathSpecification.TripleOpenOrCollider G mutilation
+            conditioned (midS :: nextS :: afterS) :=
+        PathSpecification.TripleOpenOrCollider.suffix_of_append
+          (beforeS ++ [prevS]) midS (nextS :: afterS)
+          (by
+            have eq :
+                middle :: next :: after =
+                  (beforeS ++ [prevS]) ++ midS :: nextS :: afterS := by
+              have : beforeS ++ prevS :: midS :: nextS :: afterS =
+                  (beforeS ++ [prevS]) ++ midS :: nextS :: afterS :=
+                (List.append_assoc beforeS [prevS]
+                  (midS :: nextS :: afterS)).symm
+              rw [← splitS] at this
+              exact this
+            rw [← eq]
+            exact openOr)
+      have nestedAncestors : forall vertex,
+          vertex ∈ midS :: nextS :: afterS ->
+            G.ancestorOf mutilation targets vertex = true := by
+        intro vertex member
+        apply ancestors
+        rw [splitS]
+        exact List.mem_append.mpr
+          (Or.inr (List.mem_cons.mpr (Or.inr member)))
+      cases hrightS : G.ancestorOf mutilation right midS with
+      | true =>
+          rcases (G.ancestorOf_eq_true_iff mutilation right midS).mp
+              hrightS with ⟨uRight, inRight, boundedRight⟩
+          cases condVal : conditioned uRight with
+          | true =>
+              have activated :
+                  G.ancestorOf mutilation conditioned midS = true :=
+                (G.ancestorOf_eq_true_iff mutilation conditioned midS).mpr
+                  ⟨uRight, condVal, boundedRight⟩
+              rw [activated] at unactivatedS
+              contradiction
+          | false =>
+              rcases FiniteReachability.nonempty_simpleWalk_of_boundedWalk
+                  SeparationNode.beq G.separationNodes
+                  (G.expandedMutilatedEdge mutilation)
+                  SeparationNode.beq_eq_true_iff SeparationNode.mem_all
+                  boundedRight with ⟨directedRight⟩
+              rcases G.exists_activePath_oxford_right mutilation
+                  conditioned beforeS prevS midS prefixStarts prefixFacts.1
+                  prefixFacts.2 prefixZeroS middleOpen intoMidS unactivatedS
+                  directedRight with ⟨pathMid⟩
+              exact ⟨uLeft, uRight, inLeft, inRight,
+                G.exists_activePath_oxford_left_of_activePath mutilation
+                  conditioned pathMid unactivated directedLeft⟩
+      | false =>
+          rcases G.exists_descendant_in_left_or_right mutilation left right
+              conditioned inLargeS unactivatedS with
+            ⟨uS, side, _uncond, boundedS⟩
+          rcases side with inLeftS | inRightS
+          · exact G.exists_activePath_of_open_or_collider_suffix mutilation
+              left right conditioned midS nextS afterS nestedSimple
+              nestedAdjacent nestedFinishes nestedOpen nestedAncestors
+              unactivatedS inLeftS boundedS rightSelected targetOpen
+          · have ancestorRight :
+                G.ancestorOf mutilation right midS = true :=
+              (G.ancestorOf_eq_true_iff mutilation right midS).mpr
+                ⟨uS, inRightS, boundedS⟩
+            rw [hrightS] at ancestorRight
+            contradiction
+termination_by (middle :: next :: after).length
+decreasing_by
+  exact nested_suffix_length_lt splitS
+
+/--
+A simple DAG-adjacent trail whose every window is a collider or has an
+open middle yields an active path in `left × right`.  Zero-inactive
+trails are already active paths; a first inactive window is a collider
+and Oxford reroutes to a descendant in `left` or `right`.
+-/
+theorem exists_activePath_of_open_or_collider_nodes (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {sourceIdx targetIdx : Fin S.count}
+    (nodes : List (SeparationNode S))
+    (starts : nodes.head? = some (.observed sourceIdx))
+    (finishes : nodes.getLast? = some (.observed targetIdx))
+    (simple : nodes.Nodup)
+    (adjacent : PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation) nodes)
+    (openOr : PathSpecification.TripleOpenOrCollider G mutilation
+      conditioned nodes)
+    (ancestors : forall vertex, vertex ∈ nodes ->
+      G.ancestorOf mutilation
+        (NodeSet.union left (NodeSet.union right conditioned)) vertex =
+          true)
+    (leftSelected : left sourceIdx = true)
+    (rightSelected : right targetIdx = true)
+    (sourceOpen : blockedBy conditioned (.observed sourceIdx) = false)
+    (targetOpen : blockedBy conditioned (.observed targetIdx) = false) :
+    Exists fun s : Fin S.count =>
+      Exists fun t : Fin S.count =>
+        left s = true /\ right t = true /\
+          Nonempty
+            (PathSpecification.ActivePath G mutilation conditioned
+              (.observed s) (.observed t)) := by
+  let targets := NodeSet.union left (NodeSet.union right conditioned)
+  cases hcount : PathSpecification.inactiveColliderCount G mutilation
+      conditioned nodes with
+  | zero =>
+      exact ⟨sourceIdx, targetIdx, leftSelected, rightSelected,
+        ⟨G.activePath_of_adjacent_nodes mutilation conditioned nodes
+          starts finishes simple adjacent hcount sourceOpen targetOpen⟩⟩
+  | succ n =>
+      have inactivePos :
+          0 < PathSpecification.inactiveColliderCount G mutilation
+            conditioned nodes := by
+        rw [hcount]
+        exact Nat.succ_pos _
+      rcases PathSpecification.exists_inactive_split nodes inactivePos with
+        ⟨before, previous, middle, next, after, split, inactiveTriple,
+          prefixZero⟩
+      have collider :
+          PathSpecification.isColliderBool G mutilation previous middle
+            next = true :=
+        G.isColliderBool_of_inactive_openOrCollider mutilation conditioned
+          openOr split inactiveTriple
+      have unactivated :
+          G.ancestorOf mutilation conditioned middle = false :=
+        G.unactivated_of_inactive_collider mutilation conditioned collider
+          inactiveTriple
+      have middleMem : middle ∈ nodes := by
+        rw [split]
+        exact List.mem_append.mpr
+          (Or.inr (List.mem_cons.mpr
+            (Or.inr (List.mem_cons.mpr (Or.inl rfl)))))
+      have inLarge : G.ancestorOf mutilation targets middle = true :=
+        ancestors middle middleMem
+      have prefixFacts :=
+        G.prefix_adjacent_of_inactive_split mutilation
+          (by simpa [split] using simple)
+          (by simpa [split] using adjacent)
+      have prefixStarts : (before ++ previous :: [middle]).head? =
+          some (.observed sourceIdx) :=
+        prefix_head_of_inactive_split (before := before) (previous := previous)
+          (middle := middle) (next := next) (after := after)
+          (source := .observed sourceIdx)
+          (by simpa [split] using starts)
+      have intoMiddle : G.expandedMutilatedEdge mutilation previous middle =
+          true :=
+        ((PathSpecification.IsCollider_iff_isColliderBool G mutilation
+          previous middle next).mpr collider).1
+      have suffixSimple :=
+        suffix_nodup_of_inactive_split (by simpa [split] using simple)
+      have suffixAdjacent :=
+        suffix_adjacent_of_inactive_split (by simpa [split] using adjacent)
+      have suffixFinishes : (middle :: next :: after).getLast? =
+          some (.observed targetIdx) := by
+        have listEq :
+            nodes = (before ++ [previous]) ++ middle :: next :: after := by
+          have : before ++ previous :: middle :: next :: after =
+              (before ++ [previous]) ++ middle :: next :: after :=
+            (List.append_assoc before [previous]
+              (middle :: next :: after)).symm
+          rw [← split] at this
+          exact this
+        exact getLast?_suffix_append (before := before ++ [previous])
+          (node := middle) (after := next :: after)
+          (by
+            rw [← listEq]
+            exact finishes)
+      have suffixOpen :
+          PathSpecification.TripleOpenOrCollider G mutilation
+            conditioned (middle :: next :: after) :=
+        PathSpecification.TripleOpenOrCollider.suffix_of_append
+          (before ++ [previous]) middle (next :: after)
+          (by
+            have eq :
+                nodes =
+                  (before ++ [previous]) ++ middle :: next :: after := by
+              have : before ++ previous :: middle :: next :: after =
+                  (before ++ [previous]) ++ middle :: next :: after :=
+                (List.append_assoc before [previous]
+                  (middle :: next :: after)).symm
+              rw [← split] at this
+              exact this
+            rw [← eq]
+            exact openOr)
+      have suffixAncestors : forall vertex,
+          vertex ∈ middle :: next :: after ->
+            G.ancestorOf mutilation targets vertex = true := by
+        intro vertex member
+        apply ancestors
+        rw [split]
+        exact List.mem_append.mpr
+          (Or.inr (List.mem_cons.mpr (Or.inr member)))
+      cases hright : G.ancestorOf mutilation right middle with
+      | true =>
+          rcases (G.ancestorOf_eq_true_iff mutilation right middle).mp
+              hright with ⟨u, inRight, bounded⟩
+          cases condVal : conditioned u with
+          | true =>
+              have activated :
+                  G.ancestorOf mutilation conditioned middle = true :=
+                (G.ancestorOf_eq_true_iff mutilation conditioned middle).mpr
+                  ⟨u, condVal, bounded⟩
+              rw [activated] at unactivated
+              contradiction
+          | false =>
+              rcases FiniteReachability.nonempty_simpleWalk_of_boundedWalk
+                  SeparationNode.beq G.separationNodes
+                  (G.expandedMutilatedEdge mutilation)
+                  SeparationNode.beq_eq_true_iff SeparationNode.mem_all
+                  bounded with ⟨directed⟩
+              exact ⟨sourceIdx, u, leftSelected, inRight,
+                G.exists_activePath_oxford_right mutilation conditioned
+                  before previous middle prefixStarts prefixFacts.1
+                  prefixFacts.2 prefixZero sourceOpen intoMiddle unactivated
+                  directed⟩
+      | false =>
+          rcases G.exists_descendant_in_left_or_right mutilation left right
+              conditioned inLarge unactivated with
+            ⟨u, side, _uncond, bounded⟩
+          rcases side with inLeft | inRight
+          · exact G.exists_activePath_of_open_or_collider_suffix mutilation
+              left right conditioned middle next after suffixSimple
+              suffixAdjacent suffixFinishes suffixOpen suffixAncestors
+              unactivated inLeft bounded rightSelected targetOpen
+          · have ancestorRight :
+                G.ancestorOf mutilation right middle = true :=
+              (G.ancestorOf_eq_true_iff mutilation right middle).mpr
+                ⟨u, inRight, bounded⟩
+            rw [hright] at ancestorRight
+            contradiction
+
+/--
+An expanded moral walk, simplified by cycle deletion, is a simple
+DAG-adjacent collider-or-open trail on the original endpoints, so it
+yields an active path in `left × right`.
+-/
+theorem exists_activePath_of_expanded (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {sourceIdx targetIdx : Fin S.count}
+    (walk : FiniteReachability.SimpleWalk
+      (G.MoralOpenEdge mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned)
+      (.observed sourceIdx) (.observed targetIdx))
+    (leftSelected : left sourceIdx = true)
+    (rightSelected : right targetIdx = true)
+    (sourceOpen : blockedBy conditioned (.observed sourceIdx) = false)
+    (targetOpen : blockedBy conditioned (.observed targetIdx) = false) :
+    Exists fun s : Fin S.count =>
+      Exists fun t : Fin S.count =>
+        left s = true /\ right t = true /\
+          Nonempty
+            (PathSpecification.ActivePath G mutilation conditioned
+              (.observed s) (.observed t)) := by
+  let targets := NodeSet.union left (NodeSet.union right conditioned)
+  let expanded :=
+    G.expandMoralNodes mutilation targets conditioned walk.walk
+  let simplified := simplifySeparation expanded
+  have ne := G.expandMoralNodes_ne_nil mutilation targets conditioned
+    walk.walk
+  have starts : simplified.head? = some (.observed sourceIdx) := by
+    rw [simplifySeparation_head ne]
+    exact G.expandMoralNodes_head mutilation targets conditioned walk.walk
+  have finishes : simplified.getLast? = some (.observed targetIdx) := by
+    rw [simplifySeparation_getLast ne]
+    exact G.expandMoralNodes_getLast mutilation targets conditioned walk.walk
+  have adjacent :
+      PathSpecification.Consecutive
+        (PathSpecification.Adjacent G mutilation) expanded :=
+    G.expandMoralNodes_consecutive_adjacent mutilation targets
+      conditioned walk.walk
+  have adjacentS := simplifySeparation_consecutive adjacent
+  have openOr :=
+    G.expandMoralNodes_tripleOpenOrCollider mutilation targets
+      conditioned walk.walk
+  have openOrS :=
+    G.simplifySeparation_tripleOpenOrCollider mutilation conditioned
+      adjacent openOr
+  have sourceAncestor :
+      G.ancestorOf mutilation targets (.observed sourceIdx) = true :=
+    G.ancestorOf_of_left_selected mutilation left right conditioned
+      leftSelected
+  have ancestors : forall vertex, vertex ∈ simplified ->
+      G.ancestorOf mutilation targets vertex = true := by
+    intro vertex member
+    exact G.expandMoralNodes_mem_ancestor mutilation targets conditioned
+      walk.walk sourceAncestor (mem_simplifySeparation member)
+  exact G.exists_activePath_of_open_or_collider_nodes mutilation left right
+    conditioned simplified starts finishes (simplifySeparation_nodup expanded)
+    adjacentS openOrS ancestors leftSelected rightSelected sourceOpen
+    targetOpen
+
 /--
 Deleting conditioned internal vertices from an active path yields a walk in
 the open ancestral moral graph.  A deleted vertex is necessarily a collider;
@@ -1304,6 +6098,34 @@ theorem nonempty_simpleMoralWalk_of_reachable (G : ObservedGraph S)
   exact (G.moralReachable_eq_true_iff mutilation targets conditioned
     source target).mp reachable
 
+/--
+Moral reachability yields an active-path witness: expand a simple moral
+walk, delete cycles, and Oxford-reroute the resulting simple
+collider-or-open trail.
+-/
+theorem exists_activePath_of_moralReachable (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    {sourceIdx targetIdx : Fin S.count}
+    (leftSelected : left sourceIdx = true)
+    (rightSelected : right targetIdx = true)
+    (sourceOpen : blockedBy conditioned (.observed sourceIdx) = false)
+    (targetOpen : blockedBy conditioned (.observed targetIdx) = false)
+    (reachable :
+      G.moralReachable mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        conditioned (.observed sourceIdx) (.observed targetIdx) = true) :
+    Exists fun s : Fin S.count =>
+      Exists fun t : Fin S.count =>
+        left s = true /\ right t = true /\
+          Nonempty
+            (PathSpecification.ActivePath G mutilation conditioned
+              (.observed s) (.observed t)) := by
+  rcases G.nonempty_simpleMoralWalk_of_reachable mutilation
+      (NodeSet.union left (NodeSet.union right conditioned))
+      conditioned reachable with ⟨walk⟩
+  exact G.exists_activePath_of_expanded mutilation left right conditioned
+    walk leftSelected rightSelected sourceOpen targetOpen
+
 /-- Unfold the outer finite searches in the executable separation test. -/
 theorem dSeparated_eq_true_iff_no_moralReachable (G : ObservedGraph S)
     (mutilation : GraphMutilation S) (left right conditioned : NodeSet S) :
@@ -1366,10 +6188,42 @@ theorem dSeparated_implies_pathDSeparated (G : ObservedGraph S)
   exact G.moralReachable_of_activePath mutilation left right conditioned
     sourceSelected targetSelected activePath
 
+/--
+The finite ancestral-moral algorithm is complete for the active-path
+specification: whenever an active path exists, the search reports
+dependence.
+-/
+theorem pathDSeparated_implies_dSeparated (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G mutilation left right
+      conditioned) :
+    G.dSeparated mutilation left right conditioned = true := by
+  apply (G.dSeparated_eq_true_iff_no_moralReachable mutilation
+    left right conditioned).mpr
+  rintro ⟨source, target, leftSelected, sourceOpen, rightSelected,
+    targetOpen, reachable⟩
+  rcases G.exists_activePath_of_moralReachable mutilation left right
+      conditioned leftSelected rightSelected sourceOpen targetOpen
+      reachable with ⟨s, t, sSelected, tSelected, active⟩
+  exact separated ⟨s, t, sSelected, tSelected, active⟩
+
+/-- Algorithmic d-separation coincides with the active-path specification. -/
+theorem dSeparated_iff_pathDSeparated (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (left right conditioned : NodeSet S) :
+    G.dSeparated mutilation left right conditioned = true <->
+      PathSpecification.PathDSeparated G mutilation left right
+        conditioned :=
+  ⟨G.dSeparated_implies_pathDSeparated mutilation left right conditioned,
+    G.pathDSeparated_implies_dSeparated mutilation left right conditioned⟩
+
+def dSeparationCorrectness (G : ObservedGraph S) :
+    DSeparationCorrectness G where
+  algorithm_iff_active_path := G.dSeparated_iff_pathDSeparated
+
 end ObservedGraph
 
 /-- Compile an executable rule side condition to its path form using the
-proved (one-way) algorithm soundness theorem. -/
+checked algorithm-path correspondence. -/
 def DoRuleApplication.toPathChecked
     {G : ObservedGraph S} {left right : Kernel S}
     (application : DoRuleApplication G left right) :

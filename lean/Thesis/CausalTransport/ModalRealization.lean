@@ -25,7 +25,8 @@ certificate presentation.
 structure OperationRealizedCertificateCore
     (sound : PublishedSoundness S G) (sourceTerm : ProbabilityTerm S)
     (operationKernel : Kernel S) (Certificate : Type u)
-    (toIdentification : Certificate -> IdentificationCertificate G sourceTerm) where
+    (toIdentification : Certificate ->
+      IdentificationCertificate (GraphModelClass.all G) sourceTerm) where
   certificate : Certificate
   trace : ModalDerivationTrace G (toIdentification certificate).derivation
   realized : forall (model : ExactModel S) (compatible : Compatible model G)
@@ -45,18 +46,18 @@ structure OperationRealizedCertificate
     (sound : PublishedSoundness S G) (sourceTerm : ProbabilityTerm S)
     (operationKernel : Kernel S) extends
       OperationRealizedCertificateCore sound sourceTerm operationKernel
-        (IdentificationCertificate G sourceTerm) (fun certificate => certificate)
+        (IdentificationCertificate (GraphModelClass.all G) sourceTerm) (fun certificate => certificate)
 
 structure OperationRealizedJointCertificate
     (sound : PublishedSoundness S G) (query : JointKernelQuery S) extends
       OperationRealizedCertificateCore sound query.sourceTerm query.operationKernel
-        (JointIdentificationCertificate G query)
+        (JointIdentificationCertificate (GraphModelClass.all G) query)
         (fun certificate => certificate.toGeneric)
 
 structure OperationRealizedConditionalCertificate
     (sound : PublishedSoundness S G) (query : ConditionalKernelQuery S) extends
       OperationRealizedCertificateCore sound query.sourceTerm query.operationKernel
-        (ConditionalIdentificationCertificate G query)
+        (ConditionalIdentificationCertificate (GraphModelClass.all G) query)
         (fun certificate => certificate.toGeneric)
 
 def OperationRealizedJointCertificate.toGeneric

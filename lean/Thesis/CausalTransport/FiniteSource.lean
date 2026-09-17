@@ -740,10 +740,10 @@ noncomputable def FiniteSourceCounterexample.toTarget
     Counterexample G.interpret query where
   left := counterexample.left.interpret
   right := counterexample.right.interpret
-  left_compatible :=
+  left_mem :=
     (finiteSourceCompatible_iff counterexample.left G).mp
       counterexample.left_compatible
-  right_compatible :=
+  right_mem :=
     (finiteSourceCompatible_iff counterexample.right G).mp
       counterexample.right_compatible
   observationally_equal :=
@@ -1117,7 +1117,7 @@ structure FiniteSourceConditionalCertificate (G : FiniteTableGraph T)
 
 noncomputable def FiniteSourceJointCertificate.toPublished
     (certificate : FiniteSourceJointCertificate G correct query) :
-    PublishedJointCertificate G.interpret correct query where
+    PublishedJointCertificate (GraphModelClass.all G.interpret) correct query where
   formula := certificate.formula
   actionFree := certificate.actionFree
   derivation := certificate.derivation
@@ -1132,7 +1132,8 @@ noncomputable def FiniteSourceJointCertificate.toPublished
 
 noncomputable def FiniteSourceConditionalCertificate.toPublished
     (certificate : FiniteSourceConditionalCertificate G correct query) :
-    PublishedConditionalCertificate G.interpret correct query where
+    PublishedConditionalCertificate (GraphModelClass.all G.interpret) correct
+      query where
   formula := certificate.formula
   actionFree := certificate.actionFree
   derivation := certificate.derivation
@@ -1261,7 +1262,7 @@ theorem FiniteSourceConditionalCertificate.source_identifiable
 
 noncomputable def PublishedFiniteSourceCompleteness.toPublished
     (published : PublishedFiniteSourceCompleteness T G) :
-    PublishedCompleteness T.toObserved G.interpret where
+    PublishedCompleteness (GraphModelClass.all G.interpret) where
   dseparation := published.dseparation
   joint_complete := by
     intro query identifiable
@@ -1282,10 +1283,12 @@ theorem finiteSource_completeness_transport
     (published : PublishedFiniteSourceCompleteness T G) :
     (forall query,
       TypeTheoreticIdentifiable G.interpret query ->
-        Nonempty (EncodedJointDerivation G.interpret query)) /\
+        Nonempty (EncodedJointDerivation (GraphModelClass.all G.interpret)
+          query)) /\
     (forall query,
       TypeTheoreticConditionalIdentifiable G.interpret query ->
-        Nonempty (EncodedConditionalDerivation G.interpret query)) /\
+        Nonempty (EncodedConditionalDerivation
+          (GraphModelClass.all G.interpret) query)) /\
     (forall query, HedgeWitness G.interpret query ->
       Not (TypeTheoreticIdentifiable G.interpret query)) :=
   finite_causal_completeness_transport published.toPublished
@@ -1295,7 +1298,8 @@ theorem finiteSource_transported_joint_iff
     (sound : PublishedFiniteSourceSoundness T G)
     (query : JointKernelQuery T.toObserved) :
     TypeTheoreticIdentifiable G.interpret query <->
-      Nonempty (EncodedJointDerivation G.interpret query) :=
+      Nonempty (EncodedJointDerivation (GraphModelClass.all G.interpret)
+        query) :=
   transported_joint_iff complete.toPublished sound.toPublished query
 
 theorem finiteSource_transported_conditional_iff
@@ -1303,7 +1307,8 @@ theorem finiteSource_transported_conditional_iff
     (sound : PublishedFiniteSourceSoundness T G)
     (query : ConditionalKernelQuery T.toObserved) :
     TypeTheoreticConditionalIdentifiable G.interpret query <->
-      Nonempty (EncodedConditionalDerivation G.interpret query) :=
+      Nonempty (EncodedConditionalDerivation
+        (GraphModelClass.all G.interpret) query) :=
   transported_conditional_iff complete.toPublished sound.toPublished query
 
 end Causality

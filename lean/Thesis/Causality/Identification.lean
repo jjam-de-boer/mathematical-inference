@@ -9,9 +9,10 @@ open Probability
 Intrinsic finite-SCM query and identifiability semantics.
 
 This module contains the graph-indexed model class, query languages, semantic
-equivalence notions, finite counterexamples and hedge syntax.  External
-published theorem interfaces and certificate transport live separately in
-`Thesis.CausalTransport.Correspondence`.
+equivalence notions, finite counterexamples and hedge syntax.  Executable
+c-component search and the Shpitser–Pearl ID recursion live in
+`IdentificationSearch`.  External published theorem interfaces and certificate
+transport live separately in `Thesis.CausalTransport.Correspondence`.
 -/
 
 def AssignmentsAgreeOn (nodes : NodeSet S)
@@ -366,60 +367,176 @@ def Compatible (M : ExactModel S) (G : ObservedGraph S) : Prop :=
 def ObservationallyEquivalent (M N : ExactModel S) : Prop :=
   ProbabilityTerm.ObservationalAgreement M N
 
-/-- Event-level identifiability is the derived fixed-event application notion. -/
-def EventIdentifiable (G : ObservedGraph S) (q : InterventionalQuery S) : Prop :=
+/--
+Strict positivity of the observed joint.
+
+Every complete observed assignment carries positive mass.  Sequential
+observational conditionals used by ID/IDC are then defined at every
+reference assignment.  This is a regularity hypothesis of identification,
+not a constraint on the SCM layer: `Compatible` continues to admit zeros.
+-/
+def ObservationallyPositive (M : ExactModel S) : Prop :=
+  forall assignment : S.Assignment,
+    0 <
+      (M.observationalDist.probVal
+        (FiniteProbRecord.singletonEvent assignment)).num
+
+/--
+Every observational cylinder inherits strict positivity from the atoms.
+
+A sequential conditional `P(v_i | earlier)` has denominator equal to a
+cylinder on the conditioner set.  Under `ObservationallyPositive` that
+denominator is therefore never zero, so ID's chain-rule factors are defined
+at every reference assignment.
+-/
+theorem ObservationallyPositive.cylinder_positive
+    {M : ExactModel S} (positive : ObservationallyPositive M)
+    (nodes : NodeSet S) (reference : S.Assignment) :
+    0 <
+      (M.observationalDist.probVal
+        (Kernel.agreesOn nodes reference)).num := by
+  have subset : forall sample,
+      FiniteProbRecord.singletonEvent reference sample = true ->
+        Kernel.agreesOn nodes reference sample = true := by
+    intro sample hSingleton
+    have same : sample = reference := by
+      simpa [FiniteProbRecord.singletonEvent] using hSingleton
+    simpa [same] using Kernel.agreesOn_refl nodes reference
+  have mono :
+      (M.observationalDist.probVal
+        (FiniteProbRecord.singletonEvent reference)).num ≤
+        (M.observationalDist.probVal
+          (Kernel.agreesOn nodes reference)).num :=
+    FiniteProbRecord.eventMass_mono M.observationalDist.atoms
+      (FiniteProbRecord.singletonEvent reference)
+      (Kernel.agreesOn nodes reference) subset
+  exact Nat.lt_of_lt_of_le (positive reference) mono
+
+/--
+A selected class of exact models over one observed ADMG.
+
+Identification, certificates, and completeness are stated relative to such
+a class.  The SCM layer (`Compatible`) stays general; positivity and other
+regularity hypotheses are added here and then specialised.
+-/
+structure GraphModelClass.{u} {S : ObservedSignature.{u}}
+    (G : ObservedGraph S) where
+  Mem : ExactModel.{u} S -> Prop
+  mem_compatible :
+    forall (model : ExactModel.{u} S), Mem model -> Compatible model G
+
+namespace GraphModelClass
+
+variable {S : ObservedSignature}
+
+/-- Every canonical semi-Markovian model with the given projected graph. -/
+def all (G : ObservedGraph S) : GraphModelClass G where
+  Mem := fun model => Compatible model G
+  mem_compatible := fun _model member => member
+
+/--
+The classical identification class: compatible models whose observed joint
+is strictly positive.  Shpitser–Pearl / Huang–Valtorta completeness is
+stated for this class, once the signature is also `ValueRich`.
+-/
+def positive (G : ObservedGraph S) : GraphModelClass G where
+  Mem := fun model => Compatible model G /\ ObservationallyPositive model
+  mem_compatible := fun _model member => member.1
+
+/-- Class `C` is contained in class `D`. -/
+def Subset {G : ObservedGraph S} (C D : GraphModelClass G) : Prop :=
+  forall model, C.Mem model -> D.Mem model
+
+theorem positive_subset_all (G : ObservedGraph S) :
+    (positive G).Subset (all G) := by
+  intro model member
+  exact member.1
+
+/-- Joint identifiability inside a selected model class. -/
+def identifiable {G : ObservedGraph S} (C : GraphModelClass G)
+    (q : JointKernelQuery S) : Prop :=
   forall (M N : ExactModel S),
-    Compatible M G ->
-    Compatible N G ->
+    C.Mem M ->
+    C.Mem N ->
+    ObservationallyEquivalent M N ->
+    q.ValueEquivalent M N
+
+/--
+Conditional identifiability inside a selected model class.
+
+As in the unrestricted case, this is agreement on common support rather
+than full partial-result equality.
+-/
+def conditionalIdentifiable {G : ObservedGraph S} (C : GraphModelClass G)
+    (q : ConditionalKernelQuery S) : Prop :=
+  forall (M N : ExactModel S),
+    C.Mem M ->
+    C.Mem N ->
+    ObservationallyEquivalent M N ->
+    q.ValueEquivalent M N
+
+def eventIdentifiable {G : ObservedGraph S} (C : GraphModelClass G)
+    (q : InterventionalQuery S) : Prop :=
+  forall (M N : ExactModel S),
+    C.Mem M ->
+    C.Mem N ->
     ObservationallyEquivalent M N ->
     QProb.Equiv (q.value M) (q.value N)
 
-def EventConditionalSupported (G : ObservedGraph S)
+def eventConditionalSupported {G : ObservedGraph S} (C : GraphModelClass G)
     (q : ConditionalQuery S) : Prop :=
-  forall M : ExactModel S,
-    Compatible M G -> 0 < (q.denominator M).num
+  forall M : ExactModel S, C.Mem M -> 0 < (q.denominator M).num
 
-def EventConditionalIdentifiable (G : ObservedGraph S)
+def eventConditionalIdentifiable {G : ObservedGraph S} (C : GraphModelClass G)
     (q : ConditionalQuery S) : Prop :=
   forall (M N : ExactModel S),
-    Compatible M G ->
-    Compatible N G ->
+    C.Mem M ->
+    C.Mem N ->
     ObservationallyEquivalent M N ->
     0 < (q.denominator M).num ->
     0 < (q.denominator N).num ->
     q.ValueEquivalent M N
 
-/-- Distributional identifiability is the notion used by the published theorem. -/
-def Identifiable (G : ObservedGraph S) (q : JointKernelQuery S) : Prop :=
-  forall (M N : ExactModel S),
-    Compatible M G ->
-    Compatible N G ->
-    ObservationallyEquivalent M N ->
-    q.ValueEquivalent M N
+/-- Agreement on a larger class implies agreement on every subclass. -/
+theorem identifiable_of_subset {G : ObservedGraph S}
+    {C D : GraphModelClass G}
+    (subset : C.Subset D) (q : JointKernelQuery S)
+    (identifiable : D.identifiable q) : C.identifiable q := by
+  intro left right leftMem rightMem observational
+  exact identifiable left right (subset left leftMem) (subset right rightMem)
+    observational
 
-/--
-A conditional kernel is identifiable when every pair of compatible,
-observationally equivalent models agrees at each assignment supported by both
-models.  This common-support notion does not require global support or equality
-of support domains; `ConditionalKernelQuery.ResultEquivalent` expresses the
-stronger full partial-result comparison.
--/
-def ConditionalIdentifiable (G : ObservedGraph S)
-    (q : ConditionalKernelQuery S) : Prop :=
-  forall (M N : ExactModel S),
-    Compatible M G ->
-    Compatible N G ->
-    ObservationallyEquivalent M N ->
-    q.ValueEquivalent M N
+theorem conditionalIdentifiable_of_subset {G : ObservedGraph S}
+    {C D : GraphModelClass G}
+    (subset : C.Subset D) (q : ConditionalKernelQuery S)
+    (identifiable : D.conditionalIdentifiable q) :
+    C.conditionalIdentifiable q := by
+  intro left right leftMem rightMem observational
+  exact identifiable left right (subset left leftMem) (subset right rightMem)
+    observational
 
-/-- Full kernel identifiability entails every local fixed-event instance. -/
-theorem kernel_identifiable_implies_event_identifiable
-    (G : ObservedGraph S) (q : InterventionalQuery S)
-    (kernelIdentifiable : Identifiable G q.kernelQuery) :
-    EventIdentifiable G q := by
-  intro left right leftCompatible rightCompatible observational
-  have kernelEquivalent := kernelIdentifiable left right leftCompatible
-    rightCompatible observational
+/-- Identifiability in the unrestricted compatible class specialises to the
+positive subclass. -/
+theorem positive_identifiable_of_all (G : ObservedGraph S)
+    (q : JointKernelQuery S)
+    (identifiable : (all G).identifiable q) :
+    (positive G).identifiable q :=
+  identifiable_of_subset (positive_subset_all G) q identifiable
+
+theorem positive_conditionalIdentifiable_of_all (G : ObservedGraph S)
+    (q : ConditionalKernelQuery S)
+    (identifiable : (all G).conditionalIdentifiable q) :
+    (positive G).conditionalIdentifiable q :=
+  conditionalIdentifiable_of_subset (positive_subset_all G) q identifiable
+
+/-- Full kernel identifiability in a class entails every local fixed-event instance. -/
+theorem kernel_identifiable_implies_event {G : ObservedGraph S}
+    (C : GraphModelClass G) (q : InterventionalQuery S)
+    (kernelIdentifiable : C.identifiable q.kernelQuery) :
+    C.eventIdentifiable q := by
+  intro left right leftMem rightMem observational
+  have kernelEquivalent := kernelIdentifiable left right leftMem rightMem
+    observational
   have projectedEquivalent : QProb.Equiv
       ((q.projectedDistribution left).probVal q.event)
       ((q.projectedDistribution right).probVal q.event) :=
@@ -433,21 +550,81 @@ theorem kernel_identifiable_implies_event_identifiable
     (QProb.equiv_trans projectedEquivalent
       (q.projectedEvent_equiv_value right))
 
-/-- An explicit finite rational witness that a query is not identifiable. -/
-structure Counterexample (G : ObservedGraph S) (q : JointKernelQuery S) where
+end GraphModelClass
+
+/-- Event-level identifiability is the derived fixed-event application notion. -/
+abbrev EventIdentifiable (G : ObservedGraph S) (q : InterventionalQuery S) :
+    Prop :=
+  (GraphModelClass.all G).eventIdentifiable q
+
+abbrev EventConditionalSupported (G : ObservedGraph S)
+    (q : ConditionalQuery S) : Prop :=
+  (GraphModelClass.all G).eventConditionalSupported q
+
+abbrev EventConditionalIdentifiable (G : ObservedGraph S)
+    (q : ConditionalQuery S) : Prop :=
+  (GraphModelClass.all G).eventConditionalIdentifiable q
+
+/--
+Distributional identifiability over every compatible model, including those
+with observational zeros.  Classical completeness is *not* claimed for this
+class; use `GraphModelClass.positive` for the Shpitser–Pearl specialisation.
+-/
+abbrev Identifiable (G : ObservedGraph S) (q : JointKernelQuery S) : Prop :=
+  (GraphModelClass.all G).identifiable q
+
+/--
+A conditional kernel is identifiable when every pair of compatible,
+observationally equivalent models agrees at each assignment supported by both
+models.  This common-support notion does not require global support or equality
+of support domains; `ConditionalKernelQuery.ResultEquivalent` expresses the
+stronger full partial-result comparison.
+-/
+abbrev ConditionalIdentifiable (G : ObservedGraph S)
+    (q : ConditionalKernelQuery S) : Prop :=
+  (GraphModelClass.all G).conditionalIdentifiable q
+
+/-- Full kernel identifiability entails every local fixed-event instance. -/
+theorem kernel_identifiable_implies_event_identifiable
+    (G : ObservedGraph S) (q : InterventionalQuery S)
+    (kernelIdentifiable : Identifiable G q.kernelQuery) :
+    EventIdentifiable G q :=
+  (GraphModelClass.all G).kernel_identifiable_implies_event q kernelIdentifiable
+
+/--
+An explicit finite rational witness that a query is not identifiable inside
+a selected model class.  Both models are required to belong to the class, so
+a positivity-restricted completeness package cannot discharge a hedge by
+leaving the regular subclass.
+-/
+structure CounterexampleIn {S : ObservedSignature} {G : ObservedGraph S}
+    (C : GraphModelClass G) (q : JointKernelQuery S) where
   left : ExactModel S
   right : ExactModel S
-  left_compatible : Compatible left G
-  right_compatible : Compatible right G
+  left_mem : C.Mem left
+  right_mem : C.Mem right
   observationally_equal : ObservationallyEquivalent left right
   query_separated : Not (q.ValueEquivalent left right)
 
-theorem Counterexample.not_identifiable (C : Counterexample G q) :
-    Not (Identifiable G q) := by
-  intro h
-  exact C.query_separated
-    (h C.left C.right C.left_compatible C.right_compatible
-      C.observationally_equal)
+theorem CounterexampleIn.not_identifiable
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {q : JointKernelQuery S}
+    (counterexample : CounterexampleIn C q) :
+    Not (C.identifiable q) := by
+  intro identifiable
+  exact counterexample.query_separated
+    (identifiable counterexample.left counterexample.right
+      counterexample.left_mem counterexample.right_mem
+      counterexample.observationally_equal)
+
+/-- Unrestricted compatible counterexample, recovered as the `all` class. -/
+abbrev Counterexample (G : ObservedGraph S) (q : JointKernelQuery S) :=
+  CounterexampleIn (GraphModelClass.all G) q
+
+theorem Counterexample.not_identifiable
+    (counterexample : Counterexample G q) :
+    Not (Identifiable G q) :=
+  CounterexampleIn.not_identifiable counterexample
 
 /-! ## Finite c-components, c-forests, and hedges -/
 
@@ -459,6 +636,28 @@ inductive DirectedReachableBy (S : ObservedSignature)
       DirectedReachableBy S edge i j -> edge j k ->
         DirectedReachableBy S edge i k
 
+namespace DirectedReachableBy
+
+theorem trans {S : ObservedSignature}
+    {edge : Fin S.count -> Fin S.count -> Prop}
+    {i j k : Fin S.count}
+    (first : DirectedReachableBy S edge i j)
+    (second : DirectedReachableBy S edge j k) :
+    DirectedReachableBy S edge i k := by
+  induction second with
+  | refl => exact first
+  | tail _prev ek ih => exact .tail ih ek
+
+/-- Prepend a single edge onto an existing directed walk. -/
+theorem step_left {S : ObservedSignature}
+    {edge : Fin S.count -> Fin S.count -> Prop}
+    {i j k : Fin S.count}
+    (first : edge i j) (rest : DirectedReachableBy S edge j k) :
+    DirectedReachableBy S edge i k :=
+  trans (.tail (.refl i) first) rest
+
+end DirectedReachableBy
+
 inductive BidirectedConnectedWithin (G : ObservedGraph S) (nodes : NodeSet S) :
     Fin S.count -> Fin S.count -> Prop
   | refl {i} : nodes i = true -> BidirectedConnectedWithin G nodes i i
@@ -466,6 +665,43 @@ inductive BidirectedConnectedWithin (G : ObservedGraph S) (nodes : NodeSet S) :
       BidirectedConnectedWithin G nodes i j ->
       nodes k = true -> G.bidirected j k = true ->
       BidirectedConnectedWithin G nodes i k
+
+namespace BidirectedConnectedWithin
+
+theorem mem_left {G : ObservedGraph S} {nodes : NodeSet S} {i j : Fin S.count}
+    (h : BidirectedConnectedWithin G nodes i j) : nodes i = true := by
+  induction h with
+  | refl selected => exact selected
+  | tail _prev _selected _edge ih => exact ih
+
+theorem mem_right {G : ObservedGraph S} {nodes : NodeSet S} {i j : Fin S.count}
+    (h : BidirectedConnectedWithin G nodes i j) : nodes j = true := by
+  induction h with
+  | refl selected => exact selected
+  | tail _prev selected _edge _ih => exact selected
+
+theorem trans {G : ObservedGraph S} {nodes : NodeSet S}
+    {i j k : Fin S.count}
+    (first : BidirectedConnectedWithin G nodes i j)
+    (second : BidirectedConnectedWithin G nodes j k) :
+    BidirectedConnectedWithin G nodes i k := by
+  induction second with
+  | refl _selected => exact first
+  | tail _prev selected edge ih => exact .tail ih selected edge
+
+/-- Bidirected walks reverse because the ADMG bidirected relation is symmetric. -/
+theorem symm {G : ObservedGraph S} {nodes : NodeSet S} {i j : Fin S.count}
+    (h : BidirectedConnectedWithin G nodes i j) :
+    BidirectedConnectedWithin G nodes j i := by
+  induction h with
+  | refl selected => exact .refl selected
+  | tail prev selected edge ih =>
+      exact trans
+        (.tail (.refl selected) (mem_right prev)
+          (G.bidirected_symmetric edge))
+        ih
+
+end BidirectedConnectedWithin
 
 def BidirectedComponent (G : ObservedGraph S) (nodes : NodeSet S) : Prop :=
   (Exists fun i => nodes i = true) /\
@@ -488,20 +724,72 @@ def IsRootIn (_G : ObservedGraph S) (nodes : NodeSet S)
     forall child,
       nodes child = true -> S.directed root child = false
 
-structure CForest (G : ObservedGraph S)
-    (nodes roots : NodeSet S) : Prop where
-  component : BidirectedComponent G nodes
-  at_most_one_child : AtMostOneDirectedChild G nodes
-  roots_exact : forall i, roots i = true <-> IsRootIn G nodes i
+/--
+Kept directed successor of a c-forest.  `none` is a forest root, or a vertex
+outside the selected set.  At most one child is structural in `Option`.
+-/
+abbrev ForestChild (S : ObservedSignature) :=
+  Fin S.count -> Option (Fin S.count)
 
-/-- The finite hedge obstruction for an ordinary interventional query. -/
+/-- Restrict a child map to a vertex subset: unselected parents keep `none`. -/
+def restrictChild (nodes : NodeSet S) (child : ForestChild S) :
+    ForestChild S :=
+  fun i => if nodes i then child i else none
+
+theorem restrictChild_of_false {nodes : NodeSet S} {child : ForestChild S}
+    {i : Fin S.count} (h : nodes i = false) :
+    restrictChild nodes child i = none := by
+  unfold restrictChild
+  simp [h]
+
+theorem restrictChild_of_true {nodes : NodeSet S} {child : ForestChild S}
+    {i : Fin S.count} (h : nodes i = true) :
+    restrictChild nodes child i = child i := by
+  unfold restrictChild
+  simp [h]
+
+/--
+A C-forest is a subgraph, not an induced node selection: bidirected edges
+stay those of `G` on `nodes`, while directed edges are the kept child map.
+-/
+structure CForest (G : ObservedGraph S)
+    (nodes roots : NodeSet S) (child : ForestChild S) : Prop where
+  component : BidirectedComponent G nodes
+  child_off_set :
+    forall parent, nodes parent = false -> child parent = none
+  child_edge :
+    forall parent c,
+      child parent = some c ->
+        nodes parent = true ∧
+          nodes c = true ∧
+            S.directed parent c = true
+  roots_exact :
+    forall i, roots i = true ↔ (nodes i = true ∧ child i = none)
+
+/-- A subset of a one-child selection still has at most one selected child. -/
+theorem AtMostOneDirectedChild.of_subset {G : ObservedGraph S}
+    {large small : NodeSet S}
+    (h : AtMostOneDirectedChild G large)
+    (sub : NodeSet.Subset small large) :
+    AtMostOneDirectedChild G small := by
+  intro parent child₁ child₂ hp h1 h2 e1 e2
+  exact h parent child₁ child₂ (sub parent hp) (sub child₁ h1) (sub child₂ h2) e1 e2
+
+/--
+The finite hedge obstruction for an ordinary interventional query.
+
+`child` is stored once, on the large forest.  The small forest is the
+restriction of that map to a child-closed subset of `large \ X`, so `F'` is
+a subgraph of `F` in the 2006 sense.
+-/
 structure HedgeWitness (G : ObservedGraph S)
     (q : JointKernelQuery S) where
   large : NodeSet S
   small : NodeSet S
   roots : NodeSet S
-  large_forest : CForest G large roots
-  small_forest : CForest G small roots
+  child : ForestChild S
+  large_forest : CForest G large roots child
+  small_forest : CForest G small roots (restrictChild small child)
   small_subset_large : NodeSet.Subset small large
   large_meets_intervention : NodeSet.Meets large q.action
   small_avoids_intervention : NodeSet.Disjoint small q.action
@@ -546,6 +834,19 @@ abbrev TypeTheoreticConditionalIdentifiable (G : ObservedGraph S)
 
 abbrev TypeTheoreticEventIdentifiable (G : ObservedGraph S)
     (q : InterventionalQuery S) : Prop := EventIdentifiable G q
+
+/-- Type-theoretic identifiability inside a selected model class. -/
+abbrev TypeTheoreticIdentifiableIn {S : ObservedSignature}
+    {G : ObservedGraph S} (C : GraphModelClass G)
+    (q : JointKernelQuery S) : Prop := C.identifiable q
+
+abbrev TypeTheoreticConditionalIdentifiableIn {S : ObservedSignature}
+    {G : ObservedGraph S} (C : GraphModelClass G)
+    (q : ConditionalKernelQuery S) : Prop := C.conditionalIdentifiable q
+
+abbrev TypeTheoreticEventIdentifiableIn {S : ObservedSignature}
+    {G : ObservedGraph S} (C : GraphModelClass G)
+    (q : InterventionalQuery S) : Prop := C.eventIdentifiable q
 
 theorem typeTheoretic_kernel_identifiable_implies_event
     (G : ObservedGraph S) (q : InterventionalQuery S)
