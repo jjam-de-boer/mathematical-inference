@@ -42,6 +42,30 @@ theorem eventMass_congr (atoms : List (Ω × Nat)) (E F : Event Ω)
               (if F value then weight + eventMass atoms F else eventMass atoms F)
           rw [h value, ih]
 
+/-- Two-atom event mass is the sum of the included weights. -/
+theorem eventMass_pair (x y : Ω) (wx wy : Nat) (event : Event Ω) :
+    eventMass [(x, wx), (y, wy)] event =
+      (if event x then wx else 0) + (if event y then wy else 0) := by
+  cases hx : event x <;> cases hy : event y <;> simp [eventMass, hx, hy]
+
+/-- Mass is monotone in the Boolean event: more outcomes cannot lose weight. -/
+theorem eventMass_mono (atoms : List (Ω × Nat)) (E F : Event Ω)
+    (h : forall value, E value = true -> F value = true) :
+    eventMass atoms E ≤ eventMass atoms F := by
+  induction atoms with
+  | nil => exact Nat.le_refl 0
+  | cons atom atoms ih =>
+      rcases atom with ⟨value, weight⟩
+      cases hE : E value
+      · cases hF : F value
+        · simp [eventMass, hE, hF]
+          exact ih
+        · simp [eventMass, hE, hF]
+          exact Nat.le_trans ih (Nat.le_add_left (eventMass atoms F) weight)
+      · have hF : F value = true := h value hE
+        simp [eventMass, hE, hF]
+        exact ih
+
 /-- Expand a weighted list into its equivalent unit-cell urn presentation. -/
 def expand : List (Ω × Nat) → List Ω
   | [] => []
@@ -290,6 +314,32 @@ theorem eventMass_weightedCartesian (left : List (Ω × Nat))
           (fun rightValue => (value, rightValue)) weight, ih]
       cases h : leftEvent value <;>
         simp [eventMass, eventMass_false, h, Nat.add_mul]
+
+/-- Event mass of a cartesian product, expanded along the left factor.
+Each left atom contributes its weight times the mass of the slice it
+determines on the right. -/
+theorem eventMass_weightedCartesian_bind
+    (left : List (Ω × Nat)) (right : List (X × Nat))
+    (event : Event (Ω × X)) :
+    eventMass (weightedCartesian left right) event =
+      (left.map fun leftAtom =>
+        leftAtom.2 * eventMass right (fun x => event (leftAtom.1, x))).sum := by
+  induction left with
+  | nil =>
+      simp [weightedCartesian, eventMass]
+  | cons atom atoms ih =>
+      rcases atom with ⟨value, weight⟩
+      change
+        eventMass
+            (right.map (fun rightAtom =>
+              ((value, rightAtom.1), weight * rightAtom.2)) ++
+              weightedCartesian atoms right) event =
+          weight * eventMass right (fun x => event (value, x)) +
+            (atoms.map fun leftAtom =>
+              leftAtom.2 * eventMass right (fun x => event (leftAtom.1, x))).sum
+      rw [eventMass_append,
+        eventMass_map_weight right (fun rightValue => (value, rightValue)) weight,
+        ih]
 
 end FiniteProbRecord
 

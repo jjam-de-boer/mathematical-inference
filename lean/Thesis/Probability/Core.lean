@@ -849,6 +849,18 @@ theorem mul_congr {p p' q q' : QProb}
     _ = p'.num * q'.num * (p.den * q.den) :=
       (mul_reorder_four p'.num q'.num p.den q.den).symm
 
+/-- Scaling by a natural factor preserves cross-multiplication equivalence. -/
+theorem scale_congr (w : Nat) {p q : QProb} (hpq : Equiv p q) :
+    Equiv (scale w p) (scale w q) := by
+  change w * p.num * q.den = w * q.num * p.den
+  calc
+    w * p.num * q.den = w * (p.num * q.den) := by
+      ac_rfl
+    _ = w * (q.num * p.den) := by
+      rw [hpq]
+    _ = w * q.num * p.den := by
+      ac_rfl
+
 theorem mul_comm (left right : QProb) :
     Equiv (mul left right) (mul right left) := by
   simp only [Equiv, mul]
@@ -993,6 +1005,129 @@ theorem scale_forced_ratio {N k : Nat} (hN : 0 < N)
       rw [Nat.mul_comm cell.num N]
     _ = k * cell.den := by
       rw [hwhole]
+
+/-- A natural number as a rational presentation with denominator one. -/
+def ofNat (n : Nat) : QProb where
+  num := n
+  den := 1
+  den_pos := Nat.succ_pos 0
+
+/-- Addition of whole-number presentations is addition of the numbers. -/
+theorem ofNat_add (a b : Nat) :
+    Equiv (add (ofNat a) (ofNat b)) (ofNat (a + b)) := by
+  simp [add, ofNat, Equiv]
+
+/-- Reflexivity of the cross-multiplication order. -/
+theorem le_refl (p : QProb) : LE p p := by
+  simp [LE]
+
+/-- Transitivity of the cross-multiplication order. -/
+theorem le_trans {p q r : QProb} (hpq : LE p q) (hqr : LE q r) :
+    LE p r := by
+  have hcleared :
+      p.num * r.den * q.den ≤ r.num * p.den * q.den := by
+    calc
+      p.num * r.den * q.den = p.num * q.den * r.den := by ac_rfl
+      _ ≤ q.num * p.den * r.den :=
+        Nat.mul_le_mul_right r.den hpq
+      _ = q.num * r.den * p.den := by ac_rfl
+      _ ≤ r.num * q.den * p.den :=
+        Nat.mul_le_mul_right p.den hqr
+      _ = r.num * p.den * q.den := by ac_rfl
+  exact Nat.le_of_mul_le_mul_right hcleared q.den_pos
+
+/--
+Difference of presentations, defined only when `LE q p`.  The numerator is
+the cleared-denominator natural subtraction, so no signed rationals are
+introduced.  Callers retain the inequality witness; the operation is not a
+total inverse of `add` on raw presentations, only up to `Equiv`.
+-/
+def sub (p q : QProb) (_hle : LE q p) : QProb where
+  num := p.num * q.den - q.num * p.den
+  den := p.den * q.den
+  den_pos := Nat.mul_pos p.den_pos q.den_pos
+
+/-- Adding the subtracted presentation recovers the original value. -/
+theorem sub_add (p q : QProb) (hle : LE q p) :
+    Equiv (add (sub p q hle) q) p := by
+  have hle_scaled :
+      q.num * p.den * q.den ≤ p.num * q.den * q.den :=
+    Nat.mul_le_mul_right q.den hle
+  simp only [Equiv, add, sub]
+  calc
+    ((p.num * q.den - q.num * p.den) * q.den + q.num * (p.den * q.den)) *
+        p.den
+        =
+      ((p.num * q.den * q.den - q.num * p.den * q.den) +
+          q.num * p.den * q.den) * p.den := by
+      have hdistrib :
+          (p.num * q.den - q.num * p.den) * q.den =
+            p.num * q.den * q.den - q.num * p.den * q.den :=
+        Nat.mul_sub_right_distrib (p.num * q.den) (q.num * p.den) q.den
+      rw [hdistrib, Nat.mul_assoc q.num p.den q.den]
+    _ = (p.num * q.den * q.den) * p.den := by
+      rw [Nat.sub_add_cancel hle_scaled]
+    _ = p.num * (p.den * q.den * q.den) := by ac_rfl
+
+/-- Witnessed subtraction respects presentation equivalence. -/
+theorem sub_congr {p p' q q' : QProb}
+    (hp : Equiv p p') (hq : Equiv q q')
+    (hle : LE q p) (hle' : LE q' p') :
+    Equiv (sub p q hle) (sub p' q' hle') := by
+  have hA :
+      p.num * q.den * (p'.den * q'.den) =
+        p'.num * q'.den * (p.den * q.den) := by
+    calc
+      p.num * q.den * (p'.den * q'.den) =
+          (p.num * p'.den) * (q.den * q'.den) :=
+        mul_reorder_four p.num q.den p'.den q'.den
+      _ = (p'.num * p.den) * (q.den * q'.den) := by rw [hp]
+      _ = (p'.num * p.den) * (q'.den * q.den) := by
+        rw [Nat.mul_comm q.den q'.den]
+      _ = p'.num * q'.den * (p.den * q.den) :=
+        mul_reorder_four p'.num p.den q'.den q.den
+  have hB :
+      q.num * p.den * (p'.den * q'.den) =
+        q'.num * p'.den * (p.den * q.den) := by
+    calc
+      q.num * p.den * (p'.den * q'.den) =
+          (q.num * q'.den) * (p.den * p'.den) := by
+        rw [Nat.mul_comm p'.den q'.den]
+        exact mul_reorder_four q.num p.den q'.den p'.den
+      _ = (q'.num * q.den) * (p.den * p'.den) := by rw [hq]
+      _ = (q'.num * q.den) * (p'.den * p.den) := by
+        rw [Nat.mul_comm p.den p'.den]
+      _ = q'.num * p'.den * (q.den * p.den) :=
+        mul_reorder_four q'.num q.den p'.den p.den
+      _ = q'.num * p'.den * (p.den * q.den) := by
+        rw [Nat.mul_comm q.den p.den]
+  have hle_scaled :
+      q.num * p.den * (p'.den * q'.den) ≤
+        p.num * q.den * (p'.den * q'.den) :=
+    Nat.mul_le_mul_right (p'.den * q'.den) hle
+  simp only [Equiv, sub]
+  have hdistrib_left :
+      (p.num * q.den - q.num * p.den) * (p'.den * q'.den) =
+        p.num * q.den * (p'.den * q'.den) -
+          q.num * p.den * (p'.den * q'.den) :=
+    Nat.mul_sub_right_distrib (p.num * q.den) (q.num * p.den)
+      (p'.den * q'.den)
+  have hdistrib_right :
+      (p'.num * q'.den - q'.num * p'.den) * (p.den * q.den) =
+        p'.num * q'.den * (p.den * q.den) -
+          q'.num * p'.den * (p.den * q.den) :=
+    Nat.mul_sub_right_distrib (p'.num * q'.den) (q'.num * p'.den)
+      (p.den * q.den)
+  rw [hdistrib_left, hdistrib_right, hA, hB]
+
+/-- Scaling by a natural factor preserves the cross-multiplication order. -/
+theorem scale_le_scale (k : Nat) {p q : QProb} (hle : LE p q) :
+    LE (scale k p) (scale k q) := by
+  simp only [LE, scale]
+  calc
+    (k * p.num) * q.den = k * (p.num * q.den) := by ac_rfl
+    _ ≤ k * (q.num * p.den) := Nat.mul_le_mul_left k hle
+    _ = (k * q.num) * p.den := by ac_rfl
 
 end QProb
 
