@@ -61,7 +61,7 @@ decidable equality on inputs, probability terms, or failure records.
 -/
 inductive FirstFailureAt {S : ObservedSignature} {α : Type u}
     (run : α -> IdentificationOutcome S)
-    (fail : IdentificationFail S) : List α -> α -> Prop
+    (fail : IdentificationFail S) : List α -> α -> Type u
   | here
       (item : α) (rest : List α)
       (result : run item = IdentificationOutcome.failed fail) :
@@ -106,14 +106,14 @@ A failed collection selects an ordered first-failure witness in the original
 input list.  Generalizing the accumulator makes the result reusable both for
 `combine` and for recursive proofs about `collect` itself.
 -/
-theorem firstFailureAt_of_collect_map_eq_failed
+noncomputable def firstFailureAt_of_collect_map_eq_failed
     {S : ObservedSignature} {α : Type u}
     (run : α -> IdentificationOutcome S) (inputs : List α)
     (assemble : List (ProbabilityTerm S) -> ProbabilityTerm S)
     (acc : List (ProbabilityTerm S)) {fail : IdentificationFail S}
     (result : collect assemble (inputs.map run) acc =
       IdentificationOutcome.failed fail) :
-    Exists fun selected => FirstFailureAt run fail inputs selected := by
+    Sigma fun selected => FirstFailureAt run fail inputs selected := by
   induction inputs generalizing acc with
   | nil =>
       simp [collect] at result
@@ -157,14 +157,14 @@ theorem collect_map_eq_failed_of_firstFailureAt
       simpa [collect, result] using tailResult (acc := term :: acc)
 
 /-- `combine` exposes the first failing input, not merely an arbitrary member. -/
-theorem firstFailureAt_of_combine_map_eq_failed
+noncomputable def firstFailureAt_of_combine_map_eq_failed
     {S : ObservedSignature} {α : Type u}
     (run : α -> IdentificationOutcome S) (inputs : List α)
     (assemble : List (ProbabilityTerm S) -> ProbabilityTerm S)
     {fail : IdentificationFail S}
     (result : combine (inputs.map run) assemble =
       IdentificationOutcome.failed fail) :
-    Exists fun selected => FirstFailureAt run fail inputs selected :=
+    Sigma fun selected => FirstFailureAt run fail inputs selected :=
   firstFailureAt_of_collect_map_eq_failed run inputs assemble [] result
 
 /-- An ordered first-failure witness reconstructs the result of `combine`. -/
@@ -186,10 +186,11 @@ theorem combine_map_eq_failed_iff_firstFailureAt
     (assemble : List (ProbabilityTerm S) -> ProbabilityTerm S)
     (fail : IdentificationFail S) :
     combine (inputs.map run) assemble = IdentificationOutcome.failed fail ↔
-      Exists fun selected => FirstFailureAt run fail inputs selected :=
-  ⟨firstFailureAt_of_combine_map_eq_failed run inputs assemble,
+      Nonempty (Sigma fun selected => FirstFailureAt run fail inputs selected) :=
+  ⟨fun result =>
+      ⟨firstFailureAt_of_combine_map_eq_failed run inputs assemble result⟩,
     fun witness => by
-      rcases witness with ⟨selected, path⟩
+      rcases witness with ⟨⟨selected, path⟩⟩
       exact combine_map_eq_failed_of_firstFailureAt run assemble path⟩
 
 /--
@@ -220,6 +221,78 @@ theorem combine_map_identified
       IdentificationOutcome.identified (assemble terms) := by
   simpa [combine] using collect_map_identified terms [] assemble
 
+/-!
+The search module's `collect_eq_identified` exposes its aligned terms through
+`Exists`, which is appropriate for proposition-level inversion but cannot feed
+a Type-valued structural trace.  The two definitions below perform the same
+finite-list inversion into dependent data.  Their noncomputable marker is only
+a Lean code-generator limitation for the dependent list recursor; the bodies
+use structural recursion and constructor equality, with no classical axiom.
+-/
+
+/-- Type-valued alignment data for a successful `collect` invocation. -/
+structure CollectedIdentifiedData
+    {S : ObservedSignature}
+    (assemble : List (ProbabilityTerm S) -> ProbabilityTerm S)
+    (pending : List (IdentificationOutcome S))
+    (acc : List (ProbabilityTerm S)) (term : ProbabilityTerm S) where
+  terms : List (ProbabilityTerm S)
+  pending_eq : pending = terms.map IdentificationOutcome.identified
+  term_eq : term = assemble (acc.reverse ++ terms)
+
+/-- Construct the Type-valued alignment data for a successful collection. -/
+noncomputable def collectIdentifiedData
+    {S : ObservedSignature}
+    (assemble : List (ProbabilityTerm S) -> ProbabilityTerm S)
+    (pending : List (IdentificationOutcome S))
+    (acc : List (ProbabilityTerm S)) (term : ProbabilityTerm S)
+    (result : collect assemble pending acc =
+      IdentificationOutcome.identified term) :
+    CollectedIdentifiedData assemble pending acc term := by
+  induction pending generalizing acc term with
+  | nil =>
+      refine ⟨[], rfl, ?_⟩
+      simpa [collect] using result.symm
+  | cons head rest inductionHypothesis =>
+      cases headResult : head with
+      | identified headTerm =>
+          have tailResult :
+              collect assemble rest (headTerm :: acc) =
+                IdentificationOutcome.identified term := by
+            simpa [collect, headResult] using result
+          rcases inductionHypothesis (headTerm :: acc) term tailResult with
+            ⟨terms, restEq, termEq⟩
+          refine ⟨headTerm :: terms, ?_, ?_⟩
+          · simp [restEq]
+          · simpa [List.reverse_cons, List.append_assoc] using termEq
+      | failed fail =>
+          simp [collect, headResult] at result
+      | unfinished =>
+          simp [collect, headResult] at result
+
+/-- Type-valued alignment data for a successful `combine` invocation. -/
+structure CombinedIdentifiedData
+    {S : ObservedSignature}
+    (outcomes : List (IdentificationOutcome S))
+    (assemble : List (ProbabilityTerm S) -> ProbabilityTerm S)
+    (term : ProbabilityTerm S) where
+  terms : List (ProbabilityTerm S)
+  outcomes_eq : outcomes = terms.map IdentificationOutcome.identified
+  term_eq : term = assemble terms
+
+/-- Construct the Type-valued alignment data for a successful combination. -/
+noncomputable def combineIdentifiedData
+    {S : ObservedSignature}
+    (outcomes : List (IdentificationOutcome S))
+    (assemble : List (ProbabilityTerm S) -> ProbabilityTerm S)
+    (term : ProbabilityTerm S)
+    (result : combine outcomes assemble =
+      IdentificationOutcome.identified term) :
+    CombinedIdentifiedData outcomes assemble term := by
+  rcases collectIdentifiedData assemble outcomes [] term result with
+    ⟨terms, outcomesEq, termEq⟩
+  exact ⟨terms, outcomesEq, by simpa using termEq⟩
+
 end IdentificationOutcome
 
 /-!
@@ -235,7 +308,7 @@ namespace IdentificationOutcome
 
 /-- The selected input is the first non-identified factor and is unfinished. -/
 inductive FirstUnfinishedAt {S : ObservedSignature} {α : Type u}
-    (run : α -> IdentificationOutcome S) : List α -> α -> Prop
+    (run : α -> IdentificationOutcome S) : List α -> α -> Type u
   | here
       (item : α) (rest : List α)
       (result : run item = IdentificationOutcome.unfinished) :
@@ -276,14 +349,14 @@ theorem mem {S : ObservedSignature} {α : Type u}
 end FirstUnfinishedAt
 
 /-- A sentinel result of `collect` exposes its first unfinished input. -/
-theorem firstUnfinishedAt_of_collect_map_eq_unfinished
+noncomputable def firstUnfinishedAt_of_collect_map_eq_unfinished
     {S : ObservedSignature} {α : Type u}
     (run : α -> IdentificationOutcome S) (inputs : List α)
     (assemble : List (ProbabilityTerm S) -> ProbabilityTerm S)
     (acc : List (ProbabilityTerm S))
     (result : collect assemble (inputs.map run) acc =
       IdentificationOutcome.unfinished) :
-    Exists fun selected => FirstUnfinishedAt run inputs selected := by
+    Sigma fun selected => FirstUnfinishedAt run inputs selected := by
   induction inputs generalizing acc with
   | nil =>
       simp [collect] at result
@@ -320,13 +393,13 @@ theorem collect_map_eq_unfinished_of_firstUnfinishedAt
       simpa [collect, result] using tailResult (acc := term :: acc)
 
 /-- A sentinel result of `combine` exposes its first unfinished input. -/
-theorem firstUnfinishedAt_of_combine_map_eq_unfinished
+noncomputable def firstUnfinishedAt_of_combine_map_eq_unfinished
     {S : ObservedSignature} {α : Type u}
     (run : α -> IdentificationOutcome S) (inputs : List α)
     (assemble : List (ProbabilityTerm S) -> ProbabilityTerm S)
     (result : combine (inputs.map run) assemble =
       IdentificationOutcome.unfinished) :
-    Exists fun selected => FirstUnfinishedAt run inputs selected :=
+    Sigma fun selected => FirstUnfinishedAt run inputs selected :=
   firstUnfinishedAt_of_collect_map_eq_unfinished run inputs assemble [] result
 
 /-- An ordered unfinished factor reconstructs the sentinel product result. -/
@@ -345,10 +418,12 @@ theorem combine_map_eq_unfinished_iff_firstUnfinishedAt
     (run : α -> IdentificationOutcome S) (inputs : List α)
     (assemble : List (ProbabilityTerm S) -> ProbabilityTerm S) :
     combine (inputs.map run) assemble = IdentificationOutcome.unfinished ↔
-      Exists fun selected => FirstUnfinishedAt run inputs selected :=
-  ⟨firstUnfinishedAt_of_combine_map_eq_unfinished run inputs assemble,
+      Nonempty (Sigma fun selected => FirstUnfinishedAt run inputs selected) :=
+  ⟨fun result =>
+      ⟨firstUnfinishedAt_of_combine_map_eq_unfinished run inputs assemble
+        result⟩,
     fun witness => by
-      rcases witness with ⟨selected, path⟩
+      rcases witness with ⟨⟨selected, path⟩⟩
       exact combine_map_eq_unfinished_of_firstUnfinishedAt run assemble path⟩
 
 end IdentificationOutcome
@@ -365,7 +440,7 @@ inductive IdentificationUnfinishedTrace {S : ObservedSignature}
     (G : ObservedGraph S) :
     (fuel : Nat) ->
     (remaining outcome action : NodeSet S) ->
-    ProbabilityTerm S -> Prop
+    ProbabilityTerm S -> Type
   | exhausted
       (remaining outcome action : NodeSet S)
       (current : ProbabilityTerm S) :
@@ -527,7 +602,7 @@ theorem eq_unfinished {S : ObservedSignature} {G : ObservedGraph S}
         combinedResult
 
 /-- Convert an unfinished executable result into its complete structural cause. -/
-theorem of_eq_unfinished {S : ObservedSignature}
+noncomputable def of_eq_unfinished {S : ObservedSignature}
     (fuel : Nat) (G : ObservedGraph S)
     (remaining outcome action : NodeSet S)
     (current : ProbabilityTerm S)
@@ -688,10 +763,12 @@ theorem identifyFuel_eq_unfinished_iff_unfinishedTrace
     (current : ProbabilityTerm S) :
     identifyFuel fuel G remaining outcome action current =
         IdentificationOutcome.unfinished ↔
-      IdentificationUnfinishedTrace G fuel remaining outcome action current :=
-  ⟨IdentificationUnfinishedTrace.of_eq_unfinished fuel G remaining outcome action
-      current,
-    IdentificationUnfinishedTrace.eq_unfinished⟩
+      Nonempty
+        (IdentificationUnfinishedTrace G fuel remaining outcome action current) :=
+  ⟨fun result =>
+      ⟨IdentificationUnfinishedTrace.of_eq_unfinished fuel G remaining outcome
+        action current result⟩,
+    fun ⟨trace⟩ => IdentificationUnfinishedTrace.eq_unfinished trace⟩
 
 /--
 A structural path from an invocation of `identifyFuel` to its reported failure.
@@ -713,7 +790,7 @@ inductive IdentificationFailureTrace {S : ObservedSignature}
     (fuel : Nat) ->
     (remaining outcome action : NodeSet S) ->
     ProbabilityTerm S ->
-    IdentificationFail S -> Prop
+    IdentificationFail S -> Type
   | immediate
       (fuel : Nat)
       (remaining outcome action : NodeSet S)
@@ -883,7 +960,7 @@ inversion lemmas from `IdentificationSearch`; the product inversion supplies a
 concrete member of the computed c-component list, so the construction remains
 choice-free.
 -/
-theorem of_eq_failed {S : ObservedSignature}
+noncomputable def of_eq_failed {S : ObservedSignature}
     (fuel : Nat) (G : ObservedGraph S)
     (remaining outcome action : NodeSet S)
     (current : ProbabilityTerm S)
@@ -1035,9 +1112,123 @@ theorem identifyFuel_eq_failed_iff_failureTrace
     (fail : IdentificationFail S) :
     identifyFuel fuel G remaining outcome action current =
         IdentificationOutcome.failed fail ↔
-      IdentificationFailureTrace G fuel remaining outcome action current fail :=
-  ⟨IdentificationFailureTrace.of_eq_failed fuel G remaining outcome action current,
-    IdentificationFailureTrace.eq_failed⟩
+      Nonempty
+        (IdentificationFailureTrace G fuel remaining outcome action current fail) :=
+  ⟨fun result =>
+      ⟨IdentificationFailureTrace.of_eq_failed fuel G remaining outcome action
+        current result⟩,
+    fun ⟨trace⟩ => IdentificationFailureTrace.eq_failed trace⟩
+
+/-!
+## Terminal immediate sites of arbitrary failure traces
+
+Every failed recursive ID run eventually reaches the immediate 4.1 branch.
+The following witness retains that terminal invocation and its Boolean branch
+facts.  It is deliberately independent of the path taken to the leaf: shrink,
+restriction, and product frames are removed by structural recursion over the
+trace rather than by enumerating finite stacks of those frames.
+-/
+
+/--
+The terminal immediate-failure invocation reached by a structural failure
+trace.  `fail_eq` records that the public failure record is precisely the
+remaining host and unique free component at this leaf.
+-/
+structure IdentificationImmediateFailureSite {S : ObservedSignature}
+    (G : ObservedGraph S) (fail : IdentificationFail S) where
+  fuel : Nat
+  remaining : NodeSet S
+  outcome : NodeSet S
+  action : NodeSet S
+  current : ProbabilityTerm S
+  component : NodeSet S
+  fail_eq :
+    fail = ({ remaining := remaining, free := component } : IdentificationFail S)
+  actionNonempty :
+    NodeSet.isEmpty (NodeSet.inter action remaining) = false
+  ancestral :
+    NodeSet.equal
+      (G.ancestralSet remaining
+        (GraphMutilation.bar (NodeSet.inter action remaining))
+        (NodeSet.inter outcome remaining))
+      remaining = true
+  oneFreeComponent :
+    G.cComponents
+      (NodeSet.diff remaining (NodeSet.inter action remaining)) = [component]
+  oneRemainingComponent : G.isSingleCComponent remaining = true
+
+namespace IdentificationFailureTrace
+
+/--
+Forget the recursive frames of a failure trace and return its terminal
+immediate-failure site as inspectable data.  Product traces already select
+their first failing factor, so no list search or choice is needed here.
+-/
+def immediateSite {S : ObservedSignature} {G : ObservedGraph S}
+    {fuel : Nat} {remaining outcome action : NodeSet S}
+    {current : ProbabilityTerm S} {fail : IdentificationFail S}
+    (trace :
+      IdentificationFailureTrace G fuel remaining outcome action current fail) :
+    IdentificationImmediateFailureSite G fail :=
+  match trace with
+  | .immediate fuel remaining outcome action current component actionNonempty
+      ancestral oneFreeComponent oneRemainingComponent =>
+      { fuel := fuel
+        remaining := remaining
+        outcome := outcome
+        action := action
+        current := current
+        component := component
+        fail_eq := rfl
+        actionNonempty := actionNonempty
+        ancestral := ancestral
+        oneFreeComponent := oneFreeComponent
+        oneRemainingComponent := oneRemainingComponent }
+  | .shrink _fuel _remaining _outcome _action _current _fail _actionNonempty
+      _notAncestral nested =>
+      immediateSite nested
+  | .restrict _fuel _remaining _outcome _action _current _fail _component
+      _larger _actionNonempty _ancestral _oneFreeComponent
+      _severalRemainingComponents _componentNotMaximal _containingComponent
+      nested =>
+      immediateSite nested
+  | .product _fuel _remaining _outcome _action _current _fail _component
+      _component2 _rest _piece _actionNonempty _ancestral _freeComponents
+      _firstFailingFactor nested =>
+      immediateSite nested
+
+end IdentificationFailureTrace
+
+namespace IdentificationImmediateFailureSite
+
+/-- The extracted terminal site computes to its recorded immediate failure. -/
+theorem eq_failed {S : ObservedSignature} {G : ObservedGraph S}
+    {fail : IdentificationFail S}
+    (site : IdentificationImmediateFailureSite G fail) :
+    identifyFuel (site.fuel + 1) G site.remaining site.outcome site.action
+        site.current = IdentificationOutcome.failed fail := by
+  rcases site with
+    ⟨fuel, remaining, outcome, action, current, component, failEq,
+      actionNonempty, ancestral, oneFreeComponent, oneRemainingComponent⟩
+  cases failEq
+  simp [identifyFuel, actionNonempty, ancestral, oneFreeComponent,
+    oneRemainingComponent]
+
+/-- The failure record's remaining set is the terminal immediate host. -/
+theorem fail_remaining {S : ObservedSignature} {G : ObservedGraph S}
+    {fail : IdentificationFail S}
+    (site : IdentificationImmediateFailureSite G fail) :
+    fail.remaining = site.remaining :=
+  congrArg IdentificationFail.remaining site.fail_eq
+
+/-- The failure record's free set is the terminal unique free component. -/
+theorem fail_free {S : ObservedSignature} {G : ObservedGraph S}
+    {fail : IdentificationFail S}
+    (site : IdentificationImmediateFailureSite G fail) :
+    fail.free = site.component :=
+  congrArg IdentificationFail.free site.fail_eq
+
+end IdentificationImmediateFailureSite
 
 /-!
 ## Structural traces for successful ID searches
@@ -1066,7 +1257,7 @@ inductive IdentificationSuccessTrace {S : ObservedSignature}
     (fuel : Nat) ->
     (remaining outcome action : NodeSet S) ->
     ProbabilityTerm S ->
-    ProbabilityTerm S -> Prop
+    ProbabilityTerm S -> Type
   | emptyAction
       (fuel : Nat)
       (remaining outcome action : NodeSet S)
@@ -1219,7 +1410,7 @@ inductive IdentificationProductSuccessTrace {S : ObservedSignature}
     (G : ObservedGraph S) :
     (fuel : Nat) -> (remaining : NodeSet S) ->
     (current : ProbabilityTerm S) ->
-    List (NodeSet S) -> List (ProbabilityTerm S) -> Prop
+    List (NodeSet S) -> List (ProbabilityTerm S) -> Type
   | nil :
       IdentificationProductSuccessTrace G fuel remaining current [] []
   | cons
@@ -1324,7 +1515,7 @@ Turn an identified executable search into its complete structural success
 derivation.  Product success recursively constructs one aligned factor trace
 per computed c-component; no factor is selected or discarded.
 -/
-theorem of_eq_identified {S : ObservedSignature}
+noncomputable def of_eq_identified {S : ObservedSignature}
     (fuel : Nat) (G : ObservedGraph S)
     (remaining outcome action : NodeSet S)
     (current term : ProbabilityTerm S)
@@ -1424,13 +1615,27 @@ theorem of_eq_identified {S : ObservedSignature}
                                       (chainProduct remaining larger) term
                                       nestedResult)
                   | cons component2 rest =>
-                      rcases identifyFuel_eq_identified_of_product fuel G
-                          remaining outcome action current actionEmpty ancestral
-                          freeComponents result with
-                        ⟨terms, termEq, factorResults⟩
                       let run := fun factor =>
                         identifyFuel fuel G remaining factor
                           (NodeSet.diff remaining factor) current
+                      let assemble := fun terms =>
+                        ProbabilityTerm.marginalize
+                          (NodeSet.diff remaining
+                            (NodeSet.union
+                              (NodeSet.inter outcome remaining)
+                              (NodeSet.inter action remaining)))
+                          (productTerms terms)
+                      have combinedResult :
+                          IdentificationOutcome.combine
+                              ((component :: component2 :: rest).map run)
+                              assemble =
+                            IdentificationOutcome.identified term := by
+                        simpa [identifyFuel, actionEmpty, ancestral,
+                          freeComponents, run, assemble] using result
+                      rcases IdentificationOutcome.combineIdentifiedData
+                          ((component :: component2 :: rest).map run)
+                          assemble term combinedResult with
+                        ⟨terms, factorResults, termEq⟩
                       have buildFactors :
                           forall (components : List (NodeSet S))
                             (factorTerms : List (ProbabilityTerm S)),
@@ -1472,10 +1677,11 @@ theorem of_eq_identified {S : ObservedSignature}
                             current (component :: component2 :: rest) terms :=
                         buildFactors (component :: component2 :: rest) terms
                           (by simpa [run] using factorResults)
-                      subst term
-                      exact .product fuel remaining outcome action current
-                        component component2 rest terms actionEmpty ancestral
-                        freeComponents factors
+                      rw [termEq]
+                      simpa [assemble] using
+                        (IdentificationSuccessTrace.product fuel remaining
+                          outcome action current component component2 rest terms
+                          actionEmpty ancestral freeComponents factors)
 
 end IdentificationSuccessTrace
 
@@ -1489,10 +1695,12 @@ theorem identifyFuel_eq_identified_iff_successTrace
     (current term : ProbabilityTerm S) :
     identifyFuel fuel G remaining outcome action current =
         IdentificationOutcome.identified term ↔
-      IdentificationSuccessTrace G fuel remaining outcome action current term :=
-  ⟨IdentificationSuccessTrace.of_eq_identified fuel G remaining outcome action
-      current term,
-    IdentificationSuccessTrace.eq_identified⟩
+      Nonempty
+        (IdentificationSuccessTrace G fuel remaining outcome action current term) :=
+  ⟨fun result =>
+      ⟨IdentificationSuccessTrace.of_eq_identified fuel G remaining outcome
+        action current term result⟩,
+    fun ⟨trace⟩ => IdentificationSuccessTrace.eq_identified trace⟩
 
 end Causality
 end Thesis

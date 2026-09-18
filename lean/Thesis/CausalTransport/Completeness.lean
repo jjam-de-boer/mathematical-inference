@@ -329,19 +329,19 @@ the engine's fuel, full remaining set, and observational starting term.
 
 /-- Structural explanation of a failed top-level joint identification run. -/
 abbrev JointIdentificationFailureTrace (G : ObservedGraph S)
-    (q : JointKernelQuery S) (fail : IdentificationFail S) : Prop :=
+    (q : JointKernelQuery S) (fail : IdentificationFail S) : Type :=
   IdentificationFailureTrace G (identificationFuel S) NodeSet.full
     q.outcome q.action (observationalJointTerm S) fail
 
 /-- Structural explanation of a successful top-level joint identification run. -/
 abbrev JointIdentificationSuccessTrace (G : ObservedGraph S)
-    (q : JointKernelQuery S) (term : ProbabilityTerm S) : Prop :=
+    (q : JointKernelQuery S) (term : ProbabilityTerm S) : Type :=
   IdentificationSuccessTrace G (identificationFuel S) NodeSet.full
     q.outcome q.action (observationalJointTerm S) term
 
 /-- Structural explanation of an unfinished top-level joint identification run. -/
 abbrev JointIdentificationUnfinishedTrace (G : ObservedGraph S)
-    (q : JointKernelQuery S) : Prop :=
+    (q : JointKernelQuery S) : Type :=
   IdentificationUnfinishedTrace G (identificationFuel S) NodeSet.full
     q.outcome q.action (observationalJointTerm S)
 
@@ -350,7 +350,7 @@ theorem identifyJoint_eq_failed_iff_failureTrace
     (G : ObservedGraph S) (q : JointKernelQuery S)
     (fail : IdentificationFail S) :
     identifyJoint G q = IdentificationOutcome.failed fail ↔
-      JointIdentificationFailureTrace G q fail := by
+      Nonempty (JointIdentificationFailureTrace G q fail) := by
   simpa [identifyJoint, JointIdentificationFailureTrace] using
     identifyFuel_eq_failed_iff_failureTrace (identificationFuel S) G
       NodeSet.full q.outcome q.action (observationalJointTerm S) fail
@@ -360,7 +360,7 @@ theorem identifyJoint_eq_identified_iff_successTrace
     (G : ObservedGraph S) (q : JointKernelQuery S)
     (term : ProbabilityTerm S) :
     identifyJoint G q = IdentificationOutcome.identified term ↔
-      JointIdentificationSuccessTrace G q term := by
+      Nonempty (JointIdentificationSuccessTrace G q term) := by
   simpa [identifyJoint, JointIdentificationSuccessTrace] using
     identifyFuel_eq_identified_iff_successTrace (identificationFuel S) G
       NodeSet.full q.outcome q.action (observationalJointTerm S) term
@@ -369,7 +369,7 @@ theorem identifyJoint_eq_identified_iff_successTrace
 theorem identifyJoint_eq_unfinished_iff_unfinishedTrace
     (G : ObservedGraph S) (q : JointKernelQuery S) :
     identifyJoint G q = IdentificationOutcome.unfinished ↔
-      JointIdentificationUnfinishedTrace G q := by
+      Nonempty (JointIdentificationUnfinishedTrace G q) := by
   simpa [identifyJoint, JointIdentificationUnfinishedTrace] using
     identifyFuel_eq_unfinished_iff_unfinishedTrace (identificationFuel S) G
       NodeSet.full q.outcome q.action (observationalJointTerm S)
@@ -383,7 +383,7 @@ by evaluating `identifyJoint` and therefore uses neither excluded middle nor a
 choice of a recursive branch.
 -/
 inductive JointIdentificationTrace (G : ObservedGraph S)
-    (q : JointKernelQuery S) : Prop
+    (q : JointKernelQuery S)
   | identified (term : ProbabilityTerm S)
       (trace : JointIdentificationSuccessTrace G q term)
   | failed (fail : IdentificationFail S)
@@ -391,18 +391,39 @@ inductive JointIdentificationTrace (G : ObservedGraph S)
   | unfinished (trace : JointIdentificationUnfinishedTrace G q)
 
 /-- Every executable joint query has one of the three exact structural traces. -/
-theorem identifyJoint_trace (G : ObservedGraph S) (q : JointKernelQuery S) :
+noncomputable def identifyJoint_trace (G : ObservedGraph S)
+    (q : JointKernelQuery S) :
     JointIdentificationTrace G q := by
   cases result : identifyJoint G q with
   | identified term =>
       exact .identified term
-        ((identifyJoint_eq_identified_iff_successTrace G q term).mp result)
+        (IdentificationSuccessTrace.of_eq_identified (identificationFuel S) G
+          NodeSet.full q.outcome q.action (observationalJointTerm S) term result)
   | failed fail =>
       exact .failed fail
-        ((identifyJoint_eq_failed_iff_failureTrace G q fail).mp result)
+        (IdentificationFailureTrace.of_eq_failed (identificationFuel S) G
+          NodeSet.full q.outcome q.action (observationalJointTerm S) result)
   | unfinished =>
       exact .unfinished
-        ((identifyJoint_eq_unfinished_iff_unfinishedTrace G q).mp result)
+        (IdentificationUnfinishedTrace.of_eq_unfinished (identificationFuel S) G
+          NodeSet.full q.outcome q.action (observationalJointTerm S) result)
+
+/--
+Collapse an arbitrary failed public ID run to the immediate 4.1 invocation at
+the end of its structural trace.  This is the branch-generic replacement for
+the finite family of `shrink`/`product`/`restrict` failure-stack unpackers.
+
+The returned site is Type-valued inspectable data: later hedge code may recurse
+over its local query and component without eliminating an existential
+proposition or invoking choice.
+-/
+noncomputable def identifyJointImmediateFailureSite
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    (fail : IdentificationFail S)
+    (result : identifyJoint G q = IdentificationOutcome.failed fail) :
+    IdentificationImmediateFailureSite G fail :=
+  (IdentificationFailureTrace.of_eq_failed (identificationFuel S) G
+    NodeSet.full q.outcome q.action (observationalJointTerm S) result).immediateSite
 
 /--
 Observational cylinders used as ID denominators are strictly positive in
