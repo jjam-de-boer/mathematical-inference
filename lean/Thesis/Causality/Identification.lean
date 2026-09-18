@@ -91,6 +91,104 @@ def ConditionalKernelQuery.sourceTerm (q : ConditionalKernelQuery S) :
       action := q.action
       condition := q.condition }
 
+/-- The joint query `P(Y | do(X))` obtained by dropping the conditioner. -/
+def ConditionalKernelQuery.unconditionalJoint
+    (q : ConditionalKernelQuery S) : JointKernelQuery S where
+  outcome := q.outcome
+  action := q.action
+  action_outcome_disjoint := q.action_outcome_disjoint
+
+/-- An empty conditioner is the joint query `P(Y | do(X))`. -/
+def ConditionalKernelQuery.toJoint (q : ConditionalKernelQuery S)
+    (_emptyCondition : NodeSet.isEmpty q.condition = true) :
+    JointKernelQuery S :=
+  q.unconditionalJoint
+
+theorem ConditionalKernelQuery.unconditionalJoint_sourceTerm
+    (q : ConditionalKernelQuery S) :
+    q.unconditionalJoint.sourceTerm =
+      .kernel ⟨q.outcome, q.action, NodeSet.empty⟩ := by
+  simp [ConditionalKernelQuery.unconditionalJoint,
+    JointKernelQuery.sourceTerm]
+
+theorem ConditionalKernelQuery.sourceTerm_eq_toJoint
+    (q : ConditionalKernelQuery S)
+    (emptyCondition : NodeSet.isEmpty q.condition = true) :
+    q.sourceTerm = (q.toJoint emptyCondition).sourceTerm := by
+  have hz : q.condition = NodeSet.empty :=
+    NodeSet.eq_empty_of_isEmpty emptyCondition
+  simp [ConditionalKernelQuery.sourceTerm,
+    ConditionalKernelQuery.unconditionalJoint_sourceTerm,
+    ConditionalKernelQuery.toJoint, hz]
+
+/-- The query kernel is rule 1's left kernel at empty given-set. -/
+theorem ConditionalKernelQuery.sourceTerm_eq_rule1Left_empty_w
+    (q : ConditionalKernelQuery S) :
+    q.sourceTerm =
+      .kernel
+        (rule1Left q.action q.outcome q.condition NodeSet.empty) := by
+  simp [ConditionalKernelQuery.sourceTerm, rule1Left,
+    NodeSet.union_empty_right]
+
+/-- The query kernel is the conditioning rule's left kernel at empty
+given-set: `P(Y | do(X), Z) = P(Y | do(X), Z ∪ ∅)`. -/
+theorem ConditionalKernelQuery.sourceTerm_eq_conditioningLeft_empty_w
+    (q : ConditionalKernelQuery S) :
+    q.sourceTerm =
+      .kernel ⟨q.outcome, q.action,
+        NodeSet.union q.condition NodeSet.empty⟩ := by
+  simp [ConditionalKernelQuery.sourceTerm, NodeSet.union_empty_right]
+
+/-- Dropping the conditioner is rule 1's right kernel at empty given-set. -/
+theorem ConditionalKernelQuery.unconditionalJoint_eq_rule1Right
+    (q : ConditionalKernelQuery S) :
+    q.unconditionalJoint.sourceTerm =
+      .kernel
+        (rule1Right q.action q.outcome q.condition NodeSet.empty) := by
+  simp [ConditionalKernelQuery.unconditionalJoint,
+    JointKernelQuery.sourceTerm, rule1Right]
+
+/-- The joint query `P(Y | do(X ∪ Z))` obtained by intervening on the
+conditioner. -/
+def ConditionalKernelQuery.intervenedCondition
+    (q : ConditionalKernelQuery S) : JointKernelQuery S where
+  outcome := q.outcome
+  action := NodeSet.union q.action q.condition
+  action_outcome_disjoint := fun i hi =>
+    match hx : q.action i with
+    | true =>
+        q.action_outcome_disjoint i hx
+    | false =>
+        have hz : q.condition i = true := by
+          simp [NodeSet.union, hx] at hi
+          exact hi
+        match hy : q.outcome i with
+        | false =>
+            rfl
+        | true =>
+            False.elim
+              (Bool.false_ne_true
+                ((q.outcome_condition_disjoint i hy).symm.trans hz))
+
+/-- The query kernel is rule 2's right kernel at empty given-set. -/
+theorem ConditionalKernelQuery.sourceTerm_eq_rule2Right_empty_w
+    (q : ConditionalKernelQuery S) :
+    q.sourceTerm =
+      .kernel
+        (rule2Right q.action q.outcome q.condition NodeSet.empty) := by
+  simp [ConditionalKernelQuery.sourceTerm, rule2Right,
+    NodeSet.union_empty_right]
+
+/-- Intervening on the conditioner is rule 2's left kernel at empty
+given-set. -/
+theorem ConditionalKernelQuery.intervenedCondition_eq_rule2Left
+    (q : ConditionalKernelQuery S) :
+    q.intervenedCondition.sourceTerm =
+      .kernel
+        (rule2Left q.action q.outcome q.condition NodeSet.empty) := by
+  simp [ConditionalKernelQuery.intervenedCondition,
+    JointKernelQuery.sourceTerm, rule2Left]
+
 /-- The concrete kernel at the source of a joint distributional query. -/
 def JointKernelQuery.operationKernel (query : JointKernelQuery S) : Kernel S where
   outcome := query.outcome
@@ -781,6 +879,12 @@ The finite hedge obstruction for an ordinary interventional query.
 `child` is stored once, on the large forest.  The small forest is the
 restriction of that map to a child-closed subset of `large \ X`, so `F'` is
 a subgraph of `F` in the 2006 sense.
+
+`actionSeed` and `outcomeSeed` are Type-level vertices recovered from
+Boolean member lists (intersection of the large side with `X`, and a
+reached outcome of a kept sink).  They are not unpackings of the `Prop`
+fields `large_meets_intervention` and `roots_reach_outcome`, which remain
+for theorem-level reasoning.
 -/
 structure HedgeWitness (G : ObservedGraph S)
     (q : JointKernelQuery S) where
@@ -802,6 +906,21 @@ structure HedgeWitness (G : ObservedGraph S)
             (fun i j =>
               mutilatedDirected S q.action i j = true)
             root outcome
+  /--
+  An action vertex on the large forest, recovered from the member list of
+  `large ∩ X`.  Stored as data so a countermodel constructor can mention
+  it without eliminating `Meets`/`Exists` into `Type`.
+  -/
+  actionSeed : Fin S.count
+  actionSeed_in_large : large actionSeed = true
+  actionSeed_in_action : q.action actionSeed = true
+  /--
+  An outcome vertex reached, along mutilated directed edges, from a kept
+  sink of the large forest.  Recovered from `rootsReachOutcomeBool` by
+  list search, not from unpacking `roots_reach_outcome`.
+  -/
+  outcomeSeed : Fin S.count
+  outcomeSeed_in_outcome : q.outcome outcomeSeed = true
 
 /-! ## Intrinsic type-theoretic target -/
 

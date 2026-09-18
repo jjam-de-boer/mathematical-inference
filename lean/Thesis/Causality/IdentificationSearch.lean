@@ -172,6 +172,31 @@ theorem cComponents_mem
   cComponentsCollect_mem G nodes (NodeSet.enumerated S) []
     (fun _c hc => by cases hc) h
 
+/-- Accumulated components survive the rest of the collector. -/
+theorem cComponentsCollect_keeps_acc
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (pending : List (Fin S.count)) (acc : List (NodeSet S))
+    {component : NodeSet S} (h : component ∈ acc) :
+    component ∈ ObservedGraph.cComponentsCollect G nodes pending acc := by
+  induction pending generalizing acc with
+  | nil =>
+      simp [ObservedGraph.cComponentsCollect]
+      exact h
+  | cons root rest ih =>
+      cases hnode : nodes root with
+      | false =>
+          simp [ObservedGraph.cComponentsCollect, hnode]
+          exact ih acc h
+      | true =>
+          cases hseen : acc.any (fun c => c root) with
+          | true =>
+              simp [ObservedGraph.cComponentsCollect, hnode, hseen]
+              exact ih acc h
+          | false =>
+              simp [ObservedGraph.cComponentsCollect, hnode, hseen]
+              exact ih (G.cComponentOf nodes root :: acc)
+                (List.mem_cons.mpr (Or.inr h))
+
 /--
 A Boolean singleton partition is the c-component of any of its members.
 -/
@@ -192,6 +217,112 @@ theorem isSingleCComponent_spec
           have mem : c ∈ G.cComponents nodes := by simp [hc]
           rcases cComponents_mem G nodes mem with ⟨root, hroot, hdef⟩
           exact ⟨root, hroot, eq.symm.trans hdef⟩
+
+theorem isSingleCComponent_nonempty
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (h : G.isSingleCComponent nodes = true) :
+    NodeSet.isEmpty nodes = false := by
+  rcases isSingleCComponent_spec G nodes h with ⟨root, hroot, _⟩
+  exact (NodeSet.isEmpty_eq_false_iff nodes).mpr ⟨root, hroot⟩
+
+/--
+Once every selected vertex already belongs to some accumulated component,
+the collector adds nothing more.  A connected host therefore yields a
+singleton partition after the first discovery.
+-/
+theorem cComponentsCollect_covered
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (pending : List (Fin S.count)) (acc : List (NodeSet S))
+    (hcov : forall root, nodes root = true ->
+      acc.any (fun c => c root) = true) :
+    ObservedGraph.cComponentsCollect G nodes pending acc = acc.reverse := by
+  induction pending generalizing acc with
+  | nil =>
+      simp [ObservedGraph.cComponentsCollect]
+  | cons root rest ih =>
+      cases hnode : nodes root with
+      | false =>
+          simp [ObservedGraph.cComponentsCollect, hnode]
+          exact ih acc hcov
+      | true =>
+          have hseen : acc.any (fun c => c root) = true := hcov root hnode
+          simp [ObservedGraph.cComponentsCollect, hnode, hseen]
+          exact ih acc hcov
+
+/-- Ancestral restriction never adds vertices. -/
+theorem ancestralSet_subset (G : ObservedGraph S) (nodes : NodeSet S)
+    (m : GraphMutilation S) (targets : NodeSet S) :
+    NodeSet.Subset (G.ancestralSet nodes m targets) nodes := by
+  intro i hi
+  exact (Bool.and_eq_true_iff.mp hi).1
+
+/--
+Boolean `find?` success yields membership and a true predicate, by
+induction on the list.  The Init `find?_eq_some` lemma is avoided
+because it depends on choice.
+-/
+theorem find?_eq_some_mem {α : Type _} (p : α -> Bool)
+    (xs : List α) {a : α} (h : xs.find? p = some a) :
+    a ∈ xs ∧ p a = true := by
+  induction xs with
+  | nil =>
+      simp [List.find?] at h
+  | cons x rest ih =>
+      cases hp : p x with
+      | true =>
+          simp [List.find?, hp] at h
+          subst h
+          exact ⟨List.mem_cons.mpr (Or.inl rfl), hp⟩
+      | false =>
+          simp [List.find?, hp] at h
+          rcases ih h with ⟨hmem, hpa⟩
+          exact ⟨List.mem_cons.mpr (Or.inr hmem), hpa⟩
+
+theorem containingCComponent_spec
+    (G : ObservedGraph S) (nodes subset : NodeSet S) {larger : NodeSet S}
+    (h : G.containingCComponent nodes subset = some larger) :
+    larger ∈ G.cComponents nodes ∧ NodeSet.Subset subset larger := by
+  have parts := find?_eq_some_mem
+      (fun component => NodeSet.subsetBool subset component)
+      (G.cComponents nodes) h
+  exact ⟨parts.1, (NodeSet.subsetBool_eq_true_iff subset larger).mp parts.2⟩
+
+/-- Membership in an executable c-component implies membership in the host set. -/
+theorem cComponentOf_subset (G : ObservedGraph S) (nodes : NodeSet S)
+    {root i : Fin S.count} (h : G.cComponentOf nodes root i = true) :
+    nodes i = true := by
+  have reached : G.bidirectedReachableWithin nodes root i = true := by
+    simpa [ObservedGraph.cComponentOf] using h
+  have outer :
+      (nodes root && nodes i) = true ∧
+        FiniteReachability.within finBeq (NodeSet.enumerated S)
+          (fun a b => nodes a && nodes b && G.bidirected a b)
+          S.count root i = true :=
+    Bool.and_eq_true_iff.mp (by
+      simpa [ObservedGraph.bidirectedReachableWithin] using reached)
+  exact (Bool.and_eq_true_iff.mp outer.1).2
+
+/-- Every listed c-component is supported on the host vertex set. -/
+theorem cComponents_subset
+    (G : ObservedGraph S) (nodes : NodeSet S) {component : NodeSet S}
+    (h : component ∈ G.cComponents nodes) :
+    NodeSet.Subset component nodes := by
+  rcases cComponents_mem G nodes h with ⟨root, _, hdef⟩
+  intro i hi
+  have hi' : G.cComponentOf nodes root i = true := by
+    simpa [hdef] using hi
+  exact cComponentOf_subset G nodes hi'
+
+theorem containingCComponent_subset_host
+    (G : ObservedGraph S) (nodes subset : NodeSet S) {larger : NodeSet S}
+    (h : G.containingCComponent nodes subset = some larger) :
+    NodeSet.Subset larger nodes := by
+  rcases containingCComponent_spec G nodes subset h with ⟨hmem, _⟩
+  rcases cComponents_mem G nodes hmem with ⟨root, _, hdef⟩
+  intro i hi
+  have hi' : G.cComponentOf nodes root i = true := by
+    simpa [hdef] using hi
+  exact cComponentOf_subset G nodes hi'
 
 /-! ## Vertex-thinned c-forests and ID failure data -/
 
@@ -235,6 +366,32 @@ theorem forestSeed_mem (preferred nodes : NodeSet S) {seed : Fin S.count}
       subst h
       exact NodeSet.inter_subset_right preferred nodes node
         (NodeSet.firstMember_mem hpref)
+
+/-- If the preferred set meets `nodes`, `forestSeed` is that first preferred member. -/
+theorem forestSeed_eq_preferred (preferred nodes : NodeSet S)
+    {seed : Fin S.count}
+    (hpref : NodeSet.firstMember (NodeSet.inter preferred nodes) = some seed) :
+    forestSeed preferred nodes = some seed := by
+  simp [forestSeed, hpref]
+
+theorem forestSeed_preferred_mem (preferred nodes : NodeSet S)
+    {seed : Fin S.count}
+    (hpref : NodeSet.firstMember (NodeSet.inter preferred nodes) = some seed) :
+    preferred seed = true ∧ nodes seed = true := by
+  have hinter : NodeSet.inter preferred nodes seed = true :=
+    NodeSet.firstMember_mem hpref
+  exact ⟨NodeSet.inter_subset_left preferred nodes seed hinter,
+    NodeSet.inter_subset_right preferred nodes seed hinter⟩
+
+theorem forestSeed_of_nonempty (preferred nodes : NodeSet S)
+    (h : NodeSet.isEmpty nodes = false) :
+    Exists fun seed => forestSeed preferred nodes = some seed := by
+  cases hpref : NodeSet.firstMember (NodeSet.inter preferred nodes) with
+  | some seed =>
+      exact ⟨seed, by simp [forestSeed, hpref]⟩
+  | none =>
+      rcases NodeSet.firstMember_of_not_empty h with ⟨seed, hs⟩
+      exact ⟨seed, by simp [forestSeed, hpref, hs]⟩
 
 /-- Extra directed children (all but the earliest) of one parent. -/
 def extraDirectedChildren (nodes : NodeSet S) (parent : Fin S.count) :
@@ -288,6 +445,22 @@ theorem extraChildrenOfParent_ne_seedY
           simp [hcs, List.mem_filter] at h
           exact h.2.1
 
+theorem extraChildrenOfParent_keeps_contact
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (seedY seedKeep parent child : Fin S.count)
+    (h : child ∈ extraChildrenOfParent G nodes seedY seedKeep parent) :
+    G.cComponentOf (NodeSet.diff nodes (NodeSet.singleton child)) seedY
+      seedKeep = true := by
+  unfold extraChildrenOfParent at h
+  cases hcs : directedChildren nodes parent with
+  | nil => simp [hcs] at h
+  | cons c rest =>
+      cases rest with
+      | nil => simp [hcs] at h
+      | cons c2 rest2 =>
+          simp [hcs, List.mem_filter] at h
+          exact h.2.2
+
 theorem extraChildCandidates_ne_seedY
     (G : ObservedGraph S) (nodes : NodeSet S)
     (seedY seedKeep child : Fin S.count)
@@ -315,6 +488,17 @@ theorem extraChildToDrop_ne_seedY
     child ≠ seedY :=
   extraChildCandidates_ne_seedY G nodes seedY seedKeep child
     (extraChildToDrop_mem_candidates G nodes seedY seedKeep child h)
+
+theorem extraChildToDrop_keeps_contact
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (seedY seedKeep child : Fin S.count)
+    (h : extraChildToDrop G nodes seedY seedKeep = some child) :
+    G.cComponentOf (NodeSet.diff nodes (NodeSet.singleton child)) seedY
+      seedKeep = true := by
+  have hmem := extraChildToDrop_mem_candidates G nodes seedY seedKeep child h
+  rcases List.mem_flatMap.mp hmem with ⟨parent, _, hinner⟩
+  exact extraChildrenOfParent_keeps_contact G nodes seedY seedKeep parent
+    child hinner
 
 /--
 One thinning step: drop a later extra child and re-close the bidirected
@@ -419,6 +603,28 @@ def inducedChild (nodes : NodeSet S) : ForestChild S :=
     else
       none
 
+/--
+Kept child map of a subgraph C-forest.  Vertices in `small` keep the
+earliest directed successor that still lies in `small`; vertices in
+`large \ small` keep the earliest directed successor in `large`.  Extra
+graph edges are not selected, so the map is a forest without requiring
+the induced directed graph to have unique children.  Child-closure on
+`small` holds by construction.
+-/
+def closedForestChild (large small : NodeSet S) : ForestChild S :=
+  fun parent =>
+    if large parent then
+      if small parent then
+        match directedChildren small parent with
+        | [] => none
+        | c :: _ => some c
+      else
+        match directedChildren large parent with
+        | [] => none
+        | c :: _ => some c
+    else
+      none
+
 /-- Kept-edge sinks: selected vertices with no kept child. -/
 def keptSinks (nodes : NodeSet S) (child : ForestChild S) : NodeSet S :=
   fun i => nodes i && decide (child i = none)
@@ -433,6 +639,10 @@ theorem keptSinks_iff (nodes : NodeSet S) (child : ForestChild S)
     exact ⟨parts.1, of_decide_eq_true parts.2⟩
   · intro h
     exact Bool.and_eq_true_iff.mpr ⟨h.1, decide_eq_true h.2⟩
+
+theorem keptSinks_subset (nodes : NodeSet S) (child : ForestChild S) :
+    NodeSet.Subset (keptSinks nodes child) nodes :=
+  fun i hi => ((keptSinks_iff nodes child i).mp hi).1
 
 /-- Child maps that mention only selected directed edges of `nodes`. -/
 def childWellFormedBool (nodes : NodeSet S) (child : ForestChild S) : Bool :=
@@ -477,6 +687,84 @@ theorem childWellFormed_edge (nodes : NodeSet S) (child : ForestChild S)
       rw [hp, hc] at ok
       exact ⟨rfl, (Bool.and_eq_true_iff.mp ok).1, (Bool.and_eq_true_iff.mp ok).2⟩
 
+/--
+Walk the kept-child map for `fuel` steps.  On a well-formed forest the
+map is a DAG (`directed_earlier`), so `fuel = S.count` always lands on a
+kept sink.  Fuel avoids well-founded recursion through a `match` on
+`Option`.
+-/
+def forestFollow (child : ForestChild S) (start : Fin S.count) :
+    Nat -> Fin S.count
+  | 0 => start
+  | n + 1 =>
+    match child start with
+    | none => start
+    | some c => forestFollow child c n
+
+/--
+A well-formed kept-child walk of length at least `S.count - start.val`
+ends at a selected vertex with no kept successor.  The zero-fuel case is
+impossible: `start.val < S.count`.
+-/
+theorem forestFollow_sink
+    (nodes : NodeSet S) (child : ForestChild S)
+    (hwell : childWellFormedBool nodes child = true)
+    (start : Fin S.count) (hstart : nodes start = true)
+    (fuel : Nat) (hfuel : S.count - start.val ≤ fuel) :
+    nodes (forestFollow child start fuel) = true ∧
+      child (forestFollow child start fuel) = none := by
+  induction fuel generalizing start with
+  | zero =>
+      have hzero : S.count - start.val = 0 := Nat.eq_zero_of_le_zero hfuel
+      have hle : S.count ≤ start.val := Nat.sub_eq_zero_iff_le.mp hzero
+      exact False.elim (Nat.not_le_of_gt start.isLt hle)
+  | succ n ih =>
+      cases hch : child start with
+      | none =>
+          constructor
+          · simpa [forestFollow, hch] using hstart
+          · simp [forestFollow, hch]
+      | some c =>
+          have hedge := childWellFormed_edge nodes child hwell hch
+          have hlt : start.val < c.val := S.directed_earlier hedge.2.2
+          have hfuel' : S.count - c.val ≤ n := by
+            have hs : start.val + 1 ≤ c.val := Nat.succ_le_of_lt hlt
+            have hstep :
+                S.count - c.val ≤ S.count - start.val - 1 := by
+              have :
+                  S.count - c.val ≤ S.count - (start.val + 1) :=
+                Nat.sub_le_sub_left hs S.count
+              simpa [Nat.sub_add_eq] using this
+            have hpred : S.count - start.val - 1 ≤ n :=
+              Nat.sub_le_sub_right hfuel 1
+            exact Nat.le_trans hstep hpred
+          simpa [forestFollow, hch] using ih c hedge.2.1 hfuel'
+
+/-- Kept-edge sink reached by following the child map from `start`. -/
+def forestSink (nodes : NodeSet S) (child : ForestChild S)
+    (_hwell : childWellFormedBool nodes child = true)
+    (start : Fin S.count) (_hstart : nodes start = true) : Fin S.count :=
+  forestFollow child start S.count
+
+theorem forestSink_spec
+    (nodes : NodeSet S) (child : ForestChild S)
+    (hwell : childWellFormedBool nodes child = true)
+    (start : Fin S.count) (hstart : nodes start = true) :
+    nodes (forestSink nodes child hwell start hstart) = true ∧
+      child (forestSink nodes child hwell start hstart) = none :=
+  forestFollow_sink nodes child hwell start hstart S.count
+    (Nat.sub_le S.count start.val)
+
+theorem forestSink_kept
+    (nodes : NodeSet S) (child : ForestChild S)
+    (hwell : childWellFormedBool nodes child = true)
+    (start : Fin S.count) (hstart : nodes start = true) :
+    keptSinks nodes child (forestSink nodes child hwell start hstart) =
+      true :=
+  (keptSinks_iff nodes child
+      (forestSink nodes child hwell start hstart)).mpr
+    (forestSink_spec nodes child hwell start hstart)
+
 theorem childClosed_spec (nodes : NodeSet S) (child : ForestChild S)
     (h : childClosedBool nodes child = true)
     {parent c : Fin S.count} (hp : nodes parent = true)
@@ -487,6 +775,21 @@ theorem childClosed_spec (nodes : NodeSet S) (child : ForestChild S)
   have ok := (List.all_eq_true.mp h) parent mem
   rw [hc] at ok
   exact ok
+
+/-- Child-closure is the Boolean image of a stay-inside property. -/
+theorem childClosedBool_of_stay (nodes : NodeSet S) (child : ForestChild S)
+    (h : forall parent c, nodes parent = true -> child parent = some c ->
+      nodes c = true) :
+    childClosedBool nodes child = true := by
+  refine List.all_eq_true.mpr ?_
+  intro parent hp
+  have hnode : nodes parent = true :=
+    (NodeSet.mem_members_iff nodes parent).mp hp
+  cases hc : child parent with
+  | none =>
+      simp
+  | some c =>
+      exact h parent c hnode hc
 
 theorem inducedChild_wellFormed (nodes : NodeSet S) :
     childWellFormedBool nodes (inducedChild nodes) = true := by
@@ -509,6 +812,96 @@ theorem inducedChild_wellFormed (nodes : NodeSet S) :
               exact ⟨(NodeSet.mem_members_iff nodes c).mp parts.1, parts.2⟩
           | cons _ _ =>
               simp [inducedChild, hp, hcs]
+
+theorem closedForestChild_wellFormed (large small : NodeSet S)
+    (hsub : NodeSet.Subset small large) :
+    childWellFormedBool large (closedForestChild large small) = true := by
+  refine List.all_eq_true.mpr ?_
+  intro parent _hmem
+  cases hL : large parent with
+  | false =>
+      simp [closedForestChild, hL]
+  | true =>
+      cases hS : small parent with
+      | true =>
+          cases hcs : directedChildren small parent with
+          | nil =>
+              simp [closedForestChild, hL, hS, hcs]
+          | cons c _rest =>
+              have memc : c ∈ directedChildren small parent := by
+                simp [hcs]
+              have parts := List.mem_filter.mp memc
+              have inSmall : small c = true :=
+                (NodeSet.mem_members_iff small c).mp parts.1
+              have inLarge : large c = true := hsub c inSmall
+              simp [closedForestChild, hL, hS, hcs, inLarge, parts.2]
+      | false =>
+          cases hcs : directedChildren large parent with
+          | nil =>
+              simp [closedForestChild, hL, hS, hcs]
+          | cons c _rest =>
+              have memc : c ∈ directedChildren large parent := by
+                simp [hcs]
+              have parts := List.mem_filter.mp memc
+              have inLarge : large c = true :=
+                (NodeSet.mem_members_iff large c).mp parts.1
+              simp [closedForestChild, hL, hS, hcs, inLarge, parts.2]
+
+theorem closedForestChild_childClosed (large small : NodeSet S) :
+    childClosedBool small (closedForestChild large small) = true :=
+  childClosedBool_of_stay small (closedForestChild large small)
+    (fun parent c hp hc => by
+      cases hL : large parent with
+      | false =>
+          simp [closedForestChild, hL] at hc
+      | true =>
+          cases hS : small parent with
+          | false =>
+              exact False.elim (Bool.false_ne_true (hS.symm.trans hp))
+          | true =>
+              cases hcs : directedChildren small parent with
+              | nil =>
+                  simp [closedForestChild, hL, hS, hcs] at hc
+              | cons d _rest =>
+                  have hred :
+                      closedForestChild large small parent = some d := by
+                    simp [closedForestChild, hL, hS, hcs]
+                  have heq : some d = some c := hred.symm.trans hc
+                  injection heq with hcd
+                  rw [← hcd]
+                  have memd : d ∈ directedChildren small parent := by
+                    simp [hcs]
+                  exact (NodeSet.mem_members_iff small d).mp
+                    (List.mem_filter.mp memd).1)
+
+/--
+Kept sinks of `closedForestChild` lie in `small` once every vertex of
+`large \ small` has at least one directed successor in `large`.  In a
+4.1 ID failure the ancestral side of `G_{\overline{X}}` supplies that
+outgoing edge for every remaining action vertex.
+-/
+theorem closedForestChild_keptSinks_subset (large small : NodeSet S)
+    (hout :
+      forall parent,
+        large parent = true ->
+          small parent = false ->
+            Exists fun child => child ∈ directedChildren large parent) :
+    NodeSet.Subset
+      (keptSinks large (closedForestChild large small)) small := by
+  intro i hi
+  have parts :=
+    (keptSinks_iff large (closedForestChild large small) i).mp hi
+  cases hS : small i with
+  | true =>
+      rfl
+  | false =>
+      rcases hout i parts.1 hS with ⟨_child, hmem⟩
+      cases hcs : directedChildren large i with
+      | nil =>
+          simp [hcs] at hmem
+      | cons d _rest =>
+          have hnone : closedForestChild large small i = none := parts.2
+          simp [closedForestChild, parts.1, hS, hcs] at hnone
 
 theorem childWellFormed_restrict (large small : NodeSet S)
     (child : ForestChild S)
@@ -1212,6 +1605,76 @@ def combine (outcomes : List (IdentificationOutcome S))
     IdentificationOutcome S :=
   collect assemble outcomes []
 
+theorem collect_eq_failed
+    (assemble : List (ProbabilityTerm S) -> ProbabilityTerm S)
+    (pending : List (IdentificationOutcome S))
+    (acc : List (ProbabilityTerm S)) {fail : IdentificationFail S}
+    (h : collect assemble pending acc = failed fail) :
+    failed fail ∈ pending := by
+  induction pending generalizing acc with
+  | nil =>
+      simp [collect] at h
+  | cons head rest ih =>
+      cases head with
+      | identified t =>
+          simp [collect] at h
+          exact List.mem_cons.mpr (Or.inr (ih (t :: acc) h))
+      | failed seed =>
+          simp [collect] at h
+          subst h
+          exact List.mem_cons.mpr (Or.inl rfl)
+      | unfinished =>
+          simp [collect] at h
+
+theorem combine_eq_failed
+    (outcomes : List (IdentificationOutcome S))
+    (assemble : List (ProbabilityTerm S) -> ProbabilityTerm S)
+    {fail : IdentificationFail S}
+    (h : combine outcomes assemble = failed fail) :
+    failed fail ∈ outcomes :=
+  collect_eq_failed assemble outcomes [] h
+
+/--
+A successful product collects one observational term from every factor.
+The assembled formula is `assemble` applied to those terms in list order.
+-/
+theorem collect_eq_identified
+    (assemble : List (ProbabilityTerm S) -> ProbabilityTerm S)
+    (pending : List (IdentificationOutcome S))
+    (acc : List (ProbabilityTerm S)) {term : ProbabilityTerm S}
+    (h : collect assemble pending acc = identified term) :
+    Exists fun terms =>
+      pending = terms.map identified ∧
+        term = assemble (acc.reverse ++ terms) := by
+  induction pending generalizing acc term with
+  | nil =>
+      simp [collect] at h
+      refine ⟨[], rfl, ?_⟩
+      simpa using h.symm
+  | cons head rest ih =>
+      cases head with
+      | identified t =>
+          simp [collect] at h
+          rcases ih (t :: acc) h with ⟨terms, hrest, hterm⟩
+          refine ⟨t :: terms, ?_, ?_⟩
+          · simp [hrest]
+          · simpa [List.reverse_cons, List.append_assoc] using hterm
+      | failed _seed =>
+          simp [collect] at h
+      | unfinished =>
+          simp [collect] at h
+
+theorem combine_eq_identified
+    (outcomes : List (IdentificationOutcome S))
+    (assemble : List (ProbabilityTerm S) -> ProbabilityTerm S)
+    {term : ProbabilityTerm S}
+    (h : combine outcomes assemble = identified term) :
+    Exists fun terms =>
+      outcomes = terms.map identified ∧
+        term = assemble terms := by
+  rcases collect_eq_identified assemble outcomes [] h with ⟨terms, hpending, hterm⟩
+  exact ⟨terms, hpending, by simpa using hterm⟩
+
 end IdentificationOutcome
 
 /--
@@ -1266,6 +1729,15 @@ theorem productTerms_actionFree (terms : List (ProbabilityTerm S))
           exact ih (fun u hu =>
             h u (List.mem_cons.mpr (Or.inr hu)))
 
+/-- Nonempty tail: `productTerms` is later-first multiply, matching
+`DoCalculusDerivation.chain`. -/
+theorem productTerms_cons (t : ProbabilityTerm S)
+    (rest : List (ProbabilityTerm S)) (hne : rest ≠ []) :
+    productTerms (t :: rest) = .multiply t (productTerms rest) := by
+  cases rest with
+  | nil => exact (hne rfl).elim
+  | cons _s _rest => rfl
+
 /--
 Chain-rule conditioner for `node`: every topologically earlier vertex that
 still belongs to the current remaining set.  Signature nodes are already
@@ -1273,6 +1745,464 @@ topologically numbered by `directed_earlier`.
 -/
 def chainCondition (remaining : NodeSet S) (node : Fin S.count) : NodeSet S :=
   fun j => remaining j && decide (j.val < node.val)
+
+/-- Extra topological predecessors of `node` that are not already in
+the observed action.  Rule 1 inserts this block into `P(Y | X)` to
+recover the chain-rule conditioner. -/
+def extraPredecessors (remaining : NodeSet S) (node : Fin S.count)
+    (action : NodeSet S) : NodeSet S :=
+  NodeSet.diff (chainCondition remaining node) action
+
+theorem disjoint_singleton_chainCondition (remaining : NodeSet S)
+    (node : Fin S.count) :
+    NodeSet.Disjoint (NodeSet.singleton node)
+      (chainCondition remaining node) := by
+  intro i hi
+  have heq : i = node := (NodeSet.singleton_eq_true_iff node i).mp hi
+  simp [chainCondition, heq]
+
+theorem extraPredecessors_union_eq
+    {remaining action : NodeSet S} {node : Fin S.count}
+    (hsubset : NodeSet.Subset action (chainCondition remaining node)) :
+    NodeSet.union (extraPredecessors remaining node action) action =
+      chainCondition remaining node :=
+  NodeSet.diff_union_eq hsubset
+
+/-- Immediate topological predecessor of a positive-index vertex. -/
+def predIndex {S : ObservedSignature} (j : Fin S.count) (h : 0 < j.val) :
+    Fin S.count :=
+  ⟨j.val - 1, by
+    have hlt : j.val - 1 < j.val := Nat.sub_lt h Nat.zero_lt_one
+    exact Nat.lt_trans hlt j.isLt⟩
+
+theorem predIndex_val {S : ObservedSignature} (j : Fin S.count)
+    (h : 0 < j.val) :
+    (predIndex j h).val + 1 = j.val :=
+  Nat.succ_pred_eq_of_pos h
+
+theorem predIndex_ne {S : ObservedSignature} (j : Fin S.count)
+    (h : 0 < j.val) :
+    predIndex j h ≠ j := by
+  intro heq
+  have hlt : (predIndex j h).val < j.val :=
+    Nat.sub_lt h Nat.zero_lt_one
+  have hval : (predIndex j h).val = j.val := congrArg Fin.val heq
+  exact Nat.lt_irrefl _ (hval ▸ hlt)
+
+theorem predIndex_lt {S : ObservedSignature} (j : Fin S.count)
+    (h : 0 < j.val) :
+    (predIndex j h).val < j.val :=
+  Nat.sub_lt h Nat.zero_lt_one
+
+/-- A later vertex is disjoint from the chain-rule conditioner of an
+earlier one: topological numbering forbids `j.val < i.val`. -/
+theorem disjoint_later_chainCondition (remaining : NodeSet S)
+    {i j : Fin S.count} (hlt : i.val < j.val) :
+    NodeSet.Disjoint (NodeSet.singleton j) (chainCondition remaining i) := by
+  intro k hk
+  have heq : k = j := (NodeSet.singleton_eq_true_iff j k).mp hk
+  have hnlt : ¬ j.val < i.val := Nat.not_lt.mpr (Nat.le_of_lt hlt)
+  simp [chainCondition, heq, decide_eq_false hnlt]
+
+/-- For consecutive indices, `Pa_V(j) = {i} ∪ Pa_V(i)`. -/
+theorem chainCondition_predIndex {S : ObservedSignature}
+    (j : Fin S.count) (h : 0 < j.val) :
+    chainCondition NodeSet.full j =
+      NodeSet.union (NodeSet.singleton (predIndex j h))
+        (chainCondition NodeSet.full (predIndex j h)) := by
+  funext k
+  let i := predIndex j h
+  have hilt : i.val < j.val := predIndex_lt j h
+  have hi : i.val + 1 = j.val := predIndex_val j h
+  simp [chainCondition, NodeSet.union, NodeSet.singleton, NodeSet.full]
+  cases hlt : decide (k.val < i.val) with
+  | true =>
+      have hk : k.val < i.val := of_decide_eq_true hlt
+      have hkj : k.val < j.val := Nat.lt_trans hk hilt
+      simp [decide_eq_true hkj]
+  | false =>
+      cases heq : decide (k = i) with
+      | true =>
+          have hk : k = i := of_decide_eq_true heq
+          have hkj : k.val < j.val := hk ▸ hilt
+          simp [decide_eq_true hkj]
+      | false =>
+          have hne : k ≠ i := of_decide_eq_false heq
+          have hnlt : ¬ k.val < i.val := of_decide_eq_false hlt
+          have hge : i.val ≤ k.val := Nat.not_lt.mp hnlt
+          have hneVal : k.val ≠ i.val := fun hv =>
+            hne (Fin.eq_of_val_eq hv)
+          have hgt : i.val < k.val :=
+            Nat.lt_of_le_of_ne hge (Ne.symm hneVal)
+          have hgej : j.val ≤ k.val := by
+            have : Nat.succ i.val ≤ k.val := Nat.succ_le_of_lt hgt
+            simpa [hi] using this
+          have hnltj : ¬ k.val < j.val := Nat.not_lt.mpr hgej
+          simp [decide_eq_false hnltj]
+
+theorem predIndex_pos_of_two {S : ObservedSignature} (j : Fin S.count)
+    (h1 : 1 < j.val) :
+    0 < (predIndex j (Nat.lt_trans Nat.zero_lt_one h1)).val := by
+  simpa [predIndex] using Nat.sub_pos_of_lt h1
+
+/-- Two-step topological predecessor of a vertex with index at least 2. -/
+def predIndex2 {S : ObservedSignature} (j : Fin S.count) (h1 : 1 < j.val) :
+    Fin S.count :=
+  predIndex (predIndex j (Nat.lt_trans Nat.zero_lt_one h1))
+    (predIndex_pos_of_two j h1)
+
+theorem predIndex2_lt {S : ObservedSignature} (j : Fin S.count)
+    (h1 : 1 < j.val) :
+    (predIndex2 j h1).val <
+      (predIndex j (Nat.lt_trans Nat.zero_lt_one h1)).val :=
+  predIndex_lt _ (predIndex_pos_of_two j h1)
+
+/-- For two consecutive steps, `Pa_V(j) = {i} ∪ {k} ∪ Pa_V(k)`. -/
+theorem chainCondition_predIndex2 {S : ObservedSignature}
+    (j : Fin S.count) (h1 : 1 < j.val) :
+    chainCondition NodeSet.full j =
+      NodeSet.union
+        (NodeSet.singleton (predIndex j (Nat.lt_trans Nat.zero_lt_one h1)))
+        (NodeSet.union (NodeSet.singleton (predIndex2 j h1))
+          (chainCondition NodeSet.full (predIndex2 j h1))) := by
+  have hpos : 0 < j.val := Nat.lt_trans Nat.zero_lt_one h1
+  have hi := chainCondition_predIndex j hpos
+  have hk := chainCondition_predIndex
+    (predIndex j hpos) (predIndex_pos_of_two j h1)
+  calc
+    chainCondition NodeSet.full j =
+      NodeSet.union (NodeSet.singleton (predIndex j hpos))
+        (chainCondition NodeSet.full (predIndex j hpos)) := hi
+    _ = NodeSet.union (NodeSet.singleton (predIndex j hpos))
+          (NodeSet.union (NodeSet.singleton (predIndex2 j h1))
+            (chainCondition NodeSet.full (predIndex2 j h1))) := by
+        have hdef : predIndex2 j h1 =
+            predIndex (predIndex j hpos) (predIndex_pos_of_two j h1) :=
+          rfl
+        rw [hdef, hk]
+
+/-- n-step topological predecessor: `predIndexNth j 0 = j`,
+`predIndexNth j 1 = predIndex j`, `predIndexNth j 2 = predIndex2`.
+The bound `n ≤ j.val` is data, so the inhabitant is a `Fin` without
+searching for a predecessor. -/
+def predIndexNth {S : ObservedSignature} (j : Fin S.count) (n : Nat)
+    (_h : n ≤ j.val) : Fin S.count :=
+  ⟨j.val - n, Nat.lt_of_le_of_lt (Nat.sub_le j.val n) j.isLt⟩
+
+theorem predIndexNth_val {S : ObservedSignature} (j : Fin S.count)
+    (n : Nat) (_h : n ≤ j.val) :
+    (predIndexNth j n _h).val = j.val - n :=
+  rfl
+
+theorem predIndexNth_zero {S : ObservedSignature} (j : Fin S.count) :
+    predIndexNth j 0 (Nat.zero_le j.val) = j :=
+  Fin.eq_of_val_eq (by simp [predIndexNth])
+
+theorem predIndexNth_one {S : ObservedSignature} (j : Fin S.count)
+    (h : 1 ≤ j.val) :
+    predIndexNth j 1 h = predIndex j (Nat.lt_of_succ_le h) :=
+  Fin.eq_of_val_eq (by simp [predIndexNth, predIndex])
+
+theorem predIndexNth_two {S : ObservedSignature} (j : Fin S.count)
+    (h : 2 ≤ j.val) :
+    predIndexNth j 2 h = predIndex2 j (Nat.lt_of_succ_le h) :=
+  Fin.eq_of_val_eq (by
+    simp [predIndexNth, predIndex2, predIndex]
+    omega)
+
+/-- The next predecessor is one `predIndex` step from the current
+n-step predecessor, once `n + 1 ≤ j.val` so that step is still in
+range. -/
+theorem predIndexNth_succ {S : ObservedSignature} (j : Fin S.count)
+    (n : Nat) (h : n + 1 ≤ j.val) :
+    predIndexNth j (n + 1) h =
+      predIndex
+        (predIndexNth j n (Nat.le_trans (Nat.le_succ n) h))
+        (by
+          have hlt : n < j.val := Nat.lt_of_succ_le h
+          simpa [predIndexNth] using Nat.sub_pos_of_lt hlt) :=
+  Fin.eq_of_val_eq (by
+    simp [predIndexNth, predIndex]
+    omega)
+
+/-- The n immediate topological predecessors of `j`, nearest first. -/
+def consecutivePredList {S : ObservedSignature} (j : Fin S.count)
+    (n : Nat) (h : n ≤ j.val) : List (Fin S.count) :=
+  List.ofFn fun i : Fin n =>
+    predIndexNth j (i.val + 1)
+      (Nat.succ_le_of_lt (Nat.lt_of_lt_of_le i.isLt h))
+
+/-- Vertices summed off a consecutive n-step chain factorization. -/
+def consecutiveSummed {S : ObservedSignature} (j : Fin S.count)
+    (n : Nat) (h : n ≤ j.val) : NodeSet S :=
+  (consecutivePredList j n h).foldl
+    (fun acc node => NodeSet.union acc (NodeSet.singleton node))
+    NodeSet.empty
+
+theorem consecutivePredList_zero {S : ObservedSignature}
+    (j : Fin S.count) :
+    consecutivePredList j 0 (Nat.zero_le j.val) = [] :=
+  List.ofFn_zero
+
+theorem consecutiveSummed_zero {S : ObservedSignature}
+    (j : Fin S.count) :
+    consecutiveSummed j 0 (Nat.zero_le j.val) = NodeSet.empty := by
+  simp [consecutiveSummed, consecutivePredList_zero]
+
+theorem consecutivePredList_one {S : ObservedSignature}
+    (j : Fin S.count) (h : 1 ≤ j.val) :
+    consecutivePredList j 1 h = [predIndex j (Nat.lt_of_succ_le h)] := by
+  unfold consecutivePredList
+  rw [List.ofFn_succ, List.ofFn_zero]
+  simp [predIndexNth_one]
+
+theorem consecutiveSummed_one {S : ObservedSignature}
+    (j : Fin S.count) (h : 1 ≤ j.val) :
+    consecutiveSummed j 1 h =
+      NodeSet.singleton (predIndex j (Nat.lt_of_succ_le h)) := by
+  simp [consecutiveSummed, consecutivePredList_one, List.foldl,
+    NodeSet.union_empty_left]
+
+theorem consecutivePredList_two {S : ObservedSignature}
+    (j : Fin S.count) (h : 2 ≤ j.val) :
+    consecutivePredList j 2 h =
+      [predIndex j (Nat.lt_of_succ_le (Nat.le_trans (Nat.le_succ 1) h)),
+        predIndex2 j (Nat.lt_of_succ_le h)] := by
+  have h1 : 1 ≤ j.val := Nat.le_trans (Nat.le_succ 1) h
+  unfold consecutivePredList
+  rw [List.ofFn_succ, List.ofFn_succ, List.ofFn_zero]
+  simp [predIndexNth_one (h := h1), predIndexNth_two (h := h)]
+
+theorem consecutiveSummed_two {S : ObservedSignature}
+    (j : Fin S.count) (h : 2 ≤ j.val) :
+    consecutiveSummed j 2 h =
+      NodeSet.union
+        (NodeSet.singleton
+          (predIndex j (Nat.lt_of_succ_le (Nat.le_trans (Nat.le_succ 1) h))))
+        (NodeSet.singleton (predIndex2 j (Nat.lt_of_succ_le h))) := by
+  simp [consecutiveSummed, consecutivePredList_two, List.foldl,
+    NodeSet.union_empty_left]
+
+theorem foldl_union_singleton_left {S : ObservedSignature}
+    (X : NodeSet S) (nodes : List (Fin S.count)) :
+    nodes.foldl
+        (fun acc node => NodeSet.union acc (NodeSet.singleton node)) X =
+      NodeSet.union X
+        (nodes.foldl
+          (fun acc node => NodeSet.union acc (NodeSet.singleton node))
+          NodeSet.empty) := by
+  induction nodes generalizing X with
+  | nil =>
+      simp [List.foldl, NodeSet.union_empty_right]
+  | cons n ns ih =>
+      simp only [List.foldl]
+      rw [ih]
+      rw [NodeSet.union_empty_left]
+      rw [ih (X := NodeSet.singleton n)]
+      exact NodeSet.union_assoc _ _ _
+
+theorem foldl_union_singleton_cons {S : ObservedSignature}
+    (head : Fin S.count) (tail : List (Fin S.count)) :
+    (head :: tail).foldl
+        (fun acc node => NodeSet.union acc (NodeSet.singleton node))
+        NodeSet.empty =
+      NodeSet.union (NodeSet.singleton head)
+        (tail.foldl
+          (fun acc node => NodeSet.union acc (NodeSet.singleton node))
+          NodeSet.empty) := by
+  simp only [List.foldl]
+  rw [NodeSet.union_empty_left, foldl_union_singleton_left]
+
+theorem one_le_of_succ_le {n jval : Nat} (h : n + 1 ≤ jval) : 1 ≤ jval :=
+  Nat.le_trans (Nat.succ_le_succ (Nat.zero_le n)) h
+
+theorem predIndexNth_lt_of_pos {S : ObservedSignature}
+    (j : Fin S.count) (n : Nat) (h : n ≤ j.val) (hn : 0 < n) :
+    (predIndexNth j n h).val < j.val := by
+  have hj : 0 < j.val := Nat.lt_of_lt_of_le hn h
+  simpa [predIndexNth] using Nat.sub_lt hj hn
+
+theorem consecutivePredList_succ {S : ObservedSignature}
+    (j : Fin S.count) (n : Nat) (h : n + 1 ≤ j.val) :
+    consecutivePredList j (n + 1) h =
+      predIndexNth j 1 (one_le_of_succ_le h) ::
+        consecutivePredList
+          (predIndexNth j 1 (one_le_of_succ_le h)) n
+          (by
+            simpa [predIndexNth] using
+              Nat.le_sub_one_of_lt (Nat.lt_of_succ_le h)) := by
+  unfold consecutivePredList
+  rw [List.ofFn_succ]
+  refine congr (congrArg List.cons ?_) ?_
+  · apply Fin.eq_of_val_eq
+    simp [predIndexNth]
+  · congr 1
+    funext i
+    apply Fin.eq_of_val_eq
+    simp [predIndexNth, Fin.succ]
+    omega
+
+theorem consecutiveSummed_succ {S : ObservedSignature}
+    (j : Fin S.count) (n : Nat) (h : n + 1 ≤ j.val) :
+    consecutiveSummed j (n + 1) h =
+      NodeSet.union
+        (NodeSet.singleton (predIndexNth j 1 (one_le_of_succ_le h)))
+        (consecutiveSummed
+          (predIndexNth j 1 (one_le_of_succ_le h)) n
+          (by
+            simpa [predIndexNth] using
+              Nat.le_sub_one_of_lt (Nat.lt_of_succ_le h))) := by
+  unfold consecutiveSummed
+  rw [consecutivePredList_succ]
+  simp only [List.foldl]
+  rw [NodeSet.union_empty_left, foldl_union_singleton_left]
+
+theorem consecutiveSummed_of_zero {S : ObservedSignature}
+    (j : Fin S.count) (h : 0 ≤ j.val) :
+    consecutiveSummed j 0 h = NodeSet.empty := by
+  simp [consecutiveSummed, consecutivePredList, List.ofFn_zero]
+
+theorem predIndexNth_eq_zero {S : ObservedSignature}
+    (j : Fin S.count) (h : 0 ≤ j.val) :
+    predIndexNth j 0 h = j :=
+  Fin.eq_of_val_eq (by simp [predIndexNth])
+
+/-- `j` together with its n topological predecessors. -/
+def consecutiveInterval {S : ObservedSignature} (j : Fin S.count)
+    (n : Nat) (h : n ≤ j.val) : NodeSet S :=
+  NodeSet.union (NodeSet.singleton j) (consecutiveSummed j n h)
+
+theorem consecutiveInterval_zero {S : ObservedSignature}
+    (j : Fin S.count) (h : 0 ≤ j.val) :
+    consecutiveInterval j 0 h = NodeSet.singleton j := by
+  simp [consecutiveInterval, consecutiveSummed_of_zero, NodeSet.union_empty_right]
+
+theorem predIndexNth_predIndexNth_one {S : ObservedSignature}
+    (j : Fin S.count) (n : Nat) (h : n + 1 ≤ j.val) :
+    predIndexNth (predIndexNth j 1 (one_le_of_succ_le h)) n
+        (by
+          simpa [predIndexNth] using
+            Nat.le_sub_one_of_lt (Nat.lt_of_succ_le h)) =
+      predIndexNth j (n + 1) h :=
+  Fin.eq_of_val_eq (by
+    simp [predIndexNth]
+    omega)
+
+theorem chainCondition_predIndexNth {S : ObservedSignature}
+    (j : Fin S.count) (n : Nat) (h : n ≤ j.val) :
+    chainCondition NodeSet.full j =
+      NodeSet.union (consecutiveSummed j n h)
+        (chainCondition NodeSet.full (predIndexNth j n h)) := by
+  induction n generalizing j with
+  | zero =>
+      rw [consecutiveSummed_of_zero, predIndexNth_eq_zero,
+        NodeSet.union_empty_left]
+  | succ n ih =>
+      have h1 : 1 ≤ j.val := one_le_of_succ_le h
+      have hpos : 0 < j.val := Nat.lt_of_succ_le h1
+      have hn' : n ≤ (predIndexNth j 1 h1).val := by
+        simpa [predIndexNth] using
+          Nat.le_sub_one_of_lt (Nat.lt_of_succ_le h)
+      have hi := chainCondition_predIndex j hpos
+      have hnth1 : predIndexNth j 1 h1 = predIndex j hpos :=
+        predIndexNth_one j h1
+      rw [consecutiveSummed_succ]
+      calc
+        chainCondition NodeSet.full j =
+            NodeSet.union (NodeSet.singleton (predIndex j hpos))
+              (chainCondition NodeSet.full (predIndex j hpos)) := hi
+        _ = NodeSet.union (NodeSet.singleton (predIndexNth j 1 h1))
+              (chainCondition NodeSet.full (predIndexNth j 1 h1)) := by
+            rw [hnth1]
+        _ = NodeSet.union (NodeSet.singleton (predIndexNth j 1 h1))
+              (NodeSet.union
+                (consecutiveSummed (predIndexNth j 1 h1) n hn')
+                (chainCondition NodeSet.full
+                  (predIndexNth (predIndexNth j 1 h1) n hn'))) := by
+            rw [ih (predIndexNth j 1 h1) hn']
+        _ = NodeSet.union
+              (NodeSet.union (NodeSet.singleton (predIndexNth j 1 h1))
+                (consecutiveSummed (predIndexNth j 1 h1) n hn'))
+              (chainCondition NodeSet.full
+                (predIndexNth (predIndexNth j 1 h1) n hn')) :=
+          (NodeSet.union_assoc _ _ _).symm
+        _ = NodeSet.union
+              (NodeSet.union (NodeSet.singleton (predIndexNth j 1 h1))
+                (consecutiveSummed (predIndexNth j 1 h1) n hn'))
+              (chainCondition NodeSet.full (predIndexNth j (n + 1) h)) := by
+            rw [predIndexNth_predIndexNth_one]
+
+theorem mem_consecutivePredList_lt {S : ObservedSignature}
+    (j : Fin S.count) (n : Nat) (h : n ≤ j.val) {i : Fin S.count}
+    (hi : i ∈ consecutivePredList j n h) :
+    i.val < j.val := by
+  rcases List.mem_ofFn.mp hi with ⟨k, hk⟩
+  have hn : 0 < k.val + 1 := Nat.succ_pos _
+  rw [← hk]
+  exact predIndexNth_lt_of_pos j (k.val + 1) _ hn
+
+theorem disjoint_foldl_union_singleton {S : ObservedSignature}
+    (X : NodeSet S) (nodes : List (Fin S.count))
+    (h : ∀ node ∈ nodes, NodeSet.Disjoint X (NodeSet.singleton node)) :
+    NodeSet.Disjoint X
+      (nodes.foldl
+        (fun acc node => NodeSet.union acc (NodeSet.singleton node))
+        NodeSet.empty) := by
+  induction nodes with
+  | nil =>
+      simpa [List.foldl] using NodeSet.disjoint_empty_right X
+  | cons n ns ih =>
+      rw [foldl_union_singleton_cons]
+      exact NodeSet.disjoint_union_of
+        (h n (List.mem_cons.mpr (Or.inl rfl)))
+        (ih (fun node hm => h node (List.mem_cons.mpr (Or.inr hm))))
+
+theorem disjoint_singleton_consecutiveSummed {S : ObservedSignature}
+    (j : Fin S.count) (n : Nat) (h : n ≤ j.val) :
+    NodeSet.Disjoint (NodeSet.singleton j) (consecutiveSummed j n h) := by
+  unfold consecutiveSummed
+  apply disjoint_foldl_union_singleton
+  intro node hmem
+  have hlt := mem_consecutivePredList_lt j n h hmem
+  exact NodeSet.disjoint_singletons_of_ne (fun heq =>
+    Nat.lt_irrefl _ (heq ▸ hlt))
+
+theorem disjoint_foldl_union_singleton_left {S : ObservedSignature}
+    (W : NodeSet S) (nodes : List (Fin S.count))
+    (h : ∀ node ∈ nodes, NodeSet.Disjoint (NodeSet.singleton node) W) :
+    NodeSet.Disjoint
+      (nodes.foldl
+        (fun acc node => NodeSet.union acc (NodeSet.singleton node))
+        NodeSet.empty)
+      W := by
+  induction nodes with
+  | nil =>
+      simpa [List.foldl] using NodeSet.disjoint_empty_left W
+  | cons n ns ih =>
+      rw [foldl_union_singleton_cons]
+      exact NodeSet.disjoint_union_left_of
+        (h n (List.mem_cons.mpr (Or.inl rfl)))
+        (ih (fun node hm => h node (List.mem_cons.mpr (Or.inr hm))))
+
+theorem disjoint_consecutiveSummed_chainCondition {S : ObservedSignature}
+    (j : Fin S.count) (n : Nat) (h : n ≤ j.val) :
+    NodeSet.Disjoint (consecutiveSummed j n h)
+      (chainCondition NodeSet.full (predIndexNth j n h)) := by
+  unfold consecutiveSummed
+  apply disjoint_foldl_union_singleton_left
+  intro node hmem
+  rcases List.mem_ofFn.mp hmem with ⟨k, hk⟩
+  have hle : (predIndexNth j n h).val ≤ node.val := by
+    rw [← hk]
+    simpa [predIndexNth] using
+      Nat.sub_le_sub_left (Nat.succ_le_of_lt k.isLt) j.val
+  cases Nat.lt_or_eq_of_le hle with
+  | inl hlt =>
+      exact disjoint_later_chainCondition NodeSet.full hlt
+  | inr heq =>
+      have hnode : node = predIndexNth j n h := Fin.eq_of_val_eq heq.symm
+      simpa [hnode] using
+        disjoint_singleton_chainCondition NodeSet.full node
 
 def chainKernel (remaining : NodeSet S) (node : Fin S.count) : Kernel S where
   outcome := NodeSet.singleton node
@@ -1297,6 +2227,203 @@ theorem chainProduct_actionFree (remaining component : NodeSet S) :
       rcases List.mem_map.mp ht with ⟨_node, _, rfl⟩
       intro _i
       rfl)
+
+/-- A one-vertex c-component factorizes as the single chain-rule kernel
+on that vertex.  Singleton 4.2 writes this kernel (then an empty
+complementary sum) once the free component coincides with a singleton
+outcome. -/
+theorem chainProduct_of_members_singleton (remaining : NodeSet S)
+    {component : NodeSet S} {y : Fin S.count}
+    (h : NodeSet.members component = [y]) :
+    chainProduct remaining component =
+      ProbabilityTerm.kernel (chainKernel remaining y) := by
+  simp [chainProduct, h, productTerms]
+
+/-- Chain-rule kernels of `j` and its n predecessors, later first so
+`productTerms` matches the chain-constructor multiply order used by
+the consecutive 4.2 certificates. -/
+def consecutiveChainKernels {S : ObservedSignature} (j : Fin S.count)
+    (n : Nat) (h : n ≤ j.val) : List (ProbabilityTerm S) :=
+  List.ofFn fun i : Fin (n + 1) =>
+    ProbabilityTerm.kernel
+      (chainKernel NodeSet.full
+        (predIndexNth j i.val
+          (Nat.le_trans (Nat.le_of_lt_succ i.isLt) h)))
+
+/-- Consecutive n-step 4.2 formula: the singleton kernel when `n = 0`,
+and otherwise the complementary sum of the later-first chain product. -/
+def consecutiveChainTerm {S : ObservedSignature} (j : Fin S.count)
+    (n : Nat) (h : n ≤ j.val) : ProbabilityTerm S :=
+  match n with
+  | 0 => ProbabilityTerm.kernel (chainKernel NodeSet.full j)
+  | n + 1 =>
+      ProbabilityTerm.marginalize (consecutiveSummed j (n + 1) h)
+        (productTerms (consecutiveChainKernels j (n + 1) h))
+
+theorem consecutiveChainTerm_zero {S : ObservedSignature}
+    (j : Fin S.count) :
+    consecutiveChainTerm j 0 (Nat.zero_le j.val) =
+      ProbabilityTerm.kernel (chainKernel NodeSet.full j) :=
+  rfl
+
+theorem consecutiveChainKernels_one {S : ObservedSignature}
+    (j : Fin S.count) (h : 1 ≤ j.val) :
+    consecutiveChainKernels j 1 h =
+      [ProbabilityTerm.kernel (chainKernel NodeSet.full j),
+        ProbabilityTerm.kernel
+          (chainKernel NodeSet.full (predIndex j (Nat.lt_of_succ_le h)))] := by
+  unfold consecutiveChainKernels
+  rw [List.ofFn_succ, List.ofFn_succ, List.ofFn_zero]
+  simp [predIndexNth_zero, predIndexNth_one]
+
+theorem consecutiveChainKernels_two {S : ObservedSignature}
+    (j : Fin S.count) (h : 2 ≤ j.val) :
+    consecutiveChainKernels j 2 h =
+      [ProbabilityTerm.kernel (chainKernel NodeSet.full j),
+        ProbabilityTerm.kernel
+          (chainKernel NodeSet.full
+            (predIndex j (Nat.lt_of_succ_le (Nat.le_trans (Nat.le_succ 1) h)))),
+        ProbabilityTerm.kernel
+          (chainKernel NodeSet.full (predIndex2 j (Nat.lt_of_succ_le h)))] := by
+  have h1 : 1 ≤ j.val := Nat.le_trans (Nat.le_succ 1) h
+  unfold consecutiveChainKernels
+  rw [List.ofFn_succ, List.ofFn_succ, List.ofFn_succ, List.ofFn_zero]
+  simp [predIndexNth_zero, predIndexNth_one (h := h1), predIndexNth_two (h := h)]
+
+theorem consecutiveChainTerm_one {S : ObservedSignature}
+    (j : Fin S.count) (h : 1 ≤ j.val) :
+    consecutiveChainTerm j 1 h =
+      ProbabilityTerm.marginalize
+        (NodeSet.singleton (predIndex j (Nat.lt_of_succ_le h)))
+        (.multiply
+          (.kernel (chainKernel NodeSet.full j))
+          (.kernel (chainKernel NodeSet.full
+            (predIndex j (Nat.lt_of_succ_le h))))) := by
+  simp [consecutiveChainTerm, consecutiveSummed_one, consecutiveChainKernels_one,
+    productTerms]
+
+theorem consecutiveChainTerm_two {S : ObservedSignature}
+    (j : Fin S.count) (h : 2 ≤ j.val) :
+    consecutiveChainTerm j 2 h =
+      ProbabilityTerm.marginalize
+        (NodeSet.union
+          (NodeSet.singleton
+            (predIndex j (Nat.lt_of_succ_le (Nat.le_trans (Nat.le_succ 1) h))))
+          (NodeSet.singleton (predIndex2 j (Nat.lt_of_succ_le h))))
+        (.multiply
+          (.kernel (chainKernel NodeSet.full j))
+          (.multiply
+            (.kernel (chainKernel NodeSet.full
+              (predIndex j (Nat.lt_of_succ_le
+                (Nat.le_trans (Nat.le_succ 1) h)))))
+            (.kernel (chainKernel NodeSet.full
+              (predIndex2 j (Nat.lt_of_succ_le h)))))) := by
+  simp [consecutiveChainTerm, consecutiveSummed_two, consecutiveChainKernels_two,
+    productTerms]
+
+theorem consecutiveChainKernels_zero {S : ObservedSignature}
+    (j : Fin S.count) (h : 0 ≤ j.val) :
+    consecutiveChainKernels j 0 h =
+      [ProbabilityTerm.kernel
+        (chainKernel NodeSet.full (predIndexNth j 0 h))] := by
+  unfold consecutiveChainKernels
+  rw [List.ofFn_succ, List.ofFn_zero]
+  congr 1
+
+/--
+The consecutive chain-kernel list is a `List.ofFn` of length `n + 1`,
+so it is never `[]`.  Length of `nil` is definitionally `0`; rewriting
+the computed length along `heq` and using `Nat.succ_ne_zero` avoids
+`List.eq_nil_iff_forall_not_mem`, which depends on `Classical.choice`.
+-/
+theorem consecutiveChainKernels_ne_nil {S : ObservedSignature}
+    (j : Fin S.count) (n : Nat) (h : n ≤ j.val) :
+    consecutiveChainKernels j n h ≠ [] := by
+  have hlen : (consecutiveChainKernels j n h).length = n + 1 := by
+    simp [consecutiveChainKernels]
+  intro heq
+  rw [heq] at hlen
+  exact Nat.succ_ne_zero n (Eq.symm hlen)
+
+theorem consecutiveChainKernels_product_zero {S : ObservedSignature}
+    (j : Fin S.count) (h : 0 ≤ j.val) :
+    productTerms (consecutiveChainKernels j 0 h) =
+      ProbabilityTerm.kernel (chainKernel NodeSet.full j) := by
+  rw [consecutiveChainKernels_zero, predIndexNth_eq_zero]
+  rfl
+
+theorem consecutiveChainKernels_succ {S : ObservedSignature}
+    (j : Fin S.count) (n : Nat) (h : n + 1 ≤ j.val) :
+    consecutiveChainKernels j (n + 1) h =
+      ProbabilityTerm.kernel (chainKernel NodeSet.full j) ::
+        consecutiveChainKernels
+          (predIndexNth j 1 (one_le_of_succ_le h)) n
+          (by
+            simpa [predIndexNth] using
+              Nat.le_sub_one_of_lt (Nat.lt_of_succ_le h)) := by
+  unfold consecutiveChainKernels
+  rw [List.ofFn_succ]
+  refine congr (congrArg List.cons ?_) ?_
+  · apply congrArg
+    apply congrArg
+    exact predIndexNth_eq_zero _ _
+  · congr 1
+    funext i
+    apply congrArg
+    apply congrArg
+    apply Fin.eq_of_val_eq
+    simp [predIndexNth, Fin.succ]
+    omega
+
+theorem consecutiveChainTerm_succ {S : ObservedSignature}
+    (j : Fin S.count) (n : Nat) (h : n + 1 ≤ j.val) :
+    consecutiveChainTerm j (n + 1) h =
+      ProbabilityTerm.marginalize (consecutiveSummed j (n + 1) h)
+        (.multiply
+          (.kernel (chainKernel NodeSet.full j))
+          (productTerms
+            (consecutiveChainKernels
+              (predIndexNth j 1 (one_le_of_succ_le h)) n
+              (by
+                simpa [predIndexNth] using
+                  Nat.le_sub_one_of_lt (Nat.lt_of_succ_le h))))) := by
+  simp only [consecutiveChainTerm]
+  rw [consecutiveChainKernels_succ,
+    productTerms_cons _ _ (consecutiveChainKernels_ne_nil _ _ _)]
+
+theorem consecutiveChainTerm_actionFree {S : ObservedSignature}
+    (j : Fin S.count) (n : Nat) (h : n ≤ j.val) :
+    (consecutiveChainTerm j n h).ActionFree := by
+  cases n with
+  | zero =>
+      intro _i
+      rfl
+  | succ n =>
+      simp only [consecutiveChainTerm]
+      exact productTerms_actionFree _
+        (fun t ht => by
+          rcases List.mem_ofFn.mp ht with ⟨_i, rfl⟩
+          intro _k
+          rfl)
+
+theorem consecutive_chainKernel_eq {S : ObservedSignature}
+    (j : Fin S.count) (n : Nat) (h : n ≤ j.val) :
+    ProbabilityTerm.kernel
+        ⟨NodeSet.singleton j, NodeSet.empty,
+          NodeSet.union (consecutiveSummed j n h)
+            (chainCondition NodeSet.full (predIndexNth j n h))⟩ =
+      .kernel (chainKernel NodeSet.full j) := by
+  simp only [chainKernel]
+  rw [← chainCondition_predIndexNth j n h]
+
+theorem consecutiveSummed_succ_eq_interval {S : ObservedSignature}
+    (j : Fin S.count) (n : Nat) (h : n + 1 ≤ j.val) :
+    consecutiveSummed j (n + 1) h =
+      consecutiveInterval (predIndexNth j 1 (one_le_of_succ_le h)) n
+        (by
+          simpa [predIndexNth] using
+            Nat.le_sub_one_of_lt (Nat.lt_of_succ_le h)) := by
+  rw [consecutiveInterval, consecutiveSummed_succ]
 
 /--
 One fuel-bounded ID step on a current remaining vertex set and a current
@@ -1411,6 +2538,73 @@ theorem identifyJoint_of_empty_action (G : ObservedGraph S)
           (observationalJointTerm S)) := by
   simp [identifyJoint, identificationFuel, identifyFuel, emptyAction,
     NodeSet.inter_full_right]
+
+/--
+Empty-action conditional queries reduce by IDC's Bayes step: identify
+the two joints `P(Y, Z)` and `P(Z)`, then divide.  Completeness of this
+branch is the empty-action base case of IDC.
+-/
+theorem identifyConditional_of_empty_action (G : ObservedGraph S)
+    (q : ConditionalKernelQuery S)
+    (emptyAction : NodeSet.isEmpty q.action = true) :
+    identifyConditional G q =
+      IdentificationOutcome.identified
+        (.divide
+          (.marginalize
+            (NodeSet.diff NodeSet.full
+              (NodeSet.union q.outcome q.condition))
+            (observationalJointTerm S))
+          (.marginalize
+            (NodeSet.diff NodeSet.full q.condition)
+            (observationalJointTerm S))) := by
+  have hnum :=
+    identifyJoint_of_empty_action G q.jointNumerator emptyAction
+  have hden :=
+    identifyJoint_of_empty_action G q.jointDenominator emptyAction
+  simp only [identifyConditional]
+  rw [hnum, hden]
+  simp [ConditionalKernelQuery.jointNumerator,
+    ConditionalKernelQuery.jointDenominator]
+
+/--
+The empty-local-action ID step, at any remaining set.  Top-level
+`identifyJoint_of_empty_action` is the instance `remaining = V`.
+-/
+theorem identifyFuel_eq_identified_of_empty_action
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    (hex : NodeSet.isEmpty (NodeSet.inter action remaining) = true) :
+    identifyFuel (fuel + 1) G remaining outcome action current =
+      IdentificationOutcome.identified
+        (.marginalize
+          (NodeSet.diff remaining (NodeSet.inter outcome remaining))
+          current) := by
+  simp [identifyFuel, hex]
+
+/--
+No free c-component means the working remaining set lies inside the
+local action, so ID returns the current expression marginalized off
+every remaining vertex.
+-/
+theorem identifyFuel_eq_identified_of_empty_free
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    (hex : NodeSet.isEmpty (NodeSet.inter action remaining) = false)
+    (hkept :
+      NodeSet.equal
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))
+        remaining = true)
+    (hfc :
+      G.cComponents
+        (NodeSet.diff remaining (NodeSet.inter action remaining)) = []) :
+    identifyFuel (fuel + 1) G remaining outcome action current =
+      IdentificationOutcome.identified
+        (.marginalize remaining current) := by
+  simp [identifyFuel, hex, hkept, hfc]
 
 theorem IdentificationOutcome.collect_identified_actionFree
     (assemble : List (ProbabilityTerm S) -> ProbabilityTerm S)
@@ -1572,6 +2766,396 @@ theorem identifyFuel_identified_actionFree
                           · exact ih remaining piece
                               (NodeSet.diff remaining piece) current hcur hEq
 
+/--
+ID failure always occurs on a remaining set that is a single c-component
+of the working graph.  The failed remaining set is contained in the
+remaining set of the call that produced it.
+-/
+theorem identifyFuel_eq_failed
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    {fail : IdentificationFail S}
+    (h : identifyFuel fuel G remaining outcome action current =
+      IdentificationOutcome.failed fail) :
+    G.isSingleCComponent fail.remaining = true ∧
+      NodeSet.Subset fail.remaining remaining := by
+  induction fuel generalizing remaining outcome action current with
+  | zero =>
+      simp [identifyFuel] at h
+  | succ fuel ih =>
+      cases hex :
+          NodeSet.isEmpty (NodeSet.inter action remaining) with
+      | true =>
+          simp [identifyFuel, hex] at h
+      | false =>
+          cases hkept :
+              NodeSet.equal
+                (G.ancestralSet remaining
+                  (GraphMutilation.bar (NodeSet.inter action remaining))
+                  (NodeSet.inter outcome remaining))
+                remaining with
+          | false =>
+              simp [identifyFuel, hex, hkept] at h
+              have nested :=
+                ih
+                  (G.ancestralSet remaining
+                    (GraphMutilation.bar (NodeSet.inter action remaining))
+                    (NodeSet.inter outcome remaining))
+                  outcome action
+                  (.marginalize
+                    (NodeSet.diff remaining
+                      (G.ancestralSet remaining
+                        (GraphMutilation.bar (NodeSet.inter action remaining))
+                        (NodeSet.inter outcome remaining)))
+                    current)
+                  h
+              exact ⟨nested.1, NodeSet.Subset.trans nested.2
+                (ancestralSet_subset G remaining
+                  (GraphMutilation.bar (NodeSet.inter action remaining))
+                  (NodeSet.inter outcome remaining))⟩
+          | true =>
+              cases hfc :
+                  G.cComponents
+                    (NodeSet.diff remaining
+                      (NodeSet.inter action remaining)) with
+              | nil =>
+                  simp [identifyFuel, hex, hkept, hfc] at h
+              | cons component rest =>
+                  cases rest with
+                  | nil =>
+                      cases hsingle : G.isSingleCComponent remaining with
+                      | true =>
+                          simp [identifyFuel, hex, hkept, hfc, hsingle] at h
+                          cases h
+                          exact ⟨hsingle, fun _i hi => hi⟩
+                      | false =>
+                          cases hany :
+                              (G.cComponents remaining).any
+                                (fun piece =>
+                                  NodeSet.equal piece component) with
+                          | true =>
+                              simp [identifyFuel, hex, hkept, hfc, hsingle,
+                                hany] at h
+                          | false =>
+                              cases hcont :
+                                  G.containingCComponent remaining
+                                    component with
+                              | none =>
+                                  simp [identifyFuel, hex, hkept, hfc,
+                                    hsingle, hany, hcont] at h
+                              | some larger =>
+                                  simp [identifyFuel, hex, hkept, hfc,
+                                    hsingle, hany, hcont] at h
+                                  have nested :=
+                                    ih larger outcome
+                                      (NodeSet.inter
+                                        (NodeSet.inter action remaining)
+                                        larger)
+                                      (chainProduct remaining larger) h
+                                  exact ⟨nested.1, NodeSet.Subset.trans nested.2
+                                    (containingCComponent_subset_host G
+                                      remaining component hcont)⟩
+                  | cons component2 rest2 =>
+                      simp [identifyFuel, hex, hkept, hfc] at h
+                      have hin :
+                          IdentificationOutcome.failed fail ∈
+                            (component :: component2 :: rest2).map
+                              (fun c =>
+                                identifyFuel fuel G remaining c
+                                  (NodeSet.diff remaining c) current) :=
+                        IdentificationOutcome.combine_eq_failed _ _ h
+                      rcases List.mem_map.mp hin with ⟨piece, _, hEq⟩
+                      exact ih remaining piece
+                        (NodeSet.diff remaining piece) current hEq
+
+/--
+The free side recorded at a hedge failure is a listed c-component of some
+host still inside the working remaining set.  That host is `remaining \ X`
+at an immediate 4.1 fail, and is preserved by ancestral restriction, 4.3
+c-component restriction, and product recursion.
+-/
+theorem identifyFuel_eq_failed_free
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    {fail : IdentificationFail S}
+    (h : identifyFuel fuel G remaining outcome action current =
+      IdentificationOutcome.failed fail) :
+    NodeSet.Subset fail.free fail.remaining ∧
+      Exists fun host =>
+        Exists fun root =>
+          host root = true ∧
+            fail.free = G.cComponentOf host root ∧
+              NodeSet.Subset host remaining := by
+  induction fuel generalizing remaining outcome action current with
+  | zero =>
+      simp [identifyFuel] at h
+  | succ fuel ih =>
+      cases hex :
+          NodeSet.isEmpty (NodeSet.inter action remaining) with
+      | true =>
+          simp [identifyFuel, hex] at h
+      | false =>
+          cases hkept :
+              NodeSet.equal
+                (G.ancestralSet remaining
+                  (GraphMutilation.bar (NodeSet.inter action remaining))
+                  (NodeSet.inter outcome remaining))
+                remaining with
+          | false =>
+              simp [identifyFuel, hex, hkept] at h
+              have nested :=
+                ih
+                  (G.ancestralSet remaining
+                    (GraphMutilation.bar (NodeSet.inter action remaining))
+                    (NodeSet.inter outcome remaining))
+                  outcome action
+                  (.marginalize
+                    (NodeSet.diff remaining
+                      (G.ancestralSet remaining
+                        (GraphMutilation.bar (NodeSet.inter action remaining))
+                        (NodeSet.inter outcome remaining)))
+                    current)
+                  h
+              constructor
+              · exact nested.1
+              · rcases nested.2 with ⟨host, root, hroot, hdef, hsub⟩
+                exact ⟨host, root, hroot, hdef,
+                  NodeSet.Subset.trans hsub
+                    (ancestralSet_subset G remaining
+                      (GraphMutilation.bar (NodeSet.inter action remaining))
+                      (NodeSet.inter outcome remaining))⟩
+          | true =>
+              cases hfc :
+                  G.cComponents
+                    (NodeSet.diff remaining
+                      (NodeSet.inter action remaining)) with
+              | nil =>
+                  simp [identifyFuel, hex, hkept, hfc] at h
+              | cons component rest =>
+                  cases rest with
+                  | nil =>
+                      cases hsingle : G.isSingleCComponent remaining with
+                      | true =>
+                          simp [identifyFuel, hex, hkept, hfc, hsingle] at h
+                          cases h
+                          constructor
+                          · intro i hi
+                            have hmem :
+                                component ∈
+                                  G.cComponents
+                                    (NodeSet.diff remaining
+                                      (NodeSet.inter action remaining)) := by
+                              simp [hfc]
+                            rcases cComponents_mem G _ hmem with
+                              ⟨root, _, hdef⟩
+                            have hi' :
+                                G.cComponentOf
+                                  (NodeSet.diff remaining
+                                    (NodeSet.inter action remaining))
+                                  root i = true := by
+                              simpa [hdef] using hi
+                            exact NodeSet.diff_subset_left _ _ i
+                              (cComponentOf_subset G _ hi')
+                          · have hmem :
+                                component ∈
+                                  G.cComponents
+                                    (NodeSet.diff remaining
+                                      (NodeSet.inter action remaining)) := by
+                              simp [hfc]
+                            rcases cComponents_mem G _ hmem with
+                              ⟨root, hroot, hdef⟩
+                            exact ⟨NodeSet.diff remaining
+                                (NodeSet.inter action remaining),
+                              root, hroot, hdef, NodeSet.diff_subset_left _ _⟩
+                      | false =>
+                          cases hany :
+                              (G.cComponents remaining).any
+                                (fun piece =>
+                                  NodeSet.equal piece component) with
+                          | true =>
+                              simp [identifyFuel, hex, hkept, hfc, hsingle,
+                                hany] at h
+                          | false =>
+                              cases hcont :
+                                  G.containingCComponent remaining
+                                    component with
+                              | none =>
+                                  simp [identifyFuel, hex, hkept, hfc,
+                                    hsingle, hany, hcont] at h
+                              | some larger =>
+                                  simp [identifyFuel, hex, hkept, hfc,
+                                    hsingle, hany, hcont] at h
+                                  have nested :=
+                                    ih larger outcome
+                                      (NodeSet.inter
+                                        (NodeSet.inter action remaining)
+                                        larger)
+                                      (chainProduct remaining larger) h
+                                  constructor
+                                  · exact nested.1
+                                  · rcases nested.2 with
+                                      ⟨host, root, hroot, hdef, hsub⟩
+                                    exact ⟨host, root, hroot, hdef,
+                                      NodeSet.Subset.trans hsub
+                                        (containingCComponent_subset_host G
+                                          remaining component hcont)⟩
+                  | cons component2 rest2 =>
+                      simp [identifyFuel, hex, hkept, hfc] at h
+                      have hin :
+                          IdentificationOutcome.failed fail ∈
+                            (component :: component2 :: rest2).map
+                              (fun c =>
+                                identifyFuel fuel G remaining c
+                                  (NodeSet.diff remaining c) current) :=
+                        IdentificationOutcome.combine_eq_failed _ _ h
+                      rcases List.mem_map.mp hin with ⟨piece, _, hEq⟩
+                      exact ih remaining piece
+                        (NodeSet.diff remaining piece) current hEq
+
+/--
+A 4.1 failure always records a nonempty cut `remaining \ free`.  The local
+action of that call is nonempty and lives in the cut, because the free
+side is a c-component of `remaining \ X`.
+-/
+theorem identifyFuel_eq_failed_cut_nonempty
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    {fail : IdentificationFail S}
+    (h : identifyFuel fuel G remaining outcome action current =
+      IdentificationOutcome.failed fail) :
+    NodeSet.isEmpty
+      (NodeSet.diff fail.remaining fail.free) = false := by
+  induction fuel generalizing remaining outcome action current with
+  | zero =>
+      simp [identifyFuel] at h
+  | succ fuel ih =>
+      cases hex :
+          NodeSet.isEmpty (NodeSet.inter action remaining) with
+      | true =>
+          simp [identifyFuel, hex] at h
+      | false =>
+          cases hkept :
+              NodeSet.equal
+                (G.ancestralSet remaining
+                  (GraphMutilation.bar (NodeSet.inter action remaining))
+                  (NodeSet.inter outcome remaining))
+                remaining with
+          | false =>
+              simp [identifyFuel, hex, hkept] at h
+              exact ih
+                (G.ancestralSet remaining
+                  (GraphMutilation.bar (NodeSet.inter action remaining))
+                  (NodeSet.inter outcome remaining))
+                outcome action
+                (.marginalize
+                  (NodeSet.diff remaining
+                    (G.ancestralSet remaining
+                      (GraphMutilation.bar (NodeSet.inter action remaining))
+                      (NodeSet.inter outcome remaining)))
+                  current)
+                h
+          | true =>
+              cases hfc :
+                  G.cComponents
+                    (NodeSet.diff remaining
+                      (NodeSet.inter action remaining)) with
+              | nil =>
+                  simp [identifyFuel, hex, hkept, hfc] at h
+              | cons component rest =>
+                  cases rest with
+                  | nil =>
+                      cases hsingle : G.isSingleCComponent remaining with
+                      | true =>
+                          simp [identifyFuel, hex, hkept, hfc, hsingle] at h
+                          cases h
+                          rcases (NodeSet.isEmpty_eq_false_iff
+                              (NodeSet.inter action remaining)).mp hex with
+                            ⟨i, hi⟩
+                          have hrem : remaining i = true :=
+                            NodeSet.inter_subset_right action remaining i hi
+                          have hhost :
+                              NodeSet.diff remaining
+                                (NodeSet.inter action remaining) i = false := by
+                            simp [NodeSet.diff, hi]
+                          have hfree : component i = false := by
+                            cases hf : component i with
+                            | false => rfl
+                            | true =>
+                                have hmem :
+                                    component ∈
+                                      G.cComponents
+                                        (NodeSet.diff remaining
+                                          (NodeSet.inter action remaining)) :=
+                                  by simp [hfc]
+                                rcases cComponents_mem G _ hmem with
+                                  ⟨root, _, hdef⟩
+                                have inHost :
+                                    NodeSet.diff remaining
+                                      (NodeSet.inter action remaining) i =
+                                      true :=
+                                  cComponentOf_subset G _
+                                    (by simpa [hdef] using hf)
+                                exact False.elim
+                                  (Bool.false_ne_true
+                                    (hhost.symm.trans inHost))
+                          exact (NodeSet.isEmpty_eq_false_iff _).mpr
+                            ⟨i, Bool.and_eq_true_iff.mpr
+                              ⟨hrem, by simp [hfree]⟩⟩
+                      | false =>
+                          cases hany :
+                              (G.cComponents remaining).any
+                                (fun piece =>
+                                  NodeSet.equal piece component) with
+                          | true =>
+                              simp [identifyFuel, hex, hkept, hfc, hsingle,
+                                hany] at h
+                          | false =>
+                              cases hcont :
+                                  G.containingCComponent remaining
+                                    component with
+                              | none =>
+                                  simp [identifyFuel, hex, hkept, hfc,
+                                    hsingle, hany, hcont] at h
+                              | some larger =>
+                                  simp [identifyFuel, hex, hkept, hfc,
+                                    hsingle, hany, hcont] at h
+                                  exact ih larger outcome
+                                    (NodeSet.inter
+                                      (NodeSet.inter action remaining)
+                                      larger)
+                                    (chainProduct remaining larger) h
+                  | cons component2 rest2 =>
+                      simp [identifyFuel, hex, hkept, hfc] at h
+                      have hin :
+                          IdentificationOutcome.failed fail ∈
+                            (component :: component2 :: rest2).map
+                              (fun c =>
+                                identifyFuel fuel G remaining c
+                                  (NodeSet.diff remaining c) current) :=
+                        IdentificationOutcome.combine_eq_failed _ _ h
+                      rcases List.mem_map.mp hin with ⟨piece, _, hEq⟩
+                      exact ih remaining piece
+                        (NodeSet.diff remaining piece) current hEq
+
+theorem identifyJoint_eq_failed
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    {fail : IdentificationFail S}
+    (h : identifyJoint G q = IdentificationOutcome.failed fail) :
+    G.isSingleCComponent fail.remaining = true :=
+  (identifyFuel_eq_failed (identificationFuel S) G NodeSet.full
+    q.outcome q.action (observationalJointTerm S) h).1
+
+theorem identifyJoint_eq_failed_cut_nonempty
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    {fail : IdentificationFail S}
+    (h : identifyJoint G q = IdentificationOutcome.failed fail) :
+    NodeSet.isEmpty (NodeSet.diff fail.remaining fail.free) = false :=
+  identifyFuel_eq_failed_cut_nonempty (identificationFuel S) G NodeSet.full
+    q.outcome q.action (observationalJointTerm S) h
+
 theorem identifyJoint_identified_actionFree
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {term : ProbabilityTerm S}
@@ -1638,6 +3222,837 @@ theorem cComponentOf_root_mem (G : ObservedGraph S) (nodes : NodeSet S)
     (NodeSet.mem_enumerated S root) (natBeq_refl root.val)
 
 /--
+A selected target is ancestral of itself: the Boolean ancestry test
+includes the reflexive walk at that vertex.
+-/
+theorem ancestralSet_contains_targets
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (m : GraphMutilation S) (targets : NodeSet S)
+    {i : Fin S.count}
+    (hnodes : nodes i = true) (htargets : targets i = true) :
+    G.ancestralSet nodes m targets i = true := by
+  unfold ObservedGraph.ancestralSet ObservedGraph.ancestorOfWithin
+  refine Bool.and_eq_true_iff.mpr ⟨hnodes, ?_⟩
+  refine List.any_eq_true.mpr ?_
+  refine ⟨i, ?_, ?_⟩
+  · exact (NodeSet.mem_members_iff (NodeSet.inter targets nodes) i).mpr
+      (Bool.and_eq_true_iff.mpr ⟨htargets, hnodes⟩)
+  · exact FiniteReachability.within_self finBeq (NodeSet.enumerated S)
+      (G.directedEdgeWithin nodes m) S.count i
+      (NodeSet.mem_enumerated S i) (natBeq_refl i.val)
+
+/--
+Every selected vertex is placed in some listed c-component, once it has
+either already been accumulated or still appears in the pending scan.
+The top-level collector pending is the full enumeration, so every selected
+vertex is covered.
+-/
+theorem cComponentsCollect_covers
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (pending : List (Fin S.count)) (acc : List (NodeSet S))
+    (hacc : forall component, component ∈ acc ->
+      Exists fun root =>
+        nodes root = true ∧ component = G.cComponentOf nodes root)
+    {i : Fin S.count} (hi : nodes i = true)
+    (hseen :
+      acc.any (fun c => c i) = true ∨ i ∈ pending) :
+    Exists fun component =>
+      component ∈ ObservedGraph.cComponentsCollect G nodes pending acc ∧
+        component i = true := by
+  induction pending generalizing acc with
+  | nil =>
+      have hany : acc.any (fun c => c i) = true := by
+        cases hseen with
+        | inl h => exact h
+        | inr hmem => cases hmem
+      rcases List.any_eq_true.mp hany with ⟨component, hc, hi'⟩
+      exact ⟨component,
+        cComponentsCollect_keeps_acc G nodes [] acc hc, hi'⟩
+  | cons root rest ih =>
+      cases hanyI : acc.any (fun c => c i) with
+      | true =>
+          rcases List.any_eq_true.mp hanyI with ⟨component, hc, hi'⟩
+          exact ⟨component,
+            cComponentsCollect_keeps_acc G nodes (root :: rest) acc hc, hi'⟩
+      | false =>
+          have hiPend : i ∈ root :: rest := by
+            cases hseen with
+            | inl h =>
+                exact False.elim (Bool.false_ne_true (hanyI.symm.trans h))
+            | inr hmem =>
+                exact hmem
+          cases hnode : nodes root with
+          | false =>
+              have irest : i ∈ rest := by
+                rcases List.mem_cons.mp hiPend with heq | hrest
+                · subst heq
+                  exact False.elim
+                    (Bool.false_ne_true (hnode.symm.trans hi))
+                · exact hrest
+              simp [ObservedGraph.cComponentsCollect, hnode]
+              exact ih acc hacc (Or.inr irest)
+          | true =>
+              cases hseenR : acc.any (fun c => c root) with
+              | true =>
+                  simp [ObservedGraph.cComponentsCollect, hnode, hseenR]
+                  rcases List.mem_cons.mp hiPend with heq | hrest
+                  · subst heq
+                    exact False.elim
+                      (Bool.false_ne_true (hanyI.symm.trans hseenR))
+                  · exact ih acc hacc (Or.inr hrest)
+              | false =>
+                  simp [ObservedGraph.cComponentsCollect, hnode, hseenR]
+                  have hacc' :
+                      forall component,
+                        component ∈ G.cComponentOf nodes root :: acc ->
+                          Exists fun r =>
+                            nodes r = true ∧
+                              component = G.cComponentOf nodes r := by
+                    intro component hc
+                    rcases List.mem_cons.mp hc with heq | hca
+                    · exact ⟨root, hnode, heq⟩
+                    · exact hacc component hca
+                  rcases List.mem_cons.mp hiPend with heq | hrest
+                  · subst heq
+                    refine ⟨G.cComponentOf nodes i, ?_,
+                      cComponentOf_root_mem G nodes hnode⟩
+                    exact cComponentsCollect_keeps_acc G nodes rest
+                      (G.cComponentOf nodes i :: acc)
+                      (List.mem_cons.mpr (Or.inl rfl))
+                  · exact ih (G.cComponentOf nodes root :: acc) hacc'
+                      (Or.inr hrest)
+
+theorem cComponents_covers
+    (G : ObservedGraph S) (nodes : NodeSet S) {i : Fin S.count}
+    (hi : nodes i = true) :
+    Exists fun component =>
+      component ∈ G.cComponents nodes ∧ component i = true :=
+  cComponentsCollect_covers G nodes (NodeSet.enumerated S) []
+    (fun _c hc => by cases hc) hi
+    (Or.inr (NodeSet.mem_enumerated S i))
+
+/-- A singleton listed partition is the host set itself. -/
+theorem cComponents_eq_of_singleton
+    (G : ObservedGraph S) (nodes : NodeSet S) {c : NodeSet S}
+    (h : G.cComponents nodes = [c]) : c = nodes := by
+  funext i
+  apply Bool.eq_iff_iff.mpr
+  constructor
+  · intro hc
+    have hmem : c ∈ G.cComponents nodes := by simp [h]
+    rcases cComponents_mem G nodes hmem with ⟨root, _, hdef⟩
+    have hi : G.cComponentOf nodes root i = true := by
+      simpa [hdef] using hc
+    exact cComponentOf_subset G nodes hi
+  · intro hn
+    rcases cComponents_covers G nodes hn with ⟨component, hmem, hi⟩
+    have hcomp : component = c := by
+      simp [h] at hmem
+      exact hmem
+    simpa [hcomp] using hi
+
+/--
+Every ID failure is a 4.1 site for some local outcome and local action:
+the recorded remaining set is ancestral of that local outcome in
+`G_{\overline{remaining \ free}}`, and the free side is exactly
+`remaining` minus the local cut.  Product recursion instantiates the
+local query with a c-component of `G \ X` and action `V \ S_i`; ancestral
+restriction and 4.3 keep the outer outcome.
+-/
+theorem identifyFuel_eq_failed_site
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    {fail : IdentificationFail S}
+    (h : identifyFuel fuel G remaining outcome action current =
+      IdentificationOutcome.failed fail) :
+    Exists fun localOutcome =>
+      Exists fun localAction =>
+        NodeSet.equal
+            (G.ancestralSet fail.remaining
+              (GraphMutilation.bar
+                (NodeSet.diff fail.remaining fail.free))
+              (NodeSet.inter localOutcome fail.remaining))
+            fail.remaining = true ∧
+          NodeSet.equal fail.free
+              (NodeSet.diff fail.remaining
+                (NodeSet.inter localAction fail.remaining)) = true := by
+  induction fuel generalizing remaining outcome action current with
+  | zero =>
+      simp [identifyFuel] at h
+  | succ fuel ih =>
+      cases hex :
+          NodeSet.isEmpty (NodeSet.inter action remaining) with
+      | true =>
+          simp [identifyFuel, hex] at h
+      | false =>
+          cases hkept :
+              NodeSet.equal
+                (G.ancestralSet remaining
+                  (GraphMutilation.bar (NodeSet.inter action remaining))
+                  (NodeSet.inter outcome remaining))
+                remaining with
+          | false =>
+              simp [identifyFuel, hex, hkept] at h
+              exact ih
+                (G.ancestralSet remaining
+                  (GraphMutilation.bar (NodeSet.inter action remaining))
+                  (NodeSet.inter outcome remaining))
+                outcome action
+                (.marginalize
+                  (NodeSet.diff remaining
+                    (G.ancestralSet remaining
+                      (GraphMutilation.bar (NodeSet.inter action remaining))
+                      (NodeSet.inter outcome remaining)))
+                  current)
+                h
+          | true =>
+              cases hfc :
+                  G.cComponents
+                    (NodeSet.diff remaining
+                      (NodeSet.inter action remaining)) with
+              | nil =>
+                  simp [identifyFuel, hex, hkept, hfc] at h
+              | cons component rest =>
+                  cases rest with
+                  | nil =>
+                      cases hsingle : G.isSingleCComponent remaining with
+                      | true =>
+                          simp [identifyFuel, hex, hkept, hfc, hsingle] at h
+                          cases h
+                          have hcomp : component =
+                              NodeSet.diff remaining
+                                (NodeSet.inter action remaining) :=
+                            cComponents_eq_of_singleton G _ hfc
+                          refine ⟨outcome, action, ?_, ?_⟩
+                          · have hcut :
+                                NodeSet.diff remaining component =
+                                  NodeSet.inter action remaining := by
+                              rw [hcomp, NodeSet.diff_diff]
+                              exact NodeSet.inter_eq_of_subset
+                                (NodeSet.inter_subset_right action remaining)
+                            have heq :=
+                              (NodeSet.equal_eq_true_iff _ _).mp hkept
+                            have heq' :
+                                G.ancestralSet remaining
+                                  (GraphMutilation.bar
+                                    (NodeSet.diff remaining component))
+                                  (NodeSet.inter outcome remaining) =
+                                  remaining := by
+                              simpa [hcut] using heq
+                            exact (NodeSet.equal_eq_true_iff _ _).mpr heq'
+                          · exact (NodeSet.equal_eq_true_iff _ _).mpr hcomp
+                      | false =>
+                          cases hany :
+                              (G.cComponents remaining).any
+                                (fun piece =>
+                                  NodeSet.equal piece component) with
+                          | true =>
+                              simp [identifyFuel, hex, hkept, hfc, hsingle,
+                                hany] at h
+                          | false =>
+                              cases hcont :
+                                  G.containingCComponent remaining
+                                    component with
+                              | none =>
+                                  simp [identifyFuel, hex, hkept, hfc,
+                                    hsingle, hany, hcont] at h
+                              | some larger =>
+                                  simp [identifyFuel, hex, hkept, hfc,
+                                    hsingle, hany, hcont] at h
+                                  exact ih larger outcome
+                                    (NodeSet.inter
+                                      (NodeSet.inter action remaining)
+                                      larger)
+                                    (chainProduct remaining larger) h
+                  | cons component2 rest2 =>
+                      simp [identifyFuel, hex, hkept, hfc] at h
+                      have hin :
+                          IdentificationOutcome.failed fail ∈
+                            (component :: component2 :: rest2).map
+                              (fun c =>
+                                identifyFuel fuel G remaining c
+                                  (NodeSet.diff remaining c) current) :=
+                        IdentificationOutcome.combine_eq_failed _ _ h
+                      rcases List.mem_map.mp hin with ⟨piece, _, hEq⟩
+                      exact ih remaining piece
+                        (NodeSet.diff remaining piece) current hEq
+
+theorem identifyJoint_eq_failed_site
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    {fail : IdentificationFail S}
+    (h : identifyJoint G q = IdentificationOutcome.failed fail) :
+    Exists fun localOutcome =>
+      Exists fun localAction =>
+        NodeSet.equal
+            (G.ancestralSet fail.remaining
+              (GraphMutilation.bar
+                (NodeSet.diff fail.remaining fail.free))
+              (NodeSet.inter localOutcome fail.remaining))
+            fail.remaining = true ∧
+          NodeSet.equal fail.free
+              (NodeSet.diff fail.remaining
+                (NodeSet.inter localAction fail.remaining)) = true :=
+  identifyFuel_eq_failed_site (identificationFuel S) G NodeSet.full
+    q.outcome q.action (observationalJointTerm S) h
+
+/--
+An immediate 4.1 hedge: the working remaining set is already ancestral of
+the local outcome in `G_{\overline{X}}`, that remaining set is a single
+c-component, and `G \ X` has a unique free component.  The failure record
+is exactly that remaining set together with `remaining \ X`.
+-/
+theorem identifyFuel_eq_failed_immediate_query_site
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    {fail : IdentificationFail S} {component : NodeSet S}
+    (hex : NodeSet.isEmpty (NodeSet.inter action remaining) = false)
+    (hkept :
+      NodeSet.equal
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))
+        remaining = true)
+    (hfc :
+      G.cComponents
+        (NodeSet.diff remaining (NodeSet.inter action remaining)) =
+        [component])
+    (hsingle : G.isSingleCComponent remaining = true)
+    (h : identifyFuel (fuel + 1) G remaining outcome action current =
+      IdentificationOutcome.failed fail) :
+    fail.remaining = remaining ∧
+      fail.free = component ∧
+        NodeSet.equal fail.free
+            (NodeSet.diff fail.remaining
+              (NodeSet.inter action fail.remaining)) = true ∧
+          NodeSet.equal
+            (G.ancestralSet fail.remaining
+              (GraphMutilation.bar
+                (NodeSet.diff fail.remaining fail.free))
+              (NodeSet.inter outcome fail.remaining))
+            fail.remaining = true := by
+  simp [identifyFuel, hex, hkept, hfc, hsingle] at h
+  cases h
+  have hcomp : component =
+      NodeSet.diff remaining (NodeSet.inter action remaining) :=
+    cComponents_eq_of_singleton G _ hfc
+  refine ⟨rfl, rfl, ?_, ?_⟩
+  · exact (NodeSet.equal_eq_true_iff _ _).mpr hcomp
+  · have hcut :
+        NodeSet.diff remaining component =
+          NodeSet.inter action remaining := by
+      rw [hcomp, NodeSet.diff_diff]
+      exact NodeSet.inter_eq_of_subset
+        (NodeSet.inter_subset_right action remaining)
+    have heq := (NodeSet.equal_eq_true_iff _ _).mp hkept
+    have heq' :
+        G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.diff remaining component))
+          (NodeSet.inter outcome remaining) = remaining := by
+      simpa [hcut] using heq
+    exact (NodeSet.equal_eq_true_iff _ _).mpr heq'
+
+/--
+A failing ID call whose remaining set is not ancestral of the local
+outcome first restricts to that ancestral set.  Product-nested 4.1 and
+the top-level shrink branch both instantiate this unpacking.
+-/
+theorem identifyFuel_eq_failed_of_shrink
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    {fail : IdentificationFail S}
+    (hex : NodeSet.isEmpty (NodeSet.inter action remaining) = false)
+    (hkept :
+      NodeSet.equal
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))
+        remaining = false)
+    (h : identifyFuel (fuel + 1) G remaining outcome action current =
+      IdentificationOutcome.failed fail) :
+    identifyFuel fuel G
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))
+        outcome action
+        (.marginalize
+          (NodeSet.diff remaining
+            (G.ancestralSet remaining
+              (GraphMutilation.bar (NodeSet.inter action remaining))
+              (NodeSet.inter outcome remaining)))
+          current) =
+      IdentificationOutcome.failed fail := by
+  simp [identifyFuel, hex, hkept] at h
+  exact h
+
+/--
+A 4.3 restriction whose containing c-component is found unpacks as the
+nested ID run on that host, with action `X ∩ remaining ∩ larger`.
+Immediate 4.1 and the chain-product success branch are excluded by the
+Boolean hypotheses.
+-/
+theorem identifyFuel_eq_failed_of_restrict
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    {fail : IdentificationFail S} {component larger : NodeSet S}
+    (hex : NodeSet.isEmpty (NodeSet.inter action remaining) = false)
+    (hkept :
+      NodeSet.equal
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))
+        remaining = true)
+    (hfc :
+      G.cComponents
+        (NodeSet.diff remaining (NodeSet.inter action remaining)) =
+        [component])
+    (hsingle : G.isSingleCComponent remaining = false)
+    (hany :
+      (G.cComponents remaining).any
+        (fun piece => NodeSet.equal piece component) = false)
+    (hcont :
+      G.containingCComponent remaining component = some larger)
+    (h : identifyFuel (fuel + 1) G remaining outcome action current =
+      IdentificationOutcome.failed fail) :
+    identifyFuel fuel G larger outcome
+        (NodeSet.inter (NodeSet.inter action remaining) larger)
+        (chainProduct remaining larger) =
+      IdentificationOutcome.failed fail := by
+  simp [identifyFuel, hex, hkept, hfc, hsingle, hany, hcont] at h
+  exact h
+
+/--
+A product split with at least two free c-components unpacks as a nested
+ID run on one of those pieces, with action `remaining \ piece`.
+-/
+theorem identifyFuel_eq_failed_of_product
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    {fail : IdentificationFail S}
+    {component component2 : NodeSet S} {rest : List (NodeSet S)}
+    (hex : NodeSet.isEmpty (NodeSet.inter action remaining) = false)
+    (hkept :
+      NodeSet.equal
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))
+        remaining = true)
+    (hfc :
+      G.cComponents
+        (NodeSet.diff remaining (NodeSet.inter action remaining)) =
+        component :: component2 :: rest)
+    (h : identifyFuel (fuel + 1) G remaining outcome action current =
+      IdentificationOutcome.failed fail) :
+    Exists fun piece =>
+      piece ∈ component :: component2 :: rest ∧
+        identifyFuel fuel G remaining piece
+            (NodeSet.diff remaining piece) current =
+          IdentificationOutcome.failed fail := by
+  simp [identifyFuel, hex, hkept, hfc] at h
+  have hin :
+      IdentificationOutcome.failed fail ∈
+        (component :: component2 :: rest).map (fun piece =>
+          identifyFuel fuel G remaining piece
+            (NodeSet.diff remaining piece) current) :=
+    IdentificationOutcome.combine_eq_failed _ _ h
+  rcases List.mem_map.mp hin with ⟨piece, hmem, hEq⟩
+  exact ⟨piece, hmem, hEq⟩
+
+/--
+A successful ID call whose remaining set is not ancestral of the local
+outcome first restricts to that ancestral set.  Dual of
+`identifyFuel_eq_failed_of_shrink`.
+-/
+theorem identifyFuel_eq_identified_of_shrink
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    {term : ProbabilityTerm S}
+    (hex : NodeSet.isEmpty (NodeSet.inter action remaining) = false)
+    (hkept :
+      NodeSet.equal
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))
+        remaining = false)
+    (h : identifyFuel (fuel + 1) G remaining outcome action current =
+      IdentificationOutcome.identified term) :
+    identifyFuel fuel G
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))
+        outcome action
+        (.marginalize
+          (NodeSet.diff remaining
+            (G.ancestralSet remaining
+              (GraphMutilation.bar (NodeSet.inter action remaining))
+              (NodeSet.inter outcome remaining)))
+          current) =
+      IdentificationOutcome.identified term := by
+  simp [identifyFuel, hex, hkept] at h
+  exact h
+
+/--
+Ancestral restriction whose nested remaining set no longer meets the
+action is the empty-action base case on that ancestral set: ID returns
+the observational marginal of the already-shrunk current expression.
+Needs two fuel units (one shrink, one empty-action step).
+-/
+theorem identifyFuel_eq_identified_of_shrink_empty
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    (hex : NodeSet.isEmpty (NodeSet.inter action remaining) = false)
+    (hkept :
+      NodeSet.equal
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))
+        remaining = false)
+    (hexNested :
+      NodeSet.isEmpty
+        (NodeSet.inter action
+          (G.ancestralSet remaining
+            (GraphMutilation.bar (NodeSet.inter action remaining))
+            (NodeSet.inter outcome remaining))) = true) :
+    identifyFuel (fuel + 2) G remaining outcome action current =
+      IdentificationOutcome.identified
+        (.marginalize
+          (NodeSet.diff
+            (G.ancestralSet remaining
+              (GraphMutilation.bar (NodeSet.inter action remaining))
+              (NodeSet.inter outcome remaining))
+            (NodeSet.inter outcome
+              (G.ancestralSet remaining
+                (GraphMutilation.bar (NodeSet.inter action remaining))
+                (NodeSet.inter outcome remaining))))
+          (.marginalize
+            (NodeSet.diff remaining
+              (G.ancestralSet remaining
+                (GraphMutilation.bar (NodeSet.inter action remaining))
+                (NodeSet.inter outcome remaining)))
+            current)) := by
+  have hshrink :
+      identifyFuel (fuel + 1 + 1) G remaining outcome action current =
+        identifyFuel (fuel + 1) G
+          (G.ancestralSet remaining
+            (GraphMutilation.bar (NodeSet.inter action remaining))
+            (NodeSet.inter outcome remaining))
+          outcome action
+          (.marginalize
+            (NodeSet.diff remaining
+              (G.ancestralSet remaining
+                (GraphMutilation.bar (NodeSet.inter action remaining))
+                (NodeSet.inter outcome remaining)))
+            current) := by
+    simp [identifyFuel, hex, hkept]
+  have hempty :=
+    identifyFuel_eq_identified_of_empty_action fuel G
+      (G.ancestralSet remaining
+        (GraphMutilation.bar (NodeSet.inter action remaining))
+        (NodeSet.inter outcome remaining))
+      outcome action
+      (.marginalize
+        (NodeSet.diff remaining
+          (G.ancestralSet remaining
+            (GraphMutilation.bar (NodeSet.inter action remaining))
+            (NodeSet.inter outcome remaining)))
+        current)
+      hexNested
+  rw [show fuel + 2 = fuel + 1 + 1 from rfl, hshrink, hempty]
+
+/--
+ID step 4.2: the unique free c-component is already a c-component of the
+working remaining graph, so the answer is the chain-rule factorization
+`Q[S]` marginalized to the local outcome.
+-/
+theorem identifyFuel_eq_identified_of_chain
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    {component : NodeSet S}
+    (hex : NodeSet.isEmpty (NodeSet.inter action remaining) = false)
+    (hkept :
+      NodeSet.equal
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))
+        remaining = true)
+    (hfc :
+      G.cComponents
+        (NodeSet.diff remaining (NodeSet.inter action remaining)) =
+        [component])
+    (hsingle : G.isSingleCComponent remaining = false)
+    (hany :
+      (G.cComponents remaining).any
+        (fun piece => NodeSet.equal piece component) = true) :
+    identifyFuel (fuel + 1) G remaining outcome action current =
+      IdentificationOutcome.identified
+        (.marginalize
+          (NodeSet.diff component (NodeSet.inter outcome remaining))
+          (chainProduct remaining component)) := by
+  simp [identifyFuel, hex, hkept, hfc, hsingle, hany]
+
+/--
+A 4.3 restriction whose containing c-component is found unpacks as the
+nested ID run on that host.  Dual of `identifyFuel_eq_failed_of_restrict`.
+-/
+theorem identifyFuel_eq_identified_of_restrict
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    {term : ProbabilityTerm S} {component larger : NodeSet S}
+    (hex : NodeSet.isEmpty (NodeSet.inter action remaining) = false)
+    (hkept :
+      NodeSet.equal
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))
+        remaining = true)
+    (hfc :
+      G.cComponents
+        (NodeSet.diff remaining (NodeSet.inter action remaining)) =
+        [component])
+    (hsingle : G.isSingleCComponent remaining = false)
+    (hany :
+      (G.cComponents remaining).any
+        (fun piece => NodeSet.equal piece component) = false)
+    (hcont :
+      G.containingCComponent remaining component = some larger)
+    (h : identifyFuel (fuel + 1) G remaining outcome action current =
+      IdentificationOutcome.identified term) :
+    identifyFuel fuel G larger outcome
+        (NodeSet.inter (NodeSet.inter action remaining) larger)
+        (chainProduct remaining larger) =
+      IdentificationOutcome.identified term := by
+  simp [identifyFuel, hex, hkept, hfc, hsingle, hany, hcont] at h
+  exact h
+
+/--
+A 4.3 restriction whose nested remaining set misses the restricted
+action is the empty-action base case on that host, with current
+expression the chain-rule joint on the host.  Needs two fuel units.
+-/
+theorem identifyFuel_eq_identified_of_restrict_empty
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    {component larger : NodeSet S}
+    (hex : NodeSet.isEmpty (NodeSet.inter action remaining) = false)
+    (hkept :
+      NodeSet.equal
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))
+        remaining = true)
+    (hfc :
+      G.cComponents
+        (NodeSet.diff remaining (NodeSet.inter action remaining)) =
+        [component])
+    (hsingle : G.isSingleCComponent remaining = false)
+    (hany :
+      (G.cComponents remaining).any
+        (fun piece => NodeSet.equal piece component) = false)
+    (hcont :
+      G.containingCComponent remaining component = some larger)
+    (hexNested :
+      NodeSet.isEmpty
+        (NodeSet.inter (NodeSet.inter action remaining) larger) = true) :
+    identifyFuel (fuel + 2) G remaining outcome action current =
+      IdentificationOutcome.identified
+        (.marginalize
+          (NodeSet.diff larger (NodeSet.inter outcome larger))
+          (chainProduct remaining larger)) := by
+  have hrestrict :
+      identifyFuel (fuel + 1 + 1) G remaining outcome action current =
+        identifyFuel (fuel + 1) G larger outcome
+          (NodeSet.inter (NodeSet.inter action remaining) larger)
+          (chainProduct remaining larger) := by
+    simp [identifyFuel, hex, hkept, hfc, hsingle, hany, hcont]
+  have hexNested' :
+      NodeSet.isEmpty
+        (NodeSet.inter
+          (NodeSet.inter (NodeSet.inter action remaining) larger)
+          larger) = true := by
+    simpa [NodeSet.inter_idempotent_right] using hexNested
+  have hempty :=
+    identifyFuel_eq_identified_of_empty_action fuel G larger outcome
+      (NodeSet.inter (NodeSet.inter action remaining) larger)
+      (chainProduct remaining larger) hexNested'
+  rw [show fuel + 2 = fuel + 1 + 1 from rfl, hrestrict, hempty]
+
+/--
+A product split with at least two free c-components unpacks as identified
+runs on those pieces, assembled by `productTerms` and marginalized off
+`V \ (Y ∪ X)` in the working remaining set.  Dual of
+`identifyFuel_eq_failed_of_product`.
+-/
+theorem identifyFuel_eq_identified_of_product
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    {term : ProbabilityTerm S}
+    {component component2 : NodeSet S} {rest : List (NodeSet S)}
+    (hex : NodeSet.isEmpty (NodeSet.inter action remaining) = false)
+    (hkept :
+      NodeSet.equal
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))
+        remaining = true)
+    (hfc :
+      G.cComponents
+        (NodeSet.diff remaining (NodeSet.inter action remaining)) =
+        component :: component2 :: rest)
+    (h : identifyFuel (fuel + 1) G remaining outcome action current =
+      IdentificationOutcome.identified term) :
+    Exists fun terms =>
+      term =
+          ProbabilityTerm.marginalize
+            (NodeSet.diff remaining
+              (NodeSet.union (NodeSet.inter outcome remaining)
+                (NodeSet.inter action remaining)))
+            (productTerms terms) ∧
+        (component :: component2 :: rest).map (fun piece =>
+            identifyFuel fuel G remaining piece
+              (NodeSet.diff remaining piece) current) =
+          terms.map IdentificationOutcome.identified := by
+  simp [identifyFuel, hex, hkept, hfc] at h
+  rcases IdentificationOutcome.combine_eq_identified _ _ h with
+    ⟨terms, hmap, hterm⟩
+  exact ⟨terms, hterm, hmap⟩
+
+/--
+On a vertex set contained in both `larger` and `remaining`, intersecting
+the 4.3 restricted action `X ∩ remaining ∩ larger` agrees with intersecting
+the outer action.
+-/
+theorem inter_action_eq_of_contained
+    (action remaining larger nodes : NodeSet S)
+    (hL : NodeSet.Subset nodes larger)
+    (hR : NodeSet.Subset nodes remaining) :
+    NodeSet.inter
+        (NodeSet.inter (NodeSet.inter action remaining) larger) nodes =
+      NodeSet.inter action nodes := by
+  funext i
+  cases hn : nodes i with
+  | false =>
+      simp [NodeSet.inter, hn]
+  | true =>
+      simp [NodeSet.inter, hn, hL i hn, hR i hn]
+
+/--
+If the recorded remaining set is still the working remaining set of the
+call that failed, and the free side is `remaining \ X` for that call's
+action, then the remaining set is ancestral of the call's outcome in
+`G_{\overline{cut}}`.  Ancestral restriction cannot produce this
+situation: it strictly shrinks the working remaining set.  Immediate 4.1,
+4.3 with `larger` restored to `remaining`, and product with an unshrunk
+remaining set all have `hkept`, which is the required ancestry.
+-/
+theorem identifyFuel_eq_failed_query_of_remaining_eq
+    (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    {fail : IdentificationFail S}
+    (h : identifyFuel fuel G remaining outcome action current =
+      IdentificationOutcome.failed fail)
+    (heq : NodeSet.equal fail.remaining remaining = true)
+    (hfree :
+      NodeSet.equal fail.free
+        (NodeSet.diff fail.remaining
+          (NodeSet.inter action fail.remaining)) = true) :
+    NodeSet.equal
+        (G.ancestralSet fail.remaining
+          (GraphMutilation.bar
+            (NodeSet.diff fail.remaining fail.free))
+          (NodeSet.inter outcome fail.remaining))
+        fail.remaining = true := by
+  cases fuel with
+  | zero =>
+      simp [identifyFuel] at h
+  | succ fuel =>
+      cases hex :
+          NodeSet.isEmpty (NodeSet.inter action remaining) with
+      | true =>
+          simp [identifyFuel, hex] at h
+      | false =>
+          cases hkept :
+              NodeSet.equal
+                (G.ancestralSet remaining
+                  (GraphMutilation.bar (NodeSet.inter action remaining))
+                  (NodeSet.inter outcome remaining))
+                remaining with
+          | false =>
+              simp [identifyFuel, hex, hkept] at h
+              have nested :=
+                identifyFuel_eq_failed fuel G
+                  (G.ancestralSet remaining
+                    (GraphMutilation.bar (NodeSet.inter action remaining))
+                    (NodeSet.inter outcome remaining))
+                  outcome action
+                  (.marginalize
+                    (NodeSet.diff remaining
+                      (G.ancestralSet remaining
+                        (GraphMutilation.bar (NodeSet.inter action remaining))
+                        (NodeSet.inter outcome remaining)))
+                    current)
+                  h
+              have heqR := (NodeSet.equal_eq_true_iff _ _).mp heq
+              have hsubset :
+                  NodeSet.Subset remaining
+                    (G.ancestralSet remaining
+                      (GraphMutilation.bar (NodeSet.inter action remaining))
+                      (NodeSet.inter outcome remaining)) := by
+                intro i hi
+                have hi' : fail.remaining i = true := by
+                  rw [heqR]
+                  exact hi
+                exact nested.2 i hi'
+              have hsubset' :=
+                ancestralSet_subset G remaining
+                  (GraphMutilation.bar (NodeSet.inter action remaining))
+                  (NodeSet.inter outcome remaining)
+              have hkeptTrue :
+                  NodeSet.equal
+                    (G.ancestralSet remaining
+                      (GraphMutilation.bar (NodeSet.inter action remaining))
+                      (NodeSet.inter outcome remaining))
+                    remaining = true :=
+                Bool.and_eq_true_iff.mpr
+                  ⟨(NodeSet.subsetBool_eq_true_iff _ _).mpr hsubset',
+                    (NodeSet.subsetBool_eq_true_iff _ _).mpr hsubset⟩
+              exact False.elim (Bool.false_ne_true (hkept.symm.trans hkeptTrue))
+          | true =>
+              have heqR := (NodeSet.equal_eq_true_iff _ _).mp heq
+              have hfreeEq := (NodeSet.equal_eq_true_iff _ _).mp hfree
+              have hfreeEq' :
+                  fail.free =
+                    NodeSet.diff remaining
+                      (NodeSet.inter action remaining) := by
+                rw [hfreeEq, heqR]
+              have hcut :
+                  NodeSet.diff remaining fail.free =
+                    NodeSet.inter action remaining := by
+                rw [hfreeEq', NodeSet.diff_diff]
+                exact NodeSet.inter_eq_of_subset
+                  (NodeSet.inter_subset_right action remaining)
+              have hkeptEq := (NodeSet.equal_eq_true_iff _ _).mp hkept
+              have hanc :
+                  G.ancestralSet fail.remaining
+                    (GraphMutilation.bar
+                      (NodeSet.diff fail.remaining fail.free))
+                    (NodeSet.inter outcome fail.remaining) =
+                    fail.remaining := by
+                rw [heqR, hcut]
+                exact hkeptEq
+              exact (NodeSet.equal_eq_true_iff _ _).mpr hanc
+
+/--
 Thinning always returns the bidirected component of `seedY` inside some
 residual host that still contains `seedY`.  That is the data needed to treat
 the result as a `CForest` host, once the one-child Boolean succeeds.
@@ -1695,21 +4110,6 @@ theorem thinTowardForest_seed_mem
     ⟨host, hHost, hEq⟩
   rw [hEq]
   exact cComponentOf_root_mem G host hHost
-
-/-- Membership in an executable c-component implies membership in the host set. -/
-theorem cComponentOf_subset (G : ObservedGraph S) (nodes : NodeSet S)
-    {root i : Fin S.count} (h : G.cComponentOf nodes root i = true) :
-    nodes i = true := by
-  have reached : G.bidirectedReachableWithin nodes root i = true := by
-    simpa [ObservedGraph.cComponentOf] using h
-  have outer :
-      (nodes root && nodes i) = true ∧
-        FiniteReachability.within finBeq (NodeSet.enumerated S)
-          (fun a b => nodes a && nodes b && G.bidirected a b)
-          S.count root i = true :=
-    Bool.and_eq_true_iff.mp (by
-      simpa [ObservedGraph.bidirectedReachableWithin] using reached)
-  exact (Bool.and_eq_true_iff.mp outer.1).2
 
 /-- Thinning only drops vertices, never adds them. -/
 theorem thinTowardForest_subset
@@ -1859,6 +4259,21 @@ theorem hedgeSmallOf_avoids_action (G : ObservedGraph S)
           simp [hedgeSmallOf, hseed] at hi
           exact cComponentOf_subset G _ hi)
 
+theorem hedgeSmallOf_subsetBool
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    (fail : IdentificationFail S) :
+    NodeSet.subsetBool (hedgeSmallOf G q fail) (hedgeLargeOf G q fail) =
+      true :=
+  (NodeSet.subsetBool_eq_true_iff _ _).mpr
+    (hedgeSmallOf_subset_large G q fail)
+
+theorem hedgeSmallOf_disjointBool
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    (fail : IdentificationFail S) :
+    NodeSet.disjointBool (hedgeSmallOf G q fail) q.action = true :=
+  (NodeSet.disjointBool_eq_true_iff _ _).mpr
+    (hedgeSmallOf_avoids_action G q fail)
+
 /--
 The extracted large side remains inside the ID-failure remaining set, so
 it is among the vertex assignments enumerated by `findHedgeWitnessSets`.
@@ -1912,6 +4327,170 @@ theorem findHedgeWitnessSets_eq_some_of_thinned
   findHedgeWitnessSets_eq_some_of_selection G q fail
     (thinnedHedgeSelection G q fail)
     (thinnedHedgeSelection_subset_remaining G q fail) htests
+
+/--
+Canonical candidate assembled from the ID-failure record itself: the
+failing remaining c-component, the recorded free component, and the
+child-closed first-successor map.  This is the most general vertex pair
+the failure data determines; greedy thinning is a further specialization.
+-/
+def failedHedgeSelection (fail : IdentificationFail S) : HedgeSelection S where
+  large := fail.remaining
+  small := fail.free
+  child := closedForestChild fail.remaining fail.free
+
+theorem failedHedgeSelection_subset_remaining
+    (fail : IdentificationFail S) :
+    NodeSet.Subset (failedHedgeSelection fail).large fail.remaining :=
+  fun _i hi => hi
+
+theorem findHedgeWitnessSets_eq_some_of_failed
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    (fail : IdentificationFail S)
+    (htests : hedgeTestsHold G q (failedHedgeSelection fail) = true) :
+    Exists fun found => findHedgeWitnessSets G q fail = some found :=
+  findHedgeWitnessSets_eq_some_of_selection G q fail
+    (failedHedgeSelection fail)
+    (failedHedgeSelection_subset_remaining fail) htests
+
+theorem identifyJoint_eq_failed_free_subset
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    {fail : IdentificationFail S}
+    (h : identifyJoint G q = IdentificationOutcome.failed fail) :
+    NodeSet.Subset fail.free fail.remaining :=
+  (identifyFuel_eq_failed_free (identificationFuel S) G NodeSet.full
+    q.outcome q.action (observationalJointTerm S) h).1
+
+theorem failedHedgeSelection_cut_nonempty
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    {fail : IdentificationFail S}
+    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    NodeSet.isEmpty
+      (NodeSet.diff (failedHedgeSelection fail).large
+        (failedHedgeSelection fail).small) = false :=
+  identifyJoint_eq_failed_cut_nonempty G q hfail
+
+/--
+If every original-action vertex in the remaining set lies in the cut,
+the free side avoids the original action.
+-/
+theorem failedHedgeSelection_avoids_action_of_cut
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    {fail : IdentificationFail S}
+    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hcut :
+      NodeSet.Subset (NodeSet.inter q.action fail.remaining)
+        (NodeSet.diff fail.remaining fail.free)) :
+    NodeSet.disjointBool (failedHedgeSelection fail).small q.action =
+      true :=
+  (NodeSet.disjointBool_eq_true_iff _ _).mpr (fun i hi => by
+    have hrem : fail.remaining i = true :=
+      identifyJoint_eq_failed_free_subset G q hfail i hi
+    cases ha : q.action i with
+    | false =>
+        rfl
+    | true =>
+        have hinter : NodeSet.inter q.action fail.remaining i = true :=
+          Bool.and_eq_true_iff.mpr ⟨ha, hrem⟩
+        have hcuti := hcut i hinter
+        have hfreeF : fail.free i = false := by
+          have parts := Bool.and_eq_true_iff.mp hcuti
+          cases hf : fail.free i with
+          | false =>
+              rfl
+          | true =>
+              have : (!fail.free i) = true := parts.2
+              simp [hf] at this
+        exact False.elim (Bool.false_ne_true (hfreeF.symm.trans hi)))
+
+/--
+If the nonempty cut sits inside the original action, the remaining set
+meets that action.
+-/
+theorem failedHedgeSelection_meets_action_of_cut
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    {fail : IdentificationFail S}
+    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hsub :
+      NodeSet.Subset (NodeSet.diff fail.remaining fail.free) q.action) :
+    NodeSet.meetsBool (failedHedgeSelection fail).large q.action = true := by
+  rcases (NodeSet.isEmpty_eq_false_iff _).mp
+      (failedHedgeSelection_cut_nonempty G q hfail) with ⟨i, hi⟩
+  have hrem : fail.remaining i = true :=
+    NodeSet.diff_subset_left fail.remaining fail.free i hi
+  have hact : q.action i = true := hsub i hi
+  exact (NodeSet.meetsBool_eq_true_iff _ _).mpr ⟨i, hrem, hact⟩
+
+/-- Incoming-deleted directed edges of `G_{\overline{cut}}`. -/
+theorem observedDirectedEdge_bar
+    (G : ObservedGraph S) (cut : NodeSet S)
+    {parent child : Fin S.count} :
+    G.observedDirectedEdge (GraphMutilation.bar cut) parent child = true ↔
+      S.directed parent child = true ∧ cut child = false := by
+  constructor
+  · intro h
+    simpa [ObservedGraph.observedDirectedEdge, GraphMutilation.bar,
+      NodeSet.empty] using h
+  · intro h
+    simp [ObservedGraph.observedDirectedEdge, GraphMutilation.bar,
+      NodeSet.empty, h.1, h.2]
+
+/--
+On remaining vertices, incoming deletion of `X ∩ remaining` agrees with
+incoming deletion of `X`.
+-/
+theorem observedDirectedEdge_bar_inter
+    (G : ObservedGraph S) (nodes action : NodeSet S)
+    {parent child : Fin S.count}
+    (hchild : nodes child = true) :
+    G.observedDirectedEdge
+        (GraphMutilation.bar (NodeSet.inter action nodes)) parent child =
+      G.observedDirectedEdge (GraphMutilation.bar action) parent child := by
+  simp [ObservedGraph.observedDirectedEdge, GraphMutilation.bar,
+    NodeSet.empty, NodeSet.inter, hchild]
+
+theorem directedEdgeWithin_bar_inter
+    (G : ObservedGraph S) (nodes action : NodeSet S)
+    (parent child : Fin S.count) :
+    G.directedEdgeWithin nodes
+        (GraphMutilation.bar (NodeSet.inter action nodes)) parent child =
+      G.directedEdgeWithin nodes (GraphMutilation.bar action)
+        parent child := by
+  simp [ObservedGraph.directedEdgeWithin]
+  cases hch : nodes child with
+  | false =>
+      simp
+  | true =>
+      simp [observedDirectedEdge_bar_inter G nodes action hch]
+
+theorem ancestralSet_bar_inter
+    (G : ObservedGraph S) (nodes action targets : NodeSet S) :
+    G.ancestralSet nodes
+        (GraphMutilation.bar (NodeSet.inter action nodes)) targets =
+      G.ancestralSet nodes (GraphMutilation.bar action) targets := by
+  funext i
+  have hedge :
+      G.directedEdgeWithin nodes
+        (GraphMutilation.bar (NodeSet.inter action nodes)) =
+      G.directedEdgeWithin nodes (GraphMutilation.bar action) :=
+    funext fun parent =>
+      funext fun child =>
+        directedEdgeWithin_bar_inter G nodes action parent child
+  simp [ObservedGraph.ancestralSet, ObservedGraph.ancestorOfWithin, hedge]
+
+/-- Membership in an ancestral remaining set is directed reachability. -/
+theorem ancestorOfWithin_of_ancestralSet
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (m : GraphMutilation S) (targets : NodeSet S)
+    (heq : NodeSet.equal (G.ancestralSet nodes m targets) nodes = true)
+    {i : Fin S.count} (hi : nodes i = true) :
+    G.ancestorOfWithin nodes m targets i = true := by
+  have eq : G.ancestralSet nodes m targets = nodes :=
+    (NodeSet.equal_eq_true_iff _ _).mp heq
+  have : G.ancestralSet nodes m targets i = true := by
+    rw [eq]
+    exact hi
+  simpa [ObservedGraph.ancestralSet] using this
 
 end Causality
 end Thesis
