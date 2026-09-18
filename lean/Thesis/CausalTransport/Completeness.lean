@@ -9,6 +9,26 @@ namespace Causality
 open Probability
 
 /-!
+# Constructive completeness machinery for finite identification
+
+This module develops the checked components needed to inhabit
+`PublishedCompleteness` for `GraphModelClass.positive`: supported certificates
+for successful ID branches, finite extraction of hedge witnesses from failed
+runs, and positive countermodels for realizable hedge shapes.  The published
+record is not yet inhabited.  The remaining load-bearing obligations are the
+structural success compiler, the general failure-to-hedge bridge, and the
+general hedge countermodel.
+
+For arbitrary nested engine runs, use the exact trace relations in
+`IdentificationInduction`.  The branch-specific lemmas retained below are
+verified special cases and reusable local graph facts, not a prescription to
+enumerate deeper branch stacks.
+-/
+
+/-
+Detailed implementation inventory.  This checkpoint record is intentionally
+kept near the implementation, but is not the module's public status summary.
+
 Constructive completeness of finite identification, specialized to the
 classical model class.
 
