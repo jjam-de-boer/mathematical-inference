@@ -380,6 +380,20 @@ theorem agreesOn_reference_congr (nodes : NodeSet S)
       simp only [↓reduceIte]
       rw [agree i selected]
 
+/-- Changing a sample outside the selected nodes does not change agreement. -/
+theorem agreesOn_sample_congr (nodes : NodeSet S)
+    (reference left right : S.Assignment)
+    (agree : ∀ i, nodes i = true -> left i = right i) :
+    agreesOn nodes reference left = agreesOn nodes reference right := by
+  unfold agreesOn
+  apply finAll_congr
+  intro i
+  cases selected : nodes i with
+  | false => rfl
+  | true =>
+      simp only [↓reduceIte]
+      rw [agree i selected]
+
 theorem agreesOn_iff_project_eq (nodes : NodeSet S)
     (reference sample : S.Assignment) :
     agreesOn nodes reference sample = true <->
@@ -736,6 +750,36 @@ theorem mem_marginalAssignments_iff
     · intro i impossible
       exact (Nat.not_le_of_lt i.isLt impossible).elim
 
+/-- Complements of an outcome set enumerate the outcome cylinder: a
+variant is a `V \ Y` substitution of the reference exactly when it
+agrees with the reference on `Y`. -/
+theorem mem_marginal_complement_iff_agreesOn
+    (outcome : NodeSet S) (reference variant : S.Assignment) :
+    variant ∈ marginalAssignments S
+      (NodeSet.diff NodeSet.full outcome) reference ↔
+      Kernel.agreesOn outcome reference variant = true := by
+  rw [mem_marginalAssignments_iff]
+  constructor
+  · intro h
+    unfold Kernel.agreesOn
+    apply (finAll_eq_true_iff _).mpr
+    intro i
+    cases hy : outcome i
+    · rfl
+    · have hdiff : NodeSet.diff NodeSet.full outcome i = false := by
+        simp [NodeSet.diff, NodeSet.full, hy]
+      have heq := h i hdiff
+      exact decide_eq_true heq
+  · intro hagr i hdiff
+    have hy : outcome i = true := by
+      simp [NodeSet.diff, NodeSet.full] at hdiff
+      cases hY : outcome i
+      · simp [hY] at hdiff
+      · rfl
+    have hcomp :=
+      (finAll_eq_true_iff _).mp (by simpa [Kernel.agreesOn] using hagr) i
+    simpa [hy] using hcomp
+
 theorem marginalAssignments_nodup
     (S : ObservedSignature) (nodes : NodeSet S) (reference : S.Assignment) :
     (marginalAssignments S nodes reference).Nodup :=
@@ -865,10 +909,27 @@ def SupportedAt (model : FiniteLatentSCM S) (term : ProbabilityTerm S)
   Sigma fun value =>
     ProbabilityResult.Equivalent (term.denote model assignment) (some value)
 
+/-- Transport support along syntactic equality of terms.  Used by
+`DoCalculusDerivation.eqCongr` when a `NodeSet` covering rewrites a
+kernel without changing its denotation. -/
+def SupportedAt.congr {t1 t2 : ProbabilityTerm S} (h : t1 = t2)
+    {model : FiniteLatentSCM S} {assignment : S.Assignment}
+    (supported : SupportedAt model t1 assignment) :
+    SupportedAt model t2 assignment :=
+  h ▸ supported
+
 def EquivalentAt (model : FiniteLatentSCM S)
     (left right : ProbabilityTerm S) (assignment : S.Assignment) : Type :=
   ProbabilityResult.Equivalent
     (left.denote model assignment) (right.denote model assignment)
+
+/-- Transport support along denotational equality at one assignment. -/
+def SupportedAt.of_equivalent {t1 t2 : ProbabilityTerm S}
+    {model : FiniteLatentSCM S} {assignment : S.Assignment}
+    (h : EquivalentAt model t1 t2 assignment)
+    (supported : SupportedAt model t1 assignment) :
+    SupportedAt model t2 assignment :=
+  ⟨supported.1, ProbabilityResult.trans (ProbabilityResult.symm h) supported.2⟩
 
 noncomputable def marginalize_congrAt (model : FiniteLatentSCM S)
     (nodes : NodeSet S) (assignment : S.Assignment) {left right}
@@ -933,6 +994,157 @@ noncomputable def actionFree_invariant
           (denominatorIH actionFree.2 assignment)
 
 end ProbabilityTerm
+
+/-- A supported kernel has a strictly positive conditioner cylinder.
+Empty-action IDC uses this to justify dividing the two observational
+joints that Bayes writes for `P(Y | Z)`. -/
+noncomputable def Kernel.conditionPositive_of_supportedAt
+    (model : FiniteLatentSCM S) (kernel : Kernel S)
+    (assignment : S.Assignment)
+    (supported : ProbabilityTerm.SupportedAt model (.kernel kernel) assignment) :
+    0 < ((kernel.distribution model assignment).probVal
+      (kernel.conditionEvent assignment)).num := by
+  have hsup : ProbabilityResult.Supported
+      (ProbabilityResult.divide
+        (some ((kernel.distribution model assignment).probVal
+          (kernel.numeratorEvent assignment)))
+        (some ((kernel.distribution model assignment).probVal
+          (kernel.conditionEvent assignment)))) := by
+    simpa [ProbabilityTerm.SupportedAt, ProbabilityTerm.denote, Kernel.denote] using
+      (⟨supported.1, supported.2⟩ : ProbabilityResult.Supported
+        ((ProbabilityTerm.kernel kernel).denote model assignment))
+  by_cases hpos : 0 < ((kernel.distribution model assignment).probVal
+      (kernel.conditionEvent assignment)).num
+  · exact hpos
+  · have hnone :
+        ProbabilityResult.divide
+          (some ((kernel.distribution model assignment).probVal
+            (kernel.numeratorEvent assignment)))
+          (some ((kernel.distribution model assignment).probVal
+            (kernel.conditionEvent assignment))) =
+          none := by
+      simp [ProbabilityResult.divide, dif_neg hpos]
+    rw [hnone] at hsup
+    rcases hsup with ⟨_, impossible⟩
+    cases impossible
+
+/-- Empty-action `P(Y)` is the observational marginal `∑_{V \ Y} P(V)`.
+Finite additivity of singleton masses on the `Y`-cylinder identifies the
+two denotations, so empty-action IDC can transport Bayes support onto the
+ID formula. -/
+noncomputable def emptyActionKernel_equiv_fullMarginal
+    (model : FiniteLatentSCM S) (outcome : NodeSet S)
+    (assignment : S.Assignment) :
+    ProbabilityTerm.EquivalentAt model
+      (.kernel ⟨outcome, NodeSet.empty, NodeSet.empty⟩)
+      (.marginalize (NodeSet.diff NodeSet.full outcome)
+        (.kernel ⟨NodeSet.full, NodeSet.empty, NodeSet.empty⟩))
+      assignment := by
+  let leftKernel : Kernel S := ⟨outcome, NodeSet.empty, NodeSet.empty⟩
+  let fullKernel : Kernel S := ⟨NodeSet.full, NodeSet.empty, NodeSet.empty⟩
+  let variants :=
+    ProbabilityTerm.marginalAssignments S
+      (NodeSet.diff NodeSet.full outcome) assignment
+  have leftNoAction : leftKernel.hasAction = false := by
+    apply (finAny_eq_false_iff _).mpr
+    intro _i
+    rfl
+  have fullNoAction : fullKernel.hasAction = false := by
+    apply (finAny_eq_false_iff _).mpr
+    intro _i
+    rfl
+  have leftDist :
+      leftKernel.distribution model assignment = model.observationalDist := by
+    simp [Kernel.distribution, leftNoAction]
+  have fullDist (variant : S.Assignment) :
+      fullKernel.distribution model variant = model.observationalDist := by
+    simp [Kernel.distribution, fullNoAction]
+  have hleft :=
+    Kernel.unconditionalDenote model outcome NodeSet.empty assignment
+  have hleftObs : ProbabilityResult.Equivalent
+      (leftKernel.denote model assignment)
+      (some (model.observationalDist.probVal
+        (Kernel.agreesOn outcome assignment))) := by
+    simpa [leftKernel, leftDist] using hleft
+  have hvar : ∀ variant, variant ∈ variants ->
+      ProbabilityResult.Equivalent
+        (fullKernel.denote model variant)
+        (some (model.observationalDist.probVal
+          (FiniteProbRecord.singletonEvent variant))) := by
+    intro variant _member
+    have hfull :=
+      Kernel.unconditionalDenote model NodeSet.full NodeSet.empty variant
+    have hsing : QProb.Equiv
+        ((fullKernel.distribution model variant).probVal
+          (Kernel.agreesOn NodeSet.full variant))
+        (model.observationalDist.probVal
+          (FiniteProbRecord.singletonEvent variant)) := by
+      rw [fullDist]
+      exact FiniteProbRecord.probVal_congr model.observationalDist _ _
+        (fun sample => Kernel.agreesOn_full variant sample)
+    exact ProbabilityResult.trans hfull (.value hsing)
+  have hmarg : ProbabilityResult.Equivalent
+      ((ProbabilityTerm.marginalize
+        (NodeSet.diff NodeSet.full outcome)
+        (.kernel fullKernel)).denote model assignment)
+      (some (QProb.listSum (variants.map (fun variant =>
+        model.observationalDist.probVal
+          (FiniteProbRecord.singletonEvent variant))))) := by
+    have hsum :=
+      ProbabilityResult.sum_map_congr_mem variants
+        (fun variant => fullKernel.denote model variant)
+        (fun variant =>
+          some (model.observationalDist.probVal
+            (FiniteProbRecord.singletonEvent variant)))
+        hvar
+    have hsome :
+        ProbabilityResult.sum (variants.map (fun variant =>
+          some (model.observationalDist.probVal
+            (FiniteProbRecord.singletonEvent variant)))) =
+          some (QProb.listSum (variants.map (fun variant =>
+            model.observationalDist.probVal
+              (FiniteProbRecord.singletonEvent variant)))) :=
+      ProbabilityResult.sum_some_map variants _
+    simpa [ProbabilityTerm.denote, variants] using
+      ProbabilityResult.trans hsum (by
+        rw [hsome]
+        exact ProbabilityResult.refl _)
+  have pairwise :
+      (variants.map FiniteProbRecord.singletonEvent).Pairwise
+        Probability.disjoint :=
+    FiniteProbRecord.map_singletonEvent_pairwise_disjoint
+      (ProbabilityTerm.marginalAssignments_nodup S _ assignment)
+  have union :
+      Probability.unionList (variants.map FiniteProbRecord.singletonEvent) =
+        Kernel.agreesOn outcome assignment := by
+    rw [FiniteProbRecord.unionList_map_singletonEvent]
+    funext sample
+    have hmem :
+        sample ∈ variants ↔
+          Kernel.agreesOn outcome assignment sample = true :=
+      ProbabilityTerm.mem_marginal_complement_iff_agreesOn
+        outcome assignment sample
+    by_cases hocc : sample ∈ variants
+    · have htrue := hmem.mp hocc
+      simp [FiniteProbRecord.membershipEvent, hocc, htrue]
+    · have hfalse : Kernel.agreesOn outcome assignment sample = false := by
+        cases hagr : Kernel.agreesOn outcome assignment sample
+        · rfl
+        · exact False.elim (hocc (hmem.mpr hagr))
+      simp [FiniteProbRecord.membershipEvent, hocc, hfalse]
+  have hadd : QProb.Equiv
+      (model.observationalDist.probVal
+        (Kernel.agreesOn outcome assignment))
+      (QProb.listSum (variants.map (fun variant =>
+        model.observationalDist.probVal
+          (FiniteProbRecord.singletonEvent variant)))) := by
+    have additive :=
+      model.observationalDist.finite_additivity_family
+        (variants.map FiniteProbRecord.singletonEvent) pairwise
+    rw [union] at additive
+    simpa [List.map_map, Function.comp_apply] using additive
+  exact ProbabilityResult.trans hleftObs
+    (ProbabilityResult.trans (.value hadd) (ProbabilityResult.symm hmarg))
 
 /-! ## Pointwise support semantics for partial conditional kernels -/
 
@@ -1017,6 +1229,8 @@ def LocalDerivationSupport (model : FiniteLatentSCM S)
       | .divideCongr numerator denominator =>
           LocalDerivationSupport model assignment numerator ×
             LocalDerivationSupport model assignment denominator
+      | .eqCongr _ _ inner =>
+          LocalDerivationSupport model assignment inner
 
 noncomputable def LocalDerivationSupport.endpoints
     {left right : ProbabilityTerm S}
@@ -1072,6 +1286,10 @@ noncomputable def DoCalculusDerivation.denotational_soundAt
       simpa only [ProbabilityTerm.denote] using
         ProbabilityResult.divide_congr
           (numeratorIH supported.2.2.1) (denominatorIH supported.2.2.2)
+  | eqCongr hleft hright inner ih =>
+      subst hleft
+      subst hright
+      exact ih supported.2.2
 
 end Causality
 end Thesis

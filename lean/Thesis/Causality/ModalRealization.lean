@@ -680,6 +680,8 @@ noncomputable def OperationRealizations
   | .divideCongr numerator denominator =>
       numerator.OperationRealizations assignment semantics supported.2.2.1 ×
         denominator.OperationRealizations assignment semantics supported.2.2.2
+  | .eqCongr inner =>
+      inner.OperationRealizations assignment semantics supported.2.2
 
 /-- Construct all operation realizations from the existing recursive support. -/
 noncomputable def realizeOperations
@@ -716,6 +718,8 @@ noncomputable def realizeOperations
   | divideCongr numerator denominator numeratorIH denominatorIH =>
       exact ⟨numeratorIH assignment supported.2.2.1,
         denominatorIH assignment supported.2.2.2⟩
+  | eqCongr inner ih =>
+      exact ih assignment supported.2.2
 
 end ModalDerivationTrace
 

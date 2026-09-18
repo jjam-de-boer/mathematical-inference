@@ -68,6 +68,10 @@ instance (L : LatentExtension S) (l : Fin L.count) : DecidableEq (L.Value l) :=
 abbrev Assignment (L : LatentExtension S) :=
   (l : Fin L.count) -> L.Value l
 
+instance assignmentDecidableEq (L : LatentExtension S) :
+    DecidableEq L.Assignment :=
+  FiniteProduct.assignmentDecidableEq L.count L.Value L.valueDecidableEq
+
 def Inputs (L : LatentExtension S) (child : Fin S.count) :=
   (l : Fin L.count) -> L.incident l child = true -> L.Value l
 

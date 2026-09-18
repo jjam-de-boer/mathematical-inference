@@ -190,6 +190,11 @@ inductive ModalDerivationTrace (G : ObservedGraph S) :
       {denominator : DoCalculusDerivation G right right'} :
       ModalDerivationTrace G numerator -> ModalDerivationTrace G denominator ->
         ModalDerivationTrace G (.divideCongr numerator denominator)
+  | eqCongr {left left' right right'}
+      {hleft : left = left'} {hright : right = right'}
+      {inner : DoCalculusDerivation G left' right'} :
+      ModalDerivationTrace G inner ->
+        ModalDerivationTrace G (.eqCongr hleft hright inner)
 
 def DoCalculusDerivation.toModalTrace :
     (derivation : DoCalculusDerivation G left right) ->
@@ -215,6 +220,8 @@ def DoCalculusDerivation.toModalTrace :
       .multiplyCongr first.toModalTrace second.toModalTrace
   | .divideCongr numerator denominator =>
       .divideCongr numerator.toModalTrace denominator.toModalTrace
+  | .eqCongr _hleft _hright inner =>
+      .eqCongr inner.toModalTrace
 
 namespace ModalDerivationTrace
 
@@ -234,6 +241,7 @@ def ruleKinds : {derivation : DoCalculusDerivation G left right} ->
   | _, .multiplyCongr first second => first.ruleKinds ++ second.ruleKinds
   | _, .divideCongr numerator denominator =>
       numerator.ruleKinds ++ denominator.ruleKinds
+  | _, .eqCongr inner => inner.ruleKinds
 
 end ModalDerivationTrace
 

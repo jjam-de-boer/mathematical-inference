@@ -181,6 +181,39 @@ def nonAncestorsOf (G : ObservedGraph S) (m : GraphMutilation S)
     (actions targets : NodeSet S) : NodeSet S :=
   fun i => actions i && !(G.observedAncestorOf m targets i)
 
+/-- The empty target family has no ancestors, so the Boolean search never
+selects a sink. -/
+theorem observedAncestorOf_empty (G : ObservedGraph S)
+    (m : GraphMutilation S) (source : Fin S.count) :
+    G.observedAncestorOf m NodeSet.empty source = false := by
+  simp only [observedAncestorOf, NodeSet.empty]
+  refine List.any_eq_false.mpr ?_
+  intro _target _ht
+  simp
+
+/-- Every action node is a non-ancestor of the empty family. -/
+theorem nonAncestorsOf_empty_targets (G : ObservedGraph S)
+    (m : GraphMutilation S) (actions : NodeSet S) :
+    G.nonAncestorsOf m actions NodeSet.empty = actions := by
+  funext i
+  simp [nonAncestorsOf, observedAncestorOf_empty]
+
+/-- Empty `W` makes `Z(W)` the whole of `Z`. -/
+theorem nonAncestorsOf_of_isEmpty (G : ObservedGraph S)
+    (m : GraphMutilation S) (actions targets : NodeSet S)
+    (hempty : NodeSet.isEmpty targets = true) :
+    G.nonAncestorsOf m actions targets = actions := by
+  have ht : targets = NodeSet.empty := NodeSet.eq_empty_of_isEmpty hempty
+  subst ht
+  exact nonAncestorsOf_empty_targets G m actions
+
+/-- `Z(W)` is always a subset of `Z`. -/
+theorem nonAncestorsOf_subset_actions (G : ObservedGraph S)
+    (m : GraphMutilation S) (actions targets : NodeSet S) :
+    NodeSet.Subset (G.nonAncestorsOf m actions targets) actions := by
+  intro i hi
+  exact (Bool.and_eq_true_iff.mp hi).1
+
 end ObservedGraph
 
 /-! ## Symbolic probability expressions and do-calculus certificates -/
@@ -209,6 +242,29 @@ def rule3Left (x y z w : NodeSet S) : Kernel S :=
 def rule3Right (x y _z w : NodeSet S) : Kernel S :=
   ⟨y, x, w⟩
 
+/-- Empty `Z` makes rule 1's two kernels the same `P(Y | do(X), W)`. -/
+theorem rule1Left_eq_rule1Right_of_empty_z
+    (x y z w : NodeSet S) (hz : NodeSet.isEmpty z = true) :
+    rule1Left x y z w = rule1Right x y z w := by
+  have hz' : z = NodeSet.empty := NodeSet.eq_empty_of_isEmpty hz
+  simp [rule1Left, rule1Right, hz', NodeSet.union_empty_left]
+
+/-- Empty `Z` makes rule 2's action-exchange kernels the same
+`P(Y | do(X), W)`. -/
+theorem rule2Left_eq_rule2Right_of_empty_z
+    (x y z w : NodeSet S) (hz : NodeSet.isEmpty z = true) :
+    rule2Left x y z w = rule2Right x y z w := by
+  have hz' : z = NodeSet.empty := NodeSet.eq_empty_of_isEmpty hz
+  simp [rule2Left, rule2Right, hz', NodeSet.union_empty_left,
+    NodeSet.union_empty_right]
+
+/-- Empty `Z` makes rule 3's two kernels the same `P(Y | do(X), W)`. -/
+theorem rule3Left_eq_rule3Right_of_empty_z
+    (x y z w : NodeSet S) (hz : NodeSet.isEmpty z = true) :
+    rule3Left x y z w = rule3Right x y z w := by
+  have hz' : z = NodeSet.empty := NodeSet.eq_empty_of_isEmpty hz
+  simp [rule3Left, rule3Right, hz', NodeSet.union_empty_right]
+
 /-- The four node families in a do-calculus rule are pairwise disjoint. -/
 structure FourWayDisjoint (x y z w : NodeSet S) : Prop where
   xy : NodeSet.Disjoint x y
@@ -217,6 +273,87 @@ structure FourWayDisjoint (x y z w : NodeSet S) : Prop where
   yz : NodeSet.Disjoint y z
   yw : NodeSet.Disjoint y w
   zw : NodeSet.Disjoint z w
+
+/-- Empty-action marginalization of `P(Y ∪ (V \ Y))` down to `P(Y)`: the
+action and conditioner contribute no vertices, and `Y` is complementary
+to `V \ Y`.  This is the side condition of the ID base case that writes
+`P(Y)` as a marginal of the observational joint. -/
+def FourWayDisjoint.emptyActionMarginal (y : NodeSet S) :
+    FourWayDisjoint NodeSet.empty y (NodeSet.diff NodeSet.full y)
+      NodeSet.empty where
+  xy := NodeSet.disjoint_empty_left _
+  xz := NodeSet.disjoint_empty_left _
+  xw := NodeSet.disjoint_empty_left _
+  yz := NodeSet.disjoint_diff _ _
+  yw := NodeSet.disjoint_empty_right _
+  zw := NodeSet.disjoint_empty_right _
+
+/-- Empty-action conditioning of `P(Y | Z)` as `P(Y, Z) / P(Z)`: the
+action and extra conditioner are empty, and `Y` is disjoint from `Z`. -/
+def FourWayDisjoint.emptyActionConditioning (y z : NodeSet S)
+    (hyz : NodeSet.Disjoint y z) :
+    FourWayDisjoint NodeSet.empty y z NodeSet.empty where
+  xy := NodeSet.disjoint_empty_left _
+  xz := NodeSet.disjoint_empty_left _
+  xw := NodeSet.disjoint_empty_left _
+  yz := hyz
+  yw := NodeSet.disjoint_empty_right _
+  zw := NodeSet.disjoint_empty_right _
+
+/-- Empty original action: remaining obligations are the three
+query disjointnesses of `Y`, `Z`, and `W`.  Rule 1 inserting extra
+chain-rule predecessors uses this with nonempty given-set `W`. -/
+def FourWayDisjoint.emptyAction (y z w : NodeSet S)
+    (yz : NodeSet.Disjoint y z) (yw : NodeSet.Disjoint y w)
+    (zw : NodeSet.Disjoint z w) :
+    FourWayDisjoint NodeSet.empty y z w where
+  xy := NodeSet.disjoint_empty_left _
+  xz := NodeSet.disjoint_empty_left _
+  xw := NodeSet.disjoint_empty_left _
+  yz := yz
+  yw := yw
+  zw := zw
+
+/-- Empty original action and empty complementary sum: the remaining
+obligation is `Y ⊥ W`.  Singleton 4.2 wraps `P(Y | X)` as an empty
+marginal of itself so the formula matches the engine's complementary
+sum over `S \ Y` once `S = Y`. -/
+def FourWayDisjoint.emptyActionEmptyZ (y w : NodeSet S)
+    (yw : NodeSet.Disjoint y w) :
+    FourWayDisjoint NodeSet.empty y NodeSet.empty w where
+  xy := NodeSet.disjoint_empty_left _
+  xz := NodeSet.disjoint_empty_left _
+  xw := NodeSet.disjoint_empty_left _
+  yz := NodeSet.disjoint_empty_right _
+  yw := yw
+  zw := NodeSet.disjoint_empty_left _
+
+/-- Empty given-set: the remaining pairwise obligations are the three
+query disjointnesses of `X`, `Y`, and `Z`. -/
+def FourWayDisjoint.of_empty_w (x y z : NodeSet S)
+    (xy : NodeSet.Disjoint x y) (xz : NodeSet.Disjoint x z)
+    (yz : NodeSet.Disjoint y z) :
+    FourWayDisjoint x y z NodeSet.empty where
+  xy := xy
+  xz := xz
+  xw := NodeSet.disjoint_empty_right _
+  yz := yz
+  yw := NodeSet.disjoint_empty_right _
+  zw := NodeSet.disjoint_empty_right _
+
+/-- Keep `X ∩ H` as the remaining action and delete `X \ H` by rule 3.
+The pairwise obligations are the query disjointness of `X` and `Y` in
+both orientations together with the complementary cut of `H` through
+`X`.  Empty given-set is the ID 4.3 side condition. -/
+def FourWayDisjoint.shrinkAction (x y host : NodeSet S)
+    (xy : NodeSet.Disjoint x y) (yx : NodeSet.Disjoint y x) :
+    FourWayDisjoint (NodeSet.inter x host) y (NodeSet.diff x host)
+      NodeSet.empty :=
+  FourWayDisjoint.of_empty_w
+    (NodeSet.inter x host) y (NodeSet.diff x host)
+    (NodeSet.Disjoint.of_subset_left xy (NodeSet.inter_subset_left x host))
+    (NodeSet.disjoint_inter_diff x host)
+    (NodeSet.disjoint_of_subset_right yx (NodeSet.diff_subset_left x host))
 
 /-- The graph-separation judgement carried by a family of do-rule steps. -/
 abbrev SeparationCondition (S : ObservedSignature) :=
@@ -375,6 +512,19 @@ inductive DoCalculusDerivation (G : ObservedGraph S)
       DoCalculusDerivation G (separation := separation) right right' ->
       DoCalculusDerivation G (separation := separation)
         (.divide left right) (.divide left' right')
+  /-- Reindex a derivation along syntactic equality of its endpoints.
+
+  Probability-term equality is typically `funext` of a `NodeSet` (empty
+  action, `Y ∪ (V \ Y) = V`), not a definitional match.  Wrapping the
+  already constructed inner derivation in this constructor keeps
+  recursive support and `mapRules` computable: the inner tree remains
+  a genuine inductive constructor rather than an `Eq.rec` stuck match.
+  The equalities are proof data, not a probability-algebra rule. -/
+  | eqCongr {left left' right right'}
+      (hleft : left = left') (hright : right = right')
+      (inner : DoCalculusDerivation G (separation := separation)
+        left' right') :
+      DoCalculusDerivation G (separation := separation) left right
 
 /-- Map only the do-rule leaves of a derivation. -/
 def DoCalculusDerivation.mapRules
@@ -428,6 +578,11 @@ def DoCalculusDerivation.mapRules
       @DoCalculusDerivation.divideCongr S G target first first' second second'
         (firstDerivation.mapRules (source := source) (target := target) translate)
         (secondDerivation.mapRules (source := source) (target := target) translate)
+  | @DoCalculusDerivation.eqCongr _ _ source first first' second second'
+      hleft hright inner =>
+      @DoCalculusDerivation.eqCongr S G target first first' second second'
+        hleft hright
+        (inner.mapRules (source := source) (target := target) translate)
 
 end Causality
 end Thesis

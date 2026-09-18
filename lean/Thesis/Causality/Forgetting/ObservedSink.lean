@@ -71,11 +71,6 @@ theorem cast_record_probVal {A B : Type u} (equal : A = B)
 
 namespace LatentExtension
 
-instance assignmentDecidableEq (latent : LatentExtension S) :
-    DecidableEq latent.Assignment :=
-  FiniteProduct.assignmentDecidableEq latent.count latent.Value
-    latent.valueDecidableEq
-
 /-- A duplicate-free enumeration of all assignments of a finite latent family. -/
 def assignmentEnumeration (latent : LatentExtension S) :
     List latent.Assignment :=

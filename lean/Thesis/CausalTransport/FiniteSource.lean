@@ -945,6 +945,8 @@ def FiniteSourceLocalDerivationSupport {T : FiniteTableSignature}
       | .divideCongr numerator denominator =>
           FiniteSourceLocalDerivationSupport model assignment numerator ×
             FiniteSourceLocalDerivationSupport model assignment denominator
+      | .eqCongr _ _ inner =>
+          FiniteSourceLocalDerivationSupport model assignment inner
 
 /-- Interpret a complete source support tree in the intrinsic target. -/
 noncomputable def FiniteSourceLocalDerivationSupport.toTarget
@@ -999,6 +1001,10 @@ noncomputable def FiniteSourceLocalDerivationSupport.toTarget
       exact ⟨model.termSupportedAt_to_target _ _ supported.1,
         model.termSupportedAt_to_target _ _ supported.2.1,
         numeratorIH supported.2.2.1, denominatorIH supported.2.2.2⟩
+  | eqCongr _hleft _hright inner ih =>
+      exact ⟨model.termSupportedAt_to_target _ _ supported.1,
+        model.termSupportedAt_to_target _ _ supported.2.1,
+        ih supported.2.2⟩
 
 /-- Internal induction proving source semantics for an entire derivation. -/
 noncomputable def DoCalculusDerivation.finiteSource_denotational_soundAt
@@ -1053,6 +1059,10 @@ noncomputable def DoCalculusDerivation.finiteSource_denotational_soundAt
         FiniteTableSCM.termDenote] using
         ProbabilityResult.divide_congr
           (numeratorIH supported.2.2.1) (denominatorIH supported.2.2.2)
+  | eqCongr hleft hright inner ih =>
+      subst hleft
+      subst hright
+      exact ih supported.2.2
 
 /-- Source primitive laws imply target primitive laws only through preservation. -/
 noncomputable def FiniteSourcePathPrimitiveSoundness.toTarget
