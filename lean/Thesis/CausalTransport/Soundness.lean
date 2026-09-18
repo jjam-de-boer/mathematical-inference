@@ -11,7 +11,11 @@ Constructive ingredients for inhabiting the finite-source soundness interface.
 
 This module proves the graph-independent probability-algebra leaves first.
 The d-separation/global-Markov layer and the three causal rules are kept
-separate so that each stage can be audited independently.
+separate so that each stage can be audited independently.  Empty-`W` rule 1
+and empty-`W` rule 2 now inhabit their product-partition witnesses from
+path d-separation and a projected graph: rule 2 uses open ancestral cores
+in `G_{\overline{X}\underline{Z}}` so a directed `Z → Y` edge does not
+identify the two cores.
 -/
 
 namespace FiniteLatentSCM
@@ -164,6 +168,18 @@ theorem latentRelevantUnder_eq_true_iff (model : FiniteLatentSCM S)
     exact Bool.and_eq_true_iff.mpr
       ⟨selected, Option.isNone_iff_eq_none.mpr notIntervened⟩
 
+/-- No observed child of the empty selection can witness a latent. -/
+theorem latentRelevantUnder_empty (model : FiniteLatentSCM S)
+    (intervention : (i : Fin S.count) -> Option (S.Value i))
+    (root : Fin model.latent.count) :
+    model.latentRelevantUnder intervention NodeSet.empty root = false := by
+  cases h : model.latentRelevantUnder intervention NodeSet.empty root with
+  | false => rfl
+  | true =>
+      rcases (model.latentRelevantUnder_eq_true_iff intervention
+          NodeSet.empty root).mp h with ⟨child, hnodes, _hfree, _hinc⟩
+      simp [NodeSet.empty] at hnodes
+
 theorem latentRelevantUnder_of_incident (model : FiniteLatentSCM S)
     (intervention : (i : Fin S.count) -> Option (S.Value i))
     (nodes : NodeSet S) (root : Fin model.latent.count)
@@ -174,6 +190,20 @@ theorem latentRelevantUnder_of_incident (model : FiniteLatentSCM S)
   apply finAny_eq_true_of _ child
   simp [selected, notIntervened, incident]
 
+/-- A heavier intervention (fewer free nodes) can only drop latent
+relevance. -/
+theorem latentRelevantUnder_mono (model : FiniteLatentSCM S)
+    {heavier lighter : (i : Fin S.count) -> Option (S.Value i)}
+    (nodes : NodeSet S) (root : Fin model.latent.count)
+    (freeOfHeavier : forall i, heavier i = none -> lighter i = none)
+    (relevant : model.latentRelevantUnder heavier nodes root = true) :
+    model.latentRelevantUnder lighter nodes root = true := by
+  rcases (model.latentRelevantUnder_eq_true_iff heavier nodes root).mp
+      relevant with
+    ⟨child, selected, notIntervened, incident⟩
+  exact model.latentRelevantUnder_of_incident lighter nodes root child
+    selected (freeOfHeavier child notIntervened) incident
+
 /-- A set contains every non-intervened directed parent of each of its
 members. -/
 def BackwardClosedUnder (_model : FiniteLatentSCM S)
@@ -182,6 +212,2647 @@ def BackwardClosedUnder (_model : FiniteLatentSCM S)
   forall parent child,
     nodes child = true -> intervention child = none ->
       S.directed parent child = true -> nodes parent = true
+
+/-- Evaluation on a backward-closed family depends only on the
+intervention coordinates inside that family.  Intervening elsewhere
+(rule-3 `Z` that does not ancestor `Y`) is invisible. -/
+theorem evalNodeUnder_eq_of_intervention_agree_on_closed
+    (model : FiniteLatentSCM S)
+    (left right : (i : Fin S.count) -> Option (S.Value i))
+    (nodes : NodeSet S) (roots : model.latent.Assignment)
+    (closed : model.BackwardClosedUnder left nodes)
+    (agree : forall i, nodes i = true -> left i = right i)
+    (child : Fin S.count) (hmem : nodes child = true) :
+    model.evalNodeUnder left roots child =
+      model.evalNodeUnder right roots child := by
+  have hsame := agree child hmem
+  rw [FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder
+  rw [hsame]
+  cases hsel : right child with
+  | some _value =>
+      rfl
+  | none =>
+      have hleftNone : left child = none := by
+        rw [hsame, hsel]
+      simp only
+      congr 1
+      funext parent hedge
+      exact model.evalNodeUnder_eq_of_intervention_agree_on_closed
+        left right nodes roots closed agree parent
+        (closed parent child hmem hleftNone hedge)
+termination_by child.val
+decreasing_by
+  exact S.directed_earlier hedge
+
+theorem evalUnder_eq_on_of_intervention_agree_on_closed
+    (model : FiniteLatentSCM S)
+    (left right : (i : Fin S.count) -> Option (S.Value i))
+    (nodes : NodeSet S) (roots : model.latent.Assignment)
+    (closed : model.BackwardClosedUnder left nodes)
+    (agree : forall i, nodes i = true -> left i = right i)
+    (child : Fin S.count) (hmem : nodes child = true) :
+    model.evalUnder left roots child =
+      model.evalUnder right roots child :=
+  model.evalNodeUnder_eq_of_intervention_agree_on_closed
+    left right nodes roots closed agree child hmem
+
+/--
+Ancestors of a target set in `G_{\overline{X}}` are backward-closed under
+`do(X)`: every remaining directed parent of a non-intervened ancestor is
+again an ancestor.  Shortest-path bounding on the finite vertex list keeps
+the Boolean ancestry search's fuel.
+-/
+theorem observedAncestorOf_backwardClosedUnder
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (action targets : NodeSet S) (reference : S.Assignment) :
+    model.BackwardClosedUnder
+      (fun i => if action i then some (reference i) else none)
+      (fun i =>
+        G.observedAncestorOf (GraphMutilation.bar action) targets i) := by
+  intro parent child hchild hnone hedge
+  have hact : action child = false := by
+    cases h : action child with
+    | false =>
+        rfl
+    | true =>
+        simp [h] at hnone
+  have hedgeBar :
+      G.observedDirectedEdge (GraphMutilation.bar action) parent child =
+        true := by
+    simp [ObservedGraph.observedDirectedEdge, GraphMutilation.bar,
+      NodeSet.empty, hedge, hact]
+  have hany :
+      (List.ofFn (fun i : Fin S.count => i)).any (fun target =>
+        targets target &&
+          FiniteReachability.within finBeq
+            (List.ofFn (fun i : Fin S.count => i))
+            (G.observedDirectedEdge (GraphMutilation.bar action))
+            (List.ofFn (fun i : Fin S.count => i)).length child target) =
+        true := by
+    simpa [ObservedGraph.observedAncestorOf] using hchild
+  rcases List.any_eq_true.mp hany with ⟨y, yMem, hy⟩
+  have hyParts := Bool.and_eq_true_iff.mp hy
+  have complete :
+      forall node : Fin S.count,
+        node ∈ List.ofFn (fun i : Fin S.count => i) :=
+    fun node => List.mem_ofFn.mpr ⟨node, rfl⟩
+  have bounded :
+      FiniteReachability.BoundedWalk
+        (G.observedDirectedEdge (GraphMutilation.bar action))
+        (List.ofFn (fun i : Fin S.count => i)).length child y :=
+    (FiniteReachability.within_eq_true_iff_boundedWalk finBeq
+      (List.ofFn (fun i : Fin S.count => i))
+      (G.observedDirectedEdge (GraphMutilation.bar action))
+      finBeq_eq_true_iff complete
+      (List.ofFn (fun i : Fin S.count => i)).length child y).mp hyParts.2
+  have reachableParent :
+      FiniteReachability.Reachable
+        (G.observedDirectedEdge (GraphMutilation.bar action)) parent y :=
+    FiniteReachability.Reachable.prepend hedgeBar
+      (FiniteReachability.Reachable.of_bounded bounded)
+  have boundedParent :
+      FiniteReachability.BoundedWalk
+        (G.observedDirectedEdge (GraphMutilation.bar action))
+        (List.ofFn (fun i : Fin S.count => i)).length parent y :=
+    FiniteReachability.boundedWalk_of_reachable finBeq
+      (List.ofFn (fun i : Fin S.count => i))
+      (G.observedDirectedEdge (GraphMutilation.bar action))
+      finBeq_eq_true_iff complete reachableParent
+  have hyParent :
+      FiniteReachability.within finBeq
+        (List.ofFn (fun i : Fin S.count => i))
+        (G.observedDirectedEdge (GraphMutilation.bar action))
+        (List.ofFn (fun i : Fin S.count => i)).length parent y = true :=
+    (FiniteReachability.within_eq_true_iff_boundedWalk finBeq
+      (List.ofFn (fun i : Fin S.count => i))
+      (G.observedDirectedEdge (GraphMutilation.bar action))
+      finBeq_eq_true_iff complete
+      (List.ofFn (fun i : Fin S.count => i)).length parent y).mpr
+      boundedParent
+  have hparent :
+      (List.ofFn (fun i : Fin S.count => i)).any (fun target =>
+        targets target &&
+          FiniteReachability.within finBeq
+            (List.ofFn (fun i : Fin S.count => i))
+            (G.observedDirectedEdge (GraphMutilation.bar action))
+            (List.ofFn (fun i : Fin S.count => i)).length parent target) =
+        true :=
+    List.any_eq_true.mpr
+      ⟨y, yMem, Bool.and_eq_true_iff.mpr ⟨hyParts.1, hyParent⟩⟩
+  simpa [ObservedGraph.observedAncestorOf] using hparent
+
+theorem backwardClosedUnder_of_rule1Right
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (targets : NodeSet S) :
+    model.BackwardClosedUnder
+      ((rule1Right x y z w).intervention assignment)
+      (fun i => G.observedAncestorOf (GraphMutilation.bar x) targets i) := by
+  simpa [rule1Right, Kernel.intervention] using
+    observedAncestorOf_backwardClosedUnder model G x targets assignment
+
+/-- Every selected vertex is an ancestor of itself. -/
+theorem observedAncestorOf_self (G : ObservedGraph S)
+    (m : GraphMutilation S) (targets : NodeSet S) {i : Fin S.count}
+    (hi : targets i = true) :
+    G.observedAncestorOf m targets i = true := by
+  have complete :
+      forall node : Fin S.count,
+        node ∈ List.ofFn (fun j : Fin S.count => j) :=
+    fun node => List.mem_ofFn.mpr ⟨node, rfl⟩
+  have bounded :
+      FiniteReachability.BoundedWalk (G.observedDirectedEdge m)
+        (List.ofFn (fun j : Fin S.count => j)).length i i :=
+    FiniteReachability.BoundedWalk.refl _ _ _
+  have hy :
+      FiniteReachability.within finBeq
+        (List.ofFn (fun j : Fin S.count => j))
+        (G.observedDirectedEdge m)
+        (List.ofFn (fun j : Fin S.count => j)).length i i = true :=
+    (FiniteReachability.within_eq_true_iff_boundedWalk finBeq
+      (List.ofFn (fun j : Fin S.count => j))
+      (G.observedDirectedEdge m) finBeq_eq_true_iff complete
+      (List.ofFn (fun j : Fin S.count => j)).length i i).mpr bounded
+  have hany :
+      (List.ofFn (fun j : Fin S.count => j)).any (fun target =>
+        targets target &&
+          FiniteReachability.within finBeq
+            (List.ofFn (fun j : Fin S.count => j))
+            (G.observedDirectedEdge m)
+            (List.ofFn (fun j : Fin S.count => j)).length i target) =
+        true :=
+    List.any_eq_true.mpr
+      ⟨i, complete i, Bool.and_eq_true_iff.mpr ⟨hi, hy⟩⟩
+  simpa [ObservedGraph.observedAncestorOf] using hany
+
+/-- Ancestry is monotone in the target set. -/
+theorem observedAncestorOf_mono (G : ObservedGraph S)
+    (m : GraphMutilation S) {targets targets' : NodeSet S}
+    (hsub : NodeSet.Subset targets targets') {i : Fin S.count}
+    (h : G.observedAncestorOf m targets i = true) :
+    G.observedAncestorOf m targets' i = true := by
+  have hany :
+      (List.ofFn (fun j : Fin S.count => j)).any (fun target =>
+        targets target &&
+          FiniteReachability.within finBeq
+            (List.ofFn (fun j : Fin S.count => j))
+            (G.observedDirectedEdge m)
+            (List.ofFn (fun j : Fin S.count => j)).length i target) =
+        true := by
+    simpa [ObservedGraph.observedAncestorOf] using h
+  rcases List.any_eq_true.mp hany with ⟨y, yMem, hy⟩
+  have hyParts := Bool.and_eq_true_iff.mp hy
+  have hany' :
+      (List.ofFn (fun j : Fin S.count => j)).any (fun target =>
+        targets' target &&
+          FiniteReachability.within finBeq
+            (List.ofFn (fun j : Fin S.count => j))
+            (G.observedDirectedEdge m)
+            (List.ofFn (fun j : Fin S.count => j)).length i target) =
+        true :=
+    List.any_eq_true.mpr
+      ⟨y, yMem,
+        Bool.and_eq_true_iff.mpr ⟨hsub y hyParts.1, hyParts.2⟩⟩
+  simpa [ObservedGraph.observedAncestorOf] using hany'
+
+/-- Directed ancestry of `targets` in `G_{\overline{X}}`. -/
+def ancestralInBar (G : ObservedGraph S) (action targets : NodeSet S) :
+    NodeSet S :=
+  fun i => G.observedAncestorOf (GraphMutilation.bar action) targets i
+
+/-- The empty target set has no ancestors: the Boolean search never finds
+a selected sink. -/
+theorem ancestralInBar_empty (G : ObservedGraph S) (action : NodeSet S)
+    (i : Fin S.count) :
+    ancestralInBar G action NodeSet.empty i = false := by
+  simp only [ancestralInBar, ObservedGraph.observedAncestorOf, NodeSet.empty]
+  refine List.any_eq_false.mpr ?_
+  intro _target _ht
+  simp
+
+theorem ancestralInBar_eq_empty (G : ObservedGraph S) (action : NodeSet S) :
+    ancestralInBar G action NodeSet.empty = NodeSet.empty := by
+  funext i
+  exact ancestralInBar_empty G action i
+
+/-- Every target is an ancestor of itself, so the ancestral family
+contains the seeds. -/
+theorem ancestralInBar_contains_targets (G : ObservedGraph S)
+    (action targets : NodeSet S) :
+    NodeSet.Subset targets (ancestralInBar G action targets) :=
+  fun _i hi =>
+    observedAncestorOf_self G (GraphMutilation.bar action) targets hi
+
+/--
+Vertices that remain unconditioned and still reach `targets` after every
+conditioned child is cut.  An open directed walk into `Z` (respectively `Y`)
+is exactly membership in this set for `targets = Z` (respectively `Y`).
+-/
+def openAncestralIn (G : ObservedGraph S)
+    (conditioned targets : NodeSet S) : NodeSet S :=
+  fun i =>
+    !(ObservedGraph.blockedBy conditioned (.observed i)) &&
+      ancestralInBar G conditioned targets i
+
+/-- Vertices that remain unconditioned and still reach `targets` in an
+arbitrary mutilated DAG.  Rule 1's `openAncestralIn` is the instance
+whose mutilation is `G_{\overline{conditioned}}`; rule 2 uses
+`G_{\overline{X}\underline{Z}}`. -/
+def openAncestralInGraph (G : ObservedGraph S)
+    (m : GraphMutilation S) (conditioned targets : NodeSet S) : NodeSet S :=
+  fun i =>
+    !(ObservedGraph.blockedBy conditioned (.observed i)) &&
+      G.observedAncestorOf m targets i
+
+/-- Open ancestors of `Z` in `G_{\overline{X ∪ W}\underline{Z}}` given
+`X ∪ W`.  Ancestry is taken after also cutting incoming arrows to `W`,
+so a shortest walk into `Z` never meets the conditioning set.  Empty `W`
+recovers ancestry in `G_{\overline{X}\underline{Z}}`. -/
+def rule2ZOpenCore (G : ObservedGraph S) (x z w : NodeSet S) : NodeSet S :=
+  openAncestralInGraph G
+    (GraphMutilation.barUnderline (NodeSet.union x w) z)
+    (NodeSet.union x w) z
+
+/-- Open ancestors of `Y` in `G_{\overline{X ∪ W}\underline{Z}}` given
+`X ∪ W`. -/
+def rule2YOpenCore (G : ObservedGraph S) (x y z w : NodeSet S) : NodeSet S :=
+  openAncestralInGraph G
+    (GraphMutilation.barUnderline (NodeSet.union x w) z)
+    (NodeSet.union x w) y
+
+/-- Open ancestors of `Z` in `G_{\overline{X}}` given `X ∪ W`. -/
+def rule1LeftOpenCore (G : ObservedGraph S) (x z w : NodeSet S) : NodeSet S :=
+  openAncestralIn G (NodeSet.union x w) z
+
+/-- Open ancestors of `Y` in `G_{\overline{X}}` given `X ∪ W`. -/
+def rule1RightOpenCore (G : ObservedGraph S) (x y _z w : NodeSet S) : NodeSet S :=
+  openAncestralIn G (NodeSet.union x w) y
+
+/-- Open ancestral vertices sit among the full ancestral set. -/
+theorem openAncestralIn_subset (G : ObservedGraph S)
+    (conditioned targets : NodeSet S) :
+    NodeSet.Subset (openAncestralIn G conditioned targets)
+      (ancestralInBar G conditioned targets) := by
+  intro i hi
+  have hparts :
+      ObservedGraph.blockedBy conditioned (.observed i) = false ∧
+        ancestralInBar G conditioned targets i = true := by
+    simpa [openAncestralIn] using hi
+  exact hparts.2
+
+/-- Hard-intervening a node is the same as conditioning it, for observed
+vertices. -/
+theorem intervention_none_iff_unblocked
+    (conditioned : NodeSet S) (reference : S.Assignment)
+    (i : Fin S.count) :
+    ((Kernel.mk NodeSet.empty conditioned NodeSet.empty).intervention
+      reference) i = none ↔
+      ObservedGraph.blockedBy conditioned (.observed i) = false := by
+  simp [Kernel.intervention, ObservedGraph.blockedBy]
+
+/-- A free ancestor in `G_{\overline{conditioned}}` is an open-core vertex. -/
+theorem openAncestralIn_of_free_ancestor (G : ObservedGraph S)
+    (conditioned targets : NodeSet S) (reference : S.Assignment)
+    (i : Fin S.count)
+    (hanc : ancestralInBar G conditioned targets i = true)
+    (hfree :
+      ((Kernel.mk NodeSet.empty conditioned NodeSet.empty).intervention
+        reference) i = none) :
+    openAncestralIn G conditioned targets i = true := by
+  have hunb :=
+    (intervention_none_iff_unblocked conditioned reference i).mp hfree
+  simp [openAncestralIn, hunb, hanc]
+
+/--
+Under `do(conditioned)`, latents relevant to the ancestral set are exactly
+those relevant to the open core: intervened ancestral vertices do not
+contribute incident children.
+-/
+theorem latentRelevantUnder_openAncestralIn
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (conditioned targets : NodeSet S) (reference : S.Assignment)
+    (root : Fin model.latent.count) :
+    model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty conditioned NodeSet.empty).intervention
+          reference)
+        (openAncestralIn G conditioned targets) root =
+      model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty conditioned NodeSet.empty).intervention
+          reference)
+        (ancestralInBar G conditioned targets) root := by
+  let intervention :=
+    (Kernel.mk NodeSet.empty conditioned NodeSet.empty).intervention
+      reference
+  cases hopen :
+      model.latentRelevantUnder intervention
+        (openAncestralIn G conditioned targets) root with
+  | true =>
+      rcases (model.latentRelevantUnder_eq_true_iff intervention
+          (openAncestralIn G conditioned targets) root).mp hopen with
+        ⟨child, selected, notIntervened, incident⟩
+      have ancestral :=
+        openAncestralIn_subset G conditioned targets child selected
+      have hanc :=
+        model.latentRelevantUnder_of_incident intervention
+          (ancestralInBar G conditioned targets) root child ancestral
+          notIntervened incident
+      simpa [hanc]
+  | false =>
+      cases hanc :
+          model.latentRelevantUnder intervention
+            (ancestralInBar G conditioned targets) root with
+      | false =>
+          rfl
+      | true =>
+          rcases (model.latentRelevantUnder_eq_true_iff intervention
+              (ancestralInBar G conditioned targets) root).mp hanc with
+            ⟨child, selected, notIntervened, incident⟩
+          have unblocked :=
+            (intervention_none_iff_unblocked conditioned reference child).mp
+              notIntervened
+          have inCore : openAncestralIn G conditioned targets child = true := by
+            simp [openAncestralIn, unblocked, selected]
+          have hopen' :=
+            model.latentRelevantUnder_of_incident intervention
+              (openAncestralIn G conditioned targets) root child inCore
+              notIntervened incident
+          rw [hopen] at hopen'
+          cases hopen'
+
+/-- `W` vertices that already lie among the ancestors of `Z`. -/
+def rule1WSelected (G : ObservedGraph S) (x z w : NodeSet S) : NodeSet S :=
+  NodeSet.inter w (ancestralInBar G x z)
+
+/-- `W` vertices that are not ancestors of `Z`. -/
+def rule1WUnselected (G : ObservedGraph S) (x z w : NodeSet S) : NodeSet S :=
+  fun i => w i && !(ancestralInBar G x z i)
+
+theorem rule1W_union (G : ObservedGraph S) (x z w : NodeSet S) :
+    NodeSet.union (rule1WSelected G x z w) (rule1WUnselected G x z w) =
+      w := by
+  funext i
+  simp [NodeSet.union, rule1WSelected, rule1WUnselected, NodeSet.inter,
+    ancestralInBar]
+  cases hw : w i with
+  | false =>
+      simp
+  | true =>
+      cases hA : G.observedAncestorOf (GraphMutilation.bar x) z i <;>
+        simp
+
+def rule1LeftTargets (G : ObservedGraph S) (x z w : NodeSet S) : NodeSet S :=
+  NodeSet.union z (rule1WSelected G x z w)
+
+def rule1RightTargets (G : ObservedGraph S) (x y z w : NodeSet S) :
+    NodeSet S :=
+  NodeSet.union y (rule1WUnselected G x z w)
+
+def rule1LeftRegion (G : ObservedGraph S) (x z w : NodeSet S) : NodeSet S :=
+  ancestralInBar G x (rule1LeftTargets G x z w)
+
+def rule1RightRegion (G : ObservedGraph S) (x y z w : NodeSet S) : NodeSet S :=
+  ancestralInBar G x (rule1RightTargets G x y z w)
+
+theorem subset_ancestralInBar (G : ObservedGraph S)
+    (action observed targets : NodeSet S)
+    (hsub : NodeSet.Subset observed targets) :
+    NodeSet.Subset observed (ancestralInBar G action targets) := by
+  intro i hi
+  exact observedAncestorOf_self G _ targets (hsub i hi)
+
+theorem rule1WSelected_subset_left (G : ObservedGraph S)
+    (x z w : NodeSet S) :
+    NodeSet.Subset (rule1WSelected G x z w)
+      (rule1LeftRegion G x z w) := by
+  intro i hi
+  have hz : ancestralInBar G x z i = true :=
+    NodeSet.inter_subset_right w (ancestralInBar G x z) i hi
+  have hsub : NodeSet.Subset z (rule1LeftTargets G x z w) := by
+    intro j hj
+    simp [rule1LeftTargets, NodeSet.union, hj]
+  exact observedAncestorOf_mono G _ hsub hz
+
+theorem rule1Z_subset_left (G : ObservedGraph S) (x z w : NodeSet S) :
+    NodeSet.Subset z (rule1LeftRegion G x z w) :=
+  subset_ancestralInBar G x z (rule1LeftTargets G x z w) (by
+    intro i hi
+    simp [rule1LeftTargets, NodeSet.union, hi])
+
+theorem rule1Y_subset_right (G : ObservedGraph S) (x y z w : NodeSet S) :
+    NodeSet.Subset y (rule1RightRegion G x y z w) :=
+  subset_ancestralInBar G x y (rule1RightTargets G x y z w) (by
+    intro i hi
+    simp [rule1RightTargets, NodeSet.union, hi])
+
+theorem rule1WUnselected_subset_right (G : ObservedGraph S)
+    (x y z w : NodeSet S) :
+    NodeSet.Subset (rule1WUnselected G x z w)
+      (rule1RightRegion G x y z w) := by
+  intro i hi
+  have hself : ancestralInBar G x (rule1WUnselected G x z w) i = true :=
+    observedAncestorOf_self G _ (rule1WUnselected G x z w) hi
+  have hsub :
+      NodeSet.Subset (rule1WUnselected G x z w)
+        (rule1RightTargets G x y z w) := by
+    intro j hj
+    simp [rule1RightTargets, NodeSet.union, hj]
+  exact observedAncestorOf_mono G _ hsub hself
+
+theorem rule1LeftRegion_backwardClosed
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    model.BackwardClosedUnder
+      ((rule1Right x y z w).intervention assignment)
+      (rule1LeftRegion G x z w) :=
+  backwardClosedUnder_of_rule1Right model G x y z w assignment
+    (rule1LeftTargets G x z w)
+
+theorem rule1RightRegion_backwardClosed
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    model.BackwardClosedUnder
+      ((rule1Right x y z w).intervention assignment)
+      (rule1RightRegion G x y z w) :=
+  backwardClosedUnder_of_rule1Right model G x y z w assignment
+    (rule1RightTargets G x y z w)
+
+/--
+Path d-separation of two observed families forbids a bidirected edge
+between open endpoints whose incoming arrows were not cut.
+-/
+theorem pathDSeparated_no_bidirected
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (left right conditioned : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G mutilation left right
+      conditioned)
+    {a b : Fin S.count}
+    (ha : left a = true) (hb : right b = true)
+    (haOpen : ObservedGraph.blockedBy conditioned (.observed a) = false)
+    (hbOpen : ObservedGraph.blockedBy conditioned (.observed b) = false)
+    (haIn : mutilation.removeIncoming a = false)
+    (hbIn : mutilation.removeIncoming b = false) :
+    G.bidirected a b = false := by
+  by_cases hEq : a = b
+  · subst b
+    cases hbid : G.bidirected a a with
+    | false =>
+        rfl
+    | true =>
+        exact False.elim
+          (Bool.false_ne_true
+            ((G.bidirected_irreflexive a).symm.trans hbid))
+  · cases hbid : G.bidirected a b with
+    | false =>
+        rfl
+    | true =>
+        exact False.elim
+          (separated
+            ⟨a, b, ha, hb,
+              ⟨PathSpecification.ActivePath.ofBidirected G mutilation
+                conditioned hbid hEq haOpen hbOpen haIn hbIn⟩⟩)
+
+/--
+Path d-separation of two observed families forbids an all-open directed
+walk between them, including the empty walk at a shared open vertex.
+-/
+theorem pathDSeparated_no_open_directed_walk
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (left right conditioned : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G mutilation left right
+      conditioned)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) length source target)
+    (simple : walk.nodes.Nodup)
+    (ha : left source = true) (hb : right target = true)
+    (openNodes : forall n, n ∈ walk.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false) :
+    False :=
+  separated
+    ⟨source, target, ha, hb,
+      ⟨PathSpecification.ActivePath.ofOpenDirectedWalk G mutilation
+        conditioned walk simple openNodes⟩⟩
+
+/--
+Path d-separation of two observed families forbids a pair of all-open
+directed walks from a common source, one ending in each family.  A
+common open ancestor of `Z` and `Y` is the displayed case.
+-/
+theorem pathDSeparated_no_open_directed_fork
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (left right conditioned : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G mutilation left right
+      conditioned)
+    {lengthZ lengthY : Nat} {shared zEnd yEnd : Fin S.count}
+    (walkZ : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) lengthZ shared zEnd)
+    (walkY : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) lengthY shared yEnd)
+    (simpleZ : walkZ.nodes.Nodup) (simpleY : walkY.nodes.Nodup)
+    (hz : left zEnd = true) (hy : right yEnd = true)
+    (openZ : forall n, n ∈ walkZ.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false)
+    (openY : forall n, n ∈ walkY.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false) :
+    False :=
+  separated
+    ⟨zEnd, yEnd, hz, hy,
+      ⟨PathSpecification.ActivePath.ofOpenDirectedFork G mutilation
+        conditioned walkZ walkY simpleZ simpleY openZ openY⟩⟩
+
+/-- A `G_{\overline{large}}` edge is already an edge of `G_{\overline{small}}`
+whenever `small ⊆ large`: incoming arrows to the larger family are a
+stricter cut. -/
+theorem observedDirectedEdge_bar_of_incoming_subset
+    (G : ObservedGraph S) {small large : NodeSet S}
+    (hsub : NodeSet.Subset small large) {parent child : Fin S.count}
+    (hedge : G.observedDirectedEdge (GraphMutilation.bar large)
+      parent child = true) :
+    G.observedDirectedEdge (GraphMutilation.bar small)
+      parent child = true := by
+  simp [ObservedGraph.observedDirectedEdge, GraphMutilation.bar,
+    NodeSet.empty] at hedge ⊢
+  refine ⟨hedge.1, ?_⟩
+  cases hs : small child with
+  | false =>
+      rfl
+  | true =>
+      have hlarge : large child = true := hsub child hs
+      cases (hlarge.symm.trans hedge.2)
+
+/-- Rebuild a `G_{\overline{large}}` walk inside `G_{\overline{small}}`
+along an incoming-cut inclusion. -/
+def remapBarWalk_of_incoming_subset
+    (G : ObservedGraph S) {small large : NodeSet S}
+    (hsub : NodeSet.Subset small large)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar large))
+      length source target) :
+    FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar small))
+      length source target :=
+  match walk with
+  | .refl node =>
+      .refl node
+  | @FiniteReachability.ExactWalk.step _ _ _len src mid _tgt first rest =>
+      .step (observedDirectedEdge_bar_of_incoming_subset G hsub first)
+        (remapBarWalk_of_incoming_subset G hsub rest)
+
+theorem remapBarWalk_of_incoming_subset_nodes
+    (G : ObservedGraph S) {small large : NodeSet S}
+    (hsub : NodeSet.Subset small large)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar large))
+      length source target) :
+    (remapBarWalk_of_incoming_subset G hsub walk).nodes = walk.nodes := by
+  match walk with
+  | .refl node =>
+      rfl
+  | @FiniteReachability.ExactWalk.step _ _ _len src mid _tgt first rest =>
+      simp [remapBarWalk_of_incoming_subset,
+        FiniteReachability.ExactWalk.nodes]
+      exact remapBarWalk_of_incoming_subset_nodes G hsub rest
+
+/-- Ancestry in `G_{\overline{large}}` is ancestry in `G_{\overline{small}}`
+along an incoming-cut inclusion. -/
+theorem observedAncestorOf_bar_of_incoming_subset
+    (G : ObservedGraph S) {small large : NodeSet S}
+    (hsub : NodeSet.Subset small large) (targets : NodeSet S)
+    {source : Fin S.count}
+    (hanc : G.observedAncestorOf (GraphMutilation.bar large) targets
+      source = true) :
+    G.observedAncestorOf (GraphMutilation.bar small) targets source =
+      true := by
+  rcases G.exists_minimal_walk_of_observedAncestorOf
+      (GraphMutilation.bar large) targets source hanc with
+    ⟨target, htarget, length, walk, _simple, _minimal⟩
+  let mapped := remapBarWalk_of_incoming_subset G hsub walk
+  have complete :
+      forall node : Fin S.count,
+        node ∈ List.ofFn (fun i : Fin S.count => i) :=
+    fun node => List.mem_ofFn.mpr ⟨node, rfl⟩
+  have reachable :
+      FiniteReachability.Reachable
+        (G.observedDirectedEdge (GraphMutilation.bar small)) source target :=
+    ⟨length, ⟨mapped⟩⟩
+  have bounded :=
+    FiniteReachability.boundedWalk_of_reachable finBeq
+      (List.ofFn (fun i : Fin S.count => i))
+      (G.observedDirectedEdge (GraphMutilation.bar small)) finBeq_eq_true_iff
+      complete reachable
+  exact (G.observedAncestorOf_eq_true_iff (GraphMutilation.bar small)
+      targets source).mpr ⟨target, htarget, bounded⟩
+
+/-- A `G_{\overline{X ∪ Z}}` edge is already an edge of `G_{\overline{X}}`:
+incoming arrows to `Z` are a stricter cut. -/
+theorem observedDirectedEdge_bar_of_bar_union
+    (G : ObservedGraph S) (x z : NodeSet S) {parent child : Fin S.count}
+    (hedge : G.observedDirectedEdge
+      (GraphMutilation.bar (NodeSet.union x z)) parent child = true) :
+    G.observedDirectedEdge (GraphMutilation.bar x) parent child = true :=
+  observedDirectedEdge_bar_of_incoming_subset G
+    (NodeSet.subset_union_left x z) hedge
+
+/-- Rebuild a `G_{\overline{X ∪ Z}}` walk inside `G_{\overline{X}}`. -/
+def remapBarUnionWalk_to_bar
+    (G : ObservedGraph S) (x z : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar (NodeSet.union x z)))
+      length source target) :
+    FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x))
+      length source target :=
+  remapBarWalk_of_incoming_subset G (NodeSet.subset_union_left x z) walk
+
+/-- Ancestry in `G_{\overline{X ∪ Z}}` is ancestry in `G_{\overline{X}}`. -/
+theorem observedAncestorOf_bar_of_bar_union
+    (G : ObservedGraph S) (x z targets : NodeSet S)
+    {source : Fin S.count}
+    (hanc : G.observedAncestorOf
+      (GraphMutilation.bar (NodeSet.union x z)) targets source = true) :
+    G.observedAncestorOf (GraphMutilation.bar x) targets source = true :=
+  observedAncestorOf_bar_of_incoming_subset G
+    (NodeSet.subset_union_left x z) targets hanc
+
+/-- When every `Z` node avoids `W` in `G_{\overline{X}}`, the rule-3
+mutilation is `G_{\overline{X ∪ Z}}`. -/
+theorem rule3_mutilation_eq_bar_union_of_z_avoids_w
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    (hrem : G.nonAncestorsOf (GraphMutilation.bar x) z w = z) :
+    { removeIncoming :=
+        NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+      removeOutgoing := NodeSet.empty } =
+      GraphMutilation.bar (NodeSet.union x z) :=
+  congrArg
+    (fun removable =>
+      ({ removeIncoming := NodeSet.union x removable,
+          removeOutgoing := NodeSet.empty } : GraphMutilation S))
+    hrem
+
+/-- Empty-`W` rule 3 cuts incoming arrows to `X ∪ Z`, so `Z(W) = Z`. -/
+theorem rule3_mutilation_eq_bar_union_of_empty_w
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    (hw : NodeSet.isEmpty w = true) :
+    { removeIncoming :=
+        NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+      removeOutgoing := NodeSet.empty } =
+      GraphMutilation.bar (NodeSet.union x z) :=
+  rule3_mutilation_eq_bar_union_of_z_avoids_w G x z w
+    (ObservedGraph.nonAncestorsOf_of_isEmpty G (GraphMutilation.bar x) z w hw)
+
+/-- Path d-separation of `Y` from `Z` in `G_{\overline{X ∪ Z}}` forbids a
+directed ancestral walk from a `Z` vertex into `Y`, once no `Z` node
+ancestors `W`.  A walk into `Y` that met `W` would already ancestor `W`. -/
+theorem rule3_z_not_ancestral_of_z_avoids_w
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (disjoint : FourWayDisjoint x y z w)
+    (hrem : G.nonAncestorsOf (GraphMutilation.bar x) z w = z)
+    (separated : PathSpecification.PathDSeparated G
+      { removeIncoming :=
+          NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+        removeOutgoing := NodeSet.empty }
+      y z (NodeSet.union x w))
+    {i : Fin S.count} (hz : z i = true) :
+    G.observedAncestorOf (GraphMutilation.bar (NodeSet.union x z)) y i =
+      false := by
+  have hm := rule3_mutilation_eq_bar_union_of_z_avoids_w G x z w hrem
+  cases hanc :
+      G.observedAncestorOf (GraphMutilation.bar (NodeSet.union x z)) y i with
+  | false =>
+      rfl
+  | true =>
+      rcases G.exists_minimal_walk_of_observedAncestorOf
+          (GraphMutilation.bar (NodeSet.union x z)) y i hanc with
+        ⟨yEnd, hy, _length, walkY, simpleY, _minimal⟩
+      let walkZ :
+          FiniteReachability.ExactWalk
+            (G.observedDirectedEdge
+              (GraphMutilation.bar (NodeSet.union x z)))
+            0 i i :=
+        FiniteReachability.ExactWalk.refl i
+      have simpleZ : walkZ.nodes.Nodup := by
+        simp [walkZ]
+      have hx : x i = false := by
+        cases hx : x i with
+        | false =>
+            rfl
+        | true =>
+            have hzFalse := disjoint.xz i hx
+            rw [hz] at hzFalse
+            cases hzFalse
+      have hw : w i = false := by
+        cases hw : w i with
+        | false =>
+            rfl
+        | true =>
+            have hwFalse := disjoint.zw i hz
+            rw [hw] at hwFalse
+            cases hwFalse
+      have hcond : NodeSet.union x w i = false :=
+        Bool.or_eq_false_iff.mpr ⟨hx, hw⟩
+      have openZ : forall n, n ∈ walkZ.nodes ->
+          ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) =
+            false := by
+        intro n hn
+        have : n = i := by
+          simpa [walkZ] using hn
+        subst n
+        simpa [ObservedGraph.blockedBy] using hcond
+      have openY : forall n, n ∈ walkY.nodes ->
+          ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) =
+            false := by
+        intro n hn
+        by_cases hsrc : n = i
+        · subst n
+          simpa [ObservedGraph.blockedBy] using hcond
+        · have hin :=
+            PathSpecification.directed_walk_mem_not_removeIncoming G
+              (GraphMutilation.bar (NodeSet.union x z)) walkY hn hsrc
+          have hunion : NodeSet.union x z n = false := by
+            simpa [GraphMutilation.bar] using hin
+          have hxN : x n = false := (Bool.or_eq_false_iff.mp hunion).1
+          have hwN : w n = false := by
+            cases hwN : w n with
+            | false =>
+                rfl
+            | true =>
+                rcases FiniteReachability.ExactWalk.exists_prefix_with_subset
+                    walkY hn with
+                  ⟨_plen, preWalk, _bound, _subset, _rest, _hsplit⟩
+                have hancW :
+                    G.observedAncestorOf
+                      (GraphMutilation.bar (NodeSet.union x z)) w i =
+                        true :=
+                  G.observedAncestorOf_of_mem_walk
+                    (GraphMutilation.bar (NodeSet.union x z)) w preWalk hwN
+                    preWalk.mem_source
+                have hancX :=
+                  observedAncestorOf_bar_of_bar_union G x z w hancW
+                have hnon :
+                    G.nonAncestorsOf (GraphMutilation.bar x) z w i = true := by
+                  simpa [hrem] using hz
+                have hfalse :
+                    G.observedAncestorOf (GraphMutilation.bar x) w i =
+                      false := by
+                  cases hanc' :
+                      G.observedAncestorOf (GraphMutilation.bar x) w i with
+                  | false =>
+                      rfl
+                  | true =>
+                      simp [ObservedGraph.nonAncestorsOf, hz, hanc'] at hnon
+                rw [hancX] at hfalse
+                cases hfalse
+          simpa [ObservedGraph.blockedBy, NodeSet.union] using
+            Bool.or_eq_false_iff.mpr ⟨hxN, hwN⟩
+      have separated' :
+          PathSpecification.PathDSeparated G
+            (GraphMutilation.bar (NodeSet.union x z)) y z
+            (NodeSet.union x w) := by
+        simpa [hm] using separated
+      exact (pathDSeparated_no_open_directed_fork G
+          (GraphMutilation.bar (NodeSet.union x z)) y z
+          (NodeSet.union x w) separated' walkY walkZ simpleY simpleZ
+          hy hz openY openZ).elim
+
+/-- `Z(W) = Z` means no `Z` vertex ancestors `W` in `G_{\overline{X}}`,
+hence none ancestors `W` in the stricter `G_{\overline{X ∪ Z}}`. -/
+theorem rule3_z_not_ancestral_w_of_z_avoids_w
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    (hrem : G.nonAncestorsOf (GraphMutilation.bar x) z w = z)
+    {i : Fin S.count} (hz : z i = true) :
+    G.observedAncestorOf (GraphMutilation.bar (NodeSet.union x z)) w i =
+      false := by
+  cases hanc :
+      G.observedAncestorOf (GraphMutilation.bar (NodeSet.union x z)) w i with
+  | false =>
+      rfl
+  | true =>
+      have hancX :=
+        observedAncestorOf_bar_of_bar_union G x z w hanc
+      have hnon :
+          G.nonAncestorsOf (GraphMutilation.bar x) z w i = true := by
+        simpa [hrem] using hz
+      simp [ObservedGraph.nonAncestorsOf, hz, hancX] at hnon
+
+/-- Path d-separation of `Y` from `Z` in `G_{\overline{X ∪ Z}}` forbids a
+directed ancestral walk from a `Z` vertex into `Y`. -/
+theorem rule3_z_not_ancestral_of_empty_w
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (disjoint : FourWayDisjoint x y z w)
+    (hw : NodeSet.isEmpty w = true)
+    (separated : PathSpecification.PathDSeparated G
+      { removeIncoming :=
+          NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+        removeOutgoing := NodeSet.empty }
+      y z (NodeSet.union x w))
+    {i : Fin S.count} (hz : z i = true) :
+    G.observedAncestorOf (GraphMutilation.bar (NodeSet.union x z)) y i =
+      false :=
+  rule3_z_not_ancestral_of_z_avoids_w G x y z w disjoint
+    (ObservedGraph.nonAncestorsOf_of_isEmpty G (GraphMutilation.bar x) z w hw)
+    separated hz
+
+/--
+Path d-separation of `Y` from `Z` given `X ∪ W` in `G_{\overline{X ∪ Z(W)}}`
+forbids a directed ancestral walk from a `Z` vertex into `Y` in the
+stricter `G_{\overline{X ∪ W ∪ Z}}`.  Incoming arrows to the conditioned
+family `W` are cut, so a shortest walk into `Y` never meets `W`; its
+edges already exist in the side-condition graph, where the walk plus a
+reflexive fork at `Z` would be open.
+-/
+theorem rule3_z_not_ancestral_of_union_xw
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (disjoint : FourWayDisjoint x y z w)
+    (separated : PathSpecification.PathDSeparated G
+      { removeIncoming :=
+          NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+        removeOutgoing := NodeSet.empty }
+      y z (NodeSet.union x w))
+    {i : Fin S.count} (hz : z i = true) :
+    G.observedAncestorOf
+      (GraphMutilation.bar (NodeSet.union (NodeSet.union x w) z)) y i =
+      false := by
+  let removable := G.nonAncestorsOf (GraphMutilation.bar x) z w
+  have hsub : NodeSet.Subset (NodeSet.union x removable)
+      (NodeSet.union (NodeSet.union x w) z) :=
+    NodeSet.union_subset
+      (NodeSet.Subset.trans (NodeSet.subset_union_left x w)
+        (NodeSet.subset_union_left (NodeSet.union x w) z))
+      (NodeSet.Subset.trans
+        (ObservedGraph.nonAncestorsOf_subset_actions G
+          (GraphMutilation.bar x) z w)
+        (NodeSet.subset_union_right (NodeSet.union x w) z))
+  cases hanc :
+      G.observedAncestorOf
+        (GraphMutilation.bar (NodeSet.union (NodeSet.union x w) z)) y i with
+  | false =>
+      rfl
+  | true =>
+      rcases G.exists_minimal_walk_of_observedAncestorOf
+          (GraphMutilation.bar (NodeSet.union (NodeSet.union x w) z))
+          y i hanc with
+        ⟨yEnd, hy, _length, walkY, simpleY, _minimal⟩
+      let walkZ :
+          FiniteReachability.ExactWalk
+            (G.observedDirectedEdge
+              (GraphMutilation.bar (NodeSet.union x removable)))
+            0 i i :=
+        FiniteReachability.ExactWalk.refl i
+      have simpleZ : walkZ.nodes.Nodup := by
+        simp [walkZ]
+      have hx : x i = false := by
+        cases hx : x i with
+        | false =>
+            rfl
+        | true =>
+            have hzFalse := disjoint.xz i hx
+            rw [hz] at hzFalse
+            cases hzFalse
+      have hw : w i = false := by
+        cases hw : w i with
+        | false =>
+            rfl
+        | true =>
+            have hwFalse := disjoint.zw i hz
+            rw [hw] at hwFalse
+            cases hwFalse
+      have hcond : NodeSet.union x w i = false :=
+        Bool.or_eq_false_iff.mpr ⟨hx, hw⟩
+      have openZ : forall n, n ∈ walkZ.nodes ->
+          ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) =
+            false := by
+        intro n hn
+        have : n = i := by
+          simpa [walkZ] using hn
+        subst n
+        simpa [ObservedGraph.blockedBy] using hcond
+      have openY : forall n, n ∈ walkY.nodes ->
+          ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) =
+            false := by
+        intro n hn
+        by_cases hsrc : n = i
+        · subst n
+          simpa [ObservedGraph.blockedBy] using hcond
+        · have hin :=
+            PathSpecification.directed_walk_mem_not_removeIncoming G
+              (GraphMutilation.bar
+                (NodeSet.union (NodeSet.union x w) z)) walkY hn hsrc
+          have hunion : NodeSet.union (NodeSet.union x w) z n = false := by
+            simpa [GraphMutilation.bar] using hin
+          have hxw : NodeSet.union x w n = false :=
+            (Bool.or_eq_false_iff.mp hunion).1
+          simpa [ObservedGraph.blockedBy] using hxw
+      let mapped :=
+        remapBarWalk_of_incoming_subset G hsub walkY
+      have hnodes :=
+        remapBarWalk_of_incoming_subset_nodes G hsub walkY
+      have simpleMapped : mapped.nodes.Nodup := by
+        rw [hnodes]
+        exact simpleY
+      have openMapped : forall n, n ∈ mapped.nodes ->
+          ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) =
+            false := by
+        intro n hn
+        rw [hnodes] at hn
+        exact openY n hn
+      have separated' :
+          PathSpecification.PathDSeparated G
+            (GraphMutilation.bar (NodeSet.union x removable)) y z
+            (NodeSet.union x w) := by
+        simpa [GraphMutilation.bar, removable] using separated
+      exact (pathDSeparated_no_open_directed_fork G
+          (GraphMutilation.bar (NodeSet.union x removable)) y z
+          (NodeSet.union x w) separated' mapped walkZ simpleMapped simpleZ
+          hy hz openMapped openZ).elim
+
+/--
+Path d-separation forbids a bidirected edge between the sources of two
+all-open directed walks into the two families.  A shared vertex is already
+a fork; the remaining case glues the walks across the bidirected edge.
+-/
+theorem pathDSeparated_no_bidirected_open_walk_sources
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (left right conditioned : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G mutilation left right
+      conditioned)
+    {lengthZ lengthY : Nat} {sourceZ sourceY zEnd yEnd : Fin S.count}
+    (walkZ : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) lengthZ sourceZ zEnd)
+    (walkY : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) lengthY sourceY yEnd)
+    (simpleZ : walkZ.nodes.Nodup) (simpleY : walkY.nodes.Nodup)
+    (hz : left zEnd = true) (hy : right yEnd = true)
+    (openZ : forall n, n ∈ walkZ.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false)
+    (openY : forall n, n ∈ walkY.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false)
+    (sourceZIncoming : mutilation.removeIncoming sourceZ = false)
+    (sourceYIncoming : mutilation.removeIncoming sourceY = false) :
+    G.bidirected sourceZ sourceY = false := by
+  by_cases hEq : sourceZ = sourceY
+  · subst sourceY
+    cases hbid : G.bidirected sourceZ sourceZ with
+    | false =>
+        rfl
+    | true =>
+        exact False.elim
+          (Bool.false_ne_true
+            ((G.bidirected_irreflexive sourceZ).symm.trans hbid))
+  · cases hbid : G.bidirected sourceZ sourceY with
+    | false =>
+        rfl
+    | true =>
+        have notOnZ : sourceY ∉ walkZ.nodes := by
+          intro member
+          rcases walkZ.exists_simple_suffix_of_mem simpleZ member with
+            ⟨_slen, swalk, ssimple, _pre, hnodes⟩
+          have subset : forall n, n ∈ swalk.nodes -> n ∈ walkZ.nodes :=
+            fun n hn => by
+              rw [hnodes]
+              exact List.mem_append.mpr (Or.inr hn)
+          exact pathDSeparated_no_open_directed_fork G mutilation left right
+            conditioned separated swalk walkY ssimple simpleY hz hy
+            (fun n hn => openZ n (subset n hn)) openY
+        have notOnY : sourceZ ∉ walkY.nodes := by
+          intro member
+          rcases walkY.exists_simple_suffix_of_mem simpleY member with
+            ⟨_slen, swalk, ssimple, _pre, hnodes⟩
+          have subset : forall n, n ∈ swalk.nodes -> n ∈ walkY.nodes :=
+            fun n hn => by
+              rw [hnodes]
+              exact List.mem_append.mpr (Or.inr hn)
+          exact pathDSeparated_no_open_directed_fork G mutilation left right
+            conditioned separated walkZ swalk simpleZ ssimple hz hy openZ
+            (fun n hn => openY n (subset n hn))
+        have disjointWalks :
+            forall n, n ∈ walkZ.nodes -> n ∈ walkY.nodes -> False := by
+          intro n hnZ hnY
+          rcases walkZ.exists_simple_suffix_of_mem simpleZ hnZ with
+            ⟨_lenZ, sufZ, simpleSufZ, _preZ, hnodesZ⟩
+          rcases walkY.exists_simple_suffix_of_mem simpleY hnY with
+            ⟨_lenY, sufY, simpleSufY, _preY, hnodesY⟩
+          have subZ : forall m, m ∈ sufZ.nodes -> m ∈ walkZ.nodes :=
+            fun m hm => by
+              rw [hnodesZ]
+              exact List.mem_append.mpr (Or.inr hm)
+          have subY : forall m, m ∈ sufY.nodes -> m ∈ walkY.nodes :=
+            fun m hm => by
+              rw [hnodesY]
+              exact List.mem_append.mpr (Or.inr hm)
+          exact pathDSeparated_no_open_directed_fork G mutilation left right
+            conditioned separated sufZ sufY simpleSufZ simpleSufY hz hy
+            (fun m hm => openZ m (subZ m hm))
+            (fun m hm => openY m (subY m hm))
+        exact False.elim
+          (separated
+            ⟨zEnd, yEnd, hz, hy,
+              ⟨PathSpecification.ActivePath.ofOpenWalks_glue_bidirected G
+                mutilation conditioned walkZ walkY simpleZ simpleY openZ
+                openY hbid hEq sourceZIncoming sourceYIncoming notOnZ notOnY
+                disjointWalks⟩⟩)
+
+/--
+Rule 1's `Y ⊥ Z | X ∪ W` forbids a pair of all-open directed walks from a
+common source, one ending in `Z` and one ending in `Y`.  The fork is
+reversed so the active path runs from the `Y` endpoint to the `Z`
+endpoint.
+-/
+theorem pathDSeparated_no_open_directed_fork_yz
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    {lengthZ lengthY : Nat} {shared zEnd yEnd : Fin S.count}
+    (walkZ : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) lengthZ shared zEnd)
+    (walkY : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) lengthY shared yEnd)
+    (simpleZ : walkZ.nodes.Nodup) (simpleY : walkY.nodes.Nodup)
+    (hz : z zEnd = true) (hy : y yEnd = true)
+    (openZ : forall n, n ∈ walkZ.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false)
+    (openY : forall n, n ∈ walkY.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false) :
+    False :=
+  separated
+    ⟨yEnd, zEnd, hy, hz,
+      ⟨(PathSpecification.ActivePath.ofOpenDirectedFork G
+          (GraphMutilation.bar x) (NodeSet.union x w)
+          walkZ walkY simpleZ simpleY openZ openY).reverse⟩⟩
+
+/--
+Path d-separation of `left` from `right` forbids a bidirected edge from the
+source of an all-open directed walk into `right` onto an open `left` vertex.
+-/
+theorem pathDSeparated_no_bidirected_of_open_directed_walk
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (left right conditioned : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G mutilation left right
+      conditioned)
+    {length : Nat} {source target other : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) length source target)
+    (simple : walk.nodes.Nodup)
+    (openNodes : forall n, n ∈ walk.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false)
+    (ht : right target = true) (hother : left other = true)
+    (otherOpen : ObservedGraph.blockedBy conditioned (.observed other) =
+      false)
+    (sourceIncoming : mutilation.removeIncoming source = false)
+    (otherIncoming : mutilation.removeIncoming other = false) :
+    G.bidirected source other = false := by
+  by_cases hEq : source = other
+  · subst other
+    cases hbid : G.bidirected source source with
+    | false =>
+        rfl
+    | true =>
+        exact False.elim
+          (Bool.false_ne_true
+            ((G.bidirected_irreflexive source).symm.trans hbid))
+  · cases hbid : G.bidirected source other with
+    | false =>
+        rfl
+    | true =>
+        have notOnWalk : other ∉ walk.nodes := by
+          intro member
+          rcases walk.exists_simple_suffix_of_mem simple member with
+            ⟨_slen, swalk, ssimple, _pre, hnodes⟩
+          have subset : forall n, n ∈ swalk.nodes -> n ∈ walk.nodes :=
+            fun n hn => by
+              rw [hnodes]
+              exact List.mem_append.mpr (Or.inr hn)
+          exact pathDSeparated_no_open_directed_walk G mutilation left right
+            conditioned separated swalk ssimple hother ht
+            (fun n hn => openNodes n (subset n hn))
+        exact False.elim
+          (separated
+            ⟨other, target, hother, ht,
+              ⟨(PathSpecification.ActivePath.ofOpenDirectedWalk_glue_bidirected
+                  G mutilation conditioned walk simple openNodes hbid hEq
+                  otherOpen sourceIncoming otherIncoming notOnWalk).reverse⟩⟩)
+
+/-- Ancestry in `G_{\overline{X}}` supplies a simple shortest walk into the
+target family.  Internals of that walk lie outside the family, so they are
+unconditioned whenever the family already absorbs every conditioned ancestor. -/
+theorem ancestralInBar_exists_minimal_walk
+    (G : ObservedGraph S) (action targets : NodeSet S)
+    (source : Fin S.count)
+    (hanc : ancestralInBar G action targets source = true) :
+    Exists fun target : Fin S.count =>
+      targets target = true /\
+        Exists fun length : Nat =>
+          Exists fun walk :
+              FiniteReachability.ExactWalk
+                (G.observedDirectedEdge (GraphMutilation.bar action))
+                length source target =>
+            walk.nodes.Nodup /\
+              (forall target' alternative,
+                targets target' = true ->
+                  Nonempty (FiniteReachability.ExactWalk
+                    (G.observedDirectedEdge (GraphMutilation.bar action))
+                    alternative source target') ->
+                    length <= alternative) :=
+  G.exists_minimal_walk_of_observedAncestorOf
+    (GraphMutilation.bar action) targets source hanc
+
+/-- Cutting every conditioned child is a coarser bar-`X` DAG, so its directed
+walks remain walks in `G_{\overline{X}}`. -/
+theorem observedDirectedEdge_bar_of_union
+    (G : ObservedGraph S) (x w : NodeSet S) {parent child : Fin S.count}
+    (hedge : G.observedDirectedEdge
+      (GraphMutilation.bar (NodeSet.union x w)) parent child = true) :
+    G.observedDirectedEdge (GraphMutilation.bar x) parent child = true := by
+  simp [ObservedGraph.observedDirectedEdge, GraphMutilation.bar, NodeSet.union]
+    at hedge ⊢
+  cases hx : x child with
+  | true =>
+      simp [hx] at hedge
+  | false =>
+      simpa [hx] using hedge.1
+
+/-- The converse: a `G_{\overline{X}}` edge whose child is unconditioned
+given `X ∪ W` is already an edge of `G_{\overline{X ∪ W}}`. -/
+theorem observedDirectedEdge_union_bar_of_open
+    (G : ObservedGraph S) (x w : NodeSet S) {parent child : Fin S.count}
+    (hedge : G.observedDirectedEdge (GraphMutilation.bar x) parent child =
+      true)
+    (hopen : ObservedGraph.blockedBy (NodeSet.union x w) (.observed child) =
+      false) :
+    G.observedDirectedEdge
+      (GraphMutilation.bar (NodeSet.union x w)) parent child = true := by
+  simp [ObservedGraph.observedDirectedEdge, GraphMutilation.bar,
+    ObservedGraph.blockedBy, NodeSet.union] at hedge hopen ⊢
+  exact ⟨hedge.1, hopen⟩
+
+/-- A `G_{\overline{X}}` edge whose parent is not in `Z` survives the extra
+outgoing cut of `G_{\overline{X}\underline{Z}}`. -/
+theorem observedDirectedEdge_barUnderline_of_bar
+    (G : ObservedGraph S) (x z : NodeSet S) {parent child : Fin S.count}
+    (hedge : G.observedDirectedEdge (GraphMutilation.bar x) parent child =
+      true)
+    (hparent : z parent = false) :
+    G.observedDirectedEdge (GraphMutilation.barUnderline x z) parent child =
+      true := by
+  simp [ObservedGraph.observedDirectedEdge, GraphMutilation.bar,
+    GraphMutilation.barUnderline, NodeSet.empty] at hedge ⊢
+  exact ⟨⟨hedge.1, hparent⟩, hedge.2⟩
+
+/-- A `G_{\overline{X ∪ Z}}` edge whose parent is not in `Z` is already an
+edge of `G_{\overline{X}\underline{Z}}`: the child is outside `X ∪ Z`, so
+it is outside `X`, and the extra outgoing cut only deletes edges out of
+`Z`. -/
+theorem observedDirectedEdge_barUnderline_of_barUnion
+    (G : ObservedGraph S) (x z : NodeSet S) {parent child : Fin S.count}
+    (hedge : G.observedDirectedEdge
+      (GraphMutilation.bar (NodeSet.union x z)) parent child = true)
+    (hparent : z parent = false) :
+    G.observedDirectedEdge (GraphMutilation.barUnderline x z) parent child =
+      true := by
+  simp [ObservedGraph.observedDirectedEdge, GraphMutilation.bar,
+    GraphMutilation.barUnderline, NodeSet.union, NodeSet.empty] at hedge ⊢
+  exact ⟨⟨hedge.1, hparent⟩, hedge.2.1⟩
+
+/-- Cutting incoming arrows to `W` as well as `X` only deletes edges, so
+every remaining directed edge of `G_{\overline{X ∪ W}\underline{Z}}` is
+already an edge of `G_{\overline{X}\underline{Z}}`. -/
+theorem observedDirectedEdge_barUnderline_of_unionBarUnderline
+    (G : ObservedGraph S) (x w z : NodeSet S)
+    {parent child : Fin S.count}
+    (hedge : G.observedDirectedEdge
+      (GraphMutilation.barUnderline (NodeSet.union x w) z) parent child =
+        true) :
+    G.observedDirectedEdge (GraphMutilation.barUnderline x z) parent child =
+      true := by
+  simp [ObservedGraph.observedDirectedEdge, GraphMutilation.barUnderline,
+    NodeSet.union] at hedge ⊢
+  cases hx : x child with
+  | true =>
+      simp [hx] at hedge
+  | false =>
+      simpa [hx] using hedge.1
+
+/-- A `G_{\overline{X}\underline{Z}}` edge whose child is unconditioned
+given `X ∪ W` is already an edge of `G_{\overline{X ∪ W}\underline{Z}}`. -/
+theorem observedDirectedEdge_unionBarUnderline_of_barUnderline_open
+    (G : ObservedGraph S) (x w z : NodeSet S)
+    {parent child : Fin S.count}
+    (hedge : G.observedDirectedEdge (GraphMutilation.barUnderline x z)
+      parent child = true)
+    (hopen : NodeSet.union x w child = false) :
+    G.observedDirectedEdge
+      (GraphMutilation.barUnderline (NodeSet.union x w) z) parent child =
+        true := by
+  simp [ObservedGraph.observedDirectedEdge, GraphMutilation.barUnderline,
+    NodeSet.union] at hedge hopen ⊢
+  exact ⟨hedge.1, hopen⟩
+
+/-- A `G_{\overline{X}\underline{Z}}` edge whose child is not in `Z` is
+already an edge of `G_{\overline{X ∪ Z}}`: outgoing arrows from `Z` are
+unused, and the child is outside `X ∪ Z`. -/
+theorem observedDirectedEdge_barUnion_of_barUnderline
+    (G : ObservedGraph S) (x z : NodeSet S) {parent child : Fin S.count}
+    (hedge : G.observedDirectedEdge (GraphMutilation.barUnderline x z)
+      parent child = true)
+    (hzChild : z child = false) :
+    G.observedDirectedEdge
+      (GraphMutilation.bar (NodeSet.union x z)) parent child = true := by
+  simp [ObservedGraph.observedDirectedEdge, GraphMutilation.barUnderline,
+    GraphMutilation.bar, NodeSet.union, NodeSet.empty] at hedge ⊢
+  exact ⟨hedge.1.1, ⟨hedge.2, hzChild⟩⟩
+
+/-- Rebuild a `G_{\overline{X}\underline{Z}}` walk that never meets `Z`
+inside `G_{\overline{X ∪ Z}}`. -/
+def remapBarUnderlineWalk_to_barUnion
+    (G : ObservedGraph S) (x z : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+      length source target)
+    (hnotZ : forall n, n ∈ walk.nodes -> z n = false) :
+    FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar (NodeSet.union x z)))
+      length source target :=
+  match walk with
+  | .refl node =>
+      .refl node
+  | @FiniteReachability.ExactWalk.step _ _ _len src mid _tgt first rest =>
+      have hzMid : z mid = false :=
+        hnotZ mid (by
+          simp [FiniteReachability.ExactWalk.nodes]
+          exact Or.inr rest.mem_source)
+      have restNotZ : forall n, n ∈ rest.nodes -> z n = false :=
+        fun n hn =>
+          hnotZ n (by
+            simp [FiniteReachability.ExactWalk.nodes]
+            exact Or.inr hn)
+      .step (observedDirectedEdge_barUnion_of_barUnderline G x z first hzMid)
+        (remapBarUnderlineWalk_to_barUnion G x z rest restNotZ)
+
+/-- A `G_{\overline{X}\underline{Z}}` walk that never meets `Z` is already
+a walk of `G_{\overline{X ∪ Z}}`. -/
+theorem observedAncestorOf_barUnion_of_barUnderline_walk
+    (G : ObservedGraph S) (x z targets : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+      length source target)
+    (htarget : targets target = true)
+    (hnotZ : forall n, n ∈ walk.nodes -> z n = false) :
+    G.observedAncestorOf (GraphMutilation.bar (NodeSet.union x z))
+      targets source = true := by
+  let mapped := remapBarUnderlineWalk_to_barUnion G x z walk hnotZ
+  have complete :
+      forall node : Fin S.count,
+        node ∈ List.ofFn (fun i : Fin S.count => i) :=
+    fun node => List.mem_ofFn.mpr ⟨node, rfl⟩
+  have reachable :
+      FiniteReachability.Reachable
+        (G.observedDirectedEdge (GraphMutilation.bar (NodeSet.union x z)))
+        source target :=
+    ⟨length, ⟨mapped⟩⟩
+  have bounded :=
+    FiniteReachability.boundedWalk_of_reachable finBeq
+      (List.ofFn (fun i : Fin S.count => i))
+      (G.observedDirectedEdge (GraphMutilation.bar (NodeSet.union x z)))
+      finBeq_eq_true_iff complete reachable
+  exact (G.observedAncestorOf_eq_true_iff
+      (GraphMutilation.bar (NodeSet.union x z)) targets source).mpr
+    ⟨target, htarget, bounded⟩
+
+/-- Rebuild an all-open `G_{\overline{X}\underline{Z}}` walk inside
+`G_{\overline{X ∪ W}\underline{Z}}`. -/
+def remapOpenBarUnderlineWalk_to_union
+    (G : ObservedGraph S) (x w z : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+      length source target)
+    (hopen : forall n, n ∈ walk.nodes -> NodeSet.union x w n = false) :
+    FiniteReachability.ExactWalk
+      (G.observedDirectedEdge
+        (GraphMutilation.barUnderline (NodeSet.union x w) z))
+      length source target :=
+  match walk with
+  | .refl node =>
+      .refl node
+  | @FiniteReachability.ExactWalk.step _ _ _len src mid _tgt first rest =>
+      have hchild : NodeSet.union x w mid = false :=
+        hopen mid (by
+          simp [FiniteReachability.ExactWalk.nodes]
+          exact Or.inr rest.mem_source)
+      have restOpen :
+          forall n, n ∈ rest.nodes -> NodeSet.union x w n = false :=
+        fun n hn =>
+          hopen n (by
+            simp [FiniteReachability.ExactWalk.nodes]
+            exact Or.inr hn)
+      .step
+        (observedDirectedEdge_unionBarUnderline_of_barUnderline_open G x w z
+          first hchild)
+        (remapOpenBarUnderlineWalk_to_union G x w z rest restOpen)
+
+/-- Ancestry of `targets` in `G_{\overline{X}\underline{Z}}` along an
+all-open walk is ancestry in `G_{\overline{X ∪ W}\underline{Z}}`. -/
+theorem observedAncestorOf_unionBarUnderline_of_open_walk
+    (G : ObservedGraph S) (x w z targets : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+      length source target)
+    (htarget : targets target = true)
+    (hopen : forall n, n ∈ walk.nodes -> NodeSet.union x w n = false) :
+    G.observedAncestorOf
+      (GraphMutilation.barUnderline (NodeSet.union x w) z) targets source =
+        true := by
+  let mapped := remapOpenBarUnderlineWalk_to_union G x w z walk hopen
+  have complete :
+      forall node : Fin S.count,
+        node ∈ List.ofFn (fun i : Fin S.count => i) :=
+    fun node => List.mem_ofFn.mpr ⟨node, rfl⟩
+  have reachable :
+      FiniteReachability.Reachable
+        (G.observedDirectedEdge
+          (GraphMutilation.barUnderline (NodeSet.union x w) z))
+        source target :=
+    ⟨length, ⟨mapped⟩⟩
+  have bounded :=
+    FiniteReachability.boundedWalk_of_reachable finBeq
+      (List.ofFn (fun i : Fin S.count => i))
+      (G.observedDirectedEdge
+        (GraphMutilation.barUnderline (NodeSet.union x w) z))
+      finBeq_eq_true_iff complete reachable
+  exact (G.observedAncestorOf_eq_true_iff
+      (GraphMutilation.barUnderline (NodeSet.union x w) z) targets source).mpr
+    ⟨target, htarget, bounded⟩
+
+/-- Ancestry of `Z` in `G_{\overline{X}\underline{Z}}` along an all-open
+walk is ancestry in `G_{\overline{X ∪ W}\underline{Z}}`. -/
+theorem observedAncestorOf_unionBarUnderline_z_of_open_walk
+    (G : ObservedGraph S) (x w z : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+      length source target)
+    (htarget : z target = true)
+    (hopen : forall n, n ∈ walk.nodes -> NodeSet.union x w n = false) :
+    G.observedAncestorOf
+      (GraphMutilation.barUnderline (NodeSet.union x w) z) z source =
+        true :=
+  observedAncestorOf_unionBarUnderline_of_open_walk G x w z z walk htarget
+    hopen
+
+/-- Rebuild a set-minimal `G_{\overline{X}}` walk into `Z` inside
+`G_{\overline{X}\underline{Z}}`.  Internals of a shortest walk into `Z`
+are not themselves in `Z`, so they never use a deleted `Z`-outgoing
+edge. -/
+def remapMinimalBarWalkToBarUnderline
+    (G : ObservedGraph S) (x z : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) length source target)
+    (simple : walk.nodes.Nodup)
+    (havoid : forall n, n ∈ walk.nodes -> n ≠ target -> z n = false) :
+    FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+      length source target :=
+  match walk with
+  | .refl node =>
+      .refl node
+  | @FiniteReachability.ExactWalk.step _ _ _len src _mid tgt first rest =>
+      have parts :=
+        List.nodup_cons.mp (by
+          simpa [FiniteReachability.ExactWalk.nodes] using simple)
+      have hne : src ≠ tgt := by
+        intro same
+        subst tgt
+        exact parts.1 (FiniteReachability.ExactWalk.mem_target rest)
+      have hparent : z src = false :=
+        havoid src (by simp [FiniteReachability.ExactWalk.nodes]) hne
+      have restAvoid :
+          forall n, n ∈ rest.nodes -> n ≠ tgt -> z n = false :=
+        fun n hn hne' =>
+          havoid n (by
+            simp [FiniteReachability.ExactWalk.nodes, hn]) hne'
+      .step (observedDirectedEdge_barUnderline_of_bar G x z first hparent)
+        (remapMinimalBarWalkToBarUnderline G x z rest parts.2 restAvoid)
+
+/-- Vertices of a `G_{\overline{X ∪ Z}}` walk that starts outside `X ∪ Z`
+never meet `Z`: the source is free, and every later vertex has incoming
+arrows intact, hence is also outside `X ∪ Z`. -/
+theorem barUnion_walk_vertices_not_in_z
+    (G : ObservedGraph S) (x z : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge
+        (GraphMutilation.bar (NodeSet.union x z))) length source target)
+    (hfree : NodeSet.union x z source = false)
+    {n : Fin S.count} (hn : n ∈ walk.nodes) :
+    z n = false := by
+  by_cases hsrc : n = source
+  · subst n
+    cases hx : x source with
+    | true =>
+        simp [NodeSet.union, hx] at hfree
+    | false =>
+        cases hz : z source with
+        | false =>
+            rfl
+        | true =>
+            simp [NodeSet.union, hx, hz] at hfree
+  · have hin :=
+      PathSpecification.directed_walk_mem_not_removeIncoming G
+        (GraphMutilation.bar (NodeSet.union x z)) walk hn hsrc
+    have hunion : NodeSet.union x z n = false := by
+      simpa [GraphMutilation.bar] using hin
+    cases hz : z n with
+    | false =>
+        rfl
+    | true =>
+        simp [NodeSet.union, hz] at hunion
+
+/-- Rebuild a free `G_{\overline{X ∪ Z}}` walk inside
+`G_{\overline{X}\underline{Z}}`. -/
+def remapBarUnionWalkToBarUnderline
+    (G : ObservedGraph S) (x z : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge
+        (GraphMutilation.bar (NodeSet.union x z))) length source target)
+    (hnotZ : forall n, n ∈ walk.nodes -> z n = false) :
+    FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+      length source target :=
+  match walk with
+  | .refl node =>
+      .refl node
+  | @FiniteReachability.ExactWalk.step _ _ _len src _mid _tgt first rest =>
+      have hparent : z src = false :=
+        hnotZ src (by simp [FiniteReachability.ExactWalk.nodes])
+      have restNotZ : forall n, n ∈ rest.nodes -> z n = false :=
+        fun n hn =>
+          hnotZ n (by simp [FiniteReachability.ExactWalk.nodes, hn])
+      .step
+        (observedDirectedEdge_barUnderline_of_barUnion G x z first hparent)
+        (remapBarUnionWalkToBarUnderline G x z rest restNotZ)
+
+/-- Ancestry of `Z` in `G_{\overline{X}}` is ancestry in
+`G_{\overline{X}\underline{Z}}`: a shortest walk into `Z` never leaves
+`Z` and therefore never needs a deleted outgoing arrow. -/
+theorem observedAncestorOf_barUnderline_z_of_bar
+    (G : ObservedGraph S) (x z : NodeSet S) (source : Fin S.count)
+    (hanc : G.observedAncestorOf (GraphMutilation.bar x) z source = true) :
+    G.observedAncestorOf (GraphMutilation.barUnderline x z) z source =
+      true := by
+  rcases G.exists_minimal_walk_of_observedAncestorOf
+      (GraphMutilation.bar x) z source hanc with
+    ⟨target, htarget, length, walk, simple, minimal⟩
+  have havoid :
+      forall n, n ∈ walk.nodes -> n ≠ target -> z n = false :=
+    fun n hn hne =>
+      FiniteReachability.ExactWalk.not_mem_targets_of_minimal_internal
+        walk minimal hn hne
+  let mapped :=
+    remapMinimalBarWalkToBarUnderline G x z walk simple havoid
+  have complete :
+      forall node : Fin S.count,
+        node ∈ List.ofFn (fun i : Fin S.count => i) :=
+    fun node => List.mem_ofFn.mpr ⟨node, rfl⟩
+  have reachable :
+      FiniteReachability.Reachable
+        (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+        source target :=
+    ⟨length, ⟨mapped⟩⟩
+  have bounded :=
+    FiniteReachability.boundedWalk_of_reachable finBeq
+      (List.ofFn (fun i : Fin S.count => i))
+      (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+      finBeq_eq_true_iff complete reachable
+  exact (G.observedAncestorOf_eq_true_iff
+      (GraphMutilation.barUnderline x z) z source).mpr
+    ⟨target, htarget, bounded⟩
+
+/-- A free ancestor of `Y` in `G_{\overline{X ∪ Z}}` is already an ancestor
+in `G_{\overline{X}\underline{Z}}`: the walk never meets `Z`, so the extra
+outgoing cut is unused. -/
+theorem observedAncestorOf_barUnderline_y_of_barUnion
+    (G : ObservedGraph S) (x y z : NodeSet S) (source : Fin S.count)
+    (hanc : G.observedAncestorOf
+      (GraphMutilation.bar (NodeSet.union x z)) y source = true)
+    (hfree : NodeSet.union x z source = false) :
+    G.observedAncestorOf (GraphMutilation.barUnderline x z) y source =
+      true := by
+  rcases G.exists_minimal_walk_of_observedAncestorOf
+      (GraphMutilation.bar (NodeSet.union x z)) y source hanc with
+    ⟨target, htarget, length, walk, _simple, _minimal⟩
+  have hnotZ : forall n, n ∈ walk.nodes -> z n = false :=
+    fun n hn => barUnion_walk_vertices_not_in_z G x z walk hfree hn
+  let mapped := remapBarUnionWalkToBarUnderline G x z walk hnotZ
+  have complete :
+      forall node : Fin S.count,
+        node ∈ List.ofFn (fun i : Fin S.count => i) :=
+    fun node => List.mem_ofFn.mpr ⟨node, rfl⟩
+  have reachable :
+      FiniteReachability.Reachable
+        (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+        source target :=
+    ⟨length, ⟨mapped⟩⟩
+  have bounded :=
+    FiniteReachability.boundedWalk_of_reachable finBeq
+      (List.ofFn (fun i : Fin S.count => i))
+      (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+      finBeq_eq_true_iff complete reachable
+  exact (G.observedAncestorOf_eq_true_iff
+      (GraphMutilation.barUnderline x z) y source).mpr
+    ⟨target, htarget, bounded⟩
+
+/-- An all-open directed walk in `G_{\overline{X}}` is already a walk in
+`G_{\overline{X ∪ W}}`, because every non-source vertex has incoming arrows
+intact after also cutting `W`. -/
+def mapOpenBarWalk_to_unionBar (G : ObservedGraph S) (x w : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) length source target)
+    (openNodes : forall n, n ∈ walk.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false) :
+    FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar (NodeSet.union x w)))
+      length source target :=
+  match walk with
+  | .refl node =>
+      .refl node
+  | @FiniteReachability.ExactWalk.step _ _ len src mid tgt first rest =>
+      have openMid :
+          ObservedGraph.blockedBy (NodeSet.union x w) (.observed mid) =
+            false :=
+        openNodes mid (by
+          simp [FiniteReachability.ExactWalk.nodes]
+          exact Or.inr rest.mem_source)
+      have restOpen :
+          forall n, n ∈ rest.nodes ->
+            ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) =
+              false :=
+        fun n hn =>
+          openNodes n (by
+            simp [FiniteReachability.ExactWalk.nodes]
+            exact Or.inr hn)
+      .step (observedDirectedEdge_union_bar_of_open G x w first openMid)
+        (mapOpenBarWalk_to_unionBar G x w rest restOpen)
+
+theorem mapOpenBarWalk_to_unionBar_nodes
+    (G : ObservedGraph S) (x w : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) length source target)
+    (openNodes : forall n, n ∈ walk.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false) :
+    (mapOpenBarWalk_to_unionBar G x w walk openNodes).nodes = walk.nodes := by
+  induction walk with
+  | refl node =>
+      simp [mapOpenBarWalk_to_unionBar, FiniteReachability.ExactWalk.nodes]
+  | @step length source middle target first rest ih =>
+      simp [mapOpenBarWalk_to_unionBar, FiniteReachability.ExactWalk.nodes,
+        ih]
+
+/-- Every vertex of an all-open directed walk into a family sits in that
+family's open ancestral core. -/
+theorem openAncestralIn_of_mem_open_directed_walk
+    (G : ObservedGraph S) (x w targets : NodeSet S)
+    {length : Nat} {source target node : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) length source target)
+    (ht : targets target = true)
+    (openNodes : forall n, n ∈ walk.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false)
+    (member : node ∈ walk.nodes) :
+    openAncestralIn G (NodeSet.union x w) targets node = true := by
+  have hanc :=
+    ObservedGraph.observedAncestorOf_of_mem_walk G
+      (GraphMutilation.bar (NodeSet.union x w)) targets
+      (mapOpenBarWalk_to_unionBar G x w walk openNodes) ht (by
+        rw [mapOpenBarWalk_to_unionBar_nodes]
+        exact member)
+  have hopen := openNodes node member
+  simpa [openAncestralIn, ancestralInBar, hopen] using hanc
+
+/-- Directed observed ancestry is expanded-DAG ancestry at the observed
+tag: the observed-observed expansion is the same edge. -/
+theorem ancestorOf_of_observedAncestorOf
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (targets : NodeSet S) (source : Fin S.count)
+    (hanc : G.observedAncestorOf mutilation targets source = true) :
+    G.ancestorOf mutilation targets (.observed source) = true := by
+  rcases (G.observedAncestorOf_eq_true_iff mutilation targets source).mp
+      hanc with ⟨target, selected, bounded⟩
+  rcases bounded with ⟨length, _hle, walk⟩
+  rcases walk with ⟨walk⟩
+  have walkAnc :
+      forall {len : Nat} {src tgt : Fin S.count},
+        FiniteReachability.ExactWalk (G.observedDirectedEdge mutilation)
+          len src tgt ->
+          G.ancestorOf mutilation targets (.observed tgt) = true ->
+            G.ancestorOf mutilation targets (.observed src) = true := by
+    intro len src tgt w htgt
+    induction w with
+    | refl node =>
+        exact htgt
+    | @step length source middle target first rest ih =>
+        have midAnc := ih htgt
+        have hedge :
+            G.expandedMutilatedEdge mutilation (.observed source)
+              (.observed middle) = true := by
+          simpa [PathSpecification.expandedMutilatedEdge_observed] using first
+        exact G.ancestorOf_prepend mutilation targets hedge midAnc
+  exact walkAnc walk (G.ancestorOf_target mutilation targets selected)
+
+/-- Membership in the open ancestral core supplies a simple all-open directed
+walk in `G_{\overline{X}}` into the displayed family. -/
+theorem openAncestralIn_exists_open_walk
+    (G : ObservedGraph S) (x w targets : NodeSet S) (source : Fin S.count)
+    (h : openAncestralIn G (NodeSet.union x w) targets source = true) :
+    Exists fun target : Fin S.count =>
+      targets target = true /\
+        Exists fun length : Nat =>
+          Exists fun walk :
+              FiniteReachability.ExactWalk
+                (G.observedDirectedEdge (GraphMutilation.bar x))
+                length source target =>
+            walk.nodes.Nodup /\
+              (forall n, n ∈ walk.nodes ->
+                ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) =
+                  false) := by
+  have hparts :
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed source) = false ∧
+        ancestralInBar G (NodeSet.union x w) targets source = true := by
+    simpa [openAncestralIn] using h
+  have hopen := hparts.1
+  have hanc := hparts.2
+  rcases ancestralInBar_exists_minimal_walk G (NodeSet.union x w) targets
+      source hanc with
+    ⟨target, htarget, length, walk, simple, _minimal⟩
+  let included :=
+    fun parent child hedge =>
+      observedDirectedEdge_bar_of_union G x w (parent := parent)
+        (child := child) hedge
+  let walkX := FiniteReachability.ExactWalk.mapEdge included walk
+  have hnodes :
+      walkX.nodes = walk.nodes :=
+    FiniteReachability.ExactWalk.mapEdge_nodes included walk
+  refine ⟨target, htarget, length, walkX, ?_, ?_⟩
+  · simpa [hnodes] using simple
+  · intro n hn
+    have hn' : n ∈ walk.nodes := by
+      simpa [hnodes] using hn
+    by_cases hsrc : n = source
+    · subst n
+      exact hopen
+    · have hin :=
+        PathSpecification.directed_walk_mem_not_removeIncoming G
+          (GraphMutilation.bar (NodeSet.union x w)) walk hn' hsrc
+      simpa [GraphMutilation.bar, ObservedGraph.blockedBy, NodeSet.union]
+        using hin
+
+/-- Left-side 4.1 seeds are already ancestors of `Z` in `G_{\overline{X}}`. -/
+theorem rule1LeftTargets_mem_ancestral_z
+    (G : ObservedGraph S) (x z w : NodeSet S) {i : Fin S.count}
+    (hi : rule1LeftTargets G x z w i = true) :
+    ancestralInBar G x z i = true := by
+  simp only [rule1LeftTargets, NodeSet.union, rule1WSelected, NodeSet.inter]
+    at hi
+  cases hz : z i with
+  | true =>
+      exact observedAncestorOf_self G _ z hz
+  | false =>
+      simp [hz] at hi
+      exact hi.2
+
+/-- Ancestry of `Z ∪ W_Z` is ancestry of `Z`, because every left seed already
+reaches `Z`. -/
+theorem ancestralInBar_left_implies_z
+    (G : ObservedGraph S) (x z w : NodeSet S) (source : Fin S.count)
+    (hanc : ancestralInBar G x (rule1LeftTargets G x z w) source = true) :
+    ancestralInBar G x z source = true :=
+  G.observedAncestorOf_compose (GraphMutilation.bar x)
+    (rule1LeftTargets G x z w) z source hanc
+    (fun _i hi => rule1LeftTargets_mem_ancestral_z G x z w hi)
+
+/-- Conditioned ancestors of the left family already sit inside that family. -/
+theorem rule1Left_absorbs_w
+    (G : ObservedGraph S) (x z w : NodeSet S) {i : Fin S.count}
+    (hw : w i = true)
+    (hanc : ancestralInBar G x (rule1LeftTargets G x z w) i = true) :
+    rule1LeftTargets G x z w i = true := by
+  have hz : ancestralInBar G x z i = true :=
+    ancestralInBar_left_implies_z G x z w i hanc
+  simp [rule1LeftTargets, NodeSet.union, rule1WSelected, NodeSet.inter, hw, hz]
+
+/--
+Internals of a shortest ancestral walk are unconditioned once the target
+family already contains every `W`-ancestor.  Intervened children are excluded
+by the bar-`X` edge predicate.
+-/
+theorem blockedBy_false_of_minimal_ancestral_internal
+    (G : ObservedGraph S) (action targets conditionedW : NodeSet S)
+    (absorbs : forall i, conditionedW i = true ->
+      ancestralInBar G action targets i = true -> targets i = true)
+    {length : Nat} {source target node : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar action))
+      length source target)
+    (minimal : forall target' alternative,
+      targets target' = true ->
+        Nonempty (FiniteReachability.ExactWalk
+          (G.observedDirectedEdge (GraphMutilation.bar action))
+          alternative source target') ->
+          length <= alternative)
+    (selected : targets target = true)
+    (member : node ∈ walk.nodes)
+    (internal : node ≠ target)
+    (sourceOpen :
+      ObservedGraph.blockedBy (NodeSet.union action conditionedW)
+        (.observed source) = false) :
+    ObservedGraph.blockedBy (NodeSet.union action conditionedW)
+      (.observed node) = false := by
+  by_cases hsrc : node = source
+  · subst node
+    exact sourceOpen
+  · have hact : action node = false := by
+      have hin :
+          (GraphMutilation.bar action).removeIncoming node = false :=
+        PathSpecification.directed_walk_mem_not_removeIncoming G
+          (GraphMutilation.bar action) walk member hsrc
+      simpa [GraphMutilation.bar] using hin
+    have hw : conditionedW node = false := by
+      cases hsel : conditionedW node with
+      | false =>
+          rfl
+      | true =>
+          have hanc : ancestralInBar G action targets node = true :=
+            G.observedAncestorOf_of_mem_walk (GraphMutilation.bar action)
+              targets walk selected member
+          have inTargets := absorbs node hsel hanc
+          have notTarget :=
+            walk.not_mem_targets_of_minimal_internal minimal member internal
+          rw [inTargets] at notTarget
+          contradiction
+    simp [ObservedGraph.blockedBy, NodeSet.union, hact, hw]
+
+/-- `Z` is disjoint from both `X` and `W`, so those vertices are open in
+the rule-1 side graph. -/
+theorem blockedBy_false_of_mem_z
+    (x y z w : NodeSet S) (disjoint : FourWayDisjoint x y z w)
+    {i : Fin S.count} (hz : z i = true) :
+    ObservedGraph.blockedBy (NodeSet.union x w) (.observed i) = false := by
+  have hx : x i = false := by
+    cases hx : x i with
+    | false =>
+        rfl
+    | true =>
+        have hz' := disjoint.xz i hx
+        rw [hz] at hz'
+        contradiction
+  have hw : w i = false := disjoint.zw i hz
+  simp [ObservedGraph.blockedBy, NodeSet.union, hx, hw]
+
+/-- `Y` is likewise open given `X ∪ W`. -/
+theorem blockedBy_false_of_mem_y
+    (x y z w : NodeSet S) (disjoint : FourWayDisjoint x y z w)
+    {i : Fin S.count} (hy : y i = true) :
+    ObservedGraph.blockedBy (NodeSet.union x w) (.observed i) = false := by
+  have hx : x i = false := by
+    cases hx : x i with
+    | false =>
+        rfl
+    | true =>
+        have hy' := disjoint.xy i hx
+        rw [hy] at hy'
+        contradiction
+  have hw : w i = false := disjoint.yw i hy
+  simp [ObservedGraph.blockedBy, NodeSet.union, hx, hw]
+
+/-- Open given `X ∪ W` means incoming arrows were not cut in `G_{\overline{X}}`. -/
+theorem bar_removeIncoming_false_of_open
+    (x w : NodeSet S) {i : Fin S.count}
+    (hopen : ObservedGraph.blockedBy (NodeSet.union x w) (.observed i) =
+      false) :
+    (GraphMutilation.bar x).removeIncoming i = false := by
+  simp [ObservedGraph.blockedBy, NodeSet.union, GraphMutilation.bar] at hopen ⊢
+  exact hopen.1
+
+/-- Incoming arrows in `G_{\overline{X}}` survive at any vertex outside `X`. -/
+theorem bar_removeIncoming_false_of_not_action
+    (x : NodeSet S) {i : Fin S.count} (hx : x i = false) :
+    (GraphMutilation.bar x).removeIncoming i = false := by
+  simp [GraphMutilation.bar, hx]
+
+/-- A shortest left-family walk that ends in `Z` is open at every vertex. -/
+theorem blockedBy_false_of_minimal_left_walk_to_z
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (disjoint : FourWayDisjoint x y z w)
+    {length : Nat} {source target node : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) length source target)
+    (minimal : forall target' alternative,
+      rule1LeftTargets G x z w target' = true ->
+        Nonempty (FiniteReachability.ExactWalk
+          (G.observedDirectedEdge (GraphMutilation.bar x))
+          alternative source target') ->
+          length <= alternative)
+    (hz : z target = true)
+    (member : node ∈ walk.nodes)
+    (sourceOpen :
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed source) =
+        false) :
+    ObservedGraph.blockedBy (NodeSet.union x w) (.observed node) = false := by
+  by_cases hend : node = target
+  · subst node
+    exact blockedBy_false_of_mem_z x y z w disjoint hz
+  · have selected : rule1LeftTargets G x z w target = true := by
+      simp [rule1LeftTargets, NodeSet.union, hz]
+    exact blockedBy_false_of_minimal_ancestral_internal G x
+      (rule1LeftTargets G x z w) w
+      (fun i hw hanc => rule1Left_absorbs_w G x z w hw hanc)
+      walk minimal selected member hend sourceOpen
+
+/--
+Path d-separation of `Y` from `Z` given `X ∪ W` forbids a shortest
+left-family walk that starts in `Y` and ends in `Z`.
+-/
+theorem pathDSeparated_no_minimal_y_walk_to_z
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (disjoint : FourWayDisjoint x y z w)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) length source target)
+    (simple : walk.nodes.Nodup)
+    (minimal : forall target' alternative,
+      rule1LeftTargets G x z w target' = true ->
+        Nonempty (FiniteReachability.ExactWalk
+          (G.observedDirectedEdge (GraphMutilation.bar x))
+          alternative source target') ->
+          length <= alternative)
+    (hy : y source = true) (hz : z target = true) :
+    False :=
+  pathDSeparated_no_open_directed_walk G (GraphMutilation.bar x) y z
+    (NodeSet.union x w) separated walk simple hy hz
+    (fun _node member =>
+      blockedBy_false_of_minimal_left_walk_to_z G x y z w disjoint walk
+        minimal hz member (blockedBy_false_of_mem_y x y z w disjoint hy))
+
+/--
+Path d-separation of `Y` from `Z` given `X ∪ W` forbids a bidirected edge
+from the source of a shortest left-family walk that ends in `Z` onto any
+vertex of `Y`.
+-/
+theorem pathDSeparated_no_bidirected_y_of_left_walk_to_z
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (disjoint : FourWayDisjoint x y z w)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    {length : Nat} {source target other : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) length source target)
+    (simple : walk.nodes.Nodup)
+    (minimal : forall target' alternative,
+      rule1LeftTargets G x z w target' = true ->
+        Nonempty (FiniteReachability.ExactWalk
+          (G.observedDirectedEdge (GraphMutilation.bar x))
+          alternative source target') ->
+          length <= alternative)
+    (hz : z target = true) (hy : y other = true)
+    (sourceOpen :
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed source) =
+        false) :
+    G.bidirected source other = false :=
+  pathDSeparated_no_bidirected_of_open_directed_walk G
+    (GraphMutilation.bar x) y z (NodeSet.union x w) separated walk simple
+    (fun _node member =>
+      blockedBy_false_of_minimal_left_walk_to_z G x y z w disjoint walk
+        minimal hz member sourceOpen)
+    hz hy
+    (blockedBy_false_of_mem_y x y z w disjoint hy)
+    (bar_removeIncoming_false_of_open x w sourceOpen)
+    (bar_removeIncoming_false_of_open x w
+      (blockedBy_false_of_mem_y x y z w disjoint hy))
+
+/--
+Rule 1 forbids a bidirected edge between the sources of all-open directed
+walks into `Z` and `Y`.  The families are swapped by path symmetry so the
+general source-glue applies.
+-/
+theorem pathDSeparated_no_bidirected_open_walk_sources_yz
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    {lengthZ lengthY : Nat} {sourceZ sourceY zEnd yEnd : Fin S.count}
+    (walkZ : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) lengthZ sourceZ zEnd)
+    (walkY : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) lengthY sourceY yEnd)
+    (simpleZ : walkZ.nodes.Nodup) (simpleY : walkY.nodes.Nodup)
+    (hz : z zEnd = true) (hy : y yEnd = true)
+    (openZ : forall n, n ∈ walkZ.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false)
+    (openY : forall n, n ∈ walkY.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false) :
+    G.bidirected sourceZ sourceY = false :=
+  pathDSeparated_no_bidirected_open_walk_sources G (GraphMutilation.bar x)
+    z y (NodeSet.union x w)
+    (PathSpecification.PathDSeparated.symm separated)
+    walkZ walkY simpleZ simpleY hz hy openZ openY
+    (bar_removeIncoming_false_of_open x w
+      (openZ sourceZ walkZ.mem_source))
+    (bar_removeIncoming_false_of_open x w
+      (openY sourceY walkY.mem_source))
+
+/--
+Path d-separation of `Y` from `Z` given `X ∪ W` forbids two all-open
+directed walks into the families joined by a pair of bidirected edges
+through a conditioned collider.
+-/
+theorem pathDSeparated_no_bidirected_collider_open_walks_yz
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    {lengthZ lengthY : Nat}
+    {sourceZ sourceY collider zEnd yEnd : Fin S.count}
+    (walkZ : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) lengthZ sourceZ zEnd)
+    (walkY : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) lengthY sourceY yEnd)
+    (simpleZ : walkZ.nodes.Nodup) (simpleY : walkY.nodes.Nodup)
+    (hz : z zEnd = true) (hy : y yEnd = true)
+    (openZ : forall n, n ∈ walkZ.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false)
+    (openY : forall n, n ∈ walkY.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false)
+    (hedgeLeft : G.bidirected sourceZ collider = true)
+    (hedgeRight : G.bidirected collider sourceY = true)
+    (hx : x collider = false)
+    (hw : w collider = true) :
+    False := by
+  have colliderBlocked :
+      ObservedGraph.blockedBy (NodeSet.union x w)
+        (.observed collider) = true := by
+    simp [ObservedGraph.blockedBy, NodeSet.union, hw]
+  have colliderNotOnZ : collider ∉ walkZ.nodes := by
+    intro member
+    have hopen := openZ collider member
+    simp [hopen] at colliderBlocked
+  have colliderNotOnY : collider ∉ walkY.nodes := by
+    intro member
+    have hopen := openY collider member
+    simp [hopen] at colliderBlocked
+  have sourceZNeCollider : sourceZ ≠ collider := by
+    intro heq
+    subst collider
+    exact Bool.false_ne_true
+      ((openZ sourceZ walkZ.mem_source).symm.trans colliderBlocked)
+  have sourceYNeCollider : sourceY ≠ collider := by
+    intro heq
+    subst collider
+    exact Bool.false_ne_true
+      ((openY sourceY walkY.mem_source).symm.trans colliderBlocked)
+  have sourceZNeSourceY : sourceZ ≠ sourceY := by
+    intro heq
+    subst sourceY
+    exact pathDSeparated_no_open_directed_fork_yz G x y z w separated
+      walkZ walkY simpleZ simpleY hz hy openZ openY
+  have notOnZ : sourceY ∉ walkZ.nodes := by
+    intro member
+    rcases walkZ.exists_simple_suffix_of_mem simpleZ member with
+      ⟨_slen, swalk, ssimple, _pre, hnodes⟩
+    have subset : forall n, n ∈ swalk.nodes -> n ∈ walkZ.nodes :=
+      fun n hn => by
+        rw [hnodes]
+        exact List.mem_append.mpr (Or.inr hn)
+    exact pathDSeparated_no_open_directed_fork_yz G x y z w separated
+      swalk walkY ssimple simpleY hz hy
+      (fun n hn => openZ n (subset n hn)) openY
+  have notOnY : sourceZ ∉ walkY.nodes := by
+    intro member
+    rcases walkY.exists_simple_suffix_of_mem simpleY member with
+      ⟨_slen, swalk, ssimple, _pre, hnodes⟩
+    have subset : forall n, n ∈ swalk.nodes -> n ∈ walkY.nodes :=
+      fun n hn => by
+        rw [hnodes]
+        exact List.mem_append.mpr (Or.inr hn)
+    exact pathDSeparated_no_open_directed_fork_yz G x y z w separated
+      walkZ swalk simpleZ ssimple hz hy openZ
+      (fun n hn => openY n (subset n hn))
+  have disjointWalks :
+      forall n, n ∈ walkZ.nodes -> n ∈ walkY.nodes -> False := by
+    intro n hnZ hnY
+    rcases walkZ.exists_simple_suffix_of_mem simpleZ hnZ with
+      ⟨_lenZ, sufZ, simpleSufZ, _preZ, hnodesZ⟩
+    rcases walkY.exists_simple_suffix_of_mem simpleY hnY with
+      ⟨_lenY, sufY, simpleSufY, _preY, hnodesY⟩
+    have subZ : forall m, m ∈ sufZ.nodes -> m ∈ walkZ.nodes :=
+      fun m hm => by
+        rw [hnodesZ]
+        exact List.mem_append.mpr (Or.inr hm)
+    have subY : forall m, m ∈ sufY.nodes -> m ∈ walkY.nodes :=
+      fun m hm => by
+        rw [hnodesY]
+        exact List.mem_append.mpr (Or.inr hm)
+    exact pathDSeparated_no_open_directed_fork_yz G x y z w separated
+      sufZ sufY simpleSufZ simpleSufY hz hy
+      (fun m hm => openZ m (subZ m hm))
+      (fun m hm => openY m (subY m hm))
+  have activated :
+      PathSpecification.ColliderActivated G (GraphMutilation.bar x)
+        (NodeSet.union x w) (.observed collider) :=
+    G.ancestorOf_target (GraphMutilation.bar x) (NodeSet.union x w)
+      (by simp [NodeSet.union, hw])
+  exact separated
+    ⟨yEnd, zEnd, hy, hz,
+      ⟨(PathSpecification.ActivePath.ofOpenWalks_glue_bidirected_collider G
+          (GraphMutilation.bar x) (NodeSet.union x w) walkZ walkY simpleZ
+          simpleY openZ openY hedgeLeft hedgeRight sourceZNeCollider
+          sourceYNeCollider sourceZNeSourceY
+          (bar_removeIncoming_false_of_open x w
+            (openZ sourceZ walkZ.mem_source))
+          (bar_removeIncoming_false_of_not_action x hx)
+          (bar_removeIncoming_false_of_open x w
+            (openY sourceY walkY.mem_source))
+          activated colliderNotOnZ colliderNotOnY notOnZ notOnY
+          disjointWalks).reverse⟩⟩
+
+/-- `Z` vertices are open given `X ∪ W` and are ancestors of themselves. -/
+theorem rule1Z_subset_leftOpenCore (G : ObservedGraph S)
+    (x y z w : NodeSet S) (disjoint : FourWayDisjoint x y z w)
+    {i : Fin S.count} (hi : z i = true) :
+    rule1LeftOpenCore G x z w i = true := by
+  refine Bool.and_eq_true_iff.mpr ⟨?_, ?_⟩
+  · simpa [rule1LeftOpenCore, openAncestralIn] using
+      blockedBy_false_of_mem_z x y z w disjoint hi
+  · simpa [rule1LeftOpenCore, openAncestralIn, ancestralInBar] using
+      observedAncestorOf_self G (GraphMutilation.bar (NodeSet.union x w)) z hi
+
+/-- `Y` vertices are open given `X ∪ W` and are ancestors of themselves. -/
+theorem rule1Y_subset_rightOpenCore (G : ObservedGraph S)
+    (x y z w : NodeSet S) (disjoint : FourWayDisjoint x y z w)
+    {i : Fin S.count} (hi : y i = true) :
+    rule1RightOpenCore G x y z w i = true := by
+  refine Bool.and_eq_true_iff.mpr ⟨?_, ?_⟩
+  · simpa [rule1RightOpenCore, openAncestralIn] using
+      blockedBy_false_of_mem_y x y z w disjoint hi
+  · simpa [rule1RightOpenCore, openAncestralIn, ancestralInBar] using
+      observedAncestorOf_self G (GraphMutilation.bar (NodeSet.union x w)) y hi
+
+/--
+A vertex cannot be an open ancestor of both `Z` and `Y`: that would be an
+all-open directed fork, which path d-separation forbids.
+-/
+theorem rule1OpenCores_disjoint (G : ObservedGraph S)
+    (x y z w : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w)) :
+    NodeSet.Disjoint (rule1LeftOpenCore G x z w)
+      (rule1RightOpenCore G x y z w) := by
+  intro i hiL
+  cases hR : rule1RightOpenCore G x y z w i with
+  | false =>
+      rfl
+  | true =>
+      rcases openAncestralIn_exists_open_walk G x w z i (by
+          simpa [rule1LeftOpenCore] using hiL) with
+        ⟨zEnd, hz, _lengthZ, walkZ, simpleZ, openZ⟩
+      rcases openAncestralIn_exists_open_walk G x w y i (by
+          simpa [rule1RightOpenCore] using hR) with
+        ⟨yEnd, hy, _lengthY, walkY, simpleY, openY⟩
+      exact (pathDSeparated_no_open_directed_fork_yz G x y z w separated
+        walkZ walkY simpleZ simpleY hz hy openZ openY).elim
+
+/--
+Path d-separation forbids a bidirected edge between the open ancestral cores
+of `Z` and `Y`.
+-/
+theorem rule1OpenCores_no_bidirected (G : ObservedGraph S)
+    (x y z w : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    {leftNode rightNode : Fin S.count}
+    (hleft : rule1LeftOpenCore G x z w leftNode = true)
+    (hright : rule1RightOpenCore G x y z w rightNode = true) :
+    G.bidirected leftNode rightNode = false := by
+  rcases openAncestralIn_exists_open_walk G x w z leftNode (by
+      simpa [rule1LeftOpenCore] using hleft) with
+    ⟨zEnd, hz, lengthZ, walkZ, simpleZ, openZ⟩
+  rcases openAncestralIn_exists_open_walk G x w y rightNode (by
+      simpa [rule1RightOpenCore] using hright) with
+    ⟨yEnd, hy, lengthY, walkY, simpleY, openY⟩
+  exact pathDSeparated_no_bidirected_open_walk_sources_yz G x y z w separated
+    walkZ walkY simpleZ simpleY hz hy openZ openY
+
+/-- When the mutilation's incoming cut is exactly the conditioning set,
+an open ancestral vertex supplies a simple all-open directed walk in
+that same mutilated DAG.  Empty-`W` rule 2 is the instance
+`m = G_{\overline{X}\underline{Z}}`, `conditioned = X`. -/
+theorem openAncestralInGraph_exists_open_walk
+    (G : ObservedGraph S) (m : GraphMutilation S)
+    (conditioned targets : NodeSet S) (source : Fin S.count)
+    (hcut : forall i,
+      m.removeIncoming i =
+        ObservedGraph.blockedBy conditioned (.observed i))
+    (h : openAncestralInGraph G m conditioned targets source = true) :
+    Exists fun target : Fin S.count =>
+      targets target = true /\
+        Exists fun length : Nat =>
+          Exists fun walk :
+              FiniteReachability.ExactWalk
+                (G.observedDirectedEdge m) length source target =>
+            walk.nodes.Nodup /\
+              (forall n, n ∈ walk.nodes ->
+                ObservedGraph.blockedBy conditioned (.observed n) =
+                  false) := by
+  have hparts :
+      ObservedGraph.blockedBy conditioned (.observed source) = false ∧
+        G.observedAncestorOf m targets source = true := by
+    simpa [openAncestralInGraph] using h
+  rcases G.exists_minimal_walk_of_observedAncestorOf m targets source
+      hparts.2 with
+    ⟨target, htarget, length, walk, simple, _minimal⟩
+  refine ⟨target, htarget, length, walk, simple, ?_⟩
+  intro n hn
+  by_cases hsrc : n = source
+  · subst n
+    exact hparts.1
+  · have hin :=
+      PathSpecification.directed_walk_mem_not_removeIncoming G m walk hn
+        hsrc
+    have hblocked :
+        ObservedGraph.blockedBy conditioned (.observed n) =
+          m.removeIncoming n :=
+      (hcut n).symm
+    simpa [hblocked] using hin
+
+/-- The incoming cut of `G_{\overline{X ∪ W}\underline{Z}}` is exactly the
+conditioning set `X ∪ W`. -/
+theorem barUnderline_union_removeIncoming_eq_blocked
+    (x z w : NodeSet S) (i : Fin S.count) :
+    (GraphMutilation.barUnderline (NodeSet.union x w) z).removeIncoming i =
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed i) := by
+  simp [GraphMutilation.barUnderline, ObservedGraph.blockedBy]
+
+/-- Empty `W` makes the rule-2 incoming cut `X` agree with the
+conditioning set `X ∪ W`. -/
+theorem barUnderline_removeIncoming_eq_blocked_of_empty_w
+    (x z w : NodeSet S) (hw : NodeSet.isEmpty w = true)
+    (i : Fin S.count) :
+    (GraphMutilation.barUnderline x z).removeIncoming i =
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed i) := by
+  have hact : w = NodeSet.empty := NodeSet.eq_empty_of_isEmpty hw
+  simpa [hact, NodeSet.union_empty_right] using
+    barUnderline_union_removeIncoming_eq_blocked x z w i
+
+/-- Membership in a rule-2 open core supplies a simple all-open directed
+walk in the rule-2 graph `G_{\overline{X}\underline{Z}}`.  Ancestry is
+computed after also cutting `W`; the walk is then mapped onto the lighter
+mutilation. -/
+theorem rule2_exists_open_walk
+    (G : ObservedGraph S) (x z w targets : NodeSet S)
+    (source : Fin S.count)
+    (h : openAncestralInGraph G
+      (GraphMutilation.barUnderline (NodeSet.union x w) z)
+      (NodeSet.union x w) targets source = true) :
+    Exists fun target : Fin S.count =>
+      targets target = true /\
+        Exists fun length : Nat =>
+          Exists fun walk :
+              FiniteReachability.ExactWalk
+                (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+                length source target =>
+            walk.nodes.Nodup /\
+              (forall n, n ∈ walk.nodes ->
+                ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) =
+                  false) := by
+  rcases openAncestralInGraph_exists_open_walk G
+      (GraphMutilation.barUnderline (NodeSet.union x w) z)
+      (NodeSet.union x w) targets source
+      (barUnderline_union_removeIncoming_eq_blocked x z w) h with
+    ⟨target, htarget, length, walk, simple, openNodes⟩
+  let included :=
+    fun parent child hedge =>
+      observedDirectedEdge_barUnderline_of_unionBarUnderline G x w z
+        (parent := parent) (child := child) hedge
+  let mapped := FiniteReachability.ExactWalk.mapEdge included walk
+  have hnodes : mapped.nodes = walk.nodes :=
+    FiniteReachability.ExactWalk.mapEdge_nodes included walk
+  refine ⟨target, htarget, length, mapped, ?_, ?_⟩
+  · simpa [hnodes] using simple
+  · intro n hn
+    have hn' : n ∈ walk.nodes := by
+      simpa [hnodes] using hn
+    exact openNodes n hn'
+
+/-- Path d-separation in `G_{\overline{X}\underline{Z}}` forbids a pair of
+all-open directed walks from a common source. -/
+theorem pathDSeparated_no_open_directed_fork_rule2
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G
+      (GraphMutilation.barUnderline x z) y z (NodeSet.union x w))
+    {lengthZ lengthY : Nat} {shared zEnd yEnd : Fin S.count}
+    (walkZ : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+      lengthZ shared zEnd)
+    (walkY : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+      lengthY shared yEnd)
+    (simpleZ : walkZ.nodes.Nodup) (simpleY : walkY.nodes.Nodup)
+    (hz : z zEnd = true) (hy : y yEnd = true)
+    (openZ : forall n, n ∈ walkZ.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false)
+    (openY : forall n, n ∈ walkY.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false) :
+    False :=
+  separated
+    ⟨yEnd, zEnd, hy, hz,
+      ⟨(PathSpecification.ActivePath.ofOpenDirectedFork G
+          (GraphMutilation.barUnderline x z) (NodeSet.union x w)
+          walkZ walkY simpleZ simpleY openZ openY).reverse⟩⟩
+
+/-- Empty-`W` rule 2 forbids a pair of all-open directed walks from a
+common source in `G_{\overline{X}\underline{Z}}`. -/
+theorem pathDSeparated_no_open_directed_fork_rule2_empty_w
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (_hw : NodeSet.isEmpty w = true)
+    (separated : PathSpecification.PathDSeparated G
+      (GraphMutilation.barUnderline x z) y z (NodeSet.union x w))
+    {lengthZ lengthY : Nat} {shared zEnd yEnd : Fin S.count}
+    (walkZ : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+      lengthZ shared zEnd)
+    (walkY : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+      lengthY shared yEnd)
+    (simpleZ : walkZ.nodes.Nodup) (simpleY : walkY.nodes.Nodup)
+    (hz : z zEnd = true) (hy : y yEnd = true)
+    (openZ : forall n, n ∈ walkZ.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false)
+    (openY : forall n, n ∈ walkY.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false) :
+    False :=
+  pathDSeparated_no_open_directed_fork_rule2 G x y z w separated
+    walkZ walkY simpleZ simpleY hz hy openZ openY
+
+/-- A vertex cannot be an open ancestor of both `Z` and `Y` in
+`G_{\overline{X ∪ W}\underline{Z}}`. -/
+theorem rule2OpenCores_disjoint
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G
+      (GraphMutilation.barUnderline x z) y z (NodeSet.union x w)) :
+    NodeSet.Disjoint (rule2ZOpenCore G x z w)
+      (rule2YOpenCore G x y z w) := by
+  intro i hiL
+  cases hR : rule2YOpenCore G x y z w i with
+  | false =>
+      rfl
+  | true =>
+      rcases rule2_exists_open_walk G x z w z i
+          (by simpa [rule2ZOpenCore] using hiL) with
+        ⟨zEnd, hz, _lengthZ, walkZ, simpleZ, openZ⟩
+      rcases rule2_exists_open_walk G x z w y i
+          (by simpa [rule2YOpenCore] using hR) with
+        ⟨yEnd, hy, _lengthY, walkY, simpleY, openY⟩
+      exact (pathDSeparated_no_open_directed_fork_rule2 G x y z w
+        separated walkZ walkY simpleZ simpleY hz hy openZ openY).elim
+
+/-- A vertex cannot be an open ancestor of both `Z` and `Y` in
+`G_{\overline{X}\underline{Z}}` when `W` is empty. -/
+theorem rule2OpenCores_disjoint_of_empty_w
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (_hw : NodeSet.isEmpty w = true)
+    (separated : PathSpecification.PathDSeparated G
+      (GraphMutilation.barUnderline x z) y z (NodeSet.union x w)) :
+    NodeSet.Disjoint (rule2ZOpenCore G x z w)
+      (rule2YOpenCore G x y z w) :=
+  rule2OpenCores_disjoint G x y z w separated
+
+/-- An open core vertex is outside `X`, so its incoming arrows survive in
+`G_{\overline{X}\underline{Z}}`. -/
+theorem rule2OpenCore_removeIncoming_false
+    (_G : ObservedGraph S) (x z w : NodeSet S) {i : Fin S.count}
+    (hopen : ObservedGraph.blockedBy (NodeSet.union x w) (.observed i) =
+      false) :
+    (GraphMutilation.barUnderline x z).removeIncoming i = false := by
+  have hunion : NodeSet.union x w i = false := by
+    simpa [ObservedGraph.blockedBy] using hopen
+  have hx : x i = false := (Bool.or_eq_false_iff.mp hunion).1
+  simp [GraphMutilation.barUnderline, hx]
+
+/-- Path d-separation forbids a bidirected edge between the rule-2 open
+cores. -/
+theorem rule2OpenCores_no_bidirected
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G
+      (GraphMutilation.barUnderline x z) y z (NodeSet.union x w))
+    {leftNode rightNode : Fin S.count}
+    (hleft : rule2ZOpenCore G x z w leftNode = true)
+    (hright : rule2YOpenCore G x y z w rightNode = true) :
+    G.bidirected leftNode rightNode = false := by
+  rcases rule2_exists_open_walk G x z w z leftNode
+      (by simpa [rule2ZOpenCore] using hleft) with
+    ⟨zEnd, hz, _lengthZ, walkZ, simpleZ, openZ⟩
+  rcases rule2_exists_open_walk G x z w y rightNode
+      (by simpa [rule2YOpenCore] using hright) with
+    ⟨yEnd, hy, _lengthY, walkY, simpleY, openY⟩
+  have hcutZ :
+      (GraphMutilation.barUnderline x z).removeIncoming leftNode =
+        false :=
+    rule2OpenCore_removeIncoming_false G x z w (by
+      simpa [openAncestralInGraph, rule2ZOpenCore] using
+        (Bool.and_eq_true_iff.mp hleft).1)
+  have hcutY :
+      (GraphMutilation.barUnderline x z).removeIncoming rightNode =
+        false :=
+    rule2OpenCore_removeIncoming_false G x z w (by
+      simpa [openAncestralInGraph, rule2YOpenCore] using
+        (Bool.and_eq_true_iff.mp hright).1)
+  exact pathDSeparated_no_bidirected_open_walk_sources G
+    (GraphMutilation.barUnderline x z) z y (NodeSet.union x w)
+    (PathSpecification.PathDSeparated.symm separated)
+    walkZ walkY simpleZ simpleY hz hy openZ openY hcutZ hcutY
+
+/-- Empty-`W` rule 2 forbids a bidirected edge between the open cores. -/
+theorem rule2OpenCores_no_bidirected_of_empty_w
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (_hw : NodeSet.isEmpty w = true)
+    (separated : PathSpecification.PathDSeparated G
+      (GraphMutilation.barUnderline x z) y z (NodeSet.union x w))
+    {leftNode rightNode : Fin S.count}
+    (hleft : rule2ZOpenCore G x z w leftNode = true)
+    (hright : rule2YOpenCore G x y z w rightNode = true) :
+    G.bidirected leftNode rightNode = false :=
+  rule2OpenCores_no_bidirected G x y z w separated hleft hright
+
+/--
+The same conclusion as `pathDSeparated_no_bidirected_collider_open_walks_yz`,
+but the middle vertex need only be an *ancestor* of the conditioning set.
+A collider on a descendant of `W` is activated even when it is not itself
+in `W`.
+-/
+theorem pathDSeparated_no_bidirected_collider_open_walks_yz_of_activated
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    {lengthZ lengthY : Nat}
+    {sourceZ sourceY collider zEnd yEnd : Fin S.count}
+    (walkZ : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) lengthZ sourceZ zEnd)
+    (walkY : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) lengthY sourceY yEnd)
+    (simpleZ : walkZ.nodes.Nodup) (simpleY : walkY.nodes.Nodup)
+    (hz : z zEnd = true) (hy : y yEnd = true)
+    (openZ : forall n, n ∈ walkZ.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false)
+    (openY : forall n, n ∈ walkY.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false)
+    (hedgeLeft : G.bidirected sourceZ collider = true)
+    (hedgeRight : G.bidirected collider sourceY = true)
+    (hx : x collider = false)
+    (activated : PathSpecification.ColliderActivated G
+      (GraphMutilation.bar x) (NodeSet.union x w) (.observed collider)) :
+    False := by
+  have sourceZNeCollider : sourceZ ≠ collider := by
+    intro heq
+    subst collider
+    exact Bool.false_ne_true
+      ((G.bidirected_irreflexive sourceZ).symm.trans hedgeLeft)
+  have sourceYNeCollider : sourceY ≠ collider := by
+    intro heq
+    subst collider
+    exact Bool.false_ne_true
+      ((G.bidirected_irreflexive sourceY).symm.trans hedgeRight)
+  have sourceZNeSourceY : sourceZ ≠ sourceY := by
+    intro heq
+    subst sourceY
+    exact pathDSeparated_no_open_directed_fork_yz G x y z w separated
+      walkZ walkY simpleZ simpleY hz hy openZ openY
+  have sourceYCore :
+      openAncestralIn G (NodeSet.union x w) y sourceY = true :=
+    openAncestralIn_of_mem_open_directed_walk G x w y walkY hy openY
+      walkY.mem_source
+  have sourceZCore :
+      openAncestralIn G (NodeSet.union x w) z sourceZ = true :=
+    openAncestralIn_of_mem_open_directed_walk G x w z walkZ hz openZ
+      walkZ.mem_source
+  have colliderNotOnZ : collider ∉ walkZ.nodes := by
+    intro member
+    have hZcore :=
+      openAncestralIn_of_mem_open_directed_walk G x w z walkZ hz openZ
+        member
+    have hfalse :=
+      rule1OpenCores_no_bidirected G x y z w separated
+        (by simpa [rule1LeftOpenCore] using hZcore)
+        (by simpa [rule1RightOpenCore] using sourceYCore)
+    exact Bool.false_ne_true (hfalse.symm.trans hedgeRight)
+  have colliderNotOnY : collider ∉ walkY.nodes := by
+    intro member
+    have hYcore :=
+      openAncestralIn_of_mem_open_directed_walk G x w y walkY hy openY
+        member
+    have hfalse :=
+      rule1OpenCores_no_bidirected G x y z w separated
+        (by simpa [rule1LeftOpenCore] using sourceZCore)
+        (by simpa [rule1RightOpenCore] using hYcore)
+    exact Bool.false_ne_true (hfalse.symm.trans hedgeLeft)
+  have notOnZ : sourceY ∉ walkZ.nodes := by
+    intro member
+    rcases walkZ.exists_simple_suffix_of_mem simpleZ member with
+      ⟨_slen, swalk, ssimple, _pre, hnodes⟩
+    have subset : forall n, n ∈ swalk.nodes -> n ∈ walkZ.nodes :=
+      fun n hn => by
+        rw [hnodes]
+        exact List.mem_append.mpr (Or.inr hn)
+    exact pathDSeparated_no_open_directed_fork_yz G x y z w separated
+      swalk walkY ssimple simpleY hz hy
+      (fun n hn => openZ n (subset n hn)) openY
+  have notOnY : sourceZ ∉ walkY.nodes := by
+    intro member
+    rcases walkY.exists_simple_suffix_of_mem simpleY member with
+      ⟨_slen, swalk, ssimple, _pre, hnodes⟩
+    have subset : forall n, n ∈ swalk.nodes -> n ∈ walkY.nodes :=
+      fun n hn => by
+        rw [hnodes]
+        exact List.mem_append.mpr (Or.inr hn)
+    exact pathDSeparated_no_open_directed_fork_yz G x y z w separated
+      walkZ swalk simpleZ ssimple hz hy openZ
+      (fun n hn => openY n (subset n hn))
+  have disjointWalks :
+      forall n, n ∈ walkZ.nodes -> n ∈ walkY.nodes -> False := by
+    intro n hnZ hnY
+    rcases walkZ.exists_simple_suffix_of_mem simpleZ hnZ with
+      ⟨_lenZ, sufZ, simpleSufZ, _preZ, hnodesZ⟩
+    rcases walkY.exists_simple_suffix_of_mem simpleY hnY with
+      ⟨_lenY, sufY, simpleSufY, _preY, hnodesY⟩
+    have subZ : forall m, m ∈ sufZ.nodes -> m ∈ walkZ.nodes :=
+      fun m hm => by
+        rw [hnodesZ]
+        exact List.mem_append.mpr (Or.inr hm)
+    have subY : forall m, m ∈ sufY.nodes -> m ∈ walkY.nodes :=
+      fun m hm => by
+        rw [hnodesY]
+        exact List.mem_append.mpr (Or.inr hm)
+    exact pathDSeparated_no_open_directed_fork_yz G x y z w separated
+      sufZ sufY simpleSufZ simpleSufY hz hy
+      (fun m hm => openZ m (subZ m hm))
+      (fun m hm => openY m (subY m hm))
+  exact separated
+    ⟨yEnd, zEnd, hy, hz,
+      ⟨(PathSpecification.ActivePath.ofOpenWalks_glue_bidirected_collider G
+          (GraphMutilation.bar x) (NodeSet.union x w) walkZ walkY simpleZ
+          simpleY openZ openY hedgeLeft hedgeRight sourceZNeCollider
+          sourceYNeCollider sourceZNeSourceY
+          (bar_removeIncoming_false_of_open x w
+            (openZ sourceZ walkZ.mem_source))
+          (bar_removeIncoming_false_of_not_action x hx)
+          (bar_removeIncoming_false_of_open x w
+            (openY sourceY walkY.mem_source))
+          activated colliderNotOnZ colliderNotOnY notOnZ notOnY
+          disjointWalks).reverse⟩⟩
+
+/--
+Path d-separation of `Y` from `Z` given `X ∪ W` forbids two all-open
+directed walks into the families joined by two bidirected colliders.
+-/
+theorem pathDSeparated_no_two_bidirected_colliders_open_walks_yz
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    {lengthZ lengthY : Nat}
+    {sourceZ sourceY first second zEnd yEnd : Fin S.count}
+    (walkZ : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) lengthZ sourceZ zEnd)
+    (walkY : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) lengthY sourceY yEnd)
+    (simpleZ : walkZ.nodes.Nodup) (simpleY : walkY.nodes.Nodup)
+    (hz : z zEnd = true) (hy : y yEnd = true)
+    (openZ : forall n, n ∈ walkZ.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false)
+    (openY : forall n, n ∈ walkY.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed n) = false)
+    (hedgeLeft : G.bidirected sourceZ first = true)
+    (hedgeMid : G.bidirected first second = true)
+    (hedgeRight : G.bidirected second sourceY = true)
+    (hxFirst : x first = false)
+    (hxSecond : x second = false)
+    (blockedFirst :
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed first) = true)
+    (blockedSecond :
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed second) = true)
+    (activatedFirst : PathSpecification.ColliderActivated G
+      (GraphMutilation.bar x) (NodeSet.union x w) (.observed first))
+    (activatedSecond : PathSpecification.ColliderActivated G
+      (GraphMutilation.bar x) (NodeSet.union x w) (.observed second)) :
+    False := by
+  have sourceZNeFirst : sourceZ ≠ first := by
+    intro heq
+    subst first
+    exact Bool.false_ne_true
+      ((openZ sourceZ walkZ.mem_source).symm.trans blockedFirst)
+  have sourceZNeSecond : sourceZ ≠ second := by
+    intro heq
+    subst second
+    exact Bool.false_ne_true
+      ((openZ sourceZ walkZ.mem_source).symm.trans blockedSecond)
+  have sourceYNeFirst : sourceY ≠ first := by
+    intro heq
+    subst first
+    exact Bool.false_ne_true
+      ((openY sourceY walkY.mem_source).symm.trans blockedFirst)
+  have sourceYNeSecond : sourceY ≠ second := by
+    intro heq
+    subst second
+    exact Bool.false_ne_true
+      ((openY sourceY walkY.mem_source).symm.trans blockedSecond)
+  have sourceZNeSourceY : sourceZ ≠ sourceY := by
+    intro heq
+    subst sourceY
+    exact pathDSeparated_no_open_directed_fork_yz G x y z w separated
+      walkZ walkY simpleZ simpleY hz hy openZ openY
+  have firstNeSecond : first ≠ second := by
+    intro heq
+    subst second
+    exact Bool.false_ne_true
+      ((G.bidirected_irreflexive first).symm.trans hedgeMid)
+  have firstNotOnZ : first ∉ walkZ.nodes := by
+    intro member
+    exact Bool.false_ne_true
+      ((openZ first member).symm.trans blockedFirst)
+  have secondNotOnZ : second ∉ walkZ.nodes := by
+    intro member
+    exact Bool.false_ne_true
+      ((openZ second member).symm.trans blockedSecond)
+  have firstNotOnY : first ∉ walkY.nodes := by
+    intro member
+    exact Bool.false_ne_true
+      ((openY first member).symm.trans blockedFirst)
+  have secondNotOnY : second ∉ walkY.nodes := by
+    intro member
+    exact Bool.false_ne_true
+      ((openY second member).symm.trans blockedSecond)
+  have notOnZ : sourceY ∉ walkZ.nodes := by
+    intro member
+    rcases walkZ.exists_simple_suffix_of_mem simpleZ member with
+      ⟨_slen, swalk, ssimple, _pre, hnodes⟩
+    have subset : forall n, n ∈ swalk.nodes -> n ∈ walkZ.nodes :=
+      fun n hn => by
+        rw [hnodes]
+        exact List.mem_append.mpr (Or.inr hn)
+    exact pathDSeparated_no_open_directed_fork_yz G x y z w separated
+      swalk walkY ssimple simpleY hz hy
+      (fun n hn => openZ n (subset n hn)) openY
+  have notOnY : sourceZ ∉ walkY.nodes := by
+    intro member
+    rcases walkY.exists_simple_suffix_of_mem simpleY member with
+      ⟨_slen, swalk, ssimple, _pre, hnodes⟩
+    have subset : forall n, n ∈ swalk.nodes -> n ∈ walkY.nodes :=
+      fun n hn => by
+        rw [hnodes]
+        exact List.mem_append.mpr (Or.inr hn)
+    exact pathDSeparated_no_open_directed_fork_yz G x y z w separated
+      walkZ swalk simpleZ ssimple hz hy openZ
+      (fun n hn => openY n (subset n hn))
+  have disjointWalks :
+      forall n, n ∈ walkZ.nodes -> n ∈ walkY.nodes -> False := by
+    intro n hnZ hnY
+    rcases walkZ.exists_simple_suffix_of_mem simpleZ hnZ with
+      ⟨_lenZ, sufZ, simpleSufZ, _preZ, hnodesZ⟩
+    rcases walkY.exists_simple_suffix_of_mem simpleY hnY with
+      ⟨_lenY, sufY, simpleSufY, _preY, hnodesY⟩
+    have subZ : forall m, m ∈ sufZ.nodes -> m ∈ walkZ.nodes :=
+      fun m hm => by
+        rw [hnodesZ]
+        exact List.mem_append.mpr (Or.inr hm)
+    have subY : forall m, m ∈ sufY.nodes -> m ∈ walkY.nodes :=
+      fun m hm => by
+        rw [hnodesY]
+        exact List.mem_append.mpr (Or.inr hm)
+    exact pathDSeparated_no_open_directed_fork_yz G x y z w separated
+      sufZ sufY simpleSufZ simpleSufY hz hy
+      (fun m hm => openZ m (subZ m hm))
+      (fun m hm => openY m (subY m hm))
+  exact separated
+    ⟨yEnd, zEnd, hy, hz,
+      ⟨(PathSpecification.ActivePath.ofOpenWalks_glue_two_bidirected_colliders
+          G (GraphMutilation.bar x) (NodeSet.union x w) walkZ walkY simpleZ
+          simpleY openZ openY hedgeLeft hedgeMid hedgeRight sourceZNeFirst
+          sourceZNeSecond sourceZNeSourceY firstNeSecond
+          sourceYNeFirst.symm sourceYNeSecond.symm
+          (bar_removeIncoming_false_of_open x w
+            (openZ sourceZ walkZ.mem_source))
+          (bar_removeIncoming_false_of_not_action x hxFirst)
+          (bar_removeIncoming_false_of_not_action x hxSecond)
+          (bar_removeIncoming_false_of_open x w
+            (openY sourceY walkY.mem_source))
+          activatedFirst activatedSecond firstNotOnZ secondNotOnZ
+          firstNotOnY secondNotOnY notOnZ notOnY disjointWalks).reverse⟩⟩
 
 /-- Evaluation on a backward-closed node set observes only latent roots
 incident to that set. -/
@@ -233,6 +2904,40 @@ def LatentSeparatedUnder (model : FiniteLatentSCM S)
     (left right : NodeSet S) : Prop :=
   forall root, model.latentRelevantUnder intervention left root = true ->
     model.latentRelevantUnder intervention right root = false
+
+/-- No latent root is relevant to both families, even when the two
+families are read under different interventions.  Rule 3's given-`W`
+cylinders live under `do(X ∪ W)` for `Y` and under `do(X)` / `do(X ∪ Z)`
+for `W`. -/
+def LatentSeparatedAcross (model : FiniteLatentSCM S)
+    (leftInt : (i : Fin S.count) -> Option (S.Value i))
+    (leftNodes : NodeSet S)
+    (rightInt : (i : Fin S.count) -> Option (S.Value i))
+    (rightNodes : NodeSet S) : Prop :=
+  forall root, model.latentRelevantUnder leftInt leftNodes root = true ->
+    model.latentRelevantUnder rightInt rightNodes root = false
+
+/-- A heavier intervention can only drop relevance, so latent separation
+survives adding more hard interventions. -/
+theorem LatentSeparatedUnder.mono (model : FiniteLatentSCM S)
+    {heavier lighter : (i : Fin S.count) -> Option (S.Value i)}
+    (left right : NodeSet S)
+    (freeOfHeavier : forall i, heavier i = none -> lighter i = none)
+    (separated : model.LatentSeparatedUnder lighter left right) :
+    model.LatentSeparatedUnder heavier left right := by
+  intro root leftRelevant
+  have leftLighter :=
+    model.latentRelevantUnder_mono left root freeOfHeavier leftRelevant
+  have rightLighter := separated root leftLighter
+  cases rightHeavier :
+      model.latentRelevantUnder heavier right root with
+  | false =>
+      rfl
+  | true =>
+      have rightAlsoLighter :=
+        model.latentRelevantUnder_mono right root freeOfHeavier rightHeavier
+      rw [rightLighter] at rightAlsoLighter
+      cases rightAlsoLighter
 
 /-- A shared latent parent of two distinct observed nodes is visible as a
 bidirected edge in every graph compatible with the model. -/
@@ -292,6 +2997,335 @@ theorem latentSeparatedUnder_of_no_bidirected_across
         leftSelected rightSelected
       rw [edgeTrue] at edgeFalse
       contradiction
+
+/--
+No latent root can be relevant to both open cores: they are disjoint and
+share no projected bidirected edge.
+-/
+theorem rule1OpenCores_latentSeparated
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w)) :
+    model.LatentSeparatedUnder
+      ((rule1Right x y z w).intervention assignment)
+      (rule1LeftOpenCore G x z w) (rule1RightOpenCore G x y z w) :=
+  latentSeparatedUnder_of_no_bidirected_across model G projected
+    ((rule1Right x y z w).intervention assignment)
+    (rule1LeftOpenCore G x z w) (rule1RightOpenCore G x y z w)
+    (rule1OpenCores_disjoint G x y z w separated)
+    (fun _leftNode _rightNode hleft hright =>
+      rule1OpenCores_no_bidirected G x y z w separated hleft hright)
+
+/-- No latent root is relevant to both rule-2 open cores under `do(X)`.
+The cores live in `G_{\overline{X ∪ W}\underline{Z}}`, so `Z → Y` does
+not put `Z` into the `Y` core. -/
+theorem rule2OpenCores_latentSeparated
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G
+      (GraphMutilation.barUnderline x z) y z (NodeSet.union x w)) :
+    model.LatentSeparatedUnder
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (rule2ZOpenCore G x z w) (rule2YOpenCore G x y z w) :=
+  latentSeparatedUnder_of_no_bidirected_across model G projected
+    ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+    (rule2ZOpenCore G x z w) (rule2YOpenCore G x y z w)
+    (rule2OpenCores_disjoint G x y z w separated)
+    (fun _leftNode _rightNode hleft hright =>
+      rule2OpenCores_no_bidirected G x y z w separated hleft hright)
+
+/-- No latent root is relevant to both empty-`W` rule-2 open cores under
+`do(X)`.  The cores live in `G_{\overline{X}\underline{Z}}`, so `Z → Y`
+does not put `Z` into the `Y` core. -/
+theorem rule2OpenCores_latentSeparated_of_empty_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (_hw : NodeSet.isEmpty w = true)
+    (separated : PathSpecification.PathDSeparated G
+      (GraphMutilation.barUnderline x z) y z (NodeSet.union x w)) :
+    model.LatentSeparatedUnder
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (rule2ZOpenCore G x z w) (rule2YOpenCore G x y z w) :=
+  rule2OpenCores_latentSeparated model G projected x y z w assignment
+    separated
+
+/-- A `do(X)`-free ancestor of `Z` in `G_{\overline{X}}` is already in the
+empty-`W` rule-2 open `Z` core. -/
+theorem rule2ZOpenCore_of_free_ancestral_of_empty_w
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    (hw : NodeSet.isEmpty w = true) {i : Fin S.count}
+    (hanc : ancestralInBar G x z i = true)
+    (hfree : x i = false) :
+    rule2ZOpenCore G x z w i = true := by
+  have hact : w = NodeSet.empty := NodeSet.eq_empty_of_isEmpty hw
+  have hopen :
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed i) = false := by
+    simp [ObservedGraph.blockedBy, hact, NodeSet.union_empty_right, hfree]
+  have hbar := observedAncestorOf_barUnderline_z_of_bar G x z i hanc
+  have hbarW :
+      G.observedAncestorOf
+        (GraphMutilation.barUnderline (NodeSet.union x w) z) z i = true := by
+    simpa [hact, NodeSet.union_empty_right] using hbar
+  simp [rule2ZOpenCore, openAncestralInGraph, hopen, hbarW]
+
+/-- A `do(X ∪ Z)`-free ancestor of `Y` in `G_{\overline{X ∪ Z}}` is already
+in the empty-`W` rule-2 open `Y` core. -/
+theorem rule2YOpenCore_of_free_ancestral_of_empty_w
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (hw : NodeSet.isEmpty w = true) {i : Fin S.count}
+    (hanc : ancestralInBar G (NodeSet.union x z) y i = true)
+    (hfree : NodeSet.union x z i = false) :
+    rule2YOpenCore G x y z w i = true := by
+  have hact : w = NodeSet.empty := NodeSet.eq_empty_of_isEmpty hw
+  have hx : x i = false := by
+    cases hx : x i with
+    | false =>
+        rfl
+    | true =>
+        simp [NodeSet.union, hx] at hfree
+  have hopen :
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed i) = false := by
+    simp [ObservedGraph.blockedBy, hact, NodeSet.union_empty_right, hx]
+  have hbar :=
+    observedAncestorOf_barUnderline_y_of_barUnion G x y z i hanc hfree
+  have hbarW :
+      G.observedAncestorOf
+        (GraphMutilation.barUnderline (NodeSet.union x w) z) y i = true := by
+    simpa [hact, NodeSet.union_empty_right] using hbar
+  simp [rule2YOpenCore, openAncestralInGraph, hopen, hbarW]
+
+/-- A latent relevant to `An(Z)` under `do(X)` is already relevant to the
+empty-`W` open `Z` core: its free incident child is in that core. -/
+theorem latentRelevantUnder_rule2ZOpenCore_of_ancestral_of_empty_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    (hw : NodeSet.isEmpty w = true)
+    {root : Fin model.latent.count}
+    (hrel : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (ancestralInBar G x z) root = true) :
+    model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (rule2ZOpenCore G x z w) root = true := by
+  let intervention :=
+    (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment
+  rcases (model.latentRelevantUnder_eq_true_iff intervention
+      (ancestralInBar G x z) root).mp hrel with
+    ⟨child, selected, notIntervened, incident⟩
+  have hfree : x child = false := by
+    dsimp [intervention, Kernel.intervention] at notIntervened
+    cases hx : x child with
+    | false =>
+        rfl
+    | true =>
+        simp [hx] at notIntervened
+  have hopen :=
+    rule2ZOpenCore_of_free_ancestral_of_empty_w G x z w hw selected hfree
+  exact model.latentRelevantUnder_of_incident intervention
+    (rule2ZOpenCore G x z w) root child hopen notIntervened incident
+
+/-- A latent relevant to `An(Y)` under `do(X ∪ Z)` is already relevant to
+the empty-`W` open `Y` core under `do(X)`: its free incident child is in
+that core, and dropping the extra intervention on `Z` only adds free
+nodes. -/
+theorem latentRelevantUnder_rule2YOpenCore_of_barUnion_of_empty_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hw : NodeSet.isEmpty w = true)
+    {root : Fin model.latent.count}
+    (hrel : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+        NodeSet.empty).intervention assignment)
+      (ancestralInBar G (NodeSet.union x z) y) root = true) :
+    model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (rule2YOpenCore G x y z w) root = true := by
+  let heavier :=
+    (Kernel.mk NodeSet.empty (NodeSet.union x z)
+      NodeSet.empty).intervention assignment
+  let lighter :=
+    (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment
+  rcases (model.latentRelevantUnder_eq_true_iff heavier
+      (ancestralInBar G (NodeSet.union x z) y) root).mp hrel with
+    ⟨child, selected, notIntervened, incident⟩
+  have hfree : NodeSet.union x z child = false := by
+    dsimp [heavier, Kernel.intervention] at notIntervened
+    cases hunion : NodeSet.union x z child with
+    | false =>
+        rfl
+    | true =>
+        simp [hunion] at notIntervened
+  have hopen :=
+    rule2YOpenCore_of_free_ancestral_of_empty_w G x y z w hw selected hfree
+  have notIntervenedLight : lighter child = none := by
+    have hx : x child = false := by
+      cases hx : x child with
+      | false =>
+          rfl
+      | true =>
+          simp [NodeSet.union, hx] at hfree
+    simp [lighter, Kernel.intervention, hx]
+  exact model.latentRelevantUnder_of_incident lighter
+    (rule2YOpenCore G x y z w) root child hopen notIntervenedLight incident
+
+/-- Intervening on `W` as well as `X` only drops free nodes. -/
+theorem rule1_union_intervention_free_of_heavier
+    (x y z w : NodeSet S) (assignment : S.Assignment) {i : Fin S.count}
+    (hnone :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) i = none) :
+    ((rule1Right x y z w).intervention assignment) i = none := by
+  cases hx : x i with
+  | false =>
+      simp [Kernel.intervention, rule1Right, hx]
+  | true =>
+      simp [Kernel.intervention, NodeSet.union, hx] at hnone
+
+/-- Latent separation of the open cores survives also intervening on `W`. -/
+theorem rule1OpenCores_latentSeparated_union
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w)) :
+    model.LatentSeparatedUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (rule1LeftOpenCore G x z w) (rule1RightOpenCore G x y z w) :=
+  LatentSeparatedUnder.mono model
+    (rule1LeftOpenCore G x z w) (rule1RightOpenCore G x y z w)
+    (fun _i hnone =>
+      rule1_union_intervention_free_of_heavier x y z w assignment hnone)
+    (rule1OpenCores_latentSeparated model G projected x y z w assignment
+      separated)
+
+/--
+The ancestral sets of `Z` and `Y` in `G_{\overline{X ∪ W}}` may share
+intervened vertices, but the latents still relevant after intervening on
+`W` are exactly those of the open cores.
+-/
+theorem rule1Ancestral_latentSeparated_union
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w)) :
+    model.LatentSeparatedUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (ancestralInBar G (NodeSet.union x w) z)
+      (ancestralInBar G (NodeSet.union x w) y) := by
+  intro root hleft
+  have hopen :
+      model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (rule1LeftOpenCore G x z w) root = true := by
+    simpa [rule1LeftOpenCore, latentRelevantUnder_openAncestralIn] using hleft
+  have hrightOpen :=
+    rule1OpenCores_latentSeparated_union model G projected x y z w assignment
+      separated root hopen
+  simpa [rule1RightOpenCore, latentRelevantUnder_openAncestralIn] using
+    hrightOpen
+
+/-- Directed ancestry in `G_{\overline{X}}` is transitive. -/
+theorem ancestralInBar_trans (G : ObservedGraph S) (action : NodeSet S)
+    {i j : Fin S.count} {targets : NodeSet S}
+    (hij : ancestralInBar G action (NodeSet.singleton j) i = true)
+    (hjt : ancestralInBar G action targets j = true) :
+    ancestralInBar G action targets i = true := by
+  have complete :
+      forall node : Fin S.count,
+        node ∈ List.ofFn (fun k : Fin S.count => k) :=
+    fun node => List.mem_ofFn.mpr ⟨node, rfl⟩
+  have hanyij :
+      (List.ofFn (fun k : Fin S.count => k)).any (fun target =>
+        NodeSet.singleton j target &&
+          FiniteReachability.within finBeq
+            (List.ofFn (fun k : Fin S.count => k))
+            (G.observedDirectedEdge (GraphMutilation.bar action))
+            (List.ofFn (fun k : Fin S.count => k)).length i target) =
+        true := by
+    simpa [ancestralInBar, ObservedGraph.observedAncestorOf] using hij
+  rcases List.any_eq_true.mp hanyij with ⟨j', jMem, hj'⟩
+  have hj'Parts := Bool.and_eq_true_iff.mp hj'
+  have hjEq : j' = j := (NodeSet.singleton_eq_true_iff j j').mp hj'Parts.1
+  subst j'
+  have boundedij :
+      FiniteReachability.BoundedWalk
+        (G.observedDirectedEdge (GraphMutilation.bar action))
+        (List.ofFn (fun k : Fin S.count => k)).length i j :=
+    (FiniteReachability.within_eq_true_iff_boundedWalk finBeq
+      (List.ofFn (fun k : Fin S.count => k))
+      (G.observedDirectedEdge (GraphMutilation.bar action))
+      finBeq_eq_true_iff complete
+      (List.ofFn (fun k : Fin S.count => k)).length i j).mp hj'Parts.2
+  have hanyjt :
+      (List.ofFn (fun k : Fin S.count => k)).any (fun target =>
+        targets target &&
+          FiniteReachability.within finBeq
+            (List.ofFn (fun k : Fin S.count => k))
+            (G.observedDirectedEdge (GraphMutilation.bar action))
+            (List.ofFn (fun k : Fin S.count => k)).length j target) =
+        true := by
+    simpa [ancestralInBar, ObservedGraph.observedAncestorOf] using hjt
+  rcases List.any_eq_true.mp hanyjt with ⟨t, tMem, ht⟩
+  have htParts := Bool.and_eq_true_iff.mp ht
+  have boundedjt :
+      FiniteReachability.BoundedWalk
+        (G.observedDirectedEdge (GraphMutilation.bar action))
+        (List.ofFn (fun k : Fin S.count => k)).length j t :=
+    (FiniteReachability.within_eq_true_iff_boundedWalk finBeq
+      (List.ofFn (fun k : Fin S.count => k))
+      (G.observedDirectedEdge (GraphMutilation.bar action))
+      finBeq_eq_true_iff complete
+      (List.ofFn (fun k : Fin S.count => k)).length j t).mp htParts.2
+  have reachableit :
+      FiniteReachability.Reachable
+        (G.observedDirectedEdge (GraphMutilation.bar action)) i t :=
+    FiniteReachability.Reachable.of_bounded
+      (FiniteReachability.BoundedWalk.trans boundedij boundedjt)
+  have boundedit :
+      FiniteReachability.BoundedWalk
+        (G.observedDirectedEdge (GraphMutilation.bar action))
+        (List.ofFn (fun k : Fin S.count => k)).length i t :=
+    FiniteReachability.boundedWalk_of_reachable finBeq
+      (List.ofFn (fun k : Fin S.count => k))
+      (G.observedDirectedEdge (GraphMutilation.bar action))
+      finBeq_eq_true_iff complete reachableit
+  have hyit :
+      FiniteReachability.within finBeq
+        (List.ofFn (fun k : Fin S.count => k))
+        (G.observedDirectedEdge (GraphMutilation.bar action))
+        (List.ofFn (fun k : Fin S.count => k)).length i t = true :=
+    (FiniteReachability.within_eq_true_iff_boundedWalk finBeq
+      (List.ofFn (fun k : Fin S.count => k))
+      (G.observedDirectedEdge (GraphMutilation.bar action))
+      finBeq_eq_true_iff complete
+      (List.ofFn (fun k : Fin S.count => k)).length i t).mpr boundedit
+  have hanyit :
+      (List.ofFn (fun k : Fin S.count => k)).any (fun target =>
+        targets target &&
+          FiniteReachability.within finBeq
+            (List.ofFn (fun k : Fin S.count => k))
+            (G.observedDirectedEdge (GraphMutilation.bar action))
+            (List.ofFn (fun k : Fin S.count => k)).length i target) =
+        true :=
+    List.any_eq_true.mpr
+      ⟨t, tMem, Bool.and_eq_true_iff.mpr ⟨htParts.1, hyit⟩⟩
+  simpa [ancestralInBar, ObservedGraph.observedAncestorOf] using hanyit
+
+/-- Enlarging the target set preserves directed ancestry in `G_{\overline{X}}`. -/
+theorem ancestralInBar_mono (G : ObservedGraph S) (action : NodeSet S)
+    {targets targets' : NodeSet S} (hsub : NodeSet.Subset targets targets')
+    {i : Fin S.count}
+    (h : ancestralInBar G action targets i = true) :
+    ancestralInBar G action targets' i = true :=
+  observedAncestorOf_mono G (GraphMutilation.bar action) hsub h
 
 end FiniteLatentSCM
 
@@ -451,6 +3485,90 @@ theorem DependsOnUnselected.inter (n : Nat) (Value : Fin n -> Type u)
   intro left right agree
   simp [Probability.inter, leftDepends left right agree,
     rightDepends left right agree]
+
+/-- A larger selected family still determines any event that already
+depends only on a subfamily. -/
+theorem DependsOnSelected.subset (n : Nat) (Value : Fin n -> Type u)
+    {selected selected' : Fin n -> Bool}
+    (event : Assignment n Value -> Bool)
+    (hsub : forall coordinate, selected coordinate = true ->
+      selected' coordinate = true)
+    (depends : DependsOnSelected n Value selected event) :
+    DependsOnSelected n Value selected' event := by
+  intro left right agree'
+  apply depends
+  intro coordinate chosen
+  exact agree' coordinate (hsub coordinate chosen)
+
+/-- A smaller selected family enlarges the unselected coordinates, so an
+event that ignored the original selected family still ignores the
+smaller one. -/
+theorem DependsOnUnselected.subset (n : Nat) (Value : Fin n -> Type u)
+    {selected selected' : Fin n -> Bool}
+    (event : Assignment n Value -> Bool)
+    (hsub : forall coordinate, selected' coordinate = true ->
+      selected coordinate = true)
+    (depends : DependsOnUnselected n Value selected event) :
+    DependsOnUnselected n Value selected' event := by
+  intro left right agree'
+  apply depends
+  intro coordinate unselected
+  have unselected' : selected' coordinate = false := by
+    cases hsel : selected' coordinate with
+    | false =>
+        rfl
+    | true =>
+        have : selected coordinate = true := hsub coordinate hsel
+        rw [unselected] at this
+        cases this
+  exact agree' coordinate unselected'
+
+/-- Constant events depend on no coordinates. -/
+theorem DependsOnSelected.const (n : Nat) (Value : Fin n -> Type u)
+    (selected : Fin n -> Bool) (value : Bool) :
+    DependsOnSelected n Value selected (fun _ => value) := by
+  intro _left _right _agree
+  rfl
+
+theorem DependsOnUnselected.const (n : Nat) (Value : Fin n -> Type u)
+    (selected : Fin n -> Bool) (value : Bool) :
+    DependsOnUnselected n Value selected (fun _ => value) := by
+  intro _left _right _agree
+  rfl
+
+/-- Depending only on the complement is the unselected judgement for the
+original family. -/
+theorem DependsOnUnselected.of_compl_selected (n : Nat)
+    (Value : Fin n -> Type u) (selected : Fin n -> Bool)
+    (event : Assignment n Value -> Bool)
+    (depends : DependsOnSelected n Value (fun coordinate =>
+      !selected coordinate) event) :
+    DependsOnUnselected n Value selected event := by
+  intro left right agree
+  apply depends
+  intro coordinate hcompl
+  have unselected : selected coordinate = false := by
+    cases hsel : selected coordinate with
+    | false =>
+        rfl
+    | true =>
+        simp [hsel] at hcompl
+  exact agree coordinate unselected
+
+/-- Depending only on a family is the unselected judgement for its
+complement. -/
+theorem DependsOnUnselected.of_selected_compl (n : Nat)
+    (Value : Fin n -> Type u) (selected : Fin n -> Bool)
+    (event : Assignment n Value -> Bool)
+    (depends : DependsOnSelected n Value selected event) :
+    DependsOnUnselected n Value (fun coordinate => !selected coordinate)
+      event := by
+  intro left right agree
+  apply depends
+  intro coordinate chosen
+  have unselected : (!selected coordinate) = false := by
+    simp [chosen]
+  exact agree coordinate unselected
 
 theorem dependsOnSelected_splice (n : Nat) (Value : Fin n -> Type u)
     (selected : Fin n -> Bool) (event : Assignment n Value -> Bool)
@@ -1251,6 +4369,35 @@ theorem agreesOn_evalUnder_dependsOnUnselected
       rw [rightRelevantRoot] at impossible
       contradiction
 
+/-- A cylinder under one intervention ignores the selected mask of
+another intervention when those two relevance families are disjoint. -/
+theorem agreesOn_evalUnder_dependsOnUnselected_across
+    (model : FiniteLatentSCM S)
+    (selectedInt evalInt : (i : Fin S.count) -> Option (S.Value i))
+    (selectedNodes evalNodes observed : NodeSet S)
+    (reference : S.Assignment)
+    (evalClosed : model.BackwardClosedUnder evalInt evalNodes)
+    (contained : NodeSet.Subset observed evalNodes)
+    (separated : model.LatentSeparatedAcross selectedInt selectedNodes
+      evalInt evalNodes) :
+    CanonicalFactorization.DependsOnUnselected model.latent.count
+      model.latent.Value
+        (model.latentRelevantUnder selectedInt selectedNodes)
+      (fun roots => Kernel.agreesOn observed reference
+        (model.evalUnder evalInt roots)) := by
+  intro left right rootsAgree
+  apply agreesOn_evalUnder_congr_of_rootAgreement model evalInt
+    evalNodes observed reference evalClosed contained
+  intro root evalRelevant
+  apply rootsAgree root
+  cases hsel : model.latentRelevantUnder selectedInt selectedNodes root with
+  | false =>
+      rfl
+  | true =>
+      have hfalse := separated root hsel
+      rw [evalRelevant] at hfalse
+      cases hfalse
+
 /-- Adding hard interventions at nodes that already have their requested
 values under a base intervention does not change the evaluated assignment. -/
 theorem evalUnder_union_intervention_eq_of_agreesOn
@@ -1303,6 +4450,3186 @@ theorem evalUnder_union_intervention_eq_of_agreesOn
                 baseSelected, addedSelected] using extensionValue
             subst value
             exact addedAgrees node addedSelected
+
+/--
+On the cylinder where the added action already matches the reference,
+evaluation under `do(base)` agrees with evaluation under `do(base ∪ added)`.
+Observed coordinates in a backward-closed region of the heavier graph then
+depend only on latents still relevant after both interventions.
+-/
+theorem agreesOn_evalUnder_congr_of_agreesOn_added
+    (model : FiniteLatentSCM S)
+    (baseAction addedAction observed relevant : NodeSet S)
+    (reference : S.Assignment)
+    (closed : model.BackwardClosedUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union baseAction addedAction)
+        NodeSet.empty).intervention reference)
+      relevant)
+    (contained : NodeSet.Subset observed relevant)
+    (left right : model.latent.Assignment)
+    (hleft : Kernel.agreesOn addedAction reference
+      (model.evalUnder
+        ((Kernel.mk NodeSet.empty baseAction NodeSet.empty).intervention
+          reference) left) = true)
+    (hright : Kernel.agreesOn addedAction reference
+      (model.evalUnder
+        ((Kernel.mk NodeSet.empty baseAction NodeSet.empty).intervention
+          reference) right) = true)
+    (rootsAgree : forall root,
+      model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union baseAction addedAction)
+          NodeSet.empty).intervention reference)
+        relevant root = true ->
+      left root = right root) :
+    Kernel.agreesOn observed reference
+      (model.evalUnder
+        ((Kernel.mk NodeSet.empty baseAction NodeSet.empty).intervention
+          reference) left) =
+      Kernel.agreesOn observed reference
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty baseAction NodeSet.empty).intervention
+            reference) right) := by
+  let extension :=
+    (Kernel.mk NodeSet.empty (NodeSet.union baseAction addedAction)
+      NodeSet.empty).intervention reference
+  have hleftEq :=
+    evalUnder_union_intervention_eq_of_agreesOn model baseAction addedAction
+      reference left hleft
+  have hrightEq :=
+    evalUnder_union_intervention_eq_of_agreesOn model baseAction addedAction
+      reference right hright
+  have congrEval :=
+    agreesOn_evalUnder_congr_of_rootAgreement model extension relevant
+      observed reference closed contained left right rootsAgree
+  rw [← hleftEq, ← hrightEq]
+  exact congrEval
+
+/--
+Given `W`, `Y` is evaluated as if `W` were intervened, so it depends only
+on latents still relevant to the ancestors of `Y` in `G_{\overline{X ∪ W}}`.
+-/
+theorem agreesOn_rule1Y_congr_given_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (left right : model.latent.Assignment)
+    (hleft : Kernel.agreesOn w assignment
+      (model.evalUnder
+        ((rule1Right x y z w).intervention assignment) left) = true)
+    (hright : Kernel.agreesOn w assignment
+      (model.evalUnder
+        ((rule1Right x y z w).intervention assignment) right) = true)
+    (rootsAgree : forall root,
+      model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root =
+          true ->
+      left root = right root) :
+    Kernel.agreesOn y assignment
+      (model.evalUnder
+        ((rule1Right x y z w).intervention assignment) left) =
+      Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) right) := by
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule1Right, Kernel.intervention]
+  simpa [hinter] using
+    agreesOn_evalUnder_congr_of_agreesOn_added model x w y
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) assignment
+      (FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+        (NodeSet.union x w) y assignment)
+      (FiniteLatentSCM.subset_ancestralInBar G (NodeSet.union x w) y y
+        (fun _i hi => hi))
+      left right (by simpa [hinter] using hleft)
+      (by simpa [hinter] using hright) rootsAgree
+
+/--
+Given `W`, `Z` is evaluated as if `W` were intervened, so it depends only
+on latents still relevant to the ancestors of `Z` in `G_{\overline{X ∪ W}}`.
+-/
+theorem agreesOn_rule1Z_congr_given_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (left right : model.latent.Assignment)
+    (hleft : Kernel.agreesOn w assignment
+      (model.evalUnder
+        ((rule1Right x y z w).intervention assignment) left) = true)
+    (hright : Kernel.agreesOn w assignment
+      (model.evalUnder
+        ((rule1Right x y z w).intervention assignment) right) = true)
+    (rootsAgree : forall root,
+      model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) root =
+          true ->
+      left root = right root) :
+    Kernel.agreesOn z assignment
+      (model.evalUnder
+        ((rule1Right x y z w).intervention assignment) left) =
+      Kernel.agreesOn z assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) right) := by
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule1Right, Kernel.intervention]
+  simpa [hinter] using
+    agreesOn_evalUnder_congr_of_agreesOn_added model x w z
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) assignment
+      (FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+        (NodeSet.union x w) z assignment)
+      (FiniteLatentSCM.subset_ancestralInBar G (NodeSet.union x w) z z
+        (fun _i hi => hi))
+      left right (by simpa [hinter] using hleft)
+      (by simpa [hinter] using hright) rootsAgree
+
+/-- Given `W`, agreement on the open `Y` core latents already determines `Y`. -/
+theorem agreesOn_rule1Y_congr_given_w_of_openCore
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (left right : model.latent.Assignment)
+    (hleft : Kernel.agreesOn w assignment
+      (model.evalUnder
+        ((rule1Right x y z w).intervention assignment) left) = true)
+    (hright : Kernel.agreesOn w assignment
+      (model.evalUnder
+        ((rule1Right x y z w).intervention assignment) right) = true)
+    (rootsAgree : forall root,
+      model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.rule1RightOpenCore G x y z w) root = true ->
+      left root = right root) :
+    Kernel.agreesOn y assignment
+      (model.evalUnder
+        ((rule1Right x y z w).intervention assignment) left) =
+      Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) right) :=
+  agreesOn_rule1Y_congr_given_w model G x y z w assignment left right
+    hleft hright (fun root hanc =>
+      rootsAgree root (by
+        simpa [FiniteLatentSCM.rule1RightOpenCore,
+          FiniteLatentSCM.latentRelevantUnder_openAncestralIn] using hanc))
+
+/-- Given `W`, agreement on the open `Z` core latents already determines `Z`. -/
+theorem agreesOn_rule1Z_congr_given_w_of_openCore
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (left right : model.latent.Assignment)
+    (hleft : Kernel.agreesOn w assignment
+      (model.evalUnder
+        ((rule1Right x y z w).intervention assignment) left) = true)
+    (hright : Kernel.agreesOn w assignment
+      (model.evalUnder
+        ((rule1Right x y z w).intervention assignment) right) = true)
+    (rootsAgree : forall root,
+      model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.rule1LeftOpenCore G x z w) root = true ->
+      left root = right root) :
+    Kernel.agreesOn z assignment
+      (model.evalUnder
+        ((rule1Right x y z w).intervention assignment) left) =
+      Kernel.agreesOn z assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) right) :=
+  agreesOn_rule1Z_congr_given_w model G x y z w assignment left right
+    hleft hright (fun root hanc =>
+      rootsAgree root (by
+        simpa [FiniteLatentSCM.rule1LeftOpenCore,
+          FiniteLatentSCM.latentRelevantUnder_openAncestralIn] using hanc))
+
+/--
+On every latent assignment, agreement with `added` under `do(base)` lets
+the remaining observed coordinates be read under `do(base ∪ added)`
+instead.  If `added` already disagrees, both sides are `false`.
+-/
+theorem agreesOn_and_evalUnder_union_eq
+    (model : FiniteLatentSCM S)
+    (baseAction addedAction observed : NodeSet S)
+    (reference : S.Assignment) (roots : model.latent.Assignment) :
+    Eq
+      (Kernel.agreesOn addedAction reference
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty baseAction NodeSet.empty).intervention
+            reference) roots) &&
+        Kernel.agreesOn observed reference
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty baseAction NodeSet.empty).intervention
+              reference) roots))
+      (Kernel.agreesOn addedAction reference
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty baseAction NodeSet.empty).intervention
+            reference) roots) &&
+        Kernel.agreesOn observed reference
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union baseAction addedAction)
+              NodeSet.empty).intervention reference) roots)) := by
+  generalize hC :
+    Kernel.agreesOn addedAction reference
+      (model.evalUnder
+        ((Kernel.mk NodeSet.empty baseAction NodeSet.empty).intervention
+          reference) roots) = cylinder
+  cases cylinder with
+  | false =>
+      rw [Bool.false_and, Bool.false_and]
+  | true =>
+      have heq :=
+        evalUnder_union_intervention_eq_of_agreesOn model baseAction
+          addedAction reference roots hC
+      rw [Bool.true_and, Bool.true_and, heq]
+
+/-- Rule-1 numerator/condition events rewrite as the `W`-cylinder times
+open-core events of the heavier intervention. -/
+theorem agreesOn_rule1_evalUnder_union_eq
+    (model : FiniteLatentSCM S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (roots : model.latent.Assignment) :
+    (Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) roots) &&
+      (Kernel.agreesOn z assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) roots) &&
+        Kernel.agreesOn w assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots))) =
+      (Kernel.agreesOn w assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) roots) &&
+      (Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment) roots) &&
+        Kernel.agreesOn z assignment
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment) roots))) := by
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule1Right, Kernel.intervention]
+  rw [hinter]
+  have hy :=
+    agreesOn_and_evalUnder_union_eq model x w y assignment roots
+  have hz :=
+    agreesOn_and_evalUnder_union_eq model x w z assignment roots
+  generalize hw :
+    Kernel.agreesOn w assignment
+      (model.evalUnder
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+          assignment) roots) = cylinderW
+  cases cylinderW with
+  | false =>
+      rw [Bool.and_false, Bool.and_false, Bool.false_and]
+  | true =>
+      have hy' :
+          Kernel.agreesOn y assignment
+            (model.evalUnder
+              ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+                assignment) roots) =
+            Kernel.agreesOn y assignment
+              (model.evalUnder
+                ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                  NodeSet.empty).intervention assignment) roots) := by
+        rw [hw, Bool.true_and, Bool.true_and] at hy
+        exact hy
+      have hz' :
+          Kernel.agreesOn z assignment
+            (model.evalUnder
+              ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+                assignment) roots) =
+            Kernel.agreesOn z assignment
+              (model.evalUnder
+                ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                  NodeSet.empty).intervention assignment) roots) := by
+        rw [hw, Bool.true_and, Bool.true_and] at hz
+        exact hz
+      rw [Bool.and_true, Bool.true_and, hy', hz']
+
+/-- Under `do(X ∪ W)`, `Z` depends only on latents of the open `Z` core. -/
+theorem agreesOn_rule1Z_dependsOnSelected_union
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x _y z w : NodeSet S) (assignment : S.Assignment) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z))
+      (fun roots =>
+        Kernel.agreesOn z assignment
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment) roots)) :=
+  agreesOn_evalUnder_dependsOnSelected model
+    ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+      NodeSet.empty).intervention assignment)
+    (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) z assignment
+    (FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+      (NodeSet.union x w) z assignment)
+    (FiniteLatentSCM.subset_ancestralInBar G (NodeSet.union x w) z z
+      (fun _i hi => hi))
+
+/-- Under `do(X ∪ W)`, `Y` depends only on latents complementary to the
+open `Z` core. -/
+theorem agreesOn_rule1Y_dependsOnUnselected_union
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w)) :
+    CanonicalFactorization.DependsOnUnselected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z))
+      (fun roots =>
+        Kernel.agreesOn y assignment
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment) roots)) :=
+  agreesOn_evalUnder_dependsOnUnselected model
+    ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+      NodeSet.empty).intervention assignment)
+    (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z)
+    (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) y assignment
+    (FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+      (NodeSet.union x w) y assignment)
+    (FiniteLatentSCM.subset_ancestralInBar G (NodeSet.union x w) y y
+      (fun _i hi => hi))
+    (FiniteLatentSCM.rule1Ancestral_latentSeparated_union model G projected
+      x y z w assignment separated)
+
+/-- Under `do(X ∪ W)`, `Y` depends only on latents of the open `Y` core. -/
+theorem agreesOn_rule1Y_dependsOnSelected_union
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y _z w : NodeSet S) (assignment : S.Assignment) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y))
+      (fun roots =>
+        Kernel.agreesOn y assignment
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment) roots)) :=
+  agreesOn_evalUnder_dependsOnSelected model
+    ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+      NodeSet.empty).intervention assignment)
+    (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) y assignment
+    (FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+      (NodeSet.union x w) y assignment)
+    (FiniteLatentSCM.subset_ancestralInBar G (NodeSet.union x w) y y
+      (fun _i hi => hi))
+
+/-- Under `do(X)`, `W` depends only on latents of its ancestors in
+`G_{\overline{X}}`. -/
+theorem agreesOn_rule1W_dependsOnSelected
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x w))
+      (fun roots =>
+        Kernel.agreesOn w assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots)) := by
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule1Right, Kernel.intervention]
+  simpa [hinter] using
+    agreesOn_evalUnder_dependsOnSelected model
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x w) w assignment
+      (FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G x w
+        assignment)
+      (FiniteLatentSCM.subset_ancestralInBar G x w w (fun _i hi => hi))
+
+/--
+A latent is shared between the ancestors of `W` in `G_{\overline{X}}` and
+the ancestral set of `other` in `G_{\overline{X ∪ W}}`.
+-/
+def rule1WMeetsUnionAncestral (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x w : NodeSet S) (assignment : S.Assignment)
+    (other : NodeSet S) : Bool :=
+  finAny model.latent.count (fun root =>
+    model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) other) root &&
+      model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x w) root)
+
+/-- Ancestral overlap with `W` is vacuous when `W` is empty: the `do(X)`
+side of the meet searches an empty ancestral family. -/
+theorem rule1WMeetsUnionAncestral_of_empty_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (other : NodeSet S)
+    (hw : NodeSet.isEmpty w = true) :
+    rule1WMeetsUnionAncestral model G x w assignment other = false := by
+  have hw' : w = NodeSet.empty := NodeSet.eq_empty_of_isEmpty hw
+  subst hw'
+  refine (finAny_eq_false_iff _).mpr ?_
+  intro root
+  have hrel :
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G x NodeSet.empty) root = false := by
+    simpa [FiniteLatentSCM.ancestralInBar_eq_empty] using
+      model.latentRelevantUnder_empty
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        root
+  simp [hrel]
+
+/-- Overlap unpacks as a single latent relevant to both ancestral families. -/
+theorem rule1WMeetsUnionAncestral_eq_true_iff
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (other : NodeSet S) :
+    rule1WMeetsUnionAncestral model G x w assignment other = true ↔
+      Exists fun root : Fin model.latent.count =>
+        model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) other)
+            root = true ∧
+          model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+              assignment)
+            (FiniteLatentSCM.ancestralInBar G x w) root = true := by
+  constructor
+  · intro hmeet
+    rcases (finAny_eq_true_iff _).mp (by
+      simpa [rule1WMeetsUnionAncestral] using hmeet) with ⟨root, hroot⟩
+    exact ⟨root, Bool.and_eq_true_iff.mp hroot⟩
+  · rintro ⟨root, hcore, hwanc⟩
+    apply (finAny_eq_true_iff _).mpr
+    refine ⟨root, ?_⟩
+    exact Bool.and_eq_true_iff.mpr ⟨hcore, hwanc⟩
+
+/-- One latent cannot be relevant to both open ancestral families. -/
+theorem rule1WMeets_not_same_root_both_cores
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (root : Fin model.latent.count)
+    (hZ : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) root = true)
+    (hY : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root = true) :
+    False := by
+  have hsep :=
+    FiniteLatentSCM.rule1Ancestral_latentSeparated_union model G projected
+      x y z w assignment separated
+  have hy := hsep root hZ
+  rw [hy] at hY
+  cases hY
+
+/-- A meet unpacks into a core child (free under `do(X ∪ W)`) and a
+`W`-ancestor child (free under `do(X)`), both incident to the same latent. -/
+theorem rule1WMeetsUnionAncestral_exists_children
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (other : NodeSet S)
+    (hmeet : rule1WMeetsUnionAncestral model G x w assignment other = true) :
+    Exists fun root : Fin model.latent.count =>
+      Exists fun coreChild : Fin S.count =>
+        Exists fun wChild : Fin S.count =>
+          FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) other
+              coreChild = true ∧
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment) coreChild = none ∧
+            model.latent.incident root coreChild = true ∧
+              FiniteLatentSCM.ancestralInBar G x w wChild = true ∧
+                ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+                  assignment) wChild = none ∧
+                model.latent.incident root wChild = true := by
+  rcases (rule1WMeetsUnionAncestral_eq_true_iff model G x w assignment
+      other).mp hmeet with ⟨root, hcore, hwanc⟩
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) other)
+      root).mp hcore with ⟨coreChild, hsel, hfree, hinc⟩
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x w) root).mp hwanc with
+    ⟨wChild, hwsel, hwfree, hwinc⟩
+  exact ⟨root, coreChild, wChild, hsel, hfree, hinc, hwsel, hwfree, hwinc⟩
+
+/-- Free under `do(X)` but bound under `do(X ∪ W)` means the vertex lies in
+`W`. -/
+theorem mem_w_of_base_none_union_some (x w : NodeSet S)
+    (assignment : S.Assignment) {i : Fin S.count} {value : S.Value i}
+    (hbase :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment) i =
+        none)
+    (hunion :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) i = some value) :
+    w i = true := by
+  simp [Kernel.intervention, NodeSet.union] at hbase hunion
+  cases hx : x i with
+  | true =>
+      simp [hx] at hbase
+  | false =>
+      simp [hx] at hunion
+      cases hw : w i with
+      | false =>
+          simp [hw] at hunion
+      | true =>
+          rfl
+
+/-- A `W`-side child that is still free under `do(X ∪ W)` cannot sit in the
+other family's ancestral set: the same latent would then be relevant to both
+cores. -/
+theorem rule1WMeet_free_w_child_not_in_other_ancestral
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (root : Fin model.latent.count) (wChild : Fin S.count)
+    (hZ : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) root = true)
+    (hwFree :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) wChild = none)
+    (hwInc : model.latent.incident root wChild = true)
+    (hYanc : FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y wChild =
+      true) :
+    False :=
+  rule1WMeets_not_same_root_both_cores model G projected x y z w assignment
+    separated root hZ
+    (model.latentRelevantUnder_of_incident
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root wChild
+      hYanc hwFree hwInc)
+
+/-- Core children of the two meets cannot coincide: they would be a vertex
+in both open cores. -/
+theorem rule1Meet_core_children_ne
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    {zChild yChild : Fin S.count}
+    (hz : FiniteLatentSCM.openAncestralIn G (NodeSet.union x w) z zChild =
+      true)
+    (hy : FiniteLatentSCM.openAncestralIn G (NodeSet.union x w) y yChild =
+      true) :
+    zChild ≠ yChild := by
+  intro heq
+  subst yChild
+  have hdis :=
+    FiniteLatentSCM.rule1OpenCores_disjoint G x y z w separated zChild
+      (by simpa [FiniteLatentSCM.rule1LeftOpenCore] using hz)
+  simp [FiniteLatentSCM.rule1RightOpenCore, hy] at hdis
+
+/-- A core child free under `do(X ∪ W)` and a `W`-child bound under that
+intervention are distinct, so their shared latent is a bidirected edge. -/
+theorem rule1Meet_bidirected_core_to_bound_w_child
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x w : NodeSet S) (assignment : S.Assignment)
+    (root : Fin model.latent.count)
+    {coreChild wChild : Fin S.count} {value : S.Value wChild}
+    (hcoreInc : model.latent.incident root coreChild = true)
+    (hwInc : model.latent.incident root wChild = true)
+    (hcoreFree :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) coreChild = none)
+    (hwBound :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) wChild = some value) :
+    G.bidirected coreChild wChild = true := by
+  have hne : coreChild ≠ wChild := by
+    intro heq
+    subst wChild
+    simp [hcoreFree] at hwBound
+  exact FiniteLatentSCM.bidirected_eq_true_of_shared_latent model G projected
+    root coreChild wChild hne hcoreInc hwInc
+
+/--
+The same bound `W`-child cannot join both open cores by bidirected edges:
+that is an activated collider between `Y` and `Z`.
+-/
+theorem rule1W_not_both_meet_of_same_bound_w_child
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    {zChild yChild wChild : Fin S.count}
+    (hzOpen : FiniteLatentSCM.openAncestralIn G (NodeSet.union x w) z
+      zChild = true)
+    (hyOpen : FiniteLatentSCM.openAncestralIn G (NodeSet.union x w) y
+      yChild = true)
+    (hedgeZ : G.bidirected zChild wChild = true)
+    (hedgeY : G.bidirected yChild wChild = true)
+    (hx : x wChild = false)
+    (hw : w wChild = true) :
+    False := by
+  rcases FiniteLatentSCM.openAncestralIn_exists_open_walk G x w z zChild
+      hzOpen with ⟨zEnd, hz, lengthZ, walkZ, simpleZ, openZ⟩
+  rcases FiniteLatentSCM.openAncestralIn_exists_open_walk G x w y yChild
+      hyOpen with ⟨yEnd, hy, lengthY, walkY, simpleY, openY⟩
+  exact FiniteLatentSCM.pathDSeparated_no_bidirected_collider_open_walks_yz
+    G x y z w separated walkZ walkY simpleZ simpleY hz hy openZ openY
+    hedgeZ (G.bidirected_symmetric hedgeY) hx hw
+
+/--
+Unpacking both meets onto the same `W`-child that is bound under
+`do(X ∪ W)` is already a collider contradiction.
+-/
+theorem rule1WMeets_same_bound_w_child_false
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (rootZ rootY : Fin model.latent.count)
+    {zChild yChild wChild : Fin S.count} {value : S.Value wChild}
+    (hzSel : FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z zChild =
+      true)
+    (hzFree :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) zChild = none)
+    (hzInc : model.latent.incident rootZ zChild = true)
+    (hySel : FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y yChild =
+      true)
+    (hyFree :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) yChild = none)
+    (hyInc : model.latent.incident rootY yChild = true)
+    (hwZInc : model.latent.incident rootZ wChild = true)
+    (hwYInc : model.latent.incident rootY wChild = true)
+    (hwBound :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) wChild = some value)
+    (hwXFree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        wChild = none) :
+    False := by
+  have hzOpen :=
+    FiniteLatentSCM.openAncestralIn_of_free_ancestor G (NodeSet.union x w) z
+      assignment zChild hzSel hzFree
+  have hyOpen :=
+    FiniteLatentSCM.openAncestralIn_of_free_ancestor G (NodeSet.union x w) y
+      assignment yChild hySel hyFree
+  have hedgeZ :=
+    rule1Meet_bidirected_core_to_bound_w_child model G projected x w
+      assignment rootZ hzInc hwZInc hzFree hwBound
+  have hedgeY :=
+    rule1Meet_bidirected_core_to_bound_w_child model G projected x w
+      assignment rootY hyInc hwYInc hyFree hwBound
+  have hx : x wChild = false := by
+    simp [Kernel.intervention] at hwXFree
+    exact hwXFree
+  have hw : w wChild = true :=
+    mem_w_of_base_none_union_some x w assignment hwXFree hwBound
+  exact rule1W_not_both_meet_of_same_bound_w_child G x y z w separated
+    hzOpen hyOpen hedgeZ hedgeY hx hw
+
+/--
+The same free `W`-child is an ancestor of `W`, hence an activated collider
+between the open cores even though it is not itself in `W`.
+-/
+theorem rule1WMeets_same_free_w_child_false
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (rootZ rootY : Fin model.latent.count)
+    {zChild yChild wChild : Fin S.count}
+    (hzSel : FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z zChild =
+      true)
+    (hzFree :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) zChild = none)
+    (hzInc : model.latent.incident rootZ zChild = true)
+    (hySel : FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y yChild =
+      true)
+    (hyFree :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) yChild = none)
+    (hyInc : model.latent.incident rootY yChild = true)
+    (hwSel : FiniteLatentSCM.ancestralInBar G x w wChild = true)
+    (hwZInc : model.latent.incident rootZ wChild = true)
+    (hwYInc : model.latent.incident rootY wChild = true)
+    (hwXFree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        wChild = none)
+    (_hwUnionFree :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) wChild = none) :
+    False := by
+  have hzOpen :=
+    FiniteLatentSCM.openAncestralIn_of_free_ancestor G (NodeSet.union x w) z
+      assignment zChild hzSel hzFree
+  have hyOpen :=
+    FiniteLatentSCM.openAncestralIn_of_free_ancestor G (NodeSet.union x w) y
+      assignment yChild hySel hyFree
+  have hx : x wChild = false := by
+    simp [Kernel.intervention] at hwXFree
+    exact hwXFree
+  by_cases hzEq : zChild = wChild
+  · subst wChild
+    have hfalse :=
+      FiniteLatentSCM.rule1OpenCores_no_bidirected G x y z w separated
+        (by simpa [FiniteLatentSCM.rule1LeftOpenCore] using hzOpen)
+        (by simpa [FiniteLatentSCM.rule1RightOpenCore] using hyOpen)
+    have hne : zChild ≠ yChild :=
+      rule1Meet_core_children_ne G x y z w separated hzOpen hyOpen
+    have hedgeY :=
+      FiniteLatentSCM.bidirected_eq_true_of_shared_latent model G projected
+        rootY yChild zChild hne.symm hyInc hwYInc
+    exact Bool.false_ne_true
+      (hfalse.symm.trans (G.bidirected_symmetric hedgeY))
+  · by_cases hyEq : yChild = wChild
+    · subst wChild
+      have hfalse :=
+        FiniteLatentSCM.rule1OpenCores_no_bidirected G x y z w separated
+          (by simpa [FiniteLatentSCM.rule1LeftOpenCore] using hzOpen)
+          (by simpa [FiniteLatentSCM.rule1RightOpenCore] using hyOpen)
+      have hedgeZ :=
+        FiniteLatentSCM.bidirected_eq_true_of_shared_latent model G projected
+          rootZ zChild yChild hzEq hzInc hwZInc
+      exact Bool.false_ne_true (hfalse.symm.trans hedgeZ)
+    · have hedgeZ :=
+        FiniteLatentSCM.bidirected_eq_true_of_shared_latent model G projected
+          rootZ zChild wChild hzEq hzInc hwZInc
+      have hedgeY :=
+        FiniteLatentSCM.bidirected_eq_true_of_shared_latent model G projected
+          rootY yChild wChild hyEq hyInc hwYInc
+      have activated :
+          PathSpecification.ColliderActivated G (GraphMutilation.bar x)
+            (NodeSet.union x w) (.observed wChild) :=
+        G.ancestorOf_mono (GraphMutilation.bar x) w (NodeSet.union x w)
+          (fun i hi => by simp [NodeSet.union, hi])
+          (FiniteLatentSCM.ancestorOf_of_observedAncestorOf G
+            (GraphMutilation.bar x) w wChild (by
+              simpa [FiniteLatentSCM.ancestralInBar] using hwSel))
+      rcases FiniteLatentSCM.openAncestralIn_exists_open_walk G x w z
+          zChild hzOpen with ⟨zEnd, hz, lengthZ, walkZ, simpleZ, openZ⟩
+      rcases FiniteLatentSCM.openAncestralIn_exists_open_walk G x w y
+          yChild hyOpen with ⟨yEnd, hy, lengthY, walkY, simpleY, openY⟩
+      exact
+        FiniteLatentSCM.pathDSeparated_no_bidirected_collider_open_walks_yz_of_activated
+          G x y z w separated walkZ walkY simpleZ simpleY hz hy openZ openY
+          hedgeZ (G.bidirected_symmetric hedgeY) hx activated
+
+/--
+The same `W`-child, whether bound or free under `do(X ∪ W)`, cannot join
+both open cores.
+-/
+theorem rule1WMeets_same_w_child_false
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (rootZ rootY : Fin model.latent.count)
+    {zChild yChild wChild : Fin S.count}
+    (hzSel : FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z zChild =
+      true)
+    (hzFree :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) zChild = none)
+    (hzInc : model.latent.incident rootZ zChild = true)
+    (hySel : FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y yChild =
+      true)
+    (hyFree :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) yChild = none)
+    (hyInc : model.latent.incident rootY yChild = true)
+    (hwSel : FiniteLatentSCM.ancestralInBar G x w wChild = true)
+    (hwZInc : model.latent.incident rootZ wChild = true)
+    (hwYInc : model.latent.incident rootY wChild = true)
+    (hwXFree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        wChild = none) :
+    False := by
+  cases hIu :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) wChild with
+  | none =>
+      exact rule1WMeets_same_free_w_child_false model G projected x y z w
+        assignment separated rootZ rootY hzSel hzFree hzInc hySel hyFree
+        hyInc hwSel hwZInc hwYInc hwXFree hIu
+  | some value =>
+      exact rule1WMeets_same_bound_w_child_false model G projected x y z w
+        assignment separated rootZ rootY hzSel hzFree hzInc hySel hyFree
+        hyInc hwZInc hwYInc hIu hwXFree
+
+/-- Unpacking both meets onto equal `W`-children is impossible. -/
+theorem rule1WMeets_unpacked_w_children_ne
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (rootZ rootY : Fin model.latent.count)
+    {zChild yChild wZ wY : Fin S.count}
+    (hzSel : FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z zChild =
+      true)
+    (hzFree :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) zChild = none)
+    (hzInc : model.latent.incident rootZ zChild = true)
+    (hySel : FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y yChild =
+      true)
+    (hyFree :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) yChild = none)
+    (hyInc : model.latent.incident rootY yChild = true)
+    (hwZSel : FiniteLatentSCM.ancestralInBar G x w wZ = true)
+    (hwYSel : FiniteLatentSCM.ancestralInBar G x w wY = true)
+    (hwZInc : model.latent.incident rootZ wZ = true)
+    (hwYInc : model.latent.incident rootY wY = true)
+    (hwZXFree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        wZ = none)
+    (hwYXFree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        wY = none) :
+    wZ ≠ wY := by
+  intro heq
+  subst wY
+  exact rule1WMeets_same_w_child_false model G projected x y z w assignment
+    separated rootZ rootY hzSel hzFree hzInc hySel hyFree hyInc hwZSel
+    hwZInc hwYInc hwZXFree
+
+/--
+Distinct bound `W`-children joined by a bidirected edge are two activated
+colliders between the open cores.
+-/
+theorem rule1WMeets_distinct_bound_mid_hedge_false
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (rootZ rootY : Fin model.latent.count)
+    {zChild yChild wZ wY : Fin S.count} {valueZ : S.Value wZ}
+    {valueY : S.Value wY}
+    (hzSel : FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z zChild =
+      true)
+    (hzFree :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) zChild = none)
+    (hzInc : model.latent.incident rootZ zChild = true)
+    (hySel : FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y yChild =
+      true)
+    (hyFree :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) yChild = none)
+    (hyInc : model.latent.incident rootY yChild = true)
+    (hwZInc : model.latent.incident rootZ wZ = true)
+    (hwYInc : model.latent.incident rootY wY = true)
+    (hwZBound :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) wZ = some valueZ)
+    (hwYBound :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) wY = some valueY)
+    (hwZXFree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        wZ = none)
+    (hwYXFree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        wY = none)
+    (hedgeMid : G.bidirected wZ wY = true) :
+    False := by
+  have hzOpen :=
+    FiniteLatentSCM.openAncestralIn_of_free_ancestor G (NodeSet.union x w) z
+      assignment zChild hzSel hzFree
+  have hyOpen :=
+    FiniteLatentSCM.openAncestralIn_of_free_ancestor G (NodeSet.union x w) y
+      assignment yChild hySel hyFree
+  have hedgeZ :=
+    rule1Meet_bidirected_core_to_bound_w_child model G projected x w
+      assignment rootZ hzInc hwZInc hzFree hwZBound
+  have hedgeY :=
+    rule1Meet_bidirected_core_to_bound_w_child model G projected x w
+      assignment rootY hyInc hwYInc hyFree hwYBound
+  have hxZ : x wZ = false := by
+    simp [Kernel.intervention] at hwZXFree
+    exact hwZXFree
+  have hxY : x wY = false := by
+    simp [Kernel.intervention] at hwYXFree
+    exact hwYXFree
+  have hwZ : w wZ = true :=
+    mem_w_of_base_none_union_some x w assignment hwZXFree hwZBound
+  have hwY : w wY = true :=
+    mem_w_of_base_none_union_some x w assignment hwYXFree hwYBound
+  have blockedZ :
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed wZ) = true := by
+    simp [ObservedGraph.blockedBy, NodeSet.union, hwZ]
+  have blockedY :
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed wY) = true := by
+    simp [ObservedGraph.blockedBy, NodeSet.union, hwY]
+  have activatedZ :
+      PathSpecification.ColliderActivated G (GraphMutilation.bar x)
+        (NodeSet.union x w) (.observed wZ) :=
+    G.ancestorOf_target (GraphMutilation.bar x) (NodeSet.union x w)
+      (by simp [NodeSet.union, hwZ])
+  have activatedY :
+      PathSpecification.ColliderActivated G (GraphMutilation.bar x)
+        (NodeSet.union x w) (.observed wY) :=
+    G.ancestorOf_target (GraphMutilation.bar x) (NodeSet.union x w)
+      (by simp [NodeSet.union, hwY])
+  rcases FiniteLatentSCM.openAncestralIn_exists_open_walk G x w z zChild
+      hzOpen with ⟨zEnd, hz, lengthZ, walkZ, simpleZ, openZ⟩
+  rcases FiniteLatentSCM.openAncestralIn_exists_open_walk G x w y yChild
+      hyOpen with ⟨yEnd, hy, lengthY, walkY, simpleY, openY⟩
+  exact FiniteLatentSCM.pathDSeparated_no_two_bidirected_colliders_open_walks_yz
+    G x y z w separated walkZ walkY simpleZ simpleY hz hy openZ openY
+    hedgeZ hedgeMid (G.bidirected_symmetric hedgeY) hxZ hxY blockedZ blockedY
+    activatedZ activatedY
+
+/--
+A `W` vertex meets `other`'s ancestral family when it is still free under
+`do(X)` and some latent that is relevant to that family under `do(X ∪ W)`
+is incident to it.
+-/
+def rule1WVertexMeetsCore (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x w : NodeSet S) (assignment : S.Assignment)
+    (other : NodeSet S) : NodeSet S :=
+  fun i =>
+    (w i &&
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+        assignment i).isNone) &&
+    finAny model.latent.count (fun root =>
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) other)
+          root &&
+        model.latent.incident root i)
+
+theorem rule1WVertexMeetsCore_subset_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (other : NodeSet S) :
+    NodeSet.Subset (rule1WVertexMeetsCore model G x w assignment other) w := by
+  intro i hi
+  have hparts :
+      (w i &&
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+          assignment i).isNone) = true ∧
+        finAny model.latent.count (fun root =>
+          model.latentRelevantUnder
+              ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                NodeSet.empty).intervention assignment)
+              (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) other)
+              root &&
+            model.latent.incident root i) = true := by
+    simpa [rule1WVertexMeetsCore] using hi
+  exact (Bool.and_eq_true_iff.mp hparts.1).1
+
+/-- Meeting both cores at the same `W` vertex is the same-child case. -/
+theorem rule1WVertexMeetsCore_not_both
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    {i : Fin S.count}
+    (hZ : rule1WVertexMeetsCore model G x w assignment z i = true)
+    (hY : rule1WVertexMeetsCore model G x w assignment y i = true) :
+    False := by
+  have hZparts :
+      (w i &&
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+          assignment i).isNone) = true ∧
+        finAny model.latent.count (fun root =>
+          model.latentRelevantUnder
+              ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                NodeSet.empty).intervention assignment)
+              (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z)
+              root &&
+            model.latent.incident root i) = true := by
+    simpa [rule1WVertexMeetsCore] using hZ
+  have hYparts :
+      (w i &&
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+          assignment i).isNone) = true ∧
+        finAny model.latent.count (fun root =>
+          model.latentRelevantUnder
+              ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                NodeSet.empty).intervention assignment)
+              (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+              root &&
+            model.latent.incident root i) = true := by
+    simpa [rule1WVertexMeetsCore] using hY
+  have hw : w i = true := (Bool.and_eq_true_iff.mp hZparts.1).1
+  have hwXFree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        i = none :=
+    Option.isNone_iff_eq_none.mp (Bool.and_eq_true_iff.mp hZparts.1).2
+  rcases (finAny_eq_true_iff _).mp hZparts.2 with ⟨rootZ, hrootZ⟩
+  rcases Bool.and_eq_true_iff.mp hrootZ with ⟨hZcore, hwZInc⟩
+  rcases (finAny_eq_true_iff _).mp hYparts.2 with ⟨rootY, hrootY⟩
+  rcases Bool.and_eq_true_iff.mp hrootY with ⟨hYcore, hwYInc⟩
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z)
+      rootZ).mp hZcore with ⟨zChild, hzSel, hzFree, hzInc⟩
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+      rootY).mp hYcore with ⟨yChild, hySel, hyFree, hyInc⟩
+  have hwSel : FiniteLatentSCM.ancestralInBar G x w i = true :=
+    FiniteLatentSCM.observedAncestorOf_self G (GraphMutilation.bar x) w hw
+  exact rule1WMeets_same_w_child_false model G projected x y z w assignment
+    separated rootZ rootY hzSel hzFree hzInc hySel hyFree hyInc hwSel
+    hwZInc hwYInc hwXFree
+
+/-- The `W` vertices that meet `Z` are disjoint from those that meet `Y`. -/
+theorem rule1WVertexMeetsCore_disjoint
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w)) :
+    NodeSet.Disjoint
+      (rule1WVertexMeetsCore model G x w assignment z)
+      (rule1WVertexMeetsCore model G x w assignment y) := by
+  intro i hiZ
+  cases hY : rule1WVertexMeetsCore model G x w assignment y i with
+  | false =>
+      rfl
+  | true =>
+      exact (rule1WVertexMeetsCore_not_both model G projected x y z w
+        assignment separated hiZ hY).elim
+
+/-- `W` vertices that meet the `Y` core; the complementary slice of `W`
+avoids that core. -/
+def rule1WSplitUnselected (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x w : NodeSet S) (assignment : S.Assignment)
+    (y : NodeSet S) : NodeSet S :=
+  rule1WVertexMeetsCore model G x w assignment y
+
+def rule1WSplitSelected (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x w : NodeSet S) (assignment : S.Assignment)
+    (y : NodeSet S) : NodeSet S :=
+  NodeSet.diff w (rule1WSplitUnselected model G x w assignment y)
+
+theorem rule1WSplit_disjoint (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x w : NodeSet S) (assignment : S.Assignment)
+    (y : NodeSet S) :
+    NodeSet.Disjoint
+      (rule1WSplitSelected model G x w assignment y)
+      (rule1WSplitUnselected model G x w assignment y) :=
+  NodeSet.Disjoint.diff_right w
+    (rule1WSplitUnselected model G x w assignment y)
+
+theorem rule1WSplit_union (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x w : NodeSet S) (assignment : S.Assignment)
+    (y : NodeSet S) :
+    NodeSet.union
+      (rule1WSplitSelected model G x w assignment y)
+      (rule1WSplitUnselected model G x w assignment y) = w := by
+  funext i
+  have hsub :=
+    rule1WVertexMeetsCore_subset_w model G x w assignment y i
+  simp [rule1WSplitSelected, rule1WSplitUnselected, NodeSet.union,
+    NodeSet.diff]
+  cases hw : w i with
+  | false =>
+      cases hm : rule1WVertexMeetsCore model G x w assignment y i with
+      | false =>
+          simp
+      | true =>
+          exact (Bool.false_ne_true (hw.symm.trans (hsub hm))).elim
+  | true =>
+      cases hm : rule1WVertexMeetsCore model G x w assignment y i with
+      | false =>
+          simp
+      | true =>
+          simp
+
+/--
+`do(X)`-free ancestors of `W` that carry an open-`Y`-core latent.  This
+includes the `Y`-meeting `W` vertices and also extra ancestors that sit
+outside `W`; descendant closure in `W` then absorbs every `W` vertex
+those seeds reach.
+-/
+def rule1WYSideSeed (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x w : NodeSet S) (assignment : S.Assignment)
+    (y : NodeSet S) : NodeSet S :=
+  fun i =>
+    (FiniteLatentSCM.ancestralInBar G x w i &&
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+        assignment i).isNone) &&
+    finAny model.latent.count (fun root =>
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root &&
+        model.latent.incident root i)
+
+/-- A `Y`-meeting `W` vertex is a `Y`-side seed. -/
+theorem rule1WYSideSeed_of_meets_core
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (y : NodeSet S)
+    {i : Fin S.count}
+    (hi : rule1WVertexMeetsCore model G x w assignment y i = true) :
+    rule1WYSideSeed model G x w assignment y i = true := by
+  have hparts :
+      (w i &&
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+          assignment i).isNone) = true ∧
+        finAny model.latent.count (fun root =>
+          model.latentRelevantUnder
+              ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                NodeSet.empty).intervention assignment)
+              (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+              root &&
+            model.latent.incident root i) = true := by
+    simpa [rule1WVertexMeetsCore] using hi
+  have hw : w i = true := (Bool.and_eq_true_iff.mp hparts.1).1
+  have hself :
+      FiniteLatentSCM.ancestralInBar G x w i = true :=
+    FiniteLatentSCM.observedAncestorOf_self G (GraphMutilation.bar x) w hw
+  refine Bool.and_eq_true_iff.mpr ⟨?_, hparts.2⟩
+  exact Bool.and_eq_true_iff.mpr
+    ⟨hself, (Bool.and_eq_true_iff.mp hparts.1).2⟩
+
+/--
+`W` vertices that are directed descendants of a `Y`-side seed in
+`G_{\overline{X}}`, including every `Y`-meeting `W` vertex.  Directed
+`W_Y → W'` and extra `do(X)`-free `Y`-core ancestors outside `W` are
+absorbed into the `Y` block.
+-/
+def rule1WSplitUnselectedClosed (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x w : NodeSet S) (assignment : S.Assignment)
+    (y : NodeSet S) : NodeSet S :=
+  fun i =>
+    w i &&
+      NodeSet.meetsBool
+        (FiniteLatentSCM.ancestralInBar G x (NodeSet.singleton i))
+        (rule1WYSideSeed model G x w assignment y)
+
+def rule1WSplitSelectedClosed (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x w : NodeSet S) (assignment : S.Assignment)
+    (y : NodeSet S) : NodeSet S :=
+  NodeSet.diff w (rule1WSplitUnselectedClosed model G x w assignment y)
+
+theorem rule1WSplitClosed_disjoint (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x w : NodeSet S) (assignment : S.Assignment)
+    (y : NodeSet S) :
+    NodeSet.Disjoint
+      (rule1WSplitSelectedClosed model G x w assignment y)
+      (rule1WSplitUnselectedClosed model G x w assignment y) :=
+  NodeSet.Disjoint.diff_right w
+    (rule1WSplitUnselectedClosed model G x w assignment y)
+
+theorem rule1WSplitClosed_union (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x w : NodeSet S) (assignment : S.Assignment)
+    (y : NodeSet S) :
+    NodeSet.union
+      (rule1WSplitSelectedClosed model G x w assignment y)
+      (rule1WSplitUnselectedClosed model G x w assignment y) = w := by
+  funext i
+  simp [rule1WSplitSelectedClosed, rule1WSplitUnselectedClosed,
+    NodeSet.union, NodeSet.diff]
+  cases hw : w i with
+  | false =>
+      simp
+  | true =>
+      cases hm :
+          NodeSet.meetsBool
+            (FiniteLatentSCM.ancestralInBar G x (NodeSet.singleton i))
+            (rule1WYSideSeed model G x w assignment y) with
+      | false =>
+          simp
+      | true =>
+          simp
+
+/-- Every `Y`-meeting `W` vertex is a descendant of itself, hence sits
+in the closed `Y` block. -/
+theorem rule1WSplitClosed_contains_meets
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (y : NodeSet S)
+    {i : Fin S.count}
+    (hi : rule1WVertexMeetsCore model G x w assignment y i = true) :
+    rule1WSplitUnselectedClosed model G x w assignment y i = true := by
+  have hw : w i = true :=
+    rule1WVertexMeetsCore_subset_w model G x w assignment y i hi
+  have hseed :
+      rule1WYSideSeed model G x w assignment y i = true :=
+    rule1WYSideSeed_of_meets_core model G x w assignment y hi
+  have hself :
+      FiniteLatentSCM.ancestralInBar G x (NodeSet.singleton i) i = true :=
+    FiniteLatentSCM.observedAncestorOf_self G (GraphMutilation.bar x)
+      (NodeSet.singleton i)
+      ((NodeSet.singleton_eq_true_iff i i).mpr rfl)
+  have hmeets :
+      NodeSet.meetsBool
+        (FiniteLatentSCM.ancestralInBar G x (NodeSet.singleton i))
+        (rule1WYSideSeed model G x w assignment y) = true :=
+    (NodeSet.meetsBool_eq_true_iff _ _).mpr ⟨i, hself, hseed⟩
+  simp [rule1WSplitUnselectedClosed, hw, hmeets]
+
+/-- A vertex of the closed `Y` block cannot ancestor a selected vertex:
+that selected vertex would itself be a descendant of a `Y`-meeting
+vertex, hence unselected. -/
+theorem rule1WSplitClosed_no_unselected_ancestor
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (y : NodeSet S)
+    {i : Fin S.count}
+    (hunsel : rule1WSplitUnselectedClosed model G x w assignment y i = true)
+    (hanc : FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitSelectedClosed model G x w assignment y) i = true) :
+    False := by
+  have hparts :
+      w i = true ∧
+        NodeSet.meetsBool
+          (FiniteLatentSCM.ancestralInBar G x (NodeSet.singleton i))
+          (rule1WYSideSeed model G x w assignment y) = true := by
+    simpa [rule1WSplitUnselectedClosed] using hunsel
+  rcases (NodeSet.meetsBool_eq_true_iff _ _).mp hparts.2 with
+    ⟨seed, hseedAnc, hseedY⟩
+  have hany :
+      (List.ofFn (fun k : Fin S.count => k)).any (fun target =>
+        rule1WSplitSelectedClosed model G x w assignment y target &&
+          FiniteReachability.within finBeq
+            (List.ofFn (fun k : Fin S.count => k))
+            (G.observedDirectedEdge (GraphMutilation.bar x))
+            (List.ofFn (fun k : Fin S.count => k)).length i target) =
+        true := by
+    simpa [FiniteLatentSCM.ancestralInBar, ObservedGraph.observedAncestorOf]
+      using hanc
+  rcases List.any_eq_true.mp hany with ⟨t, tMem, ht⟩
+  have htParts := Bool.and_eq_true_iff.mp ht
+  have hsel :
+      rule1WSplitSelectedClosed model G x w assignment y t = true :=
+    htParts.1
+  have hiAncT :
+      FiniteLatentSCM.ancestralInBar G x (NodeSet.singleton t) i = true := by
+    have hanyT :
+        (List.ofFn (fun k : Fin S.count => k)).any (fun target =>
+          NodeSet.singleton t target &&
+            FiniteReachability.within finBeq
+              (List.ofFn (fun k : Fin S.count => k))
+              (G.observedDirectedEdge (GraphMutilation.bar x))
+              (List.ofFn (fun k : Fin S.count => k)).length i target) =
+          true :=
+      List.any_eq_true.mpr
+        ⟨t, tMem,
+          Bool.and_eq_true_iff.mpr
+            ⟨(NodeSet.singleton_eq_true_iff t t).mpr rfl, htParts.2⟩⟩
+    simpa [FiniteLatentSCM.ancestralInBar, ObservedGraph.observedAncestorOf]
+      using hanyT
+  have hseedT :
+      FiniteLatentSCM.ancestralInBar G x (NodeSet.singleton t) seed = true :=
+    FiniteLatentSCM.ancestralInBar_trans G x hseedAnc hiAncT
+  have hwT : w t = true := by
+    have hdiff :
+        (w t &&
+          !(rule1WSplitUnselectedClosed model G x w assignment y t)) =
+          true := by
+      simpa [rule1WSplitSelectedClosed, NodeSet.diff] using hsel
+    exact (Bool.and_eq_true_iff.mp hdiff).1
+  have hunselT :
+      rule1WSplitUnselectedClosed model G x w assignment y t = true := by
+    have hmeetsT :
+        NodeSet.meetsBool
+          (FiniteLatentSCM.ancestralInBar G x (NodeSet.singleton t))
+          (rule1WYSideSeed model G x w assignment y) = true :=
+      (NodeSet.meetsBool_eq_true_iff _ _).mpr ⟨seed, hseedT, hseedY⟩
+    simp [rule1WSplitUnselectedClosed, hwT, hmeetsT]
+  have hfalse :
+      rule1WSplitUnselectedClosed model G x w assignment y t = false :=
+    rule1WSplitClosed_disjoint model G x w assignment y t hsel
+  exact Bool.false_ne_true (hfalse.symm.trans hunselT)
+
+/-- By construction, the descendant-closed selected slice of `W` does
+not meet the `Y` core. -/
+theorem rule1WSplitClosedSelected_not_meet_y
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (y : NodeSet S)
+    {i : Fin S.count}
+    (hi : rule1WSplitSelectedClosed model G x w assignment y i = true) :
+    rule1WVertexMeetsCore model G x w assignment y i = false := by
+  cases hm : rule1WVertexMeetsCore model G x w assignment y i with
+  | false =>
+      rfl
+  | true =>
+      have hunsel :=
+        rule1WSplitClosed_contains_meets model G x w assignment y hm
+      have hfalse :
+          rule1WSplitUnselectedClosed model G x w assignment y i = false :=
+        rule1WSplitClosed_disjoint model G x w assignment y i hi
+      exact False.elim (Bool.false_ne_true (hfalse.symm.trans hunsel))
+
+/-- A selected closed `W` vertex cannot carry a latent of the `Y` core. -/
+theorem rule1WSplitClosedSelected_not_incident_y_core
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (y : NodeSet S)
+    (root : Fin model.latent.count) {i : Fin S.count}
+    (hi : rule1WSplitSelectedClosed model G x w assignment y i = true)
+    (hfree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        i = none)
+    (hcore : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root = true)
+    (hinc : model.latent.incident root i = true) :
+    False := by
+  have hw : w i = true :=
+    NodeSet.diff_subset_left w
+      (rule1WSplitUnselectedClosed model G x w assignment y) i hi
+  have hmeet :
+      rule1WVertexMeetsCore model G x w assignment y i = true := by
+    refine Bool.and_eq_true_iff.mpr ⟨?_, ?_⟩
+    · exact Bool.and_eq_true_iff.mpr
+        ⟨hw, Option.isNone_iff_eq_none.mpr hfree⟩
+    · exact finAny_eq_true_of _ root
+        (Bool.and_eq_true_iff.mpr ⟨hcore, hinc⟩)
+  have hnot :=
+    rule1WSplitClosedSelected_not_meet_y model G x w assignment y hi
+  simp [hmeet] at hnot
+
+/-- A `W` vertex that is not in the closed selected slice is unselected. -/
+theorem rule1WSplitClosed_mem_w_of_not_selected
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (y : NodeSet S)
+    {i : Fin S.count}
+    (hw : w i = true)
+    (hnot : rule1WSplitSelectedClosed model G x w assignment y i = false) :
+    rule1WSplitUnselectedClosed model G x w assignment y i = true := by
+  have hdiff :
+      (w i &&
+        !(rule1WSplitUnselectedClosed model G x w assignment y i)) =
+        false := by
+    simpa [rule1WSplitSelectedClosed, NodeSet.diff] using hnot
+  simp [hw] at hdiff
+  cases hY : rule1WSplitUnselectedClosed model G x w assignment y i with
+  | true =>
+      rfl
+  | false =>
+      simp [hY] at hdiff
+
+/-- If a `Y`-core latent is relevant to the ancestors of the closed
+selected slice under `do(X)`, its `do(X)`-free child in that ancestral
+set cannot lie in the selected slice. -/
+theorem rule1WSplitClosedSelected_y_core_child_not_selected
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (root : Fin model.latent.count)
+    (hrel : model.latentRelevantUnder
+      ((rule1Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitSelectedClosed model G x w assignment y)) root = true)
+    (hcore : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root = true) :
+    Exists fun child : Fin S.count =>
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelectedClosed model G x w assignment y) child =
+        true ∧
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+          child = none ∧
+        model.latent.incident root child = true ∧
+          rule1WSplitSelectedClosed model G x w assignment y child =
+            false := by
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext j
+    simp [rule1Right, Kernel.intervention]
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((rule1Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitSelectedClosed model G x w assignment y))
+      root).mp hrel with ⟨child, hanc, hfreeR, hinc⟩
+  have hfree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        child = none := by
+    simpa [hinter] using hfreeR
+  have hnotSel :
+      rule1WSplitSelectedClosed model G x w assignment y child = false := by
+    cases hsel :
+        rule1WSplitSelectedClosed model G x w assignment y child with
+    | false =>
+        rfl
+    | true =>
+        exact (rule1WSplitClosedSelected_not_incident_y_core model G x w
+          assignment y root hsel hfree hcore hinc).elim
+  exact ⟨child, hanc, hfree, hinc, hnotSel⟩
+
+/-- Overlap of the closed selected-slice ancestors with the open `Y` core. -/
+def rule1WSplitClosedSelectedMeetsYCore
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) : Bool :=
+  finAny model.latent.count (fun root =>
+    model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root &&
+      model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelectedClosed model G x w assignment y)) root)
+
+/--
+The closed selected slice cannot share a latent with the open `Y` core:
+a `do(X)`-free `Y`-core child in its ancestral set is a `Y`-side seed,
+so every selected vertex it reaches is already unselected.
+-/
+theorem rule1WSplitClosedSelectedMeetsYCore_eq_false
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    rule1WSplitClosedSelectedMeetsYCore model G x y z w assignment =
+      false := by
+  cases hmeet :
+      rule1WSplitClosedSelectedMeetsYCore model G x y z w assignment with
+  | false =>
+      rfl
+  | true =>
+      rcases (finAny_eq_true_iff _).mp
+          (by simpa [rule1WSplitClosedSelectedMeetsYCore] using hmeet) with
+        ⟨root, hparts⟩
+      rcases Bool.and_eq_true_iff.mp hparts with ⟨hcore, hrel⟩
+      rcases rule1WSplitClosedSelected_y_core_child_not_selected model G
+          x y z w assignment root hrel hcore with
+        ⟨child, hanc, hfree, hinc, _hnotSel⟩
+      have hselSub :
+          NodeSet.Subset
+            (rule1WSplitSelectedClosed model G x w assignment y) w :=
+        NodeSet.diff_subset_left w
+          (rule1WSplitUnselectedClosed model G x w assignment y)
+      have hancW :
+          FiniteLatentSCM.ancestralInBar G x w child = true :=
+        FiniteLatentSCM.ancestralInBar_mono G x hselSub hanc
+      have hseed :
+          rule1WYSideSeed model G x w assignment y child = true := by
+        refine Bool.and_eq_true_iff.mpr ⟨?_, ?_⟩
+        · exact Bool.and_eq_true_iff.mpr
+            ⟨hancW, Option.isNone_iff_eq_none.mpr hfree⟩
+        · exact finAny_eq_true_of _ root
+            (Bool.and_eq_true_iff.mpr ⟨hcore, hinc⟩)
+      have hany :
+          (List.ofFn (fun k : Fin S.count => k)).any (fun target =>
+            rule1WSplitSelectedClosed model G x w assignment y target &&
+              FiniteReachability.within finBeq
+                (List.ofFn (fun k : Fin S.count => k))
+                (G.observedDirectedEdge (GraphMutilation.bar x))
+                (List.ofFn (fun k : Fin S.count => k)).length child
+                target) = true := by
+        simpa [FiniteLatentSCM.ancestralInBar,
+          ObservedGraph.observedAncestorOf] using hanc
+      rcases List.any_eq_true.mp hany with ⟨t, tMem, ht⟩
+      have htParts := Bool.and_eq_true_iff.mp ht
+      have hsel :
+          rule1WSplitSelectedClosed model G x w assignment y t = true :=
+        htParts.1
+      have hchildAncT :
+          FiniteLatentSCM.ancestralInBar G x (NodeSet.singleton t) child =
+            true := by
+        have hanyT :
+            (List.ofFn (fun k : Fin S.count => k)).any (fun target =>
+              NodeSet.singleton t target &&
+                FiniteReachability.within finBeq
+                  (List.ofFn (fun k : Fin S.count => k))
+                  (G.observedDirectedEdge (GraphMutilation.bar x))
+                  (List.ofFn (fun k : Fin S.count => k)).length child
+                  target) = true :=
+          List.any_eq_true.mpr
+            ⟨t, tMem,
+              Bool.and_eq_true_iff.mpr
+                ⟨(NodeSet.singleton_eq_true_iff t t).mpr rfl, htParts.2⟩⟩
+        simpa [FiniteLatentSCM.ancestralInBar,
+          ObservedGraph.observedAncestorOf] using hanyT
+      have hwT : w t = true := hselSub t hsel
+      have hunselT :
+          rule1WSplitUnselectedClosed model G x w assignment y t = true := by
+        have hmeetsT :
+            NodeSet.meetsBool
+              (FiniteLatentSCM.ancestralInBar G x (NodeSet.singleton t))
+              (rule1WYSideSeed model G x w assignment y) = true :=
+          (NodeSet.meetsBool_eq_true_iff _ _).mpr
+            ⟨child, hchildAncT, hseed⟩
+        simp [rule1WSplitUnselectedClosed, hwT, hmeetsT]
+      have hfalse :
+          rule1WSplitUnselectedClosed model G x w assignment y t = false :=
+        rule1WSplitClosed_disjoint model G x w assignment y t hsel
+      exact False.elim (Bool.false_ne_true (hfalse.symm.trans hunselT))
+
+/-- A shared ancestral child that already sits in the closed `Y` block
+cannot also ancestor the selected slice. -/
+theorem rule1WSplitClosedOverlap_same_unselected_child_false
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (y : NodeSet S)
+    {child : Fin S.count}
+    (hunsel : rule1WSplitUnselectedClosed model G x w assignment y child =
+      true)
+    (hancS : FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitSelectedClosed model G x w assignment y) child =
+      true) :
+    False :=
+  rule1WSplitClosed_no_unselected_ancestor model G x w assignment y hunsel
+    hancS
+
+/--
+A `Y`-side seed cannot ancestor the closed selected slice: every selected
+vertex it reaches is already unselected.
+-/
+theorem rule1WSplitClosed_no_yside_seed_ancestor
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (y : NodeSet S)
+    {child : Fin S.count}
+    (hseed : rule1WYSideSeed model G x w assignment y child = true)
+    (hancS : FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitSelectedClosed model G x w assignment y) child =
+      true) :
+    False := by
+  have hselSub :
+      NodeSet.Subset
+        (rule1WSplitSelectedClosed model G x w assignment y) w :=
+    NodeSet.diff_subset_left w
+      (rule1WSplitUnselectedClosed model G x w assignment y)
+  have hany :
+      (List.ofFn (fun k : Fin S.count => k)).any (fun target =>
+        rule1WSplitSelectedClosed model G x w assignment y target &&
+          FiniteReachability.within finBeq
+            (List.ofFn (fun k : Fin S.count => k))
+            (G.observedDirectedEdge (GraphMutilation.bar x))
+            (List.ofFn (fun k : Fin S.count => k)).length child
+            target) = true := by
+    simpa [FiniteLatentSCM.ancestralInBar,
+      ObservedGraph.observedAncestorOf] using hancS
+  rcases List.any_eq_true.mp hany with ⟨t, tMem, ht⟩
+  have htParts := Bool.and_eq_true_iff.mp ht
+  have hsel :
+      rule1WSplitSelectedClosed model G x w assignment y t = true :=
+    htParts.1
+  have hchildAncT :
+      FiniteLatentSCM.ancestralInBar G x (NodeSet.singleton t) child =
+        true := by
+    have hanyT :
+        (List.ofFn (fun k : Fin S.count => k)).any (fun target =>
+          NodeSet.singleton t target &&
+            FiniteReachability.within finBeq
+              (List.ofFn (fun k : Fin S.count => k))
+              (G.observedDirectedEdge (GraphMutilation.bar x))
+              (List.ofFn (fun k : Fin S.count => k)).length child
+              target) = true :=
+      List.any_eq_true.mpr
+        ⟨t, tMem,
+          Bool.and_eq_true_iff.mpr
+            ⟨(NodeSet.singleton_eq_true_iff t t).mpr rfl, htParts.2⟩⟩
+    simpa [FiniteLatentSCM.ancestralInBar,
+      ObservedGraph.observedAncestorOf] using hanyT
+  have hwT : w t = true := hselSub t hsel
+  have hunselT :
+      rule1WSplitUnselectedClosed model G x w assignment y t = true := by
+    have hmeetsT :
+        NodeSet.meetsBool
+          (FiniteLatentSCM.ancestralInBar G x (NodeSet.singleton t))
+          (rule1WYSideSeed model G x w assignment y) = true :=
+      (NodeSet.meetsBool_eq_true_iff _ _).mpr ⟨child, hchildAncT, hseed⟩
+    simp [rule1WSplitUnselectedClosed, hwT, hmeetsT]
+  have hfalse :
+      rule1WSplitUnselectedClosed model G x w assignment y t = false :=
+    rule1WSplitClosed_disjoint model G x w assignment y t hsel
+  exact Bool.false_ne_true (hfalse.symm.trans hunselT)
+
+/-- Overlap of the closed `Y`-block ancestors with the open `Z` core. -/
+def rule1WSplitClosedUnselectedMeetsZCore
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) : Bool :=
+  finAny model.latent.count (fun root =>
+    model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) root &&
+      model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitUnselectedClosed model G x w assignment y)) root)
+
+/-- A latent relevant to both closed slices of `W` under `do(X)`. -/
+def rule1WSplitClosedAncestralLatentsOverlap
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) : Bool :=
+  finAny model.latent.count (fun root =>
+    model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelectedClosed model G x w assignment y)) root &&
+      model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitUnselectedClosed model G x w assignment y)) root)
+
+/-- A shared ancestral latent of the two closed `W` slices unpacks as a
+pair of `do(X)`-free children, one in each ancestral set. -/
+theorem rule1WSplitClosedAncestralLatentsOverlap_unpack
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hoverlap :
+      rule1WSplitClosedAncestralLatentsOverlap model G x y z w assignment =
+        true) :
+    Exists fun root : Fin model.latent.count =>
+      Exists fun childSel : Fin S.count =>
+        Exists fun childUnsel : Fin S.count =>
+          FiniteLatentSCM.ancestralInBar G x
+              (rule1WSplitSelectedClosed model G x w assignment y)
+              childSel = true ∧
+            FiniteLatentSCM.ancestralInBar G x
+                (rule1WSplitUnselectedClosed model G x w assignment y)
+                childUnsel = true ∧
+              ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+                  assignment) childSel = none ∧
+                ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+                    assignment) childUnsel = none ∧
+                  model.latent.incident root childSel = true ∧
+                    model.latent.incident root childUnsel = true := by
+  rcases (finAny_eq_true_iff _).mp
+      (by simpa [rule1WSplitClosedAncestralLatentsOverlap] using hoverlap) with
+    ⟨root, hparts⟩
+  rcases Bool.and_eq_true_iff.mp hparts with ⟨hSel, hUnsel⟩
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext j
+    simp [rule1Right, Kernel.intervention]
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((rule1Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitSelectedClosed model G x w assignment y))
+      root).mp hSel with ⟨childSel, hancS, hfreeSR, hincS⟩
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((rule1Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitUnselectedClosed model G x w assignment y))
+      root).mp hUnsel with ⟨childUnsel, hancU, hfreeUR, hincU⟩
+  refine ⟨root, childSel, childUnsel, hancS, hancU, ?_, ?_, hincS, hincU⟩
+  · simpa [hinter] using hfreeSR
+  · simpa [hinter] using hfreeUR
+
+/-- A shared ancestral child that is a `Y`-side seed cannot also ancestor
+the selected slice. -/
+theorem rule1WSplitClosedAncestralLatentsOverlap_same_yside_seed_false
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (y : NodeSet S)
+    {child : Fin S.count}
+    (hseed : rule1WYSideSeed model G x w assignment y child = true)
+    (hancS : FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitSelectedClosed model G x w assignment y) child =
+      true) :
+    False :=
+  rule1WSplitClosed_no_yside_seed_ancestor model G x w assignment y hseed
+    hancS
+
+/-- A shared ancestral child in the closed `Y` block or a `Y`-side seed
+cannot also ancestor the selected slice. -/
+theorem rule1WSplitClosedAncestralLatentsOverlap_same_child_false_of
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (y : NodeSet S)
+    {child : Fin S.count}
+    (hancS : FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitSelectedClosed model G x w assignment y) child =
+      true)
+    (hblock :
+      (rule1WSplitUnselectedClosed model G x w assignment y child ||
+        rule1WYSideSeed model G x w assignment y child) = true) :
+    False := by
+  cases hunsel :
+      rule1WSplitUnselectedClosed model G x w assignment y child with
+  | true =>
+      exact rule1WSplitClosedOverlap_same_unselected_child_false model G
+        x w assignment y hunsel hancS
+  | false =>
+      have hseed :
+          rule1WYSideSeed model G x w assignment y child = true := by
+        simpa [hunsel] using hblock
+      exact rule1WSplitClosedAncestralLatentsOverlap_same_yside_seed_false
+        model G x w assignment y hseed hancS
+
+/--
+A `Z`-core latent relevant to the closed `Y` block unpacks as a
+`do(X)`-free child in that block's ancestral set.
+-/
+theorem rule1WSplitClosedUnselected_z_core_child
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (root : Fin model.latent.count)
+    (hrel : model.latentRelevantUnder
+      ((rule1Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitUnselectedClosed model G x w assignment y)) root = true)
+    (_hcore : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) root = true) :
+    Exists fun child : Fin S.count =>
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitUnselectedClosed model G x w assignment y) child =
+        true ∧
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+          child = none ∧
+        model.latent.incident root child = true := by
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext j
+    simp [rule1Right, Kernel.intervention]
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((rule1Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitUnselectedClosed model G x w assignment y))
+      root).mp hrel with ⟨child, hanc, hfreeR, hinc⟩
+  refine ⟨child, hanc, ?_, hinc⟩
+  simpa [hinter] using hfreeR
+
+/--
+A `Y`-side seed cannot also carry a latent of the open `Z` core: that is
+the same `W`-ancestor joining both cores.
+-/
+theorem rule1WSplitClosedUnselected_z_core_child_not_yside_seed
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (rootZ : Fin model.latent.count) {child : Fin S.count}
+    (hcoreZ : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) rootZ = true)
+    (hincZ : model.latent.incident rootZ child = true)
+    (hseed : rule1WYSideSeed model G x w assignment y child = true) :
+    False := by
+  have hseedParts :
+      (FiniteLatentSCM.ancestralInBar G x w child &&
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+          assignment child).isNone) = true ∧
+        finAny model.latent.count (fun root =>
+          model.latentRelevantUnder
+              ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                NodeSet.empty).intervention assignment)
+              (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+              root &&
+            model.latent.incident root child) = true := by
+    simpa [rule1WYSideSeed] using hseed
+  have hwSel : FiniteLatentSCM.ancestralInBar G x w child = true :=
+    (Bool.and_eq_true_iff.mp hseedParts.1).1
+  have hwXFree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        child = none :=
+    Option.isNone_iff_eq_none.mp (Bool.and_eq_true_iff.mp hseedParts.1).2
+  rcases (finAny_eq_true_iff _).mp hseedParts.2 with ⟨rootY, hYparts⟩
+  rcases Bool.and_eq_true_iff.mp hYparts with ⟨hcoreY, hincY⟩
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z)
+      rootZ).mp hcoreZ with ⟨zChild, hzSel, hzFree, hzInc⟩
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+      rootY).mp hcoreY with ⟨yChild, hySel, hyFree, hyInc⟩
+  exact rule1WMeets_same_w_child_false model G projected x y z w assignment
+    separated rootZ rootY hzSel hzFree hzInc hySel hyFree hyInc hwSel
+    hincZ hincY hwXFree
+
+/--
+If every `do(X)`-free ancestral child of the closed `Y` block that
+carries a `Z`-core latent is a `Y`-side seed, that block cannot share a
+latent with the open `Z` core.
+-/
+theorem rule1WSplitClosedUnselectedMeetsZCore_eq_false_of
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (hSeed : forall child,
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitUnselectedClosed model G x w assignment y) child =
+        true ->
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+            assignment) child = none ->
+          finAny model.latent.count (fun root =>
+              model.latentRelevantUnder
+                  ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                    NodeSet.empty).intervention assignment)
+                  (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z)
+                  root &&
+                model.latent.incident root child) = true ->
+            rule1WYSideSeed model G x w assignment y child = true) :
+    rule1WSplitClosedUnselectedMeetsZCore model G x y z w assignment =
+      false := by
+  cases hmeet :
+      rule1WSplitClosedUnselectedMeetsZCore model G x y z w assignment with
+  | false =>
+      rfl
+  | true =>
+      rcases (finAny_eq_true_iff _).mp
+          (by simpa [rule1WSplitClosedUnselectedMeetsZCore] using hmeet) with
+        ⟨root, hparts⟩
+      rcases Bool.and_eq_true_iff.mp hparts with ⟨hcore, hrel⟩
+      rcases rule1WSplitClosedUnselected_z_core_child model G x y z w
+          assignment root hrel hcore with
+        ⟨child, hanc, hfree, hinc⟩
+      have hincAny :
+          finAny model.latent.count (fun r =>
+            model.latentRelevantUnder
+                ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                  NodeSet.empty).intervention assignment)
+                (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z)
+                r &&
+              model.latent.incident r child) = true :=
+        finAny_eq_true_of _ root (Bool.and_eq_true_iff.mpr ⟨hcore, hinc⟩)
+      have hseed := hSeed child hanc hfree hincAny
+      exact (rule1WSplitClosedUnselected_z_core_child_not_yside_seed model G
+        projected x y z w assignment separated root hcore hinc hseed).elim
+
+/-- Unselected coordinates of the descendant-closed split: the open `Y`
+core together with ancestral latents of the closed `Y` block. Extra
+`W`-only latents stay with `Y`. -/
+def rule1WSplitClosedYBlockLatents
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    Fin model.latent.count -> Bool :=
+  fun root =>
+    model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root ||
+      model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitUnselectedClosed model G x w assignment y)) root
+
+/-- The closed selected slice of `W` observes only latents of its own
+ancestors in `G_{\overline{X}}`. -/
+theorem agreesOn_rule1WSplitClosedSelected_dependsOnAncestral
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelectedClosed model G x w assignment y)))
+      (fun roots =>
+        Kernel.agreesOn
+          (rule1WSplitSelectedClosed model G x w assignment y) assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots)) := by
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule1Right, Kernel.intervention]
+  simpa [hinter] using
+    agreesOn_evalUnder_dependsOnSelected model
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitSelectedClosed model G x w assignment y))
+      (rule1WSplitSelectedClosed model G x w assignment y) assignment
+      (FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G x
+        (rule1WSplitSelectedClosed model G x w assignment y) assignment)
+      (FiniteLatentSCM.subset_ancestralInBar G x
+        (rule1WSplitSelectedClosed model G x w assignment y)
+        (rule1WSplitSelectedClosed model G x w assignment y)
+        (fun _i hi => hi))
+
+/-- The closed `Y` block of `W` observes only latents of its own ancestors
+in `G_{\overline{X}}`. -/
+theorem agreesOn_rule1WSplitClosedUnselected_dependsOnAncestral
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitUnselectedClosed model G x w assignment y)))
+      (fun roots =>
+        Kernel.agreesOn
+          (rule1WSplitUnselectedClosed model G x w assignment y) assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots)) := by
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule1Right, Kernel.intervention]
+  simpa [hinter] using
+    agreesOn_evalUnder_dependsOnSelected model
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitUnselectedClosed model G x w assignment y))
+      (rule1WSplitUnselectedClosed model G x w assignment y) assignment
+      (FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G x
+        (rule1WSplitUnselectedClosed model G x w assignment y) assignment)
+      (FiniteLatentSCM.subset_ancestralInBar G x
+        (rule1WSplitUnselectedClosed model G x w assignment y)
+        (rule1WSplitUnselectedClosed model G x w assignment y)
+        (fun _i hi => hi))
+
+/-- The selected slice of `W` observes only latents of its own ancestors
+in `G_{\overline{X}}`. -/
+theorem agreesOn_rule1WSplitSelected_dependsOnAncestral
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelected model G x w assignment y)))
+      (fun roots =>
+        Kernel.agreesOn
+          (rule1WSplitSelected model G x w assignment y) assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots)) := by
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule1Right, Kernel.intervention]
+  simpa [hinter] using
+    agreesOn_evalUnder_dependsOnSelected model
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitSelected model G x w assignment y))
+      (rule1WSplitSelected model G x w assignment y) assignment
+      (FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G x
+        (rule1WSplitSelected model G x w assignment y) assignment)
+      (FiniteLatentSCM.subset_ancestralInBar G x
+        (rule1WSplitSelected model G x w assignment y)
+        (rule1WSplitSelected model G x w assignment y)
+        (fun _i hi => hi))
+
+/-- The `Y`-meeting slice of `W` observes only latents of its own ancestors
+in `G_{\overline{X}}`. -/
+theorem agreesOn_rule1WSplitUnselected_dependsOnAncestral
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitUnselected model G x w assignment y)))
+      (fun roots =>
+        Kernel.agreesOn
+          (rule1WSplitUnselected model G x w assignment y) assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots)) := by
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule1Right, Kernel.intervention]
+  simpa [hinter] using
+    agreesOn_evalUnder_dependsOnSelected model
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitUnselected model G x w assignment y))
+      (rule1WSplitUnselected model G x w assignment y) assignment
+      (FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G x
+        (rule1WSplitUnselected model G x w assignment y) assignment)
+      (FiniteLatentSCM.subset_ancestralInBar G x
+        (rule1WSplitUnselected model G x w assignment y)
+        (rule1WSplitUnselected model G x w assignment y)
+        (fun _i hi => hi))
+
+/-- By construction, the selected slice of `W` does not meet the `Y` core. -/
+theorem rule1WSplitSelected_not_meet_y
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (y : NodeSet S)
+    {i : Fin S.count}
+    (hi : rule1WSplitSelected model G x w assignment y i = true) :
+    rule1WVertexMeetsCore model G x w assignment y i = false :=
+  rule1WSplit_disjoint model G x w assignment y i hi
+
+/-- A `W` vertex incident to a core-relevant latent, and still free under
+`do(X)`, meets that core. -/
+theorem rule1WVertexMeetsCore_of_incident
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (other : NodeSet S)
+    (root : Fin model.latent.count) {i : Fin S.count}
+    (hw : w i = true)
+    (hfree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        i = none)
+    (hcore : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) other) root =
+        true)
+    (hinc : model.latent.incident root i = true) :
+    rule1WVertexMeetsCore model G x w assignment other i = true := by
+  refine Bool.and_eq_true_iff.mpr ⟨?_, ?_⟩
+  · exact Bool.and_eq_true_iff.mpr
+      ⟨hw, Option.isNone_iff_eq_none.mpr hfree⟩
+  · exact finAny_eq_true_of _ root
+      (Bool.and_eq_true_iff.mpr ⟨hcore, hinc⟩)
+
+/-- A selected `W` vertex cannot carry a latent of the `Y` core. -/
+theorem rule1WSplitSelected_not_incident_y_core
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (y : NodeSet S)
+    (root : Fin model.latent.count) {i : Fin S.count}
+    (hi : rule1WSplitSelected model G x w assignment y i = true)
+    (hfree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        i = none)
+    (hcore : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root = true)
+    (hinc : model.latent.incident root i = true) :
+    False := by
+  have hw : w i = true :=
+    NodeSet.diff_subset_left w
+      (rule1WSplitUnselected model G x w assignment y) i hi
+  have hmeet :=
+    rule1WVertexMeetsCore_of_incident model G x w assignment y root hw hfree
+      hcore hinc
+  have hnot :=
+    rule1WSplitSelected_not_meet_y model G x w assignment y hi
+  simp [hmeet] at hnot
+
+/-- If a `Y`-core latent is relevant to the ancestors of the selected slice
+under `do(X)`, its `do(X)`-free child in that ancestral set cannot lie in
+the selected slice. -/
+theorem rule1WSplitSelected_y_core_child_not_selected
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (root : Fin model.latent.count)
+    (hrel : model.latentRelevantUnder
+      ((rule1Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitSelected model G x w assignment y)) root = true)
+    (hcore : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root = true) :
+    Exists fun child : Fin S.count =>
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelected model G x w assignment y) child = true ∧
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+          child = none ∧
+        model.latent.incident root child = true ∧
+          rule1WSplitSelected model G x w assignment y child = false := by
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext j
+    simp [rule1Right, Kernel.intervention]
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((rule1Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitSelected model G x w assignment y))
+      root).mp hrel with ⟨child, hanc, hfreeR, hinc⟩
+  have hfree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        child = none := by
+    simpa [hinter] using hfreeR
+  have hnotSel : rule1WSplitSelected model G x w assignment y child = false := by
+    cases hsel : rule1WSplitSelected model G x w assignment y child with
+    | false =>
+        rfl
+    | true =>
+        exact (rule1WSplitSelected_not_incident_y_core model G x w assignment
+          y root hsel hfree hcore hinc).elim
+  exact ⟨child, hanc, hfree, hinc, hnotSel⟩
+
+/-- A `W` vertex that is not in the selected slice meets the `Y` core. -/
+theorem rule1WSplit_mem_w_of_not_selected
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (y : NodeSet S)
+    {i : Fin S.count}
+    (hw : w i = true)
+    (hnot : rule1WSplitSelected model G x w assignment y i = false) :
+    rule1WSplitUnselected model G x w assignment y i = true := by
+  have hdiff :
+      (w i &&
+        !(rule1WSplitUnselected model G x w assignment y i)) = false := by
+    simpa [rule1WSplitSelected, NodeSet.diff] using hnot
+  simp [hw] at hdiff
+  cases hY : rule1WSplitUnselected model G x w assignment y i with
+  | true =>
+      rfl
+  | false =>
+      simp [hY] at hdiff
+
+/-- Overlap of the selected-slice ancestors with the open `Y` core. -/
+def rule1WSplitSelectedMeetsYCore
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) : Bool :=
+  finAny model.latent.count (fun root =>
+    model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root &&
+      model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelected model G x w assignment y)) root)
+
+/-- A latent of the `Y`-meeting slice that is not a `Y`-core latent. -/
+def rule1WSplitUnselectedMeetsNotYCore
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) : Bool :=
+  finAny model.latent.count (fun root =>
+    model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitUnselected model G x w assignment y)) root &&
+      !(model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root))
+
+/-- Overlap of the `Y`-meeting-slice ancestors with the open `Z` core. -/
+def rule1WSplitUnselectedMeetsZCore
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) : Bool :=
+  finAny model.latent.count (fun root =>
+    model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) root &&
+      model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitUnselected model G x w assignment y)) root)
+
+/-- A latent relevant to both slices of `W` under `do(X)`. -/
+def rule1WSplitAncestralLatentsOverlap
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) : Bool :=
+  finAny model.latent.count (fun root =>
+    model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelected model G x w assignment y)) root &&
+      model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitUnselected model G x w assignment y)) root)
+
+/-- Unselected coordinates of the two-block split: the open `Y` core
+together with every ancestral latent of the `Y`-meeting slice. Extra
+`W`-only latents stay with `Y`, which is the most general product that
+still places `Z` and the complementary slice on the selected side. -/
+def rule1WSplitYBlockLatents
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    Fin model.latent.count -> Bool :=
+  fun root =>
+    model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root ||
+      model.latentRelevantUnder
+        ((rule1Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitUnselected model G x w assignment y)) root
+
+/-- If no `Y`-meeting vertex ancestors the selected slice, and every
+`do(X)`-free ancestor of that slice still lies in `W`, then the selected
+slice cannot share a latent with the open `Y` core. -/
+theorem rule1WSplitSelectedMeetsYCore_eq_false_of
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hnoUnselectedAncestor : forall i,
+      rule1WSplitUnselected model G x w assignment y i = true ->
+        FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitSelected model G x w assignment y) i = false)
+    (hFreeAncestorInW : forall i,
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelected model G x w assignment y) i = true ->
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+            assignment i = none ->
+          w i = true)) :
+    rule1WSplitSelectedMeetsYCore model G x y z w assignment = false := by
+  cases hmeet : rule1WSplitSelectedMeetsYCore model G x y z w assignment with
+  | false =>
+      rfl
+  | true =>
+      rcases (finAny_eq_true_iff _).mp (by simpa [rule1WSplitSelectedMeetsYCore]
+          using hmeet) with ⟨root, hparts⟩
+      rcases Bool.and_eq_true_iff.mp hparts with ⟨hcore, hrel⟩
+      rcases rule1WSplitSelected_y_core_child_not_selected model G x y z w
+          assignment root hrel hcore with
+        ⟨child, hanc, hfree, _hinc, hnotSel⟩
+      have hw : w child = true :=
+        hFreeAncestorInW child hanc hfree
+      have hunsel :=
+        rule1WSplit_mem_w_of_not_selected model G x w assignment y hw hnotSel
+      have hnotAnc := hnoUnselectedAncestor child hunsel
+      simp [hanc] at hnotAnc
+
+/-- A `W` vertex that is not in the `Y`-meeting slice is selected. -/
+theorem rule1WSplit_mem_w_of_not_unselected
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x w : NodeSet S) (assignment : S.Assignment) (y : NodeSet S)
+    {i : Fin S.count}
+    (hw : w i = true)
+    (hnot : rule1WSplitUnselected model G x w assignment y i = false) :
+    rule1WSplitSelected model G x w assignment y i = true := by
+  simp [rule1WSplitSelected, NodeSet.diff, hw, hnot]
+
+/-- A `Y`-meeting `W` vertex cannot carry a latent of the `Z` core. -/
+theorem rule1WSplitUnselected_not_incident_z_core
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (root : Fin model.latent.count) {i : Fin S.count}
+    (hi : rule1WSplitUnselected model G x w assignment y i = true)
+    (hfree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        i = none)
+    (hcore : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) root = true)
+    (hinc : model.latent.incident root i = true) :
+    False := by
+  have hw : w i = true :=
+    rule1WVertexMeetsCore_subset_w model G x w assignment y i hi
+  have hmeetZ :=
+    rule1WVertexMeetsCore_of_incident model G x w assignment z root hw hfree
+      hcore hinc
+  exact rule1WVertexMeetsCore_not_both model G projected x y z w assignment
+    separated hmeetZ hi
+
+/-- If a `Z`-core latent is relevant to the ancestors of the `Y`-meeting
+slice under `do(X)`, its `do(X)`-free child in that ancestral set cannot
+lie in the `Y`-meeting slice. -/
+theorem rule1WSplitUnselected_z_core_child_not_unselected
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (root : Fin model.latent.count)
+    (hrel : model.latentRelevantUnder
+      ((rule1Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitUnselected model G x w assignment y)) root = true)
+    (hcore : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) root = true) :
+    Exists fun child : Fin S.count =>
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitUnselected model G x w assignment y) child = true ∧
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+          child = none ∧
+        model.latent.incident root child = true ∧
+          rule1WSplitUnselected model G x w assignment y child = false := by
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext j
+    simp [rule1Right, Kernel.intervention]
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((rule1Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitUnselected model G x w assignment y))
+      root).mp hrel with ⟨child, hanc, hfreeR, hinc⟩
+  have hfree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        child = none := by
+    simpa [hinter] using hfreeR
+  have hnotUnsel :
+      rule1WSplitUnselected model G x w assignment y child = false := by
+    cases hsel : rule1WSplitUnselected model G x w assignment y child with
+    | false =>
+        rfl
+    | true =>
+        exact (rule1WSplitUnselected_not_incident_z_core model G projected
+          x y z w assignment separated root hsel hfree hcore hinc).elim
+  exact ⟨child, hanc, hfree, hinc, hnotUnsel⟩
+
+/-- If no selected vertex ancestors the `Y`-meeting slice, and every
+`do(X)`-free ancestor of that slice still lies in `W`, then the
+`Y`-meeting slice cannot share a latent with the open `Z` core. -/
+theorem rule1WSplitUnselectedMeetsZCore_eq_false_of
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (hnoSelectedAncestor : forall i,
+      rule1WSplitSelected model G x w assignment y i = true ->
+        FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitUnselected model G x w assignment y) i = false)
+    (hFreeAncestorInW : forall i,
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitUnselected model G x w assignment y) i = true ->
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+            assignment i = none ->
+          w i = true)) :
+    rule1WSplitUnselectedMeetsZCore model G x y z w assignment = false := by
+  cases hmeet : rule1WSplitUnselectedMeetsZCore model G x y z w assignment with
+  | false =>
+      rfl
+  | true =>
+      rcases (finAny_eq_true_iff _).mp
+          (by simpa [rule1WSplitUnselectedMeetsZCore] using hmeet) with
+        ⟨root, hparts⟩
+      rcases Bool.and_eq_true_iff.mp hparts with ⟨hcore, hrel⟩
+      rcases rule1WSplitUnselected_z_core_child_not_unselected model G
+          projected x y z w assignment separated root hrel hcore with
+        ⟨child, hanc, hfree, _hinc, hnotUnsel⟩
+      have hw : w child = true :=
+        hFreeAncestorInW child hanc hfree
+      have hsel :=
+        rule1WSplit_mem_w_of_not_unselected model G x w assignment y hw
+          hnotUnsel
+      have hnotAnc := hnoSelectedAncestor child hsel
+      simp [hanc] at hnotAnc
+
+/-- A shared ancestral latent of the two `W` slices unpacks as a pair of
+`do(X)`-free children, one in each ancestral set. -/
+theorem rule1WSplitAncestralLatentsOverlap_unpack
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hoverlap :
+      rule1WSplitAncestralLatentsOverlap model G x y z w assignment = true) :
+    Exists fun root : Fin model.latent.count =>
+      Exists fun childSel : Fin S.count =>
+        Exists fun childUnsel : Fin S.count =>
+          FiniteLatentSCM.ancestralInBar G x
+              (rule1WSplitSelected model G x w assignment y) childSel =
+            true ∧
+            FiniteLatentSCM.ancestralInBar G x
+                (rule1WSplitUnselected model G x w assignment y)
+                childUnsel = true ∧
+              ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+                  assignment) childSel = none ∧
+                ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+                    assignment) childUnsel = none ∧
+                  model.latent.incident root childSel = true ∧
+                    model.latent.incident root childUnsel = true := by
+  rcases (finAny_eq_true_iff _).mp
+      (by simpa [rule1WSplitAncestralLatentsOverlap] using hoverlap) with
+    ⟨root, hparts⟩
+  rcases Bool.and_eq_true_iff.mp hparts with ⟨hSel, hUnsel⟩
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext j
+    simp [rule1Right, Kernel.intervention]
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((rule1Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitSelected model G x w assignment y))
+      root).mp hSel with ⟨childSel, hancS, hfreeSR, hincS⟩
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((rule1Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x
+        (rule1WSplitUnselected model G x w assignment y))
+      root).mp hUnsel with ⟨childUnsel, hancU, hfreeUR, hincU⟩
+  refine ⟨root, childSel, childUnsel, hancS, hancU, ?_, ?_, hincS, hincU⟩
+  · simpa [hinter] using hfreeSR
+  · simpa [hinter] using hfreeUR
+
+/-- Under the same no-cross-ancestry hypotheses used to keep each slice off
+the opposite core, a shared latent cannot have the same `W` child in both
+ancestral sets. Distinct children remain the bidirected-middle case. -/
+theorem rule1WSplitAncestralLatentsOverlap_same_child_false_of
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y _z w : NodeSet S) (assignment : S.Assignment)
+    (hnoUnselectedAncestor : forall i,
+      rule1WSplitUnselected model G x w assignment y i = true ->
+        FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitSelected model G x w assignment y) i = false)
+    (hnoSelectedAncestor : forall i,
+      rule1WSplitSelected model G x w assignment y i = true ->
+        FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitUnselected model G x w assignment y) i = false)
+    (hFreeAncestorInW : forall i,
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelected model G x w assignment y) i = true ->
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+            assignment i = none ->
+          w i = true))
+    {child : Fin S.count}
+    (hancS : FiniteLatentSCM.ancestralInBar G x
+      (rule1WSplitSelected model G x w assignment y) child = true)
+    (hancU : FiniteLatentSCM.ancestralInBar G x
+      (rule1WSplitUnselected model G x w assignment y) child = true)
+    (hfree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        child = none) :
+    False := by
+  have hw : w child = true :=
+    hFreeAncestorInW child hancS hfree
+  cases hY : rule1WSplitUnselected model G x w assignment y child with
+  | true =>
+      have hnot := hnoUnselectedAncestor child hY
+      simp [hancS] at hnot
+  | false =>
+      have hsel :=
+        rule1WSplit_mem_w_of_not_unselected model G x w assignment y hw hY
+      have hnot := hnoSelectedAncestor child hsel
+      simp [hancU] at hnot
+
+/-- Distinct `do(X)`-free children of a shared ancestral latent are a
+projected bidirected edge. -/
+theorem rule1WSplitAncestralLatentsOverlap_bidirected_of_ne
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (root : Fin model.latent.count) {childSel childUnsel : Fin S.count}
+    (hne : childSel ≠ childUnsel)
+    (hincS : model.latent.incident root childSel = true)
+    (hincU : model.latent.incident root childUnsel = true) :
+    G.bidirected childSel childUnsel = true :=
+  FiniteLatentSCM.bidirected_eq_true_of_shared_latent model G projected
+    root childSel childUnsel hne hincS hincU
+
+/-- Distinct `W` children of a shared ancestral latent, each meeting one
+open core, are two bound colliders joined by a bidirected middle edge. -/
+theorem rule1WSplitAncestralLatentsOverlap_distinct_bound_false
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (root : Fin model.latent.count) {childSel childUnsel : Fin S.count}
+    (hne : childSel ≠ childUnsel)
+    (hincS : model.latent.incident root childSel = true)
+    (hincU : model.latent.incident root childUnsel = true)
+    (hmeetZ : rule1WVertexMeetsCore model G x w assignment z childSel = true)
+    (hmeetY : rule1WVertexMeetsCore model G x w assignment y childUnsel =
+      true) :
+    False := by
+  have hZparts :
+      (w childSel &&
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+          assignment childSel).isNone) = true ∧
+        finAny model.latent.count (fun r =>
+          model.latentRelevantUnder
+              ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                NodeSet.empty).intervention assignment)
+              (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z)
+              r &&
+            model.latent.incident r childSel) = true := by
+    simpa [rule1WVertexMeetsCore] using hmeetZ
+  have hYparts :
+      (w childUnsel &&
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+          assignment childUnsel).isNone) = true ∧
+        finAny model.latent.count (fun r =>
+          model.latentRelevantUnder
+              ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                NodeSet.empty).intervention assignment)
+              (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+              r &&
+            model.latent.incident r childUnsel) = true := by
+    simpa [rule1WVertexMeetsCore] using hmeetY
+  have hwS : w childSel = true :=
+    (Bool.and_eq_true_iff.mp hZparts.1).1
+  have hwU : w childUnsel = true :=
+    (Bool.and_eq_true_iff.mp hYparts.1).1
+  have hwZXFree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        childSel = none :=
+    Option.isNone_iff_eq_none.mp (Bool.and_eq_true_iff.mp hZparts.1).2
+  have hwYXFree :
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        childUnsel = none :=
+    Option.isNone_iff_eq_none.mp (Bool.and_eq_true_iff.mp hYparts.1).2
+  have hwZBound :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) childSel =
+        some (assignment childSel) := by
+    have hact : NodeSet.union x w childSel = true := by
+      simp [NodeSet.union, hwS]
+    simp [Kernel.intervention, hact]
+  have hwYBound :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment) childUnsel =
+        some (assignment childUnsel) := by
+    have hact : NodeSet.union x w childUnsel = true := by
+      simp [NodeSet.union, hwU]
+    simp [Kernel.intervention, hact]
+  rcases (finAny_eq_true_iff _).mp hZparts.2 with ⟨rootZ, hrootZ⟩
+  rcases Bool.and_eq_true_iff.mp hrootZ with ⟨hZcore, hwZInc⟩
+  rcases (finAny_eq_true_iff _).mp hYparts.2 with ⟨rootY, hrootY⟩
+  rcases Bool.and_eq_true_iff.mp hrootY with ⟨hYcore, hwYInc⟩
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z)
+      rootZ).mp hZcore with ⟨zChild, hzSel, hzFree, hzInc⟩
+  rcases (model.latentRelevantUnder_eq_true_iff
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+      rootY).mp hYcore with ⟨yChild, hySel, hyFree, hyInc⟩
+  have hedgeMid :=
+    rule1WSplitAncestralLatentsOverlap_bidirected_of_ne model G projected
+      root hne hincS hincU
+  exact rule1WMeets_distinct_bound_mid_hedge_false model G projected x y z w
+    assignment separated rootZ rootY hzSel hzFree hzInc hySel hyFree hyInc
+    hwZInc hwYInc hwZBound hwYBound hwZXFree hwYXFree hedgeMid
+
+/--
+The closed slices share no ancestral latent once a shared child is already
+in the `Y` block or is a `Y`-side seed, and distinct children that meet
+the two open cores are a bidirected middle hedge.
+-/
+theorem rule1WSplitClosedAncestralLatentsOverlap_eq_false_of
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (hSame : forall child,
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelectedClosed model G x w assignment y) child =
+        true ->
+        FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitUnselectedClosed model G x w assignment y) child =
+          true ->
+          (rule1WSplitUnselectedClosed model G x w assignment y child ||
+            rule1WYSideSeed model G x w assignment y child) = true)
+    (hDistinct : forall childSel childUnsel,
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelectedClosed model G x w assignment y) childSel =
+        true ->
+        FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitUnselectedClosed model G x w assignment y)
+            childUnsel = true ->
+          childSel ≠ childUnsel ->
+            (rule1WVertexMeetsCore model G x w assignment z childSel &&
+              rule1WVertexMeetsCore model G x w assignment y childUnsel) =
+              true) :
+    rule1WSplitClosedAncestralLatentsOverlap model G x y z w assignment =
+      false := by
+  cases hoverlap :
+      rule1WSplitClosedAncestralLatentsOverlap model G x y z w assignment with
+  | false =>
+      rfl
+  | true =>
+      rcases rule1WSplitClosedAncestralLatentsOverlap_unpack model G x y z w
+          assignment hoverlap with
+        ⟨root, childSel, childUnsel, hancS, hancU, _hfreeS, _hfreeU, hincS,
+          hincU⟩
+      if hEq : childSel = childUnsel then
+        subst childUnsel
+        exact (rule1WSplitClosedAncestralLatentsOverlap_same_child_false_of
+          model G x w assignment y hancS (hSame childSel hancS hancU)).elim
+      else
+        have hmeets := hDistinct childSel childUnsel hancS hancU hEq
+        have hparts := Bool.and_eq_true_iff.mp hmeets
+        exact (rule1WSplitAncestralLatentsOverlap_distinct_bound_false
+          model G projected x y z w assignment separated root hEq hincS
+          hincU hparts.1 hparts.2).elim
+
+/-- If neither slice ancestors the other, free ancestors still lie in `W`,
+and a distinct selected-side child meets the `Z` core, the two slices
+share no ancestral latent. -/
+theorem rule1WSplitAncestralLatentsOverlap_eq_false_of
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (hnoUnselectedAncestor : forall i,
+      rule1WSplitUnselected model G x w assignment y i = true ->
+        FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitSelected model G x w assignment y) i = false)
+    (hnoSelectedAncestor : forall i,
+      rule1WSplitSelected model G x w assignment y i = true ->
+        FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitUnselected model G x w assignment y) i = false)
+    (hFreeSelectedInW : forall i,
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelected model G x w assignment y) i = true ->
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+            assignment i = none ->
+          w i = true))
+    (hFreeUnselectedInW : forall i,
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitUnselected model G x w assignment y) i = true ->
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+            assignment i = none ->
+          w i = true))
+    (hDistinctMeetsZ : forall childSel childUnsel,
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelected model G x w assignment y) childSel = true ->
+        FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitUnselected model G x w assignment y) childUnsel =
+          true ->
+          childSel ≠ childUnsel ->
+            rule1WVertexMeetsCore model G x w assignment z childSel =
+              true) :
+    rule1WSplitAncestralLatentsOverlap model G x y z w assignment = false := by
+  cases hoverlap :
+      rule1WSplitAncestralLatentsOverlap model G x y z w assignment with
+  | false =>
+      rfl
+  | true =>
+      rcases rule1WSplitAncestralLatentsOverlap_unpack model G x y z w
+          assignment hoverlap with
+        ⟨root, childSel, childUnsel, hancS, hancU, hfreeS, hfreeU, hincS,
+          hincU⟩
+      if hEq : childSel = childUnsel then
+        subst childUnsel
+        exact (rule1WSplitAncestralLatentsOverlap_same_child_false_of
+          model G x y z w assignment hnoUnselectedAncestor
+          hnoSelectedAncestor hFreeSelectedInW hancS hancU hfreeS).elim
+      else
+        have hwU : w childUnsel = true :=
+          hFreeUnselectedInW childUnsel hancU hfreeU
+        have hmeetY :
+            rule1WVertexMeetsCore model G x w assignment y childUnsel =
+              true := by
+          cases hY :
+              rule1WSplitUnselected model G x w assignment y childUnsel with
+          | true =>
+              exact hY
+          | false =>
+              have hsel :=
+                rule1WSplit_mem_w_of_not_unselected model G x w assignment
+                  y hwU hY
+              have hnot := hnoSelectedAncestor childUnsel hsel
+              simp [hancU] at hnot
+        have hmeetZ :=
+          hDistinctMeetsZ childSel childUnsel hancS hancU hEq
+        exact (rule1WSplitAncestralLatentsOverlap_distinct_bound_false
+          model G projected x y z w assignment separated root hEq hincS
+          hincU hmeetZ hmeetY).elim
+
+/-- If no latent of the open `Z` core is relevant to `W` under `do(X)`, then
+`W` is a function of the complementary coordinates. -/
+theorem agreesOn_rule1W_dependsOnUnselected_of_avoids_z
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (havoid : rule1WMeetsUnionAncestral model G x w assignment z = false) :
+    CanonicalFactorization.DependsOnUnselected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z))
+      (fun roots =>
+        Kernel.agreesOn w assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots)) := by
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule1Right, Kernel.intervention]
+  have wDepends :=
+    agreesOn_rule1W_dependsOnSelected model G x y z w assignment
+  have hall :=
+    (finAny_eq_false_iff (fun root =>
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) root &&
+        model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G x w) root)).mp
+      (by simpa [rule1WMeetsUnionAncestral] using havoid)
+  have hsub :
+      forall root,
+        model.latentRelevantUnder
+            ((rule1Right x y z w).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G x w) root = true ->
+          (!model.latentRelevantUnder
+              ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                NodeSet.empty).intervention assignment)
+              (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z)
+              root) = true := by
+    intro root hr
+    have hroot := hall root
+    have hr' : model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x w) root = true := by
+      simpa [hinter] using hr
+    cases hz :
+        model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) root with
+    | false =>
+        rfl
+    | true =>
+        simp [hz, hr'] at hroot
+  have wCompl :=
+    CanonicalFactorization.DependsOnSelected.subset model.latent.count
+      model.latent.Value
+      (fun roots =>
+        Kernel.agreesOn w assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots))
+      hsub wDepends
+  exact CanonicalFactorization.DependsOnUnselected.of_compl_selected
+    model.latent.count model.latent.Value _ _ wCompl
+
+/-- If no latent of the open `Y` core is relevant to `W` under `do(X)`, then
+`W` is a function of the complementary coordinates. -/
+theorem agreesOn_rule1W_dependsOnSelected_of_avoids_y
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (havoid : rule1WMeetsUnionAncestral model G x w assignment y = false) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (fun root =>
+        !(model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root))
+      (fun roots =>
+        Kernel.agreesOn w assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots)) := by
+  have hinter :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule1Right, Kernel.intervention]
+  have wDepends :=
+    agreesOn_rule1W_dependsOnSelected model G x y z w assignment
+  have hall :=
+    (finAny_eq_false_iff (fun root =>
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root &&
+        model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G x w) root)).mp
+      (by simpa [rule1WMeetsUnionAncestral] using havoid)
+  have hsub :
+      forall root,
+        model.latentRelevantUnder
+            ((rule1Right x y z w).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G x w) root = true ->
+          (!model.latentRelevantUnder
+              ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                NodeSet.empty).intervention assignment)
+              (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+              root) = true := by
+    intro root hr
+    have hroot := hall root
+    have hr' : model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x w) root = true := by
+      simpa [hinter] using hr
+    cases hy :
+        model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root with
+    | false =>
+        rfl
+    | true =>
+        simp [hy, hr'] at hroot
+  exact CanonicalFactorization.DependsOnSelected.subset model.latent.count
+    model.latent.Value
+    (fun roots =>
+      Kernel.agreesOn w assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) roots))
+    hsub wDepends
+
+/-- The selected slice of `W` depends only on the complement of the open
+`Y` core, once it shares no latent with that core. -/
+theorem agreesOn_rule1WSplitSelected_dependsOnNotYCore
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (havoid :
+      rule1WSplitSelectedMeetsYCore model G x y z w assignment = false) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (fun root =>
+        !(model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root))
+      (fun roots =>
+        Kernel.agreesOn
+          (rule1WSplitSelected model G x w assignment y) assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots)) := by
+  have hall :=
+    (finAny_eq_false_iff (fun root =>
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root &&
+        model.latentRelevantUnder
+          ((rule1Right x y z w).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitSelected model G x w assignment y)) root)).mp
+      (by simpa [rule1WSplitSelectedMeetsYCore] using havoid)
+  have hsub :
+      forall root,
+        model.latentRelevantUnder
+            ((rule1Right x y z w).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G x
+              (rule1WSplitSelected model G x w assignment y)) root = true ->
+          (!model.latentRelevantUnder
+              ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                NodeSet.empty).intervention assignment)
+              (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+              root) = true := by
+    intro root hr
+    have hroot := hall root
+    cases hy :
+        model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root with
+    | false =>
+        rfl
+    | true =>
+        simp [hy, hr] at hroot
+  exact CanonicalFactorization.DependsOnSelected.subset model.latent.count
+    model.latent.Value
+    (fun roots =>
+      Kernel.agreesOn
+        (rule1WSplitSelected model G x w assignment y) assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) roots))
+    hsub
+    (agreesOn_rule1WSplitSelected_dependsOnAncestral model G x y z w
+      assignment)
+
+/-- The `Y`-meeting slice of `W` depends only on the open `Y` core, once
+every one of its ancestral latents is a core latent. -/
+theorem agreesOn_rule1WSplitUnselected_dependsOnYCore
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hinside :
+      rule1WSplitUnselectedMeetsNotYCore model G x y z w assignment = false) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y))
+      (fun roots =>
+        Kernel.agreesOn
+          (rule1WSplitUnselected model G x w assignment y) assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots)) := by
+  have hall :=
+    (finAny_eq_false_iff (fun root =>
+      model.latentRelevantUnder
+          ((rule1Right x y z w).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitUnselected model G x w assignment y)) root &&
+        !(model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+            root))).mp
+      (by simpa [rule1WSplitUnselectedMeetsNotYCore] using hinside)
+  have hsub :
+      forall root,
+        model.latentRelevantUnder
+            ((rule1Right x y z w).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G x
+              (rule1WSplitUnselected model G x w assignment y)) root = true ->
+          model.latentRelevantUnder
+              ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                NodeSet.empty).intervention assignment)
+              (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+              root = true := by
+    intro root hr
+    have hroot := hall root
+    cases hy :
+        model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root with
+    | true =>
+        rfl
+    | false =>
+        simp [hy, hr] at hroot
+  exact CanonicalFactorization.DependsOnSelected.subset model.latent.count
+    model.latent.Value
+    (fun roots =>
+      Kernel.agreesOn
+        (rule1WSplitUnselected model G x w assignment y) assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) roots))
+    hsub
+    (agreesOn_rule1WSplitUnselected_dependsOnAncestral model G x y z w
+      assignment)
+
+/-- The selected slice depends only on the complement of the `Y` block. -/
+theorem agreesOn_rule1WSplitSelected_dependsOnNotYBlock
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hY :
+      rule1WSplitSelectedMeetsYCore model G x y z w assignment = false)
+    (hOverlap :
+      rule1WSplitAncestralLatentsOverlap model G x y z w assignment = false) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (fun root =>
+        !(rule1WSplitYBlockLatents model G x y z w assignment root))
+      (fun roots =>
+        Kernel.agreesOn
+          (rule1WSplitSelected model G x w assignment y) assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots)) := by
+  have hallY :=
+    (finAny_eq_false_iff (fun root =>
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root &&
+        model.latentRelevantUnder
+          ((rule1Right x y z w).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitSelected model G x w assignment y)) root)).mp
+      (by simpa [rule1WSplitSelectedMeetsYCore] using hY)
+  have hallO :=
+    (finAny_eq_false_iff (fun root =>
+      model.latentRelevantUnder
+          ((rule1Right x y z w).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitSelected model G x w assignment y)) root &&
+        model.latentRelevantUnder
+          ((rule1Right x y z w).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitUnselected model G x w assignment y)) root)).mp
+      (by simpa [rule1WSplitAncestralLatentsOverlap] using hOverlap)
+  have hsub :
+      forall root,
+        model.latentRelevantUnder
+            ((rule1Right x y z w).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G x
+              (rule1WSplitSelected model G x w assignment y)) root = true ->
+          (!(rule1WSplitYBlockLatents model G x y z w assignment root)) =
+            true := by
+    intro root hr
+    have hYroot := hallY root
+    have hOroot := hallO root
+    cases hy :
+        model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root with
+    | true =>
+        simp [hy, hr] at hYroot
+    | false =>
+        cases hu :
+            model.latentRelevantUnder
+              ((rule1Right x y z w).intervention assignment)
+              (FiniteLatentSCM.ancestralInBar G x
+                (rule1WSplitUnselected model G x w assignment y)) root with
+        | true =>
+            simp [hr, hu] at hOroot
+        | false =>
+            simp [rule1WSplitYBlockLatents, hy, hu]
+  exact CanonicalFactorization.DependsOnSelected.subset model.latent.count
+    model.latent.Value
+    (fun roots =>
+      Kernel.agreesOn
+        (rule1WSplitSelected model G x w assignment y) assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) roots))
+    hsub
+    (agreesOn_rule1WSplitSelected_dependsOnAncestral model G x y z w
+      assignment)
+
+/-- Under `do(X ∪ W)`, `Z` depends only on the complement of the `Y` block
+once the `Y`-meeting slice shares no latent with the open `Z` core. -/
+theorem agreesOn_rule1Z_dependsOnNotYBlock
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (hUnselZ :
+      rule1WSplitUnselectedMeetsZCore model G x y z w assignment = false) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (fun root =>
+        !(rule1WSplitYBlockLatents model G x y z w assignment root))
+      (fun roots =>
+        Kernel.agreesOn z assignment
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment) roots)) := by
+  have hsep :=
+    FiniteLatentSCM.rule1Ancestral_latentSeparated_union model G projected
+      x y z w assignment separated
+  have hallZ :=
+    (finAny_eq_false_iff (fun root =>
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) root &&
+        model.latentRelevantUnder
+          ((rule1Right x y z w).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitUnselected model G x w assignment y)) root)).mp
+      (by simpa [rule1WSplitUnselectedMeetsZCore] using hUnselZ)
+  have hsub :
+      forall root,
+        model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z)
+            root = true ->
+          (!(rule1WSplitYBlockLatents model G x y z w assignment root)) =
+            true := by
+    intro root hz
+    have hy := hsep root hz
+    have hZroot := hallZ root
+    cases hy' :
+        model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root with
+    | true =>
+        simp [hy'] at hy
+    | false =>
+        cases hu :
+            model.latentRelevantUnder
+              ((rule1Right x y z w).intervention assignment)
+              (FiniteLatentSCM.ancestralInBar G x
+                (rule1WSplitUnselected model G x w assignment y)) root with
+        | true =>
+            simp [hz, hu] at hZroot
+        | false =>
+            simp [rule1WSplitYBlockLatents, hy', hu]
+  exact CanonicalFactorization.DependsOnSelected.subset model.latent.count
+    model.latent.Value
+    (fun roots =>
+      Kernel.agreesOn z assignment
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment) roots))
+    hsub
+    (agreesOn_rule1Z_dependsOnSelected_union model G x y z w assignment)
+
+/-- `Y` ignores the complement of the `Y` block. -/
+theorem agreesOn_rule1Y_dependsOnYBlock
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    CanonicalFactorization.DependsOnUnselected model.latent.count
+      model.latent.Value
+      (fun root =>
+        !(rule1WSplitYBlockLatents model G x y z w assignment root))
+      (fun roots =>
+        Kernel.agreesOn y assignment
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment) roots)) := by
+  have hsub :
+      forall root,
+        model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+            root = true ->
+          rule1WSplitYBlockLatents model G x y z w assignment root = true := by
+    intro root hr
+    simp [rule1WSplitYBlockLatents, hr]
+  exact CanonicalFactorization.DependsOnUnselected.of_selected_compl
+    model.latent.count model.latent.Value
+    (rule1WSplitYBlockLatents model G x y z w assignment)
+    (fun roots =>
+      Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment) roots))
+    (CanonicalFactorization.DependsOnSelected.subset model.latent.count
+      model.latent.Value
+      (fun roots =>
+        Kernel.agreesOn y assignment
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment) roots))
+      hsub
+      (agreesOn_rule1Y_dependsOnSelected_union model G x y z w assignment))
+
+/-- The `Y`-meeting slice ignores the complement of the `Y` block. -/
+theorem agreesOn_rule1WSplitUnselected_dependsOnYBlock
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    CanonicalFactorization.DependsOnUnselected model.latent.count
+      model.latent.Value
+      (fun root =>
+        !(rule1WSplitYBlockLatents model G x y z w assignment root))
+      (fun roots =>
+        Kernel.agreesOn
+          (rule1WSplitUnselected model G x w assignment y) assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots)) := by
+  have hsub :
+      forall root,
+        model.latentRelevantUnder
+            ((rule1Right x y z w).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G x
+              (rule1WSplitUnselected model G x w assignment y))
+            root = true ->
+          rule1WSplitYBlockLatents model G x y z w assignment root = true := by
+    intro root hr
+    simp [rule1WSplitYBlockLatents, hr]
+  exact CanonicalFactorization.DependsOnUnselected.of_selected_compl
+    model.latent.count model.latent.Value
+    (rule1WSplitYBlockLatents model G x y z w assignment)
+    (fun roots =>
+      Kernel.agreesOn
+        (rule1WSplitUnselected model G x w assignment y) assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) roots))
+    (CanonicalFactorization.DependsOnSelected.subset model.latent.count
+      model.latent.Value
+      (fun roots =>
+        Kernel.agreesOn
+          (rule1WSplitUnselected model G x w assignment y) assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots))
+      hsub
+      (agreesOn_rule1WSplitUnselected_dependsOnAncestral model G x y z w
+        assignment))
 
 theorem productRecord_singleton_qProduct (model : FiniteLatentSCM S)
     (assignment : model.latent.Assignment) :
@@ -1759,6 +8086,847 @@ def rule1PartitionWitness (model : FiniteLatentSCM S)
     simp only [Probability.inter]
     ac_rfl
 
+/--
+Rule 1 when `W` shares no latent with the open `Z` core: `Z` is selected,
+`Y` and `W` are unselected, and the common condition is the whole of `W`.
+-/
+def rule1PartitionWitness_of_w_avoids_z_core
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (havoid : rule1WMeetsUnionAncestral model G x w assignment z = false) :
+    ProductConditionalIndependenceWitnessAt model
+      (rule1Left x y z w) (rule1Right x y z w) assignment := by
+  let Iu :=
+    (Kernel.mk NodeSet.empty (NodeSet.union x w) NodeSet.empty).intervention
+      assignment
+  let zEv : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn z assignment (model.evalUnder Iu roots)
+  let yEv : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn y assignment (model.evalUnder Iu roots)
+  let wEv : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn w assignment
+      (model.evalUnder ((rule1Right x y z w).intervention assignment) roots)
+  have hL :
+      (rule1Left x y z w).intervention assignment =
+        (rule1Right x y z w).intervention assignment := by
+    funext i
+    simp [rule1Left, rule1Right, Kernel.intervention]
+  have hR :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule1Right, Kernel.intervention]
+  refine
+    { selected := model.latentRelevantUnder Iu
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z)
+      selectedOutcome := zEv
+      selectedCondition := Probability.topEvent
+      unselectedOutcome := yEv
+      unselectedCondition := wEv
+      selectedOutcomeDepends := ?_
+      selectedConditionDepends := ?_
+      unselectedOutcomeDepends := ?_
+      unselectedConditionDepends := ?_
+      leftNumerator := ?_
+      rightCondition := ?_
+      rightNumerator := ?_
+      leftCondition := ?_ }
+  · simpa [Iu, zEv] using
+      agreesOn_rule1Z_dependsOnSelected_union model G x y z w assignment
+  · exact CanonicalFactorization.DependsOnSelected.const _ _ _ true
+  · simpa [Iu, yEv] using
+      agreesOn_rule1Y_dependsOnUnselected_union model G projected x y z w
+        assignment separated
+  · simpa [wEv] using
+      agreesOn_rule1W_dependsOnUnselected_of_avoids_z model G x y z w
+        assignment havoid
+  · funext roots
+    have hrew :=
+      agreesOn_rule1_evalUnder_union_eq model x y z w assignment roots
+    simp only [productPreimage, Kernel.numeratorEvent, Probability.inter,
+      Probability.topEvent, zEv, yEv, wEv, Iu]
+    rw [show (rule1Left x y z w).outcome = y from rfl,
+      show (rule1Left x y z w).condition = NodeSet.union z w from rfl,
+      hL, Kernel.agreesOn_union, hrew]
+    simp only [Bool.and_true]
+    ac_rfl
+  · funext roots
+    simp only [productPreimage, Kernel.conditionEvent, Probability.inter,
+      Probability.topEvent, wEv]
+    rw [show (rule1Right x y z w).condition = w from rfl]
+    simp only [Bool.true_and]
+  · funext roots
+    have hy :=
+      agreesOn_and_evalUnder_union_eq model x w y assignment roots
+    simp only [productPreimage, Kernel.numeratorEvent, Probability.inter,
+      Probability.topEvent, yEv, wEv, Iu]
+    rw [show (rule1Right x y z w).outcome = y from rfl,
+      show (rule1Right x y z w).condition = w from rfl]
+    simp only [Bool.true_and]
+    rw [hR, Bool.and_comm]
+    exact hy.trans (Bool.and_comm _ _)
+  · funext roots
+    have hz :=
+      agreesOn_and_evalUnder_union_eq model x w z assignment roots
+    simp only [productPreimage, Kernel.conditionEvent, Probability.inter,
+      Probability.topEvent, zEv, wEv, Iu]
+    rw [show (rule1Left x y z w).condition = NodeSet.union z w from rfl,
+      hL, Kernel.agreesOn_union]
+    simp only [Bool.and_true]
+    rw [hR, Bool.and_comm]
+    exact hz.trans (Bool.and_comm _ _)
+
+/--
+Rule 1 when `W` shares no latent with the open `Y` core: selected
+coordinates are everything except that core, `W` sits with `Z` on the
+selected side, and `Y` is unselected.
+-/
+def rule1PartitionWitness_of_w_avoids_y_core
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (havoid : rule1WMeetsUnionAncestral model G x w assignment y = false) :
+    ProductConditionalIndependenceWitnessAt model
+      (rule1Left x y z w) (rule1Right x y z w) assignment := by
+  let Iu :=
+    (Kernel.mk NodeSet.empty (NodeSet.union x w) NodeSet.empty).intervention
+      assignment
+  let zCore := FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z
+  let yCore := FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y
+  let zEv : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn z assignment (model.evalUnder Iu roots)
+  let yEv : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn y assignment (model.evalUnder Iu roots)
+  let wEv : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn w assignment
+      (model.evalUnder ((rule1Right x y z w).intervention assignment) roots)
+  have hL :
+      (rule1Left x y z w).intervention assignment =
+        (rule1Right x y z w).intervention assignment := by
+    funext i
+    simp [rule1Left, rule1Right, Kernel.intervention]
+  have hR :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule1Right, Kernel.intervention]
+  have hsep :=
+    FiniteLatentSCM.rule1Ancestral_latentSeparated_union model G projected
+      x y z w assignment separated
+  have zCore_subset_not_y :
+      forall root, model.latentRelevantUnder Iu zCore root = true ->
+        (!model.latentRelevantUnder Iu yCore root) = true := by
+    intro root hz
+    have hy := hsep root (by simpa [Iu, zCore] using hz)
+    cases hy' : model.latentRelevantUnder Iu yCore root with
+    | false =>
+        rfl
+    | true =>
+        simp [Iu, yCore, hy'] at hy
+  refine
+    { selected := fun root => !model.latentRelevantUnder Iu yCore root
+      selectedOutcome := zEv
+      selectedCondition := wEv
+      unselectedOutcome := yEv
+      unselectedCondition := Probability.topEvent
+      selectedOutcomeDepends := ?_
+      selectedConditionDepends := ?_
+      unselectedOutcomeDepends := ?_
+      unselectedConditionDepends := ?_
+      leftNumerator := ?_
+      rightCondition := ?_
+      rightNumerator := ?_
+      leftCondition := ?_ }
+  · exact CanonicalFactorization.DependsOnSelected.subset model.latent.count
+      model.latent.Value zEv zCore_subset_not_y
+      (by simpa [Iu, zEv, zCore] using
+        agreesOn_rule1Z_dependsOnSelected_union model G x y z w assignment)
+  · simpa [wEv, Iu, yCore] using
+      agreesOn_rule1W_dependsOnSelected_of_avoids_y model G x y z w
+        assignment havoid
+  · simpa [Iu, yEv, yCore] using
+      CanonicalFactorization.DependsOnUnselected.of_selected_compl
+        model.latent.count model.latent.Value
+        (model.latentRelevantUnder Iu yCore) yEv
+        (by simpa [Iu, yEv, yCore] using
+          agreesOn_rule1Y_dependsOnSelected_union model G x y z w assignment)
+  · exact CanonicalFactorization.DependsOnUnselected.const _ _ _ true
+  · funext roots
+    have hrew :=
+      agreesOn_rule1_evalUnder_union_eq model x y z w assignment roots
+    simp only [productPreimage, Kernel.numeratorEvent, Probability.inter,
+      Probability.topEvent, zEv, yEv, wEv, Iu]
+    rw [show (rule1Left x y z w).outcome = y from rfl,
+      show (rule1Left x y z w).condition = NodeSet.union z w from rfl,
+      hL, Kernel.agreesOn_union, hrew]
+    simp only [Bool.and_true]
+    ac_rfl
+  · funext roots
+    simp only [productPreimage, Kernel.conditionEvent, Probability.inter,
+      Probability.topEvent, wEv]
+    rw [show (rule1Right x y z w).condition = w from rfl]
+    simp only [Bool.and_true]
+  · funext roots
+    have hy :=
+      agreesOn_and_evalUnder_union_eq model x w y assignment roots
+    simp only [productPreimage, Kernel.numeratorEvent, Probability.inter,
+      Probability.topEvent, yEv, wEv, Iu]
+    rw [show (rule1Right x y z w).outcome = y from rfl,
+      show (rule1Right x y z w).condition = w from rfl]
+    simp only [Bool.and_true]
+    rw [hR]
+    exact Bool.and_comm _ _ ▸ hy
+  · funext roots
+    have hz :=
+      agreesOn_and_evalUnder_union_eq model x w z assignment roots
+    simp only [productPreimage, Kernel.conditionEvent, Probability.inter,
+      Probability.topEvent, zEv, wEv, Iu]
+    rw [show (rule1Left x y z w).condition = NodeSet.union z w from rfl,
+      hL, Kernel.agreesOn_union]
+    simp only [Bool.and_true]
+    rw [hR, Bool.and_comm]
+    exact hz.trans (Bool.and_comm _ _)
+
+/--
+Rule 1 from the two one-sided core-avoidance witnesses, once `W` is known
+not to meet both open cores.
+-/
+def rule1PartitionWitness_of_not_both_meet
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (hnot :
+      (rule1WMeetsUnionAncestral model G x w assignment z &&
+        rule1WMeetsUnionAncestral model G x w assignment y) = false) :
+    ProductConditionalIndependenceWitnessAt model
+      (rule1Left x y z w) (rule1Right x y z w) assignment := by
+  cases hZ : rule1WMeetsUnionAncestral model G x w assignment z with
+  | false =>
+      exact rule1PartitionWitness_of_w_avoids_z_core model G projected
+        x y z w assignment separated hZ
+  | true =>
+      cases hY : rule1WMeetsUnionAncestral model G x w assignment y with
+      | false =>
+          exact rule1PartitionWitness_of_w_avoids_y_core model G projected
+            x y z w assignment separated hY
+      | true =>
+          simp [hZ, hY] at hnot
+
+/--
+Rule 1 with empty given-set `W`.  The both-meet obligation is vacuous, so
+path d-separation and the projected graph already supply the partition
+witness.  This is the empty-conditioner special case of
+`PathDoRulePartitionWitnesses.rule1`.
+-/
+def rule1PartitionWitness_of_empty_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (hw : NodeSet.isEmpty w = true) :
+    ProductConditionalIndependenceWitnessAt model
+      (rule1Left x y z w) (rule1Right x y z w) assignment :=
+  rule1PartitionWitness_of_not_both_meet model G projected
+    x y z w assignment separated (by
+      have hZ :=
+        rule1WMeetsUnionAncestral_of_empty_w model G x w assignment z hw
+      simp [hZ])
+
+/-- Boolean `&&` is associative and commutative; these rearrangements
+avoid relying on the AC tactic at four-factor cylinders. -/
+private theorem bool_and_four_pairs (a b c d : Bool) :
+    ((a && b) && (c && d)) = ((d && a) && (c && b)) := by
+  cases a <;> cases b <;> cases c <;> cases d <;> rfl
+
+private theorem bool_and_mid_swap (a b c : Bool) :
+    ((a && b) && c) = (a && (c && b)) := by
+  cases a <;> cases b <;> cases c <;> rfl
+
+private theorem bool_and_rot_left (a b c : Bool) :
+    ((a && b) && c) = ((c && a) && b) := by
+  cases a <;> cases b <;> cases c <;> rfl
+
+/--
+Rule 1 when `W` meets both open cores, but the two-block split of `W`
+still factorizes. Selected coordinates are the complement of the `Y`
+block: the open `Y` core together with ancestral latents of the
+`Y`-meeting slice. The remaining obligations are that the complementary
+slice avoids that block, and that the `Y`-meeting slice avoids the
+open `Z` core.
+-/
+def rule1PartitionWitness_of_w_split
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (hSelAvoids :
+      rule1WSplitSelectedMeetsYCore model G x y z w assignment = false)
+    (hOverlap :
+      rule1WSplitAncestralLatentsOverlap model G x y z w assignment = false)
+    (hUnselAvoidsZ :
+      rule1WSplitUnselectedMeetsZCore model G x y z w assignment = false) :
+    ProductConditionalIndependenceWitnessAt model
+      (rule1Left x y z w) (rule1Right x y z w) assignment := by
+  let Iu :=
+    (Kernel.mk NodeSet.empty (NodeSet.union x w) NodeSet.empty).intervention
+      assignment
+  let wSel := rule1WSplitSelected model G x w assignment y
+  let wUnsel := rule1WSplitUnselected model G x w assignment y
+  let zEv : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn z assignment (model.evalUnder Iu roots)
+  let yEv : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn y assignment (model.evalUnder Iu roots)
+  let wSelEv : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn wSel assignment
+      (model.evalUnder ((rule1Right x y z w).intervention assignment) roots)
+  let wUnselEv : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn wUnsel assignment
+      (model.evalUnder ((rule1Right x y z w).intervention assignment) roots)
+  have hL :
+      (rule1Left x y z w).intervention assignment =
+        (rule1Right x y z w).intervention assignment := by
+    funext i
+    simp [rule1Left, rule1Right, Kernel.intervention]
+  have hR :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule1Right, Kernel.intervention]
+  have wEq : forall roots,
+      Kernel.agreesOn w assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) roots) =
+        (wSelEv roots && wUnselEv roots) := by
+    intro roots
+    have hnodes :=
+      congrArg
+        (fun nodes =>
+          Kernel.agreesOn nodes assignment
+            (model.evalUnder
+              ((rule1Right x y z w).intervention assignment) roots))
+        (rule1WSplit_union model G x w assignment y)
+    simpa [wSelEv, wUnselEv, wSel, wUnsel, Kernel.agreesOn_union] using
+      hnodes.symm
+  refine
+    { selected := fun root =>
+        !(rule1WSplitYBlockLatents model G x y z w assignment root)
+      selectedOutcome := zEv
+      selectedCondition := wSelEv
+      unselectedOutcome := yEv
+      unselectedCondition := wUnselEv
+      selectedOutcomeDepends := ?_
+      selectedConditionDepends := ?_
+      unselectedOutcomeDepends := ?_
+      unselectedConditionDepends := ?_
+      leftNumerator := ?_
+      rightCondition := ?_
+      rightNumerator := ?_
+      leftCondition := ?_ }
+  · simpa [zEv, Iu] using
+      (agreesOn_rule1Z_dependsOnNotYBlock model G projected x y z w
+        assignment separated hUnselAvoidsZ)
+  · simpa [wSelEv, wSel] using
+      (agreesOn_rule1WSplitSelected_dependsOnNotYBlock model G x y z w
+        assignment hSelAvoids hOverlap)
+  · simpa [yEv, Iu] using
+      agreesOn_rule1Y_dependsOnYBlock model G x y z w assignment
+  · simpa [wUnselEv, wUnsel] using
+      agreesOn_rule1WSplitUnselected_dependsOnYBlock model G x y z w
+        assignment
+  · funext roots
+    have hrew :=
+      agreesOn_rule1_evalUnder_union_eq model x y z w assignment roots
+    simp only [productPreimage, Kernel.numeratorEvent, Probability.inter,
+      zEv, yEv, wSelEv, wUnselEv, Iu]
+    rw [show (rule1Left x y z w).outcome = y from rfl,
+      show (rule1Left x y z w).condition = NodeSet.union z w from rfl,
+      hL, Kernel.agreesOn_union, hrew, wEq roots]
+    exact bool_and_four_pairs (wSelEv roots) (wUnselEv roots)
+      (yEv roots) (zEv roots)
+  · funext roots
+    simp only [productPreimage, Kernel.conditionEvent, Probability.inter,
+      wSelEv, wUnselEv]
+    rw [show (rule1Right x y z w).condition = w from rfl, wEq roots]
+  · funext roots
+    have hy :=
+      agreesOn_and_evalUnder_union_eq model x w y assignment roots
+    simp only [productPreimage, Kernel.numeratorEvent, Probability.inter,
+      yEv, wSelEv, wUnselEv, Iu]
+    rw [show (rule1Right x y z w).outcome = y from rfl,
+      show (rule1Right x y z w).condition = w from rfl, hR,
+      Bool.and_comm, hy, ← hR, wEq roots]
+    exact bool_and_mid_swap (wSelEv roots) (wUnselEv roots) (yEv roots)
+  · funext roots
+    have hz :=
+      agreesOn_and_evalUnder_union_eq model x w z assignment roots
+    simp only [productPreimage, Kernel.conditionEvent, Probability.inter,
+      zEv, wSelEv, wUnselEv, Iu]
+    rw [show (rule1Left x y z w).condition = NodeSet.union z w from rfl,
+      hL, Kernel.agreesOn_union, hR, Bool.and_comm, hz, ← hR, wEq roots]
+    exact bool_and_rot_left (wSelEv roots) (wUnselEv roots) (zEv roots)
+
+/-- The closed selected slice depends only on the complement of the closed
+`Y` block. -/
+theorem agreesOn_rule1WSplitClosedSelected_dependsOnNotYBlock
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hY :
+      rule1WSplitClosedSelectedMeetsYCore model G x y z w assignment =
+        false)
+    (hOverlap :
+      rule1WSplitClosedAncestralLatentsOverlap model G x y z w assignment =
+        false) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (fun root =>
+        !(rule1WSplitClosedYBlockLatents model G x y z w assignment root))
+      (fun roots =>
+        Kernel.agreesOn
+          (rule1WSplitSelectedClosed model G x w assignment y) assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots)) := by
+  have hallY :=
+    (finAny_eq_false_iff (fun root =>
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root &&
+        model.latentRelevantUnder
+          ((rule1Right x y z w).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitSelectedClosed model G x w assignment y))
+          root)).mp
+      (by simpa [rule1WSplitClosedSelectedMeetsYCore] using hY)
+  have hallO :=
+    (finAny_eq_false_iff (fun root =>
+      model.latentRelevantUnder
+          ((rule1Right x y z w).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitSelectedClosed model G x w assignment y)) root &&
+        model.latentRelevantUnder
+          ((rule1Right x y z w).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitUnselectedClosed model G x w assignment y))
+          root)).mp
+      (by simpa [rule1WSplitClosedAncestralLatentsOverlap] using hOverlap)
+  have hsub :
+      forall root,
+        model.latentRelevantUnder
+            ((rule1Right x y z w).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G x
+              (rule1WSplitSelectedClosed model G x w assignment y))
+            root = true ->
+          (!(rule1WSplitClosedYBlockLatents model G x y z w assignment
+              root)) = true := by
+    intro root hr
+    have hYroot := hallY root
+    have hOroot := hallO root
+    cases hy :
+        model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root with
+    | true =>
+        simp [hy, hr] at hYroot
+    | false =>
+        cases hu :
+            model.latentRelevantUnder
+              ((rule1Right x y z w).intervention assignment)
+              (FiniteLatentSCM.ancestralInBar G x
+                (rule1WSplitUnselectedClosed model G x w assignment y))
+              root with
+        | true =>
+            simp [hr, hu] at hOroot
+        | false =>
+            simp [rule1WSplitClosedYBlockLatents, hy, hu]
+  exact CanonicalFactorization.DependsOnSelected.subset model.latent.count
+    model.latent.Value
+    (fun roots =>
+      Kernel.agreesOn
+        (rule1WSplitSelectedClosed model G x w assignment y) assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) roots))
+    hsub
+    (agreesOn_rule1WSplitClosedSelected_dependsOnAncestral model G x y z w
+      assignment)
+
+/-- Under `do(X ∪ W)`, `Z` depends only on the complement of the closed
+`Y` block once that block shares no latent with the open `Z` core. -/
+theorem agreesOn_rule1Z_dependsOnNotClosedYBlock
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (hUnselZ :
+      rule1WSplitClosedUnselectedMeetsZCore model G x y z w assignment =
+        false) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (fun root =>
+        !(rule1WSplitClosedYBlockLatents model G x y z w assignment root))
+      (fun roots =>
+        Kernel.agreesOn z assignment
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment) roots)) := by
+  have hsep :=
+    FiniteLatentSCM.rule1Ancestral_latentSeparated_union model G projected
+      x y z w assignment separated
+  have hallZ :=
+    (finAny_eq_false_iff (fun root =>
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) root &&
+        model.latentRelevantUnder
+          ((rule1Right x y z w).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitUnselectedClosed model G x w assignment y))
+          root)).mp
+      (by simpa [rule1WSplitClosedUnselectedMeetsZCore] using hUnselZ)
+  have hsub :
+      forall root,
+        model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z)
+            root = true ->
+          (!(rule1WSplitClosedYBlockLatents model G x y z w assignment
+              root)) = true := by
+    intro root hz
+    have hy := hsep root hz
+    have hZroot := hallZ root
+    cases hy' :
+        model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root with
+    | true =>
+        simp [hy'] at hy
+    | false =>
+        cases hu :
+            model.latentRelevantUnder
+              ((rule1Right x y z w).intervention assignment)
+              (FiniteLatentSCM.ancestralInBar G x
+                (rule1WSplitUnselectedClosed model G x w assignment y))
+              root with
+        | true =>
+            simp [hz, hu] at hZroot
+        | false =>
+            simp [rule1WSplitClosedYBlockLatents, hy', hu]
+  exact CanonicalFactorization.DependsOnSelected.subset model.latent.count
+    model.latent.Value
+    (fun roots =>
+      Kernel.agreesOn z assignment
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment) roots))
+    hsub
+    (agreesOn_rule1Z_dependsOnSelected_union model G x y z w assignment)
+
+/-- `Y` ignores the complement of the closed `Y` block. -/
+theorem agreesOn_rule1Y_dependsOnClosedYBlock
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    CanonicalFactorization.DependsOnUnselected model.latent.count
+      model.latent.Value
+      (fun root =>
+        !(rule1WSplitClosedYBlockLatents model G x y z w assignment root))
+      (fun roots =>
+        Kernel.agreesOn y assignment
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment) roots)) := by
+  have hsub :
+      forall root,
+        model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+            root = true ->
+          rule1WSplitClosedYBlockLatents model G x y z w assignment root =
+            true := by
+    intro root hr
+    simp [rule1WSplitClosedYBlockLatents, hr]
+  exact CanonicalFactorization.DependsOnUnselected.of_selected_compl
+    model.latent.count model.latent.Value
+    (rule1WSplitClosedYBlockLatents model G x y z w assignment)
+    (fun roots =>
+      Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment) roots))
+    (CanonicalFactorization.DependsOnSelected.subset model.latent.count
+      model.latent.Value
+      (fun roots =>
+        Kernel.agreesOn y assignment
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment) roots))
+      hsub
+      (agreesOn_rule1Y_dependsOnSelected_union model G x y z w assignment))
+
+/-- The closed `Y` block of `W` ignores the complement of that block. -/
+theorem agreesOn_rule1WSplitClosedUnselected_dependsOnYBlock
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    CanonicalFactorization.DependsOnUnselected model.latent.count
+      model.latent.Value
+      (fun root =>
+        !(rule1WSplitClosedYBlockLatents model G x y z w assignment root))
+      (fun roots =>
+        Kernel.agreesOn
+          (rule1WSplitUnselectedClosed model G x w assignment y) assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots)) := by
+  have hsub :
+      forall root,
+        model.latentRelevantUnder
+            ((rule1Right x y z w).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G x
+              (rule1WSplitUnselectedClosed model G x w assignment y))
+            root = true ->
+          rule1WSplitClosedYBlockLatents model G x y z w assignment root =
+            true := by
+    intro root hr
+    simp [rule1WSplitClosedYBlockLatents, hr]
+  exact CanonicalFactorization.DependsOnUnselected.of_selected_compl
+    model.latent.count model.latent.Value
+    (rule1WSplitClosedYBlockLatents model G x y z w assignment)
+    (fun roots =>
+      Kernel.agreesOn
+        (rule1WSplitUnselectedClosed model G x w assignment y) assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) roots))
+    (CanonicalFactorization.DependsOnSelected.subset model.latent.count
+      model.latent.Value
+      (fun roots =>
+        Kernel.agreesOn
+          (rule1WSplitUnselectedClosed model G x w assignment y) assignment
+          (model.evalUnder
+            ((rule1Right x y z w).intervention assignment) roots))
+      hsub
+      (agreesOn_rule1WSplitClosedUnselected_dependsOnAncestral model G x y
+        z w assignment))
+
+/--
+Rule 1 when `W` meets both open cores, using the descendant-closed
+`Y` block. Directed `W_Y → W'` and extra `do(X)`-free `Y`-core ancestors
+outside `W` are absorbed as `Y`-side seeds, so the complementary slice
+avoids the closed `Y` block by construction. The remaining obligations
+are that the two slices share no ancestral latent, and that the closed
+`Y` block avoids the open `Z` core.
+-/
+def rule1PartitionWitness_of_w_split_closed
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (hOverlap :
+      rule1WSplitClosedAncestralLatentsOverlap model G x y z w assignment =
+        false)
+    (hUnselAvoidsZ :
+      rule1WSplitClosedUnselectedMeetsZCore model G x y z w assignment =
+        false) :
+    ProductConditionalIndependenceWitnessAt model
+      (rule1Left x y z w) (rule1Right x y z w) assignment := by
+  have hSelAvoids :
+      rule1WSplitClosedSelectedMeetsYCore model G x y z w assignment =
+        false :=
+    rule1WSplitClosedSelectedMeetsYCore_eq_false model G x y z w assignment
+  let Iu :=
+    (Kernel.mk NodeSet.empty (NodeSet.union x w) NodeSet.empty).intervention
+      assignment
+  let wSel := rule1WSplitSelectedClosed model G x w assignment y
+  let wUnsel := rule1WSplitUnselectedClosed model G x w assignment y
+  let zEv : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn z assignment (model.evalUnder Iu roots)
+  let yEv : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn y assignment (model.evalUnder Iu roots)
+  let wSelEv : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn wSel assignment
+      (model.evalUnder ((rule1Right x y z w).intervention assignment) roots)
+  let wUnselEv : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn wUnsel assignment
+      (model.evalUnder ((rule1Right x y z w).intervention assignment) roots)
+  have hL :
+      (rule1Left x y z w).intervention assignment =
+        (rule1Right x y z w).intervention assignment := by
+    funext i
+    simp [rule1Left, rule1Right, Kernel.intervention]
+  have hR :
+      (rule1Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule1Right, Kernel.intervention]
+  have wEq : forall roots,
+      Kernel.agreesOn w assignment
+        (model.evalUnder
+          ((rule1Right x y z w).intervention assignment) roots) =
+        (wSelEv roots && wUnselEv roots) := by
+    intro roots
+    have hnodes :=
+      congrArg
+        (fun nodes =>
+          Kernel.agreesOn nodes assignment
+            (model.evalUnder
+              ((rule1Right x y z w).intervention assignment) roots))
+        (rule1WSplitClosed_union model G x w assignment y)
+    simpa [wSelEv, wUnselEv, wSel, wUnsel, Kernel.agreesOn_union] using
+      hnodes.symm
+  refine
+    { selected := fun root =>
+        !(rule1WSplitClosedYBlockLatents model G x y z w assignment root)
+      selectedOutcome := zEv
+      selectedCondition := wSelEv
+      unselectedOutcome := yEv
+      unselectedCondition := wUnselEv
+      selectedOutcomeDepends := ?_
+      selectedConditionDepends := ?_
+      unselectedOutcomeDepends := ?_
+      unselectedConditionDepends := ?_
+      leftNumerator := ?_
+      rightCondition := ?_
+      rightNumerator := ?_
+      leftCondition := ?_ }
+  · simpa [zEv, Iu] using
+      (agreesOn_rule1Z_dependsOnNotClosedYBlock model G projected x y z w
+        assignment separated hUnselAvoidsZ)
+  · simpa [wSelEv, wSel] using
+      (agreesOn_rule1WSplitClosedSelected_dependsOnNotYBlock model G x y z w
+        assignment hSelAvoids hOverlap)
+  · simpa [yEv, Iu] using
+      agreesOn_rule1Y_dependsOnClosedYBlock model G x y z w assignment
+  · simpa [wUnselEv, wUnsel] using
+      agreesOn_rule1WSplitClosedUnselected_dependsOnYBlock model G x y z w
+        assignment
+  · funext roots
+    have hrew :=
+      agreesOn_rule1_evalUnder_union_eq model x y z w assignment roots
+    simp only [productPreimage, Kernel.numeratorEvent, Probability.inter,
+      zEv, yEv, wSelEv, wUnselEv, Iu]
+    rw [show (rule1Left x y z w).outcome = y from rfl,
+      show (rule1Left x y z w).condition = NodeSet.union z w from rfl,
+      hL, Kernel.agreesOn_union, hrew, wEq roots]
+    exact bool_and_four_pairs (wSelEv roots) (wUnselEv roots)
+      (yEv roots) (zEv roots)
+  · funext roots
+    simp only [productPreimage, Kernel.conditionEvent, Probability.inter,
+      wSelEv, wUnselEv]
+    rw [show (rule1Right x y z w).condition = w from rfl, wEq roots]
+  · funext roots
+    have hy :=
+      agreesOn_and_evalUnder_union_eq model x w y assignment roots
+    simp only [productPreimage, Kernel.numeratorEvent, Probability.inter,
+      yEv, wSelEv, wUnselEv, Iu]
+    rw [show (rule1Right x y z w).outcome = y from rfl,
+      show (rule1Right x y z w).condition = w from rfl, hR,
+      Bool.and_comm, hy, ← hR, wEq roots]
+    exact bool_and_mid_swap (wSelEv roots) (wUnselEv roots) (yEv roots)
+  · funext roots
+    have hz :=
+      agreesOn_and_evalUnder_union_eq model x w z assignment roots
+    simp only [productPreimage, Kernel.conditionEvent, Probability.inter,
+      zEv, wSelEv, wUnselEv, Iu]
+    rw [show (rule1Left x y z w).condition = NodeSet.union z w from rfl,
+      hL, Kernel.agreesOn_union, hR, Bool.and_comm, hz, ← hR, wEq roots]
+    exact bool_and_rot_left (wSelEv roots) (wUnselEv roots) (zEv roots)
+
+/--
+Rule 1 from path d-separation.  If `W` misses at least one open core, the
+one-sided witnesses suffice.  If it meets both, the descendant-closed
+split still factorizes once the two slices share no ancestral latent and
+the closed `Y` block misses the open `Z` core.
+-/
+def rule1PartitionWitness_of_path
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (hOverlap :
+      rule1WSplitClosedAncestralLatentsOverlap model G x y z w assignment =
+        false)
+    (hUnselAvoidsZ :
+      rule1WSplitClosedUnselectedMeetsZCore model G x y z w assignment =
+        false) :
+    ProductConditionalIndependenceWitnessAt model
+      (rule1Left x y z w) (rule1Right x y z w) assignment := by
+  cases hboth :
+      (rule1WMeetsUnionAncestral model G x w assignment z &&
+        rule1WMeetsUnionAncestral model G x w assignment y) with
+  | false =>
+      exact rule1PartitionWitness_of_not_both_meet model G projected
+        x y z w assignment separated hboth
+  | true =>
+      exact rule1PartitionWitness_of_w_split_closed model G projected
+        x y z w assignment separated hOverlap hUnselAvoidsZ
+
+/--
+Rule 1 from path d-separation, with the remaining both-meet obligations
+stated as graph-theoretic conditions on the closed split rather than as
+raw Bools.
+-/
+def rule1PartitionWitness_of_closed_split
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G (GraphMutilation.bar x)
+      y z (NodeSet.union x w))
+    (hSame : forall child,
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelectedClosed model G x w assignment y) child =
+        true ->
+        FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitUnselectedClosed model G x w assignment y) child =
+          true ->
+          (rule1WSplitUnselectedClosed model G x w assignment y child ||
+            rule1WYSideSeed model G x w assignment y child) = true)
+    (hDistinct : forall childSel childUnsel,
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitSelectedClosed model G x w assignment y) childSel =
+        true ->
+        FiniteLatentSCM.ancestralInBar G x
+            (rule1WSplitUnselectedClosed model G x w assignment y)
+            childUnsel = true ->
+          childSel ≠ childUnsel ->
+            (rule1WVertexMeetsCore model G x w assignment z childSel &&
+              rule1WVertexMeetsCore model G x w assignment y childUnsel) =
+              true)
+    (hSeed : forall child,
+      FiniteLatentSCM.ancestralInBar G x
+          (rule1WSplitUnselectedClosed model G x w assignment y) child =
+        true ->
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+            assignment) child = none ->
+          finAny model.latent.count (fun root =>
+              model.latentRelevantUnder
+                  ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                    NodeSet.empty).intervention assignment)
+                  (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z)
+                  root &&
+                model.latent.incident root child) = true ->
+            rule1WYSideSeed model G x w assignment y child = true) :
+    ProductConditionalIndependenceWitnessAt model
+      (rule1Left x y z w) (rule1Right x y z w) assignment :=
+  rule1PartitionWitness_of_path model G projected x y z w assignment
+    separated
+    (rule1WSplitClosedAncestralLatentsOverlap_eq_false_of model G projected
+      x y z w assignment separated hSame hDistinct)
+    (rule1WSplitClosedUnselectedMeetsZCore_eq_false_of model G projected
+      x y z w assignment separated hSeed)
+
 /-- Build the rule-2 witness once the four cylinders have been assigned to a
 common latent partition.  The cross-world event equalities are discharged by
 SCM composition; only the dependence proofs remain graph-specific. -/
@@ -1879,6 +9047,1427 @@ def rule2PartitionWitness (model : FiniteLatentSCM S)
         rw [evaluationsEqual]
         rw [wSplit, Kernel.agreesOn_union wSelected wUnselected]
         simp [zHolds]
+
+/-- Empty-cylinder events are constant, so they depend on no coordinates. -/
+theorem agreesOn_empty_eq_true
+    (model : FiniteLatentSCM S)
+    (intervention : (i : Fin S.count) -> Option (S.Value i))
+    (assignment : S.Assignment) (roots : model.latent.Assignment) :
+    Kernel.agreesOn NodeSet.empty assignment
+      (model.evalUnder intervention roots) = true := by
+  unfold Kernel.agreesOn NodeSet.empty
+  refine (finAll_eq_true_iff _).mpr ?_
+  intro _i
+  simp
+
+/-- A latent is shared between `An(Z)` under `do(X)` and `An(W)` under
+`do(X ∪ Z)`.  When this is false, the whole of `W` can sit with `Y` on
+the unselected side of the rule-2 partition. -/
+def rule2WMeetsZAncestral (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S) (assignment : S.Assignment) :
+    Bool :=
+  finAny model.latent.count (fun root =>
+    model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x z) root &&
+      model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w) root)
+
+/-- Ancestral overlap with `W` is vacuous when `W` is empty. -/
+theorem rule2WMeetsZAncestral_of_empty_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    (hw : NodeSet.isEmpty w = true) :
+    rule2WMeetsZAncestral model G x z w assignment = false := by
+  have hw' : w = NodeSet.empty := NodeSet.eq_empty_of_isEmpty hw
+  subst hw'
+  refine (finAny_eq_false_iff _).mpr ?_
+  intro root
+  have hrel :
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+            NodeSet.empty) root = false := by
+    simpa [FiniteLatentSCM.ancestralInBar_eq_empty] using
+      model.latentRelevantUnder_empty
+        ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment)
+        root
+  simp [hrel]
+
+/-- The displayed meet is exactly a shared latent of the two ancestral
+families. -/
+theorem rule2WMeetsZAncestral_eq_true_iff
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment) :
+    rule2WMeetsZAncestral model G x z w assignment = true ↔
+      Exists fun root : Fin model.latent.count =>
+        model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+              assignment)
+            (FiniteLatentSCM.ancestralInBar G x z) root = true ∧
+          model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+              NodeSet.empty).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w) root =
+              true := by
+  constructor
+  · intro hmeet
+    rcases (finAny_eq_true_iff _).mp (by
+      simpa [rule2WMeetsZAncestral] using hmeet) with ⟨root, hroot⟩
+    exact ⟨root, Bool.and_eq_true_iff.mp hroot⟩
+  · rintro ⟨root, hZ, hW⟩
+    apply (finAny_eq_true_iff _).mpr
+    refine ⟨root, ?_⟩
+    exact Bool.and_eq_true_iff.mpr ⟨hZ, hW⟩
+
+/-- Rule 2 when `W` shares no latent with `An(Z)`: `W` under `do(X ∪ Z)`
+depends only on coordinates complementary to those `An(Z)` latents. -/
+theorem agreesOn_rule2W_dependsOnUnselected_of_avoids_z
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (havoid : rule2WMeetsZAncestral model G x z w assignment = false) :
+    CanonicalFactorization.DependsOnUnselected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((rule2Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x z))
+      (fun roots => Kernel.agreesOn w assignment
+        (model.evalUnder
+          ((rule2Left x y z w).intervention assignment) roots)) := by
+  let selected :=
+    model.latentRelevantUnder
+      ((rule2Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x z)
+  let heavier := (rule2Left x y z w).intervention assignment
+  intro left right rootsAgree
+  apply agreesOn_evalUnder_congr_of_rootAgreement model heavier
+    (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w) w assignment
+    (by
+      have hact :
+          heavier =
+            (fun i =>
+              if NodeSet.union x z i then some (assignment i)
+              else none) := by
+        funext i
+        simp [heavier, rule2Left, Kernel.intervention]
+      simpa [hact] using
+        FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+          (NodeSet.union x z) w assignment)
+    (FiniteLatentSCM.subset_ancestralInBar G (NodeSet.union x z) w w
+      (fun _i hi => hi))
+    left right
+  intro root hrelW
+  apply rootsAgree root
+  cases hsel : selected root with
+  | false =>
+      exact hsel
+  | true =>
+      have hmeet :
+          rule2WMeetsZAncestral model G x z w assignment = true := by
+        refine (rule2WMeetsZAncestral_eq_true_iff model G x z w
+            assignment).mpr ⟨root, ?_, ?_⟩
+        · simpa [selected, rule2Right, Kernel.intervention] using hsel
+        · simpa [heavier, rule2Left, Kernel.intervention] using hrelW
+      rw [hmeet] at havoid
+      cases havoid
+
+/-- A `do(X)`-relevant `An(Z)` latent is already relevant to the rule-2
+open `Z` core when `W` shares no such latent: its free incident child is
+open given `X ∪ W`, and a shortest walk into `Z` never meets `W`. -/
+theorem latentRelevantUnder_rule2ZOpenCore_of_avoids
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (havoid : rule2WMeetsZAncestral model G x z w assignment = false)
+    {root : Fin model.latent.count}
+    (hrel : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x z) root = true) :
+    model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.rule2ZOpenCore G x z w) root = true := by
+  let doX :=
+    (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment
+  let doXZ :=
+    (Kernel.mk NodeSet.empty (NodeSet.union x z) NodeSet.empty).intervention
+      assignment
+  rcases (model.latentRelevantUnder_eq_true_iff doX
+      (FiniteLatentSCM.ancestralInBar G x z) root).mp hrel with
+    ⟨child, hsel, hnone, hinc⟩
+  have hx : x child = false := by
+    dsimp [doX, Kernel.intervention] at hnone
+    cases hx : x child with
+    | false =>
+        rfl
+    | true =>
+        simp [hx] at hnone
+  have hwChild : w child = false := by
+    cases hw : w child with
+    | false =>
+        rfl
+    | true =>
+        have hz : z child = false := by
+          cases hz : z child with
+          | false =>
+              rfl
+          | true =>
+              have hfalse := disjoint.zw child hz
+              rw [hw] at hfalse
+              cases hfalse
+        have hfreeXZ : doXZ child = none := by
+          simp [doXZ, Kernel.intervention, NodeSet.union, hx, hz]
+        have hancW :
+            FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w child =
+              true :=
+          FiniteLatentSCM.observedAncestorOf_self G
+            (GraphMutilation.bar (NodeSet.union x z)) w hw
+        have hW :=
+          model.latentRelevantUnder_of_incident doXZ
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w)
+            root child hancW hfreeXZ hinc
+        have hmeet :
+            rule2WMeetsZAncestral model G x z w assignment = true :=
+          (rule2WMeetsZAncestral_eq_true_iff model G x z w assignment).mpr
+            ⟨root, hrel, hW⟩
+        rw [hmeet] at havoid
+        cases havoid
+  have hunion : NodeSet.union x w child = false :=
+    Bool.or_eq_false_iff.mpr ⟨hx, hwChild⟩
+  have hbar :=
+    FiniteLatentSCM.observedAncestorOf_barUnderline_z_of_bar G x z child hsel
+  rcases G.exists_minimal_walk_of_observedAncestorOf
+      (GraphMutilation.barUnderline x z) z child hbar with
+    ⟨target, htarget, length, walk, simple, minimal⟩
+  have hopen :
+      forall n, n ∈ walk.nodes -> NodeSet.union x w n = false := by
+    intro n hn
+    have hxN : x n = false := by
+      by_cases hsrc : n = child
+      · subst n
+        exact hx
+      · have hin :=
+          PathSpecification.directed_walk_mem_not_removeIncoming G
+            (GraphMutilation.barUnderline x z) walk hn hsrc
+        simpa [GraphMutilation.barUnderline] using hin
+    have hwN : w n = false := by
+      cases hw : w n with
+      | false =>
+          rfl
+      | true =>
+          have hzN : z n = false := by
+            cases hz : z n with
+            | false =>
+                rfl
+            | true =>
+                have hfalse := disjoint.zw n hz
+                rw [hw] at hfalse
+                cases hfalse
+          by_cases hsrc : n = child
+          · subst n
+            exact (Bool.false_ne_true (hwChild.symm.trans hw)).elim
+          · rcases FiniteReachability.ExactWalk.exists_prefix_with_subset
+                walk hn with
+              ⟨_plen, preWalk, _bound, subset, rest, hsplit⟩
+            have hnotZ :
+                forall m, m ∈ preWalk.nodes -> z m = false := by
+              intro m hm
+              have hmWalk := subset m hm
+              by_cases hmeq : m = target
+              · subst m
+                have hneN : n ≠ target := by
+                  intro eq
+                  subst n
+                  exact Bool.false_ne_true (hzN.symm.trans htarget)
+                cases hrest : rest with
+                | nil =>
+                    have heq : walk.nodes = preWalk.nodes := by
+                      simpa [hrest] using hsplit
+                    have wlast := walk.nodes_getLast
+                    have plast := preWalk.nodes_getLast
+                    have : n = target := by
+                      simpa [heq, plast] using wlast
+                    exact (hneN this).elim
+                | cons head tail =>
+                    have hwalkNodup := simple
+                    rw [hsplit, hrest] at hwalkNodup
+                    have hrestMem : target ∈ head :: tail := by
+                      have wlast := walk.nodes_getLast
+                      have hrestLast :
+                          (head :: tail).getLast? = some target := by
+                        rw [hsplit, hrest] at wlast
+                        simpa [List.getLast?_append] using wlast
+                      exact List.mem_of_mem_getLast? (by
+                        simp [hrestLast])
+                    have hne :=
+                      (List.nodup_append.mp hwalkNodup).2.2 target hm target
+                        hrestMem
+                    exact (hne rfl).elim
+              · have hfalse :=
+                  FiniteReachability.ExactWalk.not_mem_targets_of_minimal_internal
+                    walk minimal hmWalk hmeq
+                cases hzm : z m with
+                | false =>
+                    rfl
+                | true =>
+                    rw [hzm] at hfalse
+                    cases hfalse
+            have hancW :
+                FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w
+                    child = true :=
+              FiniteLatentSCM.observedAncestorOf_barUnion_of_barUnderline_walk
+                G x z w preWalk hw hnotZ
+            have hzChild : z child = false :=
+              hnotZ child preWalk.mem_source
+            have hfreeXZ : doXZ child = none := by
+              simp [doXZ, Kernel.intervention, NodeSet.union, hx, hzChild]
+            have hW :=
+              model.latentRelevantUnder_of_incident doXZ
+                (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w)
+                root child hancW hfreeXZ hinc
+            have hmeet :
+                rule2WMeetsZAncestral model G x z w assignment = true :=
+              (rule2WMeetsZAncestral_eq_true_iff model G x z w
+                  assignment).mpr ⟨root, hrel, hW⟩
+            rw [hmeet] at havoid
+            cases havoid
+    exact Bool.or_eq_false_iff.mpr ⟨hxN, hwN⟩
+  have hancU :=
+    FiniteLatentSCM.observedAncestorOf_unionBarUnderline_of_open_walk G x w z
+      z walk htarget hopen
+  have hblocked :
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed child) =
+        false := by
+    simpa [ObservedGraph.blockedBy] using hunion
+  have hcore : FiniteLatentSCM.rule2ZOpenCore G x z w child = true := by
+    simp [FiniteLatentSCM.rule2ZOpenCore,
+      FiniteLatentSCM.openAncestralInGraph, hblocked, hancU]
+  exact model.latentRelevantUnder_of_incident doX
+    (FiniteLatentSCM.rule2ZOpenCore G x z w) root child hcore hnone hinc
+
+/-- A `do(X ∪ Z)`-relevant `An(Y)` latent that is also `do(X)`-relevant to
+`An(Z)` is already relevant to the rule-2 open `Y` core when `W` shares
+no `An(Z)` latent: its free incident child is open given `X ∪ W`, and a
+shortest walk into `Y` in `G_{\overline{X}\underline{Z}}` never meets
+`W`. -/
+theorem latentRelevantUnder_rule2YOpenCore_of_avoids
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (havoid : rule2WMeetsZAncestral model G x z w assignment = false)
+    {root : Fin model.latent.count}
+    (hrelZ : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x z) root = true)
+    (hrelY : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) y) root =
+        true) :
+    model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.rule2YOpenCore G x y z w) root = true := by
+  let doX :=
+    (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment
+  let doXZ :=
+    (Kernel.mk NodeSet.empty (NodeSet.union x z) NodeSet.empty).intervention
+      assignment
+  rcases (model.latentRelevantUnder_eq_true_iff doXZ
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) y) root).mp
+      hrelY with
+    ⟨child, hsel, hnone, hinc⟩
+  have hfreeXZ : NodeSet.union x z child = false := by
+    dsimp [doXZ, Kernel.intervention] at hnone
+    cases hunion : NodeSet.union x z child with
+    | false =>
+        rfl
+    | true =>
+        simp [hunion] at hnone
+  have hx : x child = false := (Bool.or_eq_false_iff.mp hfreeXZ).1
+  have hzChild : z child = false := (Bool.or_eq_false_iff.mp hfreeXZ).2
+  have hwChild : w child = false := by
+    cases hw : w child with
+    | false =>
+        rfl
+    | true =>
+        have hancW :
+            FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w child =
+              true :=
+          FiniteLatentSCM.observedAncestorOf_self G
+            (GraphMutilation.bar (NodeSet.union x z)) w hw
+        have hW :=
+          model.latentRelevantUnder_of_incident doXZ
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w)
+            root child hancW hnone hinc
+        have hmeet :
+            rule2WMeetsZAncestral model G x z w assignment = true :=
+          (rule2WMeetsZAncestral_eq_true_iff model G x z w assignment).mpr
+            ⟨root, hrelZ, hW⟩
+        rw [hmeet] at havoid
+        cases havoid
+  have hunion : NodeSet.union x w child = false :=
+    Bool.or_eq_false_iff.mpr ⟨hx, hwChild⟩
+  have hbar :=
+    FiniteLatentSCM.observedAncestorOf_barUnderline_y_of_barUnion G x y z
+      child hsel hfreeXZ
+  rcases G.exists_minimal_walk_of_observedAncestorOf
+      (GraphMutilation.barUnderline x z) y child hbar with
+    ⟨target, htarget, length, walk, simple, minimal⟩
+  have hnotZWalk :
+      forall m, m ∈ walk.nodes -> z m = false := by
+    intro m hm
+    by_cases hsrc : m = child
+    · subst m
+      exact hzChild
+    · by_cases hmt : m = target
+      · subst m
+        have hyfalse := disjoint.yz target htarget
+        cases hz : z target with
+        | false =>
+            rfl
+        | true =>
+            rw [hz] at hyfalse
+            cases hyfalse
+      · rcases FiniteReachability.ExactWalk.exists_simple_suffix_of_mem
+            walk simple hm with
+          ⟨_slen, suffix, _ss, _pre, _hsplit⟩
+        cases suffix with
+        | refl =>
+            exact (hmt rfl).elim
+        | step first rest =>
+            have hzParent : z m = false := by
+              simp [ObservedGraph.observedDirectedEdge,
+                GraphMutilation.barUnderline] at first
+              exact first.1.2
+            exact hzParent
+  have hopen :
+      forall n, n ∈ walk.nodes -> NodeSet.union x w n = false := by
+    intro n hn
+    have hxN : x n = false := by
+      by_cases hsrc : n = child
+      · subst n
+        exact hx
+      · have hin :=
+          PathSpecification.directed_walk_mem_not_removeIncoming G
+            (GraphMutilation.barUnderline x z) walk hn hsrc
+        simpa [GraphMutilation.barUnderline] using hin
+    have hwN : w n = false := by
+      cases hw : w n with
+      | false =>
+          rfl
+      | true =>
+          by_cases hsrc : n = child
+          · subst n
+            exact (Bool.false_ne_true (hwChild.symm.trans hw)).elim
+          · rcases FiniteReachability.ExactWalk.exists_prefix_with_subset
+                walk hn with
+              ⟨_plen, preWalk, _bound, subset, _rest, _hsplit⟩
+            have hnotZ :
+                forall m, m ∈ preWalk.nodes -> z m = false :=
+              fun m hm => hnotZWalk m (subset m hm)
+            have hancW :
+                FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w
+                    child = true :=
+              FiniteLatentSCM.observedAncestorOf_barUnion_of_barUnderline_walk
+                G x z w preWalk hw hnotZ
+            have hW :=
+              model.latentRelevantUnder_of_incident doXZ
+                (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w)
+                root child hancW hnone hinc
+            have hmeet :
+                rule2WMeetsZAncestral model G x z w assignment = true :=
+              (rule2WMeetsZAncestral_eq_true_iff model G x z w
+                  assignment).mpr ⟨root, hrelZ, hW⟩
+            rw [hmeet] at havoid
+            cases havoid
+    exact Bool.or_eq_false_iff.mpr ⟨hxN, hwN⟩
+  have hancU :=
+    FiniteLatentSCM.observedAncestorOf_unionBarUnderline_of_open_walk G x w z
+      y walk htarget hopen
+  have hblocked :
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed child) =
+        false := by
+    simpa [ObservedGraph.blockedBy] using hunion
+  have hcore : FiniteLatentSCM.rule2YOpenCore G x y z w child = true := by
+    simp [FiniteLatentSCM.rule2YOpenCore,
+      FiniteLatentSCM.openAncestralInGraph, hblocked, hancU]
+  have hnoneX : doX child = none := by
+    simp [doX, Kernel.intervention, hx]
+  exact model.latentRelevantUnder_of_incident doX
+    (FiniteLatentSCM.rule2YOpenCore G x y z w) root child hcore hnoneX hinc
+
+/-- Rule 2 with empty `W`: `Z` under `do(X)` depends only on latents of
+`An(Z)` in `G_{\overline{X}}`. -/
+theorem agreesOn_rule2Z_dependsOnSelected_of_empty_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x _y z w : NodeSet S) (assignment : S.Assignment) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((rule2Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x z))
+      (fun roots => Kernel.agreesOn z assignment
+        (model.evalUnder
+          ((rule2Right x y z w).intervention assignment) roots)) :=
+  agreesOn_evalUnder_dependsOnSelected model
+    ((rule2Right x y z w).intervention assignment)
+    (FiniteLatentSCM.ancestralInBar G x z) z assignment
+    (by
+      have hact :
+          (rule2Right x y z w).intervention assignment =
+            (fun i => if x i then some (assignment i) else none) := by
+        funext i
+        simp [rule2Right, Kernel.intervention]
+      simpa [hact] using
+        FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+          x z assignment)
+    (FiniteLatentSCM.subset_ancestralInBar G x z z (fun _i hi => hi))
+
+/-- Rule 2 with empty `W`: `Y` under `do(X ∪ Z)` is independent of the
+selected `An(Z)` latents, because those latents are separated from the
+open `Y` core in `G_{\overline{X}\underline{Z}}`. -/
+theorem agreesOn_rule2Y_dependsOnUnselected_of_empty_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hw : NodeSet.isEmpty w = true)
+    (separated : PathSpecification.PathDSeparated G
+      (GraphMutilation.barUnderline x z) y z (NodeSet.union x w)) :
+    CanonicalFactorization.DependsOnUnselected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((rule2Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x z))
+      (fun roots => Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((rule2Left x y z w).intervention assignment) roots)) := by
+  let selected :=
+    model.latentRelevantUnder
+      ((rule2Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x z)
+  let heavier := (rule2Left x y z w).intervention assignment
+  intro left right rootsAgree
+  apply agreesOn_evalUnder_congr_of_rootAgreement model heavier
+    (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) y) y assignment
+    (by
+      have hact :
+          heavier =
+            (fun i =>
+              if NodeSet.union x z i then some (assignment i)
+              else none) := by
+        funext i
+        simp [heavier, rule2Left, Kernel.intervention]
+      simpa [hact] using
+        FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+          (NodeSet.union x z) y assignment)
+    (FiniteLatentSCM.subset_ancestralInBar G (NodeSet.union x z) y y
+      (fun _i hi => hi))
+    left right
+  intro root hrelY
+  apply rootsAgree root
+  cases hsel : selected root with
+  | false =>
+      exact hsel
+  | true =>
+      have hZopen :
+          model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+              assignment)
+            (FiniteLatentSCM.rule2ZOpenCore G x z w) root = true := by
+        have hrelZ : model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+              assignment)
+            (FiniteLatentSCM.ancestralInBar G x z) root = true := by
+          simpa [selected, rule2Right, Kernel.intervention] using hsel
+        exact FiniteLatentSCM.latentRelevantUnder_rule2ZOpenCore_of_ancestral_of_empty_w
+          model G x z w assignment hw hrelZ
+      have hYopen :
+          model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+              assignment)
+            (FiniteLatentSCM.rule2YOpenCore G x y z w) root = true := by
+        have hrelY' : model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+              NodeSet.empty).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) y) root =
+              true := by
+          simpa [heavier, rule2Left, Kernel.intervention] using hrelY
+        exact FiniteLatentSCM.latentRelevantUnder_rule2YOpenCore_of_barUnion_of_empty_w
+          model G x y z w assignment hw hrelY'
+      have hsep :=
+        FiniteLatentSCM.rule2OpenCores_latentSeparated_of_empty_w model G
+          projected x y z w assignment hw separated root hZopen
+      rw [hYopen] at hsep
+      cases hsep
+
+/-- Rule 2 when `W` shares no `An(Z)` latent: `Y` under `do(X ∪ Z)` is
+independent of the selected `An(Z)` latents, because those latents are
+separated from the open `Y` core in `G_{\overline{X}\underline{Z}}`. -/
+theorem agreesOn_rule2Y_dependsOnUnselected_of_avoids_z
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (havoid : rule2WMeetsZAncestral model G x z w assignment = false)
+    (separated : PathSpecification.PathDSeparated G
+      (GraphMutilation.barUnderline x z) y z (NodeSet.union x w)) :
+    CanonicalFactorization.DependsOnUnselected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((rule2Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x z))
+      (fun roots => Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((rule2Left x y z w).intervention assignment) roots)) := by
+  let selected :=
+    model.latentRelevantUnder
+      ((rule2Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x z)
+  let heavier := (rule2Left x y z w).intervention assignment
+  intro left right rootsAgree
+  apply agreesOn_evalUnder_congr_of_rootAgreement model heavier
+    (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) y) y assignment
+    (by
+      have hact :
+          heavier =
+            (fun i =>
+              if NodeSet.union x z i then some (assignment i)
+              else none) := by
+        funext i
+        simp [heavier, rule2Left, Kernel.intervention]
+      simpa [hact] using
+        FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+          (NodeSet.union x z) y assignment)
+    (FiniteLatentSCM.subset_ancestralInBar G (NodeSet.union x z) y y
+      (fun _i hi => hi))
+    left right
+  intro root hrelY
+  apply rootsAgree root
+  cases hsel : selected root with
+  | false =>
+      exact hsel
+  | true =>
+      have hZopen :
+          model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+              assignment)
+            (FiniteLatentSCM.rule2ZOpenCore G x z w) root = true := by
+        have hrelZ : model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+              assignment)
+            (FiniteLatentSCM.ancestralInBar G x z) root = true := by
+          simpa [selected, rule2Right, Kernel.intervention] using hsel
+        exact latentRelevantUnder_rule2ZOpenCore_of_avoids
+          model G x y z w assignment disjoint havoid hrelZ
+      have hYopen :
+          model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+              assignment)
+            (FiniteLatentSCM.rule2YOpenCore G x y z w) root = true := by
+        have hrelZ : model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+              assignment)
+            (FiniteLatentSCM.ancestralInBar G x z) root = true := by
+          simpa [selected, rule2Right, Kernel.intervention] using hsel
+        have hrelY' : model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+              NodeSet.empty).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) y) root =
+              true := by
+          simpa [heavier, rule2Left, Kernel.intervention] using hrelY
+        exact latentRelevantUnder_rule2YOpenCore_of_avoids
+          model G x y z w assignment disjoint havoid hrelZ hrelY'
+      have hsep :=
+        FiniteLatentSCM.rule2OpenCores_latentSeparated model G
+          projected x y z w assignment separated root hZopen
+      rw [hYopen] at hsep
+      cases hsep
+
+/-- Empty `W` supplies the four cylinder-dependence hypotheses of
+`rule2PartitionWitness`: both `W` blocks are empty, `Z` depends on
+`An(Z)` under `do(X)`, and `Y` is independent of those latents under
+`do(X ∪ Z)`. -/
+def rule2PartitionWitness_of_empty_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (separated : PathSpecification.PathDSeparated G
+      (GraphMutilation.barUnderline x z) y z (NodeSet.union x w))
+    (hw : NodeSet.isEmpty w = true) :
+    ProductConditionalIndependenceWitnessAt model
+      (rule2Right x y z w) (rule2Left x y z w) assignment := by
+  have hact : w = NodeSet.empty := NodeSet.eq_empty_of_isEmpty hw
+  have wSplit : w = NodeSet.union NodeSet.empty NodeSet.empty := by
+    simp [hact, NodeSet.union_empty_right]
+  exact rule2PartitionWitness model x y z w
+    NodeSet.empty NodeSet.empty assignment
+    (model.latentRelevantUnder
+      ((rule2Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x z))
+    wSplit
+    (agreesOn_rule2Z_dependsOnSelected_of_empty_w model G x y z w assignment)
+    (by
+      intro left right _agree
+      have hL :=
+        agreesOn_empty_eq_true model
+          ((rule2Left x y z w).intervention assignment) assignment left
+      have hR :=
+        agreesOn_empty_eq_true model
+          ((rule2Left x y z w).intervention assignment) assignment right
+      simp [hL, hR])
+    (agreesOn_rule2Y_dependsOnUnselected_of_empty_w model G projected
+      x y z w assignment hw separated)
+    (by
+      intro left right _agree
+      have hL :=
+        agreesOn_empty_eq_true model
+          ((rule2Left x y z w).intervention assignment) assignment left
+      have hR :=
+        agreesOn_empty_eq_true model
+          ((rule2Left x y z w).intervention assignment) assignment right
+      simp [hL, hR])
+
+/-- When `W` shares no `An(Z)` latent, the whole of `W` is unselected:
+`wSelected` is empty, `wUnselected` is `W`, `Z` depends on `An(Z)` under
+`do(X)`, and `Y` is independent of those latents under `do(X ∪ Z)`. -/
+def rule2PartitionWitness_of_w_avoids_z
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (havoid : rule2WMeetsZAncestral model G x z w assignment = false)
+    (separated : PathSpecification.PathDSeparated G
+      (GraphMutilation.barUnderline x z) y z (NodeSet.union x w)) :
+    ProductConditionalIndependenceWitnessAt model
+      (rule2Right x y z w) (rule2Left x y z w) assignment := by
+  have wSplit : w = NodeSet.union NodeSet.empty w :=
+    (NodeSet.union_empty_left w).symm
+  exact rule2PartitionWitness model x y z w
+    NodeSet.empty w assignment
+    (model.latentRelevantUnder
+      ((rule2Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x z))
+    wSplit
+    (agreesOn_rule2Z_dependsOnSelected_of_empty_w model G x y z w assignment)
+    (by
+      intro left right _agree
+      have hL :=
+        agreesOn_empty_eq_true model
+          ((rule2Left x y z w).intervention assignment) assignment left
+      have hR :=
+        agreesOn_empty_eq_true model
+          ((rule2Left x y z w).intervention assignment) assignment right
+      simp [hL, hR])
+    (agreesOn_rule2Y_dependsOnUnselected_of_avoids_z model G projected
+      x y z w assignment disjoint havoid separated)
+    (agreesOn_rule2W_dependsOnUnselected_of_avoids_z model G
+      x y z w assignment havoid)
+
+/-- A `W` vertex that is free under `do(X ∪ Z)` and incident to a
+`do(X)`-relevant `An(Z)` latent.  These are the observed children of the
+rule-2 meet. -/
+def rule2WVertexMeetsZ (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S) (assignment : S.Assignment) :
+    NodeSet S :=
+  fun i =>
+    (w i &&
+      ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+        NodeSet.empty).intervention assignment i).isNone) &&
+    finAny model.latent.count (fun root =>
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+            assignment)
+          (FiniteLatentSCM.ancestralInBar G x z) root &&
+        model.latent.incident root i)
+
+theorem rule2WVertexMeetsZ_subset_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment) :
+    NodeSet.Subset (rule2WVertexMeetsZ model G x z w assignment) w := by
+  intro i hi
+  have hparts :
+      (w i &&
+        ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment i).isNone) = true ∧
+        finAny model.latent.count (fun root =>
+          model.latentRelevantUnder
+              ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+                assignment)
+              (FiniteLatentSCM.ancestralInBar G x z) root &&
+            model.latent.incident root i) = true := by
+    simpa [rule2WVertexMeetsZ] using hi
+  exact (Bool.and_eq_true_iff.mp hparts.1).1
+
+/-- A `do(X ∪ Z)`-free ancestor of `W` incident to a `do(X)`-relevant
+`An(Z)` latent.  Meeting `W` vertices are included, as are extra free
+ancestors outside `W` that still feed the meet. -/
+def rule2WZSideSeed (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S) (assignment : S.Assignment) :
+    NodeSet S :=
+  fun i =>
+    (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w i &&
+      ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+        NodeSet.empty).intervention assignment i).isNone) &&
+    finAny model.latent.count (fun root =>
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+            assignment)
+          (FiniteLatentSCM.ancestralInBar G x z) root &&
+        model.latent.incident root i)
+
+theorem rule2WZSideSeed_of_vertex_meet
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    {i : Fin S.count}
+    (hi : rule2WVertexMeetsZ model G x z w assignment i = true) :
+    rule2WZSideSeed model G x z w assignment i = true := by
+  have hparts :
+      (w i &&
+        ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment i).isNone) = true ∧
+        finAny model.latent.count (fun root =>
+          model.latentRelevantUnder
+              ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+                assignment)
+              (FiniteLatentSCM.ancestralInBar G x z) root &&
+            model.latent.incident root i) = true := by
+    simpa [rule2WVertexMeetsZ] using hi
+  have hw : w i = true := (Bool.and_eq_true_iff.mp hparts.1).1
+  have hself :
+      FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w i = true :=
+    FiniteLatentSCM.observedAncestorOf_self G
+      (GraphMutilation.bar (NodeSet.union x z)) w hw
+  refine Bool.and_eq_true_iff.mpr ⟨?_, hparts.2⟩
+  exact Bool.and_eq_true_iff.mpr
+    ⟨hself, (Bool.and_eq_true_iff.mp hparts.1).2⟩
+
+/-- A `Z`-side seed already witnesses `rule2WMeetsZAncestral`. -/
+theorem rule2WMeetsZAncestral_of_seed
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    {i : Fin S.count}
+    (hi : rule2WZSideSeed model G x z w assignment i = true) :
+    rule2WMeetsZAncestral model G x z w assignment = true := by
+  have hparts :
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w i &&
+        ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment i).isNone) = true ∧
+        finAny model.latent.count (fun root =>
+          model.latentRelevantUnder
+              ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+                assignment)
+              (FiniteLatentSCM.ancestralInBar G x z) root &&
+            model.latent.incident root i) = true := by
+    simpa [rule2WZSideSeed] using hi
+  have hancW :
+      FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w i = true :=
+    (Bool.and_eq_true_iff.mp hparts.1).1
+  have hfree :
+      ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+        NodeSet.empty).intervention assignment i) = none :=
+    Option.isNone_iff_eq_none.mp (Bool.and_eq_true_iff.mp hparts.1).2
+  rcases (finAny_eq_true_iff _).mp hparts.2 with ⟨root, hroot⟩
+  rcases Bool.and_eq_true_iff.mp hroot with ⟨hrelZ, hinc⟩
+  have hW :=
+    model.latentRelevantUnder_of_incident
+      ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w)
+      root i hancW hfree hinc
+  exact (rule2WMeetsZAncestral_eq_true_iff model G x z w assignment).mpr
+    ⟨root, hrelZ, hW⟩
+
+/-- Avoiding the `An(Z)` meet empties the `Z`-side seed set. -/
+theorem rule2WZSideSeed_eq_false_of_avoids
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    (havoid : rule2WMeetsZAncestral model G x z w assignment = false)
+    (i : Fin S.count) :
+    rule2WZSideSeed model G x z w assignment i = false := by
+  cases hseed : rule2WZSideSeed model G x z w assignment i with
+  | false =>
+      rfl
+  | true =>
+      have hmeet :=
+        rule2WMeetsZAncestral_of_seed model G x z w assignment hseed
+      rw [hmeet] at havoid
+      cases havoid
+
+/--
+`W` vertices that are directed descendants of a `Z`-side seed in
+`G_{\overline{X ∪ Z}}`, including every `Z`-meeting `W` vertex.  Directed
+`W_Z → W'` is absorbed into the selected block.
+-/
+def rule2WSplitSelectedClosed (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S) (assignment : S.Assignment) :
+    NodeSet S :=
+  fun i =>
+    w i &&
+      NodeSet.meetsBool
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+          (NodeSet.singleton i))
+        (rule2WZSideSeed model G x z w assignment)
+
+def rule2WSplitUnselectedClosed (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S) (assignment : S.Assignment) :
+    NodeSet S :=
+  NodeSet.diff w (rule2WSplitSelectedClosed model G x z w assignment)
+
+theorem rule2WSplitClosed_disjoint (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S) (assignment : S.Assignment) :
+    NodeSet.Disjoint
+      (rule2WSplitSelectedClosed model G x z w assignment)
+      (rule2WSplitUnselectedClosed model G x z w assignment) :=
+  NodeSet.Disjoint.diff_left w
+    (rule2WSplitSelectedClosed model G x z w assignment)
+
+theorem rule2WSplitClosed_union (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S) (assignment : S.Assignment) :
+    NodeSet.union
+      (rule2WSplitSelectedClosed model G x z w assignment)
+      (rule2WSplitUnselectedClosed model G x z w assignment) = w := by
+  funext i
+  simp [rule2WSplitSelectedClosed, rule2WSplitUnselectedClosed,
+    NodeSet.union, NodeSet.diff]
+  cases hw : w i with
+  | false =>
+      simp
+  | true =>
+      cases hm :
+          NodeSet.meetsBool
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+              (NodeSet.singleton i))
+            (rule2WZSideSeed model G x z w assignment) with
+      | false =>
+          simp
+      | true =>
+          simp
+
+/-- Every `Z`-meeting `W` vertex is a descendant of itself, hence sits
+in the closed selected block. -/
+theorem rule2WSplitClosed_contains_meets
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    {i : Fin S.count}
+    (hi : rule2WVertexMeetsZ model G x z w assignment i = true) :
+    rule2WSplitSelectedClosed model G x z w assignment i = true := by
+  have hw : w i = true :=
+    rule2WVertexMeetsZ_subset_w model G x z w assignment i hi
+  have hseed :
+      rule2WZSideSeed model G x z w assignment i = true :=
+    rule2WZSideSeed_of_vertex_meet model G x z w assignment hi
+  have hself :
+      FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+        (NodeSet.singleton i) i = true :=
+    FiniteLatentSCM.observedAncestorOf_self G
+      (GraphMutilation.bar (NodeSet.union x z)) (NodeSet.singleton i)
+      ((NodeSet.singleton_eq_true_iff i i).mpr rfl)
+  have hmeets :
+      NodeSet.meetsBool
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+          (NodeSet.singleton i))
+        (rule2WZSideSeed model G x z w assignment) = true :=
+    (NodeSet.meetsBool_eq_true_iff _ _).mpr ⟨i, hself, hseed⟩
+  simp [rule2WSplitSelectedClosed, hw, hmeets]
+
+/-- Avoiding the `An(Z)` meet empties the closed selected block. -/
+theorem rule2WSplitSelectedClosed_eq_false_of_avoids
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    (havoid : rule2WMeetsZAncestral model G x z w assignment = false)
+    (i : Fin S.count) :
+    rule2WSplitSelectedClosed model G x z w assignment i = false := by
+  simp [rule2WSplitSelectedClosed]
+  cases hw : w i with
+  | false =>
+      simp
+  | true =>
+      cases hm :
+          NodeSet.meetsBool
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+              (NodeSet.singleton i))
+            (rule2WZSideSeed model G x z w assignment) with
+      | false =>
+          simp
+      | true =>
+          rcases (NodeSet.meetsBool_eq_true_iff _ _).mp hm with
+            ⟨seed, _hanc, hseed⟩
+          have hfalse :=
+            rule2WZSideSeed_eq_false_of_avoids model G x z w assignment
+              havoid seed
+          rw [hfalse] at hseed
+          cases hseed
+
+/-- A `do(X ∪ Z)`-free ancestor of `W` incident to a `do(X ∪ Z)`-relevant
+`An(Y)` latent.  This is the rule-2 analogue of a `Y`-side seed. -/
+def rule2WYSideSeed (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x y z w : NodeSet S) (assignment : S.Assignment) :
+    NodeSet S :=
+  fun i =>
+    (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w i &&
+      ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+        NodeSet.empty).intervention assignment i).isNone) &&
+    finAny model.latent.count (fun root =>
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) y) root &&
+        model.latent.incident root i)
+
+/-- A `Z`-side seed cannot ancestor an unselected `W` vertex: that
+vertex would itself be a descendant of the seed, hence selected. -/
+theorem rule2WSplitClosed_no_seed_in_unselected
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    {seed : Fin S.count}
+    (hseed : rule2WZSideSeed model G x z w assignment seed = true)
+    (hanc : FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+        (rule2WSplitUnselectedClosed model G x z w assignment) seed =
+          true) :
+    False := by
+  have hany :
+      (List.ofFn (fun k : Fin S.count => k)).any (fun target =>
+        rule2WSplitUnselectedClosed model G x z w assignment target &&
+          FiniteReachability.within finBeq
+            (List.ofFn (fun k : Fin S.count => k))
+            (G.observedDirectedEdge
+              (GraphMutilation.bar (NodeSet.union x z)))
+            (List.ofFn (fun k : Fin S.count => k)).length seed target) =
+        true := by
+    simpa [FiniteLatentSCM.ancestralInBar, ObservedGraph.observedAncestorOf]
+      using hanc
+  rcases List.any_eq_true.mp hany with ⟨t, tMem, ht⟩
+  have htParts := Bool.and_eq_true_iff.mp ht
+  have hunsel :
+      rule2WSplitUnselectedClosed model G x z w assignment t = true :=
+    htParts.1
+  have hseedT :
+      FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+        (NodeSet.singleton t) seed = true := by
+    have hanyT :
+        (List.ofFn (fun k : Fin S.count => k)).any (fun target =>
+          NodeSet.singleton t target &&
+            FiniteReachability.within finBeq
+              (List.ofFn (fun k : Fin S.count => k))
+              (G.observedDirectedEdge
+                (GraphMutilation.bar (NodeSet.union x z)))
+              (List.ofFn (fun k : Fin S.count => k)).length seed target) =
+          true :=
+      List.any_eq_true.mpr
+        ⟨t, tMem,
+          Bool.and_eq_true_iff.mpr
+            ⟨(NodeSet.singleton_eq_true_iff t t).mpr rfl, htParts.2⟩⟩
+    simpa [FiniteLatentSCM.ancestralInBar, ObservedGraph.observedAncestorOf]
+      using hanyT
+  have hwT : w t = true :=
+    NodeSet.diff_subset_left w
+      (rule2WSplitSelectedClosed model G x z w assignment) t hunsel
+  have hsel :
+      rule2WSplitSelectedClosed model G x z w assignment t = true := by
+    have hmeetsT :
+        NodeSet.meetsBool
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+            (NodeSet.singleton t))
+          (rule2WZSideSeed model G x z w assignment) = true :=
+      (NodeSet.meetsBool_eq_true_iff _ _).mpr ⟨seed, hseedT, hseed⟩
+    simp [rule2WSplitSelectedClosed, hwT, hmeetsT]
+  have hfalse :
+      rule2WSplitUnselectedClosed model G x z w assignment t = false :=
+    rule2WSplitClosed_disjoint model G x z w assignment t hsel
+  exact Bool.false_ne_true (hfalse.symm.trans hunsel)
+
+/-- The closed unselected slice of `W` observes only latents complementary
+to the `do(X)`-relevant `An(Z)` family: a selected latent incident to an
+unselected ancestor would be a `Z`-side seed in that ancestral set. -/
+theorem agreesOn_rule2WSplitUnselectedClosed_dependsOnNotZ
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    CanonicalFactorization.DependsOnUnselected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((rule2Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x z))
+      (fun roots => Kernel.agreesOn
+        (rule2WSplitUnselectedClosed model G x z w assignment) assignment
+        (model.evalUnder
+          ((rule2Left x y z w).intervention assignment) roots)) := by
+  let selected :=
+    model.latentRelevantUnder
+      ((rule2Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x z)
+  let heavier := (rule2Left x y z w).intervention assignment
+  intro left right rootsAgree
+  apply agreesOn_evalUnder_congr_of_rootAgreement model heavier
+    (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+      (rule2WSplitUnselectedClosed model G x z w assignment))
+    (rule2WSplitUnselectedClosed model G x z w assignment) assignment
+    (by
+      have hact :
+          heavier =
+            (fun i =>
+              if NodeSet.union x z i then some (assignment i)
+              else none) := by
+        funext i
+        simp [heavier, rule2Left, Kernel.intervention]
+      simpa [hact] using
+        FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+          (NodeSet.union x z)
+          (rule2WSplitUnselectedClosed model G x z w assignment)
+          assignment)
+    (FiniteLatentSCM.subset_ancestralInBar G (NodeSet.union x z)
+      (rule2WSplitUnselectedClosed model G x z w assignment)
+      (rule2WSplitUnselectedClosed model G x z w assignment)
+      (fun _i hi => hi))
+    left right
+  intro root hrelW
+  apply rootsAgree root
+  cases hsel : selected root with
+  | false =>
+      exact hsel
+  | true =>
+      have hrelZ : model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+            assignment)
+          (FiniteLatentSCM.ancestralInBar G x z) root = true := by
+        simpa [selected, rule2Right, Kernel.intervention] using hsel
+      rcases (model.latentRelevantUnder_eq_true_iff heavier
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+            (rule2WSplitUnselectedClosed model G x z w assignment))
+          root).mp (by
+            simpa [heavier, rule2Left, Kernel.intervention] using hrelW) with
+        ⟨child, hancU, hnone, hinc⟩
+      have hancW :
+          FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w child =
+            true :=
+        FiniteLatentSCM.ancestralInBar_mono G (NodeSet.union x z)
+          (NodeSet.diff_subset_left w
+            (rule2WSplitSelectedClosed model G x z w assignment))
+          hancU
+      have hseed :
+          rule2WZSideSeed model G x z w assignment child = true := by
+        have hfree :
+            ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+              NodeSet.empty).intervention assignment child).isNone =
+              true := by
+          have hact :
+              heavier =
+                (Kernel.mk NodeSet.empty (NodeSet.union x z)
+                  NodeSet.empty).intervention assignment := by
+            funext i
+            simp [heavier, rule2Left, Kernel.intervention]
+          have : heavier child = none := hnone
+          rw [hact] at this
+          exact Option.isNone_iff_eq_none.mpr this
+        have hincZ :
+            finAny model.latent.count (fun r =>
+              model.latentRelevantUnder
+                  ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+                    assignment)
+                  (FiniteLatentSCM.ancestralInBar G x z) r &&
+                model.latent.incident r child) = true :=
+          (finAny_eq_true_iff _).mpr ⟨root,
+            Bool.and_eq_true_iff.mpr ⟨hrelZ, hinc⟩⟩
+        refine Bool.and_eq_true_iff.mpr ⟨?_, hincZ⟩
+        exact Bool.and_eq_true_iff.mpr ⟨hancW, hfree⟩
+      exact (rule2WSplitClosed_no_seed_in_unselected model G x z w
+        assignment hseed hancU).elim
+
+/-- The closed selected slice of `W` observes only latents of its own
+ancestors in `G_{\overline{X ∪ Z}}`. -/
+theorem agreesOn_rule2WSplitSelectedClosed_dependsOnAncestral
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((rule2Left x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+          (rule2WSplitSelectedClosed model G x z w assignment)))
+      (fun roots =>
+        Kernel.agreesOn
+          (rule2WSplitSelectedClosed model G x z w assignment) assignment
+          (model.evalUnder
+            ((rule2Left x y z w).intervention assignment) roots)) := by
+  have hinter :
+      (rule2Left x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule2Left, Kernel.intervention]
+  simpa [hinter] using
+    agreesOn_evalUnder_dependsOnSelected model
+      ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+        (rule2WSplitSelectedClosed model G x z w assignment))
+      (rule2WSplitSelectedClosed model G x z w assignment) assignment
+      (FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+        (NodeSet.union x z)
+        (rule2WSplitSelectedClosed model G x z w assignment) assignment)
+      (FiniteLatentSCM.subset_ancestralInBar G (NodeSet.union x z)
+        (rule2WSplitSelectedClosed model G x z w assignment)
+        (rule2WSplitSelectedClosed model G x z w assignment)
+        (fun _i hi => hi))
+
+/-- The closed unselected slice of `W` observes only latents of its own
+ancestors in `G_{\overline{X ∪ Z}}`. -/
+theorem agreesOn_rule2WSplitUnselectedClosed_dependsOnAncestral
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((rule2Left x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+          (rule2WSplitUnselectedClosed model G x z w assignment)))
+      (fun roots =>
+        Kernel.agreesOn
+          (rule2WSplitUnselectedClosed model G x z w assignment) assignment
+          (model.evalUnder
+            ((rule2Left x y z w).intervention assignment) roots)) := by
+  have hinter :
+      (rule2Left x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule2Left, Kernel.intervention]
+  simpa [hinter] using
+    agreesOn_evalUnder_dependsOnSelected model
+      ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+        (rule2WSplitUnselectedClosed model G x z w assignment))
+      (rule2WSplitUnselectedClosed model G x z w assignment) assignment
+      (FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+        (NodeSet.union x z)
+        (rule2WSplitUnselectedClosed model G x z w assignment) assignment)
+      (FiniteLatentSCM.subset_ancestralInBar G (NodeSet.union x z)
+        (rule2WSplitUnselectedClosed model G x z w assignment)
+        (rule2WSplitUnselectedClosed model G x z w assignment)
+        (fun _i hi => hi))
+
+/-- A selected-`W` ancestral latent under `do(X ∪ Z)` that is missing from
+`An(Z)` under `do(X)`.  This is the extra-latent gap: the closed selected
+block can see coordinates outside the rule-2 `An(Z)` mask. -/
+def rule2WSplitSelectedClosedExtraLatent (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S) (assignment : S.Assignment) :
+    Bool :=
+  finAny model.latent.count (fun root =>
+    model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+          (rule2WSplitSelectedClosed model G x z w assignment)) root &&
+      !(model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+            assignment)
+          (FiniteLatentSCM.ancestralInBar G x z) root))
+
+/-- Avoiding the `An(Z)` meet empties the selected block, so it contributes
+no extra ancestral latents. -/
+theorem rule2WSplitSelectedClosedExtraLatent_eq_false_of_avoids
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    (havoid : rule2WMeetsZAncestral model G x z w assignment = false) :
+    rule2WSplitSelectedClosedExtraLatent model G x z w assignment =
+      false := by
+  have hsel :
+      rule2WSplitSelectedClosed model G x z w assignment = NodeSet.empty := by
+    funext i
+    exact rule2WSplitSelectedClosed_eq_false_of_avoids model G x z w
+      assignment havoid i
+  refine (finAny_eq_false_iff _).mpr ?_
+  intro root
+  have hrel :
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+            (rule2WSplitSelectedClosed model G x z w assignment))
+          root = false := by
+    rw [hsel, FiniteLatentSCM.ancestralInBar_eq_empty]
+    exact model.latentRelevantUnder_empty
+      ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+        NodeSet.empty).intervention assignment)
+      root
+  simp [hrel]
+
+/-- When the extra-latent gap is empty, the closed selected slice of `W`
+observes only the `do(X)`-relevant `An(Z)` latents. -/
+theorem agreesOn_rule2WSplitSelectedClosed_dependsOnZ
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hextra :
+      rule2WSplitSelectedClosedExtraLatent model G x z w assignment =
+        false) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((rule2Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x z))
+      (fun roots =>
+        Kernel.agreesOn
+          (rule2WSplitSelectedClosed model G x z w assignment) assignment
+          (model.evalUnder
+            ((rule2Left x y z w).intervention assignment) roots)) := by
+  have hall :=
+    (finAny_eq_false_iff (fun root =>
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+            (rule2WSplitSelectedClosed model G x z w assignment)) root &&
+        !(model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+              assignment)
+            (FiniteLatentSCM.ancestralInBar G x z) root))).mp
+      (by simpa [rule2WSplitSelectedClosedExtraLatent] using hextra)
+  have hsub :
+      forall root,
+        model.latentRelevantUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+              NodeSet.empty).intervention assignment)
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+              (rule2WSplitSelectedClosed model G x z w assignment))
+            root = true ->
+          model.latentRelevantUnder
+              ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+                assignment)
+              (FiniteLatentSCM.ancestralInBar G x z) root = true := by
+    intro root hr
+    have hroot := hall root
+    cases hz :
+        model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+            assignment)
+          (FiniteLatentSCM.ancestralInBar G x z) root with
+    | true =>
+        rfl
+    | false =>
+        simp [hr, hz] at hroot
+  have hinterL :
+      (rule2Left x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule2Left, Kernel.intervention]
+  have hinterR :
+      (rule2Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment :=
+      by
+    funext i
+    simp [rule2Right, Kernel.intervention]
+  simpa [hinterL, hinterR] using
+    CanonicalFactorization.DependsOnSelected.subset model.latent.count
+      model.latent.Value
+      (fun roots =>
+        Kernel.agreesOn
+          (rule2WSplitSelectedClosed model G x z w assignment) assignment
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+              NodeSet.empty).intervention assignment) roots))
+      hsub
+      (by
+        simpa [hinterL] using
+          agreesOn_rule2WSplitSelectedClosed_dependsOnAncestral model G
+            x y z w assignment)
+
+/-- A `do(X)`-relevant `An(Z)` latent that is also `do(X ∪ Z)`-relevant to
+`An(Y)`.  When this is false, `Y` ignores the rule-2 selected mask. -/
+def rule2SelectedMeetsYAncestral (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x y z _w : NodeSet S)
+    (assignment : S.Assignment) :
+    Bool :=
+  finAny model.latent.count (fun root =>
+    model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x z) root &&
+      model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) y) root)
+
+/-- `Y` under `do(X ∪ Z)` is independent of the selected `An(Z)` latents
+once those latents are not relevant to `An(Y)`. -/
+theorem agreesOn_rule2Y_dependsOnUnselected_of_avoids_y
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (havoidY :
+      rule2SelectedMeetsYAncestral model G x y z w assignment = false) :
+    CanonicalFactorization.DependsOnUnselected model.latent.count
+      model.latent.Value
+      (model.latentRelevantUnder
+        ((rule2Right x y z w).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x z))
+      (fun roots => Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((rule2Left x y z w).intervention assignment) roots)) := by
+  let selected :=
+    model.latentRelevantUnder
+      ((rule2Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x z)
+  let heavier := (rule2Left x y z w).intervention assignment
+  intro left right rootsAgree
+  apply agreesOn_evalUnder_congr_of_rootAgreement model heavier
+    (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) y) y assignment
+    (by
+      have hact :
+          heavier =
+            (fun i =>
+              if NodeSet.union x z i then some (assignment i)
+              else none) := by
+        funext i
+        simp [heavier, rule2Left, Kernel.intervention]
+      simpa [hact] using
+        FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+          (NodeSet.union x z) y assignment)
+    (FiniteLatentSCM.subset_ancestralInBar G (NodeSet.union x z) y y
+      (fun _i hi => hi))
+    left right
+  intro root hrelY
+  apply rootsAgree root
+  cases hsel : selected root with
+  | false =>
+      exact hsel
+  | true =>
+      have hmeet :
+          rule2SelectedMeetsYAncestral model G x y z w assignment = true := by
+        refine (finAny_eq_true_iff _).mpr ⟨root, ?_⟩
+        refine Bool.and_eq_true_iff.mpr ⟨?_, ?_⟩
+        · simpa [selected, rule2Right, Kernel.intervention] using hsel
+        · simpa [heavier, rule2Left, Kernel.intervention] using hrelY
+      rw [hmeet] at havoidY
+      cases havoidY
+
+/-- When the extra-latent gap is empty and `Y` ignores the selected
+`An(Z)` mask, the closed `Z`-side split inhabits the rule-2 partition. -/
+def rule2PartitionWitness_of_w_split_closed
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hextra :
+      rule2WSplitSelectedClosedExtraLatent model G x z w assignment =
+        false)
+    (havoidY :
+      rule2SelectedMeetsYAncestral model G x y z w assignment = false) :
+    ProductConditionalIndependenceWitnessAt model
+      (rule2Right x y z w) (rule2Left x y z w) assignment :=
+  rule2PartitionWitness model x y z w
+    (rule2WSplitSelectedClosed model G x z w assignment)
+    (rule2WSplitUnselectedClosed model G x z w assignment) assignment
+    (model.latentRelevantUnder
+      ((rule2Right x y z w).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x z))
+    (rule2WSplitClosed_union model G x z w assignment).symm
+    (agreesOn_rule2Z_dependsOnSelected_of_empty_w model G x y z w assignment)
+    (agreesOn_rule2WSplitSelectedClosed_dependsOnZ model G x y z w
+      assignment hextra)
+    (agreesOn_rule2Y_dependsOnUnselected_of_avoids_y model G x y z w
+      assignment havoidY)
+    (agreesOn_rule2WSplitUnselectedClosed_dependsOnNotZ model G x y z w
+      assignment)
 
 /-- A checked latent partition discharges the canonical-product cross-product
 obligation. -/
@@ -2020,6 +10609,980 @@ theorem ProductRectangularCrossProductWitnessAt.toCrossProduct
           (QProb.equiv_symm
             (QProb.mul_congr rightNumeratorFactor
               leftConditionFactor)))))
+
+/-- A fully unselected mask makes every event a rectangle with constant
+selected factor `true`. -/
+def ProductEventRectangle.of_all_unselected (model : FiniteLatentSCM S)
+    (event : model.latent.Assignment -> Bool) :
+    ProductEventRectangle model (fun _ => false) event where
+  selectedPart := fun _ => true
+  unselectedPart := event
+  selectedDepends :=
+    CanonicalFactorization.DependsOnSelected.const _ _ _ true
+  unselectedDepends := by
+    intro left right agree
+    have heq : left = right := funext fun i => agree i rfl
+    subst heq
+    rfl
+  factorization := by
+    funext roots
+    simp [Probability.inter]
+
+/-- Identical kernels have a rectangular cross-product: both sides share
+the same numerator and condition, and a fully unselected mask makes the
+two cross identities reflexive. -/
+def ProductRectangularCrossProductWitnessAt.of_kernel_eq
+    (model : FiniteLatentSCM S) (left right : Kernel S)
+    (assignment : S.Assignment) (heq : left = right) :
+    ProductRectangularCrossProductWitnessAt model left right assignment := by
+  subst heq
+  exact
+    { selected := fun _ => false
+      leftNumerator :=
+        ProductEventRectangle.of_all_unselected model
+          (productPreimage model left assignment
+            (left.numeratorEvent assignment))
+      rightCondition :=
+        ProductEventRectangle.of_all_unselected model
+          (productPreimage model left assignment
+            (left.conditionEvent assignment))
+      rightNumerator :=
+        ProductEventRectangle.of_all_unselected model
+          (productPreimage model left assignment
+            (left.numeratorEvent assignment))
+      leftCondition :=
+        ProductEventRectangle.of_all_unselected model
+          (productPreimage model left assignment
+            (left.conditionEvent assignment))
+      selectedCross := QProb.equiv_refl _
+      unselectedCross := QProb.equiv_refl _ }
+
+/-- Identical kernels also inhabit the stronger CI shape: the selected
+factors are constantly true, the unselected factors are the shared
+numerator and condition, and `P(Y, W)` already implies `W`. -/
+def ProductConditionalIndependenceWitnessAt.of_kernel_eq
+    (model : FiniteLatentSCM S) (left right : Kernel S)
+    (assignment : S.Assignment) (heq : left = right) :
+    ProductConditionalIndependenceWitnessAt model left right assignment := by
+  subst heq
+  let num :=
+    productPreimage model left assignment (left.numeratorEvent assignment)
+  let cond :=
+    productPreimage model left assignment (left.conditionEvent assignment)
+  let numRect := ProductEventRectangle.of_all_unselected model num
+  let condRect := ProductEventRectangle.of_all_unselected model cond
+  refine
+    { selected := fun _ => false
+      selectedOutcome := fun _ => true
+      selectedCondition := fun _ => true
+      unselectedOutcome := num
+      unselectedCondition := cond
+      selectedOutcomeDepends :=
+        CanonicalFactorization.DependsOnSelected.const _ _ _ true
+      selectedConditionDepends :=
+        CanonicalFactorization.DependsOnSelected.const _ _ _ true
+      unselectedOutcomeDepends := numRect.unselectedDepends
+      unselectedConditionDepends := condRect.unselectedDepends
+      leftNumerator := ?_
+      rightCondition := ?_
+      rightNumerator := ?_
+      leftCondition := ?_ }
+  · funext roots
+    simp [num, cond, productPreimage, Kernel.numeratorEvent,
+      Kernel.conditionEvent, Probability.inter]
+  · funext roots
+    simp [cond, productPreimage, Probability.inter]
+  · funext roots
+    simp [num, cond, productPreimage, Kernel.numeratorEvent,
+      Kernel.conditionEvent, Probability.inter]
+  · funext roots
+    simp [cond, productPreimage, Probability.inter]
+
+/-- Empty `Z` makes rule 1 an identity of kernels.  The side condition
+`Y ⊥ ∅ | X ∪ W` in `G_{\overline{X}}` is vacuous. -/
+def rule1PartitionWitness_of_empty_z
+    (model : FiniteLatentSCM S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hz : NodeSet.isEmpty z = true) :
+    ProductConditionalIndependenceWitnessAt model
+      (rule1Left x y z w) (rule1Right x y z w) assignment :=
+  ProductConditionalIndependenceWitnessAt.of_kernel_eq model
+    (rule1Left x y z w) (rule1Right x y z w) assignment
+    (rule1Left_eq_rule1Right_of_empty_z x y z w hz)
+
+/-- Empty `Z` makes rule 2 an identity of kernels, oriented as the
+partition witness `(right, left)`. -/
+def rule2PartitionWitness_of_empty_z
+    (model : FiniteLatentSCM S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hz : NodeSet.isEmpty z = true) :
+    ProductConditionalIndependenceWitnessAt model
+      (rule2Right x y z w) (rule2Left x y z w) assignment :=
+  ProductConditionalIndependenceWitnessAt.of_kernel_eq model
+    (rule2Right x y z w) (rule2Left x y z w) assignment
+    (rule2Left_eq_rule2Right_of_empty_z x y z w hz).symm
+
+/--
+Rule 2 from path d-separation.  Empty `Z` is a kernel identity; empty
+`W` or a `W` that misses `An(Z)` uses the one-sided witnesses.  If `W`
+meets `An(Z)`, the closed split still factorizes once the extra-latent
+gap is empty and `Y` ignores the selected `An(Z)` mask.
+-/
+def rule2PartitionWitness_of_path
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (separated : PathSpecification.PathDSeparated G
+      (GraphMutilation.barUnderline x z) y z (NodeSet.union x w))
+    (hextra :
+      rule2WSplitSelectedClosedExtraLatent model G x z w assignment =
+        false)
+    (havoidY :
+      rule2SelectedMeetsYAncestral model G x y z w assignment = false) :
+    ProductConditionalIndependenceWitnessAt model
+      (rule2Right x y z w) (rule2Left x y z w) assignment := by
+  cases hz : NodeSet.isEmpty z with
+  | true =>
+      exact rule2PartitionWitness_of_empty_z model x y z w assignment hz
+  | false =>
+      cases hw : NodeSet.isEmpty w with
+      | true =>
+          exact rule2PartitionWitness_of_empty_w model G projected
+            x y z w assignment separated hw
+      | false =>
+          cases havoid :
+              rule2WMeetsZAncestral model G x z w assignment with
+          | false =>
+              exact rule2PartitionWitness_of_w_avoids_z model G projected
+                x y z w assignment disjoint havoid separated
+          | true =>
+              exact rule2PartitionWitness_of_w_split_closed model G
+                x y z w assignment hextra havoidY
+
+/-- Empty `Z` makes rule 3 an identity of kernels. -/
+def rule3RectangularWitness_of_empty_z
+    (model : FiniteLatentSCM S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hz : NodeSet.isEmpty z = true) :
+    ProductRectangularCrossProductWitnessAt model
+      (rule3Left x y z w) (rule3Right x y z w) assignment :=
+  ProductRectangularCrossProductWitnessAt.of_kernel_eq model
+    (rule3Left x y z w) (rule3Right x y z w) assignment
+    (rule3Left_eq_rule3Right_of_empty_z x y z w hz)
+
+/-- When `Z(W) = Z`, `Y` is evaluated the same under `do(X)` and
+`do(X ∪ Z)`, because d-separation in `G_{\overline{X ∪ Z}}` forbids `Z`
+from ancestoring `Y`. -/
+theorem agreesOn_rule3Y_eq_of_z_avoids_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (hrem : G.nonAncestorsOf (GraphMutilation.bar x) z w = z)
+    (separated : PathSpecification.PathDSeparated G
+      { removeIncoming :=
+          NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+        removeOutgoing := NodeSet.empty }
+      y z (NodeSet.union x w))
+    (roots : model.latent.Assignment) :
+    Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((rule3Left x y z w).intervention assignment) roots) =
+      Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((rule3Right x y z w).intervention assignment) roots) := by
+  unfold Kernel.agreesOn
+  apply finAll_congr
+  intro child
+  cases hy : y child with
+  | false =>
+      rfl
+  | true =>
+      have hanc :
+          FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) y child =
+            true :=
+        FiniteLatentSCM.observedAncestorOf_self G
+          (GraphMutilation.bar (NodeSet.union x z)) y hy
+      have hclosed :=
+        FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+          (NodeSet.union x z) y assignment
+      have hagree :
+          forall i, FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) y i =
+              true ->
+            ((rule3Left x y z w).intervention assignment i) =
+              ((rule3Right x y z w).intervention assignment i) := by
+        intro i hi
+        have hz : z i = false := by
+          cases hzi : z i with
+          | false =>
+              rfl
+          | true =>
+              have hfalse :=
+                FiniteLatentSCM.rule3_z_not_ancestral_of_z_avoids_w G x y z w
+                  disjoint hrem separated hzi
+              simpa [FiniteLatentSCM.ancestralInBar] using
+                (hfalse.symm.trans hi)
+        have hinterL :
+            (rule3Left x y z w).intervention assignment i =
+              (if NodeSet.union x z i then some (assignment i)
+                else none) := by
+          simp [rule3Left, Kernel.intervention]
+        have hinterR :
+            (rule3Right x y z w).intervention assignment i =
+              (if x i then some (assignment i) else none) := by
+          simp [rule3Right, Kernel.intervention]
+        have hxZ : NodeSet.union x z i = x i := by
+          simp [NodeSet.union, hz]
+        simp [hinterL, hinterR, hxZ]
+      have heval :=
+        FiniteLatentSCM.evalUnder_eq_on_of_intervention_agree_on_closed
+          model
+          ((rule3Left x y z w).intervention assignment)
+          ((rule3Right x y z w).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) y)
+          roots hclosed hagree child hanc
+      simp [heval]
+
+theorem agreesOn_rule3Y_eq_of_empty_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (hw : NodeSet.isEmpty w = true)
+    (separated : PathSpecification.PathDSeparated G
+      { removeIncoming :=
+          NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+        removeOutgoing := NodeSet.empty }
+      y z (NodeSet.union x w))
+    (roots : model.latent.Assignment) :
+    Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((rule3Left x y z w).intervention assignment) roots) =
+      Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((rule3Right x y z w).intervention assignment) roots) :=
+  agreesOn_rule3Y_eq_of_z_avoids_w model G x y z w assignment disjoint
+    (ObservedGraph.nonAncestorsOf_of_isEmpty G (GraphMutilation.bar x) z w hw)
+    separated roots
+
+/-- When no `Z` vertex ancestors `W` in `G_{\overline{X}}`, the `W`
+cylinders under `do(X ∪ Z)` and `do(X)` coincide: intervening on `Z`
+cannot reach `W`. -/
+theorem agreesOn_rule3W_eq_of_z_avoids_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hrem : G.nonAncestorsOf (GraphMutilation.bar x) z w = z)
+    (roots : model.latent.Assignment) :
+    Kernel.agreesOn w assignment
+        (model.evalUnder
+          ((rule3Left x y z w).intervention assignment) roots) =
+      Kernel.agreesOn w assignment
+        (model.evalUnder
+          ((rule3Right x y z w).intervention assignment) roots) := by
+  unfold Kernel.agreesOn
+  apply finAll_congr
+  intro child
+  cases hw : w child with
+  | false =>
+      rfl
+  | true =>
+      have hanc :
+          FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w child =
+            true :=
+        FiniteLatentSCM.observedAncestorOf_self G
+          (GraphMutilation.bar (NodeSet.union x z)) w hw
+      have hclosed :=
+        FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+          (NodeSet.union x z) w assignment
+      have hagree :
+          forall i, FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w i =
+              true ->
+            ((rule3Left x y z w).intervention assignment i) =
+              ((rule3Right x y z w).intervention assignment i) := by
+        intro i hi
+        have hz : z i = false := by
+          cases hzi : z i with
+          | false =>
+              rfl
+          | true =>
+              have hfalse :=
+                FiniteLatentSCM.rule3_z_not_ancestral_w_of_z_avoids_w G x z w
+                  hrem hzi
+              simpa [FiniteLatentSCM.ancestralInBar] using
+                (hfalse.symm.trans hi)
+        have hinterL :
+            (rule3Left x y z w).intervention assignment i =
+              (if NodeSet.union x z i then some (assignment i)
+                else none) := by
+          simp [rule3Left, Kernel.intervention]
+        have hinterR :
+            (rule3Right x y z w).intervention assignment i =
+              (if x i then some (assignment i) else none) := by
+          simp [rule3Right, Kernel.intervention]
+        have hxZ : NodeSet.union x z i = x i := by
+          simp [NodeSet.union, hz]
+        simp [hinterL, hinterR, hxZ]
+      have heval :=
+        FiniteLatentSCM.evalUnder_eq_on_of_intervention_agree_on_closed
+          model
+          ((rule3Left x y z w).intervention assignment)
+          ((rule3Right x y z w).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w)
+          roots hclosed hagree child hanc
+      simp [heval]
+
+/-- `Y` under `do(X ∪ W ∪ Z)` equals `Y` under `do(X ∪ W)`: d-separation
+in the rule-3 side graph forbids `Z` from ancestoring `Y` after incoming
+arrows to `W` are cut. -/
+theorem agreesOn_rule3Y_eq_of_union_xw
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (separated : PathSpecification.PathDSeparated G
+      { removeIncoming :=
+          NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+        removeOutgoing := NodeSet.empty }
+      y z (NodeSet.union x w))
+    (roots : model.latent.Assignment) :
+    Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty
+            (NodeSet.union (NodeSet.union x w) z)
+            NodeSet.empty).intervention assignment) roots) =
+      Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment) roots) := by
+  unfold Kernel.agreesOn
+  apply finAll_congr
+  intro child
+  cases hy : y child with
+  | false =>
+      rfl
+  | true =>
+      have hanc :
+          FiniteLatentSCM.ancestralInBar G
+            (NodeSet.union (NodeSet.union x w) z) y child = true :=
+        FiniteLatentSCM.observedAncestorOf_self G
+          (GraphMutilation.bar (NodeSet.union (NodeSet.union x w) z)) y hy
+      have hclosed :=
+        FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+          (NodeSet.union (NodeSet.union x w) z) y assignment
+      have hagree :
+          forall i,
+            FiniteLatentSCM.ancestralInBar G
+                (NodeSet.union (NodeSet.union x w) z) y i = true ->
+              ((Kernel.mk NodeSet.empty
+                  (NodeSet.union (NodeSet.union x w) z)
+                  NodeSet.empty).intervention assignment i) =
+                ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+                  NodeSet.empty).intervention assignment i) := by
+        intro i hi
+        have hz : z i = false := by
+          cases hzi : z i with
+          | false =>
+              rfl
+          | true =>
+              have hfalse :=
+                FiniteLatentSCM.rule3_z_not_ancestral_of_union_xw G x y z w
+                  disjoint separated hzi
+              simpa [FiniteLatentSCM.ancestralInBar] using
+                (hfalse.symm.trans hi)
+        have hinterL :
+            (Kernel.mk NodeSet.empty
+                (NodeSet.union (NodeSet.union x w) z)
+                NodeSet.empty).intervention assignment i =
+              (if NodeSet.union (NodeSet.union x w) z i
+                then some (assignment i) else none) := by
+          simp [Kernel.intervention]
+        have hinterR :
+            (Kernel.mk NodeSet.empty (NodeSet.union x w)
+                NodeSet.empty).intervention assignment i =
+              (if NodeSet.union x w i then some (assignment i)
+                else none) := by
+          simp [Kernel.intervention]
+        have hxZ : NodeSet.union (NodeSet.union x w) z i =
+            NodeSet.union x w i := by
+          simp [NodeSet.union, hz]
+        simp [hinterL, hinterR, hxZ]
+      have heval :=
+        FiniteLatentSCM.evalUnder_eq_on_of_intervention_agree_on_closed
+          model
+          ((Kernel.mk NodeSet.empty
+            (NodeSet.union (NodeSet.union x w) z)
+            NodeSet.empty).intervention assignment)
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G
+            (NodeSet.union (NodeSet.union x w) z) y)
+          roots hclosed hagree child hanc
+      simp [heval]
+
+/-- Rule-3 left numerator `Y ∧ W` under `do(X ∪ Z)` rewrites as the `W`
+cylinder times `Y` under `do(X ∪ Z ∪ W)`. -/
+theorem agreesOn_rule3Left_evalUnder_union_eq
+    (model : FiniteLatentSCM S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (roots : model.latent.Assignment) :
+    (Kernel.agreesOn y assignment
+        (model.evalUnder ((rule3Left x y z w).intervention assignment)
+          roots) &&
+      Kernel.agreesOn w assignment
+        (model.evalUnder ((rule3Left x y z w).intervention assignment)
+          roots)) =
+      (Kernel.agreesOn w assignment
+        (model.evalUnder ((rule3Left x y z w).intervention assignment)
+          roots) &&
+      Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty
+            (NodeSet.union (NodeSet.union x z) w)
+            NodeSet.empty).intervention assignment) roots)) := by
+  have hinter :
+      (rule3Left x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule3Left, Kernel.intervention]
+  rw [hinter]
+  conv =>
+    lhs
+    rw [Bool.and_comm]
+  exact agreesOn_and_evalUnder_union_eq model (NodeSet.union x z) w y
+    assignment roots
+
+/-- Rule-3 right numerator `Y ∧ W` under `do(X)` rewrites as the `W`
+cylinder times `Y` under `do(X ∪ W)`. -/
+theorem agreesOn_rule3Right_evalUnder_union_eq
+    (model : FiniteLatentSCM S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (roots : model.latent.Assignment) :
+    (Kernel.agreesOn y assignment
+        (model.evalUnder ((rule3Right x y z w).intervention assignment)
+          roots) &&
+      Kernel.agreesOn w assignment
+        (model.evalUnder ((rule3Right x y z w).intervention assignment)
+          roots)) =
+      (Kernel.agreesOn w assignment
+        (model.evalUnder ((rule3Right x y z w).intervention assignment)
+          roots) &&
+      Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment) roots)) := by
+  have hinter :
+      (rule3Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+          assignment := by
+    funext i
+    simp [rule3Right, Kernel.intervention]
+  rw [hinter]
+  conv =>
+    lhs
+    rw [Bool.and_comm]
+  exact agreesOn_and_evalUnder_union_eq model x w y assignment roots
+
+/-- Combined given-`W` rewrite of the rule-3 left numerator onto
+`Y` under `do(X ∪ W)`. -/
+theorem agreesOn_rule3Left_numerator_eq_given_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (separated : PathSpecification.PathDSeparated G
+      { removeIncoming :=
+          NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+        removeOutgoing := NodeSet.empty }
+      y z (NodeSet.union x w))
+    (roots : model.latent.Assignment) :
+    (Kernel.agreesOn y assignment
+        (model.evalUnder ((rule3Left x y z w).intervention assignment)
+          roots) &&
+      Kernel.agreesOn w assignment
+        (model.evalUnder ((rule3Left x y z w).intervention assignment)
+          roots)) =
+      (Kernel.agreesOn w assignment
+        (model.evalUnder ((rule3Left x y z w).intervention assignment)
+          roots) &&
+      Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment) roots)) := by
+  have hunion :
+      NodeSet.union (NodeSet.union x z) w =
+        NodeSet.union (NodeSet.union x w) z := by
+    rw [NodeSet.union_assoc, NodeSet.union_comm z w, ← NodeSet.union_assoc]
+  rw [agreesOn_rule3Left_evalUnder_union_eq]
+  rw [hunion]
+  have hy :=
+    agreesOn_rule3Y_eq_of_union_xw model G x y z w assignment disjoint
+      separated roots
+  rw [hy]
+
+/-- A `do(X ∪ W)`-relevant ancestor of `Y` that is also relevant to `W`
+under `do(X ∪ Z)` or `do(X)`.  When this is false, the given-`W` cylinders
+factor across the `Y` mask. -/
+def rule3YWLatentOverlap (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (assignment : S.Assignment) : Bool :=
+  finAny model.latent.count (fun root =>
+    model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root &&
+      (model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w) root ||
+        model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+            assignment)
+          (FiniteLatentSCM.ancestralInBar G x w) root))
+
+/-- Empty `W` has no ancestral latents, so it cannot overlap the `Y` mask. -/
+theorem rule3YWLatentOverlap_eq_false_of_empty_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hw : NodeSet.isEmpty w = true) :
+    rule3YWLatentOverlap model G x y z w assignment = false := by
+  have hw' : w = NodeSet.empty := NodeSet.eq_empty_of_isEmpty hw
+  subst hw'
+  refine (finAny_eq_false_iff _).mpr fun root => ?_
+  have hL :
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+            NodeSet.empty) root = false := by
+    simpa [FiniteLatentSCM.ancestralInBar_eq_empty] using
+      FiniteLatentSCM.latentRelevantUnder_empty model
+        ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment) root
+  have hR :
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+            assignment)
+          (FiniteLatentSCM.ancestralInBar G x NodeSet.empty) root =
+            false := by
+    simpa [FiniteLatentSCM.ancestralInBar_eq_empty] using
+      FiniteLatentSCM.latentRelevantUnder_empty model
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+          assignment) root
+  simp [hL, hR]
+
+/-- Empty `Y` has no ancestral latents, so the given-`W` overlap is false. -/
+theorem rule3YWLatentOverlap_eq_false_of_empty_y
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hy : NodeSet.isEmpty y = true) :
+    rule3YWLatentOverlap model G x y z w assignment = false := by
+  have hy' : y = NodeSet.empty := NodeSet.eq_empty_of_isEmpty hy
+  subst hy'
+  refine (finAny_eq_false_iff _).mpr fun root => ?_
+  have hY :
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w)
+            NodeSet.empty) root = false := by
+    simpa [FiniteLatentSCM.ancestralInBar_eq_empty] using
+      FiniteLatentSCM.latentRelevantUnder_empty model
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment) root
+  simp [hY]
+
+theorem rule3YWLatentSeparatedAcross_left_of_overlap
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hoverlap : rule3YWLatentOverlap model G x y z w assignment = false) :
+    model.LatentSeparatedAcross
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+      ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w) := by
+  intro root hyRel
+  have hall := (finAny_eq_false_iff _).mp hoverlap root
+  cases hL :
+      model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w) root with
+  | false =>
+      rfl
+  | true =>
+      simp [hyRel, hL] at hall
+
+theorem rule3YWLatentSeparatedAcross_right_of_overlap
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hoverlap : rule3YWLatentOverlap model G x y z w assignment = false) :
+    model.LatentSeparatedAcross
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+      ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G x w) := by
+  intro root hyRel
+  have hall := (finAny_eq_false_iff _).mp hoverlap root
+  cases hR :
+      model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G x w) root with
+  | false =>
+      rfl
+  | true =>
+      simp [hyRel, hR] at hall
+
+/-- Given-`W` rule 3: if the `Y` mask under `do(X ∪ W)` shares no latent
+with `W` under either kernel intervention, the four events are rectangles
+on that mask.  The extra overlap Bool is not a theorem of path
+d-separation (`U → Y` and `U → W` remain). -/
+def rule3RectangularWitness_of_given_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (separated : PathSpecification.PathDSeparated G
+      { removeIncoming :=
+          NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+        removeOutgoing := NodeSet.empty }
+      y z (NodeSet.union x w))
+    (hoverlap : rule3YWLatentOverlap model G x y z w assignment = false) :
+    ProductRectangularCrossProductWitnessAt model
+      (rule3Left x y z w) (rule3Right x y z w) assignment := by
+  let yInt :=
+    (Kernel.mk NodeSet.empty (NodeSet.union x w)
+      NodeSet.empty).intervention assignment
+  let yMask :=
+    model.latentRelevantUnder yInt
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+  let yCyl : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn y assignment (model.evalUnder yInt roots)
+  let wLeft : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn w assignment
+      (model.evalUnder ((rule3Left x y z w).intervention assignment) roots)
+  let wRight : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn w assignment
+      (model.evalUnder ((rule3Right x y z w).intervention assignment) roots)
+  have hinterL :
+      (rule3Left x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment := by
+    funext i
+    simp [rule3Left, Kernel.intervention]
+  have hinterR :
+      (rule3Right x y z w).intervention assignment =
+        (Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+          assignment := by
+    funext i
+    simp [rule3Right, Kernel.intervention]
+  have yClosed :=
+    FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+      (NodeSet.union x w) y assignment
+  have yContained :=
+    FiniteLatentSCM.ancestralInBar_contains_targets G (NodeSet.union x w) y
+  have wContainedL :=
+    FiniteLatentSCM.ancestralInBar_contains_targets G (NodeSet.union x z) w
+  have wContainedR :=
+    FiniteLatentSCM.ancestralInBar_contains_targets G x w
+  have wClosedL :=
+    FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+      (NodeSet.union x z) w assignment
+  have wClosedR :=
+    FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G x w
+      assignment
+  have yDepends : CanonicalFactorization.DependsOnSelected
+      model.latent.count model.latent.Value yMask yCyl :=
+    agreesOn_evalUnder_dependsOnSelected model yInt
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) y
+      assignment yClosed yContained
+  have wLeftDepends : CanonicalFactorization.DependsOnUnselected
+      model.latent.count model.latent.Value yMask wLeft := by
+    simpa [wLeft, hinterL] using
+      agreesOn_evalUnder_dependsOnUnselected_across model yInt
+        ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w) w
+        assignment wClosedL wContainedL
+        (rule3YWLatentSeparatedAcross_left_of_overlap model G x y z w
+          assignment hoverlap)
+  have wRightDepends : CanonicalFactorization.DependsOnUnselected
+      model.latent.count model.latent.Value yMask wRight := by
+    simpa [wRight, hinterR] using
+      agreesOn_evalUnder_dependsOnUnselected_across model yInt
+        ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
+        (FiniteLatentSCM.ancestralInBar G x w) w assignment wClosedR
+        wContainedR
+        (rule3YWLatentSeparatedAcross_right_of_overlap model G x y z w
+          assignment hoverlap)
+  have hnumL :
+      productPreimage model (rule3Left x y z w) assignment
+          ((rule3Left x y z w).numeratorEvent assignment) =
+        Probability.inter yCyl wLeft := by
+    funext roots
+    simp only [productPreimage, Kernel.numeratorEvent]
+    have hout : (rule3Left x y z w).outcome = y := rfl
+    have hcond : (rule3Left x y z w).condition = w := rfl
+    rw [hout, hcond]
+    rw [agreesOn_rule3Left_numerator_eq_given_w model G x y z w assignment
+      disjoint separated roots]
+    rw [Bool.and_comm]
+    rfl
+  have hnumR :
+      productPreimage model (rule3Right x y z w) assignment
+          ((rule3Right x y z w).numeratorEvent assignment) =
+        Probability.inter yCyl wRight := by
+    funext roots
+    simp only [productPreimage, Kernel.numeratorEvent]
+    have hout : (rule3Right x y z w).outcome = y := rfl
+    have hcond : (rule3Right x y z w).condition = w := rfl
+    rw [hout, hcond]
+    rw [agreesOn_rule3Right_evalUnder_union_eq model x y z w assignment roots]
+    rw [Bool.and_comm]
+    rfl
+  have hcondL :
+      productPreimage model (rule3Left x y z w) assignment
+          ((rule3Left x y z w).conditionEvent assignment) =
+        wLeft := by
+    funext roots
+    simp [productPreimage, Kernel.conditionEvent, rule3Left, wLeft]
+  have hcondR :
+      productPreimage model (rule3Right x y z w) assignment
+          ((rule3Right x y z w).conditionEvent assignment) =
+        wRight := by
+    funext roots
+    simp [productPreimage, Kernel.conditionEvent, rule3Right, wRight]
+  exact
+    { selected := yMask
+      leftNumerator :=
+        { selectedPart := yCyl
+          unselectedPart := wLeft
+          selectedDepends := yDepends
+          unselectedDepends := wLeftDepends
+          factorization := hnumL }
+      rightCondition :=
+        { selectedPart := fun _ => true
+          unselectedPart := wRight
+          selectedDepends :=
+            CanonicalFactorization.DependsOnSelected.const _ _ _ true
+          unselectedDepends := wRightDepends
+          factorization := by
+            funext roots
+            simp only [Probability.inter, Bool.true_and]
+            exact congrArg (fun e => e roots) hcondR.symm }
+      rightNumerator :=
+        { selectedPart := yCyl
+          unselectedPart := wRight
+          selectedDepends := yDepends
+          unselectedDepends := wRightDepends
+          factorization := hnumR }
+      leftCondition :=
+        { selectedPart := fun _ => true
+          unselectedPart := wLeft
+          selectedDepends :=
+            CanonicalFactorization.DependsOnSelected.const _ _ _ true
+          unselectedDepends := wLeftDepends
+          factorization := by
+            funext roots
+            simp only [Probability.inter, Bool.true_and]
+            exact congrArg (fun e => e roots) hcondL.symm }
+      selectedCross := QProb.equiv_refl _
+      unselectedCross := QProb.mul_comm _ _ }
+
+/-- Empty-outcome rule 3: the `Y` mask is vacant, so given-`W` overlap
+is false and the rectangle inhabits. -/
+def rule3RectangularWitness_of_empty_y
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (separated : PathSpecification.PathDSeparated G
+      { removeIncoming :=
+          NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+        removeOutgoing := NodeSet.empty }
+      y z (NodeSet.union x w))
+    (hy : NodeSet.isEmpty y = true) :
+    ProductRectangularCrossProductWitnessAt model
+      (rule3Left x y z w) (rule3Right x y z w) assignment :=
+  rule3RectangularWitness_of_given_w model G x y z w assignment disjoint
+    separated
+    (rule3YWLatentOverlap_eq_false_of_empty_y model G x y z w assignment
+      hy)
+
+/-- When no `Z` vertex ancestors `W` in `G_{\overline{X}}`, and path
+d-separation forbids `Z` from ancestoring `Y` in `G_{\overline{X ∪ Z}}`,
+the two rule-3 kernels share `Y` and `W` cylinders.  The selected mask is
+vacuous: intervening on `Z` is invisible to both families. -/
+def rule3RectangularWitness_of_z_avoids_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (hrem : G.nonAncestorsOf (GraphMutilation.bar x) z w = z)
+    (separated : PathSpecification.PathDSeparated G
+      { removeIncoming :=
+          NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+        removeOutgoing := NodeSet.empty }
+      y z (NodeSet.union x w)) :
+    ProductRectangularCrossProductWitnessAt model
+      (rule3Left x y z w) (rule3Right x y z w) assignment := by
+  let yLeft : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn y assignment
+      (model.evalUnder ((rule3Left x y z w).intervention assignment) roots)
+  let wLeft : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn w assignment
+      (model.evalUnder ((rule3Left x y z w).intervention assignment) roots)
+  have yEq : forall roots,
+      yLeft roots =
+        Kernel.agreesOn y assignment
+          (model.evalUnder
+            ((rule3Right x y z w).intervention assignment) roots) :=
+    fun roots =>
+      agreesOn_rule3Y_eq_of_z_avoids_w model G x y z w assignment
+        disjoint hrem separated roots
+  have wEq : forall roots,
+      wLeft roots =
+        Kernel.agreesOn w assignment
+          (model.evalUnder
+            ((rule3Right x y z w).intervention assignment) roots) :=
+    fun roots =>
+      agreesOn_rule3W_eq_of_z_avoids_w model G x y z w assignment hrem roots
+  have hnumL :
+      productPreimage model (rule3Left x y z w) assignment
+          ((rule3Left x y z w).numeratorEvent assignment) =
+        fun roots => yLeft roots && wLeft roots := by
+    funext roots
+    simp only [productPreimage, Kernel.numeratorEvent, rule3Left]
+    simp [yLeft, wLeft, rule3Left]
+  have hnumR :
+      productPreimage model (rule3Right x y z w) assignment
+          ((rule3Right x y z w).numeratorEvent assignment) =
+        fun roots => yLeft roots && wLeft roots := by
+    funext roots
+    simp only [productPreimage, Kernel.numeratorEvent]
+    have hout : (rule3Right x y z w).outcome = y := rfl
+    have hcondn : (rule3Right x y z w).condition = w := rfl
+    rw [hout, hcondn]
+    rw [← yEq roots, ← wEq roots]
+  have hcondL :
+      productPreimage model (rule3Left x y z w) assignment
+          ((rule3Left x y z w).conditionEvent assignment) =
+        wLeft := by
+    funext roots
+    simp only [productPreimage, Kernel.conditionEvent, rule3Left]
+    simp [wLeft, rule3Left]
+  have hcondR :
+      productPreimage model (rule3Right x y z w) assignment
+          ((rule3Right x y z w).conditionEvent assignment) =
+        wLeft := by
+    funext roots
+    simp only [productPreimage, Kernel.conditionEvent]
+    have hcondn : (rule3Right x y z w).condition = w := rfl
+    rw [hcondn]
+    rw [← wEq roots]
+  exact
+    { selected := fun _ => false
+      leftNumerator :=
+        ProductEventRectangle.of_all_unselected model
+          (productPreimage model (rule3Left x y z w) assignment
+            ((rule3Left x y z w).numeratorEvent assignment))
+      rightCondition :=
+        ProductEventRectangle.of_all_unselected model
+          (productPreimage model (rule3Right x y z w) assignment
+            ((rule3Right x y z w).conditionEvent assignment))
+      rightNumerator :=
+        ProductEventRectangle.of_all_unselected model
+          (productPreimage model (rule3Right x y z w) assignment
+            ((rule3Right x y z w).numeratorEvent assignment))
+      leftCondition :=
+        ProductEventRectangle.of_all_unselected model
+          (productPreimage model (rule3Left x y z w) assignment
+            ((rule3Left x y z w).conditionEvent assignment))
+      selectedCross := QProb.equiv_refl _
+      unselectedCross := by
+        change QProb.Equiv
+          (QProb.mul
+            ((productRecord model).probVal
+              (productPreimage model (rule3Left x y z w)
+                assignment
+                ((rule3Left x y z w).numeratorEvent assignment)))
+            ((productRecord model).probVal
+              (productPreimage model (rule3Right x y z w)
+                assignment
+                ((rule3Right x y z w).conditionEvent assignment))))
+          (QProb.mul
+            ((productRecord model).probVal
+              (productPreimage model (rule3Right x y z w)
+                assignment
+                ((rule3Right x y z w).numeratorEvent assignment)))
+            ((productRecord model).probVal
+              (productPreimage model (rule3Left x y z w)
+                assignment
+                ((rule3Left x y z w).conditionEvent assignment))))
+        rw [hnumL, hnumR, hcondL, hcondR]
+        exact QProb.equiv_refl _ }
+
+/-- Empty `W` is given-`W` rule 3 with a vacuous overlap: `W` has no
+ancestral latents. -/
+def rule3RectangularWitness_of_empty_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (hw : NodeSet.isEmpty w = true)
+    (separated : PathSpecification.PathDSeparated G
+      { removeIncoming :=
+          NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+        removeOutgoing := NodeSet.empty }
+      y z (NodeSet.union x w)) :
+    ProductRectangularCrossProductWitnessAt model
+      (rule3Left x y z w) (rule3Right x y z w) assignment :=
+  rule3RectangularWitness_of_given_w model G x y z w assignment disjoint
+    separated
+    (rule3YWLatentOverlap_eq_false_of_empty_w model G x y z w assignment hw)
+
+/--
+Rule 3 from path d-separation.  Empty `Z` is a kernel identity; empty
+`Y` or empty `W` forces overlap false; `Z(W) = Z` uses matching `Y`/`W`
+cylinders.  The remaining extra Bool is given-`W` overlap of nonempty
+`Y` with nonempty `W` when `Z(W) ≠ Z`.
+-/
+def rule3RectangularWitness_of_path
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (separated : PathSpecification.PathDSeparated G
+      { removeIncoming :=
+          NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+        removeOutgoing := NodeSet.empty }
+      y z (NodeSet.union x w))
+    (hoverlap :
+      rule3YWLatentOverlap model G x y z w assignment = false) :
+    ProductRectangularCrossProductWitnessAt model
+      (rule3Left x y z w) (rule3Right x y z w) assignment := by
+  cases hz : NodeSet.isEmpty z with
+  | true =>
+      exact rule3RectangularWitness_of_empty_z model x y z w assignment hz
+  | false =>
+      cases hy : NodeSet.isEmpty y with
+      | true =>
+          exact rule3RectangularWitness_of_empty_y model G x y z w
+            assignment disjoint separated hy
+      | false =>
+          cases hw : NodeSet.isEmpty w with
+          | true =>
+              exact rule3RectangularWitness_of_empty_w model G x y z w
+                assignment disjoint hw separated
+          | false =>
+              cases hrem :
+                  NodeSet.equal
+                    (G.nonAncestorsOf (GraphMutilation.bar x) z w) z with
+              | true =>
+                  exact rule3RectangularWitness_of_z_avoids_w model G
+                    x y z w assignment disjoint
+                    ((NodeSet.equal_eq_true_iff _ _).mp hrem)
+                    separated
+              | false =>
+                  exact rule3RectangularWitness_of_given_w model G
+                    x y z w assignment disjoint separated hoverlap
 
 theorem ProductCrossProductEquivalentAt.toDistribution
     {model : FiniteLatentSCM S} {left right : Kernel S}
@@ -2179,6 +11742,72 @@ structure PathDoRulePartitionWitnesses (G : ObservedGraph S)
        y z (NodeSet.union x w)) ->
     Kernel.ProductRectangularCrossProductWitnessAt model
       (rule3Left x y z w) (rule3Right x y z w) assignment
+  -- `rule3RectangularWitness_of_path` cases empty `Z`/`Y`/`W` and
+  -- `Z(W) = Z` before asking for given-`W` overlap.  Overlap of nonempty
+  -- `Y` with nonempty `W` when `Z(W) ≠ Z` remains.
+  -- `rule2PartitionWitness_of_path` cases empty `Z`/`W` and the
+  -- `An(Z)`-avoiding split before asking for the extra-latent gap and
+  -- the mixed `An(Z)`–`An(Y)` meet.
+
+/--
+Assemble the three path-do-rule partition witnesses from path
+d-separation, a projected graph, and the remaining extra Bools.
+
+The Bools are required only on queries that survive the cheap empty /
+one-sided cases inside each `of_path` assembler; they are still
+stated for every separated query so the package does not hide a
+case split from the caller.
+-/
+def PathDoRulePartitionWitnesses.ofPath
+    (G : ObservedGraph S) (model : FiniteLatentSCM S)
+    (projected : HasProjectedGraph model G)
+    (hRule1Overlap : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
+      PathSpecification.PathDSeparated
+        G (.bar x) y z (NodeSet.union x w) →
+      Kernel.rule1WSplitClosedAncestralLatentsOverlap
+        model G x y z w assignment = false)
+    (hRule1Unsel : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
+      PathSpecification.PathDSeparated
+        G (.bar x) y z (NodeSet.union x w) →
+      Kernel.rule1WSplitClosedUnselectedMeetsZCore
+        model G x y z w assignment = false)
+    (hRule2Extra : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
+      PathSpecification.PathDSeparated
+        G (.barUnderline x z) y z (NodeSet.union x w) →
+      Kernel.rule2WSplitSelectedClosedExtraLatent
+        model G x z w assignment = false)
+    (hRule2MeetsY : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
+      PathSpecification.PathDSeparated
+        G (.barUnderline x z) y z (NodeSet.union x w) →
+      Kernel.rule2SelectedMeetsYAncestral
+        model G x y z w assignment = false)
+    (hRule3Overlap : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
+      PathSpecification.PathDSeparated G
+        { removeIncoming :=
+            NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+          removeOutgoing := NodeSet.empty }
+        y z (NodeSet.union x w) →
+      Kernel.rule3YWLatentOverlap model G x y z w assignment = false) :
+    PathDoRulePartitionWitnesses G model where
+  rule1 := fun x y z w assignment _disjoint separated =>
+    Kernel.rule1PartitionWitness_of_path model G projected
+      x y z w assignment separated
+      (hRule1Overlap x y z w assignment separated)
+      (hRule1Unsel x y z w assignment separated)
+  rule2 := fun x y z w assignment disjoint separated =>
+    Kernel.rule2PartitionWitness_of_path model G projected
+      x y z w assignment disjoint separated
+      (hRule2Extra x y z w assignment separated)
+      (hRule2MeetsY x y z w assignment separated)
+  rule3 := fun x y z w assignment disjoint separated =>
+    Kernel.rule3RectangularWitness_of_path model G
+      x y z w assignment disjoint separated
+      (hRule3Overlap x y z w assignment separated)
 
 def PathDoRulePartitionWitnesses.toProductCrossProductLaws
     {G : ObservedGraph S} {model : FiniteLatentSCM S}
