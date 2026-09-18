@@ -404,6 +404,13 @@ theorem binomTerm_mul_pow (n a b s k : Nat) :
   simp [binomTerm, Nat.mul_pow]
   ac_rfl
 
+/-- Homogenising a binomial term against a common denominator power. -/
+theorem binomTerm_homogenize (n a b num den k : Nat) :
+    binomTerm n a b k * num ^ k * den ^ (n - k) =
+      binomTerm n (a * num) (b * den) k := by
+  simp [binomTerm, Nat.mul_pow]
+  ac_rfl
+
 /-- Evaluating the binomial generating function at a natural argument `s`
 recovers the binomial theorem with success weight `a * s`. -/
 theorem binomTerm_generating (n a b s : Nat) :
@@ -513,6 +520,23 @@ theorem geomSum_pos (r n : Nat) (hn : 0 < n) :
       simp [Nat.pow_zero]
       exact Nat.add_pos_left (Nat.succ_pos 0) _
 
+/-- Homogenised geometric generating sum
+`∑_{k ≤ len} r^k d^{len - k}`.  The unhomogenised `geomSum r (len + 1)`
+is the `d = 1` case. -/
+def geomSumHomog (r d len : Nat) : Nat :=
+  natSum (len + 1) (fun k => r ^ k * d ^ (len - k))
+
+theorem geomSumHomog_one (r len : Nat) :
+    geomSumHomog r 1 len = geomSum r (len + 1) := by
+  unfold geomSumHomog geomSum
+  apply natSum_congr
+  intro k _
+  have hone : (1 : Nat) ^ (len - k) = 1 := by
+    induction len - k with
+    | zero => rfl
+    | succ n ih => rw [Nat.pow_succ, ih]
+  simp [hone]
+
 /-- Truncated negative-binomial generating sum
 `∑_{k < n} C(k + r - 1, k) x^k`.  Callers take `0 < r` so the
 `r - 1` shift does not wrap. -/
@@ -539,6 +563,24 @@ theorem nbSum_pos (r x n : Nat) (hr : 0 < r) (hn : 0 < n) :
       rw [natSum_head]
       simp [binom_zero_right, Nat.pow_zero]
       exact Nat.add_pos_left (Nat.succ_pos 0) _
+
+/-- Homogenised negative-binomial generating sum
+`∑_{k ≤ len} C(k + r - 1, k) x^k d^{len - k}`.  The unhomogenised
+`nbSum r x (len + 1)` is the `d = 1` case. -/
+def nbSumHomog (r x d len : Nat) : Nat :=
+  natSum (len + 1) (fun k =>
+    binom (k + r - 1) k * x ^ k * d ^ (len - k))
+
+theorem nbSumHomog_one (r x len : Nat) :
+    nbSumHomog r x 1 len = nbSum r x (len + 1) := by
+  unfold nbSumHomog nbSum
+  apply natSum_congr
+  intro k _
+  have hone : (1 : Nat) ^ (len - k) = 1 := by
+    induction len - k with
+    | zero => rfl
+    | succ n ih => rw [Nat.pow_succ, ih]
+  simp [hone]
 
 /-- Cauchy product of binomial terms with a common success/failure weight.
 Out-of-range indices are zero by `binom_eq_zero_of_lt`. -/

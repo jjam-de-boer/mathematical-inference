@@ -72,6 +72,71 @@ theorem map_pmf [DecidableEq X] (μ : Distro Ω) (f : Ω → X) (value : X) :
   simpa [Distro.pmf] using
     map_probVal μ f (FiniteProbRecord.singletonEvent value)
 
+/-- Relabelling composes: decode after encode is encode-then-decode. -/
+theorem map_comp (μ : Distro Ω) (f : Ω → X) (g : X → Y) :
+    (μ.map f).map g = μ.map (fun omega => g (f omega)) := by
+  simp [map, FiniteProbRecord.map_comp]
+
+/-- Composed relabelling is preimage under the composite encoding. -/
+theorem map_comp_probVal (μ : Distro Ω) (f : Ω → X) (g : X → Y)
+    (event : Event Y) :
+    QProb.Equiv (((μ.map f).map g).record.probVal event)
+      (μ.record.probVal (fun omega => event (g (f omega)))) := by
+  rw [map_comp]
+  exact map_probVal μ (fun omega => g (f omega)) event
+
+/-- A section of the encoding recovers event probabilities after
+round-trip relabelling. -/
+theorem map_section_probVal (μ : Distro Ω) (encode : Ω → X) (decode : X → Ω)
+    (hsec : forall omega, decode (encode omega) = omega)
+    (event : Event Ω) :
+    QProb.Equiv
+      (((μ.map encode).map decode).record.probVal event)
+      (μ.record.probVal event) := by
+  refine QProb.equiv_trans (map_comp_probVal μ encode decode event) ?_
+  simp [FiniteProbRecord.probVal, QProb.Equiv]
+  refine congrArg (fun mass => mass * μ.record.den) ?_
+  apply FiniteProbRecord.eventMass_congr
+  intro omega
+  simp [hsec]
+
+/-- A section of the encoding recovers singleton masses after round-trip
+relabelling. -/
+theorem map_section_pmf [DecidableEq Ω] (μ : Distro Ω)
+    (encode : Ω → X) (decode : X → Ω)
+    (hsec : forall omega, decode (encode omega) = omega)
+    (value : Ω) :
+    QProb.Equiv
+      (((μ.map encode).map decode).pmf value)
+      (μ.pmf value) := by
+  refine QProb.equiv_trans
+    (map_pmf (μ.map encode) decode value) ?_
+  refine QProb.equiv_trans
+    (map_probVal μ encode (fun x =>
+      FiniteProbRecord.singletonEvent value (decode x))) ?_
+  simp [Distro.pmf, FiniteProbRecord.probVal, QProb.Equiv]
+  refine congrArg (fun mass => mass * μ.record.den) ?_
+  apply FiniteProbRecord.eventMass_congr
+  intro omega
+  simp [FiniteProbRecord.singletonEvent, hsec]
+
+/-- Relabelling along the identity leaves the distro unchanged. -/
+theorem map_id (μ : Distro Ω) : μ.map id = μ := by
+  simp [map, FiniteProbRecord.map_id]
+
+/-- The identity section recovers every event. -/
+theorem map_id_probVal (μ : Distro Ω) (event : Event Ω) :
+    QProb.Equiv ((μ.map id).record.probVal event)
+      (μ.record.probVal event) := by
+  rw [map_id]
+  exact QProb.equiv_refl _
+
+/-- The identity section recovers every singleton. -/
+theorem map_id_pmf [DecidableEq Ω] (μ : Distro Ω) (value : Ω) :
+    QProb.Equiv ((μ.map id).pmf value) (μ.pmf value) := by
+  rw [map_id]
+  exact QProb.equiv_refl _
+
 end Distro
 
 /-- A distro whose outcomes carry a natural-number embedding. -/
@@ -429,6 +494,72 @@ theorem eventMass_finWeighted_singleton (n : Nat) (w : Fin n → Nat)
           simp [FiniteProbRecord.singletonEvent, Fin.castSucc_inj]
         simp [hlast, hcast, hprefix]
 
+/-- Event mass of a Fin-supported weight list is the sum of the weights
+of the indices that satisfy the event.  The singleton case is the spike
+`eventMass_finWeighted_singleton`. -/
+theorem eventMass_finWeighted (n : Nat) (w : Fin n → Nat)
+    (event : Event (Fin n)) :
+    FiniteProbRecord.eventMass (finWeighted n w) event =
+      natSum n (fun i =>
+        if h : i < n then
+          if event ⟨i, h⟩ then w ⟨i, h⟩ else 0
+        else 0) := by
+  induction n with
+  | zero =>
+      simp [finWeighted, FiniteProbRecord.eventMass, natSum]
+  | succ n ih =>
+      rw [finWeighted, FiniteProbRecord.eventMass_append,
+        FiniteProbRecord.eventMass_map_labels]
+      have hprefix :=
+        ih (fun i => w i.castSucc) (fun index => event index.castSucc)
+      have hlast :
+          FiniteProbRecord.eventMass [(Fin.last n, w (Fin.last n))] event =
+            if event (Fin.last n) then w (Fin.last n) else 0 := by
+        simp [FiniteProbRecord.eventMass]
+      have hfun :
+          natSum n (fun i =>
+              if h : i < n then
+                if event (⟨i, h⟩ : Fin n).castSucc then
+                  w (⟨i, h⟩ : Fin n).castSucc
+                else 0
+              else 0) =
+            natSum n (fun i =>
+              if h : i < n + 1 then
+                if event ⟨i, h⟩ then w ⟨i, h⟩ else 0
+              else 0) := by
+        apply natSum_congr
+        intro i hi
+        have hsucc : i < n + 1 := Nat.lt_succ_of_lt hi
+        have hidx :
+            (⟨i, hi⟩ : Fin n).castSucc = (⟨i, hsucc⟩ : Fin (n + 1)) :=
+          Fin.ext rfl
+        simp [hi, hsucc, hidx]
+      have hlast' :
+          (if event (Fin.last n) then w (Fin.last n) else 0) =
+            (if h : n < n + 1 then
+              if event ⟨n, h⟩ then w ⟨n, h⟩ else 0
+            else 0) := by
+        have hn : n < n + 1 := Nat.lt_succ_self n
+        have hidx : Fin.last n = ⟨n, hn⟩ := Fin.ext rfl
+        simp [hn, hidx]
+      rw [hprefix, hlast, natSum_succ, hfun, hlast']
+
+/-- Event probability of an `ofFinWeights` record is the selected-weight
+sum over the weight total. -/
+theorem ofFinWeights_probVal (n : Nat) (w : Fin n → Nat)
+    (positive : 0 < natSum n (finWeight w))
+    (event : Event (Fin n)) :
+    QProb.Equiv
+      ((ofFinWeights n w positive).probVal event)
+      ⟨natSum n (fun i =>
+          if h : i < n then
+            if event ⟨i, h⟩ then w ⟨i, h⟩ else 0
+          else 0),
+        natSum n (finWeight w),
+        positive⟩ := by
+  simp [ofFinWeights, FiniteProbRecord.probVal, QProb.Equiv,
+    eventMass_finWeighted, totalMass_finWeighted]
+
 /-- Slot mass of a Fin-supported atom list: the event mass of `{i}`, or
 zero when `i` lies outside the carrier.  Duplicate labels are summed, so
 this is the Cauchy factor of an arbitrary finite record, not merely of a
@@ -691,6 +822,14 @@ theorem addFin_ofFinWeights_pmf (n m : Nat)
   have hden := addFin_ofFinWeights_den n m μ ν hμ hν
   simp [Distro.pmf, FiniteProbRecord.probVal, QProb.Equiv, hmass, hden]
 
+/-- The zeroth power is the unit, independently of the argument. -/
+theorem qpow_zero (s : QProb) : qpow s 0 = QProb.one :=
+  rfl
+
+/-- The first power is the argument itself. -/
+theorem qpow_one (s : QProb) : QProb.Equiv (qpow s 1) s := by
+  simp [qpow, QProb.mul, QProb.one, QProb.Equiv]
+
 /-- Natural powers of a whole-number argument stay whole numbers. -/
 theorem qpow_ofNat (s : Nat) :
     forall k : Nat, QProb.Equiv (qpow (QProb.ofNat s) k) (QProb.ofNat (s ^ k))
@@ -704,6 +843,18 @@ theorem qpow_ofNat (s : Nat) :
       simp [QProb.mul, QProb.ofNat, QProb.Equiv, Nat.pow_succ]
       ac_rfl
 
+/-- Scaling the zeroth power recovers the whole-number weight. -/
+theorem scale_qpow_zero (w : Nat) (s : QProb) :
+    QProb.scale w (qpow s 0) = QProb.ofNat w := by
+  simp [qpow, QProb.scale, QProb.one, QProb.ofNat]
+
+/-- Scaling the first power is multiplication by a whole-number weight. -/
+theorem scale_qpow_one (w : Nat) (s : QProb) :
+    QProb.Equiv (QProb.scale w (qpow s 1))
+      (QProb.mul (QProb.ofNat w) s) := by
+  refine QProb.equiv_trans (QProb.scale_congr w (qpow_one s)) ?_
+  simp [QProb.scale, QProb.mul, QProb.ofNat, QProb.Equiv]
+
 /-- Scaling a whole-number power recovers the monomial `w s^k`. -/
 theorem scale_qpow_ofNat (w s k : Nat) :
     QProb.Equiv
@@ -711,6 +862,60 @@ theorem scale_qpow_ofNat (w s k : Nat) :
       (QProb.ofNat (w * s ^ k)) := by
   refine QProb.equiv_trans (QProb.scale_congr w (qpow_ofNat s k)) ?_
   simp [QProb.scale, QProb.ofNat, QProb.Equiv]
+
+/-- The numerator of a rational power is the power of the numerator. -/
+theorem qpow_num (s : QProb) :
+    forall k : Nat, (qpow s k).num = s.num ^ k
+  | 0 => by
+      simp [qpow, QProb.one]
+  | k + 1 => by
+      simp [qpow, QProb.mul, qpow_num s k, Nat.pow_succ]
+      ac_rfl
+
+/-- The denominator of a rational power is the power of the denominator. -/
+theorem qpow_den (s : QProb) :
+    forall k : Nat, (qpow s k).den = s.den ^ k
+  | 0 => by
+      simp [qpow, QProb.one]
+  | k + 1 => by
+      simp [qpow, QProb.mul, qpow_den s k, Nat.pow_succ]
+      ac_rfl
+
+/-- Scaling a rational power, rewritten on the common denominator `s.den^len`. -/
+theorem scale_qpow_homogenize (s : QProb) (len k w : Nat) (hk : k ≤ len) :
+    QProb.Equiv
+      (QProb.scale w (qpow s k))
+      ⟨w * s.num ^ k * s.den ^ (len - k),
+        s.den ^ len,
+        Nat.pow_pos s.den_pos⟩ := by
+  have hnum := qpow_num s k
+  have hden := qpow_den s k
+  have hsplit : s.den ^ len = s.den ^ (len - k) * s.den ^ k := by
+    rw [← Nat.pow_add, Nat.sub_add_cancel hk]
+  simp [QProb.Equiv, QProb.scale, hnum, hden]
+  rw [hsplit]
+  ac_rfl
+
+/-- `qpow` of an affine whole-number combination `a s + b`. -/
+theorem qpow_add_scaled (a : Nat) (s : QProb) (b n : Nat) :
+    QProb.Equiv
+      (qpow (QProb.add (QProb.mul (QProb.ofNat a) s) (QProb.ofNat b)) n)
+      ⟨(a * s.num + b * s.den) ^ n,
+        s.den ^ n,
+        Nat.pow_pos s.den_pos⟩ := by
+  have hform :
+      QProb.add (QProb.mul (QProb.ofNat a) s) (QProb.ofNat b) =
+        ⟨a * s.num + b * s.den, s.den, s.den_pos⟩ := by
+    simp [QProb.add, QProb.mul, QProb.ofNat]
+  rw [hform]
+  induction n with
+  | zero =>
+      simp [qpow, QProb.one, QProb.Equiv]
+  | succ n ih =>
+      simp only [qpow]
+      refine QProb.equiv_trans (QProb.mul_congr (QProb.equiv_refl _) ih) ?_
+      simp [QProb.mul, QProb.Equiv, Nat.pow_succ]
+      ac_rfl
 
 /-- Relabel `castSucc` atoms without changing the generating-function terms. -/
 theorem map_scale_qpow_castSucc (n : Nat) (s : Nat)
@@ -799,6 +1004,159 @@ theorem listSum_scale_qpow_finWeighted (n : Nat) (w : Fin n → Nat) (s : Nat) :
       refine QProb.equiv_trans hadd ?_
       refine QProb.equiv_trans (QProb.ofNat_add _ _) ?_
       simp [QProb.Equiv, QProb.ofNat, natSum_succ, hlastW]
+
+/-- Relabel `castSucc` atoms without changing generating-function terms,
+for a general nonnegative rational argument. -/
+theorem map_scale_qpow_castSucc_qprob (n : Nat) (s : QProb)
+    (atoms : List (Fin n × Nat)) :
+    (atoms.map (fun atom => (atom.1.castSucc, atom.2))).map
+        (fun atom =>
+          QProb.scale atom.2 (qpow s atom.1.val)) =
+      atoms.map (fun atom =>
+        QProb.scale atom.2 (qpow s atom.1.val)) := by
+  induction atoms with
+  | nil => rfl
+  | cons atom atoms ih =>
+      rcases atom with ⟨index, weight⟩
+      simp [ih]
+
+/-- Homogenised monomials of a Fin-supported weight list sum to the
+corresponding `natSum`. -/
+theorem list_sum_finWeighted_homog (len : Nat) (w : Fin (len + 1) → Nat)
+    (p d : Nat) :
+    List.sum
+        ((finWeighted (len + 1) w).map fun atom =>
+          atom.2 * p ^ atom.1.val * d ^ (len - atom.1.val)) =
+      natSum (len + 1) (fun i =>
+        finWeight w i * p ^ i * d ^ (len - i)) := by
+  induction len with
+  | zero =>
+      simp [finWeighted, finWeight, natSum]
+  | succ len ih =>
+      rw [finWeighted]
+      rw [List.map_append, List.sum_append]
+      have hmul :
+          forall xs : List (Fin (len + 1) × Nat),
+            List.sum
+                (xs.map fun atom =>
+                  atom.2 * p ^ atom.1.val * d ^ (len + 1 - atom.1.val)) =
+              d *
+                List.sum
+                  (xs.map fun atom =>
+                    atom.2 * p ^ atom.1.val * d ^ (len - atom.1.val)) := by
+        intro xs
+        induction xs with
+        | nil => simp
+        | cons atom atoms ihxs =>
+            rcases atom with ⟨index, weight⟩
+            have hi : index.val ≤ len := Nat.le_of_lt_succ index.isLt
+            have hsplit : len + 1 - index.val = len - index.val + 1 :=
+              Nat.succ_sub hi
+            have hterm :
+                weight * p ^ index.val * d ^ (len + 1 - index.val) =
+                  d * (weight * p ^ index.val * d ^ (len - index.val)) := by
+              rw [hsplit, Nat.pow_succ]
+              ac_rfl
+            simp [ihxs, hterm]
+            rw [Nat.mul_add]
+      have hmap :
+          (((finWeighted (len + 1) (fun i => w i.castSucc)).map
+              (fun atom => (atom.1.castSucc, atom.2))).map
+            (fun atom =>
+              atom.2 * p ^ atom.1.val * d ^ (len + 1 - atom.1.val))) =
+            (finWeighted (len + 1) (fun i => w i.castSucc)).map
+              (fun atom =>
+                atom.2 * p ^ atom.1.val * d ^ (len + 1 - atom.1.val)) := by
+        simp [List.map_map, Fin.val_castSucc]
+      have hprefix :
+          List.sum
+              (((finWeighted (len + 1) (fun i => w i.castSucc)).map
+                  (fun atom => (atom.1.castSucc, atom.2))).map
+                (fun atom =>
+                  atom.2 * p ^ atom.1.val * d ^ (len + 1 - atom.1.val))) =
+            d *
+              List.sum
+                ((finWeighted (len + 1) (fun i => w i.castSucc)).map
+                  fun atom =>
+                    atom.2 * p ^ atom.1.val * d ^ (len - atom.1.val)) := by
+        rw [hmap]
+        exact hmul _
+      have hfun :
+          natSum (len + 1) (fun i =>
+              finWeight (fun j => w j.castSucc) i * p ^ i * d ^ (len - i)) =
+            natSum (len + 1) (fun i =>
+              finWeight w i * p ^ i * d ^ (len - i)) := by
+        apply natSum_congr
+        intro i hi
+        simp [finWeight, hi, Nat.lt_succ_of_lt hi]
+      have hlastW : finWeight w (len + 1) = w (Fin.last (len + 1)) := by
+        simp [finWeight]
+        exact congrArg w (Fin.ext rfl)
+      have hlast :
+          List.sum
+              ([(Fin.last (len + 1), w (Fin.last (len + 1)))].map fun atom =>
+                atom.2 * p ^ atom.1.val * d ^ (len + 1 - atom.1.val)) =
+            w (Fin.last (len + 1)) * p ^ (len + 1) := by
+        simp [Fin.val_last, Nat.sub_self, Nat.pow_zero]
+      have hscale :
+          d *
+              natSum (len + 1) (fun i =>
+                finWeight w i * p ^ i * d ^ (len - i)) =
+            natSum (len + 1) (fun i =>
+              finWeight w i * p ^ i * d ^ (len + 1 - i)) := by
+        rw [← natSum_mul_left]
+        apply natSum_congr
+        intro i hi
+        have hle : i ≤ len := Nat.le_of_lt_succ hi
+        have hsplit : len + 1 - i = len - i + 1 := Nat.succ_sub hle
+        rw [hsplit, Nat.pow_succ]
+        ac_rfl
+      rw [hprefix, ih, hfun, hlast, ← hlastW, hscale]
+      rw [natSum_succ (len + 1)]
+      simp [Nat.sub_self, Nat.pow_zero, Nat.mul_one]
+
+/-- The PGF numerator of a Fin-supported weight function, evaluated at a
+nonnegative rational `s`, is the homogenised generating sum. -/
+theorem listSum_scale_qpow_finWeighted_qprob (len : Nat)
+    (w : Fin (len + 1) → Nat) (s : QProb) :
+    QProb.Equiv
+      (QProb.listSum
+        ((finWeighted (len + 1) w).map fun atom =>
+          QProb.scale atom.2 (qpow s atom.1.val)))
+      ⟨natSum (len + 1) (fun i =>
+          finWeight w i * s.num ^ i * s.den ^ (len - i)),
+        s.den ^ len,
+        Nat.pow_pos s.den_pos⟩ := by
+  let D := s.den ^ len
+  have hD : 0 < D := Nat.pow_pos s.den_pos
+  have hpoint :
+      forall atom : Fin (len + 1) × Nat,
+        QProb.Equiv
+          (QProb.scale atom.2 (qpow s atom.1.val))
+          ⟨atom.2 * s.num ^ atom.1.val * s.den ^ (len - atom.1.val),
+            D, hD⟩ := by
+    intro atom
+    exact scale_qpow_homogenize s len atom.1.val atom.2
+      (Nat.le_of_lt_succ atom.1.isLt)
+  have hcongr :=
+    QProb.listSum_map_congr (finWeighted (len + 1) w)
+      (fun atom => QProb.scale atom.2 (qpow s atom.1.val))
+      (fun atom =>
+        ⟨atom.2 * s.num ^ atom.1.val * s.den ^ (len - atom.1.val), D, hD⟩)
+      hpoint
+  refine QProb.equiv_trans hcongr ?_
+  have hmap :
+      (finWeighted (len + 1) w).map
+          (fun atom =>
+            (⟨atom.2 * s.num ^ atom.1.val * s.den ^ (len - atom.1.val),
+              D, hD⟩ : QProb)) =
+        ((finWeighted (len + 1) w).map fun atom =>
+            atom.2 * s.num ^ atom.1.val * s.den ^ (len - atom.1.val)).map
+          (fun n => (⟨n, D, hD⟩ : QProb)) := by
+    simp [List.map_map]
+  rw [hmap]
+  refine QProb.equiv_trans (QProb.listSum_mk_same_den D hD _) ?_
+  simp [QProb.Equiv, list_sum_finWeighted_homog, D]
 
 end Distros
 end Probability

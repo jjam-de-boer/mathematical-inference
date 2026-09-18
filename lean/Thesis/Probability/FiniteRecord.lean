@@ -424,6 +424,33 @@ theorem membershipEvent_cons [DecidableEq Ω] (value : Ω) (values : List Ω) :
   funext candidate
   simp [membershipEvent, singletonEvent, union]
 
+/-- The union of a list of singletons is membership in that list. -/
+theorem unionList_map_singletonEvent [DecidableEq Ω] (values : List Ω) :
+    unionList (values.map singletonEvent) = membershipEvent values := by
+  induction values with
+  | nil =>
+      funext candidate
+      simp [unionList, membershipEvent, bottomEvent]
+  | cons head tail ih =>
+      rw [List.map_cons, unionList, membershipEvent_cons, ih]
+
+/-- Distinct list entries have disjoint singleton events. -/
+theorem map_singletonEvent_pairwise_disjoint [DecidableEq Ω]
+    {values : List Ω} (nodup : values.Nodup) :
+    (values.map singletonEvent).Pairwise disjoint := by
+  induction values with
+  | nil => simp
+  | cons head tail ih =>
+      have parts := List.nodup_cons.mp nodup
+      refine List.pairwise_cons.mpr ⟨?_, ih parts.2⟩
+      intro event member sample headHolds eventHolds
+      obtain ⟨other, otherMem, rfl⟩ := List.mem_map.mp member
+      have sample_eq_head : sample = head := by
+        simpa [singletonEvent] using headHolds
+      have sample_eq_other : sample = other := by
+        simpa [singletonEvent] using eventHolds
+      exact parts.1 (sample_eq_head ▸ sample_eq_other ▸ otherMem)
+
 theorem singleton_membership_disjoint [DecidableEq Ω]
     {value : Ω} {values : List Ω} (fresh : value ∉ values) :
     disjoint (singletonEvent value) (membershipEvent values) := by
@@ -517,6 +544,15 @@ theorem map_probVal (R : FiniteProbRecord Ω) (f : Ω → X)
     QProb.Equiv ((R.map f).probVal event)
       (R.probVal (fun omega => event (f omega))) := by
   simp [QProb.Equiv, map, probVal, eventMass_map_labels]
+
+/-- Relabelling composes on atoms: decode after encode is encode-then-decode. -/
+theorem map_comp (R : FiniteProbRecord Ω) (f : Ω → X) (g : X → Y) :
+    (R.map f).map g = R.map (fun omega => g (f omega)) := by
+  simp [map, List.map_map]
+
+/-- Relabelling along the identity leaves the record unchanged. -/
+theorem map_id (R : FiniteProbRecord Ω) : R.map id = R := by
+  simp [map]
 
 /-- Construct the independent product of two finite probability records. -/
 def product (left : FiniteProbRecord Ω) (right : FiniteProbRecord X) :

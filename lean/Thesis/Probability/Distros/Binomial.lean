@@ -17,10 +17,11 @@ product along the count of `true` coordinates.  The event mass of
 `trueCount = k` on that product is the closed binomial term, so the two
 PMFs are `QProb.Equiv`.  The mean and the whole-number PGF are the
 corresponding generating-function evaluations of those closed terms.
-Independent binomials with the same weights convolve to the binomial of
-the summed trial count.  A single Bernoulli trial is the one-trial
-binomial, transported along `false ↦ 0` and `true ↦ 1` and back along
-`bernoulliOfBit`, as events and as PMFs.
+The PGF is recorded both at whole-number arguments and at a general
+nonnegative rational.  Independent binomials with the same weights convolve
+to the binomial of the summed trial count.  A single Bernoulli trial is the
+one-trial binomial, transported along `false ↦ 0` and `true ↦ 1` and back
+along `bernoulliOfBit`, as events, as PMFs, and as round-trip sections.
 -/
 
 open Combinatorics
@@ -560,6 +561,78 @@ theorem binomial_pgf_ofNat (trials trueWeight falseWeight s : Nat)
   refine QProb.equiv_trans (by simpa [pgf] using hdiv) ?_
   simp [QProb.div, QProb.ofNat, QProb.Equiv]
 
+/-- The binomial PGF at a nonnegative rational `s` is
+`(trueWeight * s + falseWeight)^n / (falseWeight + trueWeight)^n`. -/
+theorem binomial_pgf (trials trueWeight falseWeight : Nat) (s : QProb)
+    (positive : 0 < falseWeight + trueWeight) :
+    QProb.Equiv
+      (pgf (binomialNatDistro trials trueWeight falseWeight positive) s)
+      (QProb.div
+        (qpow
+          (QProb.add (QProb.mul (QProb.ofNat trueWeight) s)
+            (QProb.ofNat falseWeight))
+          trials)
+        (QProb.ofNat ((falseWeight + trueWeight) ^ trials))
+        (Nat.pow_pos positive)) := by
+  have hatoms :
+      (binomialNatDistro trials trueWeight falseWeight positive).distro.record.atoms =
+        finWeighted (trials + 1)
+          (binomialWeight trials trueWeight falseWeight) := by
+    simp [binomialNatDistro, ofFin, binomialDistro, ofFinWeights]
+  have hnum :
+      QProb.Equiv
+        (QProb.listSum
+          ((binomialNatDistro trials trueWeight falseWeight
+              positive).distro.record.atoms.map fun atom =>
+            QProb.scale atom.2
+              (qpow s
+                ((binomialNatDistro trials trueWeight falseWeight
+                    positive).embed atom.1))))
+        (qpow
+          (QProb.add (QProb.mul (QProb.ofNat trueWeight) s)
+            (QProb.ofNat falseWeight))
+          trials) := by
+    rw [hatoms]
+    have hsum :=
+      listSum_scale_qpow_finWeighted_qprob trials
+        (binomialWeight trials trueWeight falseWeight) s
+    have hterm :
+        natSum (trials + 1) (fun i =>
+            finWeight (binomialWeight trials trueWeight falseWeight) i *
+              s.num ^ i * s.den ^ (trials - i)) =
+          (trueWeight * s.num + falseWeight * s.den) ^ trials := by
+      have hcongr :
+          natSum (trials + 1) (fun i =>
+              finWeight (binomialWeight trials trueWeight falseWeight) i *
+                s.num ^ i * s.den ^ (trials - i)) =
+            natSum (trials + 1) (fun i =>
+              binomTerm trials (trueWeight * s.num)
+                (falseWeight * s.den) i) := by
+        apply natSum_congr
+        intro i hi
+        simp [finWeight, binomialWeight, hi]
+        exact binomTerm_homogenize trials trueWeight falseWeight
+          s.num s.den i
+      rw [hcongr, binomial_theorem]
+    refine QProb.equiv_trans hsum ?_
+    refine QProb.equiv_trans ?_ (QProb.equiv_symm
+      (qpow_add_scaled trueWeight s falseWeight trials))
+    simp [QProb.Equiv, hterm]
+  have hden :
+      QProb.Equiv
+        (QProb.ofNat
+          (binomialNatDistro trials trueWeight falseWeight
+            positive).distro.record.den)
+        (QProb.ofNat ((falseWeight + trueWeight) ^ trials)) := by
+    simp [QProb.Equiv, QProb.ofNat]
+    exact binomialDistro_den trials trueWeight falseWeight positive
+  have hdiv :=
+    QProb.div_congr hnum hden
+      (binomialNatDistro trials trueWeight falseWeight
+        positive).distro.record.den_pos
+      (Nat.pow_pos positive)
+  simpa [pgf] using hdiv
+
 /-- Independent binomials with a common success/failure weight convolve
 to the binomial of the summed trial count. -/
 theorem binomialWeight_convolution (n m trueWeight falseWeight : Nat)
@@ -778,6 +851,58 @@ theorem binomial_one_map_bernoulli_pmf (trueWeight falseWeight : Nat)
   simpa [Distro.pmf] using
     binomial_one_map_bernoulli_event trueWeight falseWeight positive
       (FiniteProbRecord.singletonEvent value)
+
+/-- Mapping Bernoulli to `Fin 2` and back along the bit section recovers
+every Boolean event. -/
+theorem bernoulli_map_bit_ofBit_event (trueWeight falseWeight : Nat)
+    (positive : 0 < falseWeight + trueWeight)
+    (event : Event Bool) :
+    QProb.Equiv
+      ((((bernoulliDistro trueWeight falseWeight positive).map
+          bernoulliBit).map bernoulliOfBit).record.probVal event)
+      ((bernoulliDistro trueWeight falseWeight positive).record.probVal
+        event) :=
+  Distro.map_section_probVal
+    (bernoulliDistro trueWeight falseWeight positive)
+    bernoulliBit bernoulliOfBit bernoulliOfBit_bit event
+
+/-- Mapping Bernoulli to `Fin 2` and back along the bit section recovers
+every Boolean singleton. -/
+theorem bernoulli_map_bit_ofBit_pmf (trueWeight falseWeight : Nat)
+    (positive : 0 < falseWeight + trueWeight) (value : Bool) :
+    QProb.Equiv
+      ((((bernoulliDistro trueWeight falseWeight positive).map
+          bernoulliBit).map bernoulliOfBit).pmf value)
+      ((bernoulliDistro trueWeight falseWeight positive).pmf value) :=
+  Distro.map_section_pmf
+    (bernoulliDistro trueWeight falseWeight positive)
+    bernoulliBit bernoulliOfBit bernoulliOfBit_bit value
+
+/-- Mapping the one-trial binomial to `Bool` and back along the bit
+section recovers every `Fin 2` event. -/
+theorem binomial_one_map_ofBit_bit_event (trueWeight falseWeight : Nat)
+    (positive : 0 < falseWeight + trueWeight)
+    (event : Event (Fin 2)) :
+    QProb.Equiv
+      ((((binomialDistro 1 trueWeight falseWeight positive).map
+          bernoulliOfBit).map bernoulliBit).record.probVal event)
+      ((binomialDistro 1 trueWeight falseWeight positive).record.probVal
+        event) :=
+  Distro.map_section_probVal
+    (binomialDistro 1 trueWeight falseWeight positive)
+    bernoulliOfBit bernoulliBit bernoulliBit_ofBit event
+
+/-- Mapping the one-trial binomial to `Bool` and back along the bit
+section recovers every `Fin 2` singleton. -/
+theorem binomial_one_map_ofBit_bit_pmf (trueWeight falseWeight : Nat)
+    (positive : 0 < falseWeight + trueWeight) (k : Fin 2) :
+    QProb.Equiv
+      ((((binomialDistro 1 trueWeight falseWeight positive).map
+          bernoulliOfBit).map bernoulliBit).pmf k)
+      ((binomialDistro 1 trueWeight falseWeight positive).pmf k) :=
+  Distro.map_section_pmf
+    (binomialDistro 1 trueWeight falseWeight positive)
+    bernoulliOfBit bernoulliBit bernoulliBit_ofBit k
 
 end Distros
 end Probability

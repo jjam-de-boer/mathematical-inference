@@ -824,6 +824,35 @@ theorem listSum_append (left right : List QProb) :
       exact equiv_trans (add_congr (equiv_refl _) ih)
         (equiv_symm (add_assoc value (listSum values) (listSum right)))
 
+/-- The canonical zero is equivalent to a zero numerator on any positive
+denominator. -/
+theorem equiv_zero_mk (D : Nat) (hD : 0 < D) :
+    Equiv zero ⟨0, D, hD⟩ := by
+  simp [Equiv, zero]
+
+/-- Adding two presentations that already share a denominator adds the
+numerators and keeps that denominator, up to `Equiv`. -/
+theorem add_mk_same_den (D : Nat) (hD : 0 < D) (a b : Nat) :
+    Equiv (add ⟨a, D, hD⟩ ⟨b, D, hD⟩) ⟨a + b, D, hD⟩ := by
+  simp [Equiv, add]
+  rw [← Nat.add_mul]
+  ac_rfl
+
+/-- A finite sum of common-denominator presentations is the sum of the
+numerators on that denominator. -/
+theorem listSum_mk_same_den (D : Nat) (hD : 0 < D) :
+    forall nums : List Nat,
+      Equiv (listSum (nums.map fun n => (⟨n, D, hD⟩ : QProb)))
+        ⟨List.sum nums, D, hD⟩
+  | [] => by
+      simp [listSum]
+      exact equiv_zero_mk D hD
+  | n :: ns => by
+      simp [listSum]
+      refine equiv_trans
+        (add_congr (equiv_refl _) (listSum_mk_same_den D hD ns)) ?_
+      simpa [List.sum_cons] using add_mk_same_den D hD n (List.sum ns)
+
 /-- Flattening a finite family of lists does not change its iterated rational
 sum. -/
 theorem listSum_flatMap (values : List X) (family : X -> List QProb) :

@@ -18,15 +18,20 @@ presented as a `Distro` or `NatDistro`.
   count.  Its large-`n` shape is the ordinary Gaussian, but it is a
   binomial distro, not an alias of the `q^{k²}` window.
 * `chiSquaredDistro` is the law of the sum of squared centred coordinates
-  of two independent lattice Gaussians — the finite counterpart of χ² with
-  two degrees of freedom.
+  of `df` independent lattice Gaussians — the finite counterpart of χ² with
+  `df` degrees of freedom.  The two-fold constructor is `df = 2`.
 * `betaBinomialDistro` is the Pólya / beta-binomial urn, the finite
   counterpart of a beta mixture of Bernoulli trials.
 * `negativeBinomialDistro` is a truncated negative binomial, the finite
   counterpart of a gamma-Poisson mixture.  The `0 < successes` hypothesis
   is used as the `r - 1` shift in the Pascal-triangle term.  Its
   whole-number PGF is the ratio of `nbSum` generating sums after
-  substituting `falseWeight * s`.
+  substituting `falseWeight * s`.  The same closed form holds at a general
+  nonnegative rational after homogenising `nbSum` against `s.den`.  The
+  right-censored sibling keeps ordinary occupancy weights on
+  `{0, …, cap - 1}` and lumps the tail
+  `falseWeight^{cap+1} ∑_{s < r} C(cap + s, s) trueWeight^s` onto the last
+  cell.
 -/
 
 open Combinatorics
@@ -139,37 +144,64 @@ def deMoivreLatticeDistro (trials trueWeight falseWeight : Nat)
     NatDistro (Fin (trials + 1)) :=
   binomialNatDistro trials trueWeight falseWeight positive
 
-theorem two_natSqDiff_lt (radius : Nat)
-    (x y : Fin (2 * radius + 1)) :
-    natSqDiff x.val radius + natSqDiff y.val radius <
-      2 * radius * radius + 1 := by
+/-- One more squared coordinate still fits in the `df + 1` window. -/
+theorem natSqDiff_cons_lt (df radius : Nat)
+    (s : Fin (df * radius * radius + 1))
+    (x : Fin (2 * radius + 1)) :
+    s.val + natSqDiff x.val radius <
+      (df + 1) * radius * radius + 1 := by
+  have hs : s.val ≤ df * radius * radius := Nat.le_of_lt_succ s.isLt
   have hx := natSqDiff_window radius x.val x.isLt
-  have hy := natSqDiff_window radius y.val y.isLt
-  have hsum := Nat.add_le_add hx hy
-  have htwo : radius * radius + radius * radius = 2 * (radius * radius) :=
-    (Nat.two_mul (radius * radius)).symm
-  have hassoc : 2 * radius * radius = 2 * (radius * radius) :=
-    Nat.mul_assoc 2 radius radius
-  have hbound : radius * radius + radius * radius = 2 * radius * radius :=
-    htwo.trans hassoc.symm
-  exact Nat.lt_succ_of_le (Nat.le_trans hsum (Nat.le_of_eq hbound))
+  have hsum := Nat.add_le_add hs hx
+  have hmul :
+      df * radius * radius + radius * radius =
+        (df + 1) * radius * radius := by
+    have hleft : df * radius * radius = df * (radius * radius) :=
+      Nat.mul_assoc df radius radius
+    have hright : (df + 1) * radius * radius =
+        (df + 1) * (radius * radius) :=
+      Nat.mul_assoc (df + 1) radius radius
+    rw [hleft, hright, Nat.succ_mul]
+  exact Nat.lt_succ_of_le (Nat.le_trans hsum (Nat.le_of_eq hmul))
 
-/-- Chi-squared counterpart: sum of squared centred coordinates of two
+/-- Independent product of `df` lattice Gaussians, mapped to the sum of
+squared centred coordinates.  The `df = 0` record is the unit urn on `{0}`. -/
+def chiSquaredRecord (df radius base : Nat) :
+    FiniteProbRecord (Fin (df * radius * radius + 1)) :=
+  match df with
+  | 0 =>
+      { atoms := [(⟨0, by simp⟩, 1)]
+        den := 1
+        den_pos := Nat.succ_pos 0
+        total_mass := rfl }
+  | df + 1 =>
+      ((chiSquaredRecord df radius base).product
+          (discreteGaussianDistro radius base).record).map
+        fun pair =>
+          ⟨pair.1.val + natSqDiff pair.2.val radius,
+            natSqDiff_cons_lt df radius pair.1 pair.2⟩
+
+/-- Chi-squared counterpart: sum of squared centred coordinates of `df`
 independent lattice Gaussians. -/
-def chiSquaredDistro (radius base : Nat) :
-    NatDistro (Fin (2 * radius * radius + 1)) where
-  distro :=
-    let gauss := (discreteGaussianDistro radius base).record
-    ⟨(gauss.product gauss).map fun pair =>
-      ⟨natSqDiff pair.1.val radius + natSqDiff pair.2.val radius,
-        two_natSqDiff_lt radius pair.1 pair.2⟩⟩
-  embed := Fin.val
+def chiSquaredDistro (df radius base : Nat) :
+    NatDistro (Fin (df * radius * radius + 1)) :=
+  ofFin (df * radius * radius) (chiSquaredRecord df radius base)
 
-theorem chiSquared_den (radius base : Nat) :
-    (chiSquaredDistro radius base).distro.record.den =
-      (discreteGaussianDistro radius base).record.den *
-        (discreteGaussianDistro radius base).record.den := by
-  simp [chiSquaredDistro, FiniteProbRecord.map, FiniteProbRecord.product]
+theorem chiSquaredRecord_den (df radius base : Nat) :
+    (chiSquaredRecord df radius base).den =
+      (discreteGaussianDistro radius base).record.den ^ df := by
+  induction df with
+  | zero =>
+      simp [chiSquaredRecord, Nat.pow_zero]
+  | succ df ih =>
+      simp [chiSquaredRecord, FiniteProbRecord.map, FiniteProbRecord.product, ih]
+      exact (Nat.pow_succ _ _).symm
+
+theorem chiSquared_den (df radius base : Nat) :
+    (chiSquaredDistro df radius base).distro.record.den =
+      (discreteGaussianDistro radius base).record.den ^ df := by
+  simpa [chiSquaredDistro, ofFin] using
+    chiSquaredRecord_den df radius base
 
 /-- Beta-binomial / Pólya weights. -/
 def betaBinomialWeight (trials α β : Nat) (k : Fin (trials + 1)) : Nat :=
@@ -394,6 +426,242 @@ theorem negativeBinomial_pgf_ofNat
           (Nat.succ_pos cap)))
   refine QProb.equiv_trans (by simpa [pgf] using hdiv) ?_
   simp [QProb.div, QProb.ofNat, QProb.Equiv]
+
+/-- Homogenising a truncated negative-binomial weight against a common
+denominator power substitutes `falseWeight * num` in the generating base. -/
+theorem negativeBinomialWeight_homogenize
+    (successes cap trueWeight falseWeight num den : Nat)
+    (k : Fin (cap + 1)) :
+    negativeBinomialWeight successes cap trueWeight falseWeight k *
+        num ^ k.val * den ^ (cap - k.val) =
+      trueWeight ^ successes *
+        binom (k.val + successes - 1) k.val *
+          (falseWeight * num) ^ k.val * den ^ (cap - k.val) := by
+  simp [negativeBinomialWeight, Nat.mul_pow]
+  ac_rfl
+
+/-- The truncated negative-binomial PGF at a nonnegative rational `s` is
+the ratio of a homogenised `nbSum` to the ordinary `nbSum` normaliser. -/
+theorem negativeBinomial_pgf
+    (successes cap trueWeight falseWeight : Nat) (s : QProb)
+    (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
+    QProb.Equiv
+      (pgf (negativeBinomialNatDistro successes cap trueWeight falseWeight
+          hsuccesses htrue)
+        s)
+      (QProb.div
+        ⟨trueWeight ^ successes *
+            nbSumHomog successes (falseWeight * s.num) s.den cap,
+          s.den ^ cap,
+          Nat.pow_pos s.den_pos⟩
+        (QProb.ofNat
+          (trueWeight ^ successes *
+            nbSum successes falseWeight (cap + 1)))
+        (Nat.mul_pos (Nat.pow_pos htrue)
+          (nbSum_pos successes falseWeight (cap + 1) hsuccesses
+            (Nat.succ_pos cap)))) := by
+  have hatoms :
+      (negativeBinomialNatDistro successes cap trueWeight falseWeight
+          hsuccesses htrue).distro.record.atoms =
+        finWeighted (cap + 1)
+          (negativeBinomialWeight successes cap trueWeight falseWeight) := by
+    simp [negativeBinomialNatDistro, ofFin, negativeBinomialDistro,
+      ofFinWeights]
+  have hnum :
+      QProb.Equiv
+        (QProb.listSum
+          ((negativeBinomialNatDistro successes cap trueWeight falseWeight
+              hsuccesses htrue).distro.record.atoms.map fun atom =>
+            QProb.scale atom.2
+              (qpow s
+                ((negativeBinomialNatDistro successes cap trueWeight falseWeight
+                    hsuccesses htrue).embed atom.1))))
+        ⟨trueWeight ^ successes *
+            nbSumHomog successes (falseWeight * s.num) s.den cap,
+          s.den ^ cap,
+          Nat.pow_pos s.den_pos⟩ := by
+    rw [hatoms]
+    have hsum :=
+      listSum_scale_qpow_finWeighted_qprob cap
+        (negativeBinomialWeight successes cap trueWeight falseWeight) s
+    have hterm :
+        natSum (cap + 1) (fun i =>
+            finWeight (negativeBinomialWeight successes cap trueWeight
+              falseWeight) i * s.num ^ i * s.den ^ (cap - i)) =
+          trueWeight ^ successes *
+            nbSumHomog successes (falseWeight * s.num) s.den cap := by
+      have hcongr :
+          natSum (cap + 1) (fun i =>
+              finWeight (negativeBinomialWeight successes cap trueWeight
+                falseWeight) i * s.num ^ i * s.den ^ (cap - i)) =
+            natSum (cap + 1) (fun i =>
+              trueWeight ^ successes *
+                binom (i + successes - 1) i *
+                  (falseWeight * s.num) ^ i * s.den ^ (cap - i)) := by
+        apply natSum_congr
+        intro i hi
+        simp [finWeight, hi]
+        exact negativeBinomialWeight_homogenize successes cap trueWeight
+          falseWeight s.num s.den ⟨i, hi⟩
+      rw [hcongr]
+      have hfactor :
+          natSum (cap + 1) (fun i =>
+            trueWeight ^ successes * binom (i + successes - 1) i *
+              (falseWeight * s.num) ^ i * s.den ^ (cap - i)) =
+          natSum (cap + 1) (fun i =>
+            trueWeight ^ successes *
+              (binom (i + successes - 1) i *
+                (falseWeight * s.num) ^ i * s.den ^ (cap - i))) := by
+        apply natSum_congr
+        intro i _
+        simp [Nat.mul_assoc]
+      rw [hfactor, natSum_mul_left]
+      rfl
+    refine QProb.equiv_trans hsum ?_
+    simp [QProb.Equiv, hterm]
+  have hden :
+      QProb.Equiv
+        (QProb.ofNat
+          (negativeBinomialNatDistro successes cap trueWeight falseWeight
+            hsuccesses htrue).distro.record.den)
+        (QProb.ofNat
+          (trueWeight ^ successes *
+            nbSum successes falseWeight (cap + 1))) := by
+    simp [QProb.Equiv, QProb.ofNat]
+    exact negativeBinomial_den successes cap trueWeight falseWeight
+      hsuccesses htrue
+  have hdiv :=
+    QProb.div_congr hnum hden
+      (negativeBinomialNatDistro successes cap trueWeight falseWeight
+        hsuccesses htrue).distro.record.den_pos
+      (Nat.mul_pos (Nat.pow_pos htrue)
+        (nbSum_pos successes falseWeight (cap + 1) hsuccesses
+          (Nat.succ_pos cap)))
+  simpa [pgf] using hdiv
+
+/-- Negative-binomial tail after `cap` failures: sequences that record
+`cap + 1` failures with fewer than `successes` successes, ending in a
+failure.  For one success this is `falseWeight^{cap+1}`. -/
+def negativeBinomialCensorTail
+    (successes cap trueWeight falseWeight : Nat) : Nat :=
+  falseWeight ^ (cap + 1) *
+    natSum successes (fun s => binom (cap + s) s * trueWeight ^ s)
+
+/-- Right-censored negative-binomial weights: ordinary occupancy on
+`{0, …, cap - 1}`, and on the last cell the mass at `cap` together with
+`negativeBinomialCensorTail`. -/
+def negativeBinomialCensoredWeight
+    (successes cap trueWeight falseWeight : Nat)
+    (k : Fin (cap + 1)) : Nat :=
+  if k.val < cap then
+    negativeBinomialWeight successes cap trueWeight falseWeight k
+  else
+    negativeBinomialWeight successes cap trueWeight falseWeight k +
+      negativeBinomialCensorTail successes cap trueWeight falseWeight
+
+theorem negativeBinomialCensoredWeight_sum
+    (successes cap trueWeight falseWeight : Nat)
+    (hsuccesses : 0 < successes) :
+    natSum (cap + 1)
+        (finWeight (negativeBinomialCensoredWeight successes cap
+          trueWeight falseWeight)) =
+      trueWeight ^ successes *
+          nbSum successes falseWeight (cap + 1) +
+        negativeBinomialCensorTail successes cap trueWeight falseWeight := by
+  have hcongr :
+      natSum (cap + 1)
+          (finWeight (negativeBinomialCensoredWeight successes cap
+            trueWeight falseWeight)) =
+        natSum (cap + 1)
+            (finWeight (negativeBinomialWeight successes cap
+              trueWeight falseWeight)) +
+          negativeBinomialCensorTail successes cap trueWeight falseWeight := by
+    rw [natSum_succ,
+      natSum_succ (n := cap)
+        (finWeight (negativeBinomialWeight successes cap
+          trueWeight falseWeight))]
+    have hprefix :
+        natSum cap
+            (finWeight (negativeBinomialCensoredWeight successes cap
+              trueWeight falseWeight)) =
+          natSum cap
+            (finWeight (negativeBinomialWeight successes cap
+              trueWeight falseWeight)) := by
+      apply natSum_congr
+      intro i hi
+      have hfin : i < cap + 1 := Nat.lt_succ_of_lt hi
+      simp [finWeight, negativeBinomialCensoredWeight, hfin, hi]
+    have hlast :
+        finWeight (negativeBinomialCensoredWeight successes cap
+            trueWeight falseWeight) cap =
+          finWeight (negativeBinomialWeight successes cap
+              trueWeight falseWeight) cap +
+            negativeBinomialCensorTail successes cap trueWeight
+              falseWeight := by
+      have hfin : cap < cap + 1 := Nat.lt_succ_self cap
+      have hnlt : ¬ cap < cap := Nat.lt_irrefl cap
+      simp [finWeight, negativeBinomialCensoredWeight, hfin, hnlt]
+    rw [hprefix, hlast]
+    ac_rfl
+  rw [hcongr, negativeBinomialWeight_sum successes cap trueWeight
+    falseWeight hsuccesses]
+
+/-- Right-censored negative binomial on `{0, ..., cap}`. -/
+def negativeBinomialCensoredDistro
+    (successes cap trueWeight falseWeight : Nat)
+    (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
+    Distro (Fin (cap + 1)) where
+  record :=
+    have hsum :=
+      negativeBinomialCensoredWeight_sum successes cap trueWeight
+        falseWeight hsuccesses
+    have hpos : 0 < natSum (cap + 1)
+        (finWeight (negativeBinomialCensoredWeight successes cap
+          trueWeight falseWeight)) := by
+      rw [hsum]
+      exact Nat.lt_of_lt_of_le
+        (Nat.mul_pos (Nat.pow_pos htrue)
+          (nbSum_pos successes falseWeight (cap + 1) hsuccesses
+            (Nat.succ_pos cap)))
+        (Nat.le_add_right _ _)
+    ofFinWeights (cap + 1)
+      (negativeBinomialCensoredWeight successes cap trueWeight falseWeight)
+      hpos
+
+def negativeBinomialCensoredNatDistro
+    (successes cap trueWeight falseWeight : Nat)
+    (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
+    NatDistro (Fin (cap + 1)) :=
+  ofFin cap
+    (negativeBinomialCensoredDistro successes cap trueWeight falseWeight
+      hsuccesses htrue).record
+
+theorem negativeBinomialCensored_den
+    (successes cap trueWeight falseWeight : Nat)
+    (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
+    (negativeBinomialCensoredDistro successes cap trueWeight falseWeight
+        hsuccesses htrue).record.den =
+      trueWeight ^ successes *
+          nbSum successes falseWeight (cap + 1) +
+        negativeBinomialCensorTail successes cap trueWeight falseWeight := by
+  simp [negativeBinomialCensoredDistro, ofFinWeights, totalMass_finWeighted]
+  exact negativeBinomialCensoredWeight_sum successes cap trueWeight
+    falseWeight hsuccesses
+
+theorem negativeBinomialCensored_pmf
+    (successes cap trueWeight falseWeight : Nat)
+    (hsuccesses : 0 < successes) (htrue : 0 < trueWeight)
+    (k : Fin (cap + 1)) :
+    QProb.Equiv
+      ((negativeBinomialCensoredDistro successes cap trueWeight falseWeight
+        hsuccesses htrue).pmf k)
+      ⟨negativeBinomialCensoredWeight successes cap trueWeight falseWeight k,
+        (negativeBinomialCensoredDistro successes cap trueWeight falseWeight
+          hsuccesses htrue).record.den,
+        (negativeBinomialCensoredDistro successes cap trueWeight falseWeight
+          hsuccesses htrue).record.den_pos⟩ := by
+  simp [Distro.pmf, negativeBinomialCensoredDistro, ofFinWeights,
+    FiniteProbRecord.probVal, QProb.Equiv, eventMass_finWeighted_singleton]
 
 end Distros
 end Probability

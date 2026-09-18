@@ -11,7 +11,8 @@ Bernoulli distro: a two-cell labelled urn.
 and `falseWeight` on `false`.  It is the generating atom of the binomial
 family: an `n`-fold independent product, pushed forward along the success
 count, is the binomial distro of `n` trials.  Its whole-number PGF is
-`(falseWeight + trueWeight * s) / (falseWeight + trueWeight)`.  The
+`(falseWeight + trueWeight * s) / (falseWeight + trueWeight)`.  The same
+closed form holds at a general nonnegative rational argument.  The
 success-count embedding `bernoulliBit` identifies it with the one-trial
 binomial, and `bernoulliOfBit` is the inverse transport.
 -/
@@ -180,6 +181,56 @@ theorem bernoulli_pgf_ofNat (trueWeight falseWeight s : Nat)
       positive
   refine QProb.equiv_trans (by simpa [pgf] using hdiv) ?_
   simp [QProb.div, QProb.ofNat, QProb.Equiv]
+
+/-- The Bernoulli PGF at a nonnegative rational `s` is
+`(falseWeight + trueWeight * s) / (falseWeight + trueWeight)`. -/
+theorem bernoulli_pgf (trueWeight falseWeight : Nat) (s : QProb)
+    (positive : 0 < falseWeight + trueWeight) :
+    QProb.Equiv
+      (pgf (bernoulliNatDistro trueWeight falseWeight positive) s)
+      (QProb.div
+        (QProb.add (QProb.ofNat falseWeight)
+          (QProb.mul (QProb.ofNat trueWeight) s))
+        (QProb.ofNat (falseWeight + trueWeight))
+        positive) := by
+  have hf :
+      QProb.Equiv
+        (QProb.scale falseWeight (qpow s 0))
+        (QProb.ofNat falseWeight) := by
+    rw [scale_qpow_zero]
+    exact QProb.equiv_refl _
+  have ht := scale_qpow_one trueWeight s
+  have hnum :
+      QProb.Equiv
+        (QProb.listSum
+          ((bernoulliNatDistro trueWeight falseWeight
+              positive).distro.record.atoms.map fun atom =>
+            QProb.scale atom.2
+              (qpow s
+                ((bernoulliNatDistro trueWeight falseWeight
+                    positive).embed atom.1))))
+        (QProb.add (QProb.ofNat falseWeight)
+          (QProb.mul (QProb.ofNat trueWeight) s)) := by
+    simp [bernoulliNatDistro, bernoulliDistro, QProb.listSum]
+    have htail :
+        QProb.Equiv
+          (QProb.add (QProb.scale trueWeight (qpow s 1)) QProb.zero)
+          (QProb.scale trueWeight (qpow s 1)) :=
+      QProb.add_zero _
+    have hsum :=
+      QProb.add_congr hf (QProb.equiv_trans htail ht)
+    exact hsum
+  have hden :
+      QProb.Equiv
+        (QProb.ofNat
+          (bernoulliNatDistro trueWeight falseWeight positive).distro.record.den)
+        (QProb.ofNat (falseWeight + trueWeight)) := by
+    simp [bernoulliNatDistro, bernoulliDistro, QProb.Equiv, QProb.ofNat]
+  have hdiv :=
+    QProb.div_congr hnum hden
+      (bernoulliNatDistro trueWeight falseWeight positive).distro.record.den_pos
+      positive
+  simpa [pgf] using hdiv
 
 end Distros
 end Probability

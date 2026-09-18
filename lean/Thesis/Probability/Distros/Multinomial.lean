@@ -10,6 +10,9 @@ Multinomial distro: occupancy counts of independent categorical draws.
 The construction is recursive in the number of categories.  Splitting off one
 category reduces the remaining occupancy problem to a binomial choice, after
 which the binomial theorem reconstitutes the normaliser `(∑ weights)^trials`.
+Event mass, not merely singleton occupancy, splits the same way: prefixing
+with `used` draws is the binomial factor times the remaining occupancy
+event.
 -/
 
 open Combinatorics
@@ -126,6 +129,18 @@ def multinomialWeight : List Nat → List Nat → Nat
   | _ :: _, [] => 0
   | w :: ws, c :: cs =>
       binom (c + cs.sum) c * w ^ c * multinomialWeight ws cs
+
+/-- Prefixing occupancy lists with `used` hits an arbitrary event on the
+preimage of lists that start with `used`. -/
+theorem eventMass_map_cons (used factor : Nat)
+    (atoms : List (List Nat × Nat)) (event : Event (List Nat)) :
+    FiniteProbRecord.eventMass
+        (atoms.map fun atom => (used :: atom.1, factor * atom.2))
+        event =
+      factor * FiniteProbRecord.eventMass atoms
+        (fun rest => event (used :: rest)) :=
+  FiniteProbRecord.eventMass_map_weight atoms
+    (fun rest => used :: rest) factor event
 
 /-- Prefixing every occupancy list with `used` cannot hit the empty
 singleton. -/
@@ -326,6 +341,46 @@ theorem eventMass_multinomialAtoms (trials : Nat)
             have htot : c + cs.sum ≠ trials := by omega
             simp [htot]
 
+/-- Empty category list: the only occupancy of `0` trials is `[]`, and
+any positive trial count is impossible. -/
+theorem eventMass_multinomialAtoms_nil (trials : Nat)
+    (event : Event (List Nat)) :
+    FiniteProbRecord.eventMass (multinomialAtoms trials []) event =
+      if trials = 0 then (if event [] then 1 else 0) else 0 := by
+  cases trials with
+  | zero =>
+      simp [multinomialAtoms, FiniteProbRecord.eventMass]
+  | succ trials =>
+      simp [multinomialAtoms, FiniteProbRecord.eventMass]
+
+/-- Event mass of a cons-category occupancy splits as a binomial mixture
+of the remaining occupancy events. -/
+theorem eventMass_multinomialAtoms_cons (trials weight : Nat)
+    (rest : List Nat) (event : Event (List Nat)) :
+    FiniteProbRecord.eventMass
+        (multinomialAtoms trials (weight :: rest)) event =
+      natSum (trials + 1) (fun used =>
+        binom trials used * weight ^ used *
+          FiniteProbRecord.eventMass
+            (multinomialAtoms (trials - used) rest)
+            (fun counts => event (used :: counts))) := by
+  change
+    FiniteProbRecord.eventMass
+        ((List.range (trials + 1)).flatMap fun used =>
+          (multinomialAtoms (trials - used) rest).map fun atom =>
+            (used :: atom.1, binom trials used * weight ^ used * atom.2))
+        event =
+      natSum (trials + 1) (fun used =>
+        binom trials used * weight ^ used *
+          FiniteProbRecord.eventMass
+            (multinomialAtoms (trials - used) rest)
+            (fun counts => event (used :: counts)))
+  rw [eventMass_range]
+  apply natSum_congr
+  intro used _
+  exact eventMass_map_cons used (binom trials used * weight ^ used)
+    (multinomialAtoms (trials - used) rest) event
+
 /-- Multinomial distro on occupancy lists. -/
 def multinomialDistro (trials : Nat) (weights : List Nat)
     (positive : 0 < weights.sum) : Distro (List Nat) where
@@ -356,6 +411,18 @@ theorem multinomial_pmf (trials : Nat) (weights counts : List Nat)
         (multinomialDistro trials weights positive).record.den_pos⟩ := by
   simp [Distro.pmf, multinomialDistro, FiniteProbRecord.probVal, QProb.Equiv,
     eventMass_multinomialAtoms]
+
+/-- Multinomial event probability is the occupancy-event mass over
+`(∑ weights)^trials`. -/
+theorem multinomial_probVal (trials : Nat) (weights : List Nat)
+    (positive : 0 < weights.sum) (event : Event (List Nat)) :
+    QProb.Equiv
+      ((multinomialDistro trials weights positive).record.probVal event)
+      ⟨FiniteProbRecord.eventMass (multinomialAtoms trials weights) event,
+        weights.sum ^ trials,
+        Nat.pow_pos positive⟩ := by
+  simp [multinomialDistro, FiniteProbRecord.probVal, QProb.Equiv,
+    totalMass_multinomialAtoms]
 
 end Distros
 end Probability
