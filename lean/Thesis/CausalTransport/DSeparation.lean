@@ -83,6 +83,31 @@ def PathDSeparated (G : ObservedGraph S) (mutilation : GraphMutilation S)
           (ActivePath G mutilation conditioned
             (.observed source) (.observed target)))
 
+/-- An empty left endpoint set admits no active path, so it is
+d-separated from every right set. -/
+theorem PathDSeparated.of_isEmpty_left
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (left right conditioned : NodeSet S)
+    (hleft : NodeSet.isEmpty left = true) :
+    PathDSeparated G mutilation left right conditioned := by
+  intro h
+  rcases h with ⟨source, _target, hs, _ht, _path⟩
+  have hfalse : left source = false :=
+    (NodeSet.isEmpty_eq_true_iff left).mp hleft source
+  exact Bool.false_ne_true (hfalse.symm.trans hs)
+
+/-- An empty right endpoint set admits no active path. -/
+theorem PathDSeparated.of_isEmpty_right
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (left right conditioned : NodeSet S)
+    (hright : NodeSet.isEmpty right = true) :
+    PathDSeparated G mutilation left right conditioned := by
+  intro h
+  rcases h with ⟨_source, target, _hs, ht, _path⟩
+  have hfalse : right target = false :=
+    (NodeSet.isEmpty_eq_true_iff right).mp hright target
+  exact Bool.false_ne_true (hfalse.symm.trans ht)
+
 end PathSpecification
 
 /--
@@ -97,6 +122,18 @@ structure DSeparationCorrectness (G : ObservedGraph S) : Prop where
     G.dSeparated mutilation left right conditioned = true <->
       PathSpecification.PathDSeparated
         G mutilation left right conditioned
+
+/-- The executable test is a decision procedure for the active-path
+specification. -/
+theorem DSeparationCorrectness.pathDSeparated_of_dSeparated
+    {G : ObservedGraph S} (correct : DSeparationCorrectness G)
+    {mutilation : GraphMutilation S}
+    {left right conditioned : NodeSet S}
+    (h : G.dSeparated mutilation left right conditioned = true) :
+    PathSpecification.PathDSeparated G mutilation left right
+      conditioned :=
+  (correct.algorithm_iff_active_path mutilation left right
+    conditioned).mp h
 
 /-- The active-path specialization of the common rule-side-condition interface. -/
 @[reducible] def pathRuleSeparation (G : ObservedGraph S) : RuleSeparation G where

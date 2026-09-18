@@ -110,7 +110,7 @@ theorem nodes_headD {edge : α -> α -> Bool}
   | cons head tail =>
       simp [hnodes] at h
       subst head
-      simp [hnodes]
+      simp
 
 theorem nodes_getLast {edge : α -> α -> Bool}
     {length : Nat} {source target : α}
@@ -123,6 +123,26 @@ theorem nodes_getLast {edge : α -> α -> Bool}
       | refl => rfl
       | step second tail =>
           simpa [nodes] using ih
+
+theorem mem_source {edge : α -> α -> Bool}
+    {length : Nat} {source target : α}
+    (walk : ExactWalk edge length source target) :
+    source ∈ walk.nodes := by
+  cases walk with
+  | refl =>
+      simp [nodes]
+  | step =>
+      simp [nodes]
+
+theorem mem_target {edge : α -> α -> Bool}
+    {length : Nat} {source target : α}
+    (walk : ExactWalk edge length source target) :
+    target ∈ walk.nodes := by
+  induction walk with
+  | refl =>
+      simp [nodes]
+  | step first rest ih =>
+      simp [nodes, ih]
 
 theorem nodes_length {edge : α -> α -> Bool}
     {length : Nat} {source target : α}
@@ -168,6 +188,105 @@ theorem prefix_of_mem {edge : α -> α -> Bool}
         exact ⟨prefixLength + 1, Nat.add_le_add_right bound 1,
           ⟨.step first prefixWalk⟩⟩
 
+/-- The prefix walk supplied by membership is a list-prefix of the original
+walk. -/
+theorem exists_prefix_with_subset {edge : α -> α -> Bool}
+    {length : Nat} {source target node : α}
+    (walk : ExactWalk edge length source target)
+    (member : node ∈ walk.nodes) :
+    Exists fun prefixLength =>
+      Exists fun preWalk : ExactWalk edge prefixLength source node =>
+        prefixLength <= length /\
+          (forall m, m ∈ preWalk.nodes -> m ∈ walk.nodes) /\
+            Exists fun rest => walk.nodes = preWalk.nodes ++ rest := by
+  induction walk with
+  | refl endpoint =>
+      simp only [nodes, List.mem_singleton] at member
+      subst node
+      exact ⟨0, .refl endpoint, Nat.zero_le _, fun m hm => by
+        simpa [nodes, List.mem_singleton] using hm,
+        [], by simp [nodes]⟩
+  | @step length source middle target first rest ih =>
+      simp only [nodes, List.mem_cons] at member
+      rcases member with same | later
+      · subst node
+        refine ⟨0, .refl source, Nat.zero_le _, ?_, rest.nodes, ?_⟩
+        · intro m hm
+          simp only [nodes, List.mem_singleton] at hm
+          subst m
+          simp [nodes]
+        · simp [nodes]
+      · rcases ih later with
+          ⟨prefixLength, prefixWalk, bound, subset, tail, hsplit⟩
+        refine ⟨prefixLength + 1, .step first prefixWalk,
+          Nat.add_le_add_right bound 1, ?_, tail, ?_⟩
+        · intro m hm
+          simp only [nodes, List.mem_cons] at hm ⊢
+          rcases hm with same | later'
+          · exact Or.inl same
+          · exact Or.inr (subset m later')
+        · simp [nodes, hsplit]
+
+/-- A vertex other than the walk's target is reached by a strictly shorter
+prefix.  Set-minimal ancestry uses this to keep internals out of the target
+family. -/
+theorem exists_shorter_prefix_of_internal {edge : α -> α -> Bool}
+    {length : Nat} {source target node : α}
+    (walk : ExactWalk edge length source target)
+    (member : node ∈ walk.nodes) (different : node ≠ target) :
+    Exists fun prefixLength => prefixLength < length /\
+      Nonempty (ExactWalk edge prefixLength source node) := by
+  induction walk with
+  | refl endpoint =>
+      simp only [nodes, List.mem_singleton] at member
+      subst node
+      exact (different rfl).elim
+  | @step length source middle target first rest ih =>
+      simp only [nodes, List.mem_cons] at member
+      rcases member with same | later
+      · subst node
+        exact ⟨0, Nat.succ_pos _, ⟨.refl source⟩⟩
+      · rcases ih later different with ⟨prefixLength, bound, prefixWalk⟩
+        rcases prefixWalk with ⟨prefixWalk⟩
+        exact ⟨prefixLength + 1, Nat.succ_lt_succ bound,
+          ⟨.step first prefixWalk⟩⟩
+
+/-- Set-minimal walks cannot pass through an earlier target vertex. -/
+theorem not_mem_targets_of_minimal_internal {edge : α -> α -> Bool}
+    {length : Nat} {source target node : α} {targets : α -> Bool}
+    (walk : ExactWalk edge length source target)
+    (minimal : forall target' alternative,
+      targets target' = true ->
+        Nonempty (ExactWalk edge alternative source target') ->
+          length <= alternative)
+    (member : node ∈ walk.nodes) (different : node ≠ target) :
+    targets node = false := by
+  cases hsel : targets node with
+  | false =>
+      rfl
+  | true =>
+      rcases exists_shorter_prefix_of_internal walk member different with
+        ⟨prefixLength, bound, prefixWalk⟩
+      have tooLong := minimal node prefixLength hsel prefixWalk
+      exact (Nat.not_le_of_gt bound tooLong).elim
+
+/-- A positive-length set-minimal walk cannot start inside the target family. -/
+theorem source_not_mem_targets_of_minimal_pos {edge : α -> α -> Bool}
+    {length : Nat} {source target : α} {targets : α -> Bool}
+    (_walk : ExactWalk edge length source target)
+    (positive : 0 < length)
+    (minimal : forall target' alternative,
+      targets target' = true ->
+        Nonempty (ExactWalk edge alternative source target') ->
+          length <= alternative) :
+    targets source = false := by
+  cases hsel : targets source with
+  | false =>
+      rfl
+  | true =>
+      have tooLong := minimal source 0 hsel ⟨.refl source⟩
+      exact (Nat.not_le_of_gt positive tooLong).elim
+
 /-- Every occurrence in a walk starts a suffix walk to the same target. -/
 theorem suffix_of_mem {edge : α -> α -> Bool}
     {length : Nat} {source target node : α}
@@ -180,13 +299,72 @@ theorem suffix_of_mem {edge : α -> α -> Bool}
       simp only [nodes, List.mem_singleton] at member
       subst node
       exact ⟨0, Nat.zero_le _, ⟨.refl endpoint⟩⟩
-  | @step length source middle target first rest ih =>
+      | @step length source middle target first rest ih =>
       simp only [nodes, List.mem_cons] at member
       rcases member with same | later
       · subst node
         exact ⟨length + 1, Nat.le_refl _, ⟨.step first rest⟩⟩
       · rcases ih later with ⟨suffixLength, bound, suffix⟩
         exact ⟨suffixLength, Nat.le_trans bound (Nat.le_succ _), suffix⟩
+
+/-- The suffix walk supplied by membership is a list-suffix of the original
+walk, and it remains simple.  First-shared forks recover the complementary
+prefix so that shared vertices after the meet lie on one side of the
+reversed trail. -/
+theorem exists_simple_suffix_of_mem {edge : α -> α -> Bool}
+    {length : Nat} {source target node : α}
+    (walk : ExactWalk edge length source target)
+    (simple : walk.nodes.Nodup)
+    (member : node ∈ walk.nodes) :
+    Exists fun suffixLength =>
+      Exists fun suffix : ExactWalk edge suffixLength node target =>
+        suffix.nodes.Nodup /\
+          Exists fun pre => walk.nodes = pre ++ suffix.nodes := by
+  induction walk with
+  | refl endpoint =>
+      simp only [nodes, List.mem_singleton] at member
+      subst node
+      exact ⟨0, .refl endpoint, by simp [nodes], [], by simp [nodes]⟩
+  | @step length source middle target first rest ih =>
+      have parts := List.nodup_cons.mp (by simpa [nodes] using simple)
+      simp only [nodes, List.mem_cons] at member
+      rcases member with same | later
+      · subst node
+        exact ⟨length + 1, .step first rest, by simpa [nodes] using simple,
+          [], by simp [nodes]⟩
+      · rcases ih parts.2 later with
+          ⟨suffixLength, suffix, suffixSimple, pre, hpre⟩
+        exact ⟨suffixLength, suffix, suffixSimple, source :: pre, by
+          simp [nodes, hpre]⟩
+
+/-- Computational suffix from membership, for Type-valued path constructors.
+Equality of vertices is decided, so the construction never cases on `Exists`. -/
+def suffixFrom [DecidableEq α] {edge : α -> α -> Bool}
+    {length : Nat} {source target : α}
+    (walk : ExactWalk edge length source target) (node : α)
+    (member : node ∈ walk.nodes) :
+    Σ' (suffixLength : Nat),
+      Σ' (suffix : ExactWalk edge suffixLength node target),
+        Σ' (pre : List α), PLift (walk.nodes = pre ++ suffix.nodes) :=
+  match walk with
+  | refl endpoint => by
+      simp only [nodes, List.mem_singleton] at member
+      subst node
+      exact ⟨0, .refl endpoint, [], ⟨by simp [nodes]⟩⟩
+  | @ExactWalk.step _ _ len src mid tgt first rest =>
+      if h : node = src then
+        ⟨len + 1, h.symm ▸ ExactWalk.step first rest, [], ⟨by
+          cases h
+          rfl⟩⟩
+      else by
+        have later : node ∈ rest.nodes := by
+          simp only [nodes, List.mem_cons] at member
+          rcases member with same | later
+          · exact (h same).elim
+          · exact later
+        rcases suffixFrom rest node later with
+          ⟨suffixLength, suffix, pre, ⟨hpre⟩⟩
+        exact ⟨suffixLength, suffix, src :: pre, ⟨by simp [nodes, hpre]⟩⟩
 
 /-- A shortest exact walk cannot repeat a vertex. -/
 theorem nodes_nodup_of_minimal {edge : α -> α -> Bool}
@@ -244,6 +422,17 @@ def mapEdge {e1 e2 : α -> α -> Bool}
   | .refl node => .refl node
   | .step first rest => .step (included _ _ first) (mapEdge included rest)
 
+@[simp] theorem mapEdge_nodes {e1 e2 : α -> α -> Bool}
+    (included : forall left right, e1 left right = true -> e2 left right = true)
+    {length : Nat} {source target : α}
+    (walk : ExactWalk e1 length source target) :
+    (mapEdge included walk).nodes = walk.nodes := by
+  induction walk with
+  | refl node =>
+      simp [mapEdge, nodes]
+  | step first rest ih =>
+      simp [mapEdge, nodes, ih]
+
 theorem nodes_ne_nil {edge : α -> α -> Bool} {length : Nat}
     {source target : α} (walk : ExactWalk edge length source target) :
     walk.nodes ≠ [] := by
@@ -273,7 +462,7 @@ def ofConsecutive {edge : α -> α -> Bool}
   | [] =>
       simp at starts
   | [node] =>
-      simp only [List.head?_cons, List.head?_nil, Option.some.injEq] at starts
+      simp only [List.head?_cons, Option.some.injEq] at starts
       simp only [List.getLast?_singleton, Option.some.injEq] at finishes
       subst source
       subst target
@@ -292,6 +481,19 @@ def ofConsecutive {edge : α -> α -> Bool}
       exact lengthEq ▸ ExactWalk.step consecutive.1 tailWalk
 
 end ExactWalk
+
+/-- Concatenate two bounded walks; the bound adds. -/
+theorem BoundedWalk.trans {edge : α -> α -> Bool}
+    {fuel fuel' : Nat} {source middle target : α}
+    (left : BoundedWalk edge fuel source middle)
+    (right : BoundedWalk edge fuel' middle target) :
+    BoundedWalk edge (fuel + fuel') source target := by
+  rcases left with ⟨leftLen, leftBound, leftWalk⟩
+  rcases right with ⟨rightLen, rightBound, rightWalk⟩
+  rcases leftWalk with ⟨leftExact⟩
+  rcases rightWalk with ⟨rightExact⟩
+  exact ⟨leftLen + rightLen, Nat.add_le_add leftBound rightBound,
+    ⟨ExactWalk.append leftExact rightExact⟩⟩
 
 private theorem mem_step_iff
     (same : α -> α -> Bool) (nodes : List α) (edge : α -> α -> Bool)
@@ -433,6 +635,85 @@ theorem exists_minimal_exactWalk_of_boundedWalk
           | false =>
               have notLe : Not (alternative <= fuel) := by
                 exact of_decide_eq_false alternativeBound
+              omega
+
+/-- A bounded walk into a displayed family contains a shortest exact walk
+into that family, not merely into one chosen member. -/
+theorem exists_minimal_exactWalk_to_set
+    (same : α -> α -> Bool) (nodes : List α) (edge : α -> α -> Bool)
+    (same_iff : forall left right, same left right = true <-> left = right)
+    (complete : forall node, node ∈ nodes)
+    {fuel : Nat} {source : α} {targets : α -> Bool}
+    (reached : Exists fun target =>
+      targets target = true /\ BoundedWalk edge fuel source target) :
+    Exists fun target =>
+      targets target = true /\
+        Exists fun length =>
+          Nonempty (ExactWalk edge length source target) /\
+            (forall target' alternative,
+              targets target' = true ->
+                Nonempty (ExactWalk edge alternative source target') ->
+                  length <= alternative) := by
+  induction fuel with
+  | zero =>
+      rcases reached with ⟨target, selected, ⟨length, bound, walk⟩⟩
+      have lengthZero : length = 0 := Nat.eq_zero_of_le_zero bound
+      subst length
+      exact ⟨target, selected, 0, walk, fun _ _ _ _ => Nat.zero_le _⟩
+  | succ fuel ih =>
+      cases earlier : nodes.any (fun candidate =>
+          targets candidate &&
+            within same nodes edge fuel source candidate) with
+      | true =>
+          have earlierReached : Exists fun target =>
+              targets target = true /\ BoundedWalk edge fuel source target := by
+            rcases List.any_eq_true.mp earlier with
+              ⟨target, _member, holds⟩
+            have parts := Bool.and_eq_true_iff.mp holds
+            exact ⟨target, parts.1,
+              (within_eq_true_iff_boundedWalk same nodes edge same_iff complete
+                fuel source target).mp parts.2⟩
+          exact ih earlierReached
+      | false =>
+          rcases reached with ⟨target, selected, ⟨length, bound, walk⟩⟩
+          have notEarlier : Not (length <= fuel) := by
+            intro lengthBound
+            have found : within same nodes edge fuel source target = true :=
+              (within_eq_true_iff_boundedWalk same nodes edge same_iff complete
+                fuel source target).mpr ⟨length, lengthBound, walk⟩
+            have anyFound :
+                nodes.any (fun candidate =>
+                  targets candidate &&
+                    within same nodes edge fuel source candidate) = true :=
+              List.any_eq_true.mpr
+                ⟨target, complete target,
+                  Bool.and_eq_true_iff.mpr ⟨selected, found⟩⟩
+            rw [earlier] at anyFound
+            contradiction
+          have exactLength : length = fuel + 1 := by omega
+          subst length
+          refine ⟨target, selected, fuel + 1, walk, ?_⟩
+          intro target' alternative selected' alternativeWalk
+          cases alternativeBound : decide (alternative <= fuel) with
+          | true =>
+              have leFuel : alternative <= fuel :=
+                of_decide_eq_true alternativeBound
+              have found : within same nodes edge fuel source target' = true :=
+                (within_eq_true_iff_boundedWalk same nodes edge same_iff
+                  complete fuel source target').mpr
+                    ⟨alternative, leFuel, alternativeWalk⟩
+              have anyFound :
+                  nodes.any (fun candidate =>
+                    targets candidate &&
+                      within same nodes edge fuel source candidate) = true :=
+                List.any_eq_true.mpr
+                  ⟨target', complete target',
+                    Bool.and_eq_true_iff.mpr ⟨selected', found⟩⟩
+              rw [earlier] at anyFound
+              contradiction
+          | false =>
+              have notLe : Not (alternative <= fuel) :=
+                of_decide_eq_false alternativeBound
               omega
 
 /-- An exact walk together with the proof that its vertex list is simple. -/
@@ -650,6 +931,19 @@ theorem drop_append_length {α} (xs ys : List α) :
   | cons _ rest ih =>
       simp [ih]
 
+/-- Dropping the last cell of a snoc-list recovers the prefix. -/
+theorem dropLast_snoc {α} (pre : List α) (a : α) :
+    (pre ++ [a]).dropLast = pre := by
+  induction pre with
+  | nil =>
+      simp
+  | cons head tail ih =>
+      cases tail with
+      | nil =>
+          simp [List.dropLast]
+      | cons y ys =>
+          simp [List.cons_append, List.dropLast]
+
 /-- The first success of a Boolean `find?` splits the list into earlier
 failures, the witness, and the unexamined suffix.  The construction is by
 induction on the list, so it does not invoke choice. -/
@@ -678,6 +972,188 @@ theorem find?_eq_some_split {α} (p : α -> Bool) :
           · subst y
             exact hp
           · exact noneBefore y later
+
+/-- Computational splitter for Boolean `find?`, used by Type-valued
+path constructors that cannot case on `Exists`. -/
+def find?Split {α} (p : α -> Bool) : List α -> Option (List α × α × List α)
+  | [] => none
+  | x :: xs =>
+      if p x then
+        some ([], x, xs)
+      else
+        match find?Split p xs with
+        | none => none
+        | some (before, a, after) => some (x :: before, a, after)
+
+theorem find?_eq_none_of_find?Split {α} (p : α -> Bool) :
+    forall (xs : List α), find?Split p xs = none -> xs.find? p = none
+  | [], _h => rfl
+  | x :: xs, h => by
+      cases hp : p x with
+      | true =>
+          simp [find?Split, hp] at h
+      | false =>
+          cases hsplit : find?Split p xs with
+          | none =>
+              have htail := find?_eq_none_of_find?Split p xs hsplit
+              simpa [List.find?, hp] using htail
+          | some _triple =>
+              simp [find?Split, hp, hsplit] at h
+
+theorem find?Split_eq_none_of_find? {α} (p : α -> Bool) :
+    forall (xs : List α), xs.find? p = none -> find?Split p xs = none
+  | [], _h => rfl
+  | x :: xs, h => by
+      cases hp : p x with
+      | true =>
+          simp [List.find?, hp] at h
+      | false =>
+          have htail : xs.find? p = none := by
+            simpa [List.find?, hp] using h
+          simp [find?Split, hp, find?Split_eq_none_of_find? p xs htail]
+
+theorem find?Split_spec {α} (p : α -> Bool) (xs : List α) :
+    forall (before : List α) (a : α) (after : List α),
+      find?Split p xs = some (before, a, after) ->
+        xs = before ++ a :: after ∧
+          (forall x, x ∈ before -> p x = false) ∧ p a = true := by
+  induction xs with
+  | nil =>
+      intro before a after h
+      simp [find?Split] at h
+  | cons x xs ih =>
+      intro before a after h
+      cases hp : p x with
+      | true =>
+          simp [find?Split, hp] at h
+          rcases h with ⟨rfl, rfl, rfl⟩
+          exact ⟨rfl, fun y hy => (List.not_mem_nil hy).elim, hp⟩
+      | false =>
+          cases hsplit : find?Split p xs with
+          | none =>
+              simp [find?Split, hp, hsplit] at h
+          | some val =>
+              rcases val with ⟨b, a', af⟩
+              simp [find?Split, hp, hsplit] at h
+              rcases h with ⟨rfl, rfl, rfl⟩
+              have nested := ih b a' af hsplit
+              refine ⟨by simp [nested.1], ?_, nested.2.2⟩
+              intro y mem
+              simp only [List.mem_cons] at mem
+              rcases mem with same | later
+              · subst y
+                exact hp
+              · exact nested.2.1 y later
+
+theorem find?_eq_some_of_find?Split {α} (p : α -> Bool) (xs : List α) :
+    forall (before : List α) (a : α) (after : List α),
+      find?Split p xs = some (before, a, after) ->
+        xs.find? p = some a := by
+  induction xs with
+  | nil =>
+      intro before a after h
+      simp [find?Split] at h
+  | cons x xs ih =>
+      intro before a after h
+      cases hp : p x with
+      | true =>
+          simp [find?Split, hp] at h
+          rcases h with ⟨rfl, rfl, rfl⟩
+          simp [List.find?, hp]
+      | false =>
+          cases hsplit : find?Split p xs with
+          | none =>
+              simp [find?Split, hp, hsplit] at h
+          | some val =>
+              rcases val with ⟨b, a', af⟩
+              simp [find?Split, hp, hsplit] at h
+              rcases h with ⟨rfl, rfl, rfl⟩
+              have nested := ih b a' af hsplit
+              simpa [List.find?, hp] using nested
+
+theorem eq_false_of_find?_eq_none {α} {p : α -> Bool} {xs : List α} {x : α}
+    (h : xs.find? p = none) (hx : x ∈ xs) : p x = false := by
+  have hx' := List.find?_eq_none.mp h x hx
+  cases hp : p x with
+  | false =>
+      rfl
+  | true =>
+      rw [hp] at hx'
+      exact (hx' rfl).elim
+
+/-- A successful `find?` on a prefix remains the first success after any
+suffix is appended. -/
+theorem find?_append_left {α} (p : α -> Bool)
+    (xs ys : List α) {a : α}
+    (h : xs.find? p = some a) :
+    (xs ++ ys).find? p = some a := by
+  induction xs with
+  | nil =>
+      simp at h
+  | cons x xs ih =>
+      cases hp : p x with
+      | true =>
+          simp only [List.cons_append, List.find?, hp] at h ⊢
+          exact h
+      | false =>
+          have htail : xs.find? p = some a := by
+            simpa [List.find?, hp] using h
+          simpa [List.cons_append, List.find?, hp] using ih htail
+
+/-- If a prefix has no success, the first success of the concatenated list
+is the displayed head of the remainder. -/
+theorem find?_eq_none_append_cons {α} (p : α -> Bool)
+    (xs : List α) (y : α) (ys : List α)
+    (hnone : xs.find? p = none) (hy : p y = true) :
+    (xs ++ y :: ys).find? p = some y := by
+  induction xs with
+  | nil =>
+      simp [hy]
+  | cons x xs ih =>
+      have hx : p x = false :=
+        eq_false_of_find?_eq_none hnone (List.mem_cons.mpr (Or.inl rfl))
+      have hnone_tail : xs.find? p = none :=
+        List.find?_eq_none.mpr (fun a ha => by
+          have hf := eq_false_of_find?_eq_none hnone
+            (List.mem_cons.mpr (Or.inr ha))
+          rw [hf]
+          exact Bool.false_ne_true)
+      simpa [List.cons_append, List.find?, hx] using ih hnone_tail
+
+/-- Two decompositions at the same excluded middle cell agree. -/
+theorem append_cons_inj_of_not_mem {α}
+    {xs ys xs' ys' : List α} {a : α}
+    (h : xs ++ a :: ys = xs' ++ a :: ys')
+    (nxs : a ∉ xs) (nxs' : a ∉ xs') :
+    xs = xs' ∧ ys = ys' := by
+  induction xs generalizing xs' with
+  | nil =>
+      cases xs' with
+      | nil =>
+          simp at h
+          exact ⟨rfl, h⟩
+      | cons x xs' =>
+          simp [List.cons_append] at h
+          rcases h with ⟨hax, _hrest⟩
+          subst x
+          exact (nxs' (List.mem_cons.mpr (Or.inl rfl))).elim
+  | cons x xs ih =>
+      cases xs' with
+      | nil =>
+          simp [List.cons_append] at h
+          rcases h with ⟨_hxa, _hrest⟩
+          subst x
+          exact (nxs (List.mem_cons.mpr (Or.inl rfl))).elim
+      | cons x' xs' =>
+          simp [List.cons_append] at h
+          rcases h with ⟨hxx, hrest⟩
+          subst x'
+          have nxs_tail : a ∉ xs :=
+            fun ha => nxs (List.mem_cons.mpr (Or.inr ha))
+          have nxs'_tail : a ∉ xs' :=
+            fun ha => nxs' (List.mem_cons.mpr (Or.inr ha))
+          rcases ih hrest nxs_tail nxs'_tail with ⟨rfl, rfl⟩
+          exact ⟨rfl, rfl⟩
 
 /-- Concatenating two simple lists that share no vertex remains simple. -/
 theorem nodup_append_of_disjoint {α} {xs ys : List α}
@@ -921,11 +1397,11 @@ theorem Consecutive.delete_middle {relation : α -> α -> Prop} :
           (before ++ previous :: middle :: next :: after) ->
         relation previous next ->
           Consecutive relation (before ++ previous :: next :: after)
-  | [], previous, _middle, next, after, consecutive, bridge =>
+  | [], _previous, _middle, _next, _after, consecutive, bridge =>
       ⟨bridge, consecutive.2.2⟩
-  | [head], previous, _middle, next, after, consecutive, bridge =>
+  | [_head], _previous, _middle, _next, _after, consecutive, bridge =>
       ⟨consecutive.1, ⟨bridge, consecutive.2.2.2⟩⟩
-  | head :: second :: rest, previous, middle, next, after, consecutive,
+  | _head :: second :: rest, previous, middle, next, after, consecutive,
       bridge =>
       ⟨consecutive.1,
         Consecutive.delete_middle (second :: rest) previous middle next after
@@ -962,7 +1438,7 @@ theorem InternalTriplesActive.take {G : ObservedGraph S}
     InternalTriplesActive G mutilation conditioned (nodes.take count) := by
   induction active generalizing count with
   | nil =>
-      simp [List.take]
+      simp
       exact InternalTriplesActive.nil
   | singleton node =>
       cases count with
@@ -1052,7 +1528,7 @@ theorem TripleActive_iff_tripleActiveBool (G : ObservedGraph S)
       have collider :=
         (IsCollider_iff_isColliderBool G mutilation previous middle next).mpr
           colliderValue
-      simp [colliderValue]
+      simp
       constructor
       · intro active
         rcases active with colliderAndActivated | nonColliderAndOpen
@@ -1069,7 +1545,7 @@ theorem TripleActive_iff_tripleActiveBool (G : ObservedGraph S)
             collider
         rw [colliderValue] at colliderTrue
         contradiction
-      simp [colliderValue]
+      simp
       constructor
       · intro active
         rcases active with colliderAndActivated | nonColliderAndOpen
@@ -1211,7 +1687,7 @@ theorem take_append_two {α} (xs : List α) (a b : α) (cs : List α) :
   induction xs with
   | nil => simp [List.take]
   | cons x xs ih =>
-      simp [List.take, List.length_cons]
+      simp [List.length_cons]
       exact ih
 
 /-- The first inactive triple, together with the proof that every earlier
@@ -1593,7 +2069,7 @@ theorem Consecutive.overlap_glue {relation : α -> α -> Prop}
     | cons _head tail ih =>
         cases tail with
         | nil => simp
-        | cons _ _ => simpa [List.getLast?_cons] using ih
+        | cons _ _ => simp [List.getLast?_cons]
   cases htail : backAfter with
   | nil =>
       simpa [htail] using leftCons
@@ -1654,6 +2130,933 @@ def ActivePath.ofPair (G : ObservedGraph S)
   source_open := leftOpen
   target_open := rightOpen
   internal_active := InternalTriplesActive.pair left right
+
+/--
+A bidirected edge between distinct open observed endpoints is an active
+path through the corresponding explicit latent pair.  Incoming mutilation
+must leave both endpoints, matching `G_{\overline{X}}` when those
+endpoints lie outside `X`.
+-/
+def ActivePath.ofBidirected (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {left right : Fin S.count}
+    (hedge : G.bidirected left right = true)
+    (different : left ≠ right)
+    (leftOpen : ObservedGraph.blockedBy conditioned (.observed left) = false)
+    (rightOpen : ObservedGraph.blockedBy conditioned (.observed right) = false)
+    (leftIncoming : mutilation.removeIncoming left = false)
+    (rightIncoming : mutilation.removeIncoming right = false) :
+    ActivePath G mutilation conditioned
+      (.observed left) (.observed right) where
+  nodes := [.observed left, .latentPair left right, .observed right]
+  starts := rfl
+  finishes := rfl
+  simple := by
+    refine List.nodup_cons.mpr ⟨?_, List.nodup_cons.mpr ⟨?_, by simp⟩⟩
+    · intro hmem
+      rcases List.mem_cons.mp hmem with hlat | hobs
+      · cases hlat
+      · have heq : left = right := by
+          simpa using hobs
+        exact different heq
+    · intro hmem
+      cases List.mem_singleton.mp hmem
+  adjacent := by
+    constructor
+    · refine Or.inr ?_
+      simp [ObservedGraph.expandedMutilatedEdge, hedge, leftIncoming, finBeq]
+    · constructor
+      · refine Or.inl ?_
+        simp [ObservedGraph.expandedMutilatedEdge, hedge, rightIncoming, finBeq]
+      · simp [Consecutive]
+  source_open := leftOpen
+  target_open := rightOpen
+  internal_active := by
+    refine InternalTriplesActive.step ?_ (InternalTriplesActive.pair _ _)
+    refine Or.inr ⟨?_, rfl⟩
+    intro hcol
+    have incoming :
+        G.expandedMutilatedEdge mutilation (.observed left)
+          (.latentPair left right) = true := hcol.1
+    simp [ObservedGraph.expandedMutilatedEdge] at incoming
+
+/--
+Two bidirected edges sharing a conditioned vertex form an active path
+between the open endpoints: the middle is an activated collider, and the
+latent-pair middles are never blocked.
+-/
+def ActivePath.ofBidirectedCollider (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {left collider right : Fin S.count}
+    (hedgeLeft : G.bidirected left collider = true)
+    (hedgeRight : G.bidirected collider right = true)
+    (leftNeCollider : left ≠ collider)
+    (rightNeCollider : right ≠ collider)
+    (leftNeRight : left ≠ right)
+    (leftOpen : ObservedGraph.blockedBy conditioned (.observed left) = false)
+    (rightOpen : ObservedGraph.blockedBy conditioned (.observed right) =
+      false)
+    (leftIncoming : mutilation.removeIncoming left = false)
+    (colliderIncoming : mutilation.removeIncoming collider = false)
+    (rightIncoming : mutilation.removeIncoming right = false)
+    (activated : ColliderActivated G mutilation conditioned
+      (.observed collider)) :
+    ActivePath G mutilation conditioned
+      (.observed left) (.observed right) where
+  nodes :=
+    [.observed left, .latentPair left collider, .observed collider,
+      .latentPair collider right, .observed right]
+  starts := rfl
+  finishes := rfl
+  simple := by
+    refine List.nodup_cons.mpr ⟨?_,
+      List.nodup_cons.mpr ⟨?_,
+        List.nodup_cons.mpr ⟨?_,
+          List.nodup_cons.mpr ⟨?_, by simp⟩⟩⟩⟩
+    · intro hmem
+      rcases List.mem_cons.mp hmem with hlat | hrest
+      · cases hlat
+      rcases List.mem_cons.mp hrest with hcol | hrest2
+      · have heq : left = collider := by simpa using hcol
+        exact leftNeCollider heq
+      rcases List.mem_cons.mp hrest2 with hlat2 | hrest3
+      · cases hlat2
+      rcases List.mem_cons.mp hrest3 with hright | hnil
+      · have heq : left = right := by simpa using hright
+        exact leftNeRight heq
+      · exact (List.not_mem_nil hnil).elim
+    · intro hmem
+      rcases List.mem_cons.mp hmem with hcol | hrest
+      · cases hcol
+      rcases List.mem_cons.mp hrest with hlat2 | hrest2
+      · injection hlat2 with h1 h2
+        exact leftNeRight (h1.trans h2)
+      rcases List.mem_cons.mp hrest2 with hright | hnil
+      · cases hright
+      · exact (List.not_mem_nil hnil).elim
+    · intro hmem
+      rcases List.mem_cons.mp hmem with hlat2 | hrest
+      · cases hlat2
+      rcases List.mem_cons.mp hrest with hright | hnil
+      · have heq : collider = right := by simpa using hright
+        exact rightNeCollider heq.symm
+      · exact (List.not_mem_nil hnil).elim
+    · intro hmem
+      cases List.mem_singleton.mp hmem
+  adjacent := by
+    constructor
+    · refine Or.inr ?_
+      simp [ObservedGraph.expandedMutilatedEdge, hedgeLeft, leftIncoming,
+        finBeq]
+    · constructor
+      · refine Or.inl ?_
+        simp [ObservedGraph.expandedMutilatedEdge, hedgeLeft,
+          colliderIncoming, finBeq]
+      · constructor
+        · refine Or.inr ?_
+          simp [ObservedGraph.expandedMutilatedEdge, hedgeRight,
+            colliderIncoming, finBeq]
+        · constructor
+          · refine Or.inl ?_
+            simp [ObservedGraph.expandedMutilatedEdge, hedgeRight,
+              rightIncoming, finBeq]
+          · simp [Consecutive]
+  source_open := leftOpen
+  target_open := rightOpen
+  internal_active := by
+    refine InternalTriplesActive.step ?_ ?_
+    · refine Or.inr ⟨?_, rfl⟩
+      intro hcol
+      have incoming :
+          G.expandedMutilatedEdge mutilation (.observed left)
+            (.latentPair left collider) = true := hcol.1
+      simp [ObservedGraph.expandedMutilatedEdge] at incoming
+    · refine InternalTriplesActive.step ?_ ?_
+      · refine Or.inl ⟨?_, activated⟩
+        simp [IsCollider, ObservedGraph.expandedMutilatedEdge, hedgeLeft,
+          hedgeRight, colliderIncoming, finBeq]
+      · refine InternalTriplesActive.step ?_
+          (InternalTriplesActive.pair _ _)
+        refine Or.inr ⟨?_, rfl⟩
+        intro hcol
+        have incoming :
+            G.expandedMutilatedEdge mutilation (.observed collider)
+              (.latentPair collider right) = true := hcol.1
+        simp [ObservedGraph.expandedMutilatedEdge] at incoming
+
+/--
+Two activated colliders joined by a bidirected edge form an active path
+between the open endpoints.
+-/
+def ActivePath.ofTwoBidirectedColliders (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {left first second right : Fin S.count}
+    (hedgeLeft : G.bidirected left first = true)
+    (hedgeMid : G.bidirected first second = true)
+    (hedgeRight : G.bidirected second right = true)
+    (leftNeFirst : left ≠ first)
+    (leftNeSecond : left ≠ second)
+    (leftNeRight : left ≠ right)
+    (firstNeSecond : first ≠ second)
+    (firstNeRight : first ≠ right)
+    (secondNeRight : second ≠ right)
+    (leftOpen : ObservedGraph.blockedBy conditioned (.observed left) = false)
+    (rightOpen : ObservedGraph.blockedBy conditioned (.observed right) =
+      false)
+    (leftIncoming : mutilation.removeIncoming left = false)
+    (firstIncoming : mutilation.removeIncoming first = false)
+    (secondIncoming : mutilation.removeIncoming second = false)
+    (rightIncoming : mutilation.removeIncoming right = false)
+    (activatedFirst : ColliderActivated G mutilation conditioned
+      (.observed first))
+    (activatedSecond : ColliderActivated G mutilation conditioned
+      (.observed second)) :
+    ActivePath G mutilation conditioned
+      (.observed left) (.observed right) where
+  nodes :=
+    [.observed left, .latentPair left first, .observed first,
+      .latentPair first second, .observed second,
+      .latentPair second right, .observed right]
+  starts := rfl
+  finishes := rfl
+  simple := by
+    refine List.nodup_cons.mpr ⟨?_,
+      List.nodup_cons.mpr ⟨?_,
+        List.nodup_cons.mpr ⟨?_,
+          List.nodup_cons.mpr ⟨?_,
+            List.nodup_cons.mpr ⟨?_,
+              List.nodup_cons.mpr ⟨?_, by simp⟩⟩⟩⟩⟩⟩
+    · intro hmem
+      rcases List.mem_cons.mp hmem with hlat | hrest
+      · cases hlat
+      rcases List.mem_cons.mp hrest with h1 | hrest2
+      · have heq : left = first := by simpa using h1
+        exact leftNeFirst heq
+      rcases List.mem_cons.mp hrest2 with hlat2 | hrest3
+      · cases hlat2
+      rcases List.mem_cons.mp hrest3 with h2 | hrest4
+      · have heq : left = second := by simpa using h2
+        exact leftNeSecond heq
+      rcases List.mem_cons.mp hrest4 with hlat3 | hrest5
+      · cases hlat3
+      rcases List.mem_cons.mp hrest5 with hright | hnil
+      · have heq : left = right := by simpa using hright
+        exact leftNeRight heq
+      · exact (List.not_mem_nil hnil).elim
+    · intro hmem
+      rcases List.mem_cons.mp hmem with h1 | hrest
+      · cases h1
+      rcases List.mem_cons.mp hrest with hlat2 | hrest2
+      · injection hlat2 with ha hb
+        exact leftNeSecond (ha.trans hb)
+      rcases List.mem_cons.mp hrest2 with h2 | hrest3
+      · cases h2
+      rcases List.mem_cons.mp hrest3 with hlat3 | hrest4
+      · injection hlat3 with ha _hb
+        exact leftNeSecond ha
+      rcases List.mem_cons.mp hrest4 with hright | hnil
+      · cases hright
+      · exact (List.not_mem_nil hnil).elim
+    · intro hmem
+      rcases List.mem_cons.mp hmem with hlat2 | hrest
+      · cases hlat2
+      rcases List.mem_cons.mp hrest with h2 | hrest2
+      · have heq : first = second := by simpa using h2
+        exact firstNeSecond heq
+      rcases List.mem_cons.mp hrest2 with hlat3 | hrest3
+      · cases hlat3
+      rcases List.mem_cons.mp hrest3 with hright | hnil
+      · have heq : first = right := by simpa using hright
+        exact firstNeRight heq
+      · exact (List.not_mem_nil hnil).elim
+    · intro hmem
+      rcases List.mem_cons.mp hmem with h2 | hrest
+      · cases h2
+      rcases List.mem_cons.mp hrest with hlat3 | hrest2
+      · injection hlat3 with ha hb
+        exact firstNeRight (ha.trans hb)
+      rcases List.mem_cons.mp hrest2 with hright | hnil
+      · cases hright
+      · exact (List.not_mem_nil hnil).elim
+    · intro hmem
+      rcases List.mem_cons.mp hmem with hlat3 | hrest
+      · cases hlat3
+      rcases List.mem_cons.mp hrest with hright | hnil
+      · have heq : second = right := by simpa using hright
+        exact secondNeRight heq
+      · exact (List.not_mem_nil hnil).elim
+    · intro hmem
+      cases List.mem_singleton.mp hmem
+  adjacent := by
+    constructor
+    · refine Or.inr ?_
+      simp [ObservedGraph.expandedMutilatedEdge, hedgeLeft, leftIncoming,
+        finBeq]
+    · constructor
+      · refine Or.inl ?_
+        simp [ObservedGraph.expandedMutilatedEdge, hedgeLeft, firstIncoming,
+          finBeq]
+      · constructor
+        · refine Or.inr ?_
+          simp [ObservedGraph.expandedMutilatedEdge, hedgeMid, firstIncoming,
+            finBeq]
+        · constructor
+          · refine Or.inl ?_
+            simp [ObservedGraph.expandedMutilatedEdge, hedgeMid,
+              secondIncoming, finBeq]
+          · constructor
+            · refine Or.inr ?_
+              simp [ObservedGraph.expandedMutilatedEdge, hedgeRight,
+                secondIncoming, finBeq]
+            · constructor
+              · refine Or.inl ?_
+                simp [ObservedGraph.expandedMutilatedEdge, hedgeRight,
+                  rightIncoming, finBeq]
+              · simp [Consecutive]
+  source_open := leftOpen
+  target_open := rightOpen
+  internal_active := by
+    refine InternalTriplesActive.step ?_ ?_
+    · refine Or.inr ⟨?_, rfl⟩
+      intro hcol
+      have incoming :
+          G.expandedMutilatedEdge mutilation (.observed left)
+            (.latentPair left first) = true := hcol.1
+      simp [ObservedGraph.expandedMutilatedEdge] at incoming
+    · refine InternalTriplesActive.step ?_ ?_
+      · refine Or.inl ⟨?_, activatedFirst⟩
+        simp [IsCollider, ObservedGraph.expandedMutilatedEdge, hedgeLeft,
+          hedgeMid, firstIncoming, finBeq]
+      · refine InternalTriplesActive.step ?_ ?_
+        · refine Or.inr ⟨?_, rfl⟩
+          intro hcol
+          have incoming :
+              G.expandedMutilatedEdge mutilation (.observed first)
+                (.latentPair first second) = true := hcol.1
+          simp [ObservedGraph.expandedMutilatedEdge] at incoming
+        · refine InternalTriplesActive.step ?_ ?_
+          · refine Or.inl ⟨?_, activatedSecond⟩
+            simp [IsCollider, ObservedGraph.expandedMutilatedEdge, hedgeMid,
+              hedgeRight, secondIncoming, finBeq]
+          · refine InternalTriplesActive.step ?_
+              (InternalTriplesActive.pair _ _)
+            refine Or.inr ⟨?_, rfl⟩
+            intro hcol
+            have incoming :
+                G.expandedMutilatedEdge mutilation (.observed second)
+                  (.latentPair second right) = true := hcol.1
+            simp [ObservedGraph.expandedMutilatedEdge] at incoming
+
+theorem Consecutive.map {r : α -> α -> Prop} {s : β -> β -> Prop}
+    (f : α -> β)
+    (preserve : forall left right, r left right -> s (f left) (f right)) :
+    forall nodes, Consecutive r nodes -> Consecutive s (nodes.map f)
+  | [] => fun _ => by simp [Consecutive]
+  | [_] => fun _ => by simp [Consecutive]
+  | left :: right :: rest => fun consecutive =>
+      ⟨preserve left right consecutive.1,
+        Consecutive.map f preserve (right :: rest) consecutive.2⟩
+
+/-- Observed directed edges are expanded observed-observed edges. -/
+theorem expandedMutilatedEdge_observed
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (parent child : Fin S.count) :
+    G.expandedMutilatedEdge mutilation (.observed parent) (.observed child) =
+      G.observedDirectedEdge mutilation parent child :=
+  rfl
+
+/-- A forward directed chain cannot be a collider: that would require a
+2-cycle, contradicting the topological numbering. -/
+theorem not_isCollider_of_forward_chain (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    {previous middle next : Fin S.count}
+    (forward : G.observedDirectedEdge mutilation middle next = true) :
+    Not (IsCollider G mutilation
+      (.observed previous) (.observed middle) (.observed next)) := by
+  intro hcol
+  simp [IsCollider, ObservedGraph.expandedMutilatedEdge] at hcol
+  have hrev : S.directed next middle = true := hcol.2.1.1
+  simp [ObservedGraph.observedDirectedEdge] at forward
+  have hfwd : S.directed middle next = true := forward.1.1
+  exact Nat.lt_irrefl middle.val
+    (Nat.lt_trans (S.directed_earlier hfwd) (S.directed_earlier hrev))
+
+/-- An outgoing parent cannot form a collider: that would require the
+reverse directed edge, again a 2-cycle.  The third vertex may be a latent
+pair, as in a fork from a directed child onto a bidirected edge. -/
+theorem not_isCollider_of_outgoing (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    {previous middle : Fin S.count} {next : SeparationNode S}
+    (forward : G.observedDirectedEdge mutilation middle previous = true) :
+    Not (IsCollider G mutilation
+      (.observed previous) (.observed middle) next) := by
+  intro hcol
+  have back :
+      G.expandedMutilatedEdge mutilation (.observed previous)
+        (.observed middle) = true := hcol.1
+  simp [ObservedGraph.expandedMutilatedEdge] at back
+  have hrev : S.directed previous middle = true := back.1.1
+  simp [ObservedGraph.observedDirectedEdge] at forward
+  have hfwd : S.directed middle previous = true := forward.1.1
+  exact Nat.lt_irrefl middle.val
+    (Nat.lt_trans (S.directed_earlier hfwd) (S.directed_earlier hrev))
+
+/-- An outgoing edge `middle → next` forbids a collider at `middle`, even
+when the incoming neighbour is a latent pair. -/
+theorem not_isCollider_of_outgoing_next (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    {middle next : Fin S.count} {previous : SeparationNode S}
+    (forward : G.observedDirectedEdge mutilation middle next = true) :
+    Not (IsCollider G mutilation
+      previous (.observed middle) (.observed next)) := by
+  intro hcol
+  have back :
+      G.expandedMutilatedEdge mutilation (.observed next)
+        (.observed middle) = true := hcol.2
+  simp [ObservedGraph.expandedMutilatedEdge] at back
+  have hrev : S.directed next middle = true := back.1.1
+  simp [ObservedGraph.observedDirectedEdge] at forward
+  have hfwd : S.directed middle next = true := forward.1.1
+  exact Nat.lt_irrefl middle.val
+    (Nat.lt_trans (S.directed_earlier hfwd) (S.directed_earlier hrev))
+
+/-- Mapping a simple observed walk injects through the observed constructor. -/
+theorem nodup_map_observed {S : ObservedSignature}
+    {nodes : List (Fin S.count)} (simple : nodes.Nodup) :
+    (nodes.map SeparationNode.observed).Nodup := by
+  induction nodes with
+  | nil =>
+      simp
+  | cons head tail ih =>
+      have parts := List.nodup_cons.mp simple
+      refine List.nodup_cons.mpr ⟨?_, ih parts.2⟩
+      intro hmem
+      rcases List.mem_map.mp hmem with ⟨node, nodeMem, hobs⟩
+      cases hobs
+      exact parts.1 nodeMem
+
+/-- Observed tagging is injective, so a latent pair never appears in the
+image of an observed walk. -/
+theorem not_mem_map_observed_latent {S : ObservedSignature}
+    (left right : Fin S.count) (nodes : List (Fin S.count)) :
+    SeparationNode.latentPair left right ∉
+      nodes.map SeparationNode.observed := by
+  intro hmem
+  induction nodes with
+  | nil =>
+      simp at hmem
+  | cons _head tail ih =>
+      simp only [List.map, List.mem_cons] at hmem
+      rcases hmem with same | later
+      · cases same
+      · exact ih later
+
+/-- Recovering the original vertex from membership in an observed image. -/
+theorem mem_of_observed_mem_map {S : ObservedSignature}
+    {nodes : List (Fin S.count)} {n : Fin S.count}
+    (h : SeparationNode.observed n ∈ nodes.map SeparationNode.observed) :
+    n ∈ nodes := by
+  induction nodes with
+  | nil =>
+      simp at h
+  | cons head tail ih =>
+      simp only [List.map, List.mem_cons] at h
+      rcases h with same | later
+      · cases same
+        exact List.mem_cons.mpr (Or.inl rfl)
+      · exact List.mem_cons.mpr (Or.inr (ih later))
+
+/-- Directed exact walks are consecutive in the undirected expanded graph. -/
+theorem consecutive_adjacent_of_directed_walk (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) length source target) :
+    Consecutive (Adjacent G mutilation)
+      (walk.nodes.map SeparationNode.observed) :=
+  Consecutive.map SeparationNode.observed
+    (fun left right hedge =>
+      Or.inl (by
+        simpa [expandedMutilatedEdge_observed] using hedge))
+    walk.nodes walk.nodes_consecutive
+
+/-- Internals of an all-open directed observed walk are active non-colliders. -/
+theorem InternalTriplesActive.of_open_directed_walk
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (conditioned : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) length source target)
+    (openNodes : forall n, n ∈ walk.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false) :
+    InternalTriplesActive G mutilation conditioned
+      (walk.nodes.map SeparationNode.observed) := by
+  induction walk with
+  | refl node =>
+      simp [FiniteReachability.ExactWalk.nodes]
+      exact InternalTriplesActive.singleton _
+  | @step length source middle target first rest ih =>
+      have openRest : forall n, n ∈ rest.nodes ->
+          ObservedGraph.blockedBy conditioned (.observed n) = false := by
+        intro n hn
+        exact openNodes n
+          (List.mem_cons.mpr (Or.inr hn))
+      have ihRest := ih openRest
+      cases rest with
+      | refl endpoint =>
+          simp [FiniteReachability.ExactWalk.nodes]
+          exact InternalTriplesActive.pair _ _
+      | @step restLength mid nxt dest second tail =>
+          cases htail : tail.nodes with
+          | nil =>
+              exact (tail.nodes_ne_nil htail).elim
+          | cons head after =>
+              have hhead := tail.nodes_head
+              simp [htail] at hhead
+              subst head
+              simp [FiniteReachability.ExactWalk.nodes, htail] at ihRest ⊢
+              refine InternalTriplesActive.step ?_ ihRest
+              refine Or.inr ⟨not_isCollider_of_forward_chain G mutilation
+                (previous := source) second, ?_⟩
+              exact openNodes middle
+                (List.mem_cons.mpr (Or.inr (List.mem_cons.mpr (Or.inl rfl))))
+
+/--
+An exact directed walk whose vertices are all unconditioned is an active
+path.  Ancestral lifts glue these chains to bidirected forks.
+-/
+def ActivePath.ofOpenDirectedWalk (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) length source target)
+    (simple : walk.nodes.Nodup)
+    (openNodes : forall n, n ∈ walk.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false) :
+    ActivePath G mutilation conditioned
+      (.observed source) (.observed target) where
+  nodes := walk.nodes.map SeparationNode.observed
+  starts := by
+    simpa [List.head?_map] using walk.nodes_head
+  finishes := by
+    simpa [List.getLast?_map] using walk.nodes_getLast
+  simple := nodup_map_observed simple
+  adjacent := consecutive_adjacent_of_directed_walk G mutilation walk
+  source_open := openNodes source walk.mem_source
+  target_open := openNodes target walk.mem_target
+  internal_active :=
+    InternalTriplesActive.of_open_directed_walk G mutilation conditioned
+      walk openNodes
+
+/--
+Reversing an active path remains active: adjacency is symmetric, collider
+windows reverse in place, and the endpoints merely swap.  Ancestral forks
+glue a reversed walk into `Z` onto a walk into `Y`.
+-/
+def ActivePath.reverse {G : ObservedGraph S}
+    {mutilation : GraphMutilation S} {conditioned : NodeSet S}
+    {source target : SeparationNode S}
+    (path : ActivePath G mutilation conditioned source target) :
+    ActivePath G mutilation conditioned target source where
+  nodes := path.nodes.reverse
+  starts := by
+    rw [head?_reverse_eq_getLast?]
+    exact path.finishes
+  finishes := by
+    simpa [List.getLast?_reverse] using path.starts
+  simple := nodup_reverse_of path.simple
+  adjacent :=
+    Consecutive.reverse (fun _left _right => Adjacent.symm)
+      path.nodes path.adjacent
+  source_open := path.target_open
+  target_open := path.source_open
+  internal_active :=
+    InternalTriplesActive.reverse path.nodes path.internal_active
+
+/-- Path d-separation does not order the two observed families. -/
+theorem PathDSeparated.symm {G : ObservedGraph S}
+    {mutilation : GraphMutilation S}
+    {left right conditioned : NodeSet S}
+    (separated : PathDSeparated G mutilation left right conditioned) :
+    PathDSeparated G mutilation right left conditioned := by
+  intro h
+  rcases h with ⟨source, target, hRight, hLeft, ⟨path⟩⟩
+  exact separated ⟨target, source, hLeft, hRight, ⟨path.reverse⟩⟩
+
+/-- An active path is a nonempty cons-list headed by its source. -/
+theorem ActivePath.nodes_cons {G : ObservedGraph S}
+    {mutilation : GraphMutilation S} {conditioned : NodeSet S}
+    {source target : SeparationNode S}
+    (path : ActivePath G mutilation conditioned source target) :
+    Exists fun tail => path.nodes = source :: tail :=
+  List.head?_eq_some_iff.mp path.starts
+
+/-- An active path is a nonempty snoc-list finished by its target. -/
+theorem ActivePath.nodes_snoc {G : ObservedGraph S}
+    {mutilation : GraphMutilation S} {conditioned : NodeSet S}
+    {source target : SeparationNode S}
+    (path : ActivePath G mutilation conditioned source target) :
+    Exists fun init => path.nodes = init ++ [target] :=
+  List.getLast?_eq_some_iff.mp path.finishes
+
+/--
+Glue two active paths at a shared open vertex.  Vertices other than the
+shared endpoint must not repeat, and the join window at that endpoint must
+be an active triple whenever both sides have a neighbour.
+-/
+def ActivePath.glue {G : ObservedGraph S}
+    {mutilation : GraphMutilation S} {conditioned : NodeSet S}
+    {src shared dest : SeparationNode S}
+    (left : ActivePath G mutilation conditioned src shared)
+    (right : ActivePath G mutilation conditioned shared dest)
+    (onlyShared : forall x, x ∈ left.nodes -> x ∈ right.nodes -> x = shared)
+    (join : forall pred succ,
+      left.nodes.dropLast.getLast? = some pred ->
+        right.nodes.tail.head? = some succ ->
+          TripleActive G mutilation conditioned pred shared succ) :
+    ActivePath G mutilation conditioned src dest where
+  nodes := left.nodes ++ right.nodes.tail
+  starts := by
+    rcases left.nodes_cons with ⟨_tail, hleft⟩
+    simp [hleft]
+  finishes := by
+    rcases right.nodes_cons with ⟨rest, hright⟩
+    simp [hright]
+    cases hrest : rest with
+    | nil =>
+        have hfin := right.finishes
+        simp [hright, hrest] at hfin
+        subst dest
+        simpa [hrest] using left.finishes
+    | cons _succ _more =>
+        have hfin := right.finishes
+        simp [hright, hrest] at hfin
+        simpa [hrest, List.getLast?_append] using hfin
+  simple := by
+    rcases right.nodes_cons with ⟨rest, hright⟩
+    simp [hright]
+    have rparts := List.nodup_cons.mp (by simpa [hright] using right.simple)
+    refine nodup_append_of_disjoint left.simple rparts.2 ?_
+    intro x hxLeft hxRest
+    have hxRight : x ∈ right.nodes := by
+      simpa [hright] using List.mem_cons.mpr (Or.inr hxRest)
+    have eq := onlyShared x hxLeft hxRight
+    subst x
+    exact rparts.1 hxRest
+  adjacent := by
+    rcases right.nodes_cons with ⟨rest, hright⟩
+    simp [hright]
+    refine Consecutive.append left.nodes rest left.adjacent ?_ ?_
+    · have radj := right.adjacent
+      simp [hright] at radj
+      cases rest with
+      | nil =>
+          simp [Consecutive]
+      | cons _succ _more =>
+          simp [Consecutive] at radj
+          exact radj.2
+    · intro previous next prevLast nextHead
+      have prevEq : previous = shared :=
+        Option.some.inj (prevLast.symm.trans left.finishes)
+      subst previous
+      cases hrest : rest with
+      | nil =>
+          simp [hrest] at nextHead
+      | cons succ more =>
+          simp [hrest] at nextHead
+          subst next
+          have radj := right.adjacent
+          simp [hright, hrest, Consecutive] at radj
+          exact radj.1
+  source_open := left.source_open
+  target_open := right.target_open
+  internal_active := by
+    rcases right.nodes_cons with ⟨rest, hright⟩
+    rcases left.nodes_snoc with ⟨init, hleft⟩
+    have recon : left.nodes.dropLast ++ [shared] = left.nodes := by
+      rw [hleft, dropLast_snoc]
+    have leftActive :
+        InternalTriplesActive G mutilation conditioned
+          (left.nodes.dropLast ++ [shared]) := by
+      simpa [recon] using left.internal_active
+    have rightActive :
+        InternalTriplesActive G mutilation conditioned (shared :: rest) := by
+      simpa [hright] using right.internal_active
+    have glued :
+        InternalTriplesActive G mutilation conditioned
+          (left.nodes.dropLast ++ shared :: rest) :=
+      InternalTriplesActive.glue_at left.nodes.dropLast shared rest
+        leftActive rightActive (by
+          simpa [hright] using join)
+    have fullEq :
+        left.nodes.dropLast ++ shared :: rest =
+          left.nodes ++ rest := by
+      have : left.nodes.dropLast ++ [shared] ++ rest =
+          left.nodes ++ rest := by
+        simp [recon]
+      simpa [List.append_assoc] using this
+    simpa [hright, fullEq] using glued
+
+/--
+Glue the reverse of an all-open directed walk `source → target` onto a
+bidirected edge `source ↔ other`.  The result is an active path from
+`target` to `other` through `source`.  The other endpoint must not already
+lie on the directed walk; a shortest ancestral walk discharges that by
+path d-separation of a suffix.
+-/
+def ActivePath.ofOpenDirectedWalk_glue_bidirected (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {length : Nat} {source target other : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) length source target)
+    (simple : walk.nodes.Nodup)
+    (openNodes : forall n, n ∈ walk.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false)
+    (hedge : G.bidirected source other = true)
+    (different : source ≠ other)
+    (otherOpen : ObservedGraph.blockedBy conditioned (.observed other) = false)
+    (sourceIncoming : mutilation.removeIncoming source = false)
+    (otherIncoming : mutilation.removeIncoming other = false)
+    (notOnWalk : other ∉ walk.nodes) :
+    ActivePath G mutilation conditioned
+      (.observed target) (.observed other) :=
+  ActivePath.glue
+    (ActivePath.ofOpenDirectedWalk G mutilation conditioned walk simple
+      openNodes).reverse
+    (ActivePath.ofBidirected G mutilation conditioned hedge different
+      (openNodes source walk.mem_source) otherOpen sourceIncoming
+      otherIncoming)
+    (fun x hxL hxR => by
+      have hxL' : x ∈ (walk.nodes.map SeparationNode.observed).reverse := hxL
+      have hxLmem := List.mem_reverse.mp hxL'
+      rcases List.mem_map.mp hxLmem with ⟨n, nMem, hobs⟩
+      subst x
+      have hxR' := hxR
+      simp only [ActivePath.ofBidirected, List.mem_cons] at hxR'
+      rcases hxR' with hsrc | hlat | hother
+      · cases hsrc
+        rfl
+      · cases hlat
+      · have heq : n = other := by
+          simpa using hother
+        subst n
+        exact (notOnWalk nMem).elim)
+    (fun pred succ hpred hsucc => by
+      have hsucc' : succ = .latentPair source other := by
+        simpa [ActivePath.ofBidirected] using hsucc.symm
+      subst succ
+      cases walk with
+      | refl node =>
+          simp [ActivePath.reverse, ActivePath.ofOpenDirectedWalk,
+            FiniteReachability.ExactWalk.nodes] at hpred
+      | @step length source middle target first rest =>
+          have hpred' : pred = .observed middle := by
+            simp [ActivePath.reverse, ActivePath.ofOpenDirectedWalk,
+              FiniteReachability.ExactWalk.nodes, List.reverse_cons] at hpred
+            rcases hpred with ⟨a, ha, hobs⟩
+            have ha' : a = middle :=
+              Option.some.inj (ha.symm.trans rest.nodes_head)
+            subst a
+            exact hobs.symm
+          subst pred
+          refine Or.inr ⟨not_isCollider_of_outgoing G mutilation first, ?_⟩
+          exact openNodes source (by simp [FiniteReachability.ExactWalk.nodes]))
+
+/--
+An open directed walk glued onto a bidirected collider: the walk is
+reversed so the path runs from `target` through `source` and the
+conditioned collider onto the other open endpoint.
+-/
+def ActivePath.ofOpenDirectedWalk_glue_bidirected_collider
+    (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {length : Nat} {source target collider other : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) length source target)
+    (simple : walk.nodes.Nodup)
+    (openNodes : forall n, n ∈ walk.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false)
+    (hedgeLeft : G.bidirected source collider = true)
+    (hedgeRight : G.bidirected collider other = true)
+    (sourceNeCollider : source ≠ collider)
+    (otherNeCollider : other ≠ collider)
+    (sourceNeOther : source ≠ other)
+    (otherOpen : ObservedGraph.blockedBy conditioned (.observed other) =
+      false)
+    (sourceIncoming : mutilation.removeIncoming source = false)
+    (colliderIncoming : mutilation.removeIncoming collider = false)
+    (otherIncoming : mutilation.removeIncoming other = false)
+    (activated : ColliderActivated G mutilation conditioned
+      (.observed collider))
+    (colliderNotOnWalk : collider ∉ walk.nodes)
+    (otherNotOnWalk : other ∉ walk.nodes) :
+    ActivePath G mutilation conditioned
+      (.observed target) (.observed other) :=
+  ActivePath.glue
+    (ActivePath.ofOpenDirectedWalk G mutilation conditioned walk simple
+      openNodes).reverse
+    (ActivePath.ofBidirectedCollider G mutilation conditioned hedgeLeft
+      hedgeRight sourceNeCollider otherNeCollider sourceNeOther
+      (openNodes source walk.mem_source) otherOpen sourceIncoming
+      colliderIncoming otherIncoming activated)
+    (fun x hxL hxR => by
+      have hxLmem := List.mem_reverse.mp hxL
+      rcases List.mem_map.mp hxLmem with ⟨n, nMem, hobs⟩
+      subst x
+      have hxR' := hxR
+      simp only [ActivePath.ofBidirectedCollider, List.mem_cons] at hxR'
+      rcases hxR' with hsrc | hlat | hcol | hlat2 | hother
+      · cases hsrc
+        rfl
+      · cases hlat
+      · have heq : n = collider := by
+          simpa using hcol
+        subst n
+        exact (colliderNotOnWalk nMem).elim
+      · cases hlat2
+      · have heq : n = other := by
+          simpa using hother
+        subst n
+        exact (otherNotOnWalk nMem).elim)
+    (fun pred succ hpred hsucc => by
+      have hsucc' : succ = .latentPair source collider := by
+        simpa [ActivePath.ofBidirectedCollider] using hsucc.symm
+      subst succ
+      cases walk with
+      | refl node =>
+          simp [ActivePath.reverse, ActivePath.ofOpenDirectedWalk,
+            FiniteReachability.ExactWalk.nodes] at hpred
+      | @step length source middle target first rest =>
+          have hpred' : pred = .observed middle := by
+            simp [ActivePath.reverse, ActivePath.ofOpenDirectedWalk,
+              FiniteReachability.ExactWalk.nodes, List.reverse_cons] at hpred
+            rcases hpred with ⟨a, ha, hobs⟩
+            have ha' : a = middle :=
+              Option.some.inj (ha.symm.trans rest.nodes_head)
+            subst a
+            exact hobs.symm
+          subst pred
+          refine Or.inr ⟨not_isCollider_of_outgoing G mutilation first, ?_⟩
+          exact openNodes source (by simp [FiniteReachability.ExactWalk.nodes]))
+
+/--
+An open directed walk glued onto two bidirected colliders: the walk is
+reversed so the path runs from `target` through `source` and the two
+conditioned colliders onto the other open endpoint.
+-/
+def ActivePath.ofOpenDirectedWalk_glue_two_bidirected_colliders
+    (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {length : Nat} {source target first second other : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) length source target)
+    (simple : walk.nodes.Nodup)
+    (openNodes : forall n, n ∈ walk.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false)
+    (hedgeLeft : G.bidirected source first = true)
+    (hedgeMid : G.bidirected first second = true)
+    (hedgeRight : G.bidirected second other = true)
+    (sourceNeFirst : source ≠ first)
+    (sourceNeSecond : source ≠ second)
+    (sourceNeOther : source ≠ other)
+    (firstNeSecond : first ≠ second)
+    (firstNeOther : first ≠ other)
+    (secondNeOther : second ≠ other)
+    (otherOpen : ObservedGraph.blockedBy conditioned (.observed other) =
+      false)
+    (sourceIncoming : mutilation.removeIncoming source = false)
+    (firstIncoming : mutilation.removeIncoming first = false)
+    (secondIncoming : mutilation.removeIncoming second = false)
+    (otherIncoming : mutilation.removeIncoming other = false)
+    (activatedFirst : ColliderActivated G mutilation conditioned
+      (.observed first))
+    (activatedSecond : ColliderActivated G mutilation conditioned
+      (.observed second))
+    (firstNotOnWalk : first ∉ walk.nodes)
+    (secondNotOnWalk : second ∉ walk.nodes)
+    (otherNotOnWalk : other ∉ walk.nodes) :
+    ActivePath G mutilation conditioned
+      (.observed target) (.observed other) :=
+  ActivePath.glue
+    (ActivePath.ofOpenDirectedWalk G mutilation conditioned walk simple
+      openNodes).reverse
+    (ActivePath.ofTwoBidirectedColliders G mutilation conditioned hedgeLeft
+      hedgeMid hedgeRight sourceNeFirst sourceNeSecond sourceNeOther
+      firstNeSecond firstNeOther secondNeOther
+      (openNodes source walk.mem_source) otherOpen sourceIncoming
+      firstIncoming secondIncoming otherIncoming activatedFirst
+      activatedSecond)
+    (fun x hxL hxR => by
+      have hxLmem := List.mem_reverse.mp hxL
+      rcases List.mem_map.mp hxLmem with ⟨n, nMem, hobs⟩
+      subst x
+      have hxR' := hxR
+      simp only [ActivePath.ofTwoBidirectedColliders, List.mem_cons] at hxR'
+      rcases hxR' with hsrc | hlat | h1 | hlat2 | h2 | hlat3 | hother
+      · cases hsrc
+        rfl
+      · cases hlat
+      · have heq : n = first := by
+          simpa using h1
+        subst n
+        exact (firstNotOnWalk nMem).elim
+      · cases hlat2
+      · have heq : n = second := by
+          simpa using h2
+        subst n
+        exact (secondNotOnWalk nMem).elim
+      · cases hlat3
+      · have heq : n = other := by
+          simpa using hother
+        subst n
+        exact (otherNotOnWalk nMem).elim)
+    (fun pred succ hpred hsucc => by
+      have hsucc' : succ = .latentPair source first := by
+        simpa [ActivePath.ofTwoBidirectedColliders] using hsucc.symm
+      subst succ
+      cases walk with
+      | refl node =>
+          simp [ActivePath.reverse, ActivePath.ofOpenDirectedWalk,
+            FiniteReachability.ExactWalk.nodes] at hpred
+      | @step length source middle target firstEdge rest =>
+          have hpred' : pred = .observed middle := by
+            simp [ActivePath.reverse, ActivePath.ofOpenDirectedWalk,
+              FiniteReachability.ExactWalk.nodes, List.reverse_cons] at hpred
+            rcases hpred with ⟨a, ha, hobs⟩
+            have ha' : a = middle :=
+              Option.some.inj (ha.symm.trans rest.nodes_head)
+            subst a
+            exact hobs.symm
+          subst pred
+          refine Or.inr ⟨not_isCollider_of_outgoing G mutilation firstEdge,
+            ?_⟩
+          exact openNodes source (by simp [FiniteReachability.ExactWalk.nodes]))
+
+/-- Every non-source vertex of a mutilated directed walk has its incoming
+arrows intact, so it is not an intervened child in `G_{\overline{X}}`. -/
+theorem directed_walk_mem_not_removeIncoming (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    {length : Nat} {source target node : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) length source target)
+    (member : node ∈ walk.nodes) (different : node ≠ source) :
+    mutilation.removeIncoming node = false := by
+  induction walk with
+  | refl endpoint =>
+      simp only [FiniteReachability.ExactWalk.nodes, List.mem_singleton]
+        at member
+      subst node
+      exact (different rfl).elim
+  | @step length source middle target first rest ih =>
+      simp only [FiniteReachability.ExactWalk.nodes, List.mem_cons] at member
+      rcases member with same | later
+      · subst node
+        exact (different rfl).elim
+      · by_cases hmid : node = middle
+        · subst node
+          simp [ObservedGraph.observedDirectedEdge] at first
+          exact first.2
+        · exact ih later hmid
 
 end PathSpecification
 
@@ -1885,6 +3288,26 @@ theorem firstSharedSeparation?_eq_none_disjoint
   rw [predTrue] at predFalse
   contradiction
 
+/-- A first shared vertex of a prefix remains first after any suffix. -/
+theorem firstSharedSeparation?_append_left
+    {xs ys back : List (SeparationNode S)} {u : SeparationNode S}
+    (h : firstSharedSeparation? xs back = some u) :
+    firstSharedSeparation? (xs ++ ys) back = some u :=
+  find?_append_left (fun v => back.any (fun y => SeparationNode.beq y v))
+    xs ys h
+
+/-- If a prefix shares nothing with `back`, the next cell is first shared
+exactly when it occurs in `back`. -/
+theorem firstSharedSeparation?_eq_none_append_cons
+    {xs back : List (SeparationNode S)} {y : SeparationNode S}
+    (ys : List (SeparationNode S))
+    (hnone : firstSharedSeparation? xs back = none)
+    (hy : y ∈ back) :
+    firstSharedSeparation? (xs ++ y :: ys) back = some y :=
+  find?_eq_none_append_cons
+    (fun v => back.any (fun z => SeparationNode.beq z v)) xs y ys hnone
+    ((any_beq_eq_true_iff back y).mpr hy)
+
 theorem firstSharedSeparation?_eq_some_split
     {front back : List (SeparationNode S)} {v : SeparationNode S}
     (h : firstSharedSeparation? front back = some v) :
@@ -1900,6 +3323,602 @@ theorem firstSharedSeparation?_eq_some_split
   have predTrue := (any_beq_eq_true_iff back x).mpr xBack
   rw [predTrue] at predFalse
   contradiction
+
+/-- Overlapping trails have a first shared vertex. -/
+theorem firstSharedSeparation?_isSome_of_mem
+    {front back : List (SeparationNode S)} {v : SeparationNode S}
+    (hvFront : v ∈ front) (hvBack : v ∈ back) :
+    Exists fun u => firstSharedSeparation? front back = some u := by
+  cases h : firstSharedSeparation? front back with
+  | some u =>
+      exact ⟨u, rfl⟩
+  | none =>
+      exact (firstSharedSeparation?_eq_none_disjoint h v hvFront hvBack).elim
+
+namespace PathSpecification
+
+/--
+Two all-open directed walks from a common source yield an active path
+between their targets, glued at the first shared vertex of the reversed
+left walk with the right walk.  A common open ancestor of `Z` and `Y` is
+the case `source` equal on both walks.  Placed after the first-shared
+search so the glue can name that vertex.
+-/
+def ActivePath.ofOpenDirectedFork (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {lengthZ lengthY : Nat} {shared zEnd yEnd : Fin S.count}
+    (walkZ : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) lengthZ shared zEnd)
+    (walkY : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) lengthY shared yEnd)
+    (simpleZ : walkZ.nodes.Nodup) (simpleY : walkY.nodes.Nodup)
+    (openZ : forall n, n ∈ walkZ.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false)
+    (openY : forall n, n ∈ walkY.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false) :
+    ActivePath G mutilation conditioned
+      (.observed zEnd) (.observed yEnd) := by
+  let front := (walkZ.nodes.map SeparationNode.observed).reverse
+  let back := walkY.nodes.map SeparationNode.observed
+  have hvFront : SeparationNode.observed shared ∈ front :=
+    List.mem_reverse.mpr
+      (List.mem_map.mpr ⟨shared, walkZ.mem_source, rfl⟩)
+  have hvBack : SeparationNode.observed shared ∈ back :=
+    List.mem_map.mpr ⟨shared, walkY.mem_source, rfl⟩
+  let pred := fun v => back.any (fun y => SeparationNode.beq y v)
+  match hsplit : find?Split pred front with
+  | none =>
+      have hnone : firstSharedSeparation? front back = none :=
+        find?_eq_none_of_find?Split pred front hsplit
+      exact (firstSharedSeparation?_eq_none_disjoint hnone
+        (.observed shared) hvFront hvBack).elim
+  | some (before, u, after) =>
+  have spec := find?Split_spec pred front before u after hsplit
+  have splitFront := spec.1
+  have noneBefore := spec.2.1
+  have predU := spec.2.2
+  have uBack : u ∈ back := (any_beq_eq_true_iff back u).mp predU
+  have disjointBefore : forall x, x ∈ before -> Not (x ∈ back) := by
+    intro x hx xBack
+    have predFalse : pred x = false := noneBefore x hx
+    have predTrue : pred x = true :=
+      (any_beq_eq_true_iff back x).mpr xBack
+    rw [predTrue] at predFalse
+    cases predFalse
+  have uFront : u ∈ front := by
+    rw [splitFront]
+    exact List.mem_append.mpr (Or.inr (List.mem_cons.mpr (Or.inl rfl)))
+  match u, uBack, uFront with
+  | .latentPair left right, uBack, _uFront =>
+      exact (not_mem_map_observed_latent left right walkY.nodes uBack).elim
+  | .observed meet, uBack, uFront =>
+  have meetY : meet ∈ walkY.nodes := mem_of_observed_mem_map uBack
+  have meetZ : meet ∈ walkZ.nodes :=
+    mem_of_observed_mem_map (List.mem_reverse.mp uFront)
+  rcases walkZ.suffixFrom meet meetZ with ⟨_lenZ, sufZ, preZ, ⟨hnodesZ⟩⟩
+  rcases walkY.suffixFrom meet meetY with ⟨_lenY, sufY, _preY, ⟨hnodesY⟩⟩
+  have simpleSufZ : sufZ.nodes.Nodup := by
+    have hnd := simpleZ
+    rw [hnodesZ] at hnd
+    exact (List.nodup_append.mp hnd).2.1
+  have simpleSufY : sufY.nodes.Nodup := by
+    have hnd := simpleY
+    rw [hnodesY] at hnd
+    exact (List.nodup_append.mp hnd).2.1
+  have hu : firstSharedSeparation? front back =
+      some (.observed meet) :=
+    find?_eq_some_of_find?Split pred front before (.observed meet) after
+      hsplit
+  have subZ : forall n, n ∈ sufZ.nodes -> n ∈ walkZ.nodes := fun n hn => by
+    rw [hnodesZ]
+    exact List.mem_append.mpr (Or.inr hn)
+  have subY : forall n, n ∈ sufY.nodes -> n ∈ walkY.nodes := fun n hn => by
+    rw [hnodesY]
+    exact List.mem_append.mpr (Or.inr hn)
+  refine ActivePath.glue
+    (ActivePath.ofOpenDirectedWalk G mutilation conditioned sufZ simpleSufZ
+      (fun n hn => openZ n (subZ n hn))).reverse
+    (ActivePath.ofOpenDirectedWalk G mutilation conditioned sufY simpleSufY
+      (fun n hn => openY n (subY n hn)))
+    ?_ ?_
+  · intro x hxL hxR
+    have hxLmem := List.mem_reverse.mp hxL
+    rcases List.mem_map.mp hxLmem with ⟨n, hnZ, hobs⟩
+    subst x
+    rcases List.mem_map.mp hxR with ⟨n', hnY, hobsY⟩
+    have nEq : n = n' := by
+      cases hobsY
+      rfl
+    subst n'
+    by_cases hmeet : n = meet
+    · subst n
+      rfl
+    · have nHead := sufZ.nodes_head
+      cases hsuf : sufZ.nodes with
+      | nil =>
+          simp [hsuf] at nHead
+      | cons head tail =>
+          simp [hsuf] at nHead hnZ
+          subst head
+          rcases hnZ with same | inTail
+          · exact (hmeet same).elim
+          · have frontEq :
+                front =
+                  (tail.map SeparationNode.observed).reverse ++
+                    SeparationNode.observed meet ::
+                      (preZ.map SeparationNode.observed).reverse := by
+              simp [front, hnodesZ, hsuf, List.map_append, List.reverse_append]
+            have meetNotTail : meet ∉ tail :=
+              (List.nodup_cons.mp (by simpa [hsuf] using simpleSufZ)).1
+            have meetNotRevTail :
+                SeparationNode.observed meet ∉
+                  (tail.map SeparationNode.observed).reverse := by
+              intro hmem
+              rcases List.mem_map.mp (List.mem_reverse.mp hmem) with
+                ⟨m, hm, hobs⟩
+              cases hobs
+              exact meetNotTail hm
+            have meetNotBefore : SeparationNode.observed meet ∉ before :=
+              fun hmem => disjointBefore _ hmem uBack
+            cases hpref :
+                firstSharedSeparation? (tail.map SeparationNode.observed).reverse
+                  back with
+            | some u =>
+                have hleft :=
+                  firstSharedSeparation?_append_left
+                    (ys :=
+                      SeparationNode.observed meet ::
+                        (preZ.map SeparationNode.observed).reverse)
+                    hpref
+                have hfront : firstSharedSeparation? front back = some u := by
+                  simpa [frontEq] using hleft
+                have hu' : u = SeparationNode.observed meet := by
+                  rw [hfront] at hu
+                  injection hu
+                subst u
+                have uMem :
+                    SeparationNode.observed meet ∈
+                      (tail.map SeparationNode.observed).reverse := by
+                  rcases firstSharedSeparation?_eq_some_split hpref with
+                    ⟨_b, _a, split, _, _⟩
+                  rw [split]
+                  exact List.mem_append.mpr
+                    (Or.inr (List.mem_cons.mpr (Or.inl rfl)))
+                exact (meetNotRevTail uMem).elim
+            | none =>
+                have hEqLists :
+                    before ++ SeparationNode.observed meet :: after =
+                      (tail.map SeparationNode.observed).reverse ++
+                        SeparationNode.observed meet ::
+                          (preZ.map SeparationNode.observed).reverse := by
+                  rw [← splitFront, frontEq]
+                rcases append_cons_inj_of_not_mem hEqLists meetNotBefore
+                    meetNotRevTail with ⟨beforeEq, _⟩
+                have nBefore : SeparationNode.observed n ∈ before := by
+                  rw [beforeEq]
+                  exact List.mem_reverse.mpr
+                    (List.mem_map.mpr ⟨n, inTail, rfl⟩)
+                have nBack : SeparationNode.observed n ∈ back :=
+                  List.mem_map.mpr ⟨n, subY n hnY, rfl⟩
+                exact (disjointBefore _ nBefore nBack).elim
+  · intro pred succ hpred hsucc
+    cases sufY with
+    | refl node =>
+        simp [ActivePath.ofOpenDirectedWalk,
+          FiniteReachability.ExactWalk.nodes] at hsucc
+    | @step length source middle target first rest =>
+        have hsucc' : succ = .observed middle := by
+          simp [ActivePath.ofOpenDirectedWalk,
+            FiniteReachability.ExactWalk.nodes] at hsucc
+          rcases hsucc with ⟨a, ha, hobs⟩
+          have ha' : a = middle :=
+            Option.some.inj (ha.symm.trans rest.nodes_head)
+          subst a
+          exact hobs.symm
+        subst succ
+        cases sufZ with
+        | refl node =>
+            simp [ActivePath.reverse, ActivePath.ofOpenDirectedWalk,
+              FiniteReachability.ExactWalk.nodes] at hpred
+        | @step lengthZ sourceZ middleZ targetZ firstZ restZ =>
+            have hpred' : pred = .observed middleZ := by
+              simp [ActivePath.reverse, ActivePath.ofOpenDirectedWalk,
+                FiniteReachability.ExactWalk.nodes, List.reverse_cons]
+                at hpred
+              rcases hpred with ⟨a, ha, hobs⟩
+              have ha' : a = middleZ :=
+                Option.some.inj (ha.symm.trans restZ.nodes_head)
+              subst a
+              exact hobs.symm
+            subst pred
+            refine Or.inr ⟨not_isCollider_of_outgoing G mutilation firstZ, ?_⟩
+            exact openY meet meetY
+
+/--
+Glue two all-open directed walks across a bidirected edge between their
+sources.  The result is an active path between the walk targets.  Shared
+vertices are discharged separately as a fork; the Type constructor takes
+the walks as disjoint.
+-/
+def ActivePath.ofOpenWalks_glue_bidirected (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {lengthZ lengthY : Nat} {sourceZ sourceY zEnd yEnd : Fin S.count}
+    (walkZ : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) lengthZ sourceZ zEnd)
+    (walkY : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) lengthY sourceY yEnd)
+    (simpleZ : walkZ.nodes.Nodup) (simpleY : walkY.nodes.Nodup)
+    (openZ : forall n, n ∈ walkZ.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false)
+    (openY : forall n, n ∈ walkY.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false)
+    (hedge : G.bidirected sourceZ sourceY = true)
+    (different : sourceZ ≠ sourceY)
+    (sourceZIncoming : mutilation.removeIncoming sourceZ = false)
+    (sourceYIncoming : mutilation.removeIncoming sourceY = false)
+    (notOnZ : sourceY ∉ walkZ.nodes)
+    (notOnY : sourceZ ∉ walkY.nodes)
+    (disjointWalks : forall n, n ∈ walkZ.nodes -> n ∈ walkY.nodes -> False) :
+    ActivePath G mutilation conditioned
+      (.observed zEnd) (.observed yEnd) := by
+  have leftNodes :
+      (ActivePath.ofOpenDirectedWalk_glue_bidirected G mutilation conditioned
+          walkZ simpleZ openZ hedge different
+          (openY sourceY walkY.mem_source) sourceZIncoming sourceYIncoming
+          notOnZ).nodes =
+        (walkZ.nodes.map SeparationNode.observed).reverse ++
+          [.latentPair sourceZ sourceY, .observed sourceY] := by
+    simp [ActivePath.ofOpenDirectedWalk_glue_bidirected, ActivePath.glue,
+      ActivePath.reverse, ActivePath.ofOpenDirectedWalk,
+      ActivePath.ofBidirected]
+  have sourceYOpen := openY sourceY walkY.mem_source
+  refine ActivePath.glue
+    (ActivePath.ofOpenDirectedWalk_glue_bidirected G mutilation conditioned
+      walkZ simpleZ openZ hedge different sourceYOpen sourceZIncoming
+      sourceYIncoming notOnZ)
+    (ActivePath.ofOpenDirectedWalk G mutilation conditioned walkY simpleY
+      openY)
+    ?_ ?_
+  · intro x hxL hxR
+    rcases List.mem_map.mp hxR with ⟨n, hnY, hobs⟩
+    subst x
+    have hxL' : SeparationNode.observed n ∈
+        (walkZ.nodes.map SeparationNode.observed).reverse ++
+          [.latentPair sourceZ sourceY, .observed sourceY] := by
+      simpa [leftNodes] using hxL
+    rcases List.mem_append.mp hxL' with inRev | inBid
+    · have hxLmem := List.mem_reverse.mp inRev
+      rcases List.mem_map.mp hxLmem with ⟨m, hmZ, hobs'⟩
+      have meq : m = n := by
+        cases hobs'
+        rfl
+      subst m
+      exact (disjointWalks n hmZ hnY).elim
+    · simp only [List.mem_cons] at inBid
+      rcases inBid with hlat | hsrcY
+      · cases hlat
+      · have heq : n = sourceY := by
+          simpa using hsrcY
+        subst n
+        rfl
+  · intro pred succ hpred hsucc
+    cases walkY with
+    | refl node =>
+        simp [ActivePath.ofOpenDirectedWalk,
+          FiniteReachability.ExactWalk.nodes] at hsucc
+    | @step length source middle target first rest =>
+        have hsucc' : succ = .observed middle := by
+          simp [ActivePath.ofOpenDirectedWalk,
+            FiniteReachability.ExactWalk.nodes] at hsucc
+          rcases hsucc with ⟨a, ha, hobs⟩
+          have ha' : a = middle :=
+            Option.some.inj (ha.symm.trans rest.nodes_head)
+          subst a
+          exact hobs.symm
+        subst succ
+        have hpred' : pred = SeparationNode.latentPair sourceZ sourceY := by
+          have hshape :
+              (walkZ.nodes.map SeparationNode.observed).reverse ++
+                [SeparationNode.latentPair sourceZ sourceY,
+                  SeparationNode.observed sourceY] =
+                ((walkZ.nodes.map SeparationNode.observed).reverse ++
+                  [SeparationNode.latentPair sourceZ sourceY]) ++
+                  [SeparationNode.observed sourceY] := by
+            simp [List.append_assoc]
+          have hdl :
+              ((walkZ.nodes.map SeparationNode.observed).reverse ++
+                [SeparationNode.latentPair sourceZ sourceY,
+                  SeparationNode.observed sourceY]).dropLast.getLast? =
+                some (SeparationNode.latentPair sourceZ sourceY) := by
+            rw [hshape, dropLast_snoc]
+            simp [List.getLast?_append]
+          simpa [leftNodes] using (hpred.symm.trans hdl)
+        subst pred
+        refine Or.inr ⟨not_isCollider_of_outgoing_next G mutilation first,
+          sourceYOpen⟩
+
+/--
+Two open directed walks joined through a bidirected collider at a
+conditioned vertex.  The resulting path runs from the first walk's
+endpoint to the second's.
+-/
+def ActivePath.ofOpenWalks_glue_bidirected_collider (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {lengthZ lengthY : Nat}
+    {sourceZ sourceY collider zEnd yEnd : Fin S.count}
+    (walkZ : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) lengthZ sourceZ zEnd)
+    (walkY : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) lengthY sourceY yEnd)
+    (simpleZ : walkZ.nodes.Nodup) (simpleY : walkY.nodes.Nodup)
+    (openZ : forall n, n ∈ walkZ.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false)
+    (openY : forall n, n ∈ walkY.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false)
+    (hedgeLeft : G.bidirected sourceZ collider = true)
+    (hedgeRight : G.bidirected collider sourceY = true)
+    (sourceZNeCollider : sourceZ ≠ collider)
+    (sourceYNeCollider : sourceY ≠ collider)
+    (sourceZNeSourceY : sourceZ ≠ sourceY)
+    (sourceZIncoming : mutilation.removeIncoming sourceZ = false)
+    (colliderIncoming : mutilation.removeIncoming collider = false)
+    (sourceYIncoming : mutilation.removeIncoming sourceY = false)
+    (activated : ColliderActivated G mutilation conditioned
+      (.observed collider))
+    (colliderNotOnZ : collider ∉ walkZ.nodes)
+    (colliderNotOnY : collider ∉ walkY.nodes)
+    (notOnZ : sourceY ∉ walkZ.nodes)
+    (notOnY : sourceZ ∉ walkY.nodes)
+    (disjointWalks : forall n, n ∈ walkZ.nodes -> n ∈ walkY.nodes ->
+      False) :
+    ActivePath G mutilation conditioned
+      (.observed zEnd) (.observed yEnd) := by
+  have leftNodes :
+      (ActivePath.ofOpenDirectedWalk_glue_bidirected_collider G mutilation
+          conditioned walkZ simpleZ openZ hedgeLeft hedgeRight
+          sourceZNeCollider sourceYNeCollider sourceZNeSourceY
+          (openY sourceY walkY.mem_source) sourceZIncoming colliderIncoming
+          sourceYIncoming activated colliderNotOnZ notOnZ).nodes =
+        (walkZ.nodes.map SeparationNode.observed).reverse ++
+          [.latentPair sourceZ collider, .observed collider,
+            .latentPair collider sourceY, .observed sourceY] := by
+    simp [ActivePath.ofOpenDirectedWalk_glue_bidirected_collider,
+      ActivePath.glue, ActivePath.reverse, ActivePath.ofOpenDirectedWalk,
+      ActivePath.ofBidirectedCollider]
+  have sourceYOpen := openY sourceY walkY.mem_source
+  refine ActivePath.glue
+    (ActivePath.ofOpenDirectedWalk_glue_bidirected_collider G mutilation
+      conditioned walkZ simpleZ openZ hedgeLeft hedgeRight
+      sourceZNeCollider sourceYNeCollider sourceZNeSourceY sourceYOpen
+      sourceZIncoming colliderIncoming sourceYIncoming activated
+      colliderNotOnZ notOnZ)
+    (ActivePath.ofOpenDirectedWalk G mutilation conditioned walkY simpleY
+      openY)
+    ?_ ?_
+  · intro x hxL hxR
+    rcases List.mem_map.mp hxR with ⟨n, hnY, hobs⟩
+    subst x
+    have hxL' : SeparationNode.observed n ∈
+        (walkZ.nodes.map SeparationNode.observed).reverse ++
+          [.latentPair sourceZ collider, .observed collider,
+            .latentPair collider sourceY, .observed sourceY] := by
+      simpa [leftNodes] using hxL
+    rcases List.mem_append.mp hxL' with inRev | inCol
+    · have hxLmem := List.mem_reverse.mp inRev
+      rcases List.mem_map.mp hxLmem with ⟨m, hmZ, hobs'⟩
+      have meq : m = n := by
+        cases hobs'
+        rfl
+      subst m
+      exact (disjointWalks n hmZ hnY).elim
+    · simp only [List.mem_cons] at inCol
+      rcases inCol with hlat | hcol | hlat2 | hsrcY
+      · cases hlat
+      · have heq : n = collider := by
+          simpa using hcol
+        subst n
+        exact (colliderNotOnY hnY).elim
+      · cases hlat2
+      · have heq : n = sourceY := by
+          simpa using hsrcY
+        subst n
+        rfl
+  · intro pred succ hpred hsucc
+    cases walkY with
+    | refl node =>
+        simp [ActivePath.ofOpenDirectedWalk,
+          FiniteReachability.ExactWalk.nodes] at hsucc
+    | @step length source middle target first rest =>
+        have hsucc' : succ = .observed middle := by
+          simp [ActivePath.ofOpenDirectedWalk,
+            FiniteReachability.ExactWalk.nodes] at hsucc
+          rcases hsucc with ⟨a, ha, hobs⟩
+          have ha' : a = middle :=
+            Option.some.inj (ha.symm.trans rest.nodes_head)
+          subst a
+          exact hobs.symm
+        subst succ
+        have hpred' : pred = SeparationNode.latentPair collider sourceY := by
+          have hshape :
+              (walkZ.nodes.map SeparationNode.observed).reverse ++
+                [SeparationNode.latentPair sourceZ collider,
+                  SeparationNode.observed collider,
+                  SeparationNode.latentPair collider sourceY,
+                  SeparationNode.observed sourceY] =
+                ((walkZ.nodes.map SeparationNode.observed).reverse ++
+                  [SeparationNode.latentPair sourceZ collider,
+                    SeparationNode.observed collider,
+                    SeparationNode.latentPair collider sourceY]) ++
+                  [SeparationNode.observed sourceY] := by
+            simp [List.append_assoc]
+          have hdl :
+              ((walkZ.nodes.map SeparationNode.observed).reverse ++
+                [SeparationNode.latentPair sourceZ collider,
+                  SeparationNode.observed collider,
+                  SeparationNode.latentPair collider sourceY,
+                  SeparationNode.observed sourceY]).dropLast.getLast? =
+                some (SeparationNode.latentPair collider sourceY) := by
+            rw [hshape, dropLast_snoc]
+            simp [List.getLast?_append]
+          simpa [leftNodes] using (hpred.symm.trans hdl)
+        subst pred
+        refine Or.inr ⟨not_isCollider_of_outgoing_next G mutilation first,
+          sourceYOpen⟩
+
+/--
+Two open directed walks joined through two bidirected colliders.  The
+resulting path runs from the first walk's endpoint to the second's.
+-/
+def ActivePath.ofOpenWalks_glue_two_bidirected_colliders
+    (G : ObservedGraph S)
+    (mutilation : GraphMutilation S) (conditioned : NodeSet S)
+    {lengthZ lengthY : Nat}
+    {sourceZ sourceY first second zEnd yEnd : Fin S.count}
+    (walkZ : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) lengthZ sourceZ zEnd)
+    (walkY : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) lengthY sourceY yEnd)
+    (simpleZ : walkZ.nodes.Nodup) (simpleY : walkY.nodes.Nodup)
+    (openZ : forall n, n ∈ walkZ.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false)
+    (openY : forall n, n ∈ walkY.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed n) = false)
+    (hedgeLeft : G.bidirected sourceZ first = true)
+    (hedgeMid : G.bidirected first second = true)
+    (hedgeRight : G.bidirected second sourceY = true)
+    (sourceZNeFirst : sourceZ ≠ first)
+    (sourceZNeSecond : sourceZ ≠ second)
+    (sourceZNeSourceY : sourceZ ≠ sourceY)
+    (firstNeSecond : first ≠ second)
+    (firstNeSourceY : first ≠ sourceY)
+    (secondNeSourceY : second ≠ sourceY)
+    (sourceZIncoming : mutilation.removeIncoming sourceZ = false)
+    (firstIncoming : mutilation.removeIncoming first = false)
+    (secondIncoming : mutilation.removeIncoming second = false)
+    (sourceYIncoming : mutilation.removeIncoming sourceY = false)
+    (activatedFirst : ColliderActivated G mutilation conditioned
+      (.observed first))
+    (activatedSecond : ColliderActivated G mutilation conditioned
+      (.observed second))
+    (firstNotOnZ : first ∉ walkZ.nodes)
+    (secondNotOnZ : second ∉ walkZ.nodes)
+    (firstNotOnY : first ∉ walkY.nodes)
+    (secondNotOnY : second ∉ walkY.nodes)
+    (notOnZ : sourceY ∉ walkZ.nodes)
+    (notOnY : sourceZ ∉ walkY.nodes)
+    (disjointWalks : forall n, n ∈ walkZ.nodes -> n ∈ walkY.nodes ->
+      False) :
+    ActivePath G mutilation conditioned
+      (.observed zEnd) (.observed yEnd) := by
+  have leftNodes :
+      (ActivePath.ofOpenDirectedWalk_glue_two_bidirected_colliders G
+          mutilation conditioned walkZ simpleZ openZ hedgeLeft hedgeMid
+          hedgeRight sourceZNeFirst sourceZNeSecond sourceZNeSourceY
+          firstNeSecond firstNeSourceY secondNeSourceY
+          (openY sourceY walkY.mem_source) sourceZIncoming firstIncoming
+          secondIncoming sourceYIncoming activatedFirst activatedSecond
+          firstNotOnZ secondNotOnZ notOnZ).nodes =
+        (walkZ.nodes.map SeparationNode.observed).reverse ++
+          [.latentPair sourceZ first, .observed first,
+            .latentPair first second, .observed second,
+            .latentPair second sourceY, .observed sourceY] := by
+    simp [ActivePath.ofOpenDirectedWalk_glue_two_bidirected_colliders,
+      ActivePath.glue, ActivePath.reverse, ActivePath.ofOpenDirectedWalk,
+      ActivePath.ofTwoBidirectedColliders]
+  have sourceYOpen := openY sourceY walkY.mem_source
+  refine ActivePath.glue
+    (ActivePath.ofOpenDirectedWalk_glue_two_bidirected_colliders G
+      mutilation conditioned walkZ simpleZ openZ hedgeLeft hedgeMid
+      hedgeRight sourceZNeFirst sourceZNeSecond sourceZNeSourceY
+      firstNeSecond firstNeSourceY secondNeSourceY sourceYOpen
+      sourceZIncoming firstIncoming secondIncoming sourceYIncoming
+      activatedFirst activatedSecond firstNotOnZ secondNotOnZ notOnZ)
+    (ActivePath.ofOpenDirectedWalk G mutilation conditioned walkY simpleY
+      openY)
+    ?_ ?_
+  · intro x hxL hxR
+    rcases List.mem_map.mp hxR with ⟨n, hnY, hobs⟩
+    subst x
+    have hxL' : SeparationNode.observed n ∈
+        (walkZ.nodes.map SeparationNode.observed).reverse ++
+          [.latentPair sourceZ first, .observed first,
+            .latentPair first second, .observed second,
+            .latentPair second sourceY, .observed sourceY] := by
+      simpa [leftNodes] using hxL
+    rcases List.mem_append.mp hxL' with inRev | inCol
+    · have hxLmem := List.mem_reverse.mp inRev
+      rcases List.mem_map.mp hxLmem with ⟨m, hmZ, hobs'⟩
+      have meq : m = n := by
+        cases hobs'
+        rfl
+      subst m
+      exact (disjointWalks n hmZ hnY).elim
+    · simp only [List.mem_cons] at inCol
+      rcases inCol with hlat | h1 | hlat2 | h2 | hlat3 | hsrcY
+      · cases hlat
+      · have heq : n = first := by
+          simpa using h1
+        subst n
+        exact (firstNotOnY hnY).elim
+      · cases hlat2
+      · have heq : n = second := by
+          simpa using h2
+        subst n
+        exact (secondNotOnY hnY).elim
+      · cases hlat3
+      · have heq : n = sourceY := by
+          simpa using hsrcY
+        subst n
+        rfl
+  · intro pred succ hpred hsucc
+    cases walkY with
+    | refl node =>
+        simp [ActivePath.ofOpenDirectedWalk,
+          FiniteReachability.ExactWalk.nodes] at hsucc
+    | @step length source middle target firstEdge rest =>
+        have hsucc' : succ = .observed middle := by
+          simp [ActivePath.ofOpenDirectedWalk,
+            FiniteReachability.ExactWalk.nodes] at hsucc
+          rcases hsucc with ⟨a, ha, hobs⟩
+          have ha' : a = middle :=
+            Option.some.inj (ha.symm.trans rest.nodes_head)
+          subst a
+          exact hobs.symm
+        subst succ
+        have hpred' : pred = SeparationNode.latentPair second sourceY := by
+          have hshape :
+              (walkZ.nodes.map SeparationNode.observed).reverse ++
+                [SeparationNode.latentPair sourceZ first,
+                  SeparationNode.observed first,
+                  SeparationNode.latentPair first second,
+                  SeparationNode.observed second,
+                  SeparationNode.latentPair second sourceY,
+                  SeparationNode.observed sourceY] =
+                ((walkZ.nodes.map SeparationNode.observed).reverse ++
+                  [SeparationNode.latentPair sourceZ first,
+                    SeparationNode.observed first,
+                    SeparationNode.latentPair first second,
+                    SeparationNode.observed second,
+                    SeparationNode.latentPair second sourceY]) ++
+                  [SeparationNode.observed sourceY] := by
+            simp [List.append_assoc]
+          have hdl :
+              ((walkZ.nodes.map SeparationNode.observed).reverse ++
+                [SeparationNode.latentPair sourceZ first,
+                  SeparationNode.observed first,
+                  SeparationNode.latentPair first second,
+                  SeparationNode.observed second,
+                  SeparationNode.latentPair second sourceY,
+                  SeparationNode.observed sourceY]).dropLast.getLast? =
+                some (SeparationNode.latentPair second sourceY) := by
+            rw [hshape, dropLast_snoc]
+            simp [List.getLast?_append]
+          simpa [leftNodes] using (hpred.symm.trans hdl)
+        subst pred
+        refine Or.inr ⟨not_isCollider_of_outgoing_next G mutilation firstEdge,
+          sourceYOpen⟩
+
+end PathSpecification
 
 namespace ObservedGraph
 
@@ -2158,6 +4177,101 @@ theorem observedAncestorOf_eq_true_iff (G : ObservedGraph S)
       (List.ofFn (fun i : Fin S.count => i))
       (G.observedDirectedEdge mutilation) finBeq_eq_true_iff
       (fun node => by simp [List.mem_ofFn]) _ source target).mpr reachable
+
+/-- Ancestry in a mutilated DAG supplies a simple directed walk into the
+target family that is shortest among all such walks. -/
+theorem exists_minimal_walk_of_observedAncestorOf
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (targets : NodeSet S) (source : Fin S.count)
+    (hanc : G.observedAncestorOf mutilation targets source = true) :
+    Exists fun target : Fin S.count =>
+      targets target = true /\
+        Exists fun length : Nat =>
+          Exists fun walk :
+              FiniteReachability.ExactWalk
+                (G.observedDirectedEdge mutilation) length source target =>
+            walk.nodes.Nodup /\
+              (forall target' alternative,
+                targets target' = true ->
+                  Nonempty (FiniteReachability.ExactWalk
+                    (G.observedDirectedEdge mutilation)
+                    alternative source target') ->
+                    length <= alternative) := by
+  rcases (G.observedAncestorOf_eq_true_iff mutilation targets source).mp hanc with
+    ⟨target0, selected0, bounded⟩
+  rcases FiniteReachability.exists_minimal_exactWalk_to_set
+      finBeq (List.ofFn (fun i : Fin S.count => i))
+      (G.observedDirectedEdge mutilation) finBeq_eq_true_iff
+      (fun node => by simp [List.mem_ofFn])
+      ⟨target0, selected0, bounded⟩ with
+    ⟨target, selected, length, walk, minimal⟩
+  rcases walk with ⟨walk⟩
+  refine ⟨target, selected, length, walk, ?_, minimal⟩
+  exact walk.nodes_nodup_of_minimal (fun alternative alternativeWalk =>
+    minimal target alternative selected alternativeWalk)
+
+/-- Every vertex of a directed walk into a target is itself an ancestor of
+that target, via the suffix walk. -/
+theorem observedAncestorOf_of_mem_walk
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (targets : NodeSet S)
+    {length : Nat} {source target node : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) length source target)
+    (selected : targets target = true)
+    (member : node ∈ walk.nodes) :
+    G.observedAncestorOf mutilation targets node = true := by
+  rcases walk.suffix_of_mem member with ⟨_suffixLength, _bound, suffix⟩
+  rcases suffix with ⟨suffix⟩
+  have complete :
+      forall n : Fin S.count,
+        n ∈ List.ofFn (fun i : Fin S.count => i) :=
+    fun n => List.mem_ofFn.mpr ⟨n, rfl⟩
+  have reachable :
+      FiniteReachability.Reachable (G.observedDirectedEdge mutilation)
+        node target :=
+    ⟨_, ⟨suffix⟩⟩
+  have bounded :=
+    FiniteReachability.boundedWalk_of_reachable finBeq
+      (List.ofFn (fun i : Fin S.count => i))
+      (G.observedDirectedEdge mutilation) finBeq_eq_true_iff complete
+      reachable
+  exact (G.observedAncestorOf_eq_true_iff mutilation targets node).mpr
+    ⟨target, selected, bounded⟩
+
+/-- Ancestry composes: a walk into an intermediate family, each of whose
+members already reaches the targets, is a walk into the targets. -/
+theorem observedAncestorOf_compose
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (mids targets : NodeSet S) (source : Fin S.count)
+    (fromSource : G.observedAncestorOf mutilation mids source = true)
+    (fromMids : forall i, mids i = true ->
+      G.observedAncestorOf mutilation targets i = true) :
+    G.observedAncestorOf mutilation targets source = true := by
+  rcases (G.observedAncestorOf_eq_true_iff mutilation mids source).mp
+      fromSource with ⟨mid, midSelected, boundedMid⟩
+  have midReaches := fromMids mid midSelected
+  rcases (G.observedAncestorOf_eq_true_iff mutilation targets mid).mp
+      midReaches with ⟨target, targetSelected, boundedTarget⟩
+  rcases boundedMid with ⟨_lenMid, _boundMid, walkMid⟩
+  rcases walkMid with ⟨walkMid⟩
+  rcases boundedTarget with ⟨_lenTarget, _boundTarget, walkTarget⟩
+  rcases walkTarget with ⟨walkTarget⟩
+  have complete :
+      forall n : Fin S.count,
+        n ∈ List.ofFn (fun i : Fin S.count => i) :=
+    fun n => List.mem_ofFn.mpr ⟨n, rfl⟩
+  have reachable :
+      FiniteReachability.Reachable (G.observedDirectedEdge mutilation)
+        source target :=
+    ⟨_, ⟨walkMid.append walkTarget⟩⟩
+  have bounded :=
+    FiniteReachability.boundedWalk_of_reachable finBeq
+      (List.ofFn (fun i : Fin S.count => i))
+      (G.observedDirectedEdge mutilation) finBeq_eq_true_iff complete
+      reachable
+  exact (G.observedAncestorOf_eq_true_iff mutilation targets source).mpr
+    ⟨target, targetSelected, bounded⟩
 
 def MoralOpenEdge (G : ObservedGraph S) (mutilation : GraphMutilation S)
     (targets conditioned : NodeSet S)
@@ -2463,6 +4577,14 @@ theorem nodup_prefix_append {α : Type _} {before : List α}
       · subst node
         exact List.mem_append.mpr (Or.inr (List.mem_cons.mpr (Or.inl rfl)))
 
+/-- The complementary suffix of a simple split remains simple. -/
+theorem nodup_suffix_cons {α : Type _} {before : List α}
+    {node : α} {after : List α}
+    (simple : (before ++ node :: after).Nodup) :
+    (node :: after).Nodup := by
+  have parts := nodup_of_split simple
+  exact List.nodup_cons.mpr ⟨parts.2.2.1, parts.2.2.2.1⟩
+
 theorem take_prefix_append {α : Type _} (before : List α) (node : α)
     (after : List α) :
     (before ++ node :: after).take (before.length + 1) = before ++ [node] := by
@@ -2478,7 +4600,7 @@ theorem getLast?_snoc {α : Type _} (before : List α) (node : α) :
   | cons head tail ih =>
       cases tail with
       | nil => simp
-      | cons _ _ => simpa [List.getLast?_cons] using ih
+      | cons _ _ => simp [List.getLast?_cons]
 
 def splitMemSeparation (node : SeparationNode S) :
     (nodes : List (SeparationNode S)) → node ∈ nodes →
@@ -2549,6 +4671,59 @@ def prefixActivePath (G : ObservedGraph S)
       have activeTake := PathSpecification.InternalTriplesActive.take activeFull
         (before.length + 1)
       simpa [takeEq] using activeTake }
+
+/-- The complementary suffix of an active path, cut at an open vertex, is
+itself an active path.  First-shared forks glue this onto a prefix of the
+other trail. -/
+def suffixActivePath (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    {conditioned : NodeSet S} {source target node : SeparationNode S}
+    (path : PathSpecification.ActivePath G mutilation conditioned source target)
+    (member : node ∈ path.nodes)
+    (openNode : blockedBy conditioned node = false) :
+    PathSpecification.ActivePath G mutilation conditioned node target :=
+  let split := splitMemSeparation node path.nodes member
+  let before := split.val.1
+  let after := split.val.2
+  have consecutiveFull : PathSpecification.Consecutive
+      (PathSpecification.Adjacent G mutilation)
+      (before ++ node :: after) := by
+    rw [← split.property]
+    exact path.adjacent
+  have activeFull : PathSpecification.InternalTriplesActive G mutilation
+      conditioned (before ++ node :: after) := by
+    rw [← split.property]
+    exact path.internal_active
+  have simpleFull : (before ++ node :: after).Nodup := by
+    rw [← split.property]
+    exact path.simple
+  have finishesFull : (before ++ node :: after).getLast? = some target := by
+    rw [← split.property]
+    exact path.finishes
+  { nodes := node :: after
+    starts := rfl
+    finishes := by
+      cases hafter : after with
+      | nil =>
+          have hfin := finishesFull
+          simp [hafter] at hfin
+          subst target
+          rfl
+      | cons _succ _more =>
+          have hfin := finishesFull
+          simp [hafter, List.getLast?_append] at hfin
+          exact hfin
+    simple := nodup_suffix_cons simpleFull
+    adjacent := by
+      have dropped :=
+        PathSpecification.Consecutive.drop before.length
+          (before ++ node :: after) consecutiveFull
+      simpa [drop_append_length] using dropped
+    source_open := openNode
+    target_open := path.target_open
+    internal_active :=
+      PathSpecification.InternalTriplesActive.suffix_append before node after
+        activeFull }
 
 theorem consecutive_adjacent_of_marriedCount_zero (G : ObservedGraph S)
     (mutilation : GraphMutilation S)
@@ -2635,7 +4810,7 @@ def expandMoralNodes (G : ObservedGraph S) (mutilation : GraphMutilation S)
       (G.MoralOpenEdge mutilation targets conditioned) length source target →
     List (SeparationNode S)
   | _, _, _, .refl node => [node]
-  | _, source, _target, .step first rest =>
+  | _, source, _target, .step _first rest =>
       let restNodes :=
         expandMoralNodes G mutilation targets conditioned rest
       if PathSpecification.adjacentBool G mutilation source
@@ -3701,7 +5876,7 @@ theorem simplifySeparation.go_head :
       nodes ≠ [] ->
         (simplifySeparation.go fuel nodes).head? = nodes.head?
   | 0, nodes, ne => by
-      simpa [simplifySeparation.go] using rfl
+      simp [simplifySeparation.go]
   | fuel + 1, nodes, ne => by
       simp only [simplifySeparation.go]
       split
@@ -3716,7 +5891,7 @@ theorem simplifySeparation.go_getLast :
       nodes ≠ [] ->
         (simplifySeparation.go fuel nodes).getLast? = nodes.getLast?
   | 0, nodes, ne => by
-      simpa [simplifySeparation.go] using rfl
+      simp [simplifySeparation.go]
   | fuel + 1, nodes, ne => by
       simp only [simplifySeparation.go]
       split
@@ -4165,8 +6340,7 @@ theorem exists_activePath_oxford_right (G : ObservedGraph S)
   cases walk with
   | refl _node =>
       have lastFront : front.getLast? = some dest := by
-        simpa [front, dest] using
-          getLast?_snoc (before ++ [previous]) middle
+        simp [front, dest]
       exact ⟨G.activePath_of_adjacent_nodes mutilation conditioned front
         starts lastFront simple adjacent inactive sourceOpen targetOpen⟩
   | @step restLength src child tgt firstEdge restWalk =>
@@ -4204,8 +6378,7 @@ theorem exists_activePath_oxford_right (G : ObservedGraph S)
               (fun prev next prevLast nextHead => by
                 have lastFront :
                     front.getLast? = some middle := by
-                  simpa [front] using
-                    getLast?_snoc (before ++ [previous]) middle
+                  simp [front]
                 rw [lastFront] at prevLast
                 cases prevLast
                 rw [headBack] at nextHead
@@ -5318,7 +7491,7 @@ theorem expandedActiveCase_of_simple_split (G : ObservedGraph S)
   cases hcount : PathSpecification.inactiveColliderCount G mutilation
       conditioned expanded with
   | zero =>
-      exact Or.inl (by simpa [expanded] using hcount)
+      exact Or.inl (by simp)
   | succ n =>
       have inactivePos :
           0 < PathSpecification.inactiveColliderCount G mutilation
