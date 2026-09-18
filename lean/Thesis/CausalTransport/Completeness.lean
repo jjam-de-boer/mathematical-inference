@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.Correspondence
 import Thesis.CausalTransport.DSeparationCorrectness
+import Thesis.Causality.IdentificationInduction
 import Thesis.Causality.IdentificationSearch
 import Thesis.Causality.PairRoot
 
@@ -316,6 +317,92 @@ not by search through a `Prop`.
 -/
 
 /-! ## Successful identification certificates and reusable branch leaves -/
+
+/-!
+### Top-level structural traces
+
+The generic trace relations retain every argument of `identifyFuel`.  These
+aliases specialize them to the public `identifyJoint` invocation, so subsequent
+completeness proofs can enter structural induction without repeatedly exposing
+the engine's fuel, full remaining set, and observational starting term.
+-/
+
+/-- Structural explanation of a failed top-level joint identification run. -/
+abbrev JointIdentificationFailureTrace (G : ObservedGraph S)
+    (q : JointKernelQuery S) (fail : IdentificationFail S) : Prop :=
+  IdentificationFailureTrace G (identificationFuel S) NodeSet.full
+    q.outcome q.action (observationalJointTerm S) fail
+
+/-- Structural explanation of a successful top-level joint identification run. -/
+abbrev JointIdentificationSuccessTrace (G : ObservedGraph S)
+    (q : JointKernelQuery S) (term : ProbabilityTerm S) : Prop :=
+  IdentificationSuccessTrace G (identificationFuel S) NodeSet.full
+    q.outcome q.action (observationalJointTerm S) term
+
+/-- Structural explanation of an unfinished top-level joint identification run. -/
+abbrev JointIdentificationUnfinishedTrace (G : ObservedGraph S)
+    (q : JointKernelQuery S) : Prop :=
+  IdentificationUnfinishedTrace G (identificationFuel S) NodeSet.full
+    q.outcome q.action (observationalJointTerm S)
+
+/-- Failed public ID runs are exactly top-level structural failure traces. -/
+theorem identifyJoint_eq_failed_iff_failureTrace
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    (fail : IdentificationFail S) :
+    identifyJoint G q = IdentificationOutcome.failed fail ↔
+      JointIdentificationFailureTrace G q fail := by
+  simpa [identifyJoint, JointIdentificationFailureTrace] using
+    identifyFuel_eq_failed_iff_failureTrace (identificationFuel S) G
+      NodeSet.full q.outcome q.action (observationalJointTerm S) fail
+
+/-- Successful public ID runs are exactly top-level structural success traces. -/
+theorem identifyJoint_eq_identified_iff_successTrace
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    (term : ProbabilityTerm S) :
+    identifyJoint G q = IdentificationOutcome.identified term ↔
+      JointIdentificationSuccessTrace G q term := by
+  simpa [identifyJoint, JointIdentificationSuccessTrace] using
+    identifyFuel_eq_identified_iff_successTrace (identificationFuel S) G
+      NodeSet.full q.outcome q.action (observationalJointTerm S) term
+
+/-- The public unfinished sentinel is exactly a top-level unfinished trace. -/
+theorem identifyJoint_eq_unfinished_iff_unfinishedTrace
+    (G : ObservedGraph S) (q : JointKernelQuery S) :
+    identifyJoint G q = IdentificationOutcome.unfinished ↔
+      JointIdentificationUnfinishedTrace G q := by
+  simpa [identifyJoint, JointIdentificationUnfinishedTrace] using
+    identifyFuel_eq_unfinished_iff_unfinishedTrace (identificationFuel S) G
+      NodeSet.full q.outcome q.action (observationalJointTerm S)
+
+/--
+Constructive top-level case analysis for executable joint identification.
+
+Unlike a disjunction of bare result equations, each case retains the complete
+structural trace needed by a downstream induction.  The classifier is obtained
+by evaluating `identifyJoint` and therefore uses neither excluded middle nor a
+choice of a recursive branch.
+-/
+inductive JointIdentificationTrace (G : ObservedGraph S)
+    (q : JointKernelQuery S) : Prop
+  | identified (term : ProbabilityTerm S)
+      (trace : JointIdentificationSuccessTrace G q term)
+  | failed (fail : IdentificationFail S)
+      (trace : JointIdentificationFailureTrace G q fail)
+  | unfinished (trace : JointIdentificationUnfinishedTrace G q)
+
+/-- Every executable joint query has one of the three exact structural traces. -/
+theorem identifyJoint_trace (G : ObservedGraph S) (q : JointKernelQuery S) :
+    JointIdentificationTrace G q := by
+  cases result : identifyJoint G q with
+  | identified term =>
+      exact .identified term
+        ((identifyJoint_eq_identified_iff_successTrace G q term).mp result)
+  | failed fail =>
+      exact .failed fail
+        ((identifyJoint_eq_failed_iff_failureTrace G q fail).mp result)
+  | unfinished =>
+      exact .unfinished
+        ((identifyJoint_eq_unfinished_iff_unfinishedTrace G q).mp result)
 
 /--
 Observational cylinders used as ID denominators are strictly positive in
