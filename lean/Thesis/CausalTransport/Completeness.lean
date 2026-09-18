@@ -8272,6 +8272,35 @@ theorem hedgeWitness?_eq_some_of_failed_site_agrees
       localAction hfree hanc hYeq hXeq)
 
 /--
+A product-free structural failure trace yields a hedge for the original
+top-level query, regardless of how many ancestral-shrink and 4.3-restriction
+frames precede its terminal 4.1 failure.
+
+The trace induction in `IdentificationInduction` proves that those two frame
+kinds preserve the outcome and action after restriction to `fail.remaining`.
+The terminal site's generic 4.1 facts can therefore be transported directly
+to `q` and discharged by the common hedge-search theorem above.  Product
+frames are excluded explicitly: they replace the local query by a factor and
+require the separate free-component ancestry argument developed below.
+-/
+theorem hedgeWitness?_eq_some_of_productFree_failureTrace
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    {fail : IdentificationFail S}
+    (trace : JointIdentificationFailureTrace G q fail)
+    (productFree : trace.hasNoProductFrame = true) :
+    Exists fun witness => hedgeWitness? G q fail = some witness := by
+  have hfail :
+      identifyJoint G q = IdentificationOutcome.failed fail := by
+    simpa [identifyJoint, JointIdentificationFailureTrace] using
+      trace.eq_failed
+  let site : IdentificationImmediateFailureSite G fail := trace.immediateSite
+  have localFacts := site.local_query_site
+  have queryAgreement :=
+    trace.immediateSite_query_agrees_of_hasNoProductFrame productFree
+  exact hedgeWitness?_eq_some_of_failed_site_agrees G q hfail site.outcome
+    site.action localFacts.1 localFacts.2 queryAgreement.1 queryAgreement.2
+
+/--
 Hedge tests for the original query when the failure-record forest points
 at the recorded free component (the nested 4.1 target) rather than at
 `Y` itself.  The remaining set still has to meet `X`, the free side has

@@ -1197,6 +1197,112 @@ def immediateSite {S : ObservedSignature} {G : ObservedGraph S}
       _firstFailingFactor nested =>
       immediateSite nested
 
+/--
+Whether the selected failure path reaches its immediate 4.1 site without
+entering a product factor.  An ancestral shrink and a 4.3 c-component
+restriction merely refine the working host; neither changes the substantive
+outcome/action query on the eventual failure host.  A product frame is the
+one branch that replaces that query by `piece | do(remaining \ piece)`.
+
+This is a Boolean property because it is meant to be inspected alongside the
+executable trace.  In particular, completeness code can distinguish the
+query-preserving paths from the genuinely different product case without a
+propositional excluded-middle split.
+-/
+def hasNoProductFrame {S : ObservedSignature} {G : ObservedGraph S}
+    {fuel : Nat} {remaining outcome action : NodeSet S}
+    {current : ProbabilityTerm S} {fail : IdentificationFail S}
+    (trace :
+      IdentificationFailureTrace G fuel remaining outcome action current fail) :
+    Bool :=
+  match trace with
+  | .immediate .. => true
+  | .shrink (nested := nested) .. => hasNoProductFrame nested
+  | .restrict (nested := nested) .. => hasNoProductFrame nested
+  | .product .. => false
+
+/--
+The failure record is supported inside the remaining set of every invocation
+on its trace.  Stating this directly on traces is convenient for transport
+proofs: callers need not first forget the trace back to an equality returned
+by the executable engine.
+-/
+theorem fail_remaining_subset {S : ObservedSignature} {G : ObservedGraph S}
+    {fuel : Nat} {remaining outcome action : NodeSet S}
+    {current : ProbabilityTerm S} {fail : IdentificationFail S}
+    (trace :
+      IdentificationFailureTrace G fuel remaining outcome action current fail) :
+    NodeSet.Subset fail.remaining remaining :=
+  (identifyFuel_eq_failed fuel G remaining outcome action current
+    trace.eq_failed).2
+
+/--
+Along a product-free failure path, the outcome and action stored at the
+terminal immediate site agree with the original invocation after restriction
+to the recorded failure host.
+
+The only non-definitional step is a 4.3 restriction.  Its recursive action is
+`(action ∩ remaining) ∩ larger`; the failed host lies in `larger`, while
+`larger` lies in `remaining`, so both extra intersections disappear on that
+host.  This single induction replaces every finite stack of shrink/restrict
+unpackers and deliberately stops at the product boundary, where the statement
+would be false.
+-/
+theorem immediateSite_query_agrees_of_hasNoProductFrame
+    {S : ObservedSignature} {G : ObservedGraph S}
+    {fuel : Nat} {remaining outcome action : NodeSet S}
+    {current : ProbabilityTerm S} {fail : IdentificationFail S}
+    (trace :
+      IdentificationFailureTrace G fuel remaining outcome action current fail)
+    (productFree : trace.hasNoProductFrame = true) :
+    NodeSet.equal
+          (NodeSet.inter trace.immediateSite.outcome fail.remaining)
+          (NodeSet.inter outcome fail.remaining) = true ∧
+      NodeSet.equal
+          (NodeSet.inter trace.immediateSite.action fail.remaining)
+          (NodeSet.inter action fail.remaining) = true := by
+  induction trace with
+  | immediate =>
+      constructor <;>
+        exact (NodeSet.equal_eq_true_iff _ _).mpr rfl
+  | shrink _fuel _remaining _outcome _action _current _fail _actionNonempty
+      _notAncestral nested inductionHypothesis =>
+      exact inductionHypothesis productFree
+  | restrict _fuel remaining _outcome action _current fail _component larger
+      _actionNonempty _ancestral _oneFreeComponent
+      _severalRemainingComponents _componentNotMaximal containingComponent
+      nested inductionHypothesis =>
+      have nestedAgreement := inductionHypothesis productFree
+      refine ⟨nestedAgreement.1, ?_⟩
+      have failedInLarger : NodeSet.Subset fail.remaining larger :=
+        nested.fail_remaining_subset
+      have largerInRemaining : NodeSet.Subset larger remaining :=
+        containingCComponent_subset_host G remaining _ containingComponent
+      have restrictedAction :
+          NodeSet.inter
+              (NodeSet.inter (NodeSet.inter action remaining) larger)
+              fail.remaining =
+            NodeSet.inter action fail.remaining := by
+        funext i
+        cases hFail : fail.remaining i with
+        | false =>
+            simp [NodeSet.inter, hFail]
+        | true =>
+            have hLarger : larger i = true := failedInLarger i hFail
+            have hRemaining : remaining i = true :=
+              largerInRemaining i hLarger
+            simp [NodeSet.inter, hFail, hLarger, hRemaining]
+      have localAgreement :
+          NodeSet.inter nested.immediateSite.action fail.remaining =
+            NodeSet.inter
+              (NodeSet.inter (NodeSet.inter action remaining) larger)
+              fail.remaining :=
+        (NodeSet.equal_eq_true_iff _ _).mp nestedAgreement.2
+      exact (NodeSet.equal_eq_true_iff _ _).mpr
+        (localAgreement.trans restrictedAction)
+  | product =>
+      simp [hasNoProductFrame] at productFree
+
 end IdentificationFailureTrace
 
 namespace IdentificationImmediateFailureSite
