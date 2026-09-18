@@ -1228,6 +1228,30 @@ theorem fail_free {S : ObservedSignature} {G : ObservedGraph S}
     fail.free = site.component :=
   congrArg IdentificationFail.free site.fail_eq
 
+/--
+The terminal site's free component is its local action complement, and its
+remaining host is ancestral of the local outcome after that cut.  These are
+the two immediate hedge facts formerly recovered separately for every named
+stack of outer ID branches.
+-/
+theorem local_query_site {S : ObservedSignature} {G : ObservedGraph S}
+    {fail : IdentificationFail S}
+    (site : IdentificationImmediateFailureSite G fail) :
+    NodeSet.equal fail.free
+          (NodeSet.diff fail.remaining
+            (NodeSet.inter site.action fail.remaining)) = true ∧
+      NodeSet.equal
+        (G.ancestralSet fail.remaining
+          (GraphMutilation.bar
+            (NodeSet.diff fail.remaining fail.free))
+          (NodeSet.inter site.outcome fail.remaining))
+        fail.remaining = true := by
+  have parts :=
+    identifyFuel_eq_failed_immediate_query_site site.fuel G site.remaining
+      site.outcome site.action site.current site.actionNonempty site.ancestral
+      site.oneFreeComponent site.oneRemainingComponent site.eq_failed
+  exact ⟨parts.2.2.1, parts.2.2.2⟩
+
 end IdentificationImmediateFailureSite
 
 /-!
