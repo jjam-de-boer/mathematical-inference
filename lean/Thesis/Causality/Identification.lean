@@ -799,6 +799,21 @@ theorem symm {G : ObservedGraph S} {nodes : NodeSet S} {i j : Fin S.count}
           (G.bidirected_symmetric edge))
         ih
 
+/--
+Bidirected connectivity is monotone in its permitted vertex set.  This small
+structural lemma is the bridge used when an ID c-component is computed in
+`remaining \ action` and then located inside a c-component of `remaining`.
+-/
+theorem mono {G : ObservedGraph S} {smaller larger : NodeSet S}
+    (subset : NodeSet.Subset smaller larger) {i j : Fin S.count}
+    (connected : BidirectedConnectedWithin G smaller i j) :
+    BidirectedConnectedWithin G larger i j := by
+  induction connected with
+  | refl selected =>
+      exact .refl (subset _ selected)
+  | tail _previous selected edge inductionHypothesis =>
+      exact .tail inductionHypothesis (subset _ selected) edge
+
 end BidirectedConnectedWithin
 
 def BidirectedComponent (G : ObservedGraph S) (nodes : NodeSet S) : Prop :=

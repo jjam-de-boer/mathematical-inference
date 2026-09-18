@@ -601,6 +601,26 @@ theorem eq_unfinished {S : ObservedSignature} {G : ObservedGraph S}
       simpa [identifyFuel, actionNonempty, ancestral, freeComponents] using
         combinedResult
 
+/--
+Whether the selected unfinished path ends specifically by exhausting its
+fuel.  The alternative terminal, `missingHost`, is represented explicitly so
+downstream completeness code can prove it unreachable from the c-component
+partition invariants rather than silently treating every sentinel as a depth
+failure.
+-/
+def endsInExhaustion {S : ObservedSignature} {G : ObservedGraph S}
+    {fuel : Nat} {remaining outcome action : NodeSet S}
+    {current : ProbabilityTerm S}
+    (trace :
+      IdentificationUnfinishedTrace G fuel remaining outcome action current) :
+    Bool :=
+  match trace with
+  | .exhausted .. => true
+  | .missingHost .. => false
+  | .shrink (nested := nested) .. => endsInExhaustion nested
+  | .restrict (nested := nested) .. => endsInExhaustion nested
+  | .product (nested := nested) .. => endsInExhaustion nested
+
 /-- Convert an unfinished executable result into its complete structural cause. -/
 noncomputable def of_eq_unfinished {S : ObservedSignature}
     (fuel : Nat) (G : ObservedGraph S)

@@ -6910,6 +6910,127 @@ theorem cComponentOf_idempotent
     ((cComponentOf_eq_true_iff G nodes hseed).mpr (.refl hseed))
     (cComponentOf_is_component G nodes hseed)
 
+/--
+Every executable c-component of an induced subset is contained in some
+executable c-component of the host.  Consequently, the ID engine's
+`containingCComponent` search cannot return `none` for such a component.
+
+The proof is constructive.  A root of the smaller component is also in the
+host, whose computed c-component partition supplies a concrete larger piece.
+Bidirected connectivity is monotone under the subset inclusion, so every
+vertex of the smaller piece lies in that larger piece; the Boolean `find?`
+therefore has a witnessed successful predicate.
+-/
+theorem containingCComponent_ne_none_of_mem_of_subset
+    (G : ObservedGraph S) (smaller larger : NodeSet S)
+    {component : NodeSet S}
+    (componentMem : component ∈ G.cComponents smaller)
+    (subset : NodeSet.Subset smaller larger) :
+    G.containingCComponent larger component ≠ none := by
+  rcases cComponents_mem G smaller componentMem with
+    ⟨root, rootInSmaller, componentEq⟩
+  have rootInLarger : larger root = true := subset root rootInSmaller
+  rcases cComponents_covers G larger rootInLarger with
+    ⟨hostComponent, hostComponentMem, rootInHostComponent⟩
+  rcases cComponents_mem G larger hostComponentMem with
+    ⟨hostRoot, hostRootInLarger, hostComponentEq⟩
+  have componentSubset : NodeSet.Subset component hostComponent := by
+    intro i iInComponent
+    have rootToIInSmaller :
+        BidirectedConnectedWithin G smaller root i :=
+      (cComponentOf_eq_true_iff G smaller rootInSmaller).mp (by
+        rw [← componentEq]
+        exact iInComponent)
+    have rootToIInLarger :
+        BidirectedConnectedWithin G larger root i :=
+      rootToIInSmaller.mono subset
+    have hostRootToRoot :
+        BidirectedConnectedWithin G larger hostRoot root :=
+      (cComponentOf_eq_true_iff G larger hostRootInLarger).mp (by
+        rw [← hostComponentEq]
+        exact rootInHostComponent)
+    have hostRootToI :
+        BidirectedConnectedWithin G larger hostRoot i :=
+      BidirectedConnectedWithin.trans hostRootToRoot rootToIInLarger
+    have iInHostClass : G.cComponentOf larger hostRoot i = true :=
+      (cComponentOf_eq_true_iff G larger hostRootInLarger).mpr hostRootToI
+    rw [hostComponentEq]
+    exact iInHostClass
+  have predicateTrue :
+      NodeSet.subsetBool component hostComponent = true :=
+    (NodeSet.subsetBool_eq_true_iff component hostComponent).mpr
+      componentSubset
+  intro noContainingComponent
+  have findNone :
+      (G.cComponents larger).find? (fun candidate =>
+        NodeSet.subsetBool component candidate) = none := by
+    simpa [ObservedGraph.containingCComponent] using noContainingComponent
+  exact (List.find?_eq_none.mp findNone hostComponent hostComponentMem)
+    predicateTrue
+
+/--
+The unmatched-host terminal of an unfinished ID trace is unreachable: its
+unique free component is listed inside `remaining \ action`, hence the host
+containment theorem above supplies a containing c-component of `remaining`.
+-/
+theorem identificationUnfinished_missingHost_impossible
+    (G : ObservedGraph S)
+    (remaining action component : NodeSet S)
+    (oneFreeComponent :
+      G.cComponents
+        (NodeSet.diff remaining (NodeSet.inter action remaining)) =
+        [component])
+    (noContainingComponent :
+      G.containingCComponent remaining component = none) : False := by
+  have componentMem :
+      component ∈
+        G.cComponents
+          (NodeSet.diff remaining (NodeSet.inter action remaining)) := by
+    simp [oneFreeComponent]
+  exact containingCComponent_ne_none_of_mem_of_subset G
+    (NodeSet.diff remaining (NodeSet.inter action remaining)) remaining
+    componentMem (NodeSet.diff_subset_left _ _) noContainingComponent
+
+namespace IdentificationUnfinishedTrace
+
+/--
+Every structurally unfinished ID run ends by exhausting fuel.  The other
+syntactic terminal, a missing containing c-component, contradicts the
+constructive host-containment theorem.  Thus the remaining totality task is
+precisely the advertised recursion-depth bound; there is no independent
+partition-shape gap hidden behind the same sentinel.
+-/
+theorem endsInExhaustion_eq_true
+    {G : ObservedGraph S}
+    {fuel : Nat} {remaining outcome action : NodeSet S}
+    {current : ProbabilityTerm S}
+    (trace :
+      IdentificationUnfinishedTrace G fuel remaining outcome action current) :
+    trace.endsInExhaustion = true := by
+  induction trace with
+  | exhausted =>
+      rfl
+  | missingHost _fuel remaining _outcome action _current component
+      _actionNonempty _ancestral oneFreeComponent
+      _severalRemainingComponents _componentNotMaximal noContainingComponent =>
+      exact False.elim
+        (identificationUnfinished_missingHost_impossible G remaining action
+          component oneFreeComponent noContainingComponent)
+  | shrink _fuel _remaining _outcome _action _current _actionNonempty
+      _notAncestral _nested inductionHypothesis =>
+      exact inductionHypothesis
+  | restrict _fuel _remaining _outcome _action _current _component _larger
+      _actionNonempty _ancestral _oneFreeComponent
+      _severalRemainingComponents _componentNotMaximal _containingComponent
+      _nested inductionHypothesis =>
+      exact inductionHypothesis
+  | product _fuel _remaining _outcome _action _current _component _component2
+      _rest _piece _actionNonempty _ancestral _freeComponents
+      _firstUnfinishedFactor _nested inductionHypothesis =>
+      exact inductionHypothesis
+
+end IdentificationUnfinishedTrace
+
 theorem thinTowardForest_eq_cComponent_self
     (G : ObservedGraph S) (nodes : NodeSet S)
     (seedY seedKeep : Fin S.count) (fuel : Nat)
