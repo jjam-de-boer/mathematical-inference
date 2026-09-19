@@ -16,9 +16,10 @@ This module develops the checked components needed to inhabit
 `PublishedCompleteness` for `GraphModelClass.positive`: supported certificates
 for successful ID branches, finite extraction of hedge witnesses from failed
 runs, and positive countermodels for realizable hedge shapes.  The published
-record is not yet inhabited.  The remaining load-bearing obligations are the
-structural success compiler, the general failure-to-hedge bridge, and the
-general hedge countermodel.
+record is not yet inhabited.  The executable fuel bound is proved total below,
+so public joint and conditional ID cannot return `unfinished`.  The remaining
+load-bearing obligations are the structural success compiler, the general
+failure-to-hedge bridge, and the general hedge countermodel.
 
 For arbitrary nested engine runs, use the exact trace relations in
 `IdentificationInduction`.  The branch-specific lemmas retained below are
@@ -7164,6 +7165,353 @@ theorem cComponents_eq_of_mem_host
     G.cComponents nodes = [nodes] := by
   rcases cComponents_mem G nodes hmem with ⟨root, hroot, hdef⟩
   exact cComponents_eq_singleton G nodes hroot (heq.symm.trans hdef)
+
+/--
+A cell of an executable c-component partition is connected when viewed as
+its own host, so repartitioning that cell returns the singleton list.  This is
+the fact that prevents two product frames from occurring consecutively in an
+ID trace.
+-/
+theorem cComponents_self_of_mem
+    (G : ObservedGraph S) (nodes : NodeSet S) {component : NodeSet S}
+    (componentMem : component ∈ G.cComponents nodes) :
+    G.cComponents component = [component] := by
+  rcases cComponents_mem G nodes componentMem with
+    ⟨root, rootInNodes, componentEq⟩
+  have rootInComponent : component root = true := by
+    rw [componentEq]
+    exact cComponentOf_root_mem G nodes rootInNodes
+  have componentSelf : component = G.cComponentOf component root := by
+    rw [componentEq]
+    exact (cComponentOf_idempotent G nodes rootInNodes).symm
+  exact cComponents_eq_singleton G component rootInComponent componentSelf
+
+/-! ### A decreasing rank for unfinished identification traces -/
+
+/--
+Rank of an ID invocation for fuel-totality.  Every strict host restriction
+costs at least two units.  A multi-component product receives one additional
+unit, which that product consumes before recursing on a factor whose free set
+is a single c-component.  This two-level measure is substantially tighter
+than the public cubic fuel allowance.
+-/
+def identificationTraceRank (G : ObservedGraph S)
+    (remaining action : NodeSet S) : Nat :=
+  2 * (NodeSet.members remaining).length +
+    match G.cComponents
+        (NodeSet.diff remaining (NodeSet.inter action remaining)) with
+    | _ :: _ :: _ => 1
+    | _ => 0
+
+theorem identificationTraceRank_lower
+    (G : ObservedGraph S) (remaining action : NodeSet S) :
+    2 * (NodeSet.members remaining).length ≤
+      identificationTraceRank G remaining action := by
+  unfold identificationTraceRank
+  cases components :
+      G.cComponents
+        (NodeSet.diff remaining (NodeSet.inter action remaining)) with
+  | nil => simp
+  | cons component rest =>
+      cases rest with
+      | nil => simp
+      | cons component2 rest => simp
+
+theorem identificationTraceRank_upper
+    (G : ObservedGraph S) (remaining action : NodeSet S) :
+    identificationTraceRank G remaining action ≤
+      2 * (NodeSet.members remaining).length + 1 := by
+  unfold identificationTraceRank
+  cases components :
+      G.cComponents
+        (NodeSet.diff remaining (NodeSet.inter action remaining)) with
+  | nil => simp
+  | cons component rest =>
+      cases rest with
+      | nil => simp
+      | cons component2 rest => simp
+
+/-- An ancestral-shrink frame strictly decreases the invocation rank. -/
+theorem identificationTraceRank_shrink_lt
+    (G : ObservedGraph S) (remaining outcome action : NodeSet S)
+    (notAncestral :
+      NodeSet.equal
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))
+        remaining = false) :
+    identificationTraceRank G
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))
+        action <
+      identificationTraceRank G remaining action := by
+  have shorter :
+      (NodeSet.members
+        (G.ancestralSet remaining
+          (GraphMutilation.bar (NodeSet.inter action remaining))
+          (NodeSet.inter outcome remaining))).length <
+        (NodeSet.members remaining).length :=
+    NodeSet.length_members_lt_of_subset_of_equal_false
+      (ancestralSet_subset G remaining
+        (GraphMutilation.bar (NodeSet.inter action remaining))
+        (NodeSet.inter outcome remaining))
+      notAncestral
+  have nestedUpper := identificationTraceRank_upper G
+    (G.ancestralSet remaining
+      (GraphMutilation.bar (NodeSet.inter action remaining))
+      (NodeSet.inter outcome remaining)) action
+  have outerLower := identificationTraceRank_lower G remaining action
+  omega
+
+/-- A 4.3 c-component restriction strictly decreases the invocation rank. -/
+theorem identificationTraceRank_restrict_lt
+    (G : ObservedGraph S) (remaining action component larger : NodeSet S)
+    (severalRemainingComponents : G.isSingleCComponent remaining = false)
+    (containingComponent :
+      G.containingCComponent remaining component = some larger) :
+    identificationTraceRank G larger
+        (NodeSet.inter (NodeSet.inter action remaining) larger) <
+      identificationTraceRank G remaining action := by
+  have containingSpec :=
+    containingCComponent_spec G remaining component containingComponent
+  have largerDifferent : NodeSet.equal larger remaining = false := by
+    cases equalResult : NodeSet.equal larger remaining with
+    | false =>
+        rfl
+    | true =>
+        have largerEq : larger = remaining :=
+          (NodeSet.equal_eq_true_iff larger remaining).mp equalResult
+        have singletonPartition : G.cComponents remaining = [remaining] :=
+          cComponents_eq_of_mem_host G remaining containingSpec.1 largerEq
+        have singleTrue : G.isSingleCComponent remaining = true := by
+          simp only [ObservedGraph.isSingleCComponent, singletonPartition]
+          exact (NodeSet.equal_eq_true_iff remaining remaining).mpr rfl
+        exact False.elim
+          (Bool.false_ne_true
+            (severalRemainingComponents.symm.trans singleTrue))
+  have shorter :
+      (NodeSet.members larger).length <
+        (NodeSet.members remaining).length :=
+    NodeSet.length_members_lt_of_subset_of_equal_false
+      (containingCComponent_subset_host G remaining component
+        containingComponent)
+      largerDifferent
+  have nestedUpper := identificationTraceRank_upper G larger
+    (NodeSet.inter (NodeSet.inter action remaining) larger)
+  have outerLower := identificationTraceRank_lower G remaining action
+  omega
+
+/--
+A product frame consumes exactly the rank's product bonus.  Its selected
+factor is a c-component of the current free set; on the factor query the new
+free set simplifies to that factor, whose own c-component partition is a
+singleton.
+-/
+theorem identificationTraceRank_product_lt
+    (G : ObservedGraph S) (remaining action : NodeSet S)
+    (component component2 : NodeSet S) (rest : List (NodeSet S))
+    (piece : NodeSet S)
+    (freeComponents :
+      G.cComponents
+        (NodeSet.diff remaining (NodeSet.inter action remaining)) =
+        component :: component2 :: rest)
+    (pieceMem : piece ∈ component :: component2 :: rest) :
+    identificationTraceRank G remaining (NodeSet.diff remaining piece) <
+      identificationTraceRank G remaining action := by
+  have pieceMemFree :
+      piece ∈
+        G.cComponents
+          (NodeSet.diff remaining (NodeSet.inter action remaining)) := by
+    rw [freeComponents]
+    exact pieceMem
+  have pieceSubsetRemaining : NodeSet.Subset piece remaining :=
+    NodeSet.Subset.trans
+      (cComponents_subset G _ pieceMemFree)
+      (NodeSet.diff_subset_left _ _)
+  have nestedActionInter :
+      NodeSet.inter (NodeSet.diff remaining piece) remaining =
+        NodeSet.diff remaining piece := by
+    rw [NodeSet.inter_comm]
+    exact NodeSet.inter_eq_of_subset (NodeSet.diff_subset_left _ _)
+  have nestedFree :
+      NodeSet.diff remaining
+          (NodeSet.inter (NodeSet.diff remaining piece) remaining) =
+        piece := by
+    rw [nestedActionInter, NodeSet.diff_diff,
+      NodeSet.inter_eq_of_subset pieceSubsetRemaining]
+  have nestedComponents :
+      G.cComponents
+          (NodeSet.diff remaining
+            (NodeSet.inter (NodeSet.diff remaining piece) remaining)) =
+        [piece] := by
+    rw [nestedFree]
+    exact cComponents_self_of_mem G _ pieceMemFree
+  simp [identificationTraceRank, freeComponents, nestedComponents]
+
+namespace IdentificationUnfinishedTrace
+
+/--
+The fuel consumed by an unfinished trace never exceeds the rank of its root
+invocation.  The proof groups all recursive shapes uniformly: shrink and 4.3
+use strict host decrease, product uses its one-bit split bonus, and the
+unmatched-host terminal is impossible.
+-/
+theorem fuel_le_identificationTraceRank
+    {G : ObservedGraph S}
+    {fuel : Nat} {remaining outcome action : NodeSet S}
+    {current : ProbabilityTerm S}
+    (trace :
+      IdentificationUnfinishedTrace G fuel remaining outcome action current) :
+    fuel ≤ identificationTraceRank G remaining action := by
+  induction trace with
+  | exhausted =>
+      exact Nat.zero_le _
+  | missingHost _fuel remaining _outcome action _current component
+      _actionNonempty _ancestral oneFreeComponent
+      _severalRemainingComponents _componentNotMaximal noContainingComponent =>
+      exact False.elim
+        (identificationUnfinished_missingHost_impossible G remaining action
+          component oneFreeComponent noContainingComponent)
+  | shrink fuel remaining outcome action _current _actionNonempty
+      notAncestral _nested inductionHypothesis =>
+      have rankDecreases :=
+        identificationTraceRank_shrink_lt G remaining outcome action
+          notAncestral
+      omega
+  | restrict fuel remaining _outcome action _current component larger
+      _actionNonempty _ancestral _oneFreeComponent
+      severalRemainingComponents _componentNotMaximal containingComponent
+      _nested inductionHypothesis =>
+      have rankDecreases :=
+        identificationTraceRank_restrict_lt G remaining action component larger
+          severalRemainingComponents containingComponent
+      omega
+  | product fuel remaining _outcome action _current component component2 rest
+      piece _actionNonempty _ancestral freeComponents firstUnfinishedFactor
+      _nested inductionHypothesis =>
+      have rankDecreases :=
+        identificationTraceRank_product_lt G remaining action component
+          component2 rest piece freeComponents firstUnfinishedFactor.mem
+      omega
+
+end IdentificationUnfinishedTrace
+
+/--
+Any fuel strictly above the invocation rank rules out the executable
+`unfinished` sentinel.  This is the reusable totality theorem for recursive
+subcalls; it is independent of the larger public fuel formula.
+-/
+theorem identifyFuel_ne_unfinished_of_rank_lt
+    {S : ObservedSignature.{0}} (fuel : Nat) (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S)
+    (current : ProbabilityTerm S)
+    (enoughFuel : identificationTraceRank G remaining action < fuel) :
+    identifyFuel fuel G remaining outcome action current ≠
+      (IdentificationOutcome.unfinished : IdentificationOutcome S) := by
+  intro unfinished
+  let trace :=
+    IdentificationUnfinishedTrace.of_eq_unfinished (S := S) fuel G remaining
+      outcome action current unfinished
+  have consumed := trace.fuel_le_identificationTraceRank
+  omega
+
+/-- The public cubic fuel allowance strictly exceeds the rank on `V`. -/
+theorem identificationTraceRank_full_lt_identificationFuel
+    (G : ObservedGraph S) (action : NodeSet S) :
+    identificationTraceRank G NodeSet.full action < identificationFuel S := by
+  cases countEq : S.count with
+  | zero =>
+      have enumeratedNil : NodeSet.enumerated S = [] := by
+        apply List.eq_nil_of_length_eq_zero
+        rw [NodeSet.length_enumerated, countEq]
+      simp [identificationTraceRank, identificationFuel,
+        ObservedGraph.cComponents, ObservedGraph.cComponentsCollect,
+        NodeSet.members_full, enumeratedNil, countEq]
+  | succ n =>
+      have fullLength :
+          (NodeSet.members (NodeSet.full : NodeSet S)).length = S.count := by
+        rw [NodeSet.members_full, NodeSet.length_enumerated]
+      have rankUpper := identificationTraceRank_upper G NodeSet.full action
+      have countPositive : 0 < S.count := by omega
+      have twoLeSucc : 2 ≤ Nat.succ S.count := by omega
+      have firstProduct : S.count * 2 ≤ S.count * Nat.succ S.count :=
+        Nat.mul_le_mul_left S.count twoLeSucc
+      have cubicLower :
+          (S.count * 2) * 2 ≤
+            (S.count * Nat.succ S.count) * Nat.succ S.count :=
+        Nat.mul_le_mul firstProduct twoLeSucc
+      rw [fullLength] at rankUpper
+      rw [identificationFuel]
+      have linearStrict : 2 * S.count + 1 < 4 * S.count + 1 := by
+        omega
+      have cubicBound :
+          4 * S.count ≤
+            S.count * Nat.succ S.count * Nat.succ S.count := by
+        simpa [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using cubicLower
+      omega
+
+/-- Public joint identification never exhausts its constructive fuel bound. -/
+theorem identifyJoint_ne_unfinished
+    {S : ObservedSignature.{0}}
+    (G : ObservedGraph S) (q : JointKernelQuery S) :
+    identifyJoint G q ≠ IdentificationOutcome.unfinished := by
+  exact identifyFuel_ne_unfinished_of_rank_lt
+    (identificationFuel S) G NodeSet.full q.outcome q.action
+    (observationalJointTerm S)
+    (identificationTraceRank_full_lt_identificationFuel G q.action)
+
+/--
+The total structural result of public joint ID.  Unlike
+`JointIdentificationTrace`, this type has no implementation-sentinel branch:
+the rank proof has discharged it once and for all.
+-/
+inductive JointIdentificationTerminalTrace
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+  | identified (term : ProbabilityTerm S)
+      (trace : JointIdentificationSuccessTrace G q term)
+  | failed (fail : IdentificationFail S)
+      (trace : JointIdentificationFailureTrace G q fail)
+
+/-- Evaluate public ID and retain an exact success or failure trace. -/
+noncomputable def identifyJoint_terminalTrace
+    {S : ObservedSignature.{0}}
+    (G : ObservedGraph S) (q : JointKernelQuery S) :
+    JointIdentificationTerminalTrace G q := by
+  cases result : identifyJoint G q with
+  | identified term =>
+      exact .identified term
+        (IdentificationSuccessTrace.of_eq_identified (identificationFuel S) G
+          NodeSet.full q.outcome q.action (observationalJointTerm S) term result)
+  | failed fail =>
+      exact .failed fail
+        (IdentificationFailureTrace.of_eq_failed (identificationFuel S) G
+          NodeSet.full q.outcome q.action (observationalJointTerm S) result)
+  | unfinished =>
+      exact False.elim (identifyJoint_ne_unfinished G q result)
+
+/-- Bayes-based conditional identification also cannot exhaust its joint fuel. -/
+theorem identifyConditional_ne_unfinished
+    {S : ObservedSignature.{0}}
+    (G : ObservedGraph S) (q : ConditionalKernelQuery S) :
+    identifyConditional G q ≠ IdentificationOutcome.unfinished := by
+  intro result
+  have numeratorTotal := identifyJoint_ne_unfinished G q.jointNumerator
+  have denominatorTotal := identifyJoint_ne_unfinished G q.jointDenominator
+  cases numeratorResult : identifyJoint G q.jointNumerator with
+  | identified numerator =>
+      cases denominatorResult : identifyJoint G q.jointDenominator with
+      | identified denominator =>
+          simp [identifyConditional, numeratorResult, denominatorResult] at result
+      | failed fail =>
+          simp [identifyConditional, numeratorResult, denominatorResult] at result
+      | unfinished =>
+          exact denominatorTotal denominatorResult
+  | failed fail =>
+      cases denominatorResult : identifyJoint G q.jointDenominator <;>
+        simp [identifyConditional, numeratorResult, denominatorResult] at result
+  | unfinished =>
+      exact numeratorTotal numeratorResult
 
 /-- A self-c-component is a Boolean singleton partition. -/
 theorem isSingleCComponent_of_self

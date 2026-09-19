@@ -107,6 +107,20 @@ theorem Subset.trans {X Y Z : NodeSet S}
     (hXY : Subset X Y) (hYZ : Subset Y Z) : Subset X Z :=
   fun i hi => hYZ i (hXY i hi)
 
+/-- Boolean node sets are equal when they contain one another. -/
+theorem eq_of_subset_of_subset {X Y : NodeSet S}
+    (hXY : Subset X Y) (hYX : Subset Y X) : X = Y := by
+  funext i
+  cases hX : X i with
+  | false =>
+      cases hY : Y i with
+      | false => rfl
+      | true =>
+          exact False.elim
+            (Bool.false_ne_true (hX.symm.trans (hYX i hY)))
+  | true =>
+      exact (hXY i hX).symm
+
 /-- A selected index is the singleton of that index, as a subset. -/
 theorem singleton_subset_of_mem {X : NodeSet S} {i : Fin S.count}
     (h : X i = true) : Subset (singleton i) X := by
@@ -233,6 +247,16 @@ theorem mem_enumerated (S : ObservedSignature) (i : Fin S.count) :
 theorem length_enumerated (S : ObservedSignature) :
     (enumerated S).length = S.count :=
   List.length_ofFn
+
+/-- Every enumerated observed index belongs to the full node set. -/
+theorem members_full (S : ObservedSignature) :
+    members (full : NodeSet S) = enumerated S := by
+  unfold members full
+  generalize enumerated S = nodes
+  induction nodes with
+  | nil => rfl
+  | cons node rest inductionHypothesis =>
+      simp [List.filter, inductionHypothesis]
 
 theorem mem_members_iff (X : NodeSet S) (i : Fin S.count) :
     i ∈ members X ↔ X i = true := by
@@ -623,6 +647,42 @@ theorem inter_eq_of_subset {X Y : NodeSet S} (h : Subset X Y) :
           exact False.elim (Bool.false_ne_true (hY.symm.trans (h i hX)))
   | true =>
       simp [inter, hY]
+
+/--
+A Boolean proper subset has strictly fewer enumerated members.  Properness is
+supplied as the executable equality test being false, so the proof can expose
+a nonempty difference without deciding propositional equality.
+-/
+theorem length_members_lt_of_subset_of_equal_false {X Y : NodeSet S}
+    (subset : Subset X Y) (different : equal X Y = false) :
+    (members X).length < (members Y).length := by
+  have differenceNonempty : isEmpty (diff Y X) = false := by
+    cases emptyDifference : isEmpty (diff Y X) with
+    | false =>
+        rfl
+    | true =>
+        have reverse : Subset Y X := by
+          intro i hiY
+          cases hiX : X i with
+          | true =>
+              rfl
+          | false =>
+              have hiDiff : diff Y X i = true := by
+                simp [diff, hiY, hiX]
+              have impossible : diff Y X i = false :=
+                (isEmpty_eq_true_iff (diff Y X)).mp emptyDifference i
+              exact False.elim
+                (Bool.false_ne_true (impossible.symm.trans hiDiff))
+        have setsEqual : X = Y := eq_of_subset_of_subset subset reverse
+        have equalTrue : equal X Y = true :=
+          (equal_eq_true_iff X Y).mpr setsEqual
+        exact False.elim
+          (Bool.false_ne_true (different.symm.trans equalTrue))
+  have shorter :=
+    length_members_inter_lt_of_diff_nonempty
+      (X := Y) (Y := X) differenceNonempty
+  rw [inter_eq_of_subset subset] at shorter
+  exact shorter
 
 theorem diff_diff (X Y : NodeSet S) : diff X (diff X Y) = inter X Y := by
   funext i
