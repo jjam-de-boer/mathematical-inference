@@ -17,9 +17,10 @@ This module develops the checked components needed to inhabit
 for successful ID branches, finite extraction of hedge witnesses from failed
 runs, and positive countermodels for realizable hedge shapes.  The published
 record is not yet inhabited.  The executable fuel bound is proved total below,
-so public joint and conditional ID cannot return `unfinished`.  The remaining
-load-bearing obligations are the structural success compiler, the general
-failure-to-hedge bridge, and the general hedge countermodel.
+so public joint and conditional ID cannot return `unfinished`; every public
+joint failure also yields a hedge witness through its structural trace.  The
+remaining load-bearing obligations are the structural success compiler and
+the general hedge countermodel.
 
 For arbitrary nested engine runs, use the exact trace relations in
 `IdentificationInduction`.  The branch-specific lemmas retained below are
@@ -245,6 +246,10 @@ induction.  The remaining inhabitants are:
   Nested 4.3 that then ancestrally shrinks on that host, with remaining
   the nested `An(piece)` and free side `remaining \ (V \ piece)`, lifts by
   `hedgeWitness?_eq_some_of_failed_after_product_restrict_shrink`.
+  These finite-depth cases are subsumed by
+  `hedgeWitness?_eq_some_of_identifyJoint_failed`: its Type-valued trace
+  induction transports arbitrary nested failures through shrink, restriction,
+  and product frames without choice or a depth bound.
 * a `HedgeWitness` plus `ValueRich` yields a `CounterexampleIn` of the
   positive class, hence non-identifiability; the pair-root expansion
   `hedgeLatentExtension` (Boolean pair roots plus one private enumeration
@@ -8237,6 +8242,37 @@ theorem rootsReachOutcomeBool_of_ancestralSet
   refine List.any_eq_true.mpr ?_
   exact ⟨y, (NodeSet.mem_members_iff q.outcome y).mpr hyOut, hyWalk⟩
 
+/--
+Pointwise ancestry is enough for the selected-root reachability test.
+
+This is the form used by structural failure traces.  A shrink frame can show
+that each eventual failure vertex belongs to the outer ancestral set even
+when the whole outer remaining set is not ancestral, so requiring a global
+set equality would lose exactly the information preserved by that frame.
+-/
+theorem rootsReachOutcomeBool_of_each_ancestor
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    (nodes roots : NodeSet S)
+    (hanc :
+      forall {root : Fin S.count}, roots root = true ->
+        G.ancestorOfWithin nodes (GraphMutilation.bar q.action)
+          (NodeSet.inter q.outcome nodes) root = true) :
+    rootsReachOutcomeBool q roots = true := by
+  refine List.all_eq_true.mpr ?_
+  intro root hmem
+  have hroot : roots root = true :=
+    (NodeSet.mem_members_iff roots root).mp hmem
+  have hancR :
+      G.ancestorOfWithin nodes (GraphMutilation.bar q.action)
+        (NodeSet.inter q.outcome nodes) root = true :=
+    hanc hroot
+  rcases ancestorOfWithin_reaches_outcome G nodes q.action
+      (NodeSet.inter q.outcome nodes) hancR with ⟨y, hyInter, hyWalk⟩
+  have hyOut : q.outcome y = true :=
+    NodeSet.inter_subset_left q.outcome nodes y hyInter
+  refine List.any_eq_true.mpr ?_
+  exact ⟨y, (NodeSet.mem_members_iff q.outcome y).mpr hyOut, hyWalk⟩
+
 theorem failedHedgeSelection_rootsReach_of_ancestral
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
@@ -15880,6 +15916,598 @@ theorem product_piece_avoids_action_of
         rfl
     | true =>
         simp [NodeSet.diff, NodeSet.inter, ha] at hfree)
+
+/--
+If a nested product failure's free side avoids the factor action
+`remaining \ piece`, then it lies in `piece` and therefore avoids the outer
+action.  The explicit remaining-set inclusion keeps this lemma independent of
+any particular failure-trace depth.
+-/
+theorem product_nested_free_avoids_action_of
+    (G : ObservedGraph S) (remaining action piece free : NodeSet S)
+    (pieceMem : piece ∈ G.cComponents
+      (NodeSet.diff remaining (NodeSet.inter action remaining)))
+    (freeSubsetRemaining : NodeSet.Subset free remaining)
+    (nestedAvoids :
+      NodeSet.disjointBool free (NodeSet.diff remaining piece) = true) :
+    NodeSet.disjointBool free action = true := by
+  have nestedDisjoint :
+      NodeSet.Disjoint free (NodeSet.diff remaining piece) :=
+    (NodeSet.disjointBool_eq_true_iff _ _).mp nestedAvoids
+  have freeSubsetPiece : NodeSet.Subset free piece := by
+    intro i hiFree
+    have hiRemaining : remaining i = true := freeSubsetRemaining i hiFree
+    cases hiPiece : piece i with
+    | true =>
+        rfl
+    | false =>
+        have hiNestedAction : NodeSet.diff remaining piece i = true := by
+          simp [NodeSet.diff, hiRemaining, hiPiece]
+        exact False.elim
+          (Bool.false_ne_true
+            ((nestedDisjoint i hiFree).symm.trans hiNestedAction))
+  have pieceDisjoint : NodeSet.Disjoint piece action :=
+    (NodeSet.disjointBool_eq_true_iff _ _).mp
+      (product_piece_avoids_action_of G remaining action pieceMem)
+  exact (NodeSet.disjointBool_eq_true_iff _ _).mpr
+    (NodeSet.Disjoint.of_subset_left pieceDisjoint freeSubsetPiece)
+
+/--
+A connected nested product failure that meets the factor action must meet the
+outer action.  Otherwise its whole remaining host would lie in
+`remaining \ action`; connectivity to a nonempty free vertex inside `piece`
+would then force the factor-action witness back into the same outer
+c-component `piece`, contradicting that it lies outside `piece`.
+-/
+theorem product_nested_remaining_meets_action_of
+    (G : ObservedGraph S)
+    (remaining action piece failedRemaining free : NodeSet S)
+    (pieceMem : piece ∈ G.cComponents
+      (NodeSet.diff remaining (NodeSet.inter action remaining)))
+    (failedRemainingSubset : NodeSet.Subset failedRemaining remaining)
+    (freeSubset : NodeSet.Subset free failedRemaining)
+    (freeNonempty : NodeSet.isEmpty free = false)
+    (failedRemainingSingle :
+      G.isSingleCComponent failedRemaining = true)
+    (nestedMeets :
+      NodeSet.meetsBool failedRemaining (NodeSet.diff remaining piece) = true)
+    (nestedAvoids :
+      NodeSet.disjointBool free (NodeSet.diff remaining piece) = true) :
+    NodeSet.meetsBool failedRemaining action = true := by
+  cases outerMeets : NodeSet.meetsBool failedRemaining action with
+  | true =>
+      rfl
+  | false =>
+      have emptyIntersection :
+          NodeSet.isEmpty (NodeSet.inter failedRemaining action) = true := by
+        cases emptyResult :
+            NodeSet.isEmpty (NodeSet.inter failedRemaining action) with
+        | true =>
+            rfl
+        | false =>
+            simp [NodeSet.meetsBool, emptyResult] at outerMeets
+      have failedRemainingAvoids : NodeSet.Disjoint failedRemaining action := by
+        intro i hiRemaining
+        cases hiAction : action i with
+        | false =>
+            rfl
+        | true =>
+            have hiIntersection :
+                NodeSet.inter failedRemaining action i = true := by
+              simp [NodeSet.inter, hiRemaining, hiAction]
+            have hiEmpty :
+                NodeSet.inter failedRemaining action i = false :=
+              (NodeSet.isEmpty_eq_true_iff
+                (NodeSet.inter failedRemaining action)).mp emptyIntersection i
+            exact False.elim
+              (Bool.false_ne_true (hiEmpty.symm.trans hiIntersection))
+      rcases (NodeSet.isEmpty_eq_false_iff free).mp freeNonempty with
+        ⟨inside, insideFree⟩
+      have insideFailed : failedRemaining inside = true :=
+        freeSubset inside insideFree
+      have insideRemaining : remaining inside = true :=
+        failedRemainingSubset inside insideFailed
+      have nestedDisjoint :
+          NodeSet.Disjoint free (NodeSet.diff remaining piece) :=
+        (NodeSet.disjointBool_eq_true_iff _ _).mp nestedAvoids
+      have insidePiece : piece inside = true := by
+        cases insidePieceEq : piece inside with
+        | true =>
+            rfl
+        | false =>
+            have insideNestedAction :
+                NodeSet.diff remaining piece inside = true := by
+              simp [NodeSet.diff, insideRemaining, insidePieceEq]
+            exact False.elim
+              (Bool.false_ne_true
+                ((nestedDisjoint inside insideFree).symm.trans
+                  insideNestedAction))
+      rcases (NodeSet.meetsBool_eq_true_iff _ _).mp nestedMeets with
+        ⟨outside, outsideFailed, outsideNestedAction⟩
+      have outsideRemaining : remaining outside = true :=
+        failedRemainingSubset outside outsideFailed
+      have outsidePiece : piece outside = false := by
+        cases outsidePieceEq : piece outside with
+        | false =>
+            rfl
+        | true =>
+            simp [NodeSet.diff, outsidePieceEq] at outsideNestedAction
+      have hostInsideOuterFree :
+          NodeSet.Subset failedRemaining
+            (NodeSet.diff remaining (NodeSet.inter action remaining)) := by
+        intro i hiFailed
+        have hiRemaining : remaining i = true :=
+          failedRemainingSubset i hiFailed
+        have hiAction : action i = false :=
+          failedRemainingAvoids i hiFailed
+        simp [NodeSet.diff, NodeSet.inter, hiRemaining, hiAction]
+      have insideToOutsideInFailed :
+          BidirectedConnectedWithin G failedRemaining inside outside :=
+        (bidirectedReachableWithin_eq_true_iff G failedRemaining
+          insideFailed outsideFailed).mp
+          (bidirectedReachableWithin_of_single G failedRemaining
+            failedRemainingSingle insideFailed outsideFailed)
+      have insideToOutsideInOuterFree :
+          BidirectedConnectedWithin G
+            (NodeSet.diff remaining (NodeSet.inter action remaining))
+            inside outside :=
+        insideToOutsideInFailed.mono hostInsideOuterFree
+      rcases cComponents_mem G _ pieceMem with
+        ⟨pieceRoot, pieceRootSelected, pieceEq⟩
+      have rootToInside :
+          BidirectedConnectedWithin G
+            (NodeSet.diff remaining (NodeSet.inter action remaining))
+            pieceRoot inside :=
+        (cComponentOf_eq_true_iff G _ pieceRootSelected).mp (by
+          rw [← pieceEq]
+          exact insidePiece)
+      have rootToOutside :
+          BidirectedConnectedWithin G
+            (NodeSet.diff remaining (NodeSet.inter action remaining))
+            pieceRoot outside :=
+        BidirectedConnectedWithin.trans rootToInside
+          insideToOutsideInOuterFree
+      have outsideInPiece : piece outside = true := by
+        rw [pieceEq]
+        exact (cComponentOf_eq_true_iff G _ pieceRootSelected).mpr
+          rootToOutside
+      exact False.elim
+        (Bool.false_ne_true (outsidePiece.symm.trans outsideInPiece))
+
+/--
+Query transport from a recursive failure to its terminal immediate site.
+Before the first product frame, the site's local outcome and action agree
+with the invocation on `fail.remaining`.  After a product frame, the useful
+normal form is instead the three hedge-core facts relative to the invocation:
+the remaining side meets the action, the free side avoids it, and the
+remaining side is ancestral of the free side after cutting their difference.
+-/
+inductive IdentificationFailureQueryTransport
+    (G : ObservedGraph S) (outcome action : NodeSet S)
+    (fail : IdentificationFail S)
+    (site : IdentificationImmediateFailureSite G fail) : Type
+  | local
+      (outcomeAgreement :
+        NodeSet.equal (NodeSet.inter site.outcome fail.remaining)
+          (NodeSet.inter outcome fail.remaining) = true)
+      (actionAgreement :
+        NodeSet.equal (NodeSet.inter site.action fail.remaining)
+          (NodeSet.inter action fail.remaining) = true)
+  | product
+      (remainingMeetsAction :
+        NodeSet.meetsBool fail.remaining action = true)
+      (freeAvoidsAction :
+        NodeSet.disjointBool fail.free action = true)
+      (freeAncestral :
+        NodeSet.equal
+          (G.ancestralSet fail.remaining
+            (GraphMutilation.bar
+              (NodeSet.diff fail.remaining fail.free))
+            (NodeSet.inter fail.free fail.remaining))
+          fail.remaining = true)
+
+/--
+Local-site agreement for a product-factor query already supplies the nested
+hedge core.  The factor query is `piece | do(remaining \ piece)`: its local
+free equation therefore identifies `fail.free` with `piece ∩ fail.remaining`.
+The generic nonempty failure cut gives contact with the factor action, and
+the same equality gives disjointness and free-component ancestry.
+-/
+theorem product_child_core_of_site_agrees
+    (G : ObservedGraph S) (remaining piece : NodeSet S)
+    {fuel : Nat} {current : ProbabilityTerm S}
+    {fail : IdentificationFail S}
+    (trace : IdentificationFailureTrace G fuel remaining piece
+      (NodeSet.diff remaining piece) current fail)
+    (outcomeAgreement :
+      NodeSet.equal
+        (NodeSet.inter trace.immediateSite.outcome fail.remaining)
+        (NodeSet.inter piece fail.remaining) = true)
+    (actionAgreement :
+      NodeSet.equal
+        (NodeSet.inter trace.immediateSite.action fail.remaining)
+        (NodeSet.inter (NodeSet.diff remaining piece) fail.remaining) = true) :
+    NodeSet.meetsBool fail.remaining (NodeSet.diff remaining piece) = true ∧
+      NodeSet.disjointBool fail.free (NodeSet.diff remaining piece) = true ∧
+        NodeSet.equal
+          (G.ancestralSet fail.remaining
+            (GraphMutilation.bar
+              (NodeSet.diff fail.remaining fail.free))
+            (NodeSet.inter fail.free fail.remaining))
+          fail.remaining = true := by
+  let site := trace.immediateSite
+  have localFacts := site.local_query_site
+  have actionEq :
+      NodeSet.inter site.action fail.remaining =
+        NodeSet.inter (NodeSet.diff remaining piece) fail.remaining :=
+    (NodeSet.equal_eq_true_iff _ _).mp actionAgreement
+  have outcomeEq :
+      NodeSet.inter site.outcome fail.remaining =
+        NodeSet.inter piece fail.remaining :=
+    (NodeSet.equal_eq_true_iff _ _).mp outcomeAgreement
+  have freeEq :
+      fail.free =
+        NodeSet.diff fail.remaining
+          (NodeSet.inter (NodeSet.diff remaining piece) fail.remaining) := by
+    have localFree := (NodeSet.equal_eq_true_iff _ _).mp localFacts.1
+    simpa [actionEq] using localFree
+  have failedRemainingSubset : NodeSet.Subset fail.remaining remaining :=
+    trace.fail_remaining_subset
+  have freeSubset : NodeSet.Subset fail.free fail.remaining :=
+    (identifyFuel_eq_failed_free fuel G remaining piece
+      (NodeSet.diff remaining piece) current trace.eq_failed).1
+  have freeAsPiece :
+      fail.free = NodeSet.inter piece fail.remaining := by
+    rw [freeEq]
+    funext i
+    cases hiFailed : fail.remaining i with
+    | false =>
+        simp [NodeSet.diff, NodeSet.inter, hiFailed]
+    | true =>
+        have hiRemaining : remaining i = true :=
+          failedRemainingSubset i hiFailed
+        cases hiPiece : piece i <;>
+          simp [NodeSet.diff, NodeSet.inter, hiFailed, hiRemaining, hiPiece]
+  have cutEq :
+      NodeSet.diff fail.remaining fail.free =
+        NodeSet.inter (NodeSet.diff remaining piece) fail.remaining :=
+    failedHedgeSelection_cut_eq_of_free fail
+      (NodeSet.diff remaining piece)
+      ((NodeSet.equal_eq_true_iff _ _).mpr freeEq)
+  have cutNonempty :
+      NodeSet.isEmpty (NodeSet.diff fail.remaining fail.free) = false :=
+    identifyFuel_eq_failed_cut_nonempty fuel G remaining piece
+      (NodeSet.diff remaining piece) current trace.eq_failed
+  have nestedIntersectionNonempty :
+      NodeSet.isEmpty
+        (NodeSet.inter (NodeSet.diff remaining piece) fail.remaining) = false := by
+    simpa [cutEq] using cutNonempty
+  have nestedMeets :
+      NodeSet.meetsBool fail.remaining (NodeSet.diff remaining piece) = true := by
+    unfold NodeSet.meetsBool
+    rw [NodeSet.inter_comm]
+    simp [nestedIntersectionNonempty]
+  have nestedAvoids :
+      NodeSet.disjointBool fail.free (NodeSet.diff remaining piece) = true := by
+    refine (NodeSet.disjointBool_eq_true_iff _ _).mpr ?_
+    intro i hiFree
+    have hiFailed : fail.remaining i = true := freeSubset i hiFree
+    have hiPiece : piece i = true := by
+      have hiInter : NodeSet.inter piece fail.remaining i = true := by
+        simpa [freeAsPiece] using hiFree
+      exact NodeSet.inter_subset_left piece fail.remaining i hiInter
+    simp [NodeSet.diff, hiPiece]
+  have freeInter : NodeSet.inter fail.free fail.remaining = fail.free := by
+    rw [NodeSet.inter_comm]
+    exact NodeSet.inter_eq_of_subset freeSubset
+  have targetEq :
+      NodeSet.inter site.outcome fail.remaining =
+        NodeSet.inter fail.free fail.remaining := by
+    rw [outcomeEq, freeInter, freeAsPiece]
+  have freeAncestral :
+      NodeSet.equal
+        (G.ancestralSet fail.remaining
+          (GraphMutilation.bar
+            (NodeSet.diff fail.remaining fail.free))
+          (NodeSet.inter fail.free fail.remaining))
+        fail.remaining = true := by
+    have localAncestral := localFacts.2
+    simpa [targetEq] using localAncestral
+  exact ⟨nestedMeets, nestedAvoids, freeAncestral⟩
+
+/--
+Collapse an arbitrary structural failure trace to either local query
+agreement or the product-derived hedge core.  Shrink frames preserve the
+summary verbatim.  A 4.3 frame transports action facts through its containing
+host.  The first product frame converts local agreement to the hedge core;
+later product frames preserve that core via the two generic c-component
+lemmas above.
+-/
+noncomputable def IdentificationFailureTrace.queryTransport
+    {G : ObservedGraph S}
+    {fuel : Nat} {remaining outcome action : NodeSet S}
+    {current : ProbabilityTerm S} {fail : IdentificationFail S}
+    (trace :
+      IdentificationFailureTrace G fuel remaining outcome action current fail) :
+    IdentificationFailureQueryTransport G outcome action fail
+      trace.immediateSite := by
+  induction trace with
+  | immediate =>
+      exact .local
+        ((NodeSet.equal_eq_true_iff _ _).mpr rfl)
+        ((NodeSet.equal_eq_true_iff _ _).mpr rfl)
+  | shrink _fuel _remaining _outcome _action _current _fail _actionNonempty
+      _notAncestral _nested inductionHypothesis =>
+      exact inductionHypothesis
+  | restrict fuel remaining outcome action _current fail component larger
+      _actionNonempty _ancestral _oneFreeComponent
+      _severalRemainingComponents _componentNotMaximal containingComponent
+      nested inductionHypothesis =>
+      cases inductionHypothesis with
+      | «local» outcomeAgreement actionAgreement =>
+          have failedInLarger : NodeSet.Subset fail.remaining larger :=
+            nested.fail_remaining_subset
+          have largerInRemaining : NodeSet.Subset larger remaining :=
+            containingCComponent_subset_host G remaining component
+              containingComponent
+          have restrictedAction :
+              NodeSet.inter
+                  (NodeSet.inter (NodeSet.inter action remaining) larger)
+                  fail.remaining =
+                NodeSet.inter action fail.remaining := by
+            funext i
+            cases hiFail : fail.remaining i with
+            | false =>
+                simp [NodeSet.inter, hiFail]
+            | true =>
+                have hiLarger : larger i = true := failedInLarger i hiFail
+                have hiRemaining : remaining i = true :=
+                  largerInRemaining i hiLarger
+                simp [NodeSet.inter, hiFail, hiLarger, hiRemaining]
+          have localActionEq :
+              NodeSet.inter nested.immediateSite.action fail.remaining =
+                NodeSet.inter
+                  (NodeSet.inter (NodeSet.inter action remaining) larger)
+                  fail.remaining :=
+            (NodeSet.equal_eq_true_iff _ _).mp actionAgreement
+          exact .local outcomeAgreement
+            ((NodeSet.equal_eq_true_iff _ _).mpr
+              (localActionEq.trans restrictedAction))
+      | product remainingMeetsAction freeAvoidsAction freeAncestral =>
+          have failedInLarger : NodeSet.Subset fail.remaining larger :=
+            nested.fail_remaining_subset
+          have largerInRemaining : NodeSet.Subset larger remaining :=
+            containingCComponent_subset_host G remaining component
+              containingComponent
+          have freeSubsetFailed : NodeSet.Subset fail.free fail.remaining :=
+            (identifyFuel_eq_failed_free fuel G larger outcome
+              (NodeSet.inter (NodeSet.inter action remaining) larger)
+              (chainProduct remaining larger) nested.eq_failed).1
+          have liftedMeets :
+              NodeSet.meetsBool fail.remaining action = true := by
+            rcases (NodeSet.meetsBool_eq_true_iff _ _).mp
+                remainingMeetsAction with ⟨i, hiFail, hiRestricted⟩
+            have hiAction : action i = true :=
+              NodeSet.inter_subset_left action remaining i
+                (NodeSet.inter_subset_left
+                  (NodeSet.inter action remaining) larger i hiRestricted)
+            exact (NodeSet.meetsBool_eq_true_iff _ _).mpr
+              ⟨i, hiFail, hiAction⟩
+          have liftedAvoids :
+              NodeSet.disjointBool fail.free action = true := by
+            have restrictedDisjoint :
+                NodeSet.Disjoint fail.free
+                  (NodeSet.inter (NodeSet.inter action remaining) larger) :=
+              (NodeSet.disjointBool_eq_true_iff _ _).mp freeAvoidsAction
+            refine (NodeSet.disjointBool_eq_true_iff _ _).mpr ?_
+            intro i hiFree
+            have hiFail : fail.remaining i = true :=
+              freeSubsetFailed i hiFree
+            have hiLarger : larger i = true := failedInLarger i hiFail
+            have hiRemaining : remaining i = true :=
+              largerInRemaining i hiLarger
+            cases hiAction : action i with
+            | false =>
+                rfl
+            | true =>
+                have hiRestricted :
+                    NodeSet.inter (NodeSet.inter action remaining) larger i =
+                      true := by
+                  simp [NodeSet.inter, hiAction, hiRemaining, hiLarger]
+                exact False.elim
+                  (Bool.false_ne_true
+                    ((restrictedDisjoint i hiFree).symm.trans hiRestricted))
+          exact .product liftedMeets liftedAvoids freeAncestral
+  | product fuel remaining _outcome action current fail component component2
+      rest piece _actionNonempty _ancestral freeComponents firstFailingFactor
+      nested inductionHypothesis =>
+      have nestedCore :
+          NodeSet.meetsBool fail.remaining (NodeSet.diff remaining piece) =
+              true ∧
+            NodeSet.disjointBool fail.free (NodeSet.diff remaining piece) =
+              true ∧
+            NodeSet.equal
+              (G.ancestralSet fail.remaining
+                (GraphMutilation.bar
+                  (NodeSet.diff fail.remaining fail.free))
+                (NodeSet.inter fail.free fail.remaining))
+              fail.remaining = true := by
+        cases inductionHypothesis with
+        | «local» outcomeAgreement actionAgreement =>
+            exact product_child_core_of_site_agrees G remaining piece nested
+              outcomeAgreement actionAgreement
+        | product remainingMeetsAction freeAvoidsAction freeAncestral =>
+            exact ⟨remainingMeetsAction, freeAvoidsAction, freeAncestral⟩
+      have pieceMem :
+          piece ∈
+            G.cComponents
+              (NodeSet.diff remaining (NodeSet.inter action remaining)) := by
+        rw [freeComponents]
+        exact firstFailingFactor.mem
+      have failedRemainingSubset : NodeSet.Subset fail.remaining remaining :=
+        nested.fail_remaining_subset
+      have freeSubsetFailed : NodeSet.Subset fail.free fail.remaining :=
+        (identifyFuel_eq_failed_free fuel G remaining piece
+          (NodeSet.diff remaining piece) current nested.eq_failed).1
+      have freeSubsetRemaining : NodeSet.Subset fail.free remaining :=
+        NodeSet.Subset.trans freeSubsetFailed failedRemainingSubset
+      have failedRemainingSingle :
+          G.isSingleCComponent fail.remaining = true :=
+        (identifyFuel_eq_failed fuel G remaining piece
+          (NodeSet.diff remaining piece) current nested.eq_failed).1
+      have freeNonempty : NodeSet.isEmpty fail.free = false := by
+        rcases identifyFuel_eq_failed_free_self fuel G remaining piece
+            (NodeSet.diff remaining piece) current nested.eq_failed with
+          ⟨root, rootInFree, _freeSelf⟩
+        exact (NodeSet.isEmpty_eq_false_iff fail.free).mpr
+          ⟨root, rootInFree⟩
+      have outerMeets : NodeSet.meetsBool fail.remaining action = true :=
+        product_nested_remaining_meets_action_of G remaining action piece
+          fail.remaining fail.free pieceMem failedRemainingSubset
+          freeSubsetFailed freeNonempty failedRemainingSingle nestedCore.1
+          nestedCore.2.1
+      have outerAvoids : NodeSet.disjointBool fail.free action = true :=
+        product_nested_free_avoids_action_of G remaining action piece fail.free
+          pieceMem freeSubsetRemaining nestedCore.2.1
+      exact .product outerMeets outerAvoids nestedCore.2.2
+
+/--
+Every vertex in the terminal failure host is an ancestor of the invocation's
+outcome inside the invocation's remaining graph after deleting incoming edges
+to its action.
+
+This invariant deliberately follows only the outermost frame.  An immediate,
+restriction, or product frame records that its whole remaining set is
+ancestral.  A shrink frame records the ancestral set itself as the recursive
+host, and the generic failure-host containment theorem places the terminal
+vertex in that host.  Replacing `action ∩ remaining` by `action` is sound on
+the induced remaining graph by `ancestralSet_bar_inter`.
+-/
+theorem IdentificationFailureTrace.failed_remaining_ancestorOfWithin
+    {G : ObservedGraph S}
+    {fuel : Nat} {remaining outcome action : NodeSet S}
+    {current : ProbabilityTerm S} {fail : IdentificationFail S}
+    (trace :
+      IdentificationFailureTrace G fuel remaining outcome action current fail)
+    {i : Fin S.count} (hi : fail.remaining i = true) :
+    G.ancestorOfWithin remaining (GraphMutilation.bar action)
+      (NodeSet.inter outcome remaining) i = true := by
+  cases trace with
+  | immediate _fuel remaining outcome action _current _component
+      _actionNonempty ancestral _oneFreeComponent _oneRemainingComponent =>
+      rw [ancestralSet_bar_inter G remaining action
+        (NodeSet.inter outcome remaining)] at ancestral
+      exact ancestorOfWithin_of_ancestralSet G remaining _ _ ancestral hi
+  | shrink _fuel remaining outcome action _current _fail _actionNonempty
+      _notAncestral nested =>
+      have hiKept :
+          G.ancestralSet remaining
+              (GraphMutilation.bar (NodeSet.inter action remaining))
+              (NodeSet.inter outcome remaining) i = true :=
+        nested.fail_remaining_subset i hi
+      rw [ancestralSet_bar_inter G remaining action
+        (NodeSet.inter outcome remaining)] at hiKept
+      simpa [ObservedGraph.ancestralSet] using hiKept
+  | restrict _fuel remaining outcome action _current _fail _component larger
+      _actionNonempty ancestral _oneFreeComponent
+      _severalRemainingComponents _componentNotMaximal containingComponent
+      nested =>
+      have hiLarger : larger i = true :=
+        nested.fail_remaining_subset i hi
+      have hiRemaining : remaining i = true :=
+        containingCComponent_subset_host G remaining _ containingComponent i
+          hiLarger
+      rw [ancestralSet_bar_inter G remaining action
+        (NodeSet.inter outcome remaining)] at ancestral
+      exact ancestorOfWithin_of_ancestralSet G remaining _ _ ancestral
+        hiRemaining
+  | product _fuel remaining outcome action _current _fail _component
+      _component2 _rest _piece _actionNonempty ancestral _freeComponents
+      _firstFailingFactor nested =>
+      have hiRemaining : remaining i = true :=
+        nested.fail_remaining_subset i hi
+      rw [ancestralSet_bar_inter G remaining action
+        (NodeSet.inter outcome remaining)] at ancestral
+      exact ancestorOfWithin_of_ancestralSet G remaining _ _ ancestral
+        hiRemaining
+
+/--
+The canonical roots selected from any failed public ID run reach the original
+query outcome.  This is the last hedge Boolean that cannot be read directly
+from the terminal 4.1 failure: the structural trace carries the reachability
+back through every shrink, restriction, and product frame.
+-/
+theorem JointIdentificationFailureTrace.failedHedgeSelection_rootsReach
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    {fail : IdentificationFail S}
+    (trace : JointIdentificationFailureTrace G q fail) :
+    rootsReachOutcomeBool q
+      (keptSinks (failedHedgeSelection fail).large
+        (failedHedgeSelection fail).child) = true := by
+  apply rootsReachOutcomeBool_of_each_ancestor G q NodeSet.full
+    (keptSinks fail.remaining (closedForestChild fail.remaining fail.free))
+  intro root hroot
+  have hrootFailed : fail.remaining root = true :=
+    keptSinks_subset fail.remaining
+      (closedForestChild fail.remaining fail.free) root hroot
+  simpa [JointIdentificationFailureTrace, NodeSet.inter_full_right] using
+    trace.failed_remaining_ancestorOfWithin hrootFailed
+
+/--
+Every structurally certified public ID failure yields an extracted hedge.
+
+The query-transport summary separates the only two mathematically distinct
+cases.  Product-free traces preserve the terminal 4.1 query on the failure
+host and use its local free/ancestral equations directly.  Once a product
+frame occurs, the summary instead supplies the failure host's contact with
+the original action, avoidance by the free component, and free-component
+ancestry.  The trace-wide reachability invariant above supplies the remaining
+large-forest test in both cases.
+-/
+theorem hedgeWitness?_eq_some_of_failureTrace
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    {fail : IdentificationFail S}
+    (trace : JointIdentificationFailureTrace G q fail) :
+    Exists fun witness => hedgeWitness? G q fail = some witness := by
+  have hfail :
+      identifyJoint G q = IdentificationOutcome.failed fail := by
+    simpa [identifyJoint, JointIdentificationFailureTrace] using
+      trace.eq_failed
+  cases trace.queryTransport with
+  | «local» outcomeAgreement actionAgreement =>
+      let site := trace.immediateSite
+      have localFacts := site.local_query_site
+      exact hedgeWitness?_eq_some_of_failed_site_agrees G q hfail
+        site.outcome site.action localFacts.1 localFacts.2
+        outcomeAgreement actionAgreement
+  | product remainingMeetsAction freeAvoidsAction freeAncestral =>
+      have rootsReach := trace.failedHedgeSelection_rootsReach
+      have keptSinksInFree :=
+        failedHedgeSelection_keptSinks_of_free_ancestral G q hfail
+          freeAncestral
+      have smallReady :=
+        failedHedgeSelection_smallForestReady_of G q hfail
+          freeAvoidsAction keptSinksInFree
+      have tests :=
+        failedHedgeSelection_tests_of G q hfail remainingMeetsAction
+          rootsReach smallReady
+      exact hedgeWitness?_eq_some_of_failed G q fail tests
+
+/--
+Executable form of general failure-to-hedge extraction.  The failed equation
+is first reified as a finite structural trace, then discharged by the generic
+trace theorem; no propositional choice is used to recover the recursive path.
+-/
+theorem hedgeWitness?_eq_some_of_identifyJoint_failed
+    {S : ObservedSignature.{0}}
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    {fail : IdentificationFail S}
+    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    Exists fun witness => hedgeWitness? G q fail = some witness := by
+  let trace : JointIdentificationFailureTrace G q fail :=
+    IdentificationFailureTrace.of_eq_failed (identificationFuel S) G
+      NodeSet.full q.outcome q.action (observationalJointTerm S) hfail
+  exact hedgeWitness?_eq_some_of_failureTrace G q trace
 
 /--
 A free c-component of `G \ X` avoids the original action.
