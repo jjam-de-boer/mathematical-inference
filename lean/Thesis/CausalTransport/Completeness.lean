@@ -16510,6 +16510,68 @@ theorem hedgeWitness?_eq_some_of_identifyJoint_failed
   exact hedgeWitness?_eq_some_of_failureTrace G q trace
 
 /--
+Inspectable result of the failure-to-hedge search.  Retaining the extractor
+equation makes the data useful to later executable constructions without
+reopening an existential proposition.
+-/
+structure ExtractedHedgeWitness (G : ObservedGraph S)
+    (q : JointKernelQuery S) (fail : IdentificationFail S) where
+  witness : HedgeWitness G q
+  result : hedgeWitness? G q fail = some witness
+
+/--
+Evaluate the finite hedge search certified by a structural failure trace.
+
+The proof first establishes propositionally that `none` is impossible, then
+case-splits on the computed option.  Thus the witness returned in `Type` is
+the search result itself; it is not selected from an existential and requires
+neither choice nor excluded middle.
+-/
+noncomputable def JointIdentificationFailureTrace.extractedHedge
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    {fail : IdentificationFail S}
+    (trace : JointIdentificationFailureTrace G q fail) :
+    ExtractedHedgeWitness G q fail := by
+  have notNone : hedgeWitness? G q fail ≠ none := by
+    intro result
+    rcases hedgeWitness?_eq_some_of_failureTrace G q trace with
+      ⟨witness, found⟩
+    rw [result] at found
+    cases found
+  cases result : hedgeWitness? G q fail with
+  | none =>
+      exact False.elim (notNone result)
+  | some witness =>
+      exact ⟨witness, result⟩
+
+/--
+Identifiability rules out the failure branch of the now-total public ID
+engine once every extracted hedge has its semantic counterexample.
+
+This isolates the two genuine remaining completeness tasks: compile the
+successful structural trace to a published certificate, and construct the
+general hedge countermodel.  Fuel exhaustion and arbitrary recursive failure
+nesting no longer appear in the statement.
+-/
+theorem identifyJoint_eq_identified_of_identifiable
+    {S : ObservedSignature.{0}} {G : ObservedGraph S}
+    {C : GraphModelClass G} (q : JointKernelQuery S)
+    (hedgeCounterexample : HedgeWitness G q -> CounterexampleIn C q)
+    (identifiable : C.identifiable q) :
+    Exists fun term =>
+      identifyJoint G q = IdentificationOutcome.identified term := by
+  cases identifyJoint_terminalTrace G q with
+  | identified term trace =>
+      exact ⟨term, by
+        simpa [identifyJoint, JointIdentificationSuccessTrace] using
+          trace.eq_identified⟩
+  | failed fail trace =>
+      let extracted := trace.extractedHedge G q
+      exact False.elim
+        ((hedgeCounterexample extracted.witness).not_identifiable
+          identifiable)
+
+/--
 A free c-component of `G \ X` avoids the original action.
 -/
 theorem product_piece_avoids_action
