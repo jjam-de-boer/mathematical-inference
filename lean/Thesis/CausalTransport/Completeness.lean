@@ -316,8 +316,12 @@ induction.  The remaining inhabitants are:
   `smallParityModel` package the faithful unsoftened construction--the second
   model changes only nodes in `F'`, where it ignores pair-roots and kept
   directed parents outside `F'`; both are compatible and share a product
-  prior, but no positivity claim is made for them; proving their observational
-  equivalence and then adding full-support noise without erasing the
+  prior, but no positivity claim is made for them; canonical roots for
+  bidirected path edges and XOR superposition give
+  `BidirectedComponent.pairBits_of_even_target`, and the exhaustive
+  `evenTargetPairBits` turns that incidence-surjectivity proof into data
+  without choice; proving equal fiber *counts* for the two observational maps,
+  and then adding full-support noise without erasing the
   interventional separation remain hard steps--the tempting construction that
   merely gates a private decode by restricted pair parity already fails
   observational equivalence on the two-node bow;
@@ -27759,6 +27763,60 @@ theorem foldl_congr {α β} (f g : α → β → α) (init : α) (xs : List β)
       simp [hstep]
       exact ih _
 
+/-- An XOR fold with an arbitrary accumulator is its zero-based fold plus that accumulator. -/
+theorem foldl_xor_init {α} (bits : α → Bool) (xs : List α) (init : Bool) :
+    xs.foldl (fun acc x => Bool.xor acc (bits x)) init =
+      Bool.xor init
+        (xs.foldl (fun acc x => Bool.xor acc (bits x)) false) := by
+  induction xs generalizing init with
+  | nil =>
+      cases init <;> rfl
+  | cons x xs ih =>
+      simp only [List.foldl]
+      rw [ih (Bool.xor init (bits x)), ih (Bool.xor false (bits x))]
+      generalize
+        xs.foldl (fun acc y => Bool.xor acc (bits y)) false = tail
+      cases init <;> cases bits x <;> cases tail <;> rfl
+
+/--
+General accumulator form of pointwise XOR distributivity.  Carrying two
+separate accumulators makes the induction step exact after the four Boolean
+inputs are normalized.
+-/
+theorem foldl_xor_pointwise_init {α} (left right : α → Bool)
+    (xs : List α) (leftInit rightInit : Bool) :
+    xs.foldl
+        (fun acc x => Bool.xor acc (Bool.xor (left x) (right x)))
+        (Bool.xor leftInit rightInit) =
+      Bool.xor
+        (xs.foldl (fun acc x => Bool.xor acc (left x)) leftInit)
+        (xs.foldl (fun acc x => Bool.xor acc (right x)) rightInit) := by
+  induction xs generalizing leftInit rightInit with
+  | nil =>
+      rfl
+  | cons x xs ih =>
+      simp only [List.foldl]
+      have accumulators :
+          Bool.xor (Bool.xor leftInit rightInit)
+              (Bool.xor (left x) (right x)) =
+            Bool.xor
+              (Bool.xor leftInit (left x))
+              (Bool.xor rightInit (right x)) := by
+        cases leftInit <;> cases rightInit <;>
+          cases left x <;> cases right x <;> rfl
+      rw [accumulators]
+      exact ih (Bool.xor leftInit (left x))
+        (Bool.xor rightInit (right x))
+
+/-- XOR-folding pointwise XORs distributes over the two separate folds. -/
+theorem foldl_xor_pointwise {α} (left right : α → Bool) (xs : List α) :
+    xs.foldl
+        (fun acc x => Bool.xor acc (Bool.xor (left x) (right x))) false =
+      Bool.xor
+        (xs.foldl (fun acc x => Bool.xor acc (left x)) false)
+        (xs.foldl (fun acc x => Bool.xor acc (right x)) false) := by
+  simpa using foldl_xor_pointwise_init left right xs false false
+
 theorem hedgeParentBitsFrom_empty (rich : ObservedSignature.ValueRich S)
     (child : Fin S.count)
     (get : forall parent, S.directed parent child = true → S.Value parent) :
@@ -28999,6 +29057,89 @@ def hedgeXorPairBitsWithinFrom (G : ObservedGraph S)
       else acc)
     false
 
+/-- Pointwise addition of pair-root vectors over `Bool` parity. -/
+def hedgePairBitsXor (G : ObservedGraph S)
+    (left right : (root : Fin (pairRootCount G)) → Bool) :
+    (root : Fin (pairRootCount G)) → Bool :=
+  fun root => Bool.xor (left root) (right root)
+
+/-- The zero pair-root vector. -/
+def hedgeZeroPairBits (G : ObservedGraph S) :
+    (root : Fin (pairRootCount G)) → Bool :=
+  fun _root => false
+
+/-- The zero vector induces zero incidence parity at every node. -/
+theorem hedgeXorPairBitsWithinFrom_zero
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (child : Fin S.count) :
+    hedgeXorPairBitsWithinFrom G nodes child (hedgeZeroPairBits G) = false := by
+  unfold hedgeXorPairBitsWithinFrom hedgeZeroPairBits
+  refine foldl_unchanged _ false (List.finRange (pairRootCount G)) ?_
+  intro acc root
+  cases
+      ((hedgeLatentExtension G).incident (hedgePairRoot G root) child &&
+        hedgePairRootWithin G nodes root) <;> simp
+
+/-- Forest incidence parity is linear in the pair-root vector. -/
+theorem hedgeXorPairBitsWithinFrom_xor
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (child : Fin S.count)
+    (left right : (root : Fin (pairRootCount G)) → Bool) :
+    hedgeXorPairBitsWithinFrom G nodes child
+        (hedgePairBitsXor G left right) =
+      Bool.xor
+        (hedgeXorPairBitsWithinFrom G nodes child left)
+        (hedgeXorPairBitsWithinFrom G nodes child right) := by
+  let selected : Fin (pairRootCount G) → Bool := fun root =>
+    (hedgeLatentExtension G).incident (hedgePairRoot G root) child &&
+      hedgePairRootWithin G nodes root
+  let leftSelected : Fin (pairRootCount G) → Bool := fun root =>
+    if selected root then left root else false
+  let rightSelected : Fin (pairRootCount G) → Bool := fun root =>
+    if selected root then right root else false
+  have combined :
+      hedgeXorPairBitsWithinFrom G nodes child
+          (hedgePairBitsXor G left right) =
+        (List.finRange (pairRootCount G)).foldl
+          (fun acc root =>
+            Bool.xor acc
+              (Bool.xor (leftSelected root) (rightSelected root))) false := by
+    change
+      (List.finRange (pairRootCount G)).foldl
+          (fun acc root =>
+            if selected root then
+              Bool.xor acc (Bool.xor (left root) (right root))
+            else acc) false = _
+    refine foldl_congr _ _ _ _ ?_
+    intro acc root
+    cases hselected : selected root <;>
+      simp [leftSelected, rightSelected, hselected]
+  have leftFold :
+      (List.finRange (pairRootCount G)).foldl
+          (fun acc root => Bool.xor acc (leftSelected root)) false =
+        hedgeXorPairBitsWithinFrom G nodes child left := by
+    change _ =
+      (List.finRange (pairRootCount G)).foldl
+        (fun acc root =>
+          if selected root then Bool.xor acc (left root) else acc) false
+    refine foldl_congr _ _ _ _ ?_
+    intro acc root
+    cases hselected : selected root <;>
+      simp [leftSelected, hselected]
+  have rightFold :
+      (List.finRange (pairRootCount G)).foldl
+          (fun acc root => Bool.xor acc (rightSelected root)) false =
+        hedgeXorPairBitsWithinFrom G nodes child right := by
+    change _ =
+      (List.finRange (pairRootCount G)).foldl
+        (fun acc root =>
+          if selected root then Bool.xor acc (right root) else acc) false
+    refine foldl_congr _ _ _ _ ?_
+    intro acc root
+    cases hselected : selected root <;>
+      simp [rightSelected, hselected]
+  rw [combined, foldl_xor_pointwise, leftFold, rightFold]
+
 /-- The dependent-input and root-vector presentations compute the same bit. -/
 theorem hedgeXorPairBitsWithin_pairBitsOf
     (G : ObservedGraph S) (nodes : NodeSet S)
@@ -30178,7 +30319,7 @@ theorem hedgeXorPairBitsFrom_of_one (G : ObservedGraph S)
         else acc) =
         if r = root then !acc else acc := by
     if hr : r = root then
-      subst hr
+      subst r
       simp [hinc, htrue]
     else
       have hb : pairBits r = false := hrest r hr
@@ -30212,6 +30353,414 @@ theorem hedgeOnePairBits_rest (G : ObservedGraph S)
     (hne : r ≠ root) :
     hedgeOnePairBits G root r = false := by
   simp [hedgeOnePairBits, hne]
+
+/-- A one-root vector evaluates to that root's restricted incidence bit. -/
+theorem hedgeXorPairBitsWithinFrom_one_eq
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (child : Fin S.count) (root : Fin (pairRootCount G)) :
+    hedgeXorPairBitsWithinFrom G nodes child (hedgeOnePairBits G root) =
+      ((hedgeLatentExtension G).incident (hedgePairRoot G root) child &&
+        hedgePairRootWithin G nodes root) := by
+  unfold hedgeXorPairBitsWithinFrom
+  let selected : Bool :=
+    (hedgeLatentExtension G).incident (hedgePairRoot G root) child &&
+      hedgePairRootWithin G nodes root
+  have hstep (acc : Bool) (r : Fin (pairRootCount G)) :
+      (if (hedgeLatentExtension G).incident (hedgePairRoot G r) child &&
+            hedgePairRootWithin G nodes r then
+          Bool.xor acc (hedgeOnePairBits G root r)
+        else acc) =
+        if r = root then Bool.xor acc selected else acc := by
+    if hr : r = root then
+      rw [hr]
+      cases hinc :
+          (hedgeLatentExtension G).incident (hedgePairRoot G root) child <;>
+        cases hwithin : hedgePairRootWithin G nodes root <;>
+        simp [selected, hinc, hwithin, hedgeOnePairBits_self]
+    else
+      simp [hr, hedgeOnePairBits_rest G root hr]
+  have hfold :=
+    foldl_congr
+      (fun acc r =>
+        if (hedgeLatentExtension G).incident (hedgePairRoot G r) child &&
+              hedgePairRootWithin G nodes r then
+          Bool.xor acc (hedgeOnePairBits G root r)
+        else acc)
+      (fun acc r => if r = root then Bool.xor acc selected else acc)
+      false (List.finRange (pairRootCount G)) hstep
+  rw [hfold]
+  exact foldl_xor_bit_at (pairRootCount G) root selected
+
+/--
+The one-root vector of a selected bidirected edge has precisely the two
+endpoint boundary bits.  This is the algebraic base case for a path vector.
+-/
+theorem hedgeXorPairBitsWithinFrom_one_between
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    {i j : Fin S.count}
+    (hi : nodes i = true) (hj : nodes j = true)
+    (edge : G.bidirected i j = true) (node : Fin S.count) :
+    hedgeXorPairBitsWithinFrom G nodes node
+        (hedgeOnePairBits G (pairRootBetween G edge)) =
+      Bool.xor (decide (node = i)) (decide (node = j)) := by
+  rw [hedgeXorPairBitsWithinFrom_one_eq,
+    hedgePairRootWithin_between G nodes hi hj edge]
+  have hincident :
+      (hedgeLatentExtension G).incident
+          (hedgePairRoot G (pairRootBetween G edge)) node =
+        (decide (node = i) || decide (node = j)) := by
+    simpa [hedgeLatentExtension, hedgeIncident_pair] using
+      pairRootIncident_between G edge node
+  rw [hincident]
+  have different : i ≠ j := fun same => by
+    subst same
+    rw [G.bidirected_irreflexive] at edge
+    exact Bool.false_ne_true edge
+  by_cases hleft : node = i
+  · subst hleft
+    simp [different]
+  · by_cases hright : node = j
+    · subst hright
+      simp [hleft]
+    · simp [hleft, hright]
+
+/--
+Every bidirected walk has a pair-root vector whose incidence boundary is its
+two endpoints.  The proof XORs the canonical root of each successive edge;
+the shared intermediate endpoint cancels.  This existence proof stays in
+`Prop`.  A later finite search can recover an actual vector in `Type` without
+choice.
+-/
+theorem bidirectedConnectedWithin_pairBits
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    {start finish : Fin S.count}
+    (connected : BidirectedConnectedWithin G nodes start finish) :
+    Exists fun pairBits : (root : Fin (pairRootCount G)) → Bool =>
+      forall node,
+        hedgeXorPairBitsWithinFrom G nodes node pairBits =
+          Bool.xor (decide (node = start)) (decide (node = finish)) := by
+  induction connected with
+  | @refl selected =>
+      refine ⟨hedgeZeroPairBits G, ?_⟩
+      intro node
+      rw [hedgeXorPairBitsWithinFrom_zero]
+      by_cases equal : node = start <;> simp [equal]
+  | @tail j k previous selected edge inductionHypothesis =>
+      rcases inductionHypothesis with ⟨previousBits, previousBoundary⟩
+      let edgeBits := hedgeOnePairBits G (pairRootBetween G edge)
+      refine ⟨hedgePairBitsXor G previousBits edgeBits, ?_⟩
+      intro node
+      rw [hedgeXorPairBitsWithinFrom_xor,
+        previousBoundary node,
+        hedgeXorPairBitsWithinFrom_one_between G nodes
+          (BidirectedConnectedWithin.mem_right previous) selected edge node]
+      cases hstart : decide (node = start) <;>
+        cases hmiddle : decide (node = j) <;>
+        cases hend : decide (node = k) <;> rfl
+
+/--
+A duplicate-free selected list of length `2 * pairs` is an incidence boundary.
+This explicit pair count gives structural recursion in steps of two.
+-/
+theorem BidirectedComponent.pairBits_of_length_twice
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (component : BidirectedComponent G nodes)
+    (vertices : List (Fin S.count))
+    (pairs : Nat)
+    (lengthEq : vertices.length = 2 * pairs)
+    (nodup : vertices.Nodup)
+    (inside : forall node, node ∈ vertices → nodes node = true) :
+    Exists fun pairBits : (root : Fin (pairRootCount G)) → Bool =>
+      forall node,
+        hedgeXorPairBitsWithinFrom G nodes node pairBits =
+          decide (node ∈ vertices) := by
+  induction pairs generalizing vertices with
+  | zero =>
+      cases vertices with
+      | nil =>
+          refine ⟨hedgeZeroPairBits G, ?_⟩
+          intro node
+          simp [hedgeXorPairBitsWithinFrom_zero]
+      | cons first rest =>
+          change rest.length + 1 = 2 * 0 at lengthEq
+          have impossible : False := by omega
+          exact False.elim impossible
+  | succ pairs inductionHypothesis =>
+      cases vertices with
+      | nil =>
+          change 0 = 2 * (pairs + 1) at lengthEq
+          have impossible : False := by omega
+          exact False.elim impossible
+      | cons first tail =>
+          cases tail with
+          | nil =>
+              simp only [List.length_cons, List.length_nil] at lengthEq
+              have impossible : False := by omega
+              exact False.elim impossible
+          | cons second rest =>
+              have nodupFirst := List.nodup_cons.mp nodup
+              have nodupSecond := List.nodup_cons.mp nodupFirst.2
+              have firstInside : nodes first = true :=
+                inside first (by simp)
+              have secondInside : nodes second = true :=
+                inside second (by simp)
+              have restInside :
+                  forall node, node ∈ rest → nodes node = true := by
+                intro node hmem
+                exact inside node (by simp [hmem])
+              have restLength : rest.length = 2 * pairs := by
+                simp only [List.length_cons] at lengthEq
+                omega
+              rcases inductionHypothesis rest restLength nodupSecond.2
+                  restInside with ⟨restBits, restBoundary⟩
+              have connected :
+                  BidirectedConnectedWithin G nodes first second :=
+                component.2 first second firstInside secondInside
+              rcases bidirectedConnectedWithin_pairBits G nodes connected with
+                ⟨pathBits, pathBoundary⟩
+              refine ⟨hedgePairBitsXor G pathBits restBits, ?_⟩
+              intro node
+              rw [hedgeXorPairBitsWithinFrom_xor,
+                pathBoundary node, restBoundary node]
+              have firstNeSecond : first ≠ second := by
+                intro equal
+                exact nodupFirst.1 (by simp [equal])
+              have firstNotRest : first ∉ rest := by
+                intro hmem
+                exact nodupFirst.1 (by simp [hmem])
+              have secondNotRest : second ∉ rest := nodupSecond.1
+              by_cases hfirst : node = first
+              · subst hfirst
+                simp [firstNeSecond, firstNotRest]
+              · by_cases hsecond : node = second
+                · subst hsecond
+                  simp [hfirst, secondNotRest]
+                · by_cases hrest : node ∈ rest <;>
+                    simp [hfirst, hsecond, hrest]
+
+/--
+Every even duplicate-free list of selected vertices is the incidence boundary
+of some pair-root vector.  Consecutive list elements are connected inside the
+c-component and their path vectors are XORed.
+-/
+theorem BidirectedComponent.pairBits_of_even_list
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (component : BidirectedComponent G nodes)
+    (vertices : List (Fin S.count))
+    (nodup : vertices.Nodup)
+    (inside : forall node, node ∈ vertices → nodes node = true)
+    (even : vertices.length % 2 = 0) :
+    Exists fun pairBits : (root : Fin (pairRootCount G)) → Bool =>
+      forall node,
+        hedgeXorPairBitsWithinFrom G nodes node pairBits =
+          decide (node ∈ vertices) := by
+  have decomposition := Nat.mod_add_div vertices.length 2
+  have lengthEq : vertices.length = 2 * (vertices.length / 2) := by
+    omega
+  exact component.pairBits_of_length_twice G nodes vertices
+    (vertices.length / 2) lengthEq nodup inside
+
+/-- Selected vertices at which a requested incidence pattern is true. -/
+def hedgeTrueVertices (nodes : NodeSet S)
+    (target : Fin S.count → Bool) : List (Fin S.count) :=
+  (NodeSet.members nodes).filter target
+
+theorem hedgeTrueVertices_nodup (nodes : NodeSet S)
+    (target : Fin S.count → Bool) :
+    (hedgeTrueVertices nodes target).Nodup :=
+  (NodeSet.nodup_members nodes).filter target
+
+theorem hedgeTrueVertices_inside (nodes : NodeSet S)
+    (target : Fin S.count → Bool) :
+    forall node, node ∈ hedgeTrueVertices nodes target → nodes node = true := by
+  intro node hmem
+  exact (NodeSet.mem_members_iff nodes node).mp
+    (List.mem_filter.mp hmem).1
+
+/--
+Every even incidence pattern on a bidirected component is generated by some
+pair-root vector.  This is the constructive graph-theoretic surjectivity
+lemma behind the unsoftened hedge model: the proof produces existence in
+`Prop`, ready to be turned into data by the finite pair-bit enumeration.
+-/
+theorem BidirectedComponent.pairBits_of_even_target
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (component : BidirectedComponent G nodes)
+    (target : Fin S.count → Bool)
+    (even : (hedgeTrueVertices nodes target).length % 2 = 0) :
+    Exists fun pairBits : (root : Fin (pairRootCount G)) → Bool =>
+      forall node, nodes node = true →
+        hedgeXorPairBitsWithinFrom G nodes node pairBits = target node := by
+  rcases component.pairBits_of_even_list G nodes
+      (hedgeTrueVertices nodes target)
+      (hedgeTrueVertices_nodup nodes target)
+      (hedgeTrueVertices_inside nodes target) even with
+    ⟨pairBits, boundary⟩
+  refine ⟨pairBits, ?_⟩
+  intro node hin
+  rw [boundary node]
+  cases htarget : target node <;>
+    simp [hedgeTrueVertices, List.mem_filter,
+      NodeSet.mem_members_iff, hin, htarget]
+
+/-- Executable test that a pair-root vector realizes `target` on `nodes`. -/
+def hedgePairBitsRealizes (G : ObservedGraph S) (nodes : NodeSet S)
+    (target : Fin S.count → Bool)
+    (pairBits : (root : Fin (pairRootCount G)) → Bool) : Bool :=
+  (NodeSet.members nodes).all fun node =>
+    hedgeXorPairBitsWithinFrom G nodes node pairBits == target node
+
+theorem hedgePairBitsRealizes_of
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (target : Fin S.count → Bool)
+    (pairBits : (root : Fin (pairRootCount G)) → Bool)
+    (agrees : forall node, nodes node = true →
+      hedgeXorPairBitsWithinFrom G nodes node pairBits = target node) :
+    hedgePairBitsRealizes G nodes target pairBits = true := by
+  unfold hedgePairBitsRealizes
+  refine List.all_eq_true.mpr ?_
+  intro node hmem
+  exact beq_iff_eq.mpr
+    (agrees node ((NodeSet.mem_members_iff nodes node).mp hmem))
+
+theorem hedgePairBitsRealizes_spec
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (target : Fin S.count → Bool)
+    (pairBits : (root : Fin (pairRootCount G)) → Bool)
+    (realizes : hedgePairBitsRealizes G nodes target pairBits = true) :
+    forall node, nodes node = true →
+      hedgeXorPairBitsWithinFrom G nodes node pairBits = target node := by
+  intro node hin
+  have hmem := (NodeSet.mem_members_iff nodes node).mpr hin
+  have tested := (List.all_eq_true.mp realizes) node hmem
+  exact beq_iff_eq.mp tested
+
+/-- The exhaustive pair-bit enumeration detects every even target pattern. -/
+theorem BidirectedComponent.pairBitsRealizes_any_of_even
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (component : BidirectedComponent G nodes)
+    (target : Fin S.count → Bool)
+    (even : (hedgeTrueVertices nodes target).length % 2 = 0) :
+    (hedgePairBitEnum G).any
+      (hedgePairBitsRealizes G nodes target) = true := by
+  rcases component.pairBits_of_even_target G nodes target even with
+    ⟨pairBits, agrees⟩
+  exact List.any_eq_true.mpr
+    ⟨pairBits, hedgePairBitEnum_complete G pairBits,
+      hedgePairBitsRealizes_of G nodes target pairBits agrees⟩
+
+/--
+First enumerated pair-root vector realizing an even component pattern.
+
+Although `component.pairBits_of_even_target` proves existence, this definition
+does not eliminate that existential into `Type`.  It evaluates the finite
+enumeration and uses the existence proof only to rule out `find? = none`.
+-/
+def BidirectedComponent.evenTargetPairBits
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (component : BidirectedComponent G nodes)
+    (target : Fin S.count → Bool)
+    (even : (hedgeTrueVertices nodes target).length % 2 = 0) :
+    (root : Fin (pairRootCount G)) → Bool :=
+  listFirstAny (hedgePairBitEnum G)
+    (hedgePairBitsRealizes G nodes target)
+    (component.pairBitsRealizes_any_of_even G nodes target even)
+
+/-- The computed vector realizes the requested pattern at every selected node. -/
+theorem BidirectedComponent.evenTargetPairBits_spec
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (component : BidirectedComponent G nodes)
+    (target : Fin S.count → Bool)
+    (even : (hedgeTrueVertices nodes target).length % 2 = 0) :
+    forall node, nodes node = true →
+      hedgeXorPairBitsWithinFrom G nodes node
+          (component.evenTargetPairBits G nodes target even) = target node :=
+  hedgePairBitsRealizes_spec G nodes target _
+    (listFirstAny_pred (hedgePairBitEnum G)
+      (hedgePairBitsRealizes G nodes target)
+      (component.pairBitsRealizes_any_of_even G nodes target even))
+
+/--
+Root-vector translation carrying one even component pattern to another.
+The two computed representatives are XORed, so their incidences are the
+pointwise difference of the requested patterns.
+-/
+def BidirectedComponent.targetTranslation
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (component : BidirectedComponent G nodes)
+    (left right : Fin S.count → Bool)
+    (leftEven : (hedgeTrueVertices nodes left).length % 2 = 0)
+    (rightEven : (hedgeTrueVertices nodes right).length % 2 = 0) :
+    (root : Fin (pairRootCount G)) → Bool :=
+  hedgePairBitsXor G
+    (component.evenTargetPairBits G nodes left leftEven)
+    (component.evenTargetPairBits G nodes right rightEven)
+
+/-- The translation's incidence is `left XOR right` on the component. -/
+theorem BidirectedComponent.targetTranslation_spec
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (component : BidirectedComponent G nodes)
+    (left right : Fin S.count → Bool)
+    (leftEven : (hedgeTrueVertices nodes left).length % 2 = 0)
+    (rightEven : (hedgeTrueVertices nodes right).length % 2 = 0) :
+    forall node, nodes node = true →
+      hedgeXorPairBitsWithinFrom G nodes node
+          (component.targetTranslation G nodes left right
+            leftEven rightEven) =
+        Bool.xor (left node) (right node) := by
+  intro node hin
+  rw [BidirectedComponent.targetTranslation,
+    hedgeXorPairBitsWithinFrom_xor,
+    component.evenTargetPairBits_spec G nodes left leftEven node hin,
+    component.evenTargetPairBits_spec G nodes right rightEven node hin]
+
+/-- XORing the same root vector twice is the identity. -/
+theorem hedgePairBitsXor_self_right
+    (G : ObservedGraph S)
+    (pairBits delta : (root : Fin (pairRootCount G)) → Bool) :
+    hedgePairBitsXor G (hedgePairBitsXor G pairBits delta) delta =
+      pairBits := by
+  funext root
+  unfold hedgePairBitsXor
+  cases pairBits root <;> cases delta root <;> rfl
+
+/-- Translation by a fixed root vector is an involution. -/
+theorem BidirectedComponent.targetTranslation_involution
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (component : BidirectedComponent G nodes)
+    (left right : Fin S.count → Bool)
+    (leftEven : (hedgeTrueVertices nodes left).length % 2 = 0)
+    (rightEven : (hedgeTrueVertices nodes right).length % 2 = 0)
+    (pairBits : (root : Fin (pairRootCount G)) → Bool) :
+    hedgePairBitsXor G
+        (hedgePairBitsXor G pairBits
+          (component.targetTranslation G nodes left right
+            leftEven rightEven))
+        (component.targetTranslation G nodes left right
+          leftEven rightEven) = pairBits :=
+  hedgePairBitsXor_self_right G pairBits
+    (component.targetTranslation G nodes left right leftEven rightEven)
+
+/-- Translating a realization of `left` produces a realization of `right`. -/
+theorem BidirectedComponent.targetTranslation_realizes
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (component : BidirectedComponent G nodes)
+    (left right : Fin S.count → Bool)
+    (leftEven : (hedgeTrueVertices nodes left).length % 2 = 0)
+    (rightEven : (hedgeTrueVertices nodes right).length % 2 = 0)
+    (pairBits : (root : Fin (pairRootCount G)) → Bool)
+    (realizes : hedgePairBitsRealizes G nodes left pairBits = true) :
+    hedgePairBitsRealizes G nodes right
+        (hedgePairBitsXor G pairBits
+          (component.targetTranslation G nodes left right
+            leftEven rightEven)) = true := by
+  apply hedgePairBitsRealizes_of
+  intro node hin
+  rw [hedgeXorPairBitsWithinFrom_xor,
+    hedgePairBitsRealizes_spec G nodes left pairBits realizes node hin,
+    component.targetTranslation_spec G nodes left right
+      leftEven rightEven node hin]
+  cases left node <;> cases right node <;> rfl
 
 /-- A single selected internal root contributes one at an incident endpoint. -/
 theorem hedgeXorPairBitsWithinFrom_of_one

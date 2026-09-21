@@ -196,6 +196,26 @@ theorem pairRootIncident_between_right
       exact (pairRootIncident_of G reverseOrdered
         (G.bidirected_symmetric edge)).1
 
+/-- The unoriented edge root is incident exactly to the edge's two endpoints. -/
+theorem pairRootIncident_between
+    (G : ObservedGraph S) {i j : Fin S.count}
+    (edge : G.bidirected i j = true) (node : Fin S.count) :
+    pairRootIncident G (pairRootBetween G edge) node =
+      (decide (node = i) || decide (node = j)) := by
+  unfold pairRootBetween
+  split
+  · next ordered =>
+      rw [pairRootIncident, pairRoots_get_of G ordered edge]
+  · next notOrdered =>
+      have reverseOrdered : j.val < i.val := by
+        rcases Nat.lt_or_gt_of_ne (val_ne_of_bidirected G edge) with
+          forward | reverse
+        · exact False.elim (notOrdered forward)
+        · exact reverse
+      rw [pairRootIncident,
+        pairRoots_get_of G reverseOrdered (G.bidirected_symmetric edge)]
+      simp [Bool.or_comm]
+
 /--
 The graph-only latent extension.  Each introduced root has dummy value type
 `Unit`; the only structural data are the two incidence bits.
