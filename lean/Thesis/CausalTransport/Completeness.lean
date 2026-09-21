@@ -321,11 +321,15 @@ induction.  The remaining inhabitants are:
   bidirected path edges and XOR superposition give
   `BidirectedComponent.pairBits_of_even_target`, and the exhaustive
   `evenTargetPairBits` turns that incidence-surjectivity proof into data
-  without choice; proving equal fiber *counts* for the two observational maps,
-  and then adding full-support noise without erasing the
-  interventional separation remain hard steps--the tempting construction that
-  merely gates a private decode by restricted pair parity already fails
-  observational equivalence on the two-node bow;
+  without choice; XOR translation proves equal fiber counts for any two even
+  component targets (`pairBitRealizers_length_eq_of_even`), while the finite
+  handshaking identity `hedgeNodeXor_incidence` derives evenness for the
+  incidence required by every actual large- or small-forest evaluation;
+  connecting those component counts across the piecewise outer/small model,
+  and then adding full-support noise without erasing the interventional
+  separation remain hard steps--the tempting construction that merely gates
+  a private decode by restricted pair parity already fails observational
+  equivalence on the two-node bow;
   outcome vertices sit in their ancestral set in `G_{\overline{X}}`
   (`outcome_subset_ancestralSet`), so the nested shrink-empty summed
   blocks cover `V \ Y` (`first_shrink_empty_summed_eq`);
@@ -27818,6 +27822,111 @@ theorem foldl_xor_pointwise {α} (left right : α → Bool) (xs : List α) :
         (xs.foldl (fun acc x => Bool.xor acc (right x)) false) := by
   simpa using foldl_xor_pointwise_init left right xs false false
 
+/-- An XOR fold is true exactly when its Boolean filter has odd length. -/
+theorem foldl_xor_eq_decide_filter_odd {α}
+    (bits : α → Bool) (xs : List α) :
+    xs.foldl (fun acc x => Bool.xor acc (bits x)) false =
+      decide ((xs.filter bits).length % 2 = 1) := by
+  induction xs with
+  | nil => simp
+  | cons x xs inductionHypothesis =>
+      rw [List.filter, List.foldl, foldl_xor_init]
+      cases hbit : bits x
+      · simp [inductionHypothesis]
+      · rw [inductionHypothesis]
+        cases hmod : (xs.filter bits).length % 2 with
+        | zero => simp [Nat.add_mod, hmod]
+        | succ remainder =>
+            have remainderZero : remainder = 0 := by omega
+            subst remainder
+            simp [Nat.add_mod, hmod]
+
+/-- Equivalently, an XOR fold is false exactly when its filter is even. -/
+theorem foldl_xor_eq_false_iff_filter_even {α}
+    (bits : α → Bool) (xs : List α) :
+    xs.foldl (fun acc x => Bool.xor acc (bits x)) false = false ↔
+      (xs.filter bits).length % 2 = 0 := by
+  rw [foldl_xor_eq_decide_filter_odd]
+  cases hmod : (xs.filter bits).length % 2 with
+  | zero => simp
+  | succ remainder =>
+      have remainderZero : remainder = 0 := by omega
+      subst remainder
+      simp
+
+/--
+Finite XORs may be transposed: folding row parities equals folding column
+parities.  This is the Boolean finite-sum interchange used to count each
+pair-root once by node and once by root.
+-/
+theorem foldl_xor_swap {α β} (rows : List α) (columns : List β)
+    (entry : α → β → Bool) :
+    rows.foldl
+        (fun total row => Bool.xor total
+          (columns.foldl
+            (fun rowTotal column => Bool.xor rowTotal (entry row column))
+            false)) false =
+      columns.foldl
+        (fun total column => Bool.xor total
+          (rows.foldl
+            (fun columnTotal row => Bool.xor columnTotal (entry row column))
+            false)) false := by
+  induction columns with
+  | nil =>
+      simp only [List.foldl]
+      exact foldl_unchanged _ false rows (fun acc _ => by simp)
+  | cons column columns inductionHypothesis =>
+      simp only [List.foldl, Bool.false_xor]
+      have rowSplit :
+          rows.foldl
+              (fun total row => Bool.xor total
+                (columns.foldl
+                  (fun rowTotal remaining =>
+                    Bool.xor rowTotal (entry row remaining))
+                  (entry row column))) false =
+            Bool.xor
+              (rows.foldl
+                (fun total row => Bool.xor total (entry row column)) false)
+              (rows.foldl
+                (fun total row => Bool.xor total
+                  (columns.foldl
+                    (fun rowTotal remaining =>
+                      Bool.xor rowTotal (entry row remaining)) false))
+                false) := by
+        have innerSplit : ∀ row,
+            columns.foldl
+                (fun rowTotal remaining =>
+                  Bool.xor rowTotal (entry row remaining))
+                (entry row column) =
+              Bool.xor (entry row column)
+                (columns.foldl
+                  (fun rowTotal remaining =>
+                    Bool.xor rowTotal (entry row remaining)) false) :=
+          fun row => foldl_xor_init (entry row) columns (entry row column)
+        have outerCongruence := foldl_congr
+          (fun total row => Bool.xor total
+            (columns.foldl
+              (fun rowTotal remaining =>
+                Bool.xor rowTotal (entry row remaining))
+              (entry row column)))
+          (fun total row => Bool.xor total
+            (Bool.xor (entry row column)
+              (columns.foldl
+                (fun rowTotal remaining =>
+                  Bool.xor rowTotal (entry row remaining)) false)))
+          false rows (fun total row => by
+            change Bool.xor total _ = Bool.xor total _
+            rw [innerSplit row])
+        rw [outerCongruence, foldl_xor_pointwise]
+      rw [rowSplit, inductionHypothesis]
+      exact (foldl_xor_init
+        (fun remaining =>
+          rows.foldl
+            (fun total row => Bool.xor total (entry row remaining)) false)
+        columns
+        (rows.foldl
+          (fun total row => Bool.xor total (entry row column)) false)).symm
+
 theorem hedgeParentBitsFrom_empty (rich : ObservedSignature.ValueRich S)
     (child : Fin S.count)
     (get : forall parent, S.directed parent child = true → S.Value parent) :
@@ -30857,6 +30966,307 @@ theorem BidirectedComponent.pairBitRealizers_length_eq_of_even
       leftEven rightEven pairBits
   rw [List.filter_map, predicateEq] at translatedRealizers
   simpa using translatedRealizers.length_eq
+
+/-- The XOR of a singleton indicator over a duplicate-free containing list. -/
+theorem foldl_xor_indicator_of_mem_nodup {n : Nat}
+    (xs : List (Fin n)) (pivot : Fin n)
+    (member : pivot ∈ xs) (nodup : xs.Nodup) :
+    xs.foldl
+        (fun total node => Bool.xor total (decide (node = pivot))) false =
+      true := by
+  have congruence := foldl_congr
+    (fun total node => Bool.xor total (decide (node = pivot)))
+    (fun total node => if node = pivot then !total else total)
+    false xs (fun total node => by
+      by_cases equal : node = pivot <;> simp [equal])
+  rw [congruence]
+  exact foldl_xor_true_of_mem_nodup xs member nodup
+
+/-- Two present singleton indicators cancel in an XOR fold. -/
+theorem foldl_xor_two_indicators {n : Nat}
+    (xs : List (Fin n)) (left right : Fin n)
+    (leftMem : left ∈ xs) (rightMem : right ∈ xs)
+    (nodup : xs.Nodup) :
+    xs.foldl
+        (fun total node => Bool.xor total
+          (Bool.xor (decide (node = left)) (decide (node = right)))) false =
+      false := by
+  rw [foldl_xor_pointwise,
+    foldl_xor_indicator_of_mem_nodup xs left leftMem nodup,
+    foldl_xor_indicator_of_mem_nodup xs right rightMem nodup]
+  rfl
+
+/-- Contribution of one pair-root to one restricted incidence coordinate. -/
+def hedgePairRootContributionWithin (G : ObservedGraph S)
+    (nodes : NodeSet S) (root : Fin (pairRootCount G)) (bit : Bool)
+    (node : Fin S.count) : Bool :=
+  if (hedgeLatentExtension G).incident (hedgePairRoot G root) node &&
+      hedgePairRootWithin G nodes root then bit else false
+
+/--
+One internal pair-root has even endpoint parity.  A disabled or zero root
+contributes nowhere; an enabled one contributes at its two distinct selected
+endpoints, whose singleton indicators cancel.
+-/
+theorem hedgePairRootContributionWithin_parity
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (root : Fin (pairRootCount G)) (bit : Bool) :
+    (NodeSet.members nodes).foldl
+        (fun total node => Bool.xor total
+          (hedgePairRootContributionWithin G nodes root bit node)) false =
+      false := by
+  cases hwithin : hedgePairRootWithin G nodes root
+  · exact foldl_unchanged _ false (NodeSet.members nodes) (fun total node => by
+      simp [hedgePairRootContributionWithin, hwithin])
+  · cases bit with
+    | false =>
+      exact foldl_unchanged _ false (NodeSet.members nodes) (fun total node => by
+        simp [hedgePairRootContributionWithin])
+    | true =>
+      let endpoints := (pairRoots G).get root
+      have selected :
+          nodes endpoints.1 = true ∧ nodes endpoints.2 = true := by
+        simpa [hedgePairRootWithin, endpoints] using
+          (Bool.and_eq_true_iff.mp hwithin)
+      have leftMem : endpoints.1 ∈ NodeSet.members nodes :=
+        (NodeSet.mem_members_iff nodes endpoints.1).mpr selected.1
+      have rightMem : endpoints.2 ∈ NodeSet.members nodes :=
+        (NodeSet.mem_members_iff nodes endpoints.2).mpr selected.2
+      have different : endpoints.1 ≠ endpoints.2 := by
+        intro equal
+        have valuesEqual : endpoints.1.val = endpoints.2.val :=
+          congrArg Fin.val equal
+        exact (Nat.ne_of_lt (pairRoots_get_spec G root).1) valuesEqual
+      have contributionEq : ∀ node,
+          hedgePairRootContributionWithin G nodes root true node =
+            Bool.xor (decide (node = endpoints.1))
+              (decide (node = endpoints.2)) := by
+        intro node
+        have incidentEq :
+            (hedgeLatentExtension G).incident (hedgePairRoot G root) node =
+              (decide (node = endpoints.1) ||
+                decide (node = endpoints.2)) := by
+          simp [hedgeLatentExtension, hedgeIncident_pair,
+            pairRootIncident, endpoints]
+        rw [hedgePairRootContributionWithin, incidentEq]
+        by_cases left : node = endpoints.1
+        · subst node
+          simp [hwithin, different]
+        · by_cases right : node = endpoints.2
+          · subst node
+            simp [hwithin, left]
+          · simp [hwithin, left, right]
+      have congruence := foldl_congr
+        (fun total node => Bool.xor total
+          (hedgePairRootContributionWithin G nodes root true node))
+        (fun total node => Bool.xor total
+          (Bool.xor (decide (node = endpoints.1))
+            (decide (node = endpoints.2))))
+        false (NodeSet.members nodes)
+        (fun total node => by
+          change Bool.xor total _ = Bool.xor total _
+          rw [contributionEq node])
+      rw [congruence]
+      exact foldl_xor_two_indicators (NodeSet.members nodes)
+        endpoints.1 endpoints.2 leftMem rightMem
+        (NodeSet.nodup_members nodes)
+
+/-- XOR all coordinates of a Boolean vector selected by a node set. -/
+def hedgeNodeXor (nodes : NodeSet S) (bits : Fin S.count → Bool) : Bool :=
+  (NodeSet.members nodes).foldl
+    (fun total node => Bool.xor total (bits node)) false
+
+/-- Restricted incidence is the rootwise fold of single-root contributions. -/
+theorem hedgeXorPairBitsWithinFrom_eq_contribution_fold
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (pairBits : Fin (pairRootCount G) → Bool) (node : Fin S.count) :
+    hedgeXorPairBitsWithinFrom G nodes node pairBits =
+      (List.finRange (pairRootCount G)).foldl
+        (fun total root => Bool.xor total
+          (hedgePairRootContributionWithin G nodes root
+            (pairBits root) node)) false := by
+  unfold hedgeXorPairBitsWithinFrom
+  apply foldl_congr
+  intro total root
+  cases selected :
+      ((hedgeLatentExtension G).incident (hedgePairRoot G root) node &&
+        hedgePairRootWithin G nodes root) <;>
+    simp [hedgePairRootContributionWithin, selected]
+
+/--
+The XOR of every coordinate of a restricted incidence vector is zero.
+Transposing the node/root folds reduces the statement to the two-endpoint
+parity of each individual pair-root.
+-/
+theorem hedgeNodeXor_incidence
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (pairBits : Fin (pairRootCount G) → Bool) :
+    hedgeNodeXor nodes
+        (fun node => hedgeXorPairBitsWithinFrom G nodes node pairBits) =
+      false := by
+  unfold hedgeNodeXor
+  have expanded := foldl_congr
+    (fun total node => Bool.xor total
+      (hedgeXorPairBitsWithinFrom G nodes node pairBits))
+    (fun total node => Bool.xor total
+      ((List.finRange (pairRootCount G)).foldl
+        (fun rootTotal root => Bool.xor rootTotal
+          (hedgePairRootContributionWithin G nodes root
+            (pairBits root) node)) false))
+    false (NodeSet.members nodes)
+    (fun total node => by
+      change Bool.xor total _ = Bool.xor total _
+      rw [hedgeXorPairBitsWithinFrom_eq_contribution_fold
+        G nodes pairBits node])
+  rw [expanded, foldl_xor_swap]
+  exact foldl_unchanged _ false (List.finRange (pairRootCount G))
+    (fun total root => by
+      rw [hedgePairRootContributionWithin_parity G nodes root
+        (pairBits root)]
+      simp)
+
+/-- Every restricted incidence vector has an even number of true vertices. -/
+theorem hedgeXorPairBitsWithinFrom_even
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (pairBits : Fin (pairRootCount G) → Bool) :
+    (hedgeTrueVertices nodes
+      (fun node => hedgeXorPairBitsWithinFrom G nodes node pairBits)).length %
+        2 = 0 := by
+  exact (foldl_xor_eq_false_iff_filter_even
+    (fun node => hedgeXorPairBitsWithinFrom G nodes node pairBits)
+    (NodeSet.members nodes)).mp
+      (hedgeNodeXor_incidence G nodes pairBits)
+
+/--
+Incidence pattern required for `target` by a forest-parity equation.  Solving
+the structural equation for its latent term gives observed bit XOR kept-parent
+parity.
+-/
+def hedgeForestRequiredIncidence
+    (rich : ObservedSignature.ValueRich S) (kept : ForestChild S)
+    (target : S.Assignment) (child : Fin S.count) : Bool :=
+  Bool.xor (hedgeIsSecond rich child (target child))
+    (hedgeForestParentBitsFrom rich kept child
+      (fun parent _ => target parent))
+
+/--
+The pair-root coordinates of a latent assignment realize the incidence
+pattern required by that assignment's observed forest-parity output.
+-/
+theorem hedgeForestParityModel_pairBitsRealizes_eval
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgePairBitsRealizes G nodes
+        (hedgeForestRequiredIncidence rich kept
+          ((hedgeForestParityModel G rich nodes kept).eval u))
+        (hedgePairBitsOf G u) = true := by
+  apply hedgePairBitsRealizes_of
+  intro child hin
+  rw [← hedgeXorPairBitsWithin_pairBitsOf G nodes u child]
+  have equation :
+      hedgeIsSecond rich child
+          ((hedgeForestParityModel G rich nodes kept).eval u child) =
+        Bool.xor
+          (hedgeXorPairBitsWithin G nodes child (fun latent _ => u latent))
+          (hedgeForestParentBitsFrom rich kept child
+            (fun parent _ =>
+              (hedgeForestParityModel G rich nodes kept).eval u parent)) := by
+    change hedgeIsSecond rich child
+        ((hedgeForestParityModel G rich nodes kept).evalNodeUnder
+          (FiniteLatentSCM.noIntervention S) u child) = _
+    rw [FiniteLatentSCM.evalNodeUnder]
+    unfold FiniteLatentSCM.equationUnder FiniteLatentSCM.noIntervention
+    exact hedgeForestParityOutput_bit_of_mem G rich nodes kept child _ _ hin
+  unfold hedgeForestRequiredIncidence
+  rw [equation]
+  generalize
+    hedgeXorPairBitsWithin G nodes child (fun latent _ => u latent) = pair
+  generalize hedgeForestParentBitsFrom rich kept child
+    (fun parent _ => (hedgeForestParityModel G rich nodes kept).eval u parent) =
+      parents
+  cases pair <;> cases parents <;> rfl
+
+/-- Every observed output of a forest-parity model requires an even incidence. -/
+theorem hedgeForestParityModel_requiredIncidence_even
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    (hedgeTrueVertices nodes
+      (hedgeForestRequiredIncidence rich kept
+        ((hedgeForestParityModel G rich nodes kept).eval u))).length % 2 = 0 := by
+  let required := hedgeForestRequiredIncidence rich kept
+    ((hedgeForestParityModel G rich nodes kept).eval u)
+  let actual := fun node =>
+    hedgeXorPairBitsWithinFrom G nodes node (hedgePairBitsOf G u)
+  have realization :=
+    hedgeForestParityModel_pairBitsRealizes_eval G rich nodes kept u
+  have agrees :=
+    hedgePairBitsRealizes_spec G nodes required (hedgePairBitsOf G u)
+      realization
+  have trueVerticesEq :
+      hedgeTrueVertices nodes required = hedgeTrueVertices nodes actual := by
+    unfold hedgeTrueVertices
+    apply List.filter_congr
+    intro node member
+    exact (agrees node ((NodeSet.mem_members_iff nodes node).mp member)).symm
+  rw [trueVerticesEq]
+  exact hedgeXorPairBitsWithinFrom_even G nodes (hedgePairBitsOf G u)
+
+/-- The small hedge model realizes its restricted forest equation on `F'`. -/
+theorem HedgeWitness.smallParityModel_pairBitsRealizes_eval
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgePairBitsRealizes G w.small
+        (hedgeForestRequiredIncidence rich (restrictChild w.small w.child)
+          ((w.smallParityModel rich).eval u))
+        (hedgePairBitsOf G u) = true := by
+  apply hedgePairBitsRealizes_of
+  intro child hin
+  rw [← hedgeXorPairBitsWithin_pairBitsOf G w.small u child]
+  have equation :=
+    w.smallParityModel_evalNodeUnder_bit rich
+      (FiniteLatentSCM.noIntervention S) u child rfl hin
+  change hedgeIsSecond rich child ((w.smallParityModel rich).eval u child) =
+      Bool.xor
+        (hedgeXorPairBitsWithin G w.small child (fun latent _ => u latent))
+        (hedgeForestParentBitsFrom rich (restrictChild w.small w.child) child
+          (fun parent _ => (w.smallParityModel rich).eval u parent)) at equation
+  unfold hedgeForestRequiredIncidence
+  rw [equation]
+  generalize
+    hedgeXorPairBitsWithin G w.small child (fun latent _ => u latent) = pair
+  generalize hedgeForestParentBitsFrom rich
+    (restrictChild w.small w.child) child
+    (fun parent _ => (w.smallParityModel rich).eval u parent) = parents
+  cases pair <;> cases parents <;> rfl
+
+/-- Every small-model output requires an even incidence on the small forest. -/
+theorem HedgeWitness.smallParityModel_requiredIncidence_even
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    (hedgeTrueVertices w.small
+      (hedgeForestRequiredIncidence rich (restrictChild w.small w.child)
+        ((w.smallParityModel rich).eval u))).length % 2 = 0 := by
+  let required := hedgeForestRequiredIncidence rich
+    (restrictChild w.small w.child) ((w.smallParityModel rich).eval u)
+  let actual := fun node =>
+    hedgeXorPairBitsWithinFrom G w.small node (hedgePairBitsOf G u)
+  have realization := w.smallParityModel_pairBitsRealizes_eval rich u
+  have agrees :=
+    hedgePairBitsRealizes_spec G w.small required (hedgePairBitsOf G u)
+      realization
+  have trueVerticesEq :
+      hedgeTrueVertices w.small required = hedgeTrueVertices w.small actual := by
+    unfold hedgeTrueVertices
+    apply List.filter_congr
+    intro node member
+    exact (agrees node
+      ((NodeSet.mem_members_iff w.small node).mp member)).symm
+  rw [trueVerticesEq]
+  exact hedgeXorPairBitsWithinFrom_even G w.small (hedgePairBitsOf G u)
 
 /-- A single selected internal root contributes one at an incident endpoint. -/
 theorem hedgeXorPairBitsWithinFrom_of_one
