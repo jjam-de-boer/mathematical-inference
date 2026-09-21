@@ -688,6 +688,33 @@ theorem childWellFormed_edge (nodes : NodeSet S) (child : ForestChild S)
       exact ⟨rfl, (Bool.and_eq_true_iff.mp ok).1, (Bool.and_eq_true_iff.mp ok).2⟩
 
 /--
+The propositional fields of a `CForest` imply the executable well-formedness
+test for its child map.  This direction complements the search-side
+`cForest_of_child` constructor: downstream data computations may safely use
+`forestSink` even when their forest arrived as an abstract witness rather
+than directly from the Boolean hedge search.
+-/
+theorem CForest.wellFormedBool
+    {G : ObservedGraph S} {nodes roots : NodeSet S}
+    {child : ForestChild S}
+    (forest : CForest G nodes roots child) :
+    childWellFormedBool nodes child = true := by
+  unfold childWellFormedBool
+  refine List.all_eq_true.mpr ?_
+  intro parent _parentMem
+  cases hp : nodes parent with
+  | false =>
+      have hc : child parent = none := forest.child_off_set parent hp
+      simp [hc]
+  | true =>
+      cases hc : child parent with
+      | none =>
+          simp
+      | some c =>
+          have edge := forest.child_edge parent c hc
+          simp [edge.2.1, edge.2.2]
+
+/--
 Walk the kept-child map for `fuel` steps.  On a well-formed forest the
 map is a DAG (`directed_earlier`), so `fuel = S.count` always lands on a
 kept sink.  Fuel avoids well-founded recursion through a `match` on
@@ -764,6 +791,262 @@ theorem forestSink_kept
   (keptSinks_iff nodes child
       (forestSink nodes child hwell start hstart)).mpr
     (forestSink_spec nodes child hwell start hstart)
+
+/-- Child reached by one kept-map step, defaulting to the parent at a sink. -/
+def forestEntryChild (child : ForestChild S) (parent : Fin S.count) :
+    Fin S.count :=
+  match child parent with
+  | none => parent
+  | some c => c
+
+/-- A kept edge whose parent is outside `nodes` and child is inside it. -/
+def forestChildEnters (nodes : NodeSet S) (child : ForestChild S)
+    (parent : Fin S.count) : Bool :=
+  match child parent with
+  | none => false
+  | some c => !(nodes parent) && nodes c
+
+/-- Unpack the executable boundary-edge predicate. -/
+theorem forestChildEnters_spec
+    (nodes : NodeSet S) (child : ForestChild S) {parent : Fin S.count}
+    (h : forestChildEnters nodes child parent = true) :
+    child parent = some (forestEntryChild child parent) ∧
+      nodes parent = false ∧
+        nodes (forestEntryChild child parent) = true := by
+  cases hc : child parent with
+  | none =>
+      simp [forestChildEnters, hc] at h
+  | some c =>
+      cases hp : nodes parent with
+      | false =>
+          have hchild : nodes c = true := by
+            simpa [forestChildEnters, hc, hp] using h
+          simp [forestEntryChild, hc, hchild]
+      | true =>
+          simp [forestChildEnters, hc, hp] at h
+
+/--
+If a finite child-map walk starts outside a set and ends inside it, one of
+its traversed kept edges crosses the boundary.  No graph assumptions are
+needed: this is the elementary discrete intermediate-value property for the
+stored `Option` successor map.
+-/
+theorem forestFollow_has_entry
+    (nodes : NodeSet S) (child : ForestChild S)
+    (start : Fin S.count) (fuel : Nat)
+    (startOutside : nodes start = false)
+    (endInside : nodes (forestFollow child start fuel) = true) :
+    Exists fun parent =>
+      Exists fun c =>
+        child parent = some c ∧ nodes parent = false ∧ nodes c = true := by
+  induction fuel generalizing start with
+  | zero =>
+      exact False.elim
+        (Bool.false_ne_true (startOutside.symm.trans endInside))
+  | succ fuel inductionHypothesis =>
+      cases hc : child start with
+      | none =>
+          have impossible : nodes start = true := by
+            simpa [forestFollow, hc] using endInside
+          exact False.elim
+            (Bool.false_ne_true (startOutside.symm.trans impossible))
+      | some c =>
+          cases hnext : nodes c with
+          | true =>
+              exact ⟨start, c, hc, startOutside, hnext⟩
+          | false =>
+              have endInside' :
+                  nodes (forestFollow child c fuel) = true := by
+                simpa [forestFollow, hc] using endInside
+              exact inductionHypothesis c hnext endInside'
+
+/-- The finite node enumeration detects a boundary edge on such a walk. -/
+theorem forestChildEnters_any_of_follow
+    (nodes : NodeSet S) (child : ForestChild S)
+    (start : Fin S.count) (fuel : Nat)
+    (startOutside : nodes start = false)
+    (endInside : nodes (forestFollow child start fuel) = true) :
+    (NodeSet.enumerated S).any (forestChildEnters nodes child) = true := by
+  rcases forestFollow_has_entry nodes child start fuel startOutside endInside
+      with ⟨parent, c, hc, hp, hchild⟩
+  exact List.any_eq_true.mpr
+    ⟨parent, NodeSet.mem_enumerated S parent, by
+      simp [forestChildEnters, hc, hp, hchild]⟩
+
+/-- `find? = none` contradicts a successful Boolean `any`. -/
+theorem list_any_true_of_find?_none {α} {l : List α} {p : α -> Bool}
+    (noneAll : l.find? p = none) (h : l.any p = true) : False := by
+  have notTrue : forall x, x ∈ l → ¬ p x = true :=
+    List.find?_eq_none.mp noneAll
+  rcases List.any_eq_true.mp h with ⟨x, hx, hp⟩
+  exact notTrue x hx hp
+
+/--
+The first list element satisfying a Boolean predicate, as data.  The
+`none` branch of `find?` is impossible because `any` already succeeded;
+the existential unpacking remains inside that proof of `False`, not in the
+surrounding `Type`-valued definition.
+-/
+def listFirstAny {α} (l : List α) (p : α -> Bool)
+    (h : l.any p = true) : α :=
+  match hf : l.find? p with
+  | some a => a
+  | none => False.elim (list_any_true_of_find?_none hf h)
+
+theorem listFirstAny_mem {α} (l : List α) (p : α -> Bool)
+    (h : l.any p = true) :
+    listFirstAny l p h ∈ l := by
+  unfold listFirstAny
+  split
+  · next _a hf =>
+      exact List.mem_of_find?_eq_some hf
+  · next hf =>
+      exact False.elim (list_any_true_of_find?_none hf h)
+
+theorem listFirstAny_pred {α} (l : List α) (p : α -> Bool)
+    (h : l.any p = true) :
+    p (listFirstAny l p h) = true := by
+  unfold listFirstAny
+  split
+  · next _a hf =>
+      exact List.find?_some hf
+  · next hf =>
+      exact False.elim (list_any_true_of_find?_none hf h)
+
+/-!
+### Data carried by a hedge's action branch
+
+The semantic hedge construction needs a concrete common root below an action
+vertex.  `HedgeWitness` stores the action vertex in `Type`; the functions below
+follow its already-selected large-forest child map, so the resulting root is
+data as well and no existential forest reachability is unpacked.
+-/
+
+/-- The large-forest root reached from the witness's stored action vertex. -/
+def HedgeWitness.actionRoot {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) : Fin S.count :=
+  forestSink w.large w.child w.large_forest.wellFormedBool
+    w.actionSeed w.actionSeed_in_large
+
+/-- The computed action branch remains inside the large forest. -/
+theorem HedgeWitness.actionRoot_in_large
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    w.large w.actionRoot = true :=
+  (forestSink_spec w.large w.child
+    w.large_forest.wellFormedBool w.actionSeed
+    w.actionSeed_in_large).1
+
+/-- The computed action branch stops exactly where the kept child map stops. -/
+theorem HedgeWitness.actionRoot_child_none
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    w.child w.actionRoot = none :=
+  (forestSink_spec w.large w.child
+    w.large_forest.wellFormedBool w.actionSeed
+    w.actionSeed_in_large).2
+
+/-- The computed endpoint is one of the large forest's declared roots. -/
+theorem HedgeWitness.actionRoot_in_roots
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    w.roots w.actionRoot = true :=
+  (w.large_forest.roots_exact w.actionRoot).mpr
+    ⟨w.actionRoot_in_large, w.actionRoot_child_none⟩
+
+/-- The two hedge forests have the same roots, so the action root is small. -/
+theorem HedgeWitness.actionRoot_in_small
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    w.small w.actionRoot = true :=
+  ((w.small_forest.roots_exact w.actionRoot).mp
+    w.actionRoot_in_roots).1
+
+/-- The stored action vertex cannot lie in the action-avoiding small forest. -/
+theorem HedgeWitness.actionSeed_not_in_small
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    w.small w.actionSeed = false := by
+  cases hs : w.small w.actionSeed with
+  | false =>
+      rfl
+  | true =>
+      have actionFalse := w.small_avoids_intervention w.actionSeed hs
+      exact False.elim
+        (Bool.false_ne_true
+          (actionFalse.symm.trans w.actionSeed_in_action))
+
+/-- The action-to-root child walk contains an edge entering the small side. -/
+theorem HedgeWitness.actionBoundary_existsBool
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    (NodeSet.enumerated S).any (forestChildEnters w.small w.child) = true :=
+  forestChildEnters_any_of_follow w.small w.child w.actionSeed S.count
+    w.actionSeed_not_in_small (by
+      simpa [HedgeWitness.actionRoot, forestSink] using
+        w.actionRoot_in_small)
+
+/-- First enumerated kept parent whose edge enters the small forest. -/
+def HedgeWitness.actionBoundaryParent
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) : Fin S.count :=
+  listFirstAny (NodeSet.enumerated S) (forestChildEnters w.small w.child)
+    w.actionBoundary_existsBool
+
+/-- Child across the selected action-branch boundary edge. -/
+def HedgeWitness.actionBoundaryChild
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) : Fin S.count :=
+  forestEntryChild w.child w.actionBoundaryParent
+
+/-- The selected boundary parent really maps to the selected boundary child. -/
+theorem HedgeWitness.actionBoundary_child
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    w.child w.actionBoundaryParent = some w.actionBoundaryChild :=
+  (forestChildEnters_spec w.small w.child
+    (listFirstAny_pred (NodeSet.enumerated S)
+      (forestChildEnters w.small w.child)
+      w.actionBoundary_existsBool)).1
+
+/-- The selected boundary edge starts outside the small forest. -/
+theorem HedgeWitness.actionBoundaryParent_not_in_small
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    w.small w.actionBoundaryParent = false :=
+  (forestChildEnters_spec w.small w.child
+    (listFirstAny_pred (NodeSet.enumerated S)
+      (forestChildEnters w.small w.child)
+      w.actionBoundary_existsBool)).2.1
+
+/-- The selected boundary edge ends inside the small forest. -/
+theorem HedgeWitness.actionBoundaryChild_in_small
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    w.small w.actionBoundaryChild = true :=
+  (forestChildEnters_spec w.small w.child
+    (listFirstAny_pred (NodeSet.enumerated S)
+      (forestChildEnters w.small w.child)
+      w.actionBoundary_existsBool)).2.2
+
+/-- Both endpoints of the selected boundary edge belong to the large forest. -/
+theorem HedgeWitness.actionBoundary_in_large
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    w.large w.actionBoundaryParent = true ∧
+      w.large w.actionBoundaryChild = true :=
+  let edge :=
+    w.large_forest.child_edge w.actionBoundaryParent w.actionBoundaryChild
+      w.actionBoundary_child
+  ⟨edge.1, edge.2.1⟩
+
+/-- The selected boundary edge is an actual directed edge of the graph. -/
+theorem HedgeWitness.actionBoundary_directed
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    S.directed w.actionBoundaryParent w.actionBoundaryChild = true :=
+  (w.large_forest.child_edge w.actionBoundaryParent w.actionBoundaryChild
+    w.actionBoundary_child).2.2
 
 theorem childClosed_spec (nodes : NodeSet S) (child : ForestChild S)
     (h : childClosedBool nodes child = true)

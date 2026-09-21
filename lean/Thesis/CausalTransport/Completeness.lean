@@ -8466,46 +8466,6 @@ theorem rootsReachOutcome_of_bool
   exact ⟨y, (NodeSet.mem_members_iff q.outcome y).mp yMem,
     directedReachableBy_of_within q.action hy⟩
 
-/-- `find? = none` contradicts `any p = true`. -/
-theorem list_any_true_of_find?_none {α} {l : List α} {p : α -> Bool}
-    (noneAll : l.find? p = none) (h : l.any p = true) : False := by
-  have notTrue : forall x, x ∈ l → ¬ p x = true :=
-    List.find?_eq_none.mp noneAll
-  rcases List.any_eq_true.mp h with ⟨x, hx, hp⟩
-  exact notTrue x hx hp
-
-/--
-The first list element satisfying a Boolean predicate, as data.  The
-`none` branch of `find?` is `False` because `any` already succeeded; the
-`Exists` unpacking of `List.any_eq_true` lives in that `False` proof, not
-in `Type`.
--/
-def listFirstAny {α} (l : List α) (p : α -> Bool)
-    (h : l.any p = true) : α :=
-  match hf : l.find? p with
-  | some a => a
-  | none => False.elim (list_any_true_of_find?_none hf h)
-
-theorem listFirstAny_mem {α} (l : List α) (p : α -> Bool)
-    (h : l.any p = true) :
-    listFirstAny l p h ∈ l := by
-  unfold listFirstAny
-  split
-  · next a hf =>
-      exact List.mem_of_find?_eq_some hf
-  · next hf =>
-      exact False.elim (list_any_true_of_find?_none hf h)
-
-theorem listFirstAny_pred {α} (l : List α) (p : α -> Bool)
-    (h : l.any p = true) :
-    p (listFirstAny l p h) = true := by
-  unfold listFirstAny
-  split
-  · next a hf =>
-      exact List.find?_some hf
-  · next hf =>
-      exact False.elim (list_any_true_of_find?_none hf h)
-
 /-- Unpack the Boolean hedge tests into the `HedgeWitness` fields. -/
 def hedgeWitness_of_sets
     (G : ObservedGraph S) (q : JointKernelQuery S)
