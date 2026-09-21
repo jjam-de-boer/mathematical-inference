@@ -27873,6 +27873,46 @@ def hedgePairRootWithin (G : ObservedGraph S) (nodes : NodeSet S)
   let endpoints := (pairRoots G).get root
   nodes endpoints.1 && nodes endpoints.2
 
+/-- A bidirected edge with selected endpoints names an internal pair-root. -/
+theorem hedgePairRootWithin_between
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    {i j : Fin S.count}
+    (hi : nodes i = true) (hj : nodes j = true)
+    (edge : G.bidirected i j = true) :
+    hedgePairRootWithin G nodes (pairRootBetween G edge) = true := by
+  unfold pairRootBetween
+  split
+  · next ordered =>
+      rw [hedgePairRootWithin, pairRoots_get_of G ordered edge]
+      simp [hi, hj]
+  · next notOrdered =>
+      have reverseOrdered : j.val < i.val := by
+        rcases Nat.lt_or_gt_of_ne (val_ne_of_bidirected G edge) with
+          forward | reverse
+        · exact False.elim (notOrdered forward)
+        · exact reverse
+      rw [hedgePairRootWithin,
+        pairRoots_get_of G reverseOrdered (G.bidirected_symmetric edge)]
+      simp [hi, hj]
+
+/-- The canonical root of a bidirected edge is incident in the hedge extension. -/
+theorem hedgePairRootBetween_incident_left
+    (G : ObservedGraph S) {i j : Fin S.count}
+    (edge : G.bidirected i j = true) :
+    (hedgeLatentExtension G).incident
+      (hedgePairRoot G (pairRootBetween G edge)) i = true := by
+  simpa [hedgeLatentExtension, hedgeIncident_pair] using
+    pairRootIncident_between_left G edge
+
+/-- The same canonical root is incident to the edge's right endpoint. -/
+theorem hedgePairRootBetween_incident_right
+    (G : ObservedGraph S) {i j : Fin S.count}
+    (edge : G.bidirected i j = true) :
+    (hedgeLatentExtension G).incident
+      (hedgePairRoot G (pairRootBetween G edge)) j = true := by
+  simpa [hedgeLatentExtension, hedgeIncident_pair] using
+    pairRootIncident_between_right G edge
+
 /--
 XOR of the pair-root bits whose two observed endpoints lie in `nodes` and
 whose root is incident to `child`.  Pair-roots elsewhere in `G` remain in the
@@ -27924,6 +27964,17 @@ theorem hedgeParityValue_true (rich : ObservedSignature.ValueRich S)
     hedgeParityValue rich child true = rich.second child :=
   rfl
 
+/-- Reading the distinguished second-value bit inverts `hedgeParityValue`. -/
+theorem hedgeIsSecond_parityValue
+    (rich : ObservedSignature.ValueRich S)
+    (child : Fin S.count) (bit : Bool) :
+    hedgeIsSecond rich child (hedgeParityValue rich child bit) = bit := by
+  cases bit with
+  | false =>
+      simp [hedgeParityValue, hedgeIsSecond, rich.different]
+  | true =>
+      simp [hedgeParityValue, hedgeIsSecond]
+
 /--
 Structural output of one c-forest parity circuit.  Selected nodes XOR the
 internal pair-root bits with the values of their explicitly kept directed
@@ -27941,6 +27992,20 @@ def hedgeForestParityOutput (G : ObservedGraph S)
         (hedgeForestParentBitsFrom rich kept child parents))
   else
     hedgePrivateDecode S child (hedgePrivateIndex G child inputs)
+
+/-- At a selected node, the output bit is exactly latent XOR directed parity. -/
+theorem hedgeForestParityOutput_bit_of_mem
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (child : Fin S.count) (parents : S.ParentValues child)
+    (inputs : (hedgeLatentExtension G).Inputs child)
+    (hin : nodes child = true) :
+    hedgeIsSecond rich child
+        (hedgeForestParityOutput G rich nodes kept child parents inputs) =
+      Bool.xor
+        (hedgeXorPairBitsWithin G nodes child inputs)
+        (hedgeForestParentBitsFrom rich kept child parents) := by
+  simp [hedgeForestParityOutput, hin, hedgeIsSecond_parityValue]
 
 /-- Exact SCM carrying one unsoftened forest-parity circuit. -/
 def hedgeForestParityModel (G : ObservedGraph S)
@@ -28077,6 +28142,57 @@ theorem HedgeWitness.actionBoundary_not_kept_small
     (w : HedgeWitness G q) :
     restrictChild w.small w.child w.actionBoundaryParent = none :=
   restrictChild_of_false w.actionBoundaryParent_not_in_small
+
+/--
+At a free large-forest node, evaluation satisfies the large parity equation.
+The recursive parent values in the right-hand side are the model's actual
+values under the same intervention and latent assignment.
+-/
+theorem HedgeWitness.largeParityModel_evalNodeUnder_bit
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (u : (hedgeLatentExtension G).Assignment)
+    (child : Fin S.count)
+    (hfree : intervention child = none)
+    (hin : w.large child = true) :
+    hedgeIsSecond rich child
+        ((w.largeParityModel rich).evalNodeUnder intervention u child) =
+      Bool.xor
+        (hedgeXorPairBitsWithin G w.large child
+          (fun latent _ => u latent))
+        (hedgeForestParentBitsFrom rich w.child child
+          (fun parent _ =>
+            (w.largeParityModel rich).evalNodeUnder intervention u parent)) := by
+  rw [FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder
+  rw [hfree]
+  exact hedgeForestParityOutput_bit_of_mem G rich w.large w.child child _ _ hin
+
+/-- At a free small-forest node, evaluation satisfies the restricted equation. -/
+theorem HedgeWitness.smallParityModel_evalNodeUnder_bit
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (u : (hedgeLatentExtension G).Assignment)
+    (child : Fin S.count)
+    (hfree : intervention child = none)
+    (hin : w.small child = true) :
+    hedgeIsSecond rich child
+        ((w.smallParityModel rich).evalNodeUnder intervention u child) =
+      Bool.xor
+        (hedgeXorPairBitsWithin G w.small child
+          (fun latent _ => u latent))
+        (hedgeForestParentBitsFrom rich
+          (restrictChild w.small w.child) child
+          (fun parent _ =>
+            (w.smallParityModel rich).evalNodeUnder intervention u parent)) := by
+  rw [FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder
+  rw [hfree]
+  rw [HedgeWitness.smallParityMechanism_of_small w rich child _ _ hin]
+  exact hedgeForestParityOutput_bit_of_mem G rich w.small
+    (restrictChild w.small w.child) child _ _ hin
 
 /-- Index of an observed value in its enumeration. -/
 def hedgeIndexOfValue (S : ObservedSignature) (child : Fin S.count)
@@ -28870,6 +28986,35 @@ def hedgeXorPairBitsFrom (G : ObservedGraph S) (child : Fin S.count)
         Bool.xor acc (pairBits root)
       else acc)
     false
+
+/-- Forest-restricted pair parity read from an ordinary Boolean root vector. -/
+def hedgeXorPairBitsWithinFrom (G : ObservedGraph S)
+    (nodes : NodeSet S) (child : Fin S.count)
+    (pairBits : (root : Fin (pairRootCount G)) → Bool) : Bool :=
+  (List.finRange (pairRootCount G)).foldl
+    (fun acc root =>
+      if (hedgeLatentExtension G).incident (hedgePairRoot G root) child &&
+          hedgePairRootWithin G nodes root then
+        Bool.xor acc (pairBits root)
+      else acc)
+    false
+
+/-- The dependent-input and root-vector presentations compute the same bit. -/
+theorem hedgeXorPairBitsWithin_pairBitsOf
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (u : (hedgeLatentExtension G).Assignment)
+    (child : Fin S.count) :
+    hedgeXorPairBitsWithin G nodes child (fun root _ => u root) =
+      hedgeXorPairBitsWithinFrom G nodes child (hedgePairBitsOf G u) := by
+  unfold hedgeXorPairBitsWithin hedgeXorPairBitsWithinFrom hedgePairBitsOf
+  refine foldl_congr _ _ _ _ ?_
+  intro acc root
+  if hinc :
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) child = true then
+    cases hwithin : hedgePairRootWithin G nodes root <;>
+      simp [hinc]
+  else
+    simp [hinc]
 
 /--
 Latent assignment that realises `target` with prescribed pair-root bits.
@@ -30067,6 +30212,71 @@ theorem hedgeOnePairBits_rest (G : ObservedGraph S)
     (hne : r ≠ root) :
     hedgeOnePairBits G root r = false := by
   simp [hedgeOnePairBits, hne]
+
+/-- A single selected internal root contributes one at an incident endpoint. -/
+theorem hedgeXorPairBitsWithinFrom_of_one
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (child : Fin S.count) (root : Fin (pairRootCount G))
+    (pairBits : (r : Fin (pairRootCount G)) → Bool)
+    (hinc :
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) child = true)
+    (hwithin : hedgePairRootWithin G nodes root = true)
+    (htrue : pairBits root = true)
+    (hrest : forall r, r ≠ root → pairBits r = false) :
+    hedgeXorPairBitsWithinFrom G nodes child pairBits = true := by
+  unfold hedgeXorPairBitsWithinFrom
+  have hstep (acc : Bool) (r : Fin (pairRootCount G)) :
+      (if (hedgeLatentExtension G).incident (hedgePairRoot G r) child &&
+            hedgePairRootWithin G nodes r then
+          Bool.xor acc (pairBits r)
+        else acc) =
+        if r = root then !acc else acc := by
+    if hr : r = root then
+      subst hr
+      simp [hinc, hwithin, htrue]
+    else
+      simp [hr, hrest r hr]
+  have hfold :=
+    foldl_congr
+      (fun acc r =>
+        if (hedgeLatentExtension G).incident (hedgePairRoot G r) child &&
+              hedgePairRootWithin G nodes r then
+          Bool.xor acc (pairBits r)
+        else acc)
+      (fun acc r => if r = root then !acc else acc)
+      false (List.finRange (pairRootCount G)) hstep
+  rw [hfold]
+  exact foldl_xor_true_at (pairRootCount G) root
+
+/-- Lighting one path edge flips the restricted parity at its left endpoint. -/
+theorem hedgeXorPairBitsWithinFrom_one_between_left
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    {i j : Fin S.count}
+    (hi : nodes i = true) (hj : nodes j = true)
+    (edge : G.bidirected i j = true) :
+    hedgeXorPairBitsWithinFrom G nodes i
+        (hedgeOnePairBits G (pairRootBetween G edge)) = true :=
+  hedgeXorPairBitsWithinFrom_of_one G nodes i (pairRootBetween G edge)
+    (hedgeOnePairBits G (pairRootBetween G edge))
+    (hedgePairRootBetween_incident_left G edge)
+    (hedgePairRootWithin_between G nodes hi hj edge)
+    (hedgeOnePairBits_self G (pairRootBetween G edge))
+    (fun _root hne => hedgeOnePairBits_rest G (pairRootBetween G edge) hne)
+
+/-- Lighting one path edge also flips the parity at its right endpoint. -/
+theorem hedgeXorPairBitsWithinFrom_one_between_right
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    {i j : Fin S.count}
+    (hi : nodes i = true) (hj : nodes j = true)
+    (edge : G.bidirected i j = true) :
+    hedgeXorPairBitsWithinFrom G nodes j
+        (hedgeOnePairBits G (pairRootBetween G edge)) = true :=
+  hedgeXorPairBitsWithinFrom_of_one G nodes j (pairRootBetween G edge)
+    (hedgeOnePairBits G (pairRootBetween G edge))
+    (hedgePairRootBetween_incident_right G edge)
+    (hedgePairRootWithin_between G nodes hi hj edge)
+    (hedgeOnePairBits_self G (pairRootBetween G edge))
+    (fun _root hne => hedgeOnePairBits_rest G (pairRootBetween G edge) hne)
 
 /--
 Latent assignment with a single incident pair-root set, used as an extra
