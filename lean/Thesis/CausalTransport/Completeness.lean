@@ -250,8 +250,9 @@ induction.  The remaining inhabitants are:
   `hedgeWitness?_eq_some_of_identifyJoint_failed`: its Type-valued trace
   induction transports arbitrary nested failures through shrink, restriction,
   and product frames without choice or a depth bound.
-* a `HedgeWitness` plus `ValueRich` yields a `CounterexampleIn` of the
-  positive class, hence non-identifiability; the pair-root expansion
+* the countermodel program for a `HedgeWitness` plus `ValueRich` targets a
+  `CounterexampleIn` of the positive class, hence non-identifiability; the
+  pair-root expansion
   `hedgeLatentExtension` (Boolean pair roots plus one private enumeration
   index per observed node) is the shared latent skeleton, and
   `hedgeModel` (empty parent mask `hedgeBaseModel`, full mask
@@ -307,6 +308,16 @@ induction.  The remaining inhabitants are:
   `hedgeSharedSwitchCounterexampleIn_of_ready` (the unique-child bow is
   the special case); `hedgeCounterexampleIn?` / `hedgeCounterexample?`
   package those as an `Option` from a witness or an ID-failure record;
+  for the general hedge, `HedgeWitness.actionRoot` follows the stored child
+  map to a common root and `actionBoundaryParent` / `actionBoundaryChild`
+  select a concrete large-forest edge crossing into the small forest;
+  `hedgeXorPairBitsWithin` and `hedgeForestParentBitsFrom` restrict the two
+  parity inputs to an arbitrary c-forest, while `hedgeForestMixModel`
+  packages those inputs on the unchanged compatible latent skeleton;
+  the witness-specific `largeForestMixModel` and `smallForestMixModel`
+  share their product prior and both inhabit the positive graph class;
+  observational equivalence of that pair and separation of the requested
+  interventional kernel remain the two hard general-countermodel lemmas;
   outcome vertices sit in their ancestral set in `G_{\overline{X}}`
   (`outcome_subset_ancestralSet`), so the nested shrink-empty summed
   blocks cover `V \ Y` (`first_shrink_empty_summed_eq`);
@@ -314,8 +325,9 @@ induction.  The remaining inhabitants are:
   `mask` so that `hedgeRecode_eval` identifies the empty-mask evaluation
   of the recoded assignment with the masked evaluation of the original
   (`hedgeUnrecode_eval` is the dual well-founded identity);
-* therefore identifiability in the positive class implies ID success, which
-  is `PublishedCompleteness (GraphModelClass.positive G)`.
+* once the general countermodel and structural success compiler are closed,
+  identifiability in the positive class implies ID success, yielding
+  `PublishedCompleteness (GraphModelClass.positive G)`.
 
 No axiom of choice or excluded middle is used in the engine; the hedge
 countermodel will pick the two `ValueRich` values by structure projection,
@@ -27771,6 +27783,87 @@ theorem hedgeParentBitsFrom_congr (rich : ObservedSignature.ValueRich S)
   else
     simp [hdir]
 
+/--
+XOR of the `ValueRich` second-bits carried by the explicitly kept directed
+parents of `child`.  The outer directed-edge test supplies the dependent
+argument expected by `get`; a malformed child map is therefore harmless here
+and simply cannot smuggle a non-edge into a structural mechanism.  For a
+`CForest`, `child_edge` shows that every selected entry passes this test.
+-/
+def hedgeForestParentBitsFrom (rich : ObservedSignature.ValueRich S)
+    (kept : ForestChild S) (child : Fin S.count)
+    (get : forall parent, S.directed parent child = true → S.Value parent) :
+    Bool :=
+  (List.finRange S.count).foldl
+    (fun acc parent =>
+      if hdir : S.directed parent child = true then
+        if kept parent = some child then
+          Bool.xor acc (hedgeIsSecond rich parent (get parent hdir))
+        else acc
+      else acc)
+    false
+
+/-- An empty kept-edge map contributes no directed parity. -/
+theorem hedgeForestParentBitsFrom_empty
+    (rich : ObservedSignature.ValueRich S) (child : Fin S.count)
+    (get : forall parent, S.directed parent child = true → S.Value parent) :
+    hedgeForestParentBitsFrom rich (emptyChild S) child get = false := by
+  unfold hedgeForestParentBitsFrom emptyChild
+  refine foldl_unchanged _ false (List.finRange S.count) ?_
+  intro acc parent
+  if hdir : S.directed parent child = true then
+    simp [hdir]
+  else
+    simp [hdir]
+
+/-- Pointwise-equal child maps and parent values induce the same parity bit. -/
+theorem hedgeForestParentBitsFrom_congr
+    (rich : ObservedSignature.ValueRich S) (child : Fin S.count)
+    {leftKept rightKept : ForestChild S}
+    {leftGet rightGet :
+      forall parent, S.directed parent child = true → S.Value parent}
+    (hkept : forall parent, leftKept parent = rightKept parent)
+    (hget : forall parent hp, leftGet parent hp = rightGet parent hp) :
+    hedgeForestParentBitsFrom rich leftKept child leftGet =
+      hedgeForestParentBitsFrom rich rightKept child rightGet := by
+  unfold hedgeForestParentBitsFrom
+  refine foldl_congr _ _ _ _ ?_
+  intro acc parent
+  if hdir : S.directed parent child = true then
+    rw [hkept parent]
+    simp [hdir, hget parent hdir]
+  else
+    simp [hdir]
+
+/--
+Restricting a child map does nothing at `child` when every parent whose kept
+edge reaches `child` is already selected.  This is the local equality used on
+small-forest edges that do not cross the `F \ F'` boundary.
+-/
+theorem hedgeForestParentBitsFrom_restrict_eq
+    (rich : ObservedSignature.ValueRich S) (nodes : NodeSet S)
+    (kept : ForestChild S) (child : Fin S.count)
+    (get : forall parent, S.directed parent child = true → S.Value parent)
+    (hinside : forall parent, kept parent = some child → nodes parent = true) :
+    hedgeForestParentBitsFrom rich (restrictChild nodes kept) child get =
+      hedgeForestParentBitsFrom rich kept child get := by
+  unfold hedgeForestParentBitsFrom
+  refine foldl_congr _ _ _ _ ?_
+  intro acc parent
+  if hdir : S.directed parent child = true then
+    cases hkept : kept parent with
+    | none =>
+        simp [hdir, restrictChild, hkept]
+    | some c =>
+        if hc : c = child then
+          subst hc
+          have hin := hinside parent hkept
+          simp [hdir, restrictChild, hkept, hin]
+        else
+          simp [hdir, restrictChild, hkept, hc]
+  else
+    simp [hdir]
+
 /-- Index of an observed value in its enumeration. -/
 def hedgeIndexOfValue (S : ObservedSignature) (child : Fin S.count)
     (value : S.Value child) : Fin (hedgePrivateCard S child) :=
@@ -27881,6 +27974,123 @@ theorem hedgeXorPairBits_of_pair_eq (G : ObservedGraph S) (child : Fin S.count)
   intro acc root
   if hinc : (hedgeLatentExtension G).incident (hedgePairRoot G root) child then
     simp [hinc, hpair root hinc]
+  else
+    simp [hinc]
+
+/-!
+### Parity restricted to a hedge forest
+
+The elementary `hedgeMixModel` above every pair-root incident to a node.  A
+general hedge needs a finer distinction: the large forest uses bidirected
+edges internal to `F`, whereas the small forest uses only edges internal to
+`F'`.  The latent extension itself is deliberately unchanged.  Roots outside
+the selected forest remain present (and therefore preserve compatibility with
+`G`), but the structural mechanism is allowed to ignore their values.
+-/
+
+/-- Whether both endpoints represented by a canonical pair-root lie in `nodes`. -/
+def hedgePairRootWithin (G : ObservedGraph S) (nodes : NodeSet S)
+    (root : Fin (pairRootCount G)) : Bool :=
+  let endpoints := (pairRoots G).get root
+  nodes endpoints.1 && nodes endpoints.2
+
+/--
+XOR of the pair-root bits whose two observed endpoints lie in `nodes` and
+whose root is incident to `child`.  This is the bidirected contribution of an
+induced forest subgraph; pair-roots elsewhere in `G` stay semantically inert.
+-/
+def hedgeXorPairBitsWithin (G : ObservedGraph S) (nodes : NodeSet S)
+    (child : Fin S.count) (inputs : (hedgeLatentExtension G).Inputs child) :
+    Bool :=
+  (List.finRange (pairRootCount G)).foldl
+    (fun acc root =>
+      if hinc :
+          (hedgeLatentExtension G).incident (hedgePairRoot G root) child then
+        if hedgePairRootWithin G nodes root then
+          Bool.xor acc
+            (cast (hedgeLatentValue_pair G root)
+              (inputs (hedgePairRoot G root) hinc))
+        else acc
+      else acc)
+    false
+
+/-- An internal pair-root incident to `child` certifies that `child` is selected. -/
+theorem hedgePairRootWithin_child
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    {root : Fin (pairRootCount G)} {child : Fin S.count}
+    (hwithin : hedgePairRootWithin G nodes root = true)
+    (hinc :
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) child = true) :
+    nodes child = true := by
+  have endpoints := Bool.and_eq_true_iff.mp hwithin
+  have hinc' : pairRootIncident G root child = true := by
+    have hinc' : hedgeIncident G (hedgePairRoot G root) child = true := by
+      simpa [hedgeLatentExtension] using hinc
+    rw [hedgeIncident_pair] at hinc'
+    exact hinc'
+  rcases (pairRootIncident_iff G root child).mp hinc' with hleft | hright
+  · simpa [hedgePairRootWithin, hleft] using endpoints.1
+  · simpa [hedgePairRootWithin, hright] using endpoints.2
+
+/-- No internal pair-root can contribute at a node outside the selected forest. -/
+theorem hedgeXorPairBitsWithin_of_child_outside
+    (G : ObservedGraph S) (nodes : NodeSet S) (child : Fin S.count)
+    (inputs : (hedgeLatentExtension G).Inputs child)
+    (hout : nodes child = false) :
+    hedgeXorPairBitsWithin G nodes child inputs = false := by
+  unfold hedgeXorPairBitsWithin
+  refine foldl_unchanged _ false (List.finRange (pairRootCount G)) ?_
+  intro acc root
+  if hinc :
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) child = true then
+    cases hwithin : hedgePairRootWithin G nodes root with
+    | false =>
+        simp [hinc]
+    | true =>
+        have hin := hedgePairRootWithin_child G nodes hwithin hinc
+        exact False.elim (Bool.false_ne_true (hout.symm.trans hin))
+  else
+    simp [hinc]
+
+/-- With no selected vertices, every forest-restricted pair XOR vanishes. -/
+theorem hedgeXorPairBitsWithin_empty
+    (G : ObservedGraph S) (child : Fin S.count)
+    (inputs : (hedgeLatentExtension G).Inputs child) :
+    hedgeXorPairBitsWithin G NodeSet.empty child inputs = false :=
+  hedgeXorPairBitsWithin_of_child_outside G NodeSet.empty child inputs rfl
+
+/-- Selecting every vertex recovers the original, unrestricted pair-root XOR. -/
+theorem hedgeXorPairBitsWithin_full
+    (G : ObservedGraph S) (child : Fin S.count)
+    (inputs : (hedgeLatentExtension G).Inputs child) :
+    hedgeXorPairBitsWithin G NodeSet.full child inputs =
+      hedgeXorPairBits G child inputs := by
+  unfold hedgeXorPairBitsWithin hedgeXorPairBits
+  refine foldl_congr _ _ _ _ ?_
+  intro acc root
+  if hinc :
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) child = true then
+    simp [hinc, hedgePairRootWithin, NodeSet.full]
+  else
+    simp [hinc]
+
+/-- All-false pair-root coordinates also annihilate every restricted XOR. -/
+theorem hedgeXorPairBitsWithin_of_false_pair_roots
+    (G : ObservedGraph S) (nodes : NodeSet S) (child : Fin S.count)
+    (inputs : (hedgeLatentExtension G).Inputs child)
+    (hfalse : forall root
+      (hinc : (hedgeLatentExtension G).incident
+        (hedgePairRoot G root) child = true),
+      cast (hedgeLatentValue_pair G root)
+        (inputs (hedgePairRoot G root) hinc) = false) :
+    hedgeXorPairBitsWithin G nodes child inputs = false := by
+  unfold hedgeXorPairBitsWithin
+  refine foldl_unchanged _ false (List.finRange (pairRootCount G)) ?_
+  intro acc root
+  if hinc :
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) child = true then
+    cases hwithin : hedgePairRootWithin G nodes root <;>
+      simp [hinc, hfalse root hinc]
   else
     simp [hinc]
 
@@ -29203,6 +29413,46 @@ theorem hedgeMixModel_compatible (G : ObservedGraph S)
     simpa [FiniteLatentSCM.observedGraph, LatentExtension.observedGraph,
       hedgeMixModel] using hedgeLatentExtension_projected G i j⟩
 
+/-!
+### Forest-indexed nonlinear hedge models
+
+The mask-only `hedgeMixModel` is sufficient for the bow and shared-switch
+leaves proved below, but it cannot distinguish an arbitrary hedge subforest.
+The following model is the general candidate used by the published hedge
+argument.  Its switch sees only bidirected roots internal to `nodes`, and its
+copy branch sees only directed edges selected by `kept`.  The latent skeleton
+and product prior still contain every edge of `G`, so changing these semantic
+dependencies does not change the projected graph.
+-/
+
+/-- Nonlinear parity model attached to a selected c-forest subgraph. -/
+def hedgeForestMixModel (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) (nodes : NodeSet S)
+    (kept : ForestChild S) : ExactModel S where
+  latent := hedgeLatentExtension G
+  factor := hedgeLatentFactor G
+  prior :=
+    FiniteProduct.record (hedgeLatentCount G) (hedgeLatentValue G)
+      (hedgeLatentFactor G)
+  product_law := fun events => by
+    simpa [LatentExtension.rectangularEvent, hedgeLatentExtension] using
+      FiniteProduct.record_rectangular_probVal
+        (hedgeLatentCount G) (hedgeLatentValue G) (hedgeLatentFactor G) events
+  mechanism := fun child parents inputs =>
+    hedgeMixFrom rich child
+      (hedgeXorPairBitsWithin G nodes child inputs)
+      (hedgeForestParentBitsFrom rich kept child parents)
+      (hedgePrivateDecode S child (hedgePrivateIndex G child inputs))
+
+/-- Forest selection changes mechanisms, but not compatibility with `G`. -/
+theorem hedgeForestMixModel_compatible (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) (nodes : NodeSet S)
+    (kept : ForestChild S) :
+    Compatible (hedgeForestMixModel G rich nodes kept) G :=
+  ⟨hedgeLatentExtension_canonical G, fun i j => by
+    simpa [FiniteLatentSCM.observedGraph, LatentExtension.observedGraph,
+      hedgeForestMixModel] using hedgeLatentExtension_projected G i j⟩
+
 theorem hedgeMixFrom_false (rich : ObservedSignature.ValueRich S)
     (child : Fin S.count) (parentBit : Bool) (base : S.Value child) :
     hedgeMixFrom rich child false parentBit base = base :=
@@ -29217,6 +29467,190 @@ theorem hedgeMixFrom_true_first (rich : ObservedSignature.ValueRich S)
     (child : Fin S.count) (base : S.Value child) :
     hedgeMixFrom rich child true false base = rich.first child :=
   rfl
+
+/--
+The all-false pair-root support makes every forest switch false.  Consequently
+the private coordinate selected for `target` realises `target` in every
+forest-indexed mix model, independently of the kept directed edges.
+-/
+theorem hedgeForestMixModel_evalNode_support
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (target : S.Assignment) (child : Fin S.count) :
+    (hedgeForestMixModel G rich nodes kept).evalNodeUnder
+        (FiniteLatentSCM.noIntervention S)
+        (hedgeSupportLatent G rich NodeSet.empty target) child =
+      target child := by
+  rw [FiniteLatentSCM.evalNodeUnder]
+  have hmech :
+      (hedgeForestMixModel G rich nodes kept).equationUnder
+          (FiniteLatentSCM.noIntervention S) child
+          (fun parent _ =>
+            (hedgeForestMixModel G rich nodes kept).evalNodeUnder
+              (FiniteLatentSCM.noIntervention S)
+              (hedgeSupportLatent G rich NodeSet.empty target) parent)
+          (fun latent _ =>
+            hedgeSupportLatent G rich NodeSet.empty target latent) =
+        (hedgeForestMixModel G rich nodes kept).mechanism child
+          (fun parent _ =>
+            (hedgeForestMixModel G rich nodes kept).evalNodeUnder
+              (FiniteLatentSCM.noIntervention S)
+              (hedgeSupportLatent G rich NodeSet.empty target) parent)
+          (fun latent _ =>
+            hedgeSupportLatent G rich NodeSet.empty target latent) := by
+    unfold FiniteLatentSCM.equationUnder FiniteLatentSCM.noIntervention
+    rfl
+  rw [hmech]
+  have hxor :
+      hedgeXorPairBitsWithin G nodes child
+          (fun latent _ =>
+            hedgeSupportLatent G rich NodeSet.empty target latent) = false :=
+    hedgeXorPairBitsWithin_of_false_pair_roots G nodes child _
+      (fun root _ =>
+        hedgeSupportLatent_pair G rich NodeSet.empty target root)
+  simp [hedgeForestMixModel, hxor, hedgeMixFrom_false]
+  rw [hedgeSupportLatent_private, hedgeParentBitsFrom_empty,
+    hedgeToggle_false, hedgePrivateDecode_index]
+
+/-- The canonical support assignment realises every observed assignment. -/
+theorem hedgeForestMixModel_eval_support
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (target : S.Assignment) :
+    (hedgeForestMixModel G rich nodes kept).eval
+        (hedgeSupportLatent G rich NodeSet.empty target) = target := by
+  funext child
+  exact hedgeForestMixModel_evalNode_support G rich nodes kept target child
+
+/--
+Every forest-indexed mix model is observationally positive.  A singleton
+latent cylinder around the canonical support assignment has positive product
+mass and is contained in the preimage of the requested observed atom.
+-/
+theorem hedgeForestMixModel_positive (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) (nodes : NodeSet S)
+    (kept : ForestChild S) :
+    ObservationallyPositive (hedgeForestMixModel G rich nodes kept) := by
+  intro assignment
+  have heval :=
+    hedgeForestMixModel_eval_support G rich nodes kept assignment
+  have hsubset :
+      forall u,
+        (hedgeLatentExtension G).rectangularEvent
+            (fun root value =>
+              decide
+                (value = hedgeSupportLatent G rich NodeSet.empty assignment root))
+            u = true →
+          FiniteProbRecord.singletonEvent assignment
+            ((hedgeForestMixModel G rich nodes kept).eval u) = true := by
+    intro u hrect
+    have hu : u = hedgeSupportLatent G rich NodeSet.empty assignment := by
+      funext root
+      have hroot :=
+        (FiniteProduct.rectangularEvent_eq_true_iff
+            (hedgeLatentCount G) (hedgeLatentValue G)
+            (fun root value =>
+              decide
+                (value =
+                  hedgeSupportLatent G rich NodeSet.empty assignment root))
+            u).mp
+          (by simpa [LatentExtension.rectangularEvent, hedgeLatentExtension]
+            using hrect) root
+      exact of_decide_eq_true hroot
+    simp [hu, heval, FiniteProbRecord.singletonEvent]
+  have hmono :=
+    FiniteProbRecord.eventMass_mono
+      (hedgeForestMixModel G rich nodes kept).prior.atoms _ _ hsubset
+  have hrect := by
+    simpa [hedgeForestMixModel, FiniteProduct.record,
+      LatentExtension.rectangularEvent, hedgeLatentExtension] using
+      FiniteProduct.eventMass_atoms (hedgeLatentCount G) (hedgeLatentValue G)
+        (hedgeLatentFactor G)
+        (fun root value =>
+          decide
+            (value = hedgeSupportLatent G rich NodeSet.empty assignment root))
+  have hpos :=
+    natProduct_pos _ _
+      (fun root => by
+        simpa [FiniteProbRecord.singletonEvent] using
+          hedgeLatentFactor_support_pos G rich NodeSet.empty assignment root)
+  have hprior :
+      0 <
+        FiniteProbRecord.eventMass
+          (hedgeForestMixModel G rich nodes kept).prior.atoms
+          (fun u =>
+            FiniteProbRecord.singletonEvent assignment
+              ((hedgeForestMixModel G rich nodes kept).eval u)) :=
+    Nat.lt_of_lt_of_le (hrect ▸ hpos) hmono
+  simpa [FiniteLatentSCM.observationalDist, FiniteProbRecord.probVal,
+    FiniteProbRecord.map, hedgeForestMixModel,
+    FiniteProbRecord.eventMass_map_labels] using hprior
+
+/-- Compatibility and positivity packaged for the completeness model class. -/
+theorem hedgeForestMixModel_mem_positive (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) (nodes : NodeSet S)
+    (kept : ForestChild S) :
+    (GraphModelClass.positive G).Mem
+      (hedgeForestMixModel G rich nodes kept) :=
+  ⟨hedgeForestMixModel_compatible G rich nodes kept,
+    hedgeForestMixModel_positive G rich nodes kept⟩
+
+/-!
+The two models canonically associated with a `HedgeWitness`.  Keeping these as
+named definitions prevents later observational and interventional proofs from
+silently swapping the large and small mechanisms.
+-/
+
+/-- Nonlinear parity model for the large forest `F`. -/
+def HedgeWitness.largeForestMixModel
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    ExactModel S :=
+  hedgeForestMixModel G rich w.large w.child
+
+/-- Nonlinear parity model for the restricted small forest `F'`. -/
+def HedgeWitness.smallForestMixModel
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    ExactModel S :=
+  hedgeForestMixModel G rich w.small (restrictChild w.small w.child)
+
+/-- The large member of the hedge pair lies in the positive graph class. -/
+theorem HedgeWitness.largeForestMixModel_mem_positive
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    (GraphModelClass.positive G).Mem (w.largeForestMixModel rich) :=
+  hedgeForestMixModel_mem_positive G rich w.large w.child
+
+/-- The small member of the hedge pair lies in the positive graph class. -/
+theorem HedgeWitness.smallForestMixModel_mem_positive
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    (GraphModelClass.positive G).Mem (w.smallForestMixModel rich) :=
+  hedgeForestMixModel_mem_positive G rich w.small
+    (restrictChild w.small w.child)
+
+/-- Both forest models use literally the same product distribution on latents. -/
+theorem HedgeWitness.forestMixModel_prior_eq
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    (w.largeForestMixModel rich).prior =
+      (w.smallForestMixModel rich).prior :=
+  rfl
+
+/-- The chosen action-boundary edge is active in the large mechanism. -/
+theorem HedgeWitness.actionBoundary_kept_large
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    w.child w.actionBoundaryParent = some w.actionBoundaryChild :=
+  w.actionBoundary_child
+
+/-- The same edge is absent from the small mechanism because its parent is outside `F'`. -/
+theorem HedgeWitness.actionBoundary_not_kept_small
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    restrictChild w.small w.child w.actionBoundaryParent = none :=
+  restrictChild_of_false w.actionBoundaryParent_not_in_small
 
 /--
 All-false pair-roots make the mix reduce to the private decode, so the
