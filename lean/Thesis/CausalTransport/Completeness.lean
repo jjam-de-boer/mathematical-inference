@@ -327,11 +327,13 @@ induction.  The remaining inhabitants are:
   incidence required by every actual large- or small-forest evaluation;
   `nestedPairBits_of_inner_even` further proves that the piecewise
   outer/small incidence map is surjective whenever its small restriction is
-  even; proving equal fibers for that nested map, connecting the two models'
-  atom counts, and then adding full-support noise without erasing the
-  interventional separation remain hard steps--the tempting construction
-  that merely gates a private decode by restricted pair parity already fails
-  observational equivalence on the two-node bow;
+  even, and `nestedPairBitRealizers_length_eq_of_inner_even` proves all such
+  targets have equal fibers by another explicit XOR permutation; connecting
+  these pair-bit counts to the two models' full latent atom counts, and then
+  adding full-support noise without erasing the interventional separation
+  remain hard steps--the tempting construction that merely gates a private
+  decode by restricted pair parity already fails observational equivalence
+  on the two-node bow;
   outcome vertices sit in their ancestral set in `G_{\overline{X}}`
   (`outcome_subset_ancestralSet`), so the nested shrink-empty summed
   blocks cover `V \ Y` (`first_shrink_empty_summed_eq`);
@@ -31479,6 +31481,217 @@ theorem BidirectedComponent.nestedPairBits_of_inner_even
     rw [hedgeXorPairBitsWithinFrom_xor, hedgePairBitsRestrict_same,
       realizesInner node inInner, outsideAt]
     simp
+
+/-- Nested incidence is linear in the pair-root vector. -/
+theorem hedgeNestedXorPairBitsWithinFrom_xor
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (node : Fin S.count)
+    (left right : Fin (pairRootCount G) → Bool) :
+    hedgeNestedXorPairBitsWithinFrom G outer inner node
+        (hedgePairBitsXor G left right) =
+      Bool.xor
+        (hedgeNestedXorPairBitsWithinFrom G outer inner node left)
+        (hedgeNestedXorPairBitsWithinFrom G outer inner node right) := by
+  unfold hedgeNestedXorPairBitsWithinFrom
+  split <;> exact hedgeXorPairBitsWithinFrom_xor G _ node left right
+
+/-- Executable realization test for the piecewise nested incidence map. -/
+def hedgeNestedPairBitsRealizes (G : ObservedGraph S)
+    (outer inner : NodeSet S) (target : Fin S.count → Bool)
+    (pairBits : Fin (pairRootCount G) → Bool) : Bool :=
+  (NodeSet.members outer).all fun node =>
+    hedgeNestedXorPairBitsWithinFrom G outer inner node pairBits == target node
+
+theorem hedgeNestedPairBitsRealizes_of
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (target : Fin S.count → Bool)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (agrees : ∀ node, outer node = true →
+      hedgeNestedXorPairBitsWithinFrom G outer inner node pairBits =
+        target node) :
+    hedgeNestedPairBitsRealizes G outer inner target pairBits = true := by
+  unfold hedgeNestedPairBitsRealizes
+  refine List.all_eq_true.mpr ?_
+  intro node member
+  exact beq_iff_eq.mpr
+    (agrees node ((NodeSet.mem_members_iff outer node).mp member))
+
+theorem hedgeNestedPairBitsRealizes_spec
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (target : Fin S.count → Bool)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (realizes :
+      hedgeNestedPairBitsRealizes G outer inner target pairBits = true) :
+    ∀ node, outer node = true →
+      hedgeNestedXorPairBitsWithinFrom G outer inner node pairBits =
+        target node := by
+  intro node inside
+  have member := (NodeSet.mem_members_iff outer node).mpr inside
+  exact beq_iff_eq.mp ((List.all_eq_true.mp realizes) node member)
+
+/-- The exhaustive pair-bit enumeration detects every admissible nested target. -/
+theorem BidirectedComponent.nestedPairBitsRealizes_any_of_inner_even
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (outerComponent : BidirectedComponent G outer)
+    (innerComponent : BidirectedComponent G inner)
+    (subset : NodeSet.Subset inner outer)
+    (target : Fin S.count → Bool)
+    (innerEven : (hedgeTrueVertices inner target).length % 2 = 0) :
+    (hedgePairBitEnum G).any
+      (hedgeNestedPairBitsRealizes G outer inner target) = true := by
+  rcases outerComponent.nestedPairBits_of_inner_even G outer inner
+      innerComponent subset target innerEven with ⟨pairBits, agrees⟩
+  exact List.any_eq_true.mpr
+    ⟨pairBits, hedgePairBitEnum_complete G pairBits,
+      hedgeNestedPairBitsRealizes_of G outer inner target pairBits agrees⟩
+
+/--
+First enumerated root vector realizing a nested target whose inner restriction
+is even.  As for `evenTargetPairBits`, finite search turns propositional
+surjectivity into data without eliminating an existential into `Type`.
+-/
+def BidirectedComponent.nestedEvenTargetPairBits
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (outerComponent : BidirectedComponent G outer)
+    (innerComponent : BidirectedComponent G inner)
+    (subset : NodeSet.Subset inner outer)
+    (target : Fin S.count → Bool)
+    (innerEven : (hedgeTrueVertices inner target).length % 2 = 0) :
+    Fin (pairRootCount G) → Bool :=
+  listFirstAny (hedgePairBitEnum G)
+    (hedgeNestedPairBitsRealizes G outer inner target)
+    (outerComponent.nestedPairBitsRealizes_any_of_inner_even G outer inner
+      innerComponent subset target innerEven)
+
+/-- The computed nested vector realizes its target on every outer vertex. -/
+theorem BidirectedComponent.nestedEvenTargetPairBits_spec
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (outerComponent : BidirectedComponent G outer)
+    (innerComponent : BidirectedComponent G inner)
+    (subset : NodeSet.Subset inner outer)
+    (target : Fin S.count → Bool)
+    (innerEven : (hedgeTrueVertices inner target).length % 2 = 0) :
+    ∀ node, outer node = true →
+      hedgeNestedXorPairBitsWithinFrom G outer inner node
+          (outerComponent.nestedEvenTargetPairBits G outer inner
+            innerComponent subset target innerEven) = target node :=
+  hedgeNestedPairBitsRealizes_spec G outer inner target _
+    (listFirstAny_pred (hedgePairBitEnum G)
+      (hedgeNestedPairBitsRealizes G outer inner target)
+      (outerComponent.nestedPairBitsRealizes_any_of_inner_even G outer inner
+        innerComponent subset target innerEven))
+
+/-- Root-vector translation between two admissible nested incidence targets. -/
+def BidirectedComponent.nestedTargetTranslation
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (outerComponent : BidirectedComponent G outer)
+    (innerComponent : BidirectedComponent G inner)
+    (subset : NodeSet.Subset inner outer)
+    (left right : Fin S.count → Bool)
+    (leftEven : (hedgeTrueVertices inner left).length % 2 = 0)
+    (rightEven : (hedgeTrueVertices inner right).length % 2 = 0) :
+    Fin (pairRootCount G) → Bool :=
+  hedgePairBitsXor G
+    (outerComponent.nestedEvenTargetPairBits G outer inner
+      innerComponent subset left leftEven)
+    (outerComponent.nestedEvenTargetPairBits G outer inner
+      innerComponent subset right rightEven)
+
+/-- The nested translation has incidence `left XOR right` on the outer forest. -/
+theorem BidirectedComponent.nestedTargetTranslation_spec
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (outerComponent : BidirectedComponent G outer)
+    (innerComponent : BidirectedComponent G inner)
+    (subset : NodeSet.Subset inner outer)
+    (left right : Fin S.count → Bool)
+    (leftEven : (hedgeTrueVertices inner left).length % 2 = 0)
+    (rightEven : (hedgeTrueVertices inner right).length % 2 = 0) :
+    ∀ node, outer node = true →
+      hedgeNestedXorPairBitsWithinFrom G outer inner node
+          (outerComponent.nestedTargetTranslation G outer inner
+            innerComponent subset left right leftEven rightEven) =
+        Bool.xor (left node) (right node) := by
+  intro node inside
+  rw [BidirectedComponent.nestedTargetTranslation,
+    hedgeNestedXorPairBitsWithinFrom_xor,
+    outerComponent.nestedEvenTargetPairBits_spec G outer inner
+      innerComponent subset left leftEven node inside,
+    outerComponent.nestedEvenTargetPairBits_spec G outer inner
+      innerComponent subset right rightEven node inside]
+
+/-- Nested translation carries the `left` realization test exactly to `right`. -/
+theorem BidirectedComponent.nestedTargetTranslation_realizes_eq
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (outerComponent : BidirectedComponent G outer)
+    (innerComponent : BidirectedComponent G inner)
+    (subset : NodeSet.Subset inner outer)
+    (left right : Fin S.count → Bool)
+    (leftEven : (hedgeTrueVertices inner left).length % 2 = 0)
+    (rightEven : (hedgeTrueVertices inner right).length % 2 = 0)
+    (pairBits : Fin (pairRootCount G) → Bool) :
+    hedgeNestedPairBitsRealizes G outer inner right
+        (hedgePairBitsXor G pairBits
+          (outerComponent.nestedTargetTranslation G outer inner
+            innerComponent subset left right leftEven rightEven)) =
+      hedgeNestedPairBitsRealizes G outer inner left pairBits := by
+  apply Bool.eq_iff_iff.mpr
+  constructor
+  · intro translatedRealizes
+    apply hedgeNestedPairBitsRealizes_of
+    intro node inside
+    have translatedAtNode :=
+      hedgeNestedPairBitsRealizes_spec G outer inner right _
+        translatedRealizes node inside
+    rw [hedgeNestedXorPairBitsWithinFrom_xor,
+      outerComponent.nestedTargetTranslation_spec G outer inner
+        innerComponent subset left right leftEven rightEven node inside]
+      at translatedAtNode
+    cases hpair :
+        hedgeNestedXorPairBitsWithinFrom G outer inner node pairBits <;>
+      cases hleft : left node <;> cases hright : right node <;>
+      simp_all
+  · intro leftRealizes
+    apply hedgeNestedPairBitsRealizes_of
+    intro node inside
+    rw [hedgeNestedXorPairBitsWithinFrom_xor,
+      hedgeNestedPairBitsRealizes_spec G outer inner left pairBits
+        leftRealizes node inside,
+      outerComponent.nestedTargetTranslation_spec G outer inner
+        innerComponent subset left right leftEven rightEven node inside]
+    cases left node <;> cases right node <;> rfl
+
+/--
+All nested targets with even inner restriction have equally many pair-root
+preimages.  The proof is the same explicit XOR permutation used for a single
+component, now with the piecewise incidence realization test.
+-/
+theorem BidirectedComponent.nestedPairBitRealizers_length_eq_of_inner_even
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (outerComponent : BidirectedComponent G outer)
+    (innerComponent : BidirectedComponent G inner)
+    (subset : NodeSet.Subset inner outer)
+    (left right : Fin S.count → Bool)
+    (leftEven : (hedgeTrueVertices inner left).length % 2 = 0)
+    (rightEven : (hedgeTrueVertices inner right).length % 2 = 0) :
+    ((hedgePairBitEnum G).filter
+        (hedgeNestedPairBitsRealizes G outer inner left)).length =
+      ((hedgePairBitEnum G).filter
+        (hedgeNestedPairBitsRealizes G outer inner right)).length := by
+  let delta := outerComponent.nestedTargetTranslation G outer inner
+    innerComponent subset left right leftEven rightEven
+  have translatedEnumeration := hedgePairBitEnum_map_xor_perm G delta
+  have translatedRealizers :=
+    translatedEnumeration.filter
+      (hedgeNestedPairBitsRealizes G outer inner right)
+  have predicateEq :
+      hedgeNestedPairBitsRealizes G outer inner right ∘
+          (fun pairBits => hedgePairBitsXor G pairBits delta) =
+        hedgeNestedPairBitsRealizes G outer inner left := by
+    funext pairBits
+    exact outerComponent.nestedTargetTranslation_realizes_eq G outer inner
+      innerComponent subset left right leftEven rightEven pairBits
+  rw [List.filter_map, predicateEq] at translatedRealizers
+  simpa using translatedRealizers.length_eq
 
 /-- A single selected internal root contributes one at an incident endpoint. -/
 theorem hedgeXorPairBitsWithinFrom_of_one
