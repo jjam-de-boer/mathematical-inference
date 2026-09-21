@@ -151,6 +151,67 @@ theorem perm_of_nodup_mem_iff {A : Type u} [BEq A] [LawfulBEq A]
           tailMembers
       exact (tailPerm.cons head).trans List.perm_middle.symm
 
+/--
+Mapping a duplicate-free list by a function that is injective on that list
+preserves duplicate-freeness.  Unlike global injectivity, the hypothesis may
+use membership evidence for both source values.
+-/
+theorem nodup_map_of_injective_on {A : Type u} {B : Type v}
+    [BEq B] [LawfulBEq B]
+    (forward : A → B) (values : List A)
+    (injectiveOn : ∀ left, left ∈ values → ∀ right, right ∈ values →
+      forward left = forward right → left = right)
+    (nodup : values.Nodup) :
+    (values.map forward).Nodup := by
+  induction values with
+  | nil => exact List.nodup_nil
+  | cons head tail inductionHypothesis =>
+      have parts := List.nodup_cons.mp nodup
+      apply List.nodup_cons.mpr
+      constructor
+      · intro occurs
+        rcases List.mem_map.mp occurs with ⟨value, valueMem, equal⟩
+        have same := injectiveOn head (by simp) value (by simp [valueMem])
+          equal.symm
+        exact parts.1 (same ▸ valueMem)
+      · apply inductionHypothesis
+        · intro left leftMem right rightMem equal
+          exact injectiveOn left (by simp [leftMem]) right (by simp [rightMem])
+            equal
+        · exact parts.2
+
+/--
+A duplicate-free finite list cannot be longer than a list containing every
+one of its values.  The proof removes one explicit matching occurrence at a
+time and therefore does not choose a global embedding.
+-/
+theorem length_le_of_nodup_subset {A : Type u}
+    [BEq A] [LawfulBEq A] : ∀ {left right : List A},
+    left.Nodup → (∀ value, value ∈ left → value ∈ right) →
+      left.length ≤ right.length := by
+  intro left
+  induction left with
+  | nil => simp
+  | cons head tail inductionHypothesis =>
+      intro right nodup subset
+      have parts := List.nodup_cons.mp nodup
+      have headMem := subset head (by simp)
+      obtain ⟨before, after, rightEq⟩ := List.append_of_mem headMem
+      subst right
+      have tailSubset : ∀ value, value ∈ tail → value ∈ before ++ after := by
+        intro value valueMem
+        have inRight := subset value (by simp [valueMem])
+        simp only [List.mem_append, List.mem_cons] at inRight ⊢
+        rcases inRight with inBefore | equal | inAfter
+        · exact Or.inl inBefore
+        · subst value
+          exact False.elim (parts.1 valueMem)
+        · exact Or.inr inAfter
+      have tailLength := inductionHypothesis parts.2 tailSubset
+      simp only [List.length_append] at tailLength
+      simp only [List.length_cons, List.length_append]
+      omega
+
 end ConstructivePermutation
 end Probability
 end Thesis

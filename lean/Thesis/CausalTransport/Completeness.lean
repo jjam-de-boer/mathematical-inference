@@ -328,12 +328,14 @@ induction.  The remaining inhabitants are:
   `nestedPairBits_of_inner_even` further proves that the piecewise
   outer/small incidence map is surjective whenever its small restriction is
   even, and `nestedPairBitRealizers_length_eq_of_inner_even` proves all such
-  targets have equal fibers by another explicit XOR permutation; connecting
-  these pair-bit counts to the two models' full latent atom counts, and then
-  adding full-support noise without erasing the interventional separation
-  remain hard steps--the tempting construction that merely gates a private
-  decode by restricted pair parity already fails observational equivalence
-  on the two-node bow;
+  targets have equal fibers by another explicit XOR permutation; explicit
+  injections between the ordinary and nested zero kernels then yield the
+  cross-map count `pairBitRealizers_length_eq_nested`; connecting these
+  pair-bit counts to the two models' full latent atom counts, and then adding
+  full-support noise without erasing the interventional separation remain
+  hard steps--the tempting construction that merely gates a private decode by
+  restricted pair parity already fails observational equivalence on the
+  two-node bow;
   outcome vertices sit in their ancestral set in `G_{\overline{X}}`
   (`outcome_subset_ancestralSet`), so the nested shrink-empty summed
   blocks cover `V \ Y` (`first_shrink_empty_summed_eq`);
@@ -31692,6 +31694,537 @@ theorem BidirectedComponent.nestedPairBitRealizers_length_eq_of_inner_even
       innerComponent subset left right leftEven rightEven pairBits
   rw [List.filter_map, predicateEq] at translatedRealizers
   simpa using translatedRealizers.length_eq
+
+/-- The all-false incidence target on observed vertices. -/
+def hedgeZeroIncidenceTarget (S : ObservedSignature) : Fin S.count → Bool :=
+  fun _node => false
+
+theorem hedgeZeroIncidenceTarget_trueVertices (nodes : NodeSet S) :
+    hedgeTrueVertices nodes (hedgeZeroIncidenceTarget S) = [] := by
+  unfold hedgeTrueVertices hedgeZeroIncidenceTarget
+  induction NodeSet.members nodes with
+  | nil => rfl
+  | cons node rest inductionHypothesis =>
+      simp [inductionHypothesis]
+
+/-- The zero incidence target has even support on every node set. -/
+theorem hedgeZeroIncidenceTarget_even (nodes : NodeSet S) :
+    (hedgeTrueVertices nodes (hedgeZeroIncidenceTarget S)).length % 2 = 0 := by
+  rw [hedgeZeroIncidenceTarget_trueVertices]
+  rfl
+
+/--
+Canonical even-target section supported only on roots internal to `nodes`.
+Restriction preserves its requested incidence while making every external
+coordinate inert.
+-/
+def BidirectedComponent.internalEvenTargetPairBits
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (component : BidirectedComponent G nodes)
+    (target : Fin S.count → Bool)
+    (even : (hedgeTrueVertices nodes target).length % 2 = 0) :
+    Fin (pairRootCount G) → Bool :=
+  hedgePairBitsRestrict G nodes
+    (component.evenTargetPairBits G nodes target even)
+
+/-- The internal section realizes its requested target on `nodes`. -/
+theorem BidirectedComponent.internalEvenTargetPairBits_spec
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (component : BidirectedComponent G nodes)
+    (target : Fin S.count → Bool)
+    (even : (hedgeTrueVertices nodes target).length % 2 = 0) :
+    ∀ node, nodes node = true →
+      hedgeXorPairBitsWithinFrom G nodes node
+          (component.internalEvenTargetPairBits G nodes target even) =
+        target node := by
+  intro node inside
+  rw [BidirectedComponent.internalEvenTargetPairBits,
+    hedgePairBitsRestrict_same]
+  exact component.evenTargetPairBits_spec G nodes target even node inside
+
+/-- Pointwise-equal targets give the same canonical internal section. -/
+theorem BidirectedComponent.internalEvenTargetPairBits_congr
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (component : BidirectedComponent G nodes)
+    {left right : Fin S.count → Bool} (equal : left = right)
+    (leftEven : (hedgeTrueVertices nodes left).length % 2 = 0)
+    (rightEven : (hedgeTrueVertices nodes right).length % 2 = 0) :
+    component.internalEvenTargetPairBits G nodes left leftEven =
+      component.internalEvenTargetPairBits G nodes right rightEven := by
+  subst right
+  rfl
+
+/--
+At every vertex, a vector supported internally to `inner` has the same
+incidence whether measured in `inner` or in a containing `outer` set.
+-/
+theorem hedgePairBitsRestrict_inside
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (subset : NodeSet.Subset inner outer)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (child : Fin S.count) :
+    hedgeXorPairBitsWithinFrom G outer child
+        (hedgePairBitsRestrict G inner pairBits) =
+      hedgeXorPairBitsWithinFrom G inner child pairBits := by
+  unfold hedgeXorPairBitsWithinFrom
+  apply foldl_congr
+  intro total root
+  cases hinner : hedgePairRootWithin G inner root
+  · cases hinc :
+        (hedgeLatentExtension G).incident (hedgePairRoot G root) child <;>
+      cases houter : hedgePairRootWithin G outer root <;>
+      simp [hedgePairBitsRestrict, hinner]
+  · have innerEndpoints := Bool.and_eq_true_iff.mp hinner
+    have outerWithin : hedgePairRootWithin G outer root = true := by
+      unfold hedgePairRootWithin at hinner ⊢
+      exact Bool.and_eq_true_iff.mpr
+        ⟨subset _ innerEndpoints.1, subset _ innerEndpoints.2⟩
+    cases hinc :
+        (hedgeLatentExtension G).incident (hedgePairRoot G root) child <;>
+      simp [hedgePairBitsRestrict, hinner, outerWithin]
+
+/-- Restricted incidence vanishes at a vertex outside the restricting set. -/
+theorem hedgeXorPairBitsWithinFrom_of_child_outside
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (pairBits : Fin (pairRootCount G) → Bool) (child : Fin S.count)
+    (outside : nodes child = false) :
+    hedgeXorPairBitsWithinFrom G nodes child pairBits = false := by
+  unfold hedgeXorPairBitsWithinFrom
+  apply foldl_unchanged
+  intro total root
+  cases hinc :
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) child
+  · simp
+  · cases hwithin : hedgePairRootWithin G nodes root
+    · simp
+    · have inside := hedgePairRootWithin_child G nodes hwithin hinc
+      exact False.elim (Bool.false_ne_true (outside.symm.trans inside))
+
+/--
+If nested incidence is zero, the full outer incidence restricted to `inner`
+has even support.  Full incidence is globally even, while the nested zero
+equations make every outer coordinate outside `inner` false.
+-/
+theorem hedgeInnerFullIncidence_even_of_nested_zero
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (subset : NodeSet.Subset inner outer)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (realizes : hedgeNestedPairBitsRealizes G outer inner
+      (hedgeZeroIncidenceTarget S) pairBits = true) :
+    (hedgeTrueVertices inner
+      (fun node => hedgeXorPairBitsWithinFrom G outer node pairBits)).length %
+        2 = 0 := by
+  let target := fun node =>
+    hedgeXorPairBitsWithinFrom G outer node pairBits
+  have nestedAgrees := hedgeNestedPairBitsRealizes_spec G outer inner
+    (hedgeZeroIncidenceTarget S) pairBits realizes
+  have trueVerticesEq :
+      hedgeTrueVertices outer target = hedgeTrueVertices inner target := by
+    unfold hedgeTrueVertices NodeSet.members
+    rw [List.filter_filter, List.filter_filter]
+    apply List.filter_congr
+    intro node _member
+    cases inOuter : outer node <;> cases inInner : inner node <;>
+      cases htarget : target node
+    all_goals simp
+    · exact False.elim
+        (Bool.false_ne_true (inOuter.symm.trans (subset node inInner)))
+    · have outsideAt := nestedAgrees node inOuter
+      simp [hedgeNestedXorPairBitsWithinFrom, inInner,
+        hedgeZeroIncidenceTarget] at outsideAt
+      exact False.elim (Bool.false_ne_true (outsideAt.symm.trans htarget))
+  rw [← trueVerticesEq]
+  exact hedgeXorPairBitsWithinFrom_even G outer pairBits
+
+/-- Full outer incidence, masked to the inner set. -/
+def hedgeInnerFullIncidenceTarget (G : ObservedGraph S)
+    (outer inner : NodeSet S) (pairBits : Fin (pairRootCount G) → Bool)
+    (node : Fin S.count) : Bool :=
+  if inner node then
+    hedgeXorPairBitsWithinFrom G outer node pairBits
+  else
+    false
+
+theorem hedgeInnerFullIncidenceTarget_trueVertices
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (pairBits : Fin (pairRootCount G) → Bool) :
+    hedgeTrueVertices inner
+        (hedgeInnerFullIncidenceTarget G outer inner pairBits) =
+      hedgeTrueVertices inner
+        (fun node => hedgeXorPairBitsWithinFrom G outer node pairBits) := by
+  unfold hedgeTrueVertices
+  apply List.filter_congr
+  intro node member
+  have inside := (NodeSet.mem_members_iff inner node).mp member
+  simp [hedgeInnerFullIncidenceTarget, inside]
+
+theorem hedgeInnerFullIncidenceTarget_even_of_nested_zero
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (subset : NodeSet.Subset inner outer)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (realizes : hedgeNestedPairBitsRealizes G outer inner
+      (hedgeZeroIncidenceTarget S) pairBits = true) :
+    (hedgeTrueVertices inner
+      (hedgeInnerFullIncidenceTarget G outer inner pairBits)).length % 2 = 0 := by
+  rw [hedgeInnerFullIncidenceTarget_trueVertices]
+  exact hedgeInnerFullIncidence_even_of_nested_zero G outer inner subset
+    pairBits realizes
+
+/--
+Map an ordinary outer-incidence kernel vector to a nested-incidence kernel
+vector.  Subtracting a canonical internal section cancels exactly its inner
+incidence and preserves all outside coordinates.
+-/
+def BidirectedComponent.largeKernelToNestedPairBits
+    (G : ObservedGraph S) (inner : NodeSet S)
+    (innerComponent : BidirectedComponent G inner)
+    (pairBits : Fin (pairRootCount G) → Bool) :
+    Fin (pairRootCount G) → Bool :=
+  let target := fun node =>
+    hedgeXorPairBitsWithinFrom G inner node pairBits
+  hedgePairBitsXor G pairBits
+    (innerComponent.internalEvenTargetPairBits G inner target
+      (hedgeXorPairBitsWithinFrom_even G inner pairBits))
+
+theorem BidirectedComponent.largeKernelToNestedPairBits_realizes
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (innerComponent : BidirectedComponent G inner)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (largeZero : hedgePairBitsRealizes G outer
+      (hedgeZeroIncidenceTarget S) pairBits = true) :
+    hedgeNestedPairBitsRealizes G outer inner
+        (hedgeZeroIncidenceTarget S)
+        (innerComponent.largeKernelToNestedPairBits G inner pairBits) = true := by
+  apply hedgeNestedPairBitsRealizes_of
+  intro node inOuter
+  cases inInner : inner node
+  · simp only [hedgeNestedXorPairBitsWithinFrom, inInner,
+      Bool.false_eq_true, ↓reduceIte]
+    rw [BidirectedComponent.largeKernelToNestedPairBits,
+      hedgeXorPairBitsWithinFrom_xor,
+      hedgePairBitsRealizes_spec G outer (hedgeZeroIncidenceTarget S)
+        pairBits largeZero node inOuter,
+      BidirectedComponent.internalEvenTargetPairBits,
+      hedgePairBitsRestrict_outside G outer inner _ node inInner]
+    rfl
+  · simp only [hedgeNestedXorPairBitsWithinFrom, inInner, ↓reduceIte]
+    rw [BidirectedComponent.largeKernelToNestedPairBits,
+      hedgeXorPairBitsWithinFrom_xor,
+      innerComponent.internalEvenTargetPairBits_spec G inner _ _ node inInner]
+    generalize hedgeXorPairBitsWithinFrom G inner node pairBits = bit
+    cases bit <;> rfl
+
+/-- The ordinary-to-nested kernel map is injective on the ordinary zero fiber. -/
+theorem BidirectedComponent.largeKernelToNestedPairBits_injective
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (subset : NodeSet.Subset inner outer)
+    (innerComponent : BidirectedComponent G inner)
+    (left right : Fin (pairRootCount G) → Bool)
+    (leftZero : hedgePairBitsRealizes G outer
+      (hedgeZeroIncidenceTarget S) left = true)
+    (rightZero : hedgePairBitsRealizes G outer
+      (hedgeZeroIncidenceTarget S) right = true)
+    (equal : innerComponent.largeKernelToNestedPairBits G inner left =
+      innerComponent.largeKernelToNestedPairBits G inner right) :
+    left = right := by
+  let leftTarget := fun node =>
+    hedgeXorPairBitsWithinFrom G inner node left
+  let rightTarget := fun node =>
+    hedgeXorPairBitsWithinFrom G inner node right
+  let leftCorrection := innerComponent.internalEvenTargetPairBits G inner
+    leftTarget (hedgeXorPairBitsWithinFrom_even G inner left)
+  let rightCorrection := innerComponent.internalEvenTargetPairBits G inner
+    rightTarget (hedgeXorPairBitsWithinFrom_even G inner right)
+  have targetEq : leftTarget = rightTarget := by
+    funext node
+    by_cases inInner : inner node = true
+    · have atNode := congrArg
+        (fun bits => hedgeXorPairBitsWithinFrom G outer node bits) equal
+      have inOuter := subset node inInner
+      change hedgeXorPairBitsWithinFrom G outer node
+          (hedgePairBitsXor G left leftCorrection) =
+        hedgeXorPairBitsWithinFrom G outer node
+          (hedgePairBitsXor G right rightCorrection) at atNode
+      have leftCorrectionAt :
+          hedgeXorPairBitsWithinFrom G outer node leftCorrection =
+            leftTarget node := by
+        unfold leftCorrection BidirectedComponent.internalEvenTargetPairBits
+        rw [hedgePairBitsRestrict_inside G outer inner subset,
+          innerComponent.evenTargetPairBits_spec G inner leftTarget _
+            node inInner]
+      have rightCorrectionAt :
+          hedgeXorPairBitsWithinFrom G outer node rightCorrection =
+            rightTarget node := by
+        unfold rightCorrection BidirectedComponent.internalEvenTargetPairBits
+        rw [hedgePairBitsRestrict_inside G outer inner subset,
+          innerComponent.evenTargetPairBits_spec G inner rightTarget _
+            node inInner]
+      rw [hedgeXorPairBitsWithinFrom_xor,
+        hedgeXorPairBitsWithinFrom_xor,
+        hedgePairBitsRealizes_spec G outer (hedgeZeroIncidenceTarget S)
+          left leftZero node inOuter,
+        hedgePairBitsRealizes_spec G outer (hedgeZeroIncidenceTarget S)
+          right rightZero node inOuter,
+        leftCorrectionAt, rightCorrectionAt] at atNode
+      simpa [leftTarget, rightTarget, hedgeZeroIncidenceTarget] using atNode
+    · have leftFalse : leftTarget node = false := by
+        unfold leftTarget
+        exact hedgeXorPairBitsWithinFrom_of_child_outside G inner left node
+          (Bool.eq_false_iff.mpr inInner)
+      have rightFalse : rightTarget node = false := by
+        unfold rightTarget
+        exact hedgeXorPairBitsWithinFrom_of_child_outside G inner right node
+          (Bool.eq_false_iff.mpr inInner)
+      rw [leftFalse, rightFalse]
+  have correctionEq : leftCorrection = rightCorrection := by
+    unfold leftCorrection rightCorrection
+    exact innerComponent.internalEvenTargetPairBits_congr G inner targetEq _ _
+  change hedgePairBitsXor G left leftCorrection =
+      hedgePairBitsXor G right rightCorrection at equal
+  rw [correctionEq] at equal
+  have twice := congrArg
+    (fun bits => hedgePairBitsXor G bits rightCorrection) equal
+  simpa only [hedgePairBitsXor_self_right] using twice
+
+/--
+Map a nested-incidence kernel vector back to an ordinary outer kernel vector.
+The correction is enabled only when the masked full incidence is even, making
+the definition total; nested kernel membership proves that branch is taken.
+-/
+def BidirectedComponent.nestedKernelToLargePairBits
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (innerComponent : BidirectedComponent G inner)
+    (pairBits : Fin (pairRootCount G) → Bool) :
+    Fin (pairRootCount G) → Bool :=
+  let target := hedgeInnerFullIncidenceTarget G outer inner pairBits
+  if even : (hedgeTrueVertices inner target).length % 2 = 0 then
+    hedgePairBitsXor G pairBits
+      (innerComponent.internalEvenTargetPairBits G inner target even)
+  else
+    pairBits
+
+theorem BidirectedComponent.nestedKernelToLargePairBits_realizes
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (subset : NodeSet.Subset inner outer)
+    (innerComponent : BidirectedComponent G inner)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (nestedZero : hedgeNestedPairBitsRealizes G outer inner
+      (hedgeZeroIncidenceTarget S) pairBits = true) :
+    hedgePairBitsRealizes G outer (hedgeZeroIncidenceTarget S)
+        (innerComponent.nestedKernelToLargePairBits G outer inner pairBits) =
+      true := by
+  have even := hedgeInnerFullIncidenceTarget_even_of_nested_zero
+    G outer inner subset pairBits nestedZero
+  rw [BidirectedComponent.nestedKernelToLargePairBits, dif_pos even]
+  apply hedgePairBitsRealizes_of
+  intro node inOuter
+  cases inInner : inner node
+  · have nestedAt := hedgeNestedPairBitsRealizes_spec G outer inner
+      (hedgeZeroIncidenceTarget S) pairBits nestedZero node inOuter
+    simp [hedgeNestedXorPairBitsWithinFrom, inInner,
+      hedgeZeroIncidenceTarget] at nestedAt
+    rw [hedgeXorPairBitsWithinFrom_xor, nestedAt,
+      BidirectedComponent.internalEvenTargetPairBits,
+      hedgePairBitsRestrict_outside G outer inner _ node inInner]
+    rfl
+  · rw [hedgeXorPairBitsWithinFrom_xor]
+    have correctionAt :
+        hedgeXorPairBitsWithinFrom G outer node
+            (innerComponent.internalEvenTargetPairBits G inner
+              (hedgeInnerFullIncidenceTarget G outer inner pairBits) even) =
+          hedgeXorPairBitsWithinFrom G outer node pairBits := by
+      unfold BidirectedComponent.internalEvenTargetPairBits
+      rw [hedgePairBitsRestrict_inside G outer inner subset,
+        innerComponent.evenTargetPairBits_spec G inner _ even node inInner]
+      simp [hedgeInnerFullIncidenceTarget, inInner]
+    rw [correctionAt]
+    generalize hedgeXorPairBitsWithinFrom G outer node pairBits = bit
+    cases bit <;> rfl
+
+/-- The nested-to-ordinary kernel map is injective on the nested zero fiber. -/
+theorem BidirectedComponent.nestedKernelToLargePairBits_injective
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (subset : NodeSet.Subset inner outer)
+    (innerComponent : BidirectedComponent G inner)
+    (left right : Fin (pairRootCount G) → Bool)
+    (leftZero : hedgeNestedPairBitsRealizes G outer inner
+      (hedgeZeroIncidenceTarget S) left = true)
+    (rightZero : hedgeNestedPairBitsRealizes G outer inner
+      (hedgeZeroIncidenceTarget S) right = true)
+    (equal : innerComponent.nestedKernelToLargePairBits G outer inner left =
+      innerComponent.nestedKernelToLargePairBits G outer inner right) :
+    left = right := by
+  let leftTarget := hedgeInnerFullIncidenceTarget G outer inner left
+  let rightTarget := hedgeInnerFullIncidenceTarget G outer inner right
+  have leftEven := hedgeInnerFullIncidenceTarget_even_of_nested_zero
+    G outer inner subset left leftZero
+  have rightEven := hedgeInnerFullIncidenceTarget_even_of_nested_zero
+    G outer inner subset right rightZero
+  let leftCorrection := innerComponent.internalEvenTargetPairBits G inner
+    leftTarget leftEven
+  let rightCorrection := innerComponent.internalEvenTargetPairBits G inner
+    rightTarget rightEven
+  have expandedEqual :
+      hedgePairBitsXor G left leftCorrection =
+        hedgePairBitsXor G right rightCorrection := by
+    simpa [BidirectedComponent.nestedKernelToLargePairBits,
+      leftEven, rightEven, leftTarget, rightTarget,
+      leftCorrection, rightCorrection] using equal
+  have targetEq : leftTarget = rightTarget := by
+    funext node
+    by_cases inInner : inner node = true
+    · have inOuter := subset node inInner
+      have atNode := congrArg
+        (fun bits => hedgeXorPairBitsWithinFrom G inner node bits)
+        expandedEqual
+      change hedgeXorPairBitsWithinFrom G inner node
+          (hedgePairBitsXor G left leftCorrection) =
+        hedgeXorPairBitsWithinFrom G inner node
+          (hedgePairBitsXor G right rightCorrection) at atNode
+      have leftNestedAt := hedgeNestedPairBitsRealizes_spec G outer inner
+        (hedgeZeroIncidenceTarget S) left leftZero node inOuter
+      have rightNestedAt := hedgeNestedPairBitsRealizes_spec G outer inner
+        (hedgeZeroIncidenceTarget S) right rightZero node inOuter
+      simp [hedgeNestedXorPairBitsWithinFrom, inInner,
+        hedgeZeroIncidenceTarget] at leftNestedAt rightNestedAt
+      have leftCorrectionAt :
+          hedgeXorPairBitsWithinFrom G inner node leftCorrection =
+            leftTarget node := by
+        unfold leftCorrection
+        exact innerComponent.internalEvenTargetPairBits_spec G inner
+          leftTarget leftEven node inInner
+      have rightCorrectionAt :
+          hedgeXorPairBitsWithinFrom G inner node rightCorrection =
+            rightTarget node := by
+        unfold rightCorrection
+        exact innerComponent.internalEvenTargetPairBits_spec G inner
+          rightTarget rightEven node inInner
+      rw [hedgeXorPairBitsWithinFrom_xor,
+        hedgeXorPairBitsWithinFrom_xor, leftNestedAt, rightNestedAt,
+        leftCorrectionAt, rightCorrectionAt] at atNode
+      simpa [leftTarget, rightTarget, hedgeZeroIncidenceTarget] using atNode
+    · have leftFalse : leftTarget node = false := by
+        simp [leftTarget, hedgeInnerFullIncidenceTarget, inInner]
+      have rightFalse : rightTarget node = false := by
+        simp [rightTarget, hedgeInnerFullIncidenceTarget, inInner]
+      rw [leftFalse, rightFalse]
+  have correctionEq : leftCorrection = rightCorrection := by
+    unfold leftCorrection rightCorrection
+    exact innerComponent.internalEvenTargetPairBits_congr G inner targetEq _ _
+  rw [correctionEq] at expandedEqual
+  have twice := congrArg
+    (fun bits => hedgePairBitsXor G bits rightCorrection) expandedEqual
+  simpa only [hedgePairBitsXor_self_right] using twice
+
+/--
+The ordinary and nested zero fibers have equal size.  Explicit injections in
+both directions are mapped over the duplicate-free filtered enumeration;
+constructive finite-list cardinality and antisymmetry finish the comparison.
+-/
+theorem BidirectedComponent.pairBitKernel_length_eq_nested
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (subset : NodeSet.Subset inner outer)
+    (innerComponent : BidirectedComponent G inner) :
+    ((hedgePairBitEnum G).filter
+        (hedgePairBitsRealizes G outer
+          (hedgeZeroIncidenceTarget S))).length =
+      ((hedgePairBitEnum G).filter
+        (hedgeNestedPairBitsRealizes G outer inner
+          (hedgeZeroIncidenceTarget S))).length := by
+  let largeKernel := (hedgePairBitEnum G).filter
+    (hedgePairBitsRealizes G outer (hedgeZeroIncidenceTarget S))
+  let nestedKernel := (hedgePairBitEnum G).filter
+    (hedgeNestedPairBitsRealizes G outer inner
+      (hedgeZeroIncidenceTarget S))
+  let forward := innerComponent.largeKernelToNestedPairBits G inner
+  let backward :=
+    innerComponent.nestedKernelToLargePairBits G outer inner
+  have largeNodup : largeKernel.Nodup :=
+    List.Sublist.nodup List.filter_sublist (hedgePairBitEnum_nodup G)
+  have nestedNodup : nestedKernel.Nodup :=
+    List.Sublist.nodup List.filter_sublist (hedgePairBitEnum_nodup G)
+  have forwardNodup : (largeKernel.map forward).Nodup := by
+    apply Probability.ConstructivePermutation.nodup_map_of_injective_on
+      forward largeKernel
+    · intro left leftMem right rightMem equal
+      exact innerComponent.largeKernelToNestedPairBits_injective
+        G outer inner subset left right
+        (List.mem_filter.mp leftMem).2 (List.mem_filter.mp rightMem).2 equal
+    · exact largeNodup
+  have forwardSubset : ∀ value, value ∈ largeKernel.map forward →
+      value ∈ nestedKernel := by
+    intro value member
+    rcases List.mem_map.mp member with ⟨source, sourceMem, equal⟩
+    subst value
+    apply List.mem_filter.mpr
+    exact ⟨hedgePairBitEnum_complete G _,
+      innerComponent.largeKernelToNestedPairBits_realizes
+        G outer inner source (List.mem_filter.mp sourceMem).2⟩
+  have forwardLe : largeKernel.length ≤ nestedKernel.length := by
+    have mappedLe :=
+      Probability.ConstructivePermutation.length_le_of_nodup_subset
+        forwardNodup forwardSubset
+    simpa using mappedLe
+  have backwardNodup : (nestedKernel.map backward).Nodup := by
+    apply Probability.ConstructivePermutation.nodup_map_of_injective_on
+      backward nestedKernel
+    · intro left leftMem right rightMem equal
+      exact innerComponent.nestedKernelToLargePairBits_injective
+        G outer inner subset left right
+        (List.mem_filter.mp leftMem).2 (List.mem_filter.mp rightMem).2 equal
+    · exact nestedNodup
+  have backwardSubset : ∀ value, value ∈ nestedKernel.map backward →
+      value ∈ largeKernel := by
+    intro value member
+    rcases List.mem_map.mp member with ⟨source, sourceMem, equal⟩
+    subst value
+    apply List.mem_filter.mpr
+    exact ⟨hedgePairBitEnum_complete G _,
+      innerComponent.nestedKernelToLargePairBits_realizes
+        G outer inner subset source (List.mem_filter.mp sourceMem).2⟩
+  have backwardLe : nestedKernel.length ≤ largeKernel.length := by
+    have mappedLe :=
+      Probability.ConstructivePermutation.length_le_of_nodup_subset
+        backwardNodup backwardSubset
+    simpa using mappedLe
+  exact Nat.le_antisymm forwardLe backwardLe
+
+/--
+Cross-map fiber equality: an even ordinary outer target and an arbitrary
+nested target with even inner restriction have the same number of pair-root
+preimages.  Each map is reduced to its zero fiber, whose sizes agree above.
+-/
+theorem BidirectedComponent.pairBitRealizers_length_eq_nested
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (outerComponent : BidirectedComponent G outer)
+    (innerComponent : BidirectedComponent G inner)
+    (subset : NodeSet.Subset inner outer)
+    (largeTarget nestedTarget : Fin S.count → Bool)
+    (largeEven : (hedgeTrueVertices outer largeTarget).length % 2 = 0)
+    (nestedEven : (hedgeTrueVertices inner nestedTarget).length % 2 = 0) :
+    ((hedgePairBitEnum G).filter
+        (hedgePairBitsRealizes G outer largeTarget)).length =
+      ((hedgePairBitEnum G).filter
+        (hedgeNestedPairBitsRealizes G outer inner nestedTarget)).length := by
+  calc
+    ((hedgePairBitEnum G).filter
+        (hedgePairBitsRealizes G outer largeTarget)).length =
+        ((hedgePairBitEnum G).filter
+          (hedgePairBitsRealizes G outer
+            (hedgeZeroIncidenceTarget S))).length :=
+      outerComponent.pairBitRealizers_length_eq_of_even G outer
+        largeTarget (hedgeZeroIncidenceTarget S) largeEven
+        (hedgeZeroIncidenceTarget_even outer)
+    _ = ((hedgePairBitEnum G).filter
+          (hedgeNestedPairBitsRealizes G outer inner
+            (hedgeZeroIncidenceTarget S))).length :=
+      innerComponent.pairBitKernel_length_eq_nested G outer inner subset
+    _ = ((hedgePairBitEnum G).filter
+          (hedgeNestedPairBitsRealizes G outer inner nestedTarget)).length :=
+      outerComponent.nestedPairBitRealizers_length_eq_of_inner_even
+        G outer inner innerComponent subset
+        (hedgeZeroIncidenceTarget S) nestedTarget
+        (hedgeZeroIncidenceTarget_even inner) nestedEven
 
 /-- A single selected internal root contributes one at an incident endpoint. -/
 theorem hedgeXorPairBitsWithinFrom_of_one
