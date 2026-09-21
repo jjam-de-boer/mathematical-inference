@@ -83,6 +83,74 @@ theorem perm_of_count_eq {A : Type u}
         fun other => cancel_front_counts (countsEqual other) front
       exact ((ih tailCounts).cons value).trans front.symm
 
+/--
+Duplicate-free finite enumerations with the same members differ only by a
+permutation.  The proof removes the matching head from the right-hand list
+and recurses, so it needs neither a selected inverse nor choice.
+-/
+theorem perm_of_nodup_mem_iff {A : Type u} [BEq A] [LawfulBEq A]
+    (left right : List A) (leftNodup : left.Nodup)
+    (rightNodup : right.Nodup)
+    (sameMembers : ∀ value, value ∈ left ↔ value ∈ right) :
+    left.Perm right := by
+  induction left generalizing right with
+  | nil =>
+      cases right with
+      | nil => exact List.Perm.refl []
+      | cons head tail =>
+          have impossible : head ∈ ([] : List A) :=
+            (sameMembers head).mpr (by simp)
+          exact False.elim (List.not_mem_nil impossible)
+  | cons head tail inductionHypothesis =>
+      have leftParts := List.nodup_cons.mp leftNodup
+      have headMemRight := (sameMembers head).mp (by simp)
+      obtain ⟨before, suffix, rightEq⟩ := List.append_of_mem headMemRight
+      subst right
+      have rightParts := List.nodup_append.mp rightNodup
+      have suffixParts := List.nodup_cons.mp rightParts.2.1
+      have removedNodup : (before ++ suffix).Nodup := by
+        apply List.nodup_append.mpr
+        refine ⟨rightParts.1, suffixParts.2, ?_⟩
+        intro first firstMem second secondMem same
+        exact rightParts.2.2 first firstMem second (by simp [secondMem]) same
+      have headNotRemoved : head ∉ before ++ suffix := by
+        intro occurs
+        simp only [List.mem_append] at occurs
+        rcases occurs with inPrefix | inSuffix
+        · exact rightParts.2.2 head inPrefix head (by simp) rfl
+        · exact suffixParts.1 inSuffix
+      have tailMembers : ∀ value,
+          value ∈ tail ↔ value ∈ before ++ suffix := by
+        intro value
+        constructor
+        · intro tailMem
+          have different : value ≠ head := by
+            intro same
+            subst value
+            exact leftParts.1 tailMem
+          have rightMem := (sameMembers value).mp (by simp [tailMem])
+          simp only [List.mem_append, List.mem_cons] at rightMem ⊢
+          rcases rightMem with inPrefix | same | inSuffix
+          · exact Or.inl inPrefix
+          · exact False.elim (different same)
+          · exact Or.inr inSuffix
+        · intro removedMem
+          have rightMem : value ∈ before ++ head :: suffix := by
+            simp only [List.mem_append, List.mem_cons] at removedMem ⊢
+            rcases removedMem with inPrefix | inSuffix
+            · exact Or.inl inPrefix
+            · exact Or.inr (Or.inr inSuffix)
+          have leftMem := (sameMembers value).mpr rightMem
+          simp only [List.mem_cons] at leftMem
+          rcases leftMem with same | inTail
+          · subst value
+            exact False.elim (headNotRemoved removedMem)
+          · exact inTail
+      have tailPerm :=
+        inductionHypothesis (before ++ suffix) leftParts.2 removedNodup
+          tailMembers
+      exact (tailPerm.cons head).trans List.perm_middle.symm
+
 end ConstructivePermutation
 end Probability
 end Thesis

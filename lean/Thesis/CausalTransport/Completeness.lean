@@ -3,6 +3,7 @@ import Thesis.CausalTransport.DSeparationCorrectness
 import Thesis.Causality.IdentificationInduction
 import Thesis.Causality.IdentificationSearch
 import Thesis.Causality.PairRoot
+import Thesis.Probability.ConstructivePermutation
 
 namespace Thesis
 namespace Causality
@@ -30761,6 +30762,101 @@ theorem BidirectedComponent.targetTranslation_realizes
     component.targetTranslation_spec G nodes left right
       leftEven rightEven node hin]
   cases left node <;> cases right node <;> rfl
+
+/--
+XOR by a fixed root vector permutes the exhaustive pair-bit enumeration.
+The inverse is the same XOR operation, and completeness of the enumeration
+supplies membership on both sides; no inverse is selected from an existential.
+-/
+theorem hedgePairBitEnum_map_xor_perm
+    (G : ObservedGraph S)
+    (delta : (root : Fin (pairRootCount G)) → Bool) :
+    ((hedgePairBitEnum G).map
+        (fun pairBits => hedgePairBitsXor G pairBits delta)).Perm
+      (hedgePairBitEnum G) := by
+  apply Probability.ConstructivePermutation.perm_of_nodup_mem_iff
+  · apply nodup_map_of_injective
+    · intro left right equal
+      have twice :=
+        congrArg (fun pairBits => hedgePairBitsXor G pairBits delta) equal
+      simpa only [hedgePairBitsXor_self_right] using twice
+    · exact hedgePairBitEnum_nodup G
+  · exact hedgePairBitEnum_nodup G
+  · intro pairBits
+    constructor
+    · intro _member
+      exact hedgePairBitEnum_complete G pairBits
+    · intro _member
+      exact List.mem_map.mpr
+        ⟨hedgePairBitsXor G pairBits delta,
+          hedgePairBitEnum_complete G _,
+          hedgePairBitsXor_self_right G pairBits delta⟩
+
+/--
+Translation carries the realization test for `left` exactly to the test for
+`right`.  The reverse implication uses the same XOR vector: adding the
+translation twice cancels pointwise.
+-/
+theorem BidirectedComponent.targetTranslation_realizes_eq
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (component : BidirectedComponent G nodes)
+    (left right : Fin S.count → Bool)
+    (leftEven : (hedgeTrueVertices nodes left).length % 2 = 0)
+    (rightEven : (hedgeTrueVertices nodes right).length % 2 = 0)
+    (pairBits : (root : Fin (pairRootCount G)) → Bool) :
+    hedgePairBitsRealizes G nodes right
+        (hedgePairBitsXor G pairBits
+          (component.targetTranslation G nodes left right
+            leftEven rightEven)) =
+      hedgePairBitsRealizes G nodes left pairBits := by
+  apply Bool.eq_iff_iff.mpr
+  constructor
+  · intro translatedRealizes
+    apply hedgePairBitsRealizes_of
+    intro node hin
+    have translatedAtNode :=
+      hedgePairBitsRealizes_spec G nodes right _ translatedRealizes node hin
+    rw [hedgeXorPairBitsWithinFrom_xor,
+      component.targetTranslation_spec G nodes left right
+        leftEven rightEven node hin] at translatedAtNode
+    cases hpair : hedgeXorPairBitsWithinFrom G nodes node pairBits <;>
+      cases hleft : left node <;> cases hright : right node <;>
+      simp_all
+  · intro leftRealizes
+    exact component.targetTranslation_realizes G nodes left right
+      leftEven rightEven pairBits leftRealizes
+
+/--
+All even incidence patterns on one bidirected component have equally many
+pair-root preimages.  Filtering the finite enumeration after translation is
+the same as translating the filtered source, while the translation itself is
+a permutation.  This is the finite counting statement required by the
+observational-equivalence argument for the parity hedge pair.
+-/
+theorem BidirectedComponent.pairBitRealizers_length_eq_of_even
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (component : BidirectedComponent G nodes)
+    (left right : Fin S.count → Bool)
+    (leftEven : (hedgeTrueVertices nodes left).length % 2 = 0)
+    (rightEven : (hedgeTrueVertices nodes right).length % 2 = 0) :
+    ((hedgePairBitEnum G).filter
+        (hedgePairBitsRealizes G nodes left)).length =
+      ((hedgePairBitEnum G).filter
+        (hedgePairBitsRealizes G nodes right)).length := by
+  let delta :=
+    component.targetTranslation G nodes left right leftEven rightEven
+  have translatedEnumeration := hedgePairBitEnum_map_xor_perm G delta
+  have translatedRealizers :=
+    translatedEnumeration.filter (hedgePairBitsRealizes G nodes right)
+  have predicateEq :
+      hedgePairBitsRealizes G nodes right ∘
+          (fun pairBits => hedgePairBitsXor G pairBits delta) =
+        hedgePairBitsRealizes G nodes left := by
+    funext pairBits
+    exact component.targetTranslation_realizes_eq G nodes left right
+      leftEven rightEven pairBits
+  rw [List.filter_map, predicateEq] at translatedRealizers
+  simpa using translatedRealizers.length_eq
 
 /-- A single selected internal root contributes one at an incident endpoint. -/
 theorem hedgeXorPairBitsWithinFrom_of_one
