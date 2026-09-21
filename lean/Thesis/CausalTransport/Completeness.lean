@@ -325,11 +325,13 @@ induction.  The remaining inhabitants are:
   component targets (`pairBitRealizers_length_eq_of_even`), while the finite
   handshaking identity `hedgeNodeXor_incidence` derives evenness for the
   incidence required by every actual large- or small-forest evaluation;
-  connecting those component counts across the piecewise outer/small model,
-  and then adding full-support noise without erasing the interventional
-  separation remain hard steps--the tempting construction that merely gates
-  a private decode by restricted pair parity already fails observational
-  equivalence on the two-node bow;
+  `nestedPairBits_of_inner_even` further proves that the piecewise
+  outer/small incidence map is surjective whenever its small restriction is
+  even; proving equal fibers for that nested map, connecting the two models'
+  atom counts, and then adding full-support noise without erasing the
+  interventional separation remain hard steps--the tempting construction
+  that merely gates a private decode by restricted pair parity already fails
+  observational equivalence on the two-node bow;
   outcome vertices sit in their ancestral set in `G_{\overline{X}}`
   (`outcome_subset_ancestralSet`), so the nested shrink-empty summed
   blocks cover `V \ Y` (`first_shrink_empty_summed_eq`);
@@ -31267,6 +31269,216 @@ theorem HedgeWitness.smallParityModel_requiredIncidence_even
       ((NodeSet.mem_members_iff w.small node).mp member)).symm
   rw [trueVerticesEq]
   exact hedgeXorPairBitsWithinFrom_even G w.small (hedgePairBitsOf G u)
+
+/-- Keep only pair-root coordinates whose two endpoints lie in `nodes`. -/
+def hedgePairBitsRestrict (G : ObservedGraph S) (nodes : NodeSet S)
+    (pairBits : Fin (pairRootCount G) → Bool) :
+    Fin (pairRootCount G) → Bool :=
+  fun root => if hedgePairRootWithin G nodes root then pairBits root else false
+
+/-- Restricting a root vector to `nodes` preserves its incidence on `nodes`. -/
+theorem hedgePairBitsRestrict_same
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (pairBits : Fin (pairRootCount G) → Bool) (child : Fin S.count) :
+    hedgeXorPairBitsWithinFrom G nodes child
+        (hedgePairBitsRestrict G nodes pairBits) =
+      hedgeXorPairBitsWithinFrom G nodes child pairBits := by
+  unfold hedgeXorPairBitsWithinFrom
+  apply foldl_congr
+  intro total root
+  cases hinc :
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) child <;>
+    cases hwithin : hedgePairRootWithin G nodes root <;>
+    simp [hedgePairBitsRestrict, hwithin]
+
+/--
+A vector supported on roots internal to `inner` has zero incidence at every
+vertex outside `inner`, even when incidence is measured in a larger forest.
+-/
+theorem hedgePairBitsRestrict_outside
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (child : Fin S.count) (outside : inner child = false) :
+    hedgeXorPairBitsWithinFrom G outer child
+        (hedgePairBitsRestrict G inner pairBits) = false := by
+  unfold hedgeXorPairBitsWithinFrom
+  apply foldl_unchanged
+  intro total root
+  cases hinc :
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) child
+  · simp
+  · cases houter : hedgePairRootWithin G outer root
+    · simp
+    · cases hinner : hedgePairRootWithin G inner root
+      · simp [hedgePairBitsRestrict, hinner]
+      · have inside := hedgePairRootWithin_child G inner hinner hinc
+        exact False.elim (Bool.false_ne_true (outside.symm.trans inside))
+
+/-- On a selected node, the true-vertex list tests exactly the target bit. -/
+theorem hedgeTrueVertices_spec (nodes : NodeSet S)
+    (target : Fin S.count → Bool) (node : Fin S.count)
+    (inside : nodes node = true) :
+    decide (node ∈ hedgeTrueVertices nodes target) = target node := by
+  cases htarget : target node <;>
+    simp [hedgeTrueVertices, List.mem_filter,
+      NodeSet.mem_members_iff, inside, htarget]
+
+/--
+An arbitrary target outside a nonempty inner component has an outer-component
+incidence realization.  If the outside target has odd support, one inner
+anchor is added before applying even-target surjectivity; that anchor is
+irrelevant at every outside coordinate.
+-/
+theorem BidirectedComponent.pairBits_of_outside_target
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (outerComponent : BidirectedComponent G outer)
+    (innerComponent : BidirectedComponent G inner)
+    (subset : NodeSet.Subset inner outer)
+    (target : Fin S.count → Bool) :
+    Exists fun pairBits : Fin (pairRootCount G) → Bool =>
+      ∀ node, outer node = true → inner node = false →
+        hedgeXorPairBitsWithinFrom G outer node pairBits = target node := by
+  rcases innerComponent.1 with ⟨anchor, anchorInside⟩
+  have anchorOuter : outer anchor = true := subset anchor anchorInside
+  let outsideNodes := NodeSet.diff outer inner
+  let vertices := hedgeTrueVertices outsideNodes target
+  have verticesNodup : vertices.Nodup := hedgeTrueVertices_nodup _ _
+  have verticesOuter : ∀ node, node ∈ vertices → outer node = true := by
+    intro node member
+    exact NodeSet.diff_subset_left outer inner node
+      (hedgeTrueVertices_inside outsideNodes target node member)
+  have anchorNotMem : anchor ∉ vertices := by
+    intro member
+    have outsideAnchor :=
+      hedgeTrueVertices_inside outsideNodes target anchor member
+    have outsideFalse := NodeSet.disjoint_diff outer inner anchor anchorInside
+    exact Bool.false_ne_true (outsideFalse.symm.trans outsideAnchor)
+  by_cases even : vertices.length % 2 = 0
+  · rcases outerComponent.pairBits_of_even_list G outer vertices
+        verticesNodup verticesOuter even with ⟨pairBits, boundary⟩
+    refine ⟨pairBits, ?_⟩
+    intro node inOuter outInner
+    rw [boundary node]
+    have inOutside : outsideNodes node = true := by
+      simp [outsideNodes, NodeSet.diff, inOuter, outInner]
+    exact hedgeTrueVertices_spec outsideNodes target node inOutside
+  · have extendedNodup : (anchor :: vertices).Nodup :=
+      List.nodup_cons.mpr ⟨anchorNotMem, verticesNodup⟩
+    have extendedOuter : ∀ node,
+        node ∈ anchor :: vertices → outer node = true := by
+      intro node member
+      rcases List.mem_cons.mp member with equal | inVertices
+      · exact equal ▸ anchorOuter
+      · exact verticesOuter node inVertices
+    have extendedEven : (anchor :: vertices).length % 2 = 0 := by
+      simp only [List.length_cons]
+      cases hmod : vertices.length % 2 with
+      | zero => exact False.elim (even hmod)
+      | succ remainder =>
+          have remainderZero : remainder = 0 := by omega
+          subst remainder
+          simp [Nat.add_mod, hmod]
+    rcases outerComponent.pairBits_of_even_list G outer
+        (anchor :: vertices) extendedNodup extendedOuter extendedEven with
+      ⟨pairBits, boundary⟩
+    refine ⟨pairBits, ?_⟩
+    intro node inOuter outInner
+    rw [boundary node]
+    have different : node ≠ anchor := by
+      intro equal
+      subst node
+      exact Bool.false_ne_true (outInner.symm.trans anchorInside)
+    have inOutside : outsideNodes node = true := by
+      simp [outsideNodes, NodeSet.diff, inOuter, outInner]
+    rw [show decide (node ∈ anchor :: vertices) =
+        decide (node ∈ vertices) by simp [different]]
+    exact hedgeTrueVertices_spec outsideNodes target node inOutside
+
+/--
+Piecewise incidence used by the nested parity model: inner vertices see only
+inner roots, whereas outer vertices outside `inner` see every outer root.
+-/
+def hedgeNestedXorPairBitsWithinFrom (G : ObservedGraph S)
+    (outer inner : NodeSet S) (node : Fin S.count)
+    (pairBits : Fin (pairRootCount G) → Bool) : Bool :=
+  if inner node then
+    hedgeXorPairBitsWithinFrom G inner node pairBits
+  else
+    hedgeXorPairBitsWithinFrom G outer node pairBits
+
+/--
+Every outside target has a nested-incidence realization that is zero on the
+inner component.  XORing an outer solution with its own inner restriction
+cancels its inner incidence and leaves all outside coordinates unchanged.
+-/
+theorem BidirectedComponent.nestedOutsidePairBits
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (outerComponent : BidirectedComponent G outer)
+    (innerComponent : BidirectedComponent G inner)
+    (subset : NodeSet.Subset inner outer)
+    (target : Fin S.count → Bool) :
+    Exists fun pairBits : Fin (pairRootCount G) → Bool =>
+      ∀ node, outer node = true →
+        hedgeNestedXorPairBitsWithinFrom G outer inner node pairBits =
+          if inner node then false else target node := by
+  rcases outerComponent.pairBits_of_outside_target G outer inner
+      innerComponent subset target with ⟨outerBits, realizesOutside⟩
+  let innerPart := hedgePairBitsRestrict G inner outerBits
+  let pairBits := hedgePairBitsXor G outerBits innerPart
+  refine ⟨pairBits, ?_⟩
+  intro node inOuter
+  cases inInner : inner node
+  · simp only [hedgeNestedXorPairBitsWithinFrom, inInner,
+      Bool.false_eq_true, ↓reduceIte]
+    rw [hedgeXorPairBitsWithinFrom_xor,
+      realizesOutside node inOuter inInner,
+      hedgePairBitsRestrict_outside G outer inner outerBits node inInner]
+    simp
+  · simp only [hedgeNestedXorPairBitsWithinFrom, inInner, ↓reduceIte]
+    rw [hedgeXorPairBitsWithinFrom_xor, hedgePairBitsRestrict_same]
+    generalize hedgeXorPairBitsWithinFrom G inner node outerBits = bit
+    cases bit <;> rfl
+
+/--
+Surjectivity of the nested incidence map.  The only compatibility condition
+is even parity on `inner`: an internal solution handles those coordinates,
+and `nestedOutsidePairBits` independently supplies every remaining outer
+coordinate.  Both vectors are restricted/XORed explicitly.
+-/
+theorem BidirectedComponent.nestedPairBits_of_inner_even
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (outerComponent : BidirectedComponent G outer)
+    (innerComponent : BidirectedComponent G inner)
+    (subset : NodeSet.Subset inner outer)
+    (target : Fin S.count → Bool)
+    (innerEven : (hedgeTrueVertices inner target).length % 2 = 0) :
+    Exists fun pairBits : Fin (pairRootCount G) → Bool =>
+      ∀ node, outer node = true →
+        hedgeNestedXorPairBitsWithinFrom G outer inner node pairBits =
+          target node := by
+  rcases innerComponent.pairBits_of_even_target G inner target innerEven with
+    ⟨innerBits, realizesInner⟩
+  rcases outerComponent.nestedOutsidePairBits G outer inner innerComponent
+      subset target with ⟨outsideBits, realizesOutside⟩
+  let innerPart := hedgePairBitsRestrict G inner innerBits
+  let pairBits := hedgePairBitsXor G innerPart outsideBits
+  refine ⟨pairBits, ?_⟩
+  intro node inOuter
+  cases inInner : inner node
+  · have outsideAt := realizesOutside node inOuter
+    simp [hedgeNestedXorPairBitsWithinFrom, inInner] at outsideAt
+    simp only [hedgeNestedXorPairBitsWithinFrom, inInner,
+      Bool.false_eq_true, ↓reduceIte]
+    rw [hedgeXorPairBitsWithinFrom_xor,
+      hedgePairBitsRestrict_outside G outer inner innerBits node inInner,
+      outsideAt]
+    simp
+  · have outsideAt := realizesOutside node inOuter
+    simp [hedgeNestedXorPairBitsWithinFrom, inInner] at outsideAt
+    simp only [hedgeNestedXorPairBitsWithinFrom, inInner, ↓reduceIte]
+    rw [hedgeXorPairBitsWithinFrom_xor, hedgePairBitsRestrict_same,
+      realizesInner node inInner, outsideAt]
+    simp
 
 /-- A single selected internal root contributes one at an incident endpoint. -/
 theorem hedgeXorPairBitsWithinFrom_of_one
