@@ -312,10 +312,15 @@ induction.  The remaining inhabitants are:
   map to a common root and `actionBoundaryParent` / `actionBoundaryChild`
   select a concrete large-forest edge crossing into the small forest;
   `hedgeXorPairBitsWithin` and `hedgeForestParentBitsFrom` restrict the two
-  parity inputs to an arbitrary c-forest; packaging those ingredients into
-  a *positive observationally equivalent* pair is still the hard step--the
-  tempting construction that merely gates a private decode by the restricted
-  pair parity already fails observational equivalence on the two-node bow;
+  parity inputs to an arbitrary c-forest; `largeParityModel` and
+  `smallParityModel` package the faithful unsoftened construction--the second
+  model changes only nodes in `F'`, where it ignores pair-roots and kept
+  directed parents outside `F'`; both are compatible and share a product
+  prior, but no positivity claim is made for them; proving their observational
+  equivalence and then adding full-support noise without erasing the
+  interventional separation remain hard steps--the tempting construction that
+  merely gates a private decode by restricted pair parity already fails
+  observational equivalence on the two-node bow;
   outcome vertices sit in their ancestral set in `G_{\overline{X}}`
   (`outcome_subset_ancestralSet`), so the nested shrink-empty summed
   blocks cover `V \ Y` (`first_shrink_empty_summed_eq`);
@@ -27862,6 +27867,217 @@ theorem hedgeForestParentBitsFrom_restrict_eq
   else
     simp [hdir]
 
+/-- Whether both endpoints represented by a canonical pair-root lie in `nodes`. -/
+def hedgePairRootWithin (G : ObservedGraph S) (nodes : NodeSet S)
+    (root : Fin (pairRootCount G)) : Bool :=
+  let endpoints := (pairRoots G).get root
+  nodes endpoints.1 && nodes endpoints.2
+
+/--
+XOR of the pair-root bits whose two observed endpoints lie in `nodes` and
+whose root is incident to `child`.  Pair-roots elsewhere in `G` remain in the
+latent extension, but are semantically inert in this forest circuit.
+-/
+def hedgeXorPairBitsWithin (G : ObservedGraph S) (nodes : NodeSet S)
+    (child : Fin S.count) (inputs : (hedgeLatentExtension G).Inputs child) :
+    Bool :=
+  (List.finRange (pairRootCount G)).foldl
+    (fun acc root =>
+      if hinc :
+          (hedgeLatentExtension G).incident (hedgePairRoot G root) child then
+        if hedgePairRootWithin G nodes root then
+          Bool.xor acc
+            (cast (hedgeLatentValue_pair G root)
+              (inputs (hedgePairRoot G root) hinc))
+        else acc
+      else acc)
+    false
+
+/-!
+### The unsoftened forest-parity pair
+
+The published hedge proof first constructs a binary parity pair and only then
+softens it to obtain a strictly positive observed law.  Keeping those stages
+separate is important here.  In particular, inserting the positive
+`hedgeMixFrom` gate at this point is unsound: on the two-node bow it destroys
+the observational equality of the large and small parity circuits.
+
+The definitions below therefore encode only the faithful unsoftened core.
+They use `ValueRich.first` and `ValueRich.second` as zero and one, ignore the
+private coordinate inside the selected forest, and retain the private decode
+outside it.  No theorem below claims that these models are observationally
+positive.
+-/
+
+/-- Encode one Boolean parity bit by the two distinguished observed values. -/
+def hedgeParityValue (rich : ObservedSignature.ValueRich S)
+    (child : Fin S.count) (bit : Bool) : S.Value child :=
+  if bit then rich.second child else rich.first child
+
+theorem hedgeParityValue_false (rich : ObservedSignature.ValueRich S)
+    (child : Fin S.count) :
+    hedgeParityValue rich child false = rich.first child :=
+  rfl
+
+theorem hedgeParityValue_true (rich : ObservedSignature.ValueRich S)
+    (child : Fin S.count) :
+    hedgeParityValue rich child true = rich.second child :=
+  rfl
+
+/--
+Structural output of one c-forest parity circuit.  Selected nodes XOR the
+internal pair-root bits with the values of their explicitly kept directed
+parents.  Unselected nodes remain ordinary private-noise coordinates.
+-/
+def hedgeForestParityOutput (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) (nodes : NodeSet S)
+    (kept : ForestChild S) (child : Fin S.count)
+    (parents : S.ParentValues child)
+    (inputs : (hedgeLatentExtension G).Inputs child) : S.Value child :=
+  if nodes child then
+    hedgeParityValue rich child
+      (Bool.xor
+        (hedgeXorPairBitsWithin G nodes child inputs)
+        (hedgeForestParentBitsFrom rich kept child parents))
+  else
+    hedgePrivateDecode S child (hedgePrivateIndex G child inputs)
+
+/-- Exact SCM carrying one unsoftened forest-parity circuit. -/
+def hedgeForestParityModel (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) (nodes : NodeSet S)
+    (kept : ForestChild S) : ExactModel S where
+  latent := hedgeLatentExtension G
+  factor := hedgeLatentFactor G
+  prior :=
+    FiniteProduct.record (hedgeLatentCount G) (hedgeLatentValue G)
+      (hedgeLatentFactor G)
+  product_law := fun events => by
+    simpa [LatentExtension.rectangularEvent, hedgeLatentExtension] using
+      FiniteProduct.record_rectangular_probVal
+        (hedgeLatentCount G) (hedgeLatentValue G) (hedgeLatentFactor G) events
+  mechanism := hedgeForestParityOutput G rich nodes kept
+
+/-- The parity circuit keeps the full latent projection of `G`. -/
+theorem hedgeForestParityModel_compatible (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) (nodes : NodeSet S)
+    (kept : ForestChild S) :
+    Compatible (hedgeForestParityModel G rich nodes kept) G :=
+  ⟨hedgeLatentExtension_canonical G, fun i j => by
+    simpa [FiniteLatentSCM.observedGraph, LatentExtension.observedGraph,
+      hedgeForestParityModel] using hedgeLatentExtension_projected G i j⟩
+
+/--
+Piecewise parity model for nested forests `inner ⊆ outer`.  Nodes outside the
+inner forest keep the outer mechanism verbatim; nodes inside it use only the
+inner pair-roots and kept edges.  The definition itself does not require the
+subset proof, allowing the semantic equality outside `inner` to be a direct
+computation rather than a cast-heavy transport.
+-/
+def hedgeNestedForestParityModel (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S)
+    (outer inner : NodeSet S)
+    (outerKept innerKept : ForestChild S) : ExactModel S where
+  latent := hedgeLatentExtension G
+  factor := hedgeLatentFactor G
+  prior :=
+    FiniteProduct.record (hedgeLatentCount G) (hedgeLatentValue G)
+      (hedgeLatentFactor G)
+  product_law := fun events => by
+    simpa [LatentExtension.rectangularEvent, hedgeLatentExtension] using
+      FiniteProduct.record_rectangular_probVal
+        (hedgeLatentCount G) (hedgeLatentValue G) (hedgeLatentFactor G) events
+  mechanism := fun child parents inputs =>
+    if inner child then
+      hedgeForestParityOutput G rich inner innerKept child parents inputs
+    else
+      hedgeForestParityOutput G rich outer outerKept child parents inputs
+
+/-- Piecewise restriction also keeps the full latent projection of `G`. -/
+theorem hedgeNestedForestParityModel_compatible (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S)
+    (outer inner : NodeSet S)
+    (outerKept innerKept : ForestChild S) :
+    Compatible
+      (hedgeNestedForestParityModel G rich outer inner outerKept innerKept) G :=
+  ⟨hedgeLatentExtension_canonical G, fun i j => by
+    simpa [FiniteLatentSCM.observedGraph, LatentExtension.observedGraph,
+      hedgeNestedForestParityModel] using hedgeLatentExtension_projected G i j⟩
+
+/-- The first, large-forest model from the classical hedge construction. -/
+def HedgeWitness.largeParityModel
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    ExactModel S :=
+  hedgeForestParityModel G rich w.large w.child
+
+/--
+The second hedge model: unchanged on `F \ F'`, but with every node of `F'`
+ignoring pair-roots and kept directed parents that are not internal to `F'`.
+-/
+def HedgeWitness.smallParityModel
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    ExactModel S :=
+  hedgeNestedForestParityModel G rich w.large w.small w.child
+    (restrictChild w.small w.child)
+
+/-- The large unsoftened hedge model is compatible with the observed graph. -/
+theorem HedgeWitness.largeParityModel_compatible
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Compatible (w.largeParityModel rich) G :=
+  hedgeForestParityModel_compatible G rich w.large w.child
+
+/-- The small unsoftened hedge model is compatible with the observed graph. -/
+theorem HedgeWitness.smallParityModel_compatible
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Compatible (w.smallParityModel rich) G :=
+  hedgeNestedForestParityModel_compatible G rich w.large w.small w.child
+    (restrictChild w.small w.child)
+
+/-- Both unsoftened models use definitionally the same product prior. -/
+theorem HedgeWitness.parityModel_prior_eq
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    (w.largeParityModel rich).prior = (w.smallParityModel rich).prior :=
+  rfl
+
+/--
+Outside `F'` the two structural mechanisms are identical.  This is the
+formal version of the clause that the second published model changes only
+nodes of the small forest.
+-/
+theorem HedgeWitness.parityMechanism_eq_of_not_small
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (child : Fin S.count) (parents : S.ParentValues child)
+    (inputs : (hedgeLatentExtension G).Inputs child)
+    (hout : w.small child = false) :
+    (w.largeParityModel rich).mechanism child parents inputs =
+      (w.smallParityModel rich).mechanism child parents inputs := by
+  simp [HedgeWitness.largeParityModel, HedgeWitness.smallParityModel,
+    hedgeForestParityModel, hedgeNestedForestParityModel, hout]
+
+/-- On `F'`, the second model evaluates exactly the restricted parity circuit. -/
+theorem HedgeWitness.smallParityMechanism_of_small
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (child : Fin S.count) (parents : S.ParentValues child)
+    (inputs : (hedgeLatentExtension G).Inputs child)
+    (hin : w.small child = true) :
+    (w.smallParityModel rich).mechanism child parents inputs =
+      hedgeForestParityOutput G rich w.small
+        (restrictChild w.small w.child) child parents inputs := by
+  simp [HedgeWitness.smallParityModel, hedgeNestedForestParityModel, hin]
+
+/-- The selected action-boundary edge is removed from the `F'` child map. -/
+theorem HedgeWitness.actionBoundary_not_kept_small
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    restrictChild w.small w.child w.actionBoundaryParent = none :=
+  restrictChild_of_false w.actionBoundaryParent_not_in_small
+
 /-- Index of an observed value in its enumeration. -/
 def hedgeIndexOfValue (S : ObservedSignature) (child : Fin S.count)
     (value : S.Value child) : Fin (hedgePrivateCard S child) :=
@@ -27976,7 +28192,7 @@ theorem hedgeXorPairBits_of_pair_eq (G : ObservedGraph S) (child : Fin S.count)
     simp [hinc]
 
 /-!
-### Parity restricted to a hedge forest
+### Laws for parity restricted to a hedge forest
 
 The elementary `hedgeMixModel` above every pair-root incident to a node.  A
 general hedge needs a finer distinction: the large forest uses bidirected
@@ -27985,32 +28201,6 @@ edges internal to `F`, whereas the small forest uses only edges internal to
 the selected forest remain present (and therefore preserve compatibility with
 `G`), but the structural mechanism is allowed to ignore their values.
 -/
-
-/-- Whether both endpoints represented by a canonical pair-root lie in `nodes`. -/
-def hedgePairRootWithin (G : ObservedGraph S) (nodes : NodeSet S)
-    (root : Fin (pairRootCount G)) : Bool :=
-  let endpoints := (pairRoots G).get root
-  nodes endpoints.1 && nodes endpoints.2
-
-/--
-XOR of the pair-root bits whose two observed endpoints lie in `nodes` and
-whose root is incident to `child`.  This is the bidirected contribution of an
-induced forest subgraph; pair-roots elsewhere in `G` stay semantically inert.
--/
-def hedgeXorPairBitsWithin (G : ObservedGraph S) (nodes : NodeSet S)
-    (child : Fin S.count) (inputs : (hedgeLatentExtension G).Inputs child) :
-    Bool :=
-  (List.finRange (pairRootCount G)).foldl
-    (fun acc root =>
-      if hinc :
-          (hedgeLatentExtension G).incident (hedgePairRoot G root) child then
-        if hedgePairRootWithin G nodes root then
-          Bool.xor acc
-            (cast (hedgeLatentValue_pair G root)
-              (inputs (hedgePairRoot G root) hinc))
-        else acc
-      else acc)
-    false
 
 /-- An internal pair-root incident to `child` certifies that `child` is selected. -/
 theorem hedgePairRootWithin_child
