@@ -312,6 +312,9 @@ induction.  The remaining inhabitants are:
   for the general hedge, `HedgeWitness.actionRoot` follows the stored child
   map to a common root and `actionBoundaryParent` / `actionBoundaryChild`
   select a concrete large-forest edge crossing into the small forest;
+  `parityReadoutOutcome` reflects the witness's inductive root-to-outcome
+  reachability back into the finite Boolean search and selects a concrete
+  reachable query outcome without choice;
   `hedgeXorPairBitsWithin` and `hedgeForestParentBitsFrom` restrict the two
   parity inputs to an arbitrary c-forest; `largeParityModel` and
   `smallParityModel` package the faithful unsoftened construction--the second
@@ -8501,6 +8504,127 @@ theorem rootsReachOutcome_of_bool
   rcases List.any_eq_true.mp anyY with ⟨y, yMem, hy⟩
   exact ⟨y, (NodeSet.mem_members_iff q.outcome y).mp yMem,
     directedReachableBy_of_within q.action hy⟩
+
+/-!
+### Recovering executable outcome data from a hedge witness
+
+`HedgeWitness.roots_reach_outcome` deliberately states its mathematical
+content as an inductive reachability proposition.  The countermodel, however,
+must choose an actual downstream outcome in `Type`.  The lemmas below first
+reflect the inductive walk back into the finite Boolean search.  Selection can
+then use `listFirstAny`, so no existential is eliminated into data and no
+choice principle is introduced.
+-/
+
+/-- An inductive Boolean-edge walk determines a finite exact walk. -/
+theorem finiteReachable_of_directedReachableBy
+    {edge : Fin S.count → Fin S.count → Bool}
+    {source target : Fin S.count}
+    (reachable : DirectedReachableBy S
+      (fun i j => edge i j = true) source target) :
+    FiniteReachability.Reachable edge source target := by
+  induction reachable with
+  | refl =>
+      exact FiniteReachability.Reachable.refl edge source
+  | tail previous last inductionHypothesis =>
+      rcases inductionHypothesis with ⟨length, ⟨walk⟩⟩
+      exact ⟨length + 1,
+        ⟨FiniteReachability.exactWalk_snoc walk last⟩⟩
+
+/--
+On the complete observed-node enumeration, inductive reachability is accepted
+by the bounded Boolean search with its standard `S.count` fuel.
+-/
+theorem finiteWithin_of_directedReachableBy
+    {edge : Fin S.count → Fin S.count → Bool}
+    {source target : Fin S.count}
+    (reachable : DirectedReachableBy S
+      (fun i j => edge i j = true) source target) :
+    FiniteReachability.within finBeq (NodeSet.enumerated S) edge
+        S.count source target = true := by
+  have finiteReachable := finiteReachable_of_directedReachableBy reachable
+  have bounded := FiniteReachability.boundedWalk_of_reachable finBeq
+    (NodeSet.enumerated S) edge finBeq_eq_true_iff
+    (NodeSet.mem_enumerated S) finiteReachable
+  have found :=
+    (FiniteReachability.within_eq_true_iff_boundedWalk finBeq
+      (NodeSet.enumerated S) edge finBeq_eq_true_iff
+      (NodeSet.mem_enumerated S) (NodeSet.enumerated S).length
+      source target).mpr bounded
+  simpa [NodeSet.length_enumerated] using found
+
+/-- The propositional root-to-outcome condition reflects to its Boolean test. -/
+theorem rootsReachOutcomeBool_of_reachable
+    (q : JointKernelQuery S) (roots : NodeSet S)
+    (reachable : forall root,
+      roots root = true →
+        Exists fun outcome =>
+          q.outcome outcome = true ∧
+            DirectedReachableBy S
+              (fun i j => mutilatedDirected S q.action i j = true)
+              root outcome) :
+    rootsReachOutcomeBool q roots = true := by
+  unfold rootsReachOutcomeBool
+  apply List.all_eq_true.mpr
+  intro root rootMember
+  have rootSelected :=
+    (NodeSet.mem_members_iff roots root).mp rootMember
+  rcases reachable root rootSelected with
+    ⟨outcome, outcomeSelected, path⟩
+  apply List.any_eq_true.mpr
+  exact ⟨outcome,
+    (NodeSet.mem_members_iff q.outcome outcome).mpr outcomeSelected,
+    finiteWithin_of_directedReachableBy path⟩
+
+/-- Every abstract hedge witness satisfies the executable reachability test. -/
+theorem HedgeWitness.rootsReachOutcomeBool
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    rootsReachOutcomeBool q w.roots = true :=
+  rootsReachOutcomeBool_of_reachable q w.roots w.roots_reach_outcome
+
+/-- The action branch's computed root reaches some enumerated outcome. -/
+theorem HedgeWitness.actionRoot_reaches_outcome_any
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    (NodeSet.members q.outcome).any (fun outcome =>
+      FiniteReachability.within finBeq (NodeSet.enumerated S)
+        (mutilatedDirected S q.action) S.count w.actionRoot outcome) = true :=
+  (List.all_eq_true.mp w.rootsReachOutcomeBool) w.actionRoot
+    ((NodeSet.mem_members_iff w.roots w.actionRoot).mpr
+      w.actionRoot_in_roots)
+
+/--
+Canonical reachable query outcome used by the eventual parity readout.  The
+list search, rather than a proposition-level existential, supplies the data.
+-/
+def HedgeWitness.parityReadoutOutcome
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) : Fin S.count :=
+  listFirstAny (NodeSet.members q.outcome)
+    (fun outcome =>
+      FiniteReachability.within finBeq (NodeSet.enumerated S)
+        (mutilatedDirected S q.action) S.count w.actionRoot outcome)
+    w.actionRoot_reaches_outcome_any
+
+/-- The selected parity-readout vertex belongs to the query outcome. -/
+theorem HedgeWitness.parityReadoutOutcome_in_outcome
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    q.outcome w.parityReadoutOutcome = true :=
+  (NodeSet.mem_members_iff q.outcome w.parityReadoutOutcome).mp
+    (listFirstAny_mem (NodeSet.members q.outcome) _
+      w.actionRoot_reaches_outcome_any)
+
+/-- The selected outcome is reached in the action-mutilated graph. -/
+theorem HedgeWitness.actionRoot_reaches_parityReadoutOutcome
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    FiniteReachability.within finBeq (NodeSet.enumerated S)
+      (mutilatedDirected S q.action) S.count w.actionRoot
+        w.parityReadoutOutcome = true :=
+  listFirstAny_pred (NodeSet.members q.outcome) _
+    w.actionRoot_reaches_outcome_any
 
 /-- Unpack the Boolean hedge tests into the `HedgeWitness` fields. -/
 def hedgeWitness_of_sets
