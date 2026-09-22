@@ -316,7 +316,8 @@ induction.  The remaining inhabitants are:
   reachability back into the finite Boolean search and selects a concrete
   reachable query outcome without choice; `parityReadoutRoute` computes a
   concrete route to it, proves every consecutive edge survives
-  `G_{\overline{X}}`, and proves that no route vertex is intervened upon;
+  `G_{\overline{X}}`, proves that no route vertex is intervened upon, and
+  supplies a duplicate-free deterministic predecessor map along that route;
   `hedgeXorPairBitsWithin` and `hedgeForestParentBitsFrom` restrict the two
   parity inputs to an arbitrary c-forest; `largeParityModel` and
   `smallParityModel` package the faithful unsoftened construction--the second
@@ -8821,6 +8822,165 @@ theorem consecutive_mutilatedDirected_avoids_action
           · exact inductionHypothesis next rfl nextFree consecutive.2 node
               tailMember
 
+/-!
+The observed topological order makes any directed readout route strictly
+increasing.  Besides ruling out cycles, this gives the uniqueness needed to
+turn a route into an executable child-to-parent lookup without selecting from
+a proposition-level existence proof.
+-/
+
+/-- Every vertex after the head of a strictly increasing finite route is
+strictly later than that head. -/
+theorem PathSpecification.Consecutive.fin_lt_of_mem_tail
+    {n : Nat} {head : Fin n} {tail : List (Fin n)}
+    (consecutive : PathSpecification.Consecutive
+      (fun left right : Fin n => left.val < right.val) (head :: tail)) :
+    ∀ node, node ∈ tail → head.val < node.val := by
+  induction tail generalizing head with
+  | nil =>
+      intro node member
+      simp at member
+  | cons next rest inductionHypothesis =>
+      have first : head.val < next.val := consecutive.1
+      intro node member
+      rcases List.mem_cons.mp member with same | later
+      · simpa [same] using first
+      · exact Nat.lt_trans first
+          (inductionHypothesis consecutive.2 node later)
+
+/-- A route that strictly increases in `Fin`'s value has no repeated vertex. -/
+theorem PathSpecification.Consecutive.nodup_of_fin_lt
+    {n : Nat} (route : List (Fin n))
+    (consecutive : PathSpecification.Consecutive
+      (fun left right : Fin n => left.val < right.val) route) :
+    route.Nodup := by
+  induction route with
+  | nil => exact List.nodup_nil
+  | cons head tail inductionHypothesis =>
+      apply List.nodup_cons.mpr
+      constructor
+      · intro member
+        have impossible := consecutive.fin_lt_of_mem_tail head member
+        exact (Nat.lt_irrefl head.val impossible).elim
+      · cases tail with
+        | nil => exact List.nodup_nil
+        | cons next rest =>
+            exact inductionHypothesis consecutive.2
+
+/--
+Return the vertex immediately before the first occurrence of `target` in a
+route.  A head occurrence has no predecessor; later occurrences are found by
+the adjacent-pair scan.  The construction is entirely data-driven.
+-/
+def routePredecessor {α : Type} [DecidableEq α] :
+    List α → α → Option α
+  | parent :: child :: rest, target =>
+      if child = target then some parent
+      else routePredecessor (child :: rest) target
+  | _, _target => none
+
+/-- An immediately displayed child is assigned its displayed parent. -/
+@[simp] theorem routePredecessor_pair
+    {α : Type} [DecidableEq α]
+    (parent child : α) (rest : List α) :
+    routePredecessor (parent :: child :: rest) child = some parent := by
+  simp [routePredecessor]
+
+/-- A displayed adjacent pair is found after a front segment that contains
+neither a previous target nor the target as its final vertex. -/
+theorem routePredecessor_append_pair
+    {α : Type} [DecidableEq α]
+    (front : List α) (parent target : α) (suffix : List α)
+    (targetNotFront : target ∉ front) (parentNe : parent ≠ target) :
+    routePredecessor (front ++ parent :: target :: suffix) target =
+      some parent := by
+  induction front with
+  | nil => simp
+  | cons first rest inductionHypothesis =>
+      cases rest with
+      | nil =>
+          change (if parent = target then some first
+            else routePredecessor (parent :: target :: suffix) target) =
+              some parent
+          rw [if_neg parentNe]
+          exact routePredecessor_pair parent target suffix
+      | cons second rest =>
+          have secondNe : second ≠ target := by
+            intro equal
+            apply targetNotFront
+            simp [equal]
+          have targetNotRest : target ∉ second :: rest := by
+            intro member
+            apply targetNotFront
+            exact List.mem_cons_of_mem first member
+          simp only [List.cons_append]
+          rw [routePredecessor]
+          simp only [secondNe, ↓reduceIte]
+          exact inductionHypothesis targetNotRest
+
+/-- On a duplicate-free route, the predecessor scan finds any displayed
+adjacent pair, independently of where that pair occurs. -/
+theorem routePredecessor_of_adjacent_nodup
+    {α : Type} [DecidableEq α]
+    (front : List α) (parent target : α) (suffix : List α)
+    (nodup : (front ++ parent :: target :: suffix).Nodup) :
+    routePredecessor (front ++ parent :: target :: suffix) target =
+      some parent := by
+  have parts := List.nodup_append.mp nodup
+  have targetNotFront : target ∉ front := by
+    intro member
+    exact parts.2.2 target member target (by simp) rfl
+  have parentNe : parent ≠ target := by
+    intro equal
+    have tailNodup := parts.2.1
+    have parentFresh := (List.nodup_cons.mp tailNodup).1
+    apply parentFresh
+    simp [equal]
+  exact routePredecessor_append_pair front parent target suffix
+    targetNotFront parentNe
+
+/-- Auxiliary suffix induction: the lookup in the full route recognizes
+every adjacent pair of a duplicate-free suffix. -/
+theorem routePredecessor_consecutive_suffix
+    {α : Type} [DecidableEq α]
+    (front suffix : List α) (nodup : (front ++ suffix).Nodup) :
+    PathSpecification.Consecutive
+      (fun parent child =>
+        routePredecessor (front ++ suffix) child = some parent)
+      suffix := by
+  induction suffix generalizing front with
+  | nil => trivial
+  | cons parent tail inductionHypothesis =>
+      cases tail with
+      | nil => trivial
+      | cons child rest =>
+          constructor
+          · exact routePredecessor_of_adjacent_nodup front parent child
+              rest nodup
+          · have reassociated :
+                front ++ parent :: child :: rest =
+                  (front ++ [parent]) ++ child :: rest := by
+              simp
+            have restNodup :
+                ((front ++ [parent]) ++ child :: rest).Nodup := by
+              rw [← reassociated]
+              exact nodup
+            have tailConsecutive :=
+              inductionHypothesis (front ++ [parent]) restNodup
+            rw [reassociated]
+            exact tailConsecutive
+
+/-- The predecessor lookup for a duplicate-free route recognizes every one
+of its consecutive parent-child pairs. -/
+theorem routePredecessor_consecutive
+    {α : Type} [DecidableEq α]
+    (route : List α) (nodup : route.Nodup) :
+    PathSpecification.Consecutive
+      (fun parent child => routePredecessor route child = some parent)
+      route := by
+  simpa using routePredecessor_consecutive_suffix ([] : List α)
+    route (by simpa using nodup)
+
 /-- Canonical action-root-to-outcome route carried by the hedge witness. -/
 def HedgeWitness.parityReadoutRoute
     {G : ObservedGraph S} {q : JointKernelQuery S}
@@ -8858,6 +9018,17 @@ theorem HedgeWitness.parityReadoutRoute_consecutive
     (mutilatedDirectedRoute_spec q.action w.parityReadoutOutcome S.count
       w.actionRoot w.actionRoot_reaches_parityReadoutOutcome).2.2
 
+/-- Strict topological increase prevents repeated vertices on the canonical
+readout route. -/
+theorem HedgeWitness.parityReadoutRoute_nodup
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    w.parityReadoutRoute.Nodup := by
+  apply PathSpecification.Consecutive.nodup_of_fin_lt
+    w.parityReadoutRoute
+  exact w.parityReadoutRoute_consecutive.mono
+    (fun parent child edge => mutilatedDirected_earlier S q.action edge)
+
 /-- No vertex on the canonical readout route is intervened upon. -/
 theorem HedgeWitness.parityReadoutRoute_avoids_action
     {G : ObservedGraph S} {q : JointKernelQuery S}
@@ -8868,6 +9039,24 @@ theorem HedgeWitness.parityReadoutRoute_avoids_action
   exact consecutive_mutilatedDirected_avoids_action q.action
     w.parityReadoutRoute w.actionRoot w.parityReadoutRoute_starts rootFree
     w.parityReadoutRoute_consecutive
+
+/-- Deterministic parent lookup along the canonical parity-readout route. -/
+def HedgeWitness.parityReadoutParent
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (child : Fin S.count) : Option (Fin S.count) :=
+  routePredecessor w.parityReadoutRoute child
+
+/-- Every consecutive pair of the canonical route is recorded by its global
+parent lookup. -/
+theorem HedgeWitness.parityReadoutParent_consecutive
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    PathSpecification.Consecutive
+      (fun parent child => w.parityReadoutParent child = some parent)
+      w.parityReadoutRoute := by
+  simpa [HedgeWitness.parityReadoutParent] using
+    routePredecessor_consecutive w.parityReadoutRoute
+      w.parityReadoutRoute_nodup
 
 /-- Unpack the Boolean hedge tests into the `HedgeWitness` fields. -/
 def hedgeWitness_of_sets
