@@ -212,6 +212,88 @@ theorem length_le_of_nodup_subset {A : Type u}
       simp only [List.length_cons, List.length_append]
       omega
 
+/-! ## Duplicate-free Cartesian lists -/
+
+/--
+Cartesian-product enumeration with the right coordinate varying fastest.
+This list-level construction is useful when a finite bijection must remain
+fully explicit: unlike a `Fintype` argument, it does not synthesize any
+classical finite structure.
+-/
+def pairList {A : Type u} {B : Type v} :
+    List A → List B → List (A × B)
+  | [], _right => []
+  | first :: rest, right =>
+      right.map (fun second => (first, second)) ++ pairList rest right
+
+@[simp] theorem mem_pairList {A : Type u} {B : Type v}
+    [BEq A] [LawfulBEq A] [BEq B] [LawfulBEq B]
+    (first : A) (second : B) (left : List A) (right : List B) :
+    (first, second) ∈ pairList left right ↔
+      first ∈ left ∧ second ∈ right := by
+  induction left with
+  | nil => simp [pairList]
+  | cons head tail inductionHypothesis =>
+      simp only [pairList, List.mem_append, List.mem_map, List.mem_cons]
+      constructor
+      · intro member
+        rcases member with rowMember | tailMember
+        · rcases rowMember with ⟨value, valueMember, equal⟩
+          have firstEqual : first = head := (congrArg Prod.fst equal).symm
+          have secondEqual : second = value := (congrArg Prod.snd equal).symm
+          exact ⟨Or.inl firstEqual, secondEqual ▸ valueMember⟩
+        · have parts := inductionHypothesis.mp tailMember
+          exact ⟨Or.inr parts.1, parts.2⟩
+      · intro parts
+        rcases parts.1 with firstEqual | firstInTail
+        · exact Or.inl ⟨second, parts.2, by simp [firstEqual]⟩
+        · exact Or.inr (inductionHypothesis.mpr ⟨firstInTail, parts.2⟩)
+
+/-- A Cartesian list has the expected product length. -/
+theorem pairList_length {A : Type u} {B : Type v}
+    (left : List A) (right : List B) :
+    (pairList left right).length = left.length * right.length := by
+  induction left with
+  | nil => simp [pairList]
+  | cons first rest inductionHypothesis =>
+      simp only [pairList, List.length_append, List.length_map,
+        inductionHypothesis, List.length_cons]
+      simpa [Nat.add_mul] using
+        Nat.add_comm right.length (rest.length * right.length)
+
+/--
+The Cartesian enumeration of two duplicate-free lists is duplicate-free.
+Rows are internally duplicate-free because pairing with a fixed left value is
+injective; distinct rows cannot overlap because their left coordinates differ.
+-/
+theorem pairList_nodup {A : Type u} {B : Type v}
+    [BEq A] [LawfulBEq A] [BEq B] [LawfulBEq B]
+    (left : List A) (right : List B)
+    (leftNodup : left.Nodup) (rightNodup : right.Nodup) :
+    (pairList left right).Nodup := by
+  induction left with
+  | nil => simp [pairList]
+  | cons first rest inductionHypothesis =>
+      have parts := List.nodup_cons.mp leftNodup
+      rw [pairList, List.nodup_append]
+      constructor
+      · apply nodup_map_of_injective_on
+          (fun second => (first, second)) right
+        · intro leftValue _ rightValue _ equal
+          exact congrArg Prod.snd equal
+        · exact rightNodup
+      · constructor
+        · exact inductionHypothesis parts.2
+        · intro rowPair rowMem tailPair tailMem equal
+          apply parts.1
+          have rowFirst : rowPair.1 = first := by
+            rcases List.mem_map.mp rowMem with ⟨second, _, rowEqual⟩
+            rw [← rowEqual]
+          have tailFirst : tailPair.1 ∈ rest :=
+            (mem_pairList tailPair.1 tailPair.2 rest right).mp tailMem |>.1
+          rw [← rowFirst, equal]
+          exact tailFirst
+
 end ConstructivePermutation
 end Probability
 end Thesis

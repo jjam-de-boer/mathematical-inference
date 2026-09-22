@@ -330,12 +330,18 @@ induction.  The remaining inhabitants are:
   even, and `nestedPairBitRealizers_length_eq_of_inner_even` proves all such
   targets have equal fibers by another explicit XOR permutation; explicit
   injections between the ordinary and nested zero kernels then yield the
-  cross-map count `pairBitRealizers_length_eq_nested`; connecting these
-  pair-bit counts to the two models' full latent atom counts, and then adding
-  full-support noise without erasing the interventional separation remain
-  hard steps--the tempting construction that merely gates a private decode by
-  restricted pair parity already fails observational equivalence on the
-  two-node bow;
+  cross-map count `pairBitRealizers_length_eq_nested`; c-forest cancellation
+  shows that the large and nested required targets are even simultaneously
+  (`largeRequiredEven_iff_smallRequiredEven`), while odd targets have empty
+  fibers; `hedgeCoordinateSupportLatents` factors complete latent assignments
+  into pair-root and private coordinates, so every observed atom has the same
+  number of equal-weight preimages and
+  `parityModels_observationally_equivalent` proves full observational
+  agreement of the unsoftened pair.  Establishing interventional separation
+  for the general hedge and then adding full-support noise without erasing it
+  remain hard steps--the tempting construction that merely gates a private
+  decode by restricted pair parity already fails observational equivalence on
+  the two-node bow;
   outcome vertices sit in their ancestral set in `G_{\overline{X}}`
   (`outcome_subset_ancestralSet`), so the nested shrink-empty summed
   blocks cover `V \ Y` (`first_shrink_empty_summed_eq`);
@@ -27279,14 +27285,12 @@ def hedgeLatentCount (G : ObservedGraph S) : Nat :=
 def hedgePairRoot (G : ObservedGraph S)
     (root : Fin (pairRootCount G)) :
     Fin (hedgeLatentCount G) :=
-  ⟨root.val, Nat.lt_of_lt_of_le root.isLt
-    (Nat.le_add_right (pairRootCount G) S.count)⟩
+  Fin.castAdd S.count root
 
 /-- Private root of an observed node, placed after every pair-root. -/
 def hedgePrivateRoot (G : ObservedGraph S) (child : Fin S.count) :
     Fin (hedgeLatentCount G) :=
-  ⟨pairRootCount G + child.val,
-    Nat.add_lt_add_left child.isLt (pairRootCount G)⟩
+  Fin.natAdd (pairRootCount G) child
 
 /--
 Incidence for the hedge skeleton: pair-roots keep their two endpoints,
@@ -27509,8 +27513,9 @@ theorem hedgeIncident_pair (G : ObservedGraph S)
     (root : Fin (pairRootCount G)) (child : Fin S.count) :
     hedgeIncident G (hedgePairRoot G root) child =
       pairRootIncident G root child := by
-  unfold hedgeIncident hedgePairRoot
-  rw [dif_pos root.isLt]
+  unfold hedgeIncident
+  rw [dif_pos (by exact root.isLt)]
+  congr 1
 
 /-- Private roots never join two distinct observed nodes. -/
 theorem hedgeIncident_private_both
@@ -28942,8 +28947,8 @@ theorem hedgeRecode_pairRoot (G : ObservedGraph S)
     (root : Fin (pairRootCount G)) :
     hedgeRecodeLatent G rich mask u (hedgePairRoot G root) =
       u (hedgePairRoot G root) := by
-  unfold hedgeRecodeLatent hedgePairRoot
-  rw [dif_pos root.isLt]
+  unfold hedgeRecodeLatent
+  rw [dif_pos (by exact root.isLt)]
 
 theorem hedgeUnrecode_pairRoot (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) (mask : NodeSet S)
@@ -28951,8 +28956,8 @@ theorem hedgeUnrecode_pairRoot (G : ObservedGraph S)
     (root : Fin (pairRootCount G)) :
     hedgeUnrecodeLatent G rich mask w (hedgePairRoot G root) =
       w (hedgePairRoot G root) := by
-  unfold hedgeUnrecodeLatent hedgePairRoot
-  rw [dif_pos root.isLt]
+  unfold hedgeUnrecodeLatent
+  rw [dif_pos (by exact root.isLt)]
 
 theorem hedgeRecode_privateIndex (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) (mask : NodeSet S)
@@ -32225,6 +32230,1707 @@ theorem BidirectedComponent.pairBitRealizers_length_eq_nested
         G outer inner innerComponent subset
         (hedgeZeroIncidenceTarget S) nestedTarget
         (hedgeZeroIncidenceTarget_even inner) nestedEven
+
+/-! ### Lifting pair-root fibers to complete latent assignments -/
+
+/--
+The private coordinates of the hedge latent extension, indexed directly by
+their observed children.  Separating this dependent vector from the Boolean
+pair-root vector makes the multiplicity ignored by the parity mechanisms
+explicit without changing the latent extension itself.
+-/
+abbrev HedgePrivateCoordinates (S : ObservedSignature) :=
+  (child : Fin S.count) → Fin (hedgePrivateCard S child)
+
+instance : DecidableEq (HedgePrivateCoordinates S) :=
+  FiniteProduct.assignmentDecidableEq S.count
+    (fun child => Fin (hedgePrivateCard S child)) (fun _child => inferInstance)
+
+/-- Read every canonical private coordinate from a hedge latent assignment. -/
+def hedgePrivateCoordinatesOf (G : ObservedGraph S)
+    (u : (hedgeLatentExtension G).Assignment) : HedgePrivateCoordinates S :=
+  fun child => hedgePrivateIndex G child (fun root _incident => u root)
+
+/-- The project-specific pair-root embedding is Lean's left `Fin` injection. -/
+theorem hedgePairRoot_eq_castAdd (G : ObservedGraph S)
+    (root : Fin (pairRootCount G)) :
+    hedgePairRoot G root = Fin.castAdd S.count root := by
+  apply Fin.ext
+  rfl
+
+/-- The project-specific private-root embedding is Lean's right `Fin` injection. -/
+theorem hedgePrivateRoot_eq_natAdd (G : ObservedGraph S)
+    (child : Fin S.count) :
+    hedgePrivateRoot G child = Fin.natAdd (pairRootCount G) child := by
+  apply Fin.ext
+  rfl
+
+/--
+Reassemble a hedge latent assignment from its two independent coordinate
+blocks.  Prefix roots receive the prescribed Boolean values; every remaining
+root is the canonical private root of `hedgeChildOfPrivate` and receives that
+child's finite enumeration index.
+-/
+def hedgeLatentOfCoordinates (G : ObservedGraph S)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (privateCoordinates : HedgePrivateCoordinates S) :
+    (hedgeLatentExtension G).Assignment :=
+  Fin.addCases
+    (fun root =>
+      cast (hedgeLatentValue_pair G root).symm (pairBits root))
+    (fun child =>
+      cast
+        (hedgeLatentValue_eq_fin G (hedgePrivateRoot G child)
+          (hedgePrivateRoot_not_pair G child)).symm
+        ((privateCoordinates child).cast
+          (by rw [hedgeChildOfPrivate_privateRoot])))
+
+/-- Coordinate reassembly computes directly on a pair-root index. -/
+theorem hedgeLatentOfCoordinates_pair (G : ObservedGraph S)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (privateCoordinates : HedgePrivateCoordinates S)
+    (root : Fin (pairRootCount G)) :
+    hedgeLatentOfCoordinates G pairBits privateCoordinates
+        (hedgePairRoot G root) =
+      cast (hedgeLatentValue_pair G root).symm (pairBits root) := by
+  unfold hedgeLatentOfCoordinates hedgePairRoot
+  exact Fin.addCases_left root
+
+/-- Coordinate reassembly computes directly on a canonical private root. -/
+theorem hedgeLatentOfCoordinates_private (G : ObservedGraph S)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (privateCoordinates : HedgePrivateCoordinates S)
+    (child : Fin S.count) :
+    hedgeLatentOfCoordinates G pairBits privateCoordinates
+        (hedgePrivateRoot G child) =
+      cast
+        (hedgeLatentValue_eq_fin G (hedgePrivateRoot G child)
+          (hedgePrivateRoot_not_pair G child)).symm
+        ((privateCoordinates child).cast
+          (by rw [hedgeChildOfPrivate_privateRoot])) := by
+  unfold hedgeLatentOfCoordinates hedgePrivateRoot
+  exact Fin.addCases_right child
+
+/-- Transporting a value along an equality and immediately back is identity. -/
+theorem cast_symm_cast_value {A B : Type} (equal : A = B) (value : B) :
+    cast equal (cast equal.symm value) = value := by
+  cases equal
+  rfl
+
+/-- Transport along a type equality is injective. -/
+theorem cast_injective_value {A B : Type} (equal : A = B)
+    {left right : A} (same : cast equal left = cast equal right) :
+    left = right := by
+  cases equal
+  exact same
+
+/-- Reassembling coordinates preserves the pair-root block exactly. -/
+theorem hedgePairBitsOf_latentOfCoordinates (G : ObservedGraph S)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (privateCoordinates : HedgePrivateCoordinates S) :
+    hedgePairBitsOf G
+        (hedgeLatentOfCoordinates G pairBits privateCoordinates) =
+      pairBits := by
+  funext root
+  unfold hedgePairBitsOf
+  rw [hedgeLatentOfCoordinates_pair]
+  exact cast_symm_cast_value (hedgeLatentValue_pair G root) (pairBits root)
+
+/-- Reassembling coordinates preserves every private coordinate exactly. -/
+theorem hedgePrivateCoordinatesOf_latentOfCoordinates
+    (G : ObservedGraph S)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (privateCoordinates : HedgePrivateCoordinates S) :
+    hedgePrivateCoordinatesOf G
+        (hedgeLatentOfCoordinates G pairBits privateCoordinates) =
+      privateCoordinates := by
+  funext child
+  apply Fin.ext
+  unfold hedgePrivateCoordinatesOf hedgePrivateIndex
+  change
+    ((cast
+      (hedgeLatentValue_eq_fin G (hedgePrivateRoot G child)
+        (hedgePrivateRoot_not_pair G child))
+      (hedgeLatentOfCoordinates G pairBits privateCoordinates
+        (hedgePrivateRoot G child))).cast _).val =
+      (privateCoordinates child).val
+  rw [hedgeLatentOfCoordinates_private, cast_cast]
+  simp [Fin.cast]
+
+/-- Pair and private coordinates jointly determine a hedge latent assignment. -/
+theorem hedgeLatentAssignment_ext (G : ObservedGraph S)
+    {left right : (hedgeLatentExtension G).Assignment}
+    (pairEqual : hedgePairBitsOf G left = hedgePairBitsOf G right)
+    (privateEqual : hedgePrivateCoordinatesOf G left =
+      hedgePrivateCoordinatesOf G right) :
+    left = right := by
+  funext root
+  refine Fin.addCases ?_ ?_ root
+  · intro pairRoot
+    apply cast_injective_value (hedgeLatentValue_pair G pairRoot)
+    exact congrFun pairEqual pairRoot
+  · intro child
+    change left (hedgePrivateRoot G child) =
+      right (hedgePrivateRoot G child)
+    have leftInverse := hedgePrivateIndex_inv_at_child G left child
+    have rightInverse := hedgePrivateIndex_inv_at_child G right child
+    rw [← leftInverse, ← rightInverse]
+    have coordinateEqual := congrFun privateEqual child
+    change hedgePrivateIndex G child (fun root _ => left root) =
+      hedgePrivateIndex G child (fun root _ => right root) at coordinateEqual
+    rw [coordinateEqual]
+
+/--
+Pair and private coordinate recovery is a left inverse of reassembly.  The
+proof covers pair-prefix and private-suffix roots separately and uses the
+canonical private-root section instead of comparing dependent types by hand.
+-/
+theorem hedgeLatentOfCoordinates_recover (G : ObservedGraph S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgeLatentOfCoordinates G (hedgePairBitsOf G u)
+        (hedgePrivateCoordinatesOf G u) =
+      u := by
+  apply hedgeLatentAssignment_ext G
+  · exact hedgePairBitsOf_latentOfCoordinates G _ _
+  · exact hedgePrivateCoordinatesOf_latentOfCoordinates G _ _
+
+/-- Package the two coordinate blocks as the source of the reassembly map. -/
+def hedgeLatentOfCoordinatePair (G : ObservedGraph S)
+    (coordinates :
+      (Fin (pairRootCount G) → Bool) × HedgePrivateCoordinates S) :
+    (hedgeLatentExtension G).Assignment :=
+  hedgeLatentOfCoordinates G coordinates.1 coordinates.2
+
+/-- Distinct coordinate pairs reassemble to distinct latent assignments. -/
+theorem hedgeLatentOfCoordinatePair_injective (G : ObservedGraph S)
+    {left right :
+      (Fin (pairRootCount G) → Bool) × HedgePrivateCoordinates S}
+    (equal : hedgeLatentOfCoordinatePair G left =
+      hedgeLatentOfCoordinatePair G right) :
+    left = right := by
+  apply Prod.ext
+  · have recovered := congrArg (hedgePairBitsOf G) equal
+    simpa [hedgeLatentOfCoordinatePair,
+      hedgePairBitsOf_latentOfCoordinates] using recovered
+  · have recovered := congrArg (hedgePrivateCoordinatesOf G) equal
+    simpa [hedgeLatentOfCoordinatePair,
+      hedgePrivateCoordinatesOf_latentOfCoordinates] using recovered
+
+/-- Duplicate-free exhaustive enumeration of all private-coordinate vectors. -/
+def hedgePrivateCoordinateEnum (S : ObservedSignature) :
+    List (HedgePrivateCoordinates S) :=
+  deduplicate
+    (FiniteProduct.enumeration S.count
+      (fun child => Fin (hedgePrivateCard S child))
+      (fun child => List.finRange (hedgePrivateCard S child)))
+
+theorem hedgePrivateCoordinateEnum_complete (S : ObservedSignature)
+    (privateCoordinates : HedgePrivateCoordinates S) :
+    privateCoordinates ∈ hedgePrivateCoordinateEnum S := by
+  unfold hedgePrivateCoordinateEnum
+  rw [mem_deduplicate]
+  exact FiniteProduct.enumeration_complete S.count
+    (fun child => Fin (hedgePrivateCard S child))
+    (fun child => List.finRange (hedgePrivateCard S child))
+    (fun _child value => List.mem_finRange value) privateCoordinates
+
+theorem hedgePrivateCoordinateEnum_nodup (S : ObservedSignature) :
+    (hedgePrivateCoordinateEnum S).Nodup := by
+  unfold hedgePrivateCoordinateEnum
+  exact deduplicate_nodup _
+
+/--
+Private coordinates compatible with an observed target outside `nodes`.
+Coordinates at selected parity nodes remain unrestricted because those
+mechanisms ignore their private roots.
+-/
+def hedgePrivateCoordinatesFit (outer : NodeSet S) (target : S.Assignment)
+    (privateCoordinates : HedgePrivateCoordinates S) : Bool :=
+  (List.finRange S.count).all fun child =>
+    if outer child then true
+    else privateCoordinates child == hedgeIndexOfValue S child (target child)
+
+theorem hedgePrivateCoordinatesFit_of (outer : NodeSet S)
+    (target : S.Assignment)
+    (privateCoordinates : HedgePrivateCoordinates S)
+    (outside : ∀ child, outer child = false →
+      privateCoordinates child = hedgeIndexOfValue S child (target child)) :
+    hedgePrivateCoordinatesFit outer target privateCoordinates = true := by
+  unfold hedgePrivateCoordinatesFit
+  apply List.all_eq_true.mpr
+  intro child _member
+  cases inside : outer child
+  · simpa [inside] using beq_iff_eq.mpr (outside child inside)
+  · rfl
+
+theorem hedgePrivateCoordinatesFit_spec (outer : NodeSet S)
+    (target : S.Assignment)
+    (privateCoordinates : HedgePrivateCoordinates S)
+    (fits : hedgePrivateCoordinatesFit outer target privateCoordinates = true)
+    (child : Fin S.count) (outside : outer child = false) :
+    privateCoordinates child = hedgeIndexOfValue S child (target child) := by
+  have tested := (List.all_eq_true.mp fits) child (List.mem_finRange child)
+  simp [outside] at tested
+  exact tested
+
+/-- All private-coordinate vectors that fit `target` outside `outer`. -/
+def hedgePrivateSupportEnum (outer : NodeSet S) (target : S.Assignment) :
+    List (HedgePrivateCoordinates S) :=
+  (hedgePrivateCoordinateEnum S).filter
+    (hedgePrivateCoordinatesFit outer target)
+
+theorem hedgePrivateSupportEnum_complete (outer : NodeSet S)
+    (target : S.Assignment)
+    (privateCoordinates : HedgePrivateCoordinates S)
+    (fits : hedgePrivateCoordinatesFit outer target privateCoordinates = true) :
+    privateCoordinates ∈ hedgePrivateSupportEnum outer target := by
+  exact List.mem_filter.mpr
+    ⟨hedgePrivateCoordinateEnum_complete S privateCoordinates, fits⟩
+
+theorem hedgePrivateSupportEnum_nodup (outer : NodeSet S)
+    (target : S.Assignment) :
+    (hedgePrivateSupportEnum outer target).Nodup :=
+  List.Sublist.nodup List.filter_sublist
+    (hedgePrivateCoordinateEnum_nodup S)
+
+/--
+Full latent support associated with an arbitrary executable pair-root test.
+The Cartesian source keeps the common private multiplicity visible; mapping
+by coordinate reassembly returns actual assignments of `hedgeLatentExtension`.
+-/
+def hedgeCoordinateSupportLatents (G : ObservedGraph S)
+    (outer : NodeSet S) (target : S.Assignment)
+    (pairTest : (Fin (pairRootCount G) → Bool) → Bool) :
+    List (hedgeLatentExtension G).Assignment :=
+  (Probability.ConstructivePermutation.pairList
+      ((hedgePairBitEnum G).filter pairTest)
+      (hedgePrivateSupportEnum outer target)).map
+    (hedgeLatentOfCoordinatePair G)
+
+/-- Coordinate support contains no duplicate latent assignment. -/
+theorem hedgeCoordinateSupportLatents_nodup (G : ObservedGraph S)
+    (outer : NodeSet S) (target : S.Assignment)
+    (pairTest : (Fin (pairRootCount G) → Bool) → Bool) :
+    (hedgeCoordinateSupportLatents G outer target pairTest).Nodup := by
+  unfold hedgeCoordinateSupportLatents
+  apply Probability.ConstructivePermutation.nodup_map_of_injective_on
+      (hedgeLatentOfCoordinatePair G) _
+  · intro left _leftMem right _rightMem equal
+    exact hedgeLatentOfCoordinatePair_injective G equal
+  · exact Probability.ConstructivePermutation.pairList_nodup _ _
+      (List.Sublist.nodup List.filter_sublist (hedgePairBitEnum_nodup G))
+      (hedgePrivateSupportEnum_nodup outer target)
+
+/--
+Membership in coordinate support is exactly the conjunction of the pair-root
+test and the outside-private constraint recovered from the assignment.
+-/
+theorem hedgeCoordinateSupportLatents_mem_iff (G : ObservedGraph S)
+    (outer : NodeSet S) (target : S.Assignment)
+    (pairTest : (Fin (pairRootCount G) → Bool) → Bool)
+    (u : (hedgeLatentExtension G).Assignment) :
+    u ∈ hedgeCoordinateSupportLatents G outer target pairTest ↔
+      pairTest (hedgePairBitsOf G u) = true ∧
+        hedgePrivateCoordinatesFit outer target
+          (hedgePrivateCoordinatesOf G u) = true := by
+  constructor
+  · intro member
+    rcases List.mem_map.mp member with ⟨coordinates, coordinatesMem, equal⟩
+    have parts :=
+      (Probability.ConstructivePermutation.mem_pairList
+        coordinates.1 coordinates.2
+        ((hedgePairBitEnum G).filter pairTest)
+        (hedgePrivateSupportEnum outer target)).mp coordinatesMem
+    have pairParts := List.mem_filter.mp parts.1
+    have privateParts := List.mem_filter.mp parts.2
+    rw [← equal]
+    constructor
+    · simpa [hedgeLatentOfCoordinatePair,
+        hedgePairBitsOf_latentOfCoordinates] using pairParts.2
+    · simpa [hedgeLatentOfCoordinatePair,
+        hedgePrivateCoordinatesOf_latentOfCoordinates] using privateParts.2
+  · intro parts
+    apply List.mem_map.mpr
+    refine ⟨(hedgePairBitsOf G u, hedgePrivateCoordinatesOf G u), ?_, ?_⟩
+    · apply (Probability.ConstructivePermutation.mem_pairList
+        (hedgePairBitsOf G u) (hedgePrivateCoordinatesOf G u)
+        ((hedgePairBitEnum G).filter pairTest)
+        (hedgePrivateSupportEnum outer target)).mpr
+      constructor
+      · exact List.mem_filter.mpr
+          ⟨hedgePairBitEnum_complete G (hedgePairBitsOf G u), parts.1⟩
+      · exact hedgePrivateSupportEnum_complete outer target _ parts.2
+    · exact hedgeLatentOfCoordinates_recover G u
+
+/--
+The full support length is the pair-fiber length times the common number of
+admissible private-coordinate vectors.  No closed cardinality formula for the
+dependent private product is needed by the later comparison.
+-/
+theorem hedgeCoordinateSupportLatents_length (G : ObservedGraph S)
+    (outer : NodeSet S) (target : S.Assignment)
+    (pairTest : (Fin (pairRootCount G) → Bool) → Bool) :
+    (hedgeCoordinateSupportLatents G outer target pairTest).length =
+      ((hedgePairBitEnum G).filter pairTest).length *
+        (hedgePrivateSupportEnum outer target).length := by
+  unfold hedgeCoordinateSupportLatents
+  rw [List.length_map,
+    Probability.ConstructivePermutation.pairList_length]
+
+/-! ### Semantic support of the forest-parity models -/
+
+/--
+Boolean test that every selected node of `target` uses one of the two values
+which encode parity.  A Boolean test is intentional: later empty-support
+branches can be split constructively without invoking excluded middle on a
+proposition.
+-/
+def hedgeParityTargetValid (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (target : S.Assignment) : Bool :=
+  (NodeSet.members nodes).all fun child =>
+    decide (target child = rich.first child) ||
+      decide (target child = rich.second child)
+
+theorem hedgeParityTargetValid_of (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (target : S.Assignment)
+    (valid : ∀ child, nodes child = true →
+      target child = rich.first child ∨
+        target child = rich.second child) :
+    hedgeParityTargetValid rich nodes target = true := by
+  unfold hedgeParityTargetValid
+  apply List.all_eq_true.mpr
+  intro child member
+  have inside := (NodeSet.mem_members_iff nodes child).mp member
+  rcases valid child inside with first | second
+  · simp [first]
+  · simp [second]
+
+theorem hedgeParityTargetValid_spec (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (target : S.Assignment)
+    (valid : hedgeParityTargetValid rich nodes target = true)
+    (child : Fin S.count) (inside : nodes child = true) :
+    target child = rich.first child ∨
+      target child = rich.second child := by
+  have member := (NodeSet.mem_members_iff nodes child).mpr inside
+  have tested := (List.all_eq_true.mp valid) child member
+  simp only [Bool.or_eq_true, decide_eq_true_eq] at tested
+  exact tested
+
+/-- A valid distinguished value is recovered from its encoded second-bit. -/
+theorem hedgeParityValue_isSecond_of_valid
+    (rich : ObservedSignature.ValueRich S) (child : Fin S.count)
+    (value : S.Value child)
+    (valid : value = rich.first child ∨ value = rich.second child) :
+    hedgeParityValue rich child (hedgeIsSecond rich child value) = value := by
+  rcases valid with first | second
+  · subst value
+    simp [hedgeIsSecond, hedgeParityValue, rich.different]
+  · subst value
+    simp [hedgeIsSecond, hedgeParityValue]
+
+/-- Every output of a forest-parity circuit is valid on its selected nodes. -/
+theorem hedgeForestParityModel_eval_valid
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgeParityTargetValid rich nodes
+        ((hedgeForestParityModel G rich nodes kept).eval u) = true := by
+  apply hedgeParityTargetValid_of
+  intro child inside
+  change
+    (hedgeForestParityModel G rich nodes kept).evalNodeUnder
+          (FiniteLatentSCM.noIntervention S) u child = rich.first child ∨
+      (hedgeForestParityModel G rich nodes kept).evalNodeUnder
+          (FiniteLatentSCM.noIntervention S) u child = rich.second child
+  rw [FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder FiniteLatentSCM.noIntervention
+  change
+    hedgeForestParityOutput G rich nodes kept child
+        (fun parent _ =>
+          (hedgeForestParityModel G rich nodes kept).evalNodeUnder
+            (FiniteLatentSCM.noIntervention S) u parent)
+        (fun latent _ => u latent) = rich.first child ∨
+      hedgeForestParityOutput G rich nodes kept child
+        (fun parent _ =>
+          (hedgeForestParityModel G rich nodes kept).evalNodeUnder
+            (FiniteLatentSCM.noIntervention S) u parent)
+        (fun latent _ => u latent) = rich.second child
+  rw [hedgeForestParityOutput, if_pos inside]
+  generalize
+    Bool.xor
+      (hedgeXorPairBitsWithin G nodes child fun latent _ => u latent)
+      (hedgeForestParentBitsFrom rich kept child fun parent _ =>
+        (hedgeForestParityModel G rich nodes kept).evalNodeUnder
+          (FiniteLatentSCM.noIntervention S) u parent) = bit
+  cases bit with
+  | false => exact Or.inl rfl
+  | true => exact Or.inr rfl
+
+/--
+Outside the selected forest, the private coordinate is exactly the index of
+the observed output.  Selected private coordinates remain unrestricted.
+-/
+theorem hedgeForestParityModel_privateCoordinatesFit_eval
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgePrivateCoordinatesFit nodes
+        ((hedgeForestParityModel G rich nodes kept).eval u)
+        (hedgePrivateCoordinatesOf G u) = true := by
+  apply hedgePrivateCoordinatesFit_of
+  intro child outside
+  change hedgePrivateIndex G child (fun root _ => u root) =
+    hedgeIndexOfValue S child
+      ((hedgeForestParityModel G rich nodes kept).eval u child)
+  have outputEq :
+      (hedgeForestParityModel G rich nodes kept).eval u child =
+        hedgePrivateDecode S child
+          (hedgePrivateIndex G child (fun root _ => u root)) := by
+    change
+      (hedgeForestParityModel G rich nodes kept).evalNodeUnder
+          (FiniteLatentSCM.noIntervention S) u child = _
+    rw [FiniteLatentSCM.evalNodeUnder]
+    unfold FiniteLatentSCM.equationUnder FiniteLatentSCM.noIntervention
+    simp [hedgeForestParityModel, hedgeForestParityOutput, outside]
+  have indexed := congrArg (hedgeIndexOfValue S child) outputEq
+  rw [hedgeIndexOf_decode] at indexed
+  exact indexed.symm
+
+/--
+One node of a forest-parity circuit evaluates to a valid target whenever the
+recovered pair bits realize the target incidence and the outside private
+coordinates fit.  Recursive calls are only made at directed parents, whose
+indices are earlier in the observed signature.
+-/
+theorem hedgeForestParityModel_evalNode_eq_of_support
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (target : S.Assignment)
+    (valid : hedgeParityTargetValid rich nodes target = true)
+    (u : (hedgeLatentExtension G).Assignment)
+    (realizes : hedgePairBitsRealizes G nodes
+      (hedgeForestRequiredIncidence rich kept target)
+      (hedgePairBitsOf G u) = true)
+    (privateFits : hedgePrivateCoordinatesFit nodes target
+      (hedgePrivateCoordinatesOf G u) = true)
+    (child : Fin S.count) :
+    (hedgeForestParityModel G rich nodes kept).evalNodeUnder
+        (FiniteLatentSCM.noIntervention S) u child = target child := by
+  cases inside : nodes child
+  · rw [FiniteLatentSCM.evalNodeUnder]
+    unfold FiniteLatentSCM.equationUnder FiniteLatentSCM.noIntervention
+    simp only [hedgeForestParityModel, hedgeForestParityOutput, inside,
+      Bool.false_eq_true, ↓reduceIte]
+    have privateAt := hedgePrivateCoordinatesFit_spec nodes target
+      (hedgePrivateCoordinatesOf G u) privateFits child inside
+    change hedgePrivateIndex G child (fun root _ => u root) =
+      hedgeIndexOfValue S child (target child) at privateAt
+    rw [privateAt, hedgePrivateDecode_index]
+  · have incidence := hedgePairBitsRealizes_spec G nodes
+      (hedgeForestRequiredIncidence rich kept target)
+      (hedgePairBitsOf G u) realizes child inside
+    have parents :
+        hedgeForestParentBitsFrom rich kept child
+            (fun parent _ =>
+              (hedgeForestParityModel G rich nodes kept).evalNodeUnder
+                (FiniteLatentSCM.noIntervention S) u parent) =
+          hedgeForestParentBitsFrom rich kept child
+            (fun parent _ => target parent) := by
+      apply hedgeForestParentBitsFrom_congr rich child
+      · intro _parent
+        rfl
+      · intro parent edge
+        exact hedgeForestParityModel_evalNode_eq_of_support G rich nodes kept
+          target valid u realizes privateFits parent
+    rw [FiniteLatentSCM.evalNodeUnder]
+    unfold FiniteLatentSCM.equationUnder FiniteLatentSCM.noIntervention
+    change
+      hedgeForestParityOutput G rich nodes kept child
+          (fun parent _ =>
+            (hedgeForestParityModel G rich nodes kept).evalNodeUnder
+              (FiniteLatentSCM.noIntervention S) u parent)
+          (fun latent _ => u latent) = target child
+    rw [hedgeForestParityOutput, if_pos inside]
+    rw [hedgeXorPairBitsWithin_pairBitsOf, incidence, parents]
+    unfold hedgeForestRequiredIncidence
+    rw [Bool.xor_assoc, Bool.xor_self, Bool.xor_false]
+    exact hedgeParityValue_isSecond_of_valid rich child (target child)
+      (hedgeParityTargetValid_spec rich nodes target valid child inside)
+termination_by child.val
+decreasing_by
+  exact S.directed_earlier edge
+
+/-- Complete evaluation of a supported forest-parity latent assignment. -/
+theorem hedgeForestParityModel_eval_eq_of_support
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (target : S.Assignment)
+    (valid : hedgeParityTargetValid rich nodes target = true)
+    (u : (hedgeLatentExtension G).Assignment)
+    (realizes : hedgePairBitsRealizes G nodes
+      (hedgeForestRequiredIncidence rich kept target)
+      (hedgePairBitsOf G u) = true)
+    (privateFits : hedgePrivateCoordinatesFit nodes target
+      (hedgePrivateCoordinatesOf G u) = true) :
+    (hedgeForestParityModel G rich nodes kept).eval u = target := by
+  funext child
+  exact hedgeForestParityModel_evalNode_eq_of_support G rich nodes kept target
+    valid u realizes privateFits child
+
+/--
+For a valid target, evaluation by the ordinary forest-parity model is exactly
+membership in the factored coordinate support.
+-/
+theorem hedgeForestParityModel_eval_mem_coordinateSupport_iff
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (target : S.Assignment)
+    (valid : hedgeParityTargetValid rich nodes target = true)
+    (u : (hedgeLatentExtension G).Assignment) :
+    (hedgeForestParityModel G rich nodes kept).eval u = target ↔
+      u ∈ hedgeCoordinateSupportLatents G nodes target
+        (hedgePairBitsRealizes G nodes
+          (hedgeForestRequiredIncidence rich kept target)) := by
+  rw [hedgeCoordinateSupportLatents_mem_iff]
+  constructor
+  · intro evaluates
+    subst target
+    exact ⟨hedgeForestParityModel_pairBitsRealizes_eval
+        G rich nodes kept u,
+      hedgeForestParityModel_privateCoordinatesFit_eval
+        G rich nodes kept u⟩
+  · intro support
+    exact hedgeForestParityModel_eval_eq_of_support G rich nodes kept target
+      valid u support.1 support.2
+
+/--
+Incidence demanded by a target in the piecewise nested parity model.  Inner
+vertices use the restricted forest equation; the remaining outer vertices
+use the original large-forest equation.
+-/
+def hedgeNestedForestRequiredIncidence
+    (rich : ObservedSignature.ValueRich S) (inner : NodeSet S)
+    (outerKept innerKept : ForestChild S) (target : S.Assignment)
+    (child : Fin S.count) : Bool :=
+  if inner child then
+    hedgeForestRequiredIncidence rich innerKept target child
+  else
+    hedgeForestRequiredIncidence rich outerKept target child
+
+/--
+Recovered pair bits of a nested-model output realize its complete piecewise
+incidence target on the outer forest.
+-/
+theorem hedgeNestedForestParityModel_pairBitsRealizes_eval
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (outer inner : NodeSet S) (outerKept innerKept : ForestChild S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgeNestedPairBitsRealizes G outer inner
+        (hedgeNestedForestRequiredIncidence rich inner outerKept innerKept
+          ((hedgeNestedForestParityModel G rich outer inner
+            outerKept innerKept).eval u))
+        (hedgePairBitsOf G u) = true := by
+  apply hedgeNestedPairBitsRealizes_of
+  intro child inOuter
+  cases inInner : inner child
+  · simp only [hedgeNestedXorPairBitsWithinFrom, inInner,
+      hedgeNestedForestRequiredIncidence]
+    rw [← hedgeXorPairBitsWithin_pairBitsOf G outer u child]
+    have equation :
+        hedgeIsSecond rich child
+            ((hedgeNestedForestParityModel G rich outer inner
+              outerKept innerKept).eval u child) =
+          Bool.xor
+            (hedgeXorPairBitsWithin G outer child
+              (fun latent _ => u latent))
+            (hedgeForestParentBitsFrom rich outerKept child
+              (fun parent _ =>
+                (hedgeNestedForestParityModel G rich outer inner
+                  outerKept innerKept).eval u parent)) := by
+      change hedgeIsSecond rich child
+          ((hedgeNestedForestParityModel G rich outer inner
+            outerKept innerKept).evalNodeUnder
+              (FiniteLatentSCM.noIntervention S) u child) = _
+      rw [FiniteLatentSCM.evalNodeUnder]
+      unfold FiniteLatentSCM.equationUnder FiniteLatentSCM.noIntervention
+      change hedgeIsSecond rich child
+          (if inner child then
+            hedgeForestParityOutput G rich inner innerKept child _ _
+          else
+            hedgeForestParityOutput G rich outer outerKept child _ _) = _
+      simp only [inInner, Bool.false_eq_true, ↓reduceIte]
+      exact hedgeForestParityOutput_bit_of_mem G rich outer outerKept
+        child _ _ inOuter
+    unfold hedgeForestRequiredIncidence
+    rw [equation]
+    generalize hedgeXorPairBitsWithin G outer child
+      (fun latent _ => u latent) = pair
+    generalize hedgeForestParentBitsFrom rich outerKept child
+      (fun parent _ =>
+        (hedgeNestedForestParityModel G rich outer inner
+          outerKept innerKept).eval u parent) = parents
+    cases pair <;> cases parents <;> rfl
+  · simp only [hedgeNestedXorPairBitsWithinFrom, inInner,
+      hedgeNestedForestRequiredIncidence, ↓reduceIte]
+    rw [← hedgeXorPairBitsWithin_pairBitsOf G inner u child]
+    have equation :
+        hedgeIsSecond rich child
+            ((hedgeNestedForestParityModel G rich outer inner
+              outerKept innerKept).eval u child) =
+          Bool.xor
+            (hedgeXorPairBitsWithin G inner child
+              (fun latent _ => u latent))
+            (hedgeForestParentBitsFrom rich innerKept child
+              (fun parent _ =>
+                (hedgeNestedForestParityModel G rich outer inner
+                  outerKept innerKept).eval u parent)) := by
+      change hedgeIsSecond rich child
+          ((hedgeNestedForestParityModel G rich outer inner
+            outerKept innerKept).evalNodeUnder
+              (FiniteLatentSCM.noIntervention S) u child) = _
+      rw [FiniteLatentSCM.evalNodeUnder]
+      unfold FiniteLatentSCM.equationUnder FiniteLatentSCM.noIntervention
+      change hedgeIsSecond rich child
+          (if inner child then
+            hedgeForestParityOutput G rich inner innerKept child _ _
+          else
+            hedgeForestParityOutput G rich outer outerKept child _ _) = _
+      rw [if_pos inInner]
+      exact hedgeForestParityOutput_bit_of_mem G rich inner innerKept
+        child _ _ inInner
+    unfold hedgeForestRequiredIncidence
+    rw [equation]
+    generalize hedgeXorPairBitsWithin G inner child
+      (fun latent _ => u latent) = pair
+    generalize hedgeForestParentBitsFrom rich innerKept child
+      (fun parent _ =>
+        (hedgeNestedForestParityModel G rich outer inner
+          outerKept innerKept).eval u parent) = parents
+    cases pair <;> cases parents <;> rfl
+
+/-- Every nested-model output is parity-valid on the complete outer forest. -/
+theorem hedgeNestedForestParityModel_eval_valid
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (outer inner : NodeSet S) (outerKept innerKept : ForestChild S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgeParityTargetValid rich outer
+        ((hedgeNestedForestParityModel G rich outer inner
+          outerKept innerKept).eval u) = true := by
+  apply hedgeParityTargetValid_of
+  intro child inOuter
+  change
+    (hedgeNestedForestParityModel G rich outer inner
+        outerKept innerKept).evalNodeUnder
+          (FiniteLatentSCM.noIntervention S) u child = rich.first child ∨
+      (hedgeNestedForestParityModel G rich outer inner
+        outerKept innerKept).evalNodeUnder
+          (FiniteLatentSCM.noIntervention S) u child = rich.second child
+  rw [FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder FiniteLatentSCM.noIntervention
+  change
+    (if inner child then
+      hedgeForestParityOutput G rich inner innerKept child _ _
+    else
+      hedgeForestParityOutput G rich outer outerKept child _ _) =
+        rich.first child ∨
+      (if inner child then
+        hedgeForestParityOutput G rich inner innerKept child _ _
+      else
+        hedgeForestParityOutput G rich outer outerKept child _ _) =
+          rich.second child
+  cases inInner : inner child
+  · simp only [Bool.false_eq_true, ↓reduceIte]
+    rw [hedgeForestParityOutput, if_pos inOuter]
+    change hedgeParityValue rich child
+        (Bool.xor
+          (hedgeXorPairBitsWithin G outer child (fun root _ => u root))
+          (hedgeForestParentBitsFrom rich outerKept child
+            (fun parent _ =>
+              (hedgeNestedForestParityModel G rich outer inner
+                outerKept innerKept).evalNodeUnder
+                  (FiniteLatentSCM.noIntervention S) u parent))) =
+          rich.first child ∨
+      hedgeParityValue rich child
+        (Bool.xor
+          (hedgeXorPairBitsWithin G outer child (fun root _ => u root))
+          (hedgeForestParentBitsFrom rich outerKept child
+            (fun parent _ =>
+              (hedgeNestedForestParityModel G rich outer inner
+                outerKept innerKept).evalNodeUnder
+                  (FiniteLatentSCM.noIntervention S) u parent))) =
+          rich.second child
+    generalize
+      Bool.xor
+        (hedgeXorPairBitsWithin G outer child fun root _ => u root)
+        (hedgeForestParentBitsFrom rich outerKept child fun parent _ =>
+          (hedgeNestedForestParityModel G rich outer inner
+            outerKept innerKept).evalNodeUnder
+              (FiniteLatentSCM.noIntervention S) u parent) = bit
+    cases bit with
+    | false => exact Or.inl rfl
+    | true => exact Or.inr rfl
+  · simp only [↓reduceIte]
+    rw [hedgeForestParityOutput, if_pos inInner]
+    change hedgeParityValue rich child
+        (Bool.xor
+          (hedgeXorPairBitsWithin G inner child (fun root _ => u root))
+          (hedgeForestParentBitsFrom rich innerKept child
+            (fun parent _ =>
+              (hedgeNestedForestParityModel G rich outer inner
+                outerKept innerKept).evalNodeUnder
+                  (FiniteLatentSCM.noIntervention S) u parent))) =
+          rich.first child ∨
+      hedgeParityValue rich child
+        (Bool.xor
+          (hedgeXorPairBitsWithin G inner child (fun root _ => u root))
+          (hedgeForestParentBitsFrom rich innerKept child
+            (fun parent _ =>
+              (hedgeNestedForestParityModel G rich outer inner
+                outerKept innerKept).evalNodeUnder
+                  (FiniteLatentSCM.noIntervention S) u parent))) =
+          rich.second child
+    generalize
+      Bool.xor
+        (hedgeXorPairBitsWithin G inner child fun root _ => u root)
+        (hedgeForestParentBitsFrom rich innerKept child fun parent _ =>
+          (hedgeNestedForestParityModel G rich outer inner
+            outerKept innerKept).evalNodeUnder
+              (FiniteLatentSCM.noIntervention S) u parent) = bit
+    cases bit with
+    | false => exact Or.inl rfl
+    | true => exact Or.inr rfl
+
+/-- Outside the outer forest, nested-model outputs are fixed by private noise. -/
+theorem hedgeNestedForestParityModel_privateCoordinatesFit_eval
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (outer inner : NodeSet S) (outerKept innerKept : ForestChild S)
+    (subset : NodeSet.Subset inner outer)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgePrivateCoordinatesFit outer
+        ((hedgeNestedForestParityModel G rich outer inner
+          outerKept innerKept).eval u)
+        (hedgePrivateCoordinatesOf G u) = true := by
+  apply hedgePrivateCoordinatesFit_of
+  intro child outside
+  have innerOutside : inner child = false := by
+    cases inside : inner child
+    · rfl
+    · exact False.elim
+        (Bool.false_ne_true (outside.symm.trans (subset child inside)))
+  change hedgePrivateIndex G child (fun root _ => u root) =
+    hedgeIndexOfValue S child
+      ((hedgeNestedForestParityModel G rich outer inner
+        outerKept innerKept).eval u child)
+  have outputEq :
+      (hedgeNestedForestParityModel G rich outer inner
+          outerKept innerKept).eval u child =
+        hedgePrivateDecode S child
+          (hedgePrivateIndex G child (fun root _ => u root)) := by
+    change
+      (hedgeNestedForestParityModel G rich outer inner
+        outerKept innerKept).evalNodeUnder
+          (FiniteLatentSCM.noIntervention S) u child = _
+    rw [FiniteLatentSCM.evalNodeUnder]
+    unfold FiniteLatentSCM.equationUnder FiniteLatentSCM.noIntervention
+    change
+      (if inner child then
+        hedgeForestParityOutput G rich inner innerKept child _ _
+      else
+        hedgeForestParityOutput G rich outer outerKept child _ _) = _
+    simp only [innerOutside, Bool.false_eq_true, ↓reduceIte]
+    simp only [hedgeForestParityOutput, outside, Bool.false_eq_true,
+      ↓reduceIte]
+    rfl
+  have indexed := congrArg (hedgeIndexOfValue S child) outputEq
+  rw [hedgeIndexOf_decode] at indexed
+  exact indexed.symm
+
+/-- Recursive evaluation of one node from nested coordinate support. -/
+theorem hedgeNestedForestParityModel_evalNode_eq_of_support
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (outer inner : NodeSet S) (outerKept innerKept : ForestChild S)
+    (subset : NodeSet.Subset inner outer)
+    (target : S.Assignment)
+    (valid : hedgeParityTargetValid rich outer target = true)
+    (u : (hedgeLatentExtension G).Assignment)
+    (realizes : hedgeNestedPairBitsRealizes G outer inner
+      (hedgeNestedForestRequiredIncidence rich inner outerKept innerKept target)
+      (hedgePairBitsOf G u) = true)
+    (privateFits : hedgePrivateCoordinatesFit outer target
+      (hedgePrivateCoordinatesOf G u) = true)
+    (child : Fin S.count) :
+    (hedgeNestedForestParityModel G rich outer inner
+      outerKept innerKept).evalNodeUnder
+        (FiniteLatentSCM.noIntervention S) u child = target child := by
+  cases inOuter : outer child
+  · have inInner : inner child = false := by
+      cases inside : inner child
+      · rfl
+      · exact False.elim
+          (Bool.false_ne_true (inOuter.symm.trans (subset child inside)))
+    rw [FiniteLatentSCM.evalNodeUnder]
+    unfold FiniteLatentSCM.equationUnder FiniteLatentSCM.noIntervention
+    change
+      (if inner child then
+        hedgeForestParityOutput G rich inner innerKept child _ _
+      else
+        hedgeForestParityOutput G rich outer outerKept child _ _) = _
+    simp only [inInner, Bool.false_eq_true, ↓reduceIte]
+    simp only [hedgeForestParityOutput, inOuter, Bool.false_eq_true,
+      ↓reduceIte]
+    change hedgePrivateDecode S child
+      (hedgePrivateIndex G child (fun root _ => u root)) = target child
+    have privateAt := hedgePrivateCoordinatesFit_spec outer target
+      (hedgePrivateCoordinatesOf G u) privateFits child inOuter
+    change hedgePrivateIndex G child (fun root _ => u root) =
+      hedgeIndexOfValue S child (target child) at privateAt
+    rw [privateAt, hedgePrivateDecode_index]
+  · have incidence := hedgeNestedPairBitsRealizes_spec G outer inner
+      (hedgeNestedForestRequiredIncidence rich inner outerKept innerKept target)
+      (hedgePairBitsOf G u) realizes child inOuter
+    cases inInner : inner child
+    · have parents :
+          hedgeForestParentBitsFrom rich outerKept child
+              (fun parent _ =>
+                (hedgeNestedForestParityModel G rich outer inner
+                  outerKept innerKept).evalNodeUnder
+                    (FiniteLatentSCM.noIntervention S) u parent) =
+            hedgeForestParentBitsFrom rich outerKept child
+              (fun parent _ => target parent) := by
+        apply hedgeForestParentBitsFrom_congr rich child
+        · intro _parent
+          rfl
+        · intro parent edge
+          exact hedgeNestedForestParityModel_evalNode_eq_of_support G rich
+            outer inner outerKept innerKept subset target valid u realizes
+            privateFits parent
+      rw [FiniteLatentSCM.evalNodeUnder]
+      unfold FiniteLatentSCM.equationUnder FiniteLatentSCM.noIntervention
+      change
+        (if inner child then
+          hedgeForestParityOutput G rich inner innerKept child _ _
+        else
+          hedgeForestParityOutput G rich outer outerKept child _ _) = _
+      simp only [inInner, Bool.false_eq_true, ↓reduceIte]
+      rw [hedgeForestParityOutput, if_pos inOuter]
+      change hedgeParityValue rich child
+        (Bool.xor
+          (hedgeXorPairBitsWithin G outer child (fun root _ => u root))
+          (hedgeForestParentBitsFrom rich outerKept child
+            (fun parent _ =>
+              (hedgeNestedForestParityModel G rich outer inner
+                outerKept innerKept).evalNodeUnder
+                  (FiniteLatentSCM.noIntervention S) u parent))) = target child
+      rw [hedgeXorPairBitsWithin_pairBitsOf]
+      unfold hedgeNestedXorPairBitsWithinFrom at incidence
+      rw [if_neg (by simp [inInner])] at incidence
+      rw [incidence, parents]
+      unfold hedgeNestedForestRequiredIncidence
+      simp only [inInner, Bool.false_eq_true, ↓reduceIte]
+      unfold hedgeForestRequiredIncidence
+      rw [Bool.xor_assoc, Bool.xor_self, Bool.xor_false]
+      exact hedgeParityValue_isSecond_of_valid rich child (target child)
+        (hedgeParityTargetValid_spec rich outer target valid child inOuter)
+    · have parents :
+          hedgeForestParentBitsFrom rich innerKept child
+              (fun parent _ =>
+                (hedgeNestedForestParityModel G rich outer inner
+                  outerKept innerKept).evalNodeUnder
+                    (FiniteLatentSCM.noIntervention S) u parent) =
+            hedgeForestParentBitsFrom rich innerKept child
+              (fun parent _ => target parent) := by
+        apply hedgeForestParentBitsFrom_congr rich child
+        · intro _parent
+          rfl
+        · intro parent edge
+          exact hedgeNestedForestParityModel_evalNode_eq_of_support G rich
+            outer inner outerKept innerKept subset target valid u realizes
+            privateFits parent
+      rw [FiniteLatentSCM.evalNodeUnder]
+      unfold FiniteLatentSCM.equationUnder FiniteLatentSCM.noIntervention
+      change
+        (if inner child then
+          hedgeForestParityOutput G rich inner innerKept child _ _
+        else
+          hedgeForestParityOutput G rich outer outerKept child _ _) = _
+      rw [if_pos inInner]
+      rw [hedgeForestParityOutput, if_pos inInner]
+      change hedgeParityValue rich child
+        (Bool.xor
+          (hedgeXorPairBitsWithin G inner child (fun root _ => u root))
+          (hedgeForestParentBitsFrom rich innerKept child
+            (fun parent _ =>
+              (hedgeNestedForestParityModel G rich outer inner
+                outerKept innerKept).evalNodeUnder
+                  (FiniteLatentSCM.noIntervention S) u parent))) = target child
+      rw [hedgeXorPairBitsWithin_pairBitsOf]
+      unfold hedgeNestedXorPairBitsWithinFrom at incidence
+      rw [if_pos inInner] at incidence
+      rw [incidence, parents]
+      unfold hedgeNestedForestRequiredIncidence
+      rw [if_pos inInner]
+      unfold hedgeForestRequiredIncidence
+      rw [Bool.xor_assoc, Bool.xor_self, Bool.xor_false]
+      exact hedgeParityValue_isSecond_of_valid rich child (target child)
+        (hedgeParityTargetValid_spec rich outer target valid child inOuter)
+termination_by child.val
+decreasing_by
+  all_goals exact S.directed_earlier edge
+
+/-- Complete evaluation of a supported nested-parity latent assignment. -/
+theorem hedgeNestedForestParityModel_eval_eq_of_support
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (outer inner : NodeSet S) (outerKept innerKept : ForestChild S)
+    (subset : NodeSet.Subset inner outer)
+    (target : S.Assignment)
+    (valid : hedgeParityTargetValid rich outer target = true)
+    (u : (hedgeLatentExtension G).Assignment)
+    (realizes : hedgeNestedPairBitsRealizes G outer inner
+      (hedgeNestedForestRequiredIncidence rich inner outerKept innerKept target)
+      (hedgePairBitsOf G u) = true)
+    (privateFits : hedgePrivateCoordinatesFit outer target
+      (hedgePrivateCoordinatesOf G u) = true) :
+    (hedgeNestedForestParityModel G rich outer inner
+      outerKept innerKept).eval u = target := by
+  funext child
+  exact hedgeNestedForestParityModel_evalNode_eq_of_support G rich outer inner
+    outerKept innerKept subset target valid u realizes privateFits child
+
+/-- Valid nested evaluation is exactly membership in its coordinate support. -/
+theorem hedgeNestedForestParityModel_eval_mem_coordinateSupport_iff
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (outer inner : NodeSet S) (outerKept innerKept : ForestChild S)
+    (subset : NodeSet.Subset inner outer)
+    (target : S.Assignment)
+    (valid : hedgeParityTargetValid rich outer target = true)
+    (u : (hedgeLatentExtension G).Assignment) :
+    (hedgeNestedForestParityModel G rich outer inner
+      outerKept innerKept).eval u = target ↔
+      u ∈ hedgeCoordinateSupportLatents G outer target
+        (hedgeNestedPairBitsRealizes G outer inner
+          (hedgeNestedForestRequiredIncidence rich inner
+            outerKept innerKept target)) := by
+  rw [hedgeCoordinateSupportLatents_mem_iff]
+  constructor
+  · intro evaluates
+    subst target
+    exact ⟨hedgeNestedForestParityModel_pairBitsRealizes_eval G rich outer
+        inner outerKept innerKept u,
+      hedgeNestedForestParityModel_privateCoordinatesFit_eval G rich outer
+        inner outerKept innerKept subset u⟩
+  · intro support
+    exact hedgeNestedForestParityModel_eval_eq_of_support G rich outer inner
+      outerKept innerKept subset target valid u support.1 support.2
+
+/--
+Lift the ordinary/nested pair-root fiber equality to complete latent support.
+Both sides use the identical private-coordinate list, so its dependent-product
+multiplicity is a common right factor and no closed cardinality calculation is
+required.
+-/
+theorem HedgeWitness.parityCoordinateSupport_length_eq_of_even
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (target : S.Assignment)
+    (largeEven :
+      (hedgeTrueVertices w.large
+        (hedgeForestRequiredIncidence rich w.child target)).length % 2 = 0)
+    (smallEven :
+      (hedgeTrueVertices w.small
+        (hedgeNestedForestRequiredIncidence rich w.small w.child
+          (restrictChild w.small w.child) target)).length % 2 = 0) :
+    (hedgeCoordinateSupportLatents G w.large target
+        (hedgePairBitsRealizes G w.large
+          (hedgeForestRequiredIncidence rich w.child target))).length =
+      (hedgeCoordinateSupportLatents G w.large target
+        (hedgeNestedPairBitsRealizes G w.large w.small
+          (hedgeNestedForestRequiredIncidence rich w.small w.child
+            (restrictChild w.small w.child) target))).length := by
+  rw [hedgeCoordinateSupportLatents_length,
+    hedgeCoordinateSupportLatents_length]
+  rw [w.large_forest.component.pairBitRealizers_length_eq_nested
+    G w.large w.small w.small_forest.component w.small_subset_large
+    (hedgeForestRequiredIncidence rich w.child target)
+    (hedgeNestedForestRequiredIncidence rich w.small w.child
+      (restrictChild w.small w.child) target)
+    largeEven smallEven]
+
+/-! ### Parity compatibility of nested c-forests -/
+
+/-- Contribution of one kept parent to one prospective child coordinate. -/
+def hedgeForestParentEntry (rich : ObservedSignature.ValueRich S)
+    (kept : ForestChild S) (target : S.Assignment)
+    (child parent : Fin S.count) : Bool :=
+  if _edge : S.directed parent child = true then
+    if kept parent = some child then
+      hedgeIsSecond rich parent (target parent)
+    else
+      false
+  else
+    false
+
+/-- Rewrite the kept-parent fold as an XOR of explicit parent entries. -/
+theorem hedgeForestParentBitsFrom_eq_entryFold
+    (rich : ObservedSignature.ValueRich S) (kept : ForestChild S)
+    (target : S.Assignment) (child : Fin S.count) :
+    hedgeForestParentBitsFrom rich kept child (fun parent _ => target parent) =
+      (List.finRange S.count).foldl
+        (fun total parent => Bool.xor total
+          (hedgeForestParentEntry rich kept target child parent)) false := by
+  unfold hedgeForestParentBitsFrom hedgeForestParentEntry
+  apply foldl_congr
+  intro total parent
+  if edge : S.directed parent child = true then
+    if selected : kept parent = some child then
+      simp [edge, selected]
+    else
+      simp [edge, selected]
+  else
+    simp [edge]
+
+/-- Bit contributed by a selected non-root parent after transposing the folds. -/
+def hedgeForestNonRootBit (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (kept : ForestChild S) (target : S.Assignment)
+    (parent : Fin S.count) : Bool :=
+  if nodes parent then
+    match kept parent with
+    | none => false
+    | some _child => hedgeIsSecond rich parent (target parent)
+  else
+    false
+
+/--
+For a fixed parent, XORing its entries over all selected children returns its
+observed bit exactly when it is a selected non-root.  A well-formed c-forest
+gives one selected child and the corresponding directed edge.
+-/
+theorem CForest.fold_parentEntry
+    {G : ObservedGraph S} {nodes roots : NodeSet S}
+    {kept : ForestChild S} (forest : CForest G nodes roots kept)
+    (rich : ObservedSignature.ValueRich S) (target : S.Assignment)
+    (parent : Fin S.count) :
+    (NodeSet.members nodes).foldl
+        (fun total child => Bool.xor total
+          (hedgeForestParentEntry rich kept target child parent)) false =
+      hedgeForestNonRootBit rich nodes kept target parent := by
+  cases parentInside : nodes parent
+  · have parentNone := forest.child_off_set parent parentInside
+    unfold hedgeForestNonRootBit
+    rw [if_neg (by simp [parentInside])]
+    exact foldl_unchanged _ false (NodeSet.members nodes) (fun total child => by
+      simp [hedgeForestParentEntry, parentNone])
+  · cases parentChild : kept parent with
+    | none =>
+        unfold hedgeForestNonRootBit
+        rw [if_pos parentInside, parentChild]
+        exact foldl_unchanged _ false (NodeSet.members nodes)
+          (fun total child => by
+            if edge : S.directed parent child = true then
+              simp [hedgeForestParentEntry, edge, parentChild]
+            else
+              simp [hedgeForestParentEntry, edge])
+    | some selectedChild =>
+        have edgeData := forest.child_edge parent selectedChild parentChild
+        have childMember : selectedChild ∈ NodeSet.members nodes :=
+          (NodeSet.mem_members_iff nodes selectedChild).mpr edgeData.2.1
+        have rowEq :
+            (NodeSet.members nodes).foldl
+                (fun total child => Bool.xor total
+                  (hedgeForestParentEntry rich kept target child parent)) false =
+              (NodeSet.members nodes).foldl
+                (fun total child =>
+                  if child = selectedChild then
+                    Bool.xor total
+                      (hedgeIsSecond rich parent (target parent))
+                  else
+                    total) false := by
+          apply foldl_congr
+          intro total child
+          by_cases same : child = selectedChild
+          · subst child
+            simp [hedgeForestParentEntry, edgeData.2.2, parentChild]
+          · if edge : S.directed parent child = true then
+              have reverse : selectedChild ≠ child := fun equal => same equal.symm
+              simp [hedgeForestParentEntry, edge, parentChild, same, reverse]
+            else
+              simp [hedgeForestParentEntry, edge, same]
+        rw [rowEq, foldl_xor_bit_of_mem_nodup
+          (NodeSet.members nodes) childMember (NodeSet.nodup_members nodes)]
+        simp [hedgeForestNonRootBit, parentInside, parentChild]
+
+/--
+XORing all kept-parent parities by child equals XORing the observed bits of
+all selected non-roots.  `foldl_xor_swap` performs the finite row/column
+interchange; `fold_parentEntry` evaluates each resulting parent column.
+-/
+theorem CForest.nodeXor_parentBits
+    {G : ObservedGraph S} {nodes roots : NodeSet S}
+    {kept : ForestChild S} (forest : CForest G nodes roots kept)
+    (rich : ObservedSignature.ValueRich S) (target : S.Assignment) :
+    hedgeNodeXor nodes
+        (fun child => hedgeForestParentBitsFrom rich kept child
+          (fun parent _ => target parent)) =
+      (List.finRange S.count).foldl
+        (fun total parent => Bool.xor total
+          (hedgeForestNonRootBit rich nodes kept target parent)) false := by
+  unfold hedgeNodeXor
+  have expanded := foldl_congr
+    (fun total child => Bool.xor total
+      (hedgeForestParentBitsFrom rich kept child
+        (fun parent _ => target parent)))
+    (fun total child => Bool.xor total
+      ((List.finRange S.count).foldl
+        (fun parentTotal parent => Bool.xor parentTotal
+          (hedgeForestParentEntry rich kept target child parent)) false))
+    false (NodeSet.members nodes) (fun total child => by
+      change Bool.xor total _ = Bool.xor total _
+      rw [hedgeForestParentBitsFrom_eq_entryFold])
+  rw [expanded, foldl_xor_swap]
+  apply foldl_congr
+  intro total parent
+  rw [forest.fold_parentEntry rich target parent]
+
+/-- The selected non-root fold may equivalently be taken over set members. -/
+theorem CForest.nodeXor_nonRootBits_members
+    {G : ObservedGraph S} {nodes roots : NodeSet S}
+    {kept : ForestChild S} (_forest : CForest G nodes roots kept)
+    (rich : ObservedSignature.ValueRich S) (target : S.Assignment) :
+    (List.finRange S.count).foldl
+        (fun total parent => Bool.xor total
+          (hedgeForestNonRootBit rich nodes kept target parent)) false =
+      (NodeSet.members nodes).foldl
+        (fun total parent => Bool.xor total
+          (match kept parent with
+          | none => false
+          | some _child => hedgeIsSecond rich parent (target parent))) false := by
+  unfold NodeSet.members NodeSet.enumerated
+  rw [List.foldl_filter]
+  apply foldl_congr
+  intro total parent
+  cases inside : nodes parent <;>
+    simp [hedgeForestNonRootBit, inside]
+
+/-- Root members are precisely selected vertices with no kept child. -/
+theorem CForest.members_roots
+    {G : ObservedGraph S} {nodes roots : NodeSet S}
+    {kept : ForestChild S} (forest : CForest G nodes roots kept) :
+    NodeSet.members roots =
+      (NodeSet.members nodes).filter fun node => decide (kept node = none) := by
+  unfold NodeSet.members NodeSet.enumerated
+  rw [List.filter_filter]
+  apply List.filter_congr
+  intro node _member
+  apply Bool.eq_iff_iff.mpr
+  rw [Bool.and_eq_true, decide_eq_true_eq]
+  constructor
+  · intro root
+    have parts := (forest.roots_exact node).mp root
+    exact ⟨parts.2, parts.1⟩
+  · intro parts
+    exact (forest.roots_exact node).mpr ⟨parts.2, parts.1⟩
+
+/--
+The XOR of required incidence over a c-forest is the XOR of target bits at
+its roots.  Every selected non-root bit occurs once directly and once through
+its unique kept edge, hence cancels; root bits occur only directly.
+-/
+theorem CForest.nodeXor_requiredIncidence
+    {G : ObservedGraph S} {nodes roots : NodeSet S}
+    {kept : ForestChild S} (forest : CForest G nodes roots kept)
+    (rich : ObservedSignature.ValueRich S) (target : S.Assignment) :
+    hedgeNodeXor nodes (hedgeForestRequiredIncidence rich kept target) =
+      hedgeNodeXor roots
+        (fun node => hedgeIsSecond rich node (target node)) := by
+  let observedBit : Fin S.count → Bool := fun node =>
+    hedgeIsSecond rich node (target node)
+  let parentBit : Fin S.count → Bool := fun child =>
+    hedgeForestParentBitsFrom rich kept child (fun parent _ => target parent)
+  have split :
+      hedgeNodeXor nodes (hedgeForestRequiredIncidence rich kept target) =
+        Bool.xor (hedgeNodeXor nodes observedBit)
+          (hedgeNodeXor nodes parentBit) := by
+    unfold hedgeNodeXor hedgeForestRequiredIncidence observedBit parentBit
+    exact foldl_xor_pointwise _ _ (NodeSet.members nodes)
+  rw [split, forest.nodeXor_parentBits rich target,
+    forest.nodeXor_nonRootBits_members rich target]
+  unfold hedgeNodeXor
+  rw [← foldl_xor_pointwise]
+  have pointwise :
+      (NodeSet.members nodes).foldl
+          (fun total node => Bool.xor total
+            (Bool.xor (observedBit node)
+              (match kept node with
+              | none => false
+              | some _child => observedBit node))) false =
+        (NodeSet.members nodes).foldl
+          (fun total node => Bool.xor total
+            (if kept node = none then observedBit node else false)) false := by
+    apply foldl_congr
+    intro total node
+    cases childEq : kept node with
+    | none =>
+        cases observedBit node <;> simp
+    | some child =>
+        cases observedBit node <;> rfl
+  rw [pointwise]
+  have filtered := List.foldl_filter
+    (p := fun node : Fin S.count => decide (kept node = none))
+    (f := fun total node => Bool.xor total (observedBit node))
+    (l := NodeSet.members nodes) (init := false)
+  have rootFold :
+      (NodeSet.members nodes).foldl
+          (fun total node => Bool.xor total
+            (if kept node = none then observedBit node else false)) false =
+        ((NodeSet.members nodes).filter
+          fun node => decide (kept node = none)).foldl
+            (fun total node => Bool.xor total (observedBit node)) false := by
+    rw [filtered]
+    apply foldl_congr
+    intro total node
+    by_cases root : kept node = none <;> simp [root]
+  rw [rootFold, ← forest.members_roots]
+
+/-- The required-incidence evenness of a c-forest depends only on its roots. -/
+theorem CForest.requiredIncidence_even_iff_rootBits_even
+    {G : ObservedGraph S} {nodes roots : NodeSet S}
+    {kept : ForestChild S} (forest : CForest G nodes roots kept)
+    (rich : ObservedSignature.ValueRich S) (target : S.Assignment) :
+    (hedgeTrueVertices nodes
+      (hedgeForestRequiredIncidence rich kept target)).length % 2 = 0 ↔
+      (hedgeTrueVertices roots
+        (fun node => hedgeIsSecond rich node (target node))).length % 2 = 0 := by
+  constructor
+  · intro even
+    have leftFalse :
+        hedgeNodeXor nodes
+            (hedgeForestRequiredIncidence rich kept target) = false :=
+      (foldl_xor_eq_false_iff_filter_even
+        (hedgeForestRequiredIncidence rich kept target)
+        (NodeSet.members nodes)).mpr even
+    have rightFalse :
+        hedgeNodeXor roots
+            (fun node => hedgeIsSecond rich node (target node)) = false := by
+      rw [← forest.nodeXor_requiredIncidence rich target]
+      exact leftFalse
+    exact (foldl_xor_eq_false_iff_filter_even
+      (fun node => hedgeIsSecond rich node (target node))
+      (NodeSet.members roots)).mp rightFalse
+  · intro even
+    have rightFalse :
+        hedgeNodeXor roots
+            (fun node => hedgeIsSecond rich node (target node)) = false :=
+      (foldl_xor_eq_false_iff_filter_even
+        (fun node => hedgeIsSecond rich node (target node))
+        (NodeSet.members roots)).mpr even
+    have leftFalse :
+        hedgeNodeXor nodes
+            (hedgeForestRequiredIncidence rich kept target) = false := by
+      rw [forest.nodeXor_requiredIncidence rich target]
+      exact rightFalse
+    exact (foldl_xor_eq_false_iff_filter_even
+      (hedgeForestRequiredIncidence rich kept target)
+      (NodeSet.members nodes)).mp leftFalse
+
+/--
+Large and small hedge forests have the same roots, so their required
+incidence targets are even simultaneously.
+-/
+theorem HedgeWitness.largeRequiredEven_iff_smallRequiredEven
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (target : S.Assignment) :
+    (hedgeTrueVertices w.large
+      (hedgeForestRequiredIncidence rich w.child target)).length % 2 = 0 ↔
+      (hedgeTrueVertices w.small
+        (hedgeNestedForestRequiredIncidence rich w.small w.child
+          (restrictChild w.small w.child) target)).length % 2 = 0 := by
+  have largeRoots := w.large_forest.requiredIncidence_even_iff_rootBits_even
+    rich target
+  have smallRoots := w.small_forest.requiredIncidence_even_iff_rootBits_even
+    rich target
+  have nestedEq :
+      hedgeTrueVertices w.small
+          (hedgeNestedForestRequiredIncidence rich w.small w.child
+            (restrictChild w.small w.child) target) =
+        hedgeTrueVertices w.small
+          (hedgeForestRequiredIncidence rich
+            (restrictChild w.small w.child) target) := by
+    unfold hedgeTrueVertices
+    apply List.filter_congr
+    intro node member
+    have inside := (NodeSet.mem_members_iff w.small node).mp member
+    simp [hedgeNestedForestRequiredIncidence, inside]
+  rw [nestedEq]
+  exact largeRoots.trans smallRoots.symm
+
+/-!
+The preceding compatibility theorem removes the last parity premise from the
+fiber comparison.  The even branch uses the explicit translations already
+constructed above.  In the odd branch both fibers are empty: every incidence
+vector generated by pair roots has even support.  The empty-fiber proofs
+inspect the computed filtered lists directly, avoiding any classical
+`list = []` characterization.
+-/
+
+/-- Any target realized by ordinary restricted pair-root incidence is even. -/
+theorem hedgePairBitsRealizes_even
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (target : Fin S.count → Bool)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (realizes : hedgePairBitsRealizes G nodes target pairBits = true) :
+    (hedgeTrueVertices nodes target).length % 2 = 0 := by
+  let actual := fun node =>
+    hedgeXorPairBitsWithinFrom G nodes node pairBits
+  have agrees := hedgePairBitsRealizes_spec G nodes target pairBits realizes
+  have trueVerticesEq :
+      hedgeTrueVertices nodes target = hedgeTrueVertices nodes actual := by
+    unfold hedgeTrueVertices
+    apply List.filter_congr
+    intro node member
+    exact (agrees node
+      ((NodeSet.mem_members_iff nodes node).mp member)).symm
+  rw [trueVerticesEq]
+  exact hedgeXorPairBitsWithinFrom_even G nodes pairBits
+
+/-- Any nested target realized on `inner` has even inner support. -/
+theorem hedgeNestedPairBitsRealizes_inner_even
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (subset : NodeSet.Subset inner outer)
+    (target : Fin S.count → Bool)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (realizes :
+      hedgeNestedPairBitsRealizes G outer inner target pairBits = true) :
+    (hedgeTrueVertices inner target).length % 2 = 0 := by
+  let actual := fun node =>
+    hedgeXorPairBitsWithinFrom G inner node pairBits
+  have agrees := hedgeNestedPairBitsRealizes_spec G outer inner target pairBits
+    realizes
+  have trueVerticesEq :
+      hedgeTrueVertices inner target = hedgeTrueVertices inner actual := by
+    unfold hedgeTrueVertices
+    apply List.filter_congr
+    intro node member
+    have inside := (NodeSet.mem_members_iff inner node).mp member
+    have atNode := agrees node (subset node inside)
+    simpa [hedgeNestedXorPairBitsWithinFrom, inside] using atNode.symm
+  rw [trueVerticesEq]
+  exact hedgeXorPairBitsWithinFrom_even G inner pairBits
+
+/-- An odd ordinary target has no pair-root realizer in the enumeration. -/
+theorem hedgePairBitRealizers_length_eq_zero_of_not_even
+    (G : ObservedGraph S) (nodes : NodeSet S)
+    (target : Fin S.count → Bool)
+    (notEven : (hedgeTrueVertices nodes target).length % 2 ≠ 0) :
+    ((hedgePairBitEnum G).filter
+      (hedgePairBitsRealizes G nodes target)).length = 0 := by
+  cases filtered : (hedgePairBitEnum G).filter
+      (hedgePairBitsRealizes G nodes target) with
+  | nil => rfl
+  | cons pairBits tail =>
+      have member :
+          pairBits ∈ (hedgePairBitEnum G).filter
+            (hedgePairBitsRealizes G nodes target) := by
+        rw [filtered]
+        exact List.mem_cons_self
+      exact False.elim (notEven (hedgePairBitsRealizes_even G nodes target
+        pairBits (List.mem_filter.mp member).2))
+
+/-- An odd inner target has no nested pair-root realizer in the enumeration. -/
+theorem hedgeNestedPairBitRealizers_length_eq_zero_of_not_even
+    (G : ObservedGraph S) (outer inner : NodeSet S)
+    (subset : NodeSet.Subset inner outer)
+    (target : Fin S.count → Bool)
+    (notEven : (hedgeTrueVertices inner target).length % 2 ≠ 0) :
+    ((hedgePairBitEnum G).filter
+      (hedgeNestedPairBitsRealizes G outer inner target)).length = 0 := by
+  cases filtered : (hedgePairBitEnum G).filter
+      (hedgeNestedPairBitsRealizes G outer inner target) with
+  | nil => rfl
+  | cons pairBits tail =>
+      have member :
+          pairBits ∈ (hedgePairBitEnum G).filter
+            (hedgeNestedPairBitsRealizes G outer inner target) := by
+        rw [filtered]
+        exact List.mem_cons_self
+      exact False.elim
+        (notEven (hedgeNestedPairBitsRealizes_inner_even G outer inner subset
+          target pairBits (List.mem_filter.mp member).2))
+
+/--
+The ordinary large-forest and nested small-forest pair-root fibers have equal
+cardinality for every observed target, including the common empty odd case.
+-/
+theorem HedgeWitness.parityPairBitRealizers_length_eq
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (target : S.Assignment) :
+    ((hedgePairBitEnum G).filter
+      (hedgePairBitsRealizes G w.large
+        (hedgeForestRequiredIncidence rich w.child target))).length =
+      ((hedgePairBitEnum G).filter
+        (hedgeNestedPairBitsRealizes G w.large w.small
+          (hedgeNestedForestRequiredIncidence rich w.small w.child
+            (restrictChild w.small w.child) target))).length := by
+  by_cases largeEven :
+      (hedgeTrueVertices w.large
+        (hedgeForestRequiredIncidence rich w.child target)).length % 2 = 0
+  · exact w.large_forest.component.pairBitRealizers_length_eq_nested
+      G w.large w.small w.small_forest.component w.small_subset_large
+      (hedgeForestRequiredIncidence rich w.child target)
+      (hedgeNestedForestRequiredIncidence rich w.small w.child
+        (restrictChild w.small w.child) target)
+      largeEven ((w.largeRequiredEven_iff_smallRequiredEven rich target).mp
+        largeEven)
+  · have smallNotEven :
+        (hedgeTrueVertices w.small
+          (hedgeNestedForestRequiredIncidence rich w.small w.child
+            (restrictChild w.small w.child) target)).length % 2 ≠ 0 :=
+        fun smallEven => largeEven
+          ((w.largeRequiredEven_iff_smallRequiredEven rich target).mpr
+            smallEven)
+    rw [hedgePairBitRealizers_length_eq_zero_of_not_even G w.large
+      (hedgeForestRequiredIncidence rich w.child target) largeEven,
+      hedgeNestedPairBitRealizers_length_eq_zero_of_not_even G w.large
+        w.small w.small_subset_large
+        (hedgeNestedForestRequiredIncidence rich w.small w.child
+          (restrictChild w.small w.child) target) smallNotEven]
+
+/--
+The complete latent supports of the two parity models have equal cardinality
+for every target.  Their private-coordinate factor is literally shared; the
+preceding theorem supplies equality of the only model-dependent factor.
+-/
+theorem HedgeWitness.parityCoordinateSupport_length_eq
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (target : S.Assignment) :
+    (hedgeCoordinateSupportLatents G w.large target
+      (hedgePairBitsRealizes G w.large
+        (hedgeForestRequiredIncidence rich w.child target))).length =
+      (hedgeCoordinateSupportLatents G w.large target
+        (hedgeNestedPairBitsRealizes G w.large w.small
+          (hedgeNestedForestRequiredIncidence rich w.small w.child
+            (restrictChild w.small w.child) target))).length := by
+  rw [hedgeCoordinateSupportLatents_length,
+    hedgeCoordinateSupportLatents_length,
+    w.parityPairBitRealizers_length_eq rich target]
+
+/-! ### Observational equivalence of the unsoftened parity pair -/
+
+/--
+Two equally long lists have equivalent sums of singleton masses whenever any
+singleton on the left is equivalent to any singleton on the right.  This
+form is tailored to a uniform finite prior: no permutation or chosen matching
+between the two supports is needed.
+-/
+theorem FiniteProbRecord.listSum_singletons_equiv_of_length
+    {Ω : Type} [DecidableEq Ω]
+    (leftRecord rightRecord : FiniteProbRecord Ω)
+    (leftValues rightValues : List Ω)
+    (sameLength : leftValues.length = rightValues.length)
+    (atomEquiv : ∀ left right,
+      QProb.Equiv
+        (leftRecord.probVal (FiniteProbRecord.singletonEvent left))
+        (rightRecord.probVal (FiniteProbRecord.singletonEvent right))) :
+    QProb.Equiv
+      (QProb.listSum (leftValues.map fun value =>
+        leftRecord.probVal (FiniteProbRecord.singletonEvent value)))
+      (QProb.listSum (rightValues.map fun value =>
+        rightRecord.probVal (FiniteProbRecord.singletonEvent value))) := by
+  induction leftValues generalizing rightValues with
+  | nil =>
+      cases rightValues with
+      | nil => exact QProb.equiv_refl QProb.zero
+      | cons _head _tail => cases sameLength
+  | cons left leftTail ih =>
+      cases rightValues with
+      | nil => cases sameLength
+      | cons right rightTail =>
+          simp only [List.length_cons, Nat.succ.injEq] at sameLength
+          simp only [List.map_cons, QProb.listSum]
+          exact QProb.add_congr (atomEquiv left right)
+            (ih rightTail sameLength)
+
+/--
+Every observed atom has the same probability in the large and small
+unsoftened hedge models.  Valid targets are counted by the coordinate-support
+theorems above.  Invalid targets have zero mass on both sides because neither
+parity circuit can emit a non-distinguished value inside the large forest.
+-/
+theorem HedgeWitness.parityModels_observational_singleton_equiv
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (target : S.Assignment) :
+    QProb.Equiv
+      ((w.largeParityModel rich).observationalValue
+        (FiniteProbRecord.singletonEvent target))
+      ((w.smallParityModel rich).observationalValue
+        (FiniteProbRecord.singletonEvent target)) := by
+  cases valid : hedgeParityTargetValid rich w.large target
+  · have largeNever (u : (hedgeLatentExtension G).Assignment) :
+        FiniteProbRecord.singletonEvent target
+            ((w.largeParityModel rich).eval u) = false := by
+      apply Bool.eq_false_iff.mpr
+      intro holds
+      have evaluates : (w.largeParityModel rich).eval u = target :=
+        of_decide_eq_true (by
+          simpa [FiniteProbRecord.singletonEvent] using holds)
+      have outputValid := hedgeForestParityModel_eval_valid G rich w.large
+        w.child u
+      change hedgeParityTargetValid rich w.large
+        ((w.largeParityModel rich).eval u) = true at outputValid
+      rw [evaluates, valid] at outputValid
+      contradiction
+    have smallNever (u : (hedgeLatentExtension G).Assignment) :
+        FiniteProbRecord.singletonEvent target
+            ((w.smallParityModel rich).eval u) = false := by
+      apply Bool.eq_false_iff.mpr
+      intro holds
+      have evaluates : (w.smallParityModel rich).eval u = target :=
+        of_decide_eq_true (by
+          simpa [FiniteProbRecord.singletonEvent] using holds)
+      have outputValid := hedgeNestedForestParityModel_eval_valid G rich
+        w.large w.small w.child (restrictChild w.small w.child) u
+      change hedgeParityTargetValid rich w.large
+        ((w.smallParityModel rich).eval u) = true at outputValid
+      rw [evaluates, valid] at outputValid
+      contradiction
+    have largeZero :
+        QProb.Equiv
+          ((w.largeParityModel rich).observationalValue
+            (FiniteProbRecord.singletonEvent target)) QProb.zero :=
+      QProb.equiv_trans
+        ((w.largeParityModel rich).observationalValue_eq
+          (FiniteProbRecord.singletonEvent target))
+        (QProb.equiv_trans
+          ((w.largeParityModel rich).prior.probVal_congr _ _ largeNever)
+          ((w.largeParityModel rich).prior.probVal_false))
+    have smallZero :
+        QProb.Equiv
+          ((w.smallParityModel rich).observationalValue
+            (FiniteProbRecord.singletonEvent target)) QProb.zero :=
+      QProb.equiv_trans
+        ((w.smallParityModel rich).observationalValue_eq
+          (FiniteProbRecord.singletonEvent target))
+        (QProb.equiv_trans
+          ((w.smallParityModel rich).prior.probVal_congr _ _ smallNever)
+          ((w.smallParityModel rich).prior.probVal_false))
+    exact QProb.equiv_trans largeZero (QProb.equiv_symm smallZero)
+  · let largeSupport :=
+      hedgeCoordinateSupportLatents G w.large target
+        (hedgePairBitsRealizes G w.large
+          (hedgeForestRequiredIncidence rich w.child target))
+    let smallSupport :=
+      hedgeCoordinateSupportLatents G w.large target
+        (hedgeNestedPairBitsRealizes G w.large w.small
+          (hedgeNestedForestRequiredIncidence rich w.small w.child
+            (restrictChild w.small w.child) target))
+    have largeEvalIff (u : (hedgeLatentExtension G).Assignment) :
+        (w.largeParityModel rich).eval u = target ↔ u ∈ largeSupport := by
+      simpa [HedgeWitness.largeParityModel, largeSupport] using
+        (hedgeForestParityModel_eval_mem_coordinateSupport_iff
+          G rich w.large w.child target valid u)
+    have smallEvalIff (u : (hedgeLatentExtension G).Assignment) :
+        (w.smallParityModel rich).eval u = target ↔ u ∈ smallSupport := by
+      simpa [HedgeWitness.smallParityModel, smallSupport] using
+        (hedgeNestedForestParityModel_eval_mem_coordinateSupport_iff
+          G rich w.large w.small w.child
+          (restrictChild w.small w.child) w.small_subset_large
+          target valid u)
+    have largeEvent (u : (hedgeLatentExtension G).Assignment) :
+        FiniteProbRecord.singletonEvent target
+            ((w.largeParityModel rich).eval u) =
+          FiniteProbRecord.membershipEvent largeSupport u := by
+      apply Bool.eq_iff_iff.mpr
+      simpa only [FiniteProbRecord.singletonEvent,
+        FiniteProbRecord.membershipEvent, decide_eq_true_eq] using
+          largeEvalIff u
+    have smallEvent (u : (hedgeLatentExtension G).Assignment) :
+        FiniteProbRecord.singletonEvent target
+            ((w.smallParityModel rich).eval u) =
+          FiniteProbRecord.membershipEvent smallSupport u := by
+      apply Bool.eq_iff_iff.mpr
+      simpa only [FiniteProbRecord.singletonEvent,
+        FiniteProbRecord.membershipEvent, decide_eq_true_eq] using
+          smallEvalIff u
+    have largeMembership :
+        QProb.Equiv
+          ((w.largeParityModel rich).prior.probVal fun u =>
+            FiniteProbRecord.singletonEvent target
+              ((w.largeParityModel rich).eval u))
+          ((w.largeParityModel rich).prior.probVal
+            (FiniteProbRecord.membershipEvent largeSupport)) :=
+      (w.largeParityModel rich).prior.probVal_congr _ _ largeEvent
+    have smallMembership :
+        QProb.Equiv
+          ((w.smallParityModel rich).prior.probVal fun u =>
+            FiniteProbRecord.singletonEvent target
+              ((w.smallParityModel rich).eval u))
+          ((w.smallParityModel rich).prior.probVal
+            (FiniteProbRecord.membershipEvent smallSupport)) :=
+      (w.smallParityModel rich).prior.probVal_congr _ _ smallEvent
+    have largeSum := FiniteProbRecord.probVal_membership_equiv_listSum
+      (w.largeParityModel rich).prior largeSupport
+      (by
+        simpa [largeSupport] using
+          hedgeCoordinateSupportLatents_nodup G w.large target
+            (hedgePairBitsRealizes G w.large
+              (hedgeForestRequiredIncidence rich w.child target)))
+    have smallSum := FiniteProbRecord.probVal_membership_equiv_listSum
+      (w.smallParityModel rich).prior smallSupport
+      (by
+        simpa [smallSupport] using
+          hedgeCoordinateSupportLatents_nodup G w.large target
+            (hedgeNestedPairBitsRealizes G w.large w.small
+              (hedgeNestedForestRequiredIncidence rich w.small w.child
+                (restrictChild w.small w.child) target)))
+    have supportLength : largeSupport.length = smallSupport.length := by
+      simpa [largeSupport, smallSupport] using
+        w.parityCoordinateSupport_length_eq rich target
+    have atomEquiv
+        (left right : (hedgeLatentExtension G).Assignment) :
+        QProb.Equiv
+          ((w.largeParityModel rich).prior.probVal
+            (FiniteProbRecord.singletonEvent left))
+          ((w.smallParityModel rich).prior.probVal
+            (FiniteProbRecord.singletonEvent right)) := by
+      change QProb.Equiv
+        ((FiniteProduct.record (hedgeLatentCount G) (hedgeLatentValue G)
+          (hedgeLatentFactor G)).probVal
+            (FiniteProbRecord.singletonEvent left))
+        ((FiniteProduct.record (hedgeLatentCount G) (hedgeLatentValue G)
+          (hedgeLatentFactor G)).probVal
+            (FiniteProbRecord.singletonEvent right))
+      exact hedgePrior_singleton_equiv G left right
+    have equalSums :=
+      FiniteProbRecord.listSum_singletons_equiv_of_length
+        (w.largeParityModel rich).prior (w.smallParityModel rich).prior
+        largeSupport smallSupport supportLength atomEquiv
+    exact QProb.equiv_trans
+      ((w.largeParityModel rich).observationalValue_eq
+        (FiniteProbRecord.singletonEvent target))
+      (QProb.equiv_trans largeMembership
+        (QProb.equiv_trans largeSum
+          (QProb.equiv_trans equalSums
+            (QProb.equiv_trans (QProb.equiv_symm smallSum)
+              (QProb.equiv_trans (QProb.equiv_symm smallMembership)
+                (QProb.equiv_symm
+                  ((w.smallParityModel rich).observationalValue_eq
+                    (FiniteProbRecord.singletonEvent target))))))))
+
+/-- The faithful unsoftened large and small hedge models agree observationally. -/
+theorem HedgeWitness.parityModels_observationally_equivalent
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    ObservationallyEquivalent (w.largeParityModel rich)
+      (w.smallParityModel rich) := by
+  intro event
+  exact FiniteProbRecord.probVal_extensional_of_singletons
+    (w.largeParityModel rich).observationalDist
+    (w.smallParityModel rich).observationalDist
+    S.assignmentEnumeration S.assignmentEnumeration_nodup
+    S.assignmentEnumeration_complete
+    (w.parityModels_observational_singleton_equiv rich) event
 
 /-- A single selected internal root contributes one at an incident endpoint. -/
 theorem hedgeXorPairBitsWithinFrom_of_one
