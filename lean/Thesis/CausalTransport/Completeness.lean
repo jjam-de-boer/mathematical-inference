@@ -318,6 +318,9 @@ induction.  The remaining inhabitants are:
   concrete route to it, proves every consecutive edge survives
   `G_{\overline{X}}`, proves that no route vertex is intervened upon, and
   supplies a duplicate-free deterministic predecessor map along that route;
+  `largeReadoutParityModel` and `smallReadoutParityModel` then wrap the two
+  parity models with graph-compatible mechanisms that copy the encoded bit
+  along every indexed route edge;
   `hedgeXorPairBitsWithin` and `hedgeForestParentBitsFrom` restrict the two
   parity inputs to an arbitrary c-forest; `largeParityModel` and
   `smallParityModel` package the faithful unsoftened construction--the second
@@ -8981,6 +8984,109 @@ theorem routePredecessor_consecutive
   simpa using routePredecessor_consecutive_suffix ([] : List α)
     route (by simpa using nodup)
 
+/-- A target absent from the route cannot acquire a predecessor. -/
+theorem routePredecessor_eq_none_of_not_mem
+    {α : Type} [DecidableEq α] (route : List α) (target : α)
+    (absent : target ∉ route) :
+    routePredecessor route target = none := by
+  induction route with
+  | nil => rfl
+  | cons first tail inductionHypothesis =>
+      cases tail with
+      | nil => rfl
+      | cons second rest =>
+          have secondNe : second ≠ target := by
+            intro equal
+            apply absent
+            simp [equal]
+          have absentTail : target ∉ second :: rest := by
+            intro member
+            exact absent (List.mem_cons_of_mem first member)
+          change (if second = target then some first
+            else routePredecessor (second :: rest) target) = none
+          rw [if_neg secondNe]
+          exact inductionHypothesis absentTail
+
+/-- The first vertex of a duplicate-free route has no predecessor. -/
+theorem routePredecessor_head_eq_none
+    {α : Type} [DecidableEq α] (route : List α) (head : α)
+    (starts : route.head? = some head) (nodup : route.Nodup) :
+    routePredecessor route head = none := by
+  cases route with
+  | nil => simp at starts
+  | cons first tail =>
+      have firstEq : first = head := by
+        simpa using Option.some.inj starts
+      subst first
+      have fresh : head ∉ tail := (List.nodup_cons.mp nodup).1
+      cases tail with
+      | nil => rfl
+      | cons second rest =>
+          have secondNe : second ≠ head := by
+            intro equal
+            apply fresh
+            simp [equal]
+          change (if second = head then some head
+            else routePredecessor (second :: rest) head) = none
+          rw [if_neg secondNe]
+          exact routePredecessor_eq_none_of_not_mem
+            (second :: rest) head fresh
+
+/-- Any predecessor returned by the scan is an actual consecutive edge of
+the route.  This converse complements `routePredecessor_consecutive`. -/
+theorem routePredecessor_rel_of_eq_some
+    {α : Type} [DecidableEq α] (relation : α → α → Prop)
+    (route : List α) (parent child : α)
+    (consecutive : PathSpecification.Consecutive relation route)
+    (found : routePredecessor route child = some parent) :
+    relation parent child := by
+  induction route with
+  | nil => simp [routePredecessor] at found
+  | cons first tail inductionHypothesis =>
+      cases tail with
+      | nil => simp [routePredecessor] at found
+      | cons second rest =>
+          if same : second = child then
+            subst second
+            have parentEq : first = parent := by
+              simpa [routePredecessor] using found
+            subst parent
+            exact consecutive.1
+          else
+            have tailFound :
+                routePredecessor (second :: rest) child = some parent := by
+              simpa [routePredecessor, same] using found
+            exact inductionHypothesis consecutive.2 tailFound
+
+/-- If a value is preserved across every consecutive pair, its values at the
+two advertised endpoints agree. -/
+theorem PathSpecification.Consecutive.end_eq_start_of_step_eq
+    {α β : Type} (value : α → β)
+    (route : List α) (source target : α)
+    (starts : route.head? = some source)
+    (finishes : route.getLast? = some target)
+    (consecutive : PathSpecification.Consecutive
+      (fun parent child => value child = value parent) route) :
+    value target = value source := by
+  induction route generalizing source with
+  | nil => simp at starts
+  | cons head tail inductionHypothesis =>
+      have headEq : head = source := by
+        simpa using Option.some.inj starts
+      subst head
+      cases tail with
+      | nil =>
+          have targetEq : source = target := by
+            simpa using Option.some.inj finishes
+          subst target
+          rfl
+      | cons next rest =>
+          have tailFinishes : (next :: rest).getLast? = some target := by
+            simpa [List.getLast?_cons_cons] using finishes
+          exact
+            (inductionHypothesis next rfl tailFinishes consecutive.2).trans
+              consecutive.1
+
 /-- Canonical action-root-to-outcome route carried by the hedge witness. -/
 def HedgeWitness.parityReadoutRoute
     {G : ObservedGraph S} {q : JointKernelQuery S}
@@ -9057,6 +9163,40 @@ theorem HedgeWitness.parityReadoutParent_consecutive
   simpa [HedgeWitness.parityReadoutParent] using
     routePredecessor_consecutive w.parityReadoutRoute
       w.parityReadoutRoute_nodup
+
+/-- The action-side forest root is the first readout vertex and therefore has
+no readout parent. -/
+theorem HedgeWitness.parityReadoutParent_actionRoot
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    w.parityReadoutParent w.actionRoot = none := by
+  exact routePredecessor_head_eq_none w.parityReadoutRoute w.actionRoot
+    w.parityReadoutRoute_starts w.parityReadoutRoute_nodup
+
+/-- Every parent returned by the canonical lookup is the corresponding edge
+of the action-mutilated graph. -/
+theorem HedgeWitness.parityReadoutParent_mutilatedDirected
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) {parent child : Fin S.count}
+    (found : w.parityReadoutParent child = some parent) :
+    mutilatedDirected S q.action parent child = true := by
+  apply routePredecessor_rel_of_eq_some
+    (fun left right => mutilatedDirected S q.action left right = true)
+    w.parityReadoutRoute parent child w.parityReadoutRoute_consecutive
+  simpa [HedgeWitness.parityReadoutParent] using found
+
+/-- In particular, a returned readout parent is a genuine directed parent in
+the original observed signature. -/
+theorem HedgeWitness.parityReadoutParent_directed
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) {parent child : Fin S.count}
+    (found : w.parityReadoutParent child = some parent) :
+    S.directed parent child = true := by
+  have edge := w.parityReadoutParent_mutilatedDirected found
+  unfold mutilatedDirected at edge
+  split at edge
+  · contradiction
+  · exact edge
 
 /-- Unpack the Boolean hedge tests into the `HedgeWitness` fields. -/
 def hedgeWitness_of_sets
@@ -28710,6 +28850,72 @@ theorem hedgeIsSecond_parityValue
   | true =>
       simp [hedgeParityValue, hedgeIsSecond]
 
+/-!
+### Structural readout along a directed route
+
+The hedge parity difference is born at a forest root, whereas the published
+query may observe only a directed descendant.  The wrapper below provides the
+mechanism-level transport needed to carry that bit along an explicit route.
+It retains the base latent extension and product law verbatim, so projected
+graph compatibility is unchanged.  An invalid proposed parent falls back to
+the base mechanism; canonical readout maps never take that branch, by
+`HedgeWitness.parityReadoutParent_directed`.
+-/
+
+/-- Replace indexed children by exact copies of their indexed parent's
+distinguished Boolean label, leaving every unindexed mechanism unchanged. -/
+def hedgeRouteReadoutModel (rich : ObservedSignature.ValueRich S)
+    (parentOf : Fin S.count → Option (Fin S.count))
+    (base : ExactModel S) : ExactModel S where
+  latent := base.latent
+  factor := base.factor
+  prior := base.prior
+  product_law := base.product_law
+  mechanism := fun child parents inputs =>
+    match parentOf child with
+    | none => base.mechanism child parents inputs
+    | some parent =>
+        if edge : S.directed parent child = true then
+          hedgeParityValue rich child
+            (hedgeIsSecond rich parent (parents parent edge))
+        else
+          base.mechanism child parents inputs
+
+/-- Route readout changes mechanisms only; the latent projection and hence
+compatibility with the observed graph are inherited from the base model. -/
+theorem hedgeRouteReadoutModel_compatible
+    (rich : ObservedSignature.ValueRich S)
+    (parentOf : Fin S.count → Option (Fin S.count))
+    (base : ExactModel S) (compatible : Compatible base G) :
+    Compatible (hedgeRouteReadoutModel rich parentOf base) G := by
+  exact ⟨compatible.1, fun i j => compatible.2 i j⟩
+
+/-- At an unintervened indexed child with a valid directed parent, evaluating
+the wrapper preserves exactly the parent's encoded bit. -/
+theorem hedgeRouteReadoutModel_evalNodeUnder_bit_of_parent
+    (rich : ObservedSignature.ValueRich S)
+    (parentOf : Fin S.count → Option (Fin S.count))
+    (base : ExactModel S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (u : base.latent.Assignment) {parent child : Fin S.count}
+    (free : intervention child = none)
+    (parentEq : parentOf child = some parent)
+    (edge : S.directed parent child = true) :
+    hedgeIsSecond rich child
+        ((hedgeRouteReadoutModel rich parentOf base).evalNodeUnder
+          intervention u child) =
+      hedgeIsSecond rich parent
+        ((hedgeRouteReadoutModel rich parentOf base).evalNodeUnder
+          intervention u parent) := by
+  rw [FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder
+  rw [free]
+  simp only [hedgeRouteReadoutModel, parentEq, edge, dite_true]
+  exact hedgeIsSecond_parityValue rich child
+    (hedgeIsSecond rich parent
+      ((hedgeRouteReadoutModel rich parentOf base).evalNodeUnder
+        intervention u parent))
+
 /--
 Structural output of one c-forest parity circuit.  Selected nodes XOR the
 internal pair-root bits with the values of their explicitly kept directed
@@ -28842,6 +29048,142 @@ theorem HedgeWitness.parityModel_prior_eq
     (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
     (w.largeParityModel rich).prior = (w.smallParityModel rich).prior :=
   rfl
+
+/-- The large parity circuit with its root bit routed to the selected query
+outcome. -/
+def HedgeWitness.largeReadoutParityModel
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    ExactModel S :=
+  hedgeRouteReadoutModel rich w.parityReadoutParent
+    (w.largeParityModel rich)
+
+/-- The nested small parity circuit with the identical directed readout
+wrapper. -/
+def HedgeWitness.smallReadoutParityModel
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    ExactModel S :=
+  hedgeRouteReadoutModel rich w.parityReadoutParent
+    (w.smallParityModel rich)
+
+/-- The wrapped large model remains compatible with the same ADMG. -/
+theorem HedgeWitness.largeReadoutParityModel_compatible
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Compatible (w.largeReadoutParityModel rich) G :=
+  hedgeRouteReadoutModel_compatible rich w.parityReadoutParent
+    (w.largeParityModel rich) (w.largeParityModel_compatible rich)
+
+/-- The wrapped small model remains compatible with the same ADMG. -/
+theorem HedgeWitness.smallReadoutParityModel_compatible
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Compatible (w.smallReadoutParityModel rich) G :=
+  hedgeRouteReadoutModel_compatible rich w.parityReadoutParent
+    (w.smallParityModel rich) (w.smallParityModel_compatible rich)
+
+/-- Wrapping both parity circuits leaves their shared product prior
+definitionally unchanged. -/
+theorem HedgeWitness.readoutParityModel_prior_eq
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    (w.largeReadoutParityModel rich).prior =
+      (w.smallReadoutParityModel rich).prior :=
+  rfl
+
+/-- Every free canonical route child in the large wrapped model copies its
+canonical parent's parity bit. -/
+theorem HedgeWitness.largeReadoutParityModel_evalNodeUnder_bit_of_parent
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (u : (hedgeLatentExtension G).Assignment)
+    {parent child : Fin S.count}
+    (free : intervention child = none)
+    (parentEq : w.parityReadoutParent child = some parent) :
+    hedgeIsSecond rich child
+        ((w.largeReadoutParityModel rich).evalNodeUnder
+          intervention u child) =
+      hedgeIsSecond rich parent
+        ((w.largeReadoutParityModel rich).evalNodeUnder
+          intervention u parent) :=
+  hedgeRouteReadoutModel_evalNodeUnder_bit_of_parent rich
+    w.parityReadoutParent (w.largeParityModel rich) intervention u free
+    parentEq (w.parityReadoutParent_directed parentEq)
+
+/-- Every free canonical route child in the small wrapped model copies its
+canonical parent's parity bit. -/
+theorem HedgeWitness.smallReadoutParityModel_evalNodeUnder_bit_of_parent
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (u : (hedgeLatentExtension G).Assignment)
+    {parent child : Fin S.count}
+    (free : intervention child = none)
+    (parentEq : w.parityReadoutParent child = some parent) :
+    hedgeIsSecond rich child
+        ((w.smallReadoutParityModel rich).evalNodeUnder
+          intervention u child) =
+      hedgeIsSecond rich parent
+        ((w.smallReadoutParityModel rich).evalNodeUnder
+          intervention u parent) :=
+  hedgeRouteReadoutModel_evalNodeUnder_bit_of_parent rich
+    w.parityReadoutParent (w.smallParityModel rich) intervention u free
+    parentEq (w.parityReadoutParent_directed parentEq)
+
+/-- Whenever the route vertices are free, the wrapped large model carries the
+root's encoded bit all the way to the canonically selected outcome. -/
+theorem HedgeWitness.largeReadoutParityModel_parityReadoutOutcome_bit
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (u : (hedgeLatentExtension G).Assignment)
+    (routeFree : ∀ parent child,
+      w.parityReadoutParent child = some parent →
+        intervention child = none) :
+    hedgeIsSecond rich w.parityReadoutOutcome
+        ((w.largeReadoutParityModel rich).evalNodeUnder
+          intervention u w.parityReadoutOutcome) =
+      hedgeIsSecond rich w.actionRoot
+        ((w.largeReadoutParityModel rich).evalNodeUnder
+          intervention u w.actionRoot) := by
+  apply PathSpecification.Consecutive.end_eq_start_of_step_eq
+    (fun node =>
+      hedgeIsSecond rich node
+        ((w.largeReadoutParityModel rich).evalNodeUnder
+          intervention u node))
+    w.parityReadoutRoute w.actionRoot w.parityReadoutOutcome
+    w.parityReadoutRoute_starts w.parityReadoutRoute_finishes
+  exact w.parityReadoutParent_consecutive.mono (fun parent child found =>
+    w.largeReadoutParityModel_evalNodeUnder_bit_of_parent rich
+      intervention u (routeFree parent child found) found)
+
+/-- The same free-route parity transport holds in the wrapped small model. -/
+theorem HedgeWitness.smallReadoutParityModel_parityReadoutOutcome_bit
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (u : (hedgeLatentExtension G).Assignment)
+    (routeFree : ∀ parent child,
+      w.parityReadoutParent child = some parent →
+        intervention child = none) :
+    hedgeIsSecond rich w.parityReadoutOutcome
+        ((w.smallReadoutParityModel rich).evalNodeUnder
+          intervention u w.parityReadoutOutcome) =
+      hedgeIsSecond rich w.actionRoot
+        ((w.smallReadoutParityModel rich).evalNodeUnder
+          intervention u w.actionRoot) := by
+  apply PathSpecification.Consecutive.end_eq_start_of_step_eq
+    (fun node =>
+      hedgeIsSecond rich node
+        ((w.smallReadoutParityModel rich).evalNodeUnder
+          intervention u node))
+    w.parityReadoutRoute w.actionRoot w.parityReadoutOutcome
+    w.parityReadoutRoute_starts w.parityReadoutRoute_finishes
+  exact w.parityReadoutParent_consecutive.mono (fun parent child found =>
+    w.smallReadoutParityModel_evalNodeUnder_bit_of_parent rich
+      intervention u (routeFree parent child found) found)
 
 /--
 Outside `F'` the two structural mechanisms are identical.  This is the
@@ -30707,6 +31049,51 @@ theorem hedgeDoSecond_of_false (rich : ObservedSignature.ValueRich S)
     (action : NodeSet S) {i : Fin S.count} (h : action i = false) :
     hedgeDoSecond rich action i = none := by
   simp [hedgeDoSecond, h]
+
+/-- Every indexed readout child remains free under the query intervention. -/
+theorem HedgeWitness.parityReadoutParent_free_under_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    {parent child : Fin S.count}
+    (found : w.parityReadoutParent child = some parent) :
+    hedgeDoSecond rich q.action child = none :=
+  hedgeDoSecond_of_false rich q.action
+    (action_false_of_mutilatedDirected q.action
+      (w.parityReadoutParent_mutilatedDirected found))
+
+/-- Under `do(X = second)`, the wrapped large model exposes its root parity at
+the selected query outcome. -/
+theorem HedgeWitness.largeReadoutParityModel_parityReadoutOutcome_bit_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgeIsSecond rich w.parityReadoutOutcome
+        ((w.largeReadoutParityModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action) u w.parityReadoutOutcome) =
+      hedgeIsSecond rich w.actionRoot
+        ((w.largeReadoutParityModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action) u w.actionRoot) :=
+  w.largeReadoutParityModel_parityReadoutOutcome_bit rich
+    (hedgeDoSecond rich q.action) u
+    (fun _parent _child found =>
+      w.parityReadoutParent_free_under_doSecond rich found)
+
+/-- The wrapped small model has the identical end-to-end readout equation
+under `do(X = second)`. -/
+theorem HedgeWitness.smallReadoutParityModel_parityReadoutOutcome_bit_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgeIsSecond rich w.parityReadoutOutcome
+        ((w.smallReadoutParityModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action) u w.parityReadoutOutcome) =
+      hedgeIsSecond rich w.actionRoot
+        ((w.smallReadoutParityModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action) u w.actionRoot) :=
+  w.smallReadoutParityModel_parityReadoutOutcome_bit rich
+    (hedgeDoSecond rich q.action) u
+    (fun _parent _child found =>
+      w.parityReadoutParent_free_under_doSecond rich found)
 
 /--
 Reference assignment that pins every action vertex to `second` and every
