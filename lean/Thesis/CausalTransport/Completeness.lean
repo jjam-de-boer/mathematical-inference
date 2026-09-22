@@ -314,7 +314,9 @@ induction.  The remaining inhabitants are:
   select a concrete large-forest edge crossing into the small forest;
   `parityReadoutOutcome` reflects the witness's inductive root-to-outcome
   reachability back into the finite Boolean search and selects a concrete
-  reachable query outcome without choice;
+  reachable query outcome without choice; `parityReadoutRoute` computes a
+  concrete route to it, proves every consecutive edge survives
+  `G_{\overline{X}}`, and proves that no route vertex is intervened upon;
   `hedgeXorPairBitsWithin` and `hedgeForestParentBitsFrom` restrict the two
   parity inputs to an arbitrary c-forest; `largeParityModel` and
   `smallParityModel` package the faithful unsoftened construction--the second
@@ -8625,6 +8627,247 @@ theorem HedgeWitness.actionRoot_reaches_parityReadoutOutcome
         w.parityReadoutOutcome = true :=
   listFirstAny_pred (NodeSet.members q.outcome) _
     w.actionRoot_reaches_outcome_any
+
+/-!
+### A canonical directed route to the selected outcome
+
+The Boolean reachability certificate can also drive an explicit route.  At
+each positive fuel level, the construction takes the first enumerated child
+whose remaining bounded search still reaches the target.  Its proof argument
+is used only to rule out a failed search; the selected vertices themselves are
+computed by `find?` through `listFirstAny`.
+-/
+
+/--
+A nontrivial bounded reachability certificate contains a first edge whose
+target remains reachable with one less unit of fuel.
+-/
+theorem finiteWithin_successor_any
+    {α : Type} (same : α → α → Bool) (nodes : List α)
+    (edge : α → α → Bool)
+    (same_iff : ∀ left right, same left right = true ↔ left = right)
+    (complete : ∀ node, node ∈ nodes)
+    {fuel : Nat} {source target : α}
+    (reachable : FiniteReachability.within same nodes edge (fuel + 1)
+      source target = true)
+    (different : same source target = false) :
+    nodes.any (fun middle => edge source middle &&
+      FiniteReachability.within same nodes edge fuel middle target) = true := by
+  have bounded :=
+    (FiniteReachability.within_eq_true_iff_boundedWalk same nodes edge
+      same_iff complete (fuel + 1) source target).mp reachable
+  rcases bounded with ⟨length, bound, ⟨walk⟩⟩
+  cases walk with
+  | refl =>
+      have sameSelf : same source source = true :=
+        (same_iff source source).mpr rfl
+      rw [sameSelf] at different
+      contradiction
+  | @step restLength _ middle _ first rest =>
+      have restBound : restLength ≤ fuel := by omega
+      have restReachable :
+          FiniteReachability.within same nodes edge fuel middle target =
+            true :=
+        (FiniteReachability.within_eq_true_iff_boundedWalk same nodes edge
+          same_iff complete fuel middle target).mpr
+            ⟨restLength, restBound, ⟨rest⟩⟩
+      exact List.any_eq_true.mpr
+        ⟨middle, complete middle,
+          Bool.and_eq_true_iff.mpr ⟨first, restReachable⟩⟩
+
+/--
+Executable route following edges of the action-mutilated observed graph.
+The decreasing reachability proof supplies the recursive call but contributes
+no nonconstructive data.
+-/
+def mutilatedDirectedRoute (action : NodeSet S) (target : Fin S.count) :
+    (fuel : Nat) → (source : Fin S.count) →
+      FiniteReachability.within finBeq (NodeSet.enumerated S)
+        (mutilatedDirected S action) fuel source target = true →
+      List (Fin S.count)
+  | 0, source, _reachable => [source]
+  | fuel + 1, source, reachable =>
+      if same : finBeq source target = true then
+        [source]
+      else
+        let candidates := NodeSet.enumerated S
+        let continues := fun middle =>
+          mutilatedDirected S action source middle &&
+            FiniteReachability.within finBeq candidates
+              (mutilatedDirected S action) fuel middle target
+        let found : candidates.any continues = true :=
+          finiteWithin_successor_any finBeq candidates
+            (mutilatedDirected S action) finBeq_eq_true_iff
+            (NodeSet.mem_enumerated S) reachable
+            (Bool.eq_false_iff.mpr same)
+        let next := listFirstAny candidates continues found
+        let nextReachable :
+            FiniteReachability.within finBeq candidates
+              (mutilatedDirected S action) fuel next target = true :=
+          (Bool.and_eq_true_iff.mp
+            (listFirstAny_pred candidates continues found)).2
+        source :: mutilatedDirectedRoute action target fuel next nextReachable
+
+/-- The canonical route has the advertised endpoints and mutilated edges. -/
+theorem mutilatedDirectedRoute_spec (action : NodeSet S)
+    (target : Fin S.count) (fuel : Nat) (source : Fin S.count)
+    (reachable : FiniteReachability.within finBeq (NodeSet.enumerated S)
+      (mutilatedDirected S action) fuel source target = true) :
+    let route := mutilatedDirectedRoute action target fuel source reachable
+    route.head? = some source ∧
+      route.getLast? = some target ∧
+        PathSpecification.Consecutive
+          (fun parent child =>
+            mutilatedDirected S action parent child = true) route := by
+  induction fuel generalizing source with
+  | zero =>
+      have bounded :=
+        (FiniteReachability.within_eq_true_iff_boundedWalk finBeq
+          (NodeSet.enumerated S) (mutilatedDirected S action)
+          finBeq_eq_true_iff (NodeSet.mem_enumerated S) 0 source target).mp
+          reachable
+      rcases bounded with ⟨length, bound, ⟨walk⟩⟩
+      have lengthZero : length = 0 := Nat.eq_zero_of_le_zero bound
+      subst length
+      have sourceEq : source = target := walk.eq_of_length_zero
+      subst source
+      simp [mutilatedDirectedRoute, PathSpecification.Consecutive]
+  | succ fuel inductionHypothesis =>
+      by_cases same : finBeq source target = true
+      · have sourceEq : source = target :=
+          (finBeq_eq_true_iff source target).mp same
+        subst source
+        simp [mutilatedDirectedRoute, same,
+          PathSpecification.Consecutive]
+      · have different : finBeq source target = false :=
+          Bool.eq_false_iff.mpr same
+        let candidates := NodeSet.enumerated S
+        let continues := fun middle =>
+          mutilatedDirected S action source middle &&
+            FiniteReachability.within finBeq candidates
+              (mutilatedDirected S action) fuel middle target
+        have found : candidates.any continues = true :=
+          finiteWithin_successor_any finBeq candidates
+            (mutilatedDirected S action) finBeq_eq_true_iff
+            (NodeSet.mem_enumerated S) reachable different
+        let next := listFirstAny candidates continues found
+        have nextParts : continues next = true :=
+          listFirstAny_pred candidates continues found
+        have firstEdge : mutilatedDirected S action source next = true :=
+          (Bool.and_eq_true_iff.mp nextParts).1
+        have nextReachable :
+            FiniteReachability.within finBeq candidates
+              (mutilatedDirected S action) fuel next target = true :=
+          (Bool.and_eq_true_iff.mp nextParts).2
+        have rest := inductionHypothesis next nextReachable
+        dsimp only at rest
+        rw [mutilatedDirectedRoute]
+        simp only [same, Bool.false_eq_true, ↓reduceDIte]
+        cases routeEq : mutilatedDirectedRoute action target fuel next
+            nextReachable with
+        | nil =>
+            have impossible := rest.1
+            rw [routeEq] at impossible
+            simp at impossible
+        | cons head tail =>
+            have headEq : head = next := by
+              have restHead := rest.1
+              rw [routeEq] at restHead
+              simpa using restHead
+            subst head
+            rw [routeEq] at rest
+            exact ⟨rfl, rest.2.1, firstEdge, rest.2.2⟩
+
+/-- A mutilated directed edge cannot enter the intervention set. -/
+theorem action_false_of_mutilatedDirected
+    (action : NodeSet S) {parent child : Fin S.count}
+    (edge : mutilatedDirected S action parent child = true) :
+    action child = false := by
+  cases selected : action child with
+  | false => rfl
+  | true => simp [mutilatedDirected, selected] at edge
+
+/--
+If the first vertex is not intervened, every vertex of a consecutive
+mutilated directed route is likewise free under that intervention.
+-/
+theorem consecutive_mutilatedDirected_avoids_action
+    (action : NodeSet S) (route : List (Fin S.count))
+    (source : Fin S.count) (starts : route.head? = some source)
+    (sourceFree : action source = false)
+    (consecutive : PathSpecification.Consecutive
+      (fun parent child =>
+        mutilatedDirected S action parent child = true) route) :
+    ∀ node, node ∈ route → action node = false := by
+  induction route generalizing source with
+  | nil =>
+      intro node member
+      simp at member
+  | cons head tail inductionHypothesis =>
+      have headEq : head = source := by
+        simpa using Option.some.inj starts
+      subst head
+      cases tail with
+      | nil =>
+          intro node member
+          simpa using List.mem_singleton.mp member ▸ sourceFree
+      | cons next rest =>
+          have firstEdge : mutilatedDirected S action source next = true :=
+            consecutive.1
+          have nextFree := action_false_of_mutilatedDirected action firstEdge
+          intro node member
+          rcases List.mem_cons.mp member with same | tailMember
+          · simpa [same] using sourceFree
+          · exact inductionHypothesis next rfl nextFree consecutive.2 node
+              tailMember
+
+/-- Canonical action-root-to-outcome route carried by the hedge witness. -/
+def HedgeWitness.parityReadoutRoute
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) : List (Fin S.count) :=
+  mutilatedDirectedRoute q.action w.parityReadoutOutcome S.count
+    w.actionRoot w.actionRoot_reaches_parityReadoutOutcome
+
+/-- The readout route starts at the action branch's common forest root. -/
+theorem HedgeWitness.parityReadoutRoute_starts
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    w.parityReadoutRoute.head? = some w.actionRoot := by
+  simpa [HedgeWitness.parityReadoutRoute] using
+    (mutilatedDirectedRoute_spec q.action w.parityReadoutOutcome S.count
+      w.actionRoot w.actionRoot_reaches_parityReadoutOutcome).1
+
+/-- The readout route ends at the selected query outcome. -/
+theorem HedgeWitness.parityReadoutRoute_finishes
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    w.parityReadoutRoute.getLast? = some w.parityReadoutOutcome := by
+  simpa [HedgeWitness.parityReadoutRoute] using
+    (mutilatedDirectedRoute_spec q.action w.parityReadoutOutcome S.count
+      w.actionRoot w.actionRoot_reaches_parityReadoutOutcome).2.1
+
+/-- Every consecutive readout pair is an edge of `G_{bar X}`. -/
+theorem HedgeWitness.parityReadoutRoute_consecutive
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    PathSpecification.Consecutive
+      (fun parent child =>
+        mutilatedDirected S q.action parent child = true)
+      w.parityReadoutRoute := by
+  simpa [HedgeWitness.parityReadoutRoute] using
+    (mutilatedDirectedRoute_spec q.action w.parityReadoutOutcome S.count
+      w.actionRoot w.actionRoot_reaches_parityReadoutOutcome).2.2
+
+/-- No vertex on the canonical readout route is intervened upon. -/
+theorem HedgeWitness.parityReadoutRoute_avoids_action
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    ∀ node, node ∈ w.parityReadoutRoute → q.action node = false := by
+  have rootFree := w.small_avoids_intervention w.actionRoot
+    w.actionRoot_in_small
+  exact consecutive_mutilatedDirected_avoids_action q.action
+    w.parityReadoutRoute w.actionRoot w.parityReadoutRoute_starts rootFree
+    w.parityReadoutRoute_consecutive
 
 /-- Unpack the Boolean hedge tests into the `HedgeWitness` fields. -/
 def hedgeWitness_of_sets
