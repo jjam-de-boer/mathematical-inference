@@ -312,12 +312,13 @@ induction.  The remaining inhabitants are:
   for the general hedge, `HedgeWitness.actionRoot` follows the stored child
   map to a common root and `actionBoundaryParent` / `actionBoundaryChild`
   select a concrete large-forest edge crossing into the small forest;
-  `parityReadoutOutcome` reflects the witness's inductive root-to-outcome
+  `rootReadoutOutcome` reflects the witness's inductive root-to-outcome
   reachability back into the finite Boolean search and selects a concrete
-  reachable query outcome without choice; `parityReadoutRoute` computes a
-  concrete route to it, proves every consecutive edge survives
-  `G_{\overline{X}}`, proves that no route vertex is intervened upon, and
-  supplies a duplicate-free deterministic predecessor map along that route;
+  reachable query outcome for every forest root without choice;
+  `rootReadoutRoute` computes corresponding duplicate-free directed routes,
+  proves that their edges survive `G_{\overline{X}}`, and supplies
+  deterministic predecessor maps; `parityReadoutOutcome` and
+  `parityReadoutRoute` retain the action-branch specialization;
   `largeReadoutParityModel` and `smallReadoutParityModel` then wrap the two
   parity models with graph-compatible mechanisms that copy the encoded bit
   along every indexed route edge;
@@ -8589,6 +8590,63 @@ theorem HedgeWitness.rootsReachOutcomeBool
     rootsReachOutcomeBool q w.roots = true :=
   rootsReachOutcomeBool_of_reachable q w.roots w.roots_reach_outcome
 
+/-- Every selected forest root reaches some enumerated query outcome.  This
+is the root-uniform form of the action-branch fact used below. -/
+theorem HedgeWitness.root_reaches_outcome_any
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count)
+    (rootIn : w.roots root = true) :
+    (NodeSet.members q.outcome).any (fun outcome =>
+      FiniteReachability.within finBeq (NodeSet.enumerated S)
+        (mutilatedDirected S q.action) S.count root outcome) = true :=
+  (List.all_eq_true.mp w.rootsReachOutcomeBool) root
+    ((NodeSet.mem_members_iff w.roots root).mpr rootIn)
+
+/--
+Canonical reachable outcome for an arbitrary forest root.  The non-root
+branch returns the witness's already certified outcome seed, making the
+function total; all routing theorems use the selected-root branch.
+-/
+def HedgeWitness.rootReadoutOutcome
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count) : Fin S.count :=
+  if rootIn : w.roots root = true then
+    listFirstAny (NodeSet.members q.outcome)
+      (fun outcome =>
+        FiniteReachability.within finBeq (NodeSet.enumerated S)
+          (mutilatedDirected S q.action) S.count root outcome)
+      (w.root_reaches_outcome_any root rootIn)
+  else
+    w.outcomeSeed
+
+/-- The root-indexed selector always returns a query outcome, including its
+irrelevant fallback branch. -/
+theorem HedgeWitness.rootReadoutOutcome_in_outcome
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count) :
+    q.outcome (w.rootReadoutOutcome root) = true := by
+  by_cases rootIn : w.roots root = true
+  · unfold HedgeWitness.rootReadoutOutcome
+    rw [dif_pos rootIn]
+    exact (NodeSet.mem_members_iff q.outcome _).mp
+      (listFirstAny_mem (NodeSet.members q.outcome) _
+        (w.root_reaches_outcome_any root rootIn))
+  · simp [HedgeWitness.rootReadoutOutcome, rootIn,
+      w.outcomeSeed_in_outcome]
+
+/-- A selected root reaches its root-indexed outcome in the mutilated graph. -/
+theorem HedgeWitness.root_reaches_rootReadoutOutcome
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count)
+    (rootIn : w.roots root = true) :
+    FiniteReachability.within finBeq (NodeSet.enumerated S)
+      (mutilatedDirected S q.action) S.count root
+        (w.rootReadoutOutcome root) = true := by
+  unfold HedgeWitness.rootReadoutOutcome
+  rw [dif_pos rootIn]
+  exact listFirstAny_pred (NodeSet.members q.outcome) _
+    (w.root_reaches_outcome_any root rootIn)
+
 /-- The action branch's computed root reaches some enumerated outcome. -/
 theorem HedgeWitness.actionRoot_reaches_outcome_any
     {G : ObservedGraph S} {q : JointKernelQuery S}
@@ -8596,9 +8654,7 @@ theorem HedgeWitness.actionRoot_reaches_outcome_any
     (NodeSet.members q.outcome).any (fun outcome =>
       FiniteReachability.within finBeq (NodeSet.enumerated S)
         (mutilatedDirected S q.action) S.count w.actionRoot outcome) = true :=
-  (List.all_eq_true.mp w.rootsReachOutcomeBool) w.actionRoot
-    ((NodeSet.mem_members_iff w.roots w.actionRoot).mpr
-      w.actionRoot_in_roots)
+  w.root_reaches_outcome_any w.actionRoot w.actionRoot_in_roots
 
 /--
 Canonical reachable query outcome used by the eventual parity readout.  The
@@ -9086,6 +9142,124 @@ theorem PathSpecification.Consecutive.end_eq_start_of_step_eq
           exact
             (inductionHypothesis next rfl tailFinishes consecutive.2).trans
               consecutive.1
+
+/-- Canonical root-to-outcome route for every selected root of a hedge.  The
+singleton fallback makes the function total away from `w.roots`. -/
+def HedgeWitness.rootReadoutRoute
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count) : List (Fin S.count) :=
+  if rootIn : w.roots root = true then
+    mutilatedDirectedRoute q.action (w.rootReadoutOutcome root) S.count root
+      (w.root_reaches_rootReadoutOutcome root rootIn)
+  else
+    [root]
+
+/-- A selected root's route starts at that root. -/
+theorem HedgeWitness.rootReadoutRoute_starts
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count)
+    (rootIn : w.roots root = true) :
+    (w.rootReadoutRoute root).head? = some root := by
+  unfold HedgeWitness.rootReadoutRoute
+  rw [dif_pos rootIn]
+  simpa using
+    (mutilatedDirectedRoute_spec q.action (w.rootReadoutOutcome root) S.count
+      root (w.root_reaches_rootReadoutOutcome root rootIn)).1
+
+/-- A selected root's route ends at its canonical query outcome. -/
+theorem HedgeWitness.rootReadoutRoute_finishes
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count)
+    (rootIn : w.roots root = true) :
+    (w.rootReadoutRoute root).getLast? =
+      some (w.rootReadoutOutcome root) := by
+  unfold HedgeWitness.rootReadoutRoute
+  rw [dif_pos rootIn]
+  simpa using
+    (mutilatedDirectedRoute_spec q.action (w.rootReadoutOutcome root) S.count
+      root (w.root_reaches_rootReadoutOutcome root rootIn)).2.1
+
+/-- Every edge of a selected root's route survives the query intervention. -/
+theorem HedgeWitness.rootReadoutRoute_consecutive
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count)
+    (rootIn : w.roots root = true) :
+    PathSpecification.Consecutive
+      (fun parent child =>
+        mutilatedDirected S q.action parent child = true)
+      (w.rootReadoutRoute root) := by
+  unfold HedgeWitness.rootReadoutRoute
+  rw [dif_pos rootIn]
+  simpa using
+    (mutilatedDirectedRoute_spec q.action (w.rootReadoutOutcome root) S.count
+      root (w.root_reaches_rootReadoutOutcome root rootIn)).2.2
+
+/-- Strict topological increase makes every selected root's route
+duplicate-free. -/
+theorem HedgeWitness.rootReadoutRoute_nodup
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count)
+    (rootIn : w.roots root = true) :
+    (w.rootReadoutRoute root).Nodup := by
+  apply PathSpecification.Consecutive.nodup_of_fin_lt
+    (w.rootReadoutRoute root)
+  exact (w.rootReadoutRoute_consecutive root rootIn).mono
+    (fun parent child edge => mutilatedDirected_earlier S q.action edge)
+
+/-- No vertex of a selected root's canonical route is intervened upon. -/
+theorem HedgeWitness.rootReadoutRoute_avoids_action
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count)
+    (rootIn : w.roots root = true) :
+    ∀ node, node ∈ w.rootReadoutRoute root → q.action node = false := by
+  have rootInSmall := ((w.small_forest.roots_exact root).mp rootIn).1
+  have rootFree := w.small_avoids_intervention root rootInSmall
+  exact consecutive_mutilatedDirected_avoids_action q.action
+    (w.rootReadoutRoute root) root (w.rootReadoutRoute_starts root rootIn)
+    rootFree (w.rootReadoutRoute_consecutive root rootIn)
+
+/-- Deterministic predecessor lookup for a root-indexed readout route. -/
+def HedgeWitness.rootReadoutParent
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root child : Fin S.count) :
+    Option (Fin S.count) :=
+  routePredecessor (w.rootReadoutRoute root) child
+
+/-- The predecessor lookup recognizes every pair of a selected root's route. -/
+theorem HedgeWitness.rootReadoutParent_consecutive
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count)
+    (rootIn : w.roots root = true) :
+    PathSpecification.Consecutive
+      (fun parent child => w.rootReadoutParent root child = some parent)
+      (w.rootReadoutRoute root) := by
+  simpa [HedgeWitness.rootReadoutParent] using
+    routePredecessor_consecutive (w.rootReadoutRoute root)
+      (w.rootReadoutRoute_nodup root rootIn)
+
+/-- A selected route source has no predecessor on its own route. -/
+theorem HedgeWitness.rootReadoutParent_source
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count)
+    (rootIn : w.roots root = true) :
+    w.rootReadoutParent root root = none := by
+  exact routePredecessor_head_eq_none (w.rootReadoutRoute root) root
+    (w.rootReadoutRoute_starts root rootIn)
+    (w.rootReadoutRoute_nodup root rootIn)
+
+/-- Every predecessor returned on a selected root's route is its actual
+action-mutilated directed edge. -/
+theorem HedgeWitness.rootReadoutParent_mutilatedDirected
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count)
+    (rootIn : w.roots root = true) {parent child : Fin S.count}
+    (found : w.rootReadoutParent root child = some parent) :
+    mutilatedDirected S q.action parent child = true := by
+  apply routePredecessor_rel_of_eq_some
+    (fun left right => mutilatedDirected S q.action left right = true)
+    (w.rootReadoutRoute root) parent child
+    (w.rootReadoutRoute_consecutive root rootIn)
+  simpa [HedgeWitness.rootReadoutParent] using found
 
 /-- Canonical action-root-to-outcome route carried by the hedge witness. -/
 def HedgeWitness.parityReadoutRoute
