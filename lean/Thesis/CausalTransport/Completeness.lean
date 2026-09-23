@@ -351,7 +351,18 @@ induction.  The remaining inhabitants are:
   cross-map count `pairBitRealizers_length_eq_nested`; c-forest cancellation
   shows that the large and nested required targets are even simultaneously
   (`largeRequiredEven_iff_smallRequiredEven`), while odd targets have empty
-  fibers; `hedgeCoordinateSupportLatents` factors complete latent assignments
+  fibers; the same cancellation makes the action-free small model's common
+  root parity identically even (`smallParityModel_rootParity_doSecond`) and
+  reduces the large model's common-root parity exactly to its structural-
+  equation defects on `F \cap X`
+  (`largeParityModel_rootParity_eq_actionDefects_doSecond`); an explicit
+  action-seed/root incidence vector then flips exactly one common-root output,
+  proving constructively that some large-model latent assignment has odd
+  total root parity (`exists_largeParityModel_rootParity_true_doSecond`);
+  hence the odd common-root event has positive interventional mass in the
+  large model and zero mass in the small model
+  (`parityModels_rootParity_not_equiv_doSecond`);
+  `hedgeCoordinateSupportLatents` factors complete latent assignments
   into pair-root and private coordinates, so every observed atom has the same
   number of equal-weight preimages and
   `parityModels_observationally_equivalent` proves full observational
@@ -29304,6 +29315,34 @@ theorem hedgeForestParentBitsFrom_congr
   else
     simp [hdir]
 
+/-- Congruence for the forest-parent fold only needs equality at parents whose
+kept edge actually reaches `child`.  This sharper form is useful for recursive
+comparisons: values at all other graph parents are inspected by neither side
+of the fold. -/
+theorem hedgeForestParentBitsFrom_congr_of_kept
+    (rich : ObservedSignature.ValueRich S) (kept : ForestChild S)
+    (child : Fin S.count)
+    (left right : forall parent, S.directed parent child = true →
+      S.Value parent)
+    (equalBit : forall parent edge, kept parent = some child →
+      hedgeIsSecond rich parent (left parent edge) =
+        hedgeIsSecond rich parent (right parent edge)) :
+    hedgeForestParentBitsFrom rich kept child left =
+      hedgeForestParentBitsFrom rich kept child right := by
+  unfold hedgeForestParentBitsFrom
+  apply foldl_congr
+  intro total parent
+  if edge : S.directed parent child = true then
+    cases keptEq : kept parent with
+    | none => simp [edge]
+    | some selectedChild =>
+        by_cases selected : selectedChild = child
+        · subst selectedChild
+          simp [edge, equalBit parent edge keptEq]
+        · simp [edge, selected]
+  else
+    simp [edge]
+
 /--
 Restricting a child map does nothing at `child` when every parent whose kept
 edge reaches `child` is already selected.  This is the local equality used on
@@ -35619,6 +35658,673 @@ theorem CForest.nodeXor_requiredIncidence
     intro total node
     by_cases root : kept node = none <;> simp [root]
   rw [rootFold, ← forest.members_roots]
+
+/-!
+### Structural-equation defects and the action boundary
+
+The faithful large model satisfies its intended XOR equation at every free
+large-forest vertex.  Intervened vertices need not satisfy that equation, so
+the useful conserved quantity is the XOR of the *defects* between required
+and actual latent incidence.  C-forest cancellation identifies total root
+parity with total defect parity, and restriction to the query intervention
+then removes every defect outside `F \cap X`.  This cleanly isolates the
+remaining separation argument at the finite action boundary.
+-/
+
+/-- The local discrepancy between the bit required by a forest equation and
+the bit supplied by the pair-root coordinates internal to `nodes`. -/
+def hedgeForestEquationDefect (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) (nodes : NodeSet S)
+    (kept : ForestChild S) (target : S.Assignment)
+    (pairBits : Fin (pairRootCount G) → Bool)
+    (child : Fin S.count) : Bool :=
+  Bool.xor (hedgeForestRequiredIncidence rich kept target child)
+    (hedgeXorPairBitsWithinFrom G nodes child pairBits)
+
+/-- Total output parity at the roots of a c-forest is exactly the XOR of its
+local equation defects.  The actual incidence contribution disappears by
+the finite handshaking identity, leaving only required incidence, which the
+c-forest cancellation theorem moves to the roots. -/
+theorem CForest.rootBits_eq_nodeXor_equationDefect
+    {G : ObservedGraph S} {nodes roots : NodeSet S}
+    {kept : ForestChild S} (forest : CForest G nodes roots kept)
+    (rich : ObservedSignature.ValueRich S) (target : S.Assignment)
+    (pairBits : Fin (pairRootCount G) → Bool) :
+    hedgeNodeXor roots
+        (fun node => hedgeIsSecond rich node (target node)) =
+      hedgeNodeXor nodes
+        (hedgeForestEquationDefect G rich nodes kept target pairBits) := by
+  rw [← forest.nodeXor_requiredIncidence rich target]
+  unfold hedgeForestEquationDefect hedgeNodeXor
+  rw [foldl_xor_pointwise]
+  have incidence := hedgeNodeXor_incidence G nodes pairBits
+  unfold hedgeNodeXor at incidence
+  rw [incidence]
+  simp
+
+/-- If a bit is false outside `selected`, restricting an XOR fold over
+`nodes` to `nodes ∩ selected` does not change its value. -/
+theorem hedgeNodeXor_eq_inter_of_false_right
+    (nodes selected : NodeSet S) (bits : Fin S.count → Bool)
+    (zeroOutside : forall node, nodes node = true → selected node = false →
+      bits node = false) :
+    hedgeNodeXor nodes bits =
+      hedgeNodeXor (NodeSet.inter nodes selected) bits := by
+  unfold hedgeNodeXor NodeSet.members NodeSet.enumerated
+  rw [List.foldl_filter, List.foldl_filter]
+  apply foldl_congr
+  intro total node
+  cases inside : nodes node with
+  | false => simp [inside, NodeSet.inter]
+  | true =>
+      cases chosen : selected node with
+      | true => simp [inside, chosen, NodeSet.inter]
+      | false => simp [inside, chosen, NodeSet.inter,
+          zeroOutside node inside chosen]
+
+/-- At a free large-forest vertex, the faithful large model has no local
+equation defect: its observed bit is precisely the XOR of its kept-parent
+bits and its internal pair-root incidence. -/
+theorem HedgeWitness.largeParityModel_equationDefect_of_free
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (u : (hedgeLatentExtension G).Assignment)
+    (child : Fin S.count) (selected : w.large child = true)
+    (free : intervention child = none) :
+    hedgeForestEquationDefect G rich w.large w.child
+        (fun node => (w.largeParityModel rich).evalNodeUnder
+          intervention u node)
+        (hedgePairBitsOf G u) child = false := by
+  have equation := w.largeParityModel_evalNodeUnder_bit rich intervention u
+    child free selected
+  have actualEq := hedgeXorPairBitsWithin_pairBitsOf G w.large u child
+  unfold hedgeForestEquationDefect hedgeForestRequiredIncidence
+  rw [equation, actualEq]
+  generalize
+    hedgeXorPairBitsWithinFrom G w.large child (hedgePairBitsOf G u) = pair
+  generalize hedgeForestParentBitsFrom rich w.child child
+    (fun parent _ =>
+      (w.largeParityModel rich).evalNodeUnder intervention u parent) = parents
+  cases pair <;> cases parents <;> rfl
+
+/-- Under the query intervention, every large-model equation defect outside
+the action is false.  Consequently the common-root parity is governed
+exactly by defects on the finite boundary `F ∩ X`; no claim about the
+boundary parity itself is hidden in this reduction. -/
+theorem HedgeWitness.largeParityModel_rootParity_eq_actionDefects_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    let target : S.Assignment := fun node =>
+      (w.largeParityModel rich).evalNodeUnder
+        (hedgeDoSecond rich q.action) u node
+    let defect := hedgeForestEquationDefect G rich w.large w.child target
+      (hedgePairBitsOf G u)
+    hedgeNodeXor w.roots
+        (fun node => hedgeIsSecond rich node (target node)) =
+      hedgeNodeXor (NodeSet.inter w.large q.action) defect := by
+  dsimp only
+  let target : S.Assignment := fun node =>
+    (w.largeParityModel rich).evalNodeUnder
+      (hedgeDoSecond rich q.action) u node
+  let defect := hedgeForestEquationDefect G rich w.large w.child target
+    (hedgePairBitsOf G u)
+  rw [w.large_forest.rootBits_eq_nodeXor_equationDefect rich target
+    (hedgePairBitsOf G u)]
+  apply hedgeNodeXor_eq_inter_of_false_right
+  intro node selected notAction
+  exact w.largeParityModel_equationDefect_of_free rich
+    (hedgeDoSecond rich q.action) u node selected
+    (hedgeDoSecond_of_false rich q.action notAction)
+
+/-!
+### A constructive odd large-root assignment
+
+It is not true that the large circuit has odd root parity for every latent
+assignment.  Instead, connect the stored action seed to its common-forest
+root inside the large bidirected component.  The resulting pair-root vector
+has incidence at exactly those two endpoints.  Under `do(X = second)`, the
+action endpoint is blocked while the root endpoint remains free.  Toggling
+from the zero vector to this endpoint vector therefore flips exactly that
+root's output and leaves every other root unchanged.  One of the two explicit
+latent assignments must consequently have odd total root parity.
+
+The endpoint vector is recovered by exhaustive finite search through
+`evenTargetPairBits`; the component path is used only to prove that the
+two-endpoint target is even.  Thus no proposition-level witness is eliminated
+into data and no choice principle is needed.
+-/
+
+/-- The selected common root lies in the action-avoiding small forest and is
+therefore not intervened upon. -/
+theorem HedgeWitness.actionRoot_not_in_action
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    q.action w.actionRoot = false :=
+  w.small_avoids_intervention w.actionRoot w.actionRoot_in_small
+
+/-- The stored action seed and its selected common root are distinct because
+the former is in the action and the latter is not. -/
+theorem HedgeWitness.actionSeed_ne_actionRoot
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    w.actionSeed ≠ w.actionRoot := by
+  intro equal
+  have actionFalse := w.actionRoot_not_in_action
+  rw [← equal, w.actionSeed_in_action] at actionFalse
+  exact Bool.noConfusion actionFalse
+
+/-- Incidence target with one bit at the action seed and one at the selected
+common root.  XOR makes the definition robust while the distinctness theorem
+shows that both endpoint coordinates are true. -/
+def HedgeWitness.actionRootToggleTarget
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (node : Fin S.count) : Bool :=
+  Bool.xor (decide (node = w.actionSeed))
+    (decide (node = w.actionRoot))
+
+/-- The two-endpoint target has even support inside the large c-component. -/
+theorem HedgeWitness.actionRootToggleTarget_even
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    (hedgeTrueVertices w.large w.actionRootToggleTarget).length % 2 = 0 := by
+  apply (foldl_xor_eq_false_iff_filter_even w.actionRootToggleTarget
+    (NodeSet.members w.large)).mp
+  exact foldl_xor_two_indicators (NodeSet.members w.large)
+    w.actionSeed w.actionRoot
+    ((NodeSet.mem_members_iff w.large w.actionSeed).mpr
+      w.actionSeed_in_large)
+    ((NodeSet.mem_members_iff w.large w.actionRoot).mpr
+      w.actionRoot_in_large)
+    (NodeSet.nodup_members w.large)
+
+/-- First exhaustively enumerated pair-root vector whose large-forest
+incidence is the action-seed/root endpoint target. -/
+def HedgeWitness.actionRootTogglePairBits
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    Fin (pairRootCount G) → Bool :=
+  w.large_forest.component.evenTargetPairBits G w.large
+    w.actionRootToggleTarget w.actionRootToggleTarget_even
+
+/-- The computed toggle vector realizes the requested two-endpoint incidence
+at every vertex of the large forest. -/
+theorem HedgeWitness.actionRootTogglePairBits_spec
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    forall node, w.large node = true →
+      hedgeXorPairBitsWithinFrom G w.large node
+          w.actionRootTogglePairBits =
+        w.actionRootToggleTarget node :=
+  w.large_forest.component.evenTargetPairBits_spec G w.large
+    w.actionRootToggleTarget w.actionRootToggleTarget_even
+
+/-- Concrete latent assignment with every pair-root bit false.  The private
+coordinates are filled by an existing full-support enumerator; they are
+ignored at every selected vertex of the large parity circuit. -/
+def HedgeWitness.largeParityBaselineLatent
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (_w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    (hedgeLatentExtension G).Assignment :=
+  hedgeSupportLatentWithPairs G rich NodeSet.empty
+    (hedgeActionReference rich q.action) (hedgeZeroPairBits G)
+
+/-- Companion latent assignment carrying the action-seed/root toggle vector
+on its pair-root coordinates. -/
+def HedgeWitness.largeParityToggleLatent
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    (hedgeLatentExtension G).Assignment :=
+  hedgeSupportLatentWithPairs G rich NodeSet.empty
+    (hedgeActionReference rich q.action) w.actionRootTogglePairBits
+
+/-- Pair-root projection of the baseline latent is the zero vector. -/
+theorem HedgeWitness.pairBitsOf_largeParityBaselineLatent
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    hedgePairBitsOf G (w.largeParityBaselineLatent rich) =
+      hedgeZeroPairBits G :=
+  hedgePairBitsOf_supportWithPairs G rich NodeSet.empty
+    (hedgeActionReference rich q.action) (hedgeZeroPairBits G)
+
+/-- Pair-root projection of the companion latent is the computed toggle
+vector. -/
+theorem HedgeWitness.pairBitsOf_largeParityToggleLatent
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    hedgePairBitsOf G (w.largeParityToggleLatent rich) =
+      w.actionRootTogglePairBits :=
+  hedgePairBitsOf_supportWithPairs G rich NodeSet.empty
+    (hedgeActionReference rich q.action) w.actionRootTogglePairBits
+
+/-- Baseline and toggle executions have the same encoded output at every
+large-forest vertex except the selected common root.  At the action seed the
+intervention masks the changed incidence.  At every other free vertex the
+incidence is unchanged, and recursive equality of kept-parent bits follows
+the strict observed topological order. -/
+theorem HedgeWitness.largeParityModel_bit_eq_of_ne_actionRoot
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (child : Fin S.count) (selected : w.large child = true)
+    (notRoot : child ≠ w.actionRoot) :
+    hedgeIsSecond rich child
+        ((w.largeParityModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action)
+          (w.largeParityBaselineLatent rich) child) =
+      hedgeIsSecond rich child
+        ((w.largeParityModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action)
+          (w.largeParityToggleLatent rich) child) := by
+  cases freeEq : hedgeDoSecond rich q.action child with
+  | some value =>
+      rw [FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.evalNodeUnder]
+      unfold FiniteLatentSCM.equationUnder
+      simp [freeEq]
+  | none =>
+      have notSeed : child ≠ w.actionSeed := by
+        intro equal
+        subst child
+        rw [hedgeDoSecond_of_true rich q.action w.actionSeed_in_action] at freeEq
+        contradiction
+      have baselineEq := w.largeParityModel_evalNodeUnder_bit rich
+        (hedgeDoSecond rich q.action) (w.largeParityBaselineLatent rich)
+        child freeEq selected
+      have toggleEq := w.largeParityModel_evalNodeUnder_bit rich
+        (hedgeDoSecond rich q.action) (w.largeParityToggleLatent rich)
+        child freeEq selected
+      rw [baselineEq, toggleEq,
+        hedgeXorPairBitsWithin_pairBitsOf,
+        hedgeXorPairBitsWithin_pairBitsOf,
+        w.pairBitsOf_largeParityBaselineLatent rich,
+        w.pairBitsOf_largeParityToggleLatent rich,
+        hedgeXorPairBitsWithinFrom_zero,
+        w.actionRootTogglePairBits_spec child selected]
+      have targetFalse : w.actionRootToggleTarget child = false := by
+        simp [HedgeWitness.actionRootToggleTarget, notSeed, notRoot]
+      rw [targetFalse]
+      simp only [Bool.false_xor]
+      apply hedgeForestParentBitsFrom_congr_of_kept
+      intro parent edge kept
+      exact w.largeParityModel_bit_eq_of_ne_actionRoot rich parent
+        (w.large_forest.child_edge parent child kept).1
+        (fun equal => by
+          subst parent
+          rw [w.actionRoot_child_none] at kept
+          contradiction)
+termination_by child.val
+decreasing_by
+  exact S.directed_earlier edge
+
+/-- The companion pair-root vector flips the selected common root's encoded
+output bit.  Its kept parents are unaffected by the preceding recursive
+comparison, while its own incidence changes from zero to one. -/
+theorem HedgeWitness.largeParityModel_actionRoot_bit_toggle
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    hedgeIsSecond rich w.actionRoot
+        ((w.largeParityModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action)
+          (w.largeParityToggleLatent rich) w.actionRoot) =
+      !hedgeIsSecond rich w.actionRoot
+        ((w.largeParityModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action)
+          (w.largeParityBaselineLatent rich) w.actionRoot) := by
+  have free := hedgeDoSecond_of_false rich q.action w.actionRoot_not_in_action
+  have baselineEq := w.largeParityModel_evalNodeUnder_bit rich
+    (hedgeDoSecond rich q.action) (w.largeParityBaselineLatent rich)
+    w.actionRoot free w.actionRoot_in_large
+  have toggleEq := w.largeParityModel_evalNodeUnder_bit rich
+    (hedgeDoSecond rich q.action) (w.largeParityToggleLatent rich)
+    w.actionRoot free w.actionRoot_in_large
+  rw [baselineEq, toggleEq,
+    hedgeXorPairBitsWithin_pairBitsOf,
+    hedgeXorPairBitsWithin_pairBitsOf,
+    w.pairBitsOf_largeParityBaselineLatent rich,
+    w.pairBitsOf_largeParityToggleLatent rich,
+    hedgeXorPairBitsWithinFrom_zero,
+    w.actionRootTogglePairBits_spec w.actionRoot w.actionRoot_in_large]
+  have targetTrue : w.actionRootToggleTarget w.actionRoot = true := by
+    have rootNeSeed : w.actionRoot ≠ w.actionSeed :=
+      fun equal => w.actionSeed_ne_actionRoot (Eq.symm equal)
+    simp [HedgeWitness.actionRootToggleTarget, rootNeSeed]
+  rw [targetTrue]
+  have parentBitsEq :
+      hedgeForestParentBitsFrom rich w.child w.actionRoot
+          (fun parent _ =>
+            (w.largeParityModel rich).evalNodeUnder
+              (hedgeDoSecond rich q.action)
+              (w.largeParityBaselineLatent rich) parent) =
+        hedgeForestParentBitsFrom rich w.child w.actionRoot
+          (fun parent _ =>
+            (w.largeParityModel rich).evalNodeUnder
+              (hedgeDoSecond rich q.action)
+              (w.largeParityToggleLatent rich) parent) := by
+    apply hedgeForestParentBitsFrom_congr_of_kept
+    intro parent edge kept
+    exact w.largeParityModel_bit_eq_of_ne_actionRoot rich parent
+      (w.large_forest.child_edge parent w.actionRoot kept).1
+      (fun equal => by
+        subst parent
+        rw [w.actionRoot_child_none] at kept
+        contradiction)
+  rw [parentBitsEq]
+  generalize
+    hedgeForestParentBitsFrom rich w.child w.actionRoot
+      (fun parent _ =>
+        (w.largeParityModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action)
+          (w.largeParityToggleLatent rich) parent) = parents
+  cases parents <;> rfl
+
+/-- Toggling the endpoint vector complements total parity over all common
+roots: the selected action root flips and every other root stays fixed. -/
+theorem HedgeWitness.largeParityModel_rootParity_toggle
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    hedgeNodeXor w.roots (fun node =>
+        hedgeIsSecond rich node
+          ((w.largeParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action)
+            (w.largeParityToggleLatent rich) node)) =
+      !hedgeNodeXor w.roots (fun node =>
+        hedgeIsSecond rich node
+          ((w.largeParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action)
+            (w.largeParityBaselineLatent rich) node)) := by
+  let baseline := fun node =>
+    hedgeIsSecond rich node
+      ((w.largeParityModel rich).evalNodeUnder
+        (hedgeDoSecond rich q.action)
+        (w.largeParityBaselineLatent rich) node)
+  let toggled := fun node =>
+    hedgeIsSecond rich node
+      ((w.largeParityModel rich).evalNodeUnder
+        (hedgeDoSecond rich q.action)
+        (w.largeParityToggleLatent rich) node)
+  have pointwise : forall node, w.roots node = true →
+      toggled node = Bool.xor (baseline node)
+        (decide (node = w.actionRoot)) := by
+    intro node selected
+    by_cases equal : node = w.actionRoot
+    · subst node
+      simpa [baseline, toggled, Bool.xor_true] using
+        w.largeParityModel_actionRoot_bit_toggle rich
+    · have inLarge := (w.large_forest.roots_exact node).mp selected |>.1
+      have same := w.largeParityModel_bit_eq_of_ne_actionRoot rich node
+        inLarge equal
+      simpa [baseline, toggled, equal] using same.symm
+  unfold hedgeNodeXor
+  have rewritten :
+      (NodeSet.members w.roots).foldl
+          (fun total node => Bool.xor total (toggled node)) false =
+        (NodeSet.members w.roots).foldl
+          (fun total node => Bool.xor total
+            (Bool.xor (baseline node)
+              (decide (node = w.actionRoot)))) false := by
+    apply foldl_congr_of_mem
+    intro total node member
+    rw [pointwise node ((NodeSet.mem_members_iff w.roots node).mp member)]
+  rw [rewritten, foldl_xor_pointwise,
+    foldl_xor_indicator_of_mem_nodup (NodeSet.members w.roots)
+      w.actionRoot
+      ((NodeSet.mem_members_iff w.roots w.actionRoot).mpr
+        w.actionRoot_in_roots)
+      (NodeSet.nodup_members w.roots)]
+  simp [baseline]
+
+/-- There is a concrete latent assignment for which the large parity model
+has odd total common-root parity under the query intervention.  The proof
+case-splits only on the computable baseline Boolean: if it is already odd,
+use it; otherwise use the explicit endpoint toggle. -/
+theorem HedgeWitness.exists_largeParityModel_rootParity_true_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Exists fun u : (hedgeLatentExtension G).Assignment =>
+      hedgeNodeXor w.roots (fun node =>
+        hedgeIsSecond rich node
+          ((w.largeParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action) u node)) = true := by
+  let baselineParity := hedgeNodeXor w.roots (fun node =>
+    hedgeIsSecond rich node
+      ((w.largeParityModel rich).evalNodeUnder
+        (hedgeDoSecond rich q.action)
+        (w.largeParityBaselineLatent rich) node))
+  cases parityEq : baselineParity with
+  | true =>
+      exact ⟨w.largeParityBaselineLatent rich, parityEq⟩
+  | false =>
+      refine ⟨w.largeParityToggleLatent rich, ?_⟩
+      rw [w.largeParityModel_rootParity_toggle rich]
+      simpa [baselineParity] using
+        congrArg (fun bit : Bool => !bit) parityEq
+
+/-!
+### Root parity of the action-free small forest
+
+The all-root transport layer needs a source invariant from the two original
+hedge circuits.  On the small side, the invariant is exact: every small-forest
+node remains free under the query action.  Its structural equation therefore
+recovers the actual internal pair-root incidence, whose total XOR is even;
+c-forest cancellation moves that evenness to the common root set.
+-/
+
+/-- Whenever an intervention leaves every small-forest node free, the total
+encoded output bit at the common hedge roots is false for every latent
+assignment. -/
+theorem HedgeWitness.smallParityModel_rootParity_of_free
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (u : (hedgeLatentExtension G).Assignment)
+    (free : forall child, w.small child = true →
+      intervention child = none) :
+    hedgeNodeXor w.roots (fun child =>
+      hedgeIsSecond rich child
+        ((w.smallParityModel rich).evalNodeUnder intervention u child)) =
+      false := by
+  let target : S.Assignment := fun child =>
+    (w.smallParityModel rich).evalNodeUnder intervention u child
+  let required :=
+    hedgeForestRequiredIncidence rich (restrictChild w.small w.child) target
+  let actual := fun child =>
+    hedgeXorPairBitsWithinFrom G w.small child (hedgePairBitsOf G u)
+  have requiredAt : forall child, w.small child = true →
+      required child = actual child := by
+    intro child selected
+    have equation := w.smallParityModel_evalNodeUnder_bit rich intervention u
+      child (free child selected) selected
+    have actualEq := hedgeXorPairBitsWithin_pairBitsOf G w.small u child
+    dsimp only [required, actual, hedgeForestRequiredIncidence, target]
+    rw [equation, actualEq]
+    generalize
+      hedgeXorPairBitsWithinFrom G w.small child (hedgePairBitsOf G u) = pair
+    generalize hedgeForestParentBitsFrom rich
+      (restrictChild w.small w.child) child
+      (fun parent _ =>
+        (w.smallParityModel rich).evalNodeUnder intervention u parent) = parents
+    cases pair <;> cases parents <;> rfl
+  have requiredXor :
+      hedgeNodeXor w.small required = hedgeNodeXor w.small actual := by
+    unfold hedgeNodeXor
+    apply foldl_congr_of_mem
+    intro total child member
+    rw [requiredAt child
+      ((NodeSet.mem_members_iff w.small child).mp member)]
+  have requiredFalse : hedgeNodeXor w.small required = false := by
+    rw [requiredXor]
+    exact hedgeNodeXor_incidence G w.small (hedgePairBitsOf G u)
+  rw [← w.small_forest.nodeXor_requiredIncidence rich target]
+  exact requiredFalse
+
+/-- In particular, the action-avoiding small forest has even root parity
+under the canonical intervention that sets all action vertices to their
+distinguished second values. -/
+theorem HedgeWitness.smallParityModel_rootParity_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgeNodeXor w.roots (fun child =>
+      hedgeIsSecond rich child
+        ((w.smallParityModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action) u child)) = false := by
+  apply w.smallParityModel_rootParity_of_free rich
+  intro child selected
+  exact hedgeDoSecond_of_false rich q.action
+    (w.small_avoids_intervention child selected)
+
+/-!
+### Separation at the common-root parity event
+
+The preceding pointwise invariants already separate the two unsoftened
+interventional laws on the event that the common roots have odd parity.  The
+small model gives this event zero mass.  The large model gives it positive
+mass because the explicit odd latent atom has unit prior numerator.  This is
+the exact probabilistic separation that the remaining readout construction
+must transport from the common roots to a query-outcome event.
+-/
+
+/-- Boolean event that the distinguished-value bits on `roots` have odd XOR
+parity. -/
+def hedgeRootParityEvent (rich : ObservedSignature.ValueRich S)
+    (roots : NodeSet S) : Event S.Assignment :=
+  fun assignment => hedgeNodeXor roots (fun node =>
+    hedgeIsSecond rich node (assignment node))
+
+/-- Every small-model latent assignment misses the odd common-root event
+under the query intervention. -/
+theorem HedgeWitness.smallParityModel_rootParityEvent_false_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgeRootParityEvent rich w.roots
+        ((w.smallParityModel rich).evalUnder
+          (hedgeDoSecond rich q.action) u) = false :=
+  w.smallParityModel_rootParity_doSecond rich u
+
+/-- The odd common-root event has positive natural numerator in the large
+model.  Monotonicity embeds the explicitly constructed odd singleton, whose
+uniform product-prior mass is exactly one. -/
+theorem HedgeWitness.largeParityModel_rootParityEventMass_pos_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    0 < FiniteProbRecord.eventMass
+      (w.largeParityModel rich).prior.atoms
+      (fun u => hedgeRootParityEvent rich w.roots
+        ((w.largeParityModel rich).evalUnder
+          (hedgeDoSecond rich q.action) u)) := by
+  rcases w.exists_largeParityModel_rootParity_true_doSecond rich with
+    ⟨u, odd⟩
+  let rootParity : Event ((hedgeLatentExtension G).Assignment) := fun v =>
+    hedgeRootParityEvent rich w.roots
+      ((w.largeParityModel rich).evalUnder
+        (hedgeDoSecond rich q.action) v)
+  have singletonMass :
+      FiniteProbRecord.eventMass
+          (w.largeParityModel rich).prior.atoms
+          (FiniteProbRecord.singletonEvent u) = 1 := by
+    simpa [HedgeWitness.largeParityModel, hedgeForestParityModel] using
+      hedgePrior_eventMass_singleton G u
+  have subset : forall v,
+      FiniteProbRecord.singletonEvent u v = true → rootParity v = true := by
+    intro v member
+    have equal : v = u := of_decide_eq_true (by
+      simpa [FiniteProbRecord.singletonEvent] using member)
+    simpa [rootParity, equal] using odd
+  have monotone := FiniteProbRecord.eventMass_mono
+    (w.largeParityModel rich).prior.atoms
+    (FiniteProbRecord.singletonEvent u) rootParity subset
+  change 0 < FiniteProbRecord.eventMass
+    (w.largeParityModel rich).prior.atoms rootParity
+  exact Nat.lt_of_lt_of_le
+    (Nat.lt_of_lt_of_eq Nat.zero_lt_one singletonMass.symm) monotone
+
+/-- The same odd common-root event has zero natural numerator in the small
+model because its pointwise root parity is always false. -/
+theorem HedgeWitness.smallParityModel_rootParityEventMass_zero_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    FiniteProbRecord.eventMass
+      (w.smallParityModel rich).prior.atoms
+      (fun u => hedgeRootParityEvent rich w.roots
+        ((w.smallParityModel rich).evalUnder
+          (hedgeDoSecond rich q.action) u)) = 0 := by
+  rw [FiniteProbRecord.eventMass_congr
+    (w.smallParityModel rich).prior.atoms
+    (fun u => hedgeRootParityEvent rich w.roots
+      ((w.smallParityModel rich).evalUnder
+        (hedgeDoSecond rich q.action) u))
+    (fun _ => false)
+    (w.smallParityModel_rootParityEvent_false_doSecond rich)]
+  exact FiniteProbRecord.eventMass_false _
+
+/-- The unsoftened large and small hedge models therefore disagree on the
+odd common-root event under `do(X = second)`.  Their denominators are equal
+definitionally; positive versus zero numerator rules out rational
+equivalence. -/
+theorem HedgeWitness.parityModels_rootParity_not_equiv_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Not (QProb.Equiv
+      ((w.largeParityModel rich).interventionalValue
+        (hedgeDoSecond rich q.action)
+        (hedgeRootParityEvent rich w.roots))
+      ((w.smallParityModel rich).interventionalValue
+        (hedgeDoSecond rich q.action)
+        (hedgeRootParityEvent rich w.roots))) := by
+  intro equivalent
+  have largeEq := FiniteLatentSCM.interventionalValue_eq
+    (w.largeParityModel rich) (hedgeDoSecond rich q.action)
+    (hedgeRootParityEvent rich w.roots)
+  have smallEq := FiniteLatentSCM.interventionalValue_eq
+    (w.smallParityModel rich) (hedgeDoSecond rich q.action)
+    (hedgeRootParityEvent rich w.roots)
+  have priorEquivalent : QProb.Equiv
+      ((w.largeParityModel rich).prior.probVal (fun u =>
+        hedgeRootParityEvent rich w.roots
+          ((w.largeParityModel rich).evalUnder
+            (hedgeDoSecond rich q.action) u)))
+      ((w.smallParityModel rich).prior.probVal (fun u =>
+        hedgeRootParityEvent rich w.roots
+          ((w.smallParityModel rich).evalUnder
+            (hedgeDoSecond rich q.action) u))) :=
+    QProb.equiv_trans (QProb.equiv_symm largeEq)
+      (QProb.equiv_trans equivalent smallEq)
+  have massEqual :
+      FiniteProbRecord.eventMass
+          (w.largeParityModel rich).prior.atoms
+          (fun u => hedgeRootParityEvent rich w.roots
+            ((w.largeParityModel rich).evalUnder
+              (hedgeDoSecond rich q.action) u)) =
+        FiniteProbRecord.eventMass
+          (w.smallParityModel rich).prior.atoms
+          (fun u => hedgeRootParityEvent rich w.roots
+            ((w.smallParityModel rich).evalUnder
+              (hedgeDoSecond rich q.action) u)) := by
+    have multiplied :
+        FiniteProbRecord.eventMass
+            (w.largeParityModel rich).prior.atoms
+            (fun u => hedgeRootParityEvent rich w.roots
+              ((w.largeParityModel rich).evalUnder
+                (hedgeDoSecond rich q.action) u)) *
+          (w.smallParityModel rich).prior.den =
+        FiniteProbRecord.eventMass
+            (w.smallParityModel rich).prior.atoms
+            (fun u => hedgeRootParityEvent rich w.roots
+              ((w.smallParityModel rich).evalUnder
+                (hedgeDoSecond rich q.action) u)) *
+          (w.largeParityModel rich).prior.den := by
+      simpa [QProb.Equiv, FiniteProbRecord.probVal] using priorEquivalent
+    have sameDenominator :
+        (w.largeParityModel rich).prior.den =
+          (w.smallParityModel rich).prior.den := by
+      rw [w.parityModel_prior_eq rich]
+    rw [sameDenominator] at multiplied
+    exact Nat.eq_of_mul_eq_mul_right
+      (w.smallParityModel rich).prior.den_pos multiplied
+  rw [w.smallParityModel_rootParityEventMass_zero_doSecond rich] at massEqual
+  have positive := w.largeParityModel_rootParityEventMass_pos_doSecond rich
+  exact Nat.not_lt_zero 0 (massEqual ▸ positive)
 
 /-- The required-incidence evenness of a c-forest depends only on its roots. -/
 theorem CForest.requiredIncidence_even_iff_rootBits_even
