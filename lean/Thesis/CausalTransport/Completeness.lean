@@ -325,7 +325,12 @@ induction.  The remaining inhabitants are:
   carrying an odd readout without choice; `hedgeFlowReadoutModel` realizes
   that recurrence as graph-compatible mechanisms, while
   `rootFlowReadoutModel_sinkParity_doSecond` closes its end-to-end transport
-  theorem under the query intervention; `parityReadoutOutcome` and
+  theorem under the query intervention; route-priority
+  `forestChildPrioritize` composes either c-forest with that routing without
+  splitting a stream when a route re-enters the hedge, and every resulting
+  sink is still a query outcome; in fact, both compositions have exactly the
+  same canonical sink set (`largeOutcomeFlowSinks_eq_rootReadoutSinks`,
+  `smallOutcomeFlowSinks_eq_rootReadoutSinks`); `parityReadoutOutcome` and
   `parityReadoutRoute` retain the action-branch specialization;
   `largeReadoutParityModel` and `smallReadoutParityModel` then wrap the two
   parity models with graph-compatible mechanisms that copy the encoded bit
@@ -364,15 +369,21 @@ induction.  The remaining inhabitants are:
   (`parityModels_rootParity_not_equiv_doSecond`), and event-to-kernel
   extensionality packages the unsoftened pair as an unrestricted-class
   `rootParityCounterexample` for the corresponding common-root query;
+  `largeOutcomeFlowModel` and `smallOutcomeFlowModel` inject the respective
+  c-forest incidence into the composed readout; the small sink parity is
+  uniformly even, while the explicit action-seed/root toggle makes one large
+  sink assignment odd; the common sink event is local to `q.outcome`, and
+  `outcomeFlowModels_query_separated` proves that these combined models
+  already disagree on the original kernel query;
   `hedgeCoordinateSupportLatents` factors complete latent assignments
   into pair-root and private coordinates, so every observed atom has the same
   number of equal-weight preimages and
   `parityModels_observationally_equivalent` proves full observational
-  agreement of the unsoftened pair.  Establishing interventional separation
-  for the general hedge and then adding full-support noise without erasing it
-  remain hard steps--the tempting construction that merely gates a private
-  decode by restricted pair parity already fails observational equivalence on
-  the two-node bow;
+  agreement of the unsoftened pair.  Establishing observational equivalence
+  for the combined outcome-flow pair, then adding full-support noise without
+  erasing its separation, remain hard steps--the tempting construction that
+  merely gates a private decode by restricted pair parity already fails
+  observational equivalence on the two-node bow;
   outcome vertices sit in their ancestral set in `G_{\overline{X}}`
   (`outcome_subset_ancestralSet`), so the nested shrink-empty summed
   blocks cover `V \ Y` (`first_shrink_empty_summed_eq`);
@@ -9675,6 +9686,290 @@ theorem HedgeWitness.rootReadoutSink_in_outcome
     (w.root_in_rootReadoutNodes root rootIn)
   exact w.rootReadoutSuccessor_none_is_outcome
     (w.rootReadoutSink root rootIn) sinkSpec.1 sinkSpec.2
+
+/-!
+### Composing a c-forest with its outcome readout
+
+A readout route may pass through another vertex of the hedge forest.  Treating
+the forest and readout maps independently would then split one Boolean stream
+between two successors.  The left-biased composition below avoids that bug.
+For the hedge-specific maps, the action-free readout edge receives priority:
+once a stream reaches a routing vertex it stays on that route instead of being
+redirected through a later intervened forest vertex.  Every selected edge
+remains a genuine directed edge, and strict topological order therefore still
+makes the combined map acyclic.
+-/
+
+/-- Use `preferred` on every selected priority vertex and `fallback`
+elsewhere.  In particular, a priority sink remains a sink: `none` does not
+fall through to the other map. -/
+def forestChildPrioritize (priorityNodes : NodeSet S)
+    (preferred fallback : ForestChild S) : ForestChild S :=
+  fun parent =>
+    if priorityNodes parent then preferred parent else fallback parent
+
+/-- Priority composition preserves executable child-map well-formedness on
+the union of the priority and fallback node sets. -/
+theorem childWellFormedBool_forestChildPrioritize
+    (priorityNodes fallbackNodes : NodeSet S)
+    (preferred fallback : ForestChild S)
+    (preferredWellFormed :
+      childWellFormedBool priorityNodes preferred = true)
+    (fallbackWellFormed :
+      childWellFormedBool fallbackNodes fallback = true) :
+    childWellFormedBool (NodeSet.union priorityNodes fallbackNodes)
+      (forestChildPrioritize priorityNodes preferred fallback) = true := by
+  unfold childWellFormedBool
+  apply List.all_eq_true.mpr
+  intro parent _member
+  cases priority : priorityNodes parent with
+  | true =>
+      cases preferredEq : preferred parent with
+      | some child =>
+          have edgeData := childWellFormed_edge priorityNodes preferred
+            preferredWellFormed preferredEq
+          simp [forestChildPrioritize, priority, preferredEq, NodeSet.union,
+            edgeData.2.1, edgeData.2.2]
+      | none =>
+          simp [forestChildPrioritize, priority, preferredEq,
+            NodeSet.union]
+  | false =>
+      cases fallbackEq : fallback parent with
+      | some child =>
+          have edgeData := childWellFormed_edge fallbackNodes fallback
+            fallbackWellFormed fallbackEq
+          simp [forestChildPrioritize, priority, fallbackEq, NodeSet.union,
+            edgeData.1, edgeData.2.1, edgeData.2.2]
+      | none =>
+          simp only [forestChildPrioritize, priority, fallbackEq]
+          cases NodeSet.union priorityNodes fallbackNodes parent <;> rfl
+
+/-- Nodes participating in either the large c-forest or an outcome readout
+route. -/
+def HedgeWitness.largeOutcomeFlowNodes
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) : NodeSet S :=
+  NodeSet.union w.rootReadoutNodes w.large
+
+/-- Follow large c-forest edges until a canonical readout route is reached,
+then give that action-free route priority all the way to an outcome. -/
+def HedgeWitness.largeOutcomeFlowSuccessor
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) : ForestChild S :=
+  forestChildPrioritize w.rootReadoutNodes w.rootReadoutSuccessor w.child
+
+/-- The composed large-forest/outcome successor is well formed on its union
+node set. -/
+theorem HedgeWitness.largeOutcomeFlowSuccessor_wellFormed
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    childWellFormedBool w.largeOutcomeFlowNodes
+      w.largeOutcomeFlowSuccessor = true :=
+  childWellFormedBool_forestChildPrioritize w.rootReadoutNodes w.large
+    w.rootReadoutSuccessor w.child w.rootReadoutSuccessor_wellFormed
+    w.large_forest.wellFormedBool
+
+/-- Every sink of the composed large flow is a query outcome.  A sink inside
+the large forest is a declared common root; otherwise it was already a sink
+of the canonical readout routing forest. -/
+theorem HedgeWitness.largeOutcomeFlowSinks_subset_outcome
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    NodeSet.Subset
+      (keptSinks w.largeOutcomeFlowNodes w.largeOutcomeFlowSuccessor)
+      q.outcome := by
+  intro node sink
+  have sinkData :=
+    (keptSinks_iff w.largeOutcomeFlowNodes
+      w.largeOutcomeFlowSuccessor node).mp sink
+  cases inReadout : w.rootReadoutNodes node with
+  | true =>
+      exact w.rootReadoutSuccessor_none_is_outcome node
+        inReadout (by
+          simpa [HedgeWitness.largeOutcomeFlowSuccessor,
+            forestChildPrioritize, inReadout] using sinkData.2)
+  | false =>
+      have inLarge : w.large node = true := by
+        simpa [HedgeWitness.largeOutcomeFlowNodes, NodeSet.union, inReadout]
+          using sinkData.1
+      have childNone : w.child node = none := by
+        simpa [HedgeWitness.largeOutcomeFlowSuccessor,
+          forestChildPrioritize, inReadout] using sinkData.2
+      have inRoot := (w.large_forest.roots_exact node).mpr
+        ⟨inLarge, childNone⟩
+      have rootInReadout := w.root_in_rootReadoutNodes node inRoot
+      rw [inReadout] at rootInReadout
+      contradiction
+
+/-- If a composed large-flow edge enters a vertex outside the canonical
+readout, then its parent is outside the readout as well.  Readout priority is
+the essential point: a parent already on a route can only point to another
+route vertex. -/
+theorem HedgeWitness.largeOutcomeFlowSuccessor_parent_not_readout
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) {parent child : Fin S.count}
+    (childNotReadout : w.rootReadoutNodes child = false)
+    (found : w.largeOutcomeFlowSuccessor parent = some child) :
+    w.rootReadoutNodes parent = false := by
+  cases parentReadout : w.rootReadoutNodes parent with
+  | false => rfl
+  | true =>
+      have routeFound : w.rootReadoutSuccessor parent = some child := by
+        simpa [HedgeWitness.largeOutcomeFlowSuccessor,
+          forestChildPrioritize, parentReadout] using found
+      have childReadout := (w.rootReadoutSuccessor_nodes routeFound).2
+      rw [childNotReadout] at childReadout
+      contradiction
+
+/-- Nodes participating in either the action-avoiding small c-forest or an
+outcome readout route. -/
+def HedgeWitness.smallOutcomeFlowNodes
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) : NodeSet S :=
+  NodeSet.union w.rootReadoutNodes w.small
+
+/-- Follow small-forest kept edges until a canonical readout route is reached,
+then give the action-free route priority. -/
+def HedgeWitness.smallOutcomeFlowSuccessor
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) : ForestChild S :=
+  forestChildPrioritize w.rootReadoutNodes w.rootReadoutSuccessor
+    (restrictChild w.small w.child)
+
+/-- The composed small-forest/outcome successor is well formed on its union
+node set. -/
+theorem HedgeWitness.smallOutcomeFlowSuccessor_wellFormed
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    childWellFormedBool w.smallOutcomeFlowNodes
+      w.smallOutcomeFlowSuccessor = true :=
+  childWellFormedBool_forestChildPrioritize w.rootReadoutNodes w.small
+    w.rootReadoutSuccessor (restrictChild w.small w.child)
+    w.rootReadoutSuccessor_wellFormed w.small_forest.wellFormedBool
+
+/-- Every sink of the composed small flow is likewise a query outcome. -/
+theorem HedgeWitness.smallOutcomeFlowSinks_subset_outcome
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    NodeSet.Subset
+      (keptSinks w.smallOutcomeFlowNodes w.smallOutcomeFlowSuccessor)
+      q.outcome := by
+  intro node sink
+  have sinkData :=
+    (keptSinks_iff w.smallOutcomeFlowNodes
+      w.smallOutcomeFlowSuccessor node).mp sink
+  cases inReadout : w.rootReadoutNodes node with
+  | true =>
+      exact w.rootReadoutSuccessor_none_is_outcome node
+        inReadout (by
+          simpa [HedgeWitness.smallOutcomeFlowSuccessor,
+            forestChildPrioritize, inReadout] using sinkData.2)
+  | false =>
+      have inSmall : w.small node = true := by
+        simpa [HedgeWitness.smallOutcomeFlowNodes, NodeSet.union, inReadout]
+          using sinkData.1
+      have childNone : restrictChild w.small w.child node = none := by
+        simpa [HedgeWitness.smallOutcomeFlowSuccessor,
+          forestChildPrioritize, inReadout] using sinkData.2
+      have inRoot := (w.small_forest.roots_exact node).mpr
+        ⟨inSmall, childNone⟩
+      have rootInReadout := w.root_in_rootReadoutNodes node inRoot
+      rw [inReadout] at rootInReadout
+      contradiction
+
+/-- The composed large flow has exactly the canonical readout sinks.  The
+forward direction rules out a non-readout sink using the c-forest's exact
+root set; the reverse direction is immediate from readout priority. -/
+theorem HedgeWitness.largeOutcomeFlowSinks_eq_rootReadoutSinks
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    keptSinks w.largeOutcomeFlowNodes w.largeOutcomeFlowSuccessor =
+      keptSinks w.rootReadoutNodes w.rootReadoutSuccessor := by
+  funext node
+  apply Bool.eq_iff_iff.mpr
+  constructor
+  · intro combinedSink
+    have combined :=
+      (keptSinks_iff w.largeOutcomeFlowNodes
+        w.largeOutcomeFlowSuccessor node).mp combinedSink
+    have inReadout : w.rootReadoutNodes node = true := by
+      cases readout : w.rootReadoutNodes node with
+      | true => rfl
+      | false =>
+          have inLarge : w.large node = true := by
+            simpa [HedgeWitness.largeOutcomeFlowNodes, NodeSet.union,
+              readout] using combined.1
+          have childNone : w.child node = none := by
+            simpa [HedgeWitness.largeOutcomeFlowSuccessor,
+              forestChildPrioritize, readout] using combined.2
+          have inRoot := (w.large_forest.roots_exact node).mpr
+            ⟨inLarge, childNone⟩
+          have rootInReadout := w.root_in_rootReadoutNodes node inRoot
+          rw [readout] at rootInReadout
+          contradiction
+    have routeNone : w.rootReadoutSuccessor node = none := by
+      simpa [HedgeWitness.largeOutcomeFlowSuccessor,
+        forestChildPrioritize, inReadout] using combined.2
+    exact (keptSinks_iff w.rootReadoutNodes
+      w.rootReadoutSuccessor node).mpr ⟨inReadout, routeNone⟩
+  · intro routeSink
+    have route :=
+      (keptSinks_iff w.rootReadoutNodes
+        w.rootReadoutSuccessor node).mp routeSink
+    have combinedNode : w.largeOutcomeFlowNodes node = true := by
+      simp [HedgeWitness.largeOutcomeFlowNodes, NodeSet.union, route.1]
+    have combinedNone : w.largeOutcomeFlowSuccessor node = none := by
+      simp [HedgeWitness.largeOutcomeFlowSuccessor,
+        forestChildPrioritize, route.1, route.2]
+    exact (keptSinks_iff w.largeOutcomeFlowNodes
+      w.largeOutcomeFlowSuccessor node).mpr ⟨combinedNode, combinedNone⟩
+
+/-- The composed small flow has the same canonical sink set.  Consequently
+the large and small sink-parity theorems concern one common outcome event,
+not merely two events that happen to lie inside the query outcome. -/
+theorem HedgeWitness.smallOutcomeFlowSinks_eq_rootReadoutSinks
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    keptSinks w.smallOutcomeFlowNodes w.smallOutcomeFlowSuccessor =
+      keptSinks w.rootReadoutNodes w.rootReadoutSuccessor := by
+  funext node
+  apply Bool.eq_iff_iff.mpr
+  constructor
+  · intro combinedSink
+    have combined :=
+      (keptSinks_iff w.smallOutcomeFlowNodes
+        w.smallOutcomeFlowSuccessor node).mp combinedSink
+    have inReadout : w.rootReadoutNodes node = true := by
+      cases readout : w.rootReadoutNodes node with
+      | true => rfl
+      | false =>
+          have inSmall : w.small node = true := by
+            simpa [HedgeWitness.smallOutcomeFlowNodes, NodeSet.union,
+              readout] using combined.1
+          have childNone : restrictChild w.small w.child node = none := by
+            simpa [HedgeWitness.smallOutcomeFlowSuccessor,
+              forestChildPrioritize, readout] using combined.2
+          have inRoot := (w.small_forest.roots_exact node).mpr
+            ⟨inSmall, childNone⟩
+          have rootInReadout := w.root_in_rootReadoutNodes node inRoot
+          rw [readout] at rootInReadout
+          contradiction
+    have routeNone : w.rootReadoutSuccessor node = none := by
+      simpa [HedgeWitness.smallOutcomeFlowSuccessor,
+        forestChildPrioritize, inReadout] using combined.2
+    exact (keptSinks_iff w.rootReadoutNodes
+      w.rootReadoutSuccessor node).mpr ⟨inReadout, routeNone⟩
+  · intro routeSink
+    have route :=
+      (keptSinks_iff w.rootReadoutNodes
+        w.rootReadoutSuccessor node).mp routeSink
+    have combinedNode : w.smallOutcomeFlowNodes node = true := by
+      simp [HedgeWitness.smallOutcomeFlowNodes, NodeSet.union, route.1]
+    have combinedNone : w.smallOutcomeFlowSuccessor node = none := by
+      simp [HedgeWitness.smallOutcomeFlowSuccessor,
+        forestChildPrioritize, route.1, route.2]
+    exact (keptSinks_iff w.smallOutcomeFlowNodes
+      w.smallOutcomeFlowSuccessor node).mpr ⟨combinedNode, combinedNone⟩
 
 /-- Canonical action-root-to-outcome route carried by the hedge witness. -/
 def HedgeWitness.parityReadoutRoute
@@ -32937,6 +33232,50 @@ theorem hedgeRoutingFlow_conservation
         | some _child => bits parent)) false = nonSinkParity
   cases sourceParity <;> cases nonSinkParity <;> rfl
 
+/-- Recover the effective local source of an arbitrary routed bit labelling:
+the vertex bit with all incoming routed bits cancelled by XOR. -/
+def hedgeRoutingLocalSource (kept : ForestChild S)
+    (bits : Fin S.count → Bool) (node : Fin S.count) : Bool :=
+  Bool.xor (bits node) (hedgeRoutingIncomingBits kept bits node)
+
+/-- Flow conservation can always be stated using the recovered local source.
+The Boolean group law makes the required local equation an identity, so this
+form remains useful at vertices whose structural mechanism was intervened
+upon and no longer satisfies its original equation. -/
+theorem hedgeRoutingFlow_conservation_localSource
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (wellFormed : childWellFormedBool nodes kept = true)
+    (bits : Fin S.count → Bool) :
+    hedgeNodeXor (keptSinks nodes kept) bits =
+      hedgeNodeXor nodes (hedgeRoutingLocalSource kept bits) := by
+  apply hedgeRoutingFlow_conservation nodes kept wellFormed
+  intro node _selected
+  unfold hedgeRoutingLocalSource
+  generalize bits node = bit
+  generalize hedgeRoutingIncomingBits kept bits node = incoming
+  cases bit <;> cases incoming <;> rfl
+
+/-- Incoming parity is unchanged when two labellings agree at every parent
+that the successor map actually sends to the chosen child.  The proof scans
+the finite parent enumeration and does not decide any proposition globally. -/
+theorem hedgeRoutingIncomingBits_congr_of_kept
+    (kept : ForestChild S) (child : Fin S.count)
+    (left right : Fin S.count → Bool)
+    (equal : forall parent, kept parent = some child →
+      left parent = right parent) :
+    hedgeRoutingIncomingBits kept left child =
+      hedgeRoutingIncomingBits kept right child := by
+  unfold hedgeRoutingIncomingBits hedgeRoutingParentEntry
+  apply foldl_congr
+  intro total parent
+  cases keptEq : kept parent with
+  | none => simp
+  | some selectedChild =>
+      by_cases selected : selectedChild = child
+      · subst selectedChild
+        simp [equal parent keptEq]
+      · simp [selected]
+
 /-!
 The hedge's canonical all-root route forest now inherits the generic
 conservation law.  Its source vector is the supplied bit vector masked to the
@@ -33258,6 +33597,115 @@ theorem HedgeWitness.rootFlowReadoutModel_exists_outcome_bit_doSecond
       (keptSinks w.rootReadoutNodes w.rootReadoutSuccessor) outcome).mp member
   exact ⟨outcome, w.rootReadoutSinks_subset_outcome outcome sink, outputBit⟩
 
+/-!
+### C-forest incidence flow all the way to query outcomes
+
+The abstract root-flow wrapper above still requires a caller to reconstruct
+the root bits.  The models below instead put the pair-root incidence directly
+at every selected c-forest vertex and use the route-priority combined
+successor.  Forest incidence therefore flows toward common roots and, once it
+touches a canonical readout route, continues to a query outcome without
+splitting or returning through an intervened vertex.
+
+On the small side every selected vertex is free under the query intervention.
+Flow conservation and the finite handshaking identity immediately force even
+parity at the outcome sinks.  The corresponding odd large-side construction
+is developed separately because its selected action vertices deliberately
+break their local structural equations.
+-/
+
+/-- Local source bit supplied by pair-roots internal to `nodes`; vertices
+outside the forest inject zero into the routing flow. -/
+def hedgeForestIncidenceSource (G : ObservedGraph S)
+    (nodes : NodeSet S) (child : Fin S.count)
+    (_parents : S.ParentValues child)
+    (inputs : (hedgeLatentExtension G).Inputs child) : Bool :=
+  if nodes child then hedgeXorPairBitsWithin G nodes child inputs else false
+
+/-- Large c-forest incidence followed through the combined action-free
+outcome routing map. -/
+def HedgeWitness.largeOutcomeFlowModel
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    ExactModel S :=
+  hedgeFlowReadoutModel rich w.largeOutcomeFlowNodes
+    w.largeOutcomeFlowSuccessor (w.largeParityModel rich)
+    (hedgeForestIncidenceSource G w.large)
+
+/-- Small c-forest incidence followed through the corresponding combined
+outcome routing map. -/
+def HedgeWitness.smallOutcomeFlowModel
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    ExactModel S :=
+  hedgeFlowReadoutModel rich w.smallOutcomeFlowNodes
+    w.smallOutcomeFlowSuccessor (w.smallParityModel rich)
+    (hedgeForestIncidenceSource G w.small)
+
+/-- The combined large flow changes mechanisms but retains the canonical
+latent extension and projected graph. -/
+theorem HedgeWitness.largeOutcomeFlowModel_compatible
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Compatible (w.largeOutcomeFlowModel rich) G :=
+  hedgeFlowReadoutModel_compatible rich w.largeOutcomeFlowNodes
+    w.largeOutcomeFlowSuccessor (w.largeParityModel rich)
+    (hedgeForestIncidenceSource G w.large)
+    (w.largeParityModel_compatible rich)
+
+/-- The combined small flow has the same compatibility guarantee. -/
+theorem HedgeWitness.smallOutcomeFlowModel_compatible
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Compatible (w.smallOutcomeFlowModel rich) G :=
+  hedgeFlowReadoutModel_compatible rich w.smallOutcomeFlowNodes
+    w.smallOutcomeFlowSuccessor (w.smallParityModel rich)
+    (hedgeForestIncidenceSource G w.small)
+    (w.smallParityModel_compatible rich)
+
+/-- At a free vertex of the combined large flow, cancelling its incoming
+routed bits recovers exactly the pair-root incidence injected by the large
+c-forest.  This packages the structural equation in the effective-source
+form needed to compare an ordinary run with the endpoint-toggle run. -/
+theorem HedgeWitness.largeOutcomeFlowModel_localSource_of_free
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (hedgeLatentExtension G).Assignment)
+    (child : Fin S.count) (selected : w.largeOutcomeFlowNodes child = true)
+    (free : hedgeDoSecond rich q.action child = none) :
+    let bits := fun node => hedgeIsSecond rich node
+      ((w.largeOutcomeFlowModel rich).evalNodeUnder
+        (hedgeDoSecond rich q.action) u node)
+    hedgeRoutingLocalSource w.largeOutcomeFlowSuccessor bits child =
+      if w.large child then
+        hedgeXorPairBitsWithin G w.large child (fun latent _ => u latent)
+      else false := by
+  dsimp only
+  let bits := fun node => hedgeIsSecond rich node
+    ((w.largeOutcomeFlowModel rich).evalNodeUnder
+      (hedgeDoSecond rich q.action) u node)
+  have equation := hedgeFlowReadoutModel_evalNodeUnder_bit rich
+    w.largeOutcomeFlowNodes w.largeOutcomeFlowSuccessor
+    w.largeOutcomeFlowSuccessor_wellFormed (w.largeParityModel rich)
+    (hedgeForestIncidenceSource G w.large)
+    (hedgeDoSecond rich q.action) u child selected free
+  change bits child = Bool.xor
+    (if w.large child then
+      hedgeXorPairBitsWithin G w.large child (fun latent _ => u latent)
+    else false)
+    (hedgeRoutingIncomingBits w.largeOutcomeFlowSuccessor bits child) at equation
+  unfold hedgeRoutingLocalSource
+  change Bool.xor (bits child)
+      (hedgeRoutingIncomingBits w.largeOutcomeFlowSuccessor bits child) = _
+  rw [equation]
+  generalize
+    (if w.large child then
+      hedgeXorPairBitsWithin G w.large child (fun latent _ => u latent)
+    else false) = source
+  generalize hedgeRoutingIncomingBits w.largeOutcomeFlowSuccessor bits child =
+    incoming
+  cases source <;> cases incoming <;> rfl
+
 /-- Restricted incidence is the rootwise fold of single-root contributions. -/
 theorem hedgeXorPairBitsWithinFrom_eq_contribution_fold
     (G : ObservedGraph S) (nodes : NodeSet S)
@@ -33306,6 +33754,80 @@ theorem hedgeNodeXor_incidence
       rw [hedgePairRootContributionWithin_parity G nodes root
         (pairBits root)]
       simp)
+
+/-- Masking incidence to a forest inside a larger union does not change its
+total XOR, which is even by the pair-root handshaking identity. -/
+theorem hedgeNodeXor_incidenceSource_union
+    (G : ObservedGraph S) (nodes extra : NodeSet S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgeNodeXor (NodeSet.union extra nodes) (fun child =>
+        if nodes child then
+          hedgeXorPairBitsWithin G nodes child (fun latent _ => u latent)
+        else false) = false := by
+  rw [hedgeNodeXor_mask_of_subset nodes (NodeSet.union extra nodes)
+    (NodeSet.subset_union_right extra nodes)
+    (fun child => hedgeXorPairBitsWithin G nodes child
+      (fun latent _ => u latent))]
+  have converted :
+      hedgeNodeXor nodes (fun child =>
+          hedgeXorPairBitsWithin G nodes child (fun latent _ => u latent)) =
+        hedgeNodeXor nodes (fun child =>
+          hedgeXorPairBitsWithinFrom G nodes child (hedgePairBitsOf G u)) := by
+    unfold hedgeNodeXor
+    apply foldl_congr
+    intro total child
+    change Bool.xor total
+        (hedgeXorPairBitsWithin G nodes child (fun latent _ => u latent)) =
+      Bool.xor total
+        (hedgeXorPairBitsWithinFrom G nodes child (hedgePairBitsOf G u))
+    rw [hedgeXorPairBitsWithin_pairBitsOf]
+  rw [converted]
+  exact hedgeNodeXor_incidence G nodes (hedgePairBitsOf G u)
+
+/-- Every latent assignment of the combined small model has even parity over
+its query-outcome sinks under `do(X = second)`.  Both the small forest and the
+readout routes avoid the action, so all local flow equations remain active;
+their total source is an even internal incidence vector. -/
+theorem HedgeWitness.smallOutcomeFlowModel_sinkParity_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgeNodeXor
+        (keptSinks w.smallOutcomeFlowNodes w.smallOutcomeFlowSuccessor)
+        (fun node => hedgeIsSecond rich node
+          ((w.smallOutcomeFlowModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action) u node)) = false := by
+  let bits := fun node => hedgeIsSecond rich node
+    ((w.smallOutcomeFlowModel rich).evalNodeUnder
+      (hedgeDoSecond rich q.action) u node)
+  let source := fun child =>
+    if w.small child then
+      hedgeXorPairBitsWithin G w.small child (fun latent _ => u latent)
+    else false
+  have flow : forall node, w.smallOutcomeFlowNodes node = true →
+      bits node = Bool.xor (source node)
+        (hedgeRoutingIncomingBits w.smallOutcomeFlowSuccessor bits node) := by
+    intro node selected
+    have free : hedgeDoSecond rich q.action node = none := by
+      apply hedgeDoSecond_of_false rich q.action
+      cases inReadout : w.rootReadoutNodes node with
+      | true => exact w.rootReadoutNodes_avoids_action node inReadout
+      | false =>
+          have inSmall : w.small node = true := by
+            simpa [HedgeWitness.smallOutcomeFlowNodes, NodeSet.union,
+              inReadout] using selected
+          exact w.small_avoids_intervention node inSmall
+    have equation := hedgeFlowReadoutModel_evalNodeUnder_bit rich
+      w.smallOutcomeFlowNodes w.smallOutcomeFlowSuccessor
+      w.smallOutcomeFlowSuccessor_wellFormed (w.smallParityModel rich)
+      (hedgeForestIncidenceSource G w.small)
+      (hedgeDoSecond rich q.action) u node selected free
+    simpa [bits, source, HedgeWitness.smallOutcomeFlowModel,
+      hedgeForestIncidenceSource] using equation
+  rw [hedgeRoutingFlow_conservation w.smallOutcomeFlowNodes
+    w.smallOutcomeFlowSuccessor w.smallOutcomeFlowSuccessor_wellFormed
+    source bits flow]
+  exact hedgeNodeXor_incidenceSource_union G w.small w.rootReadoutNodes u
 
 /-- Every restricted incidence vector has an even number of true vertices. -/
 theorem hedgeXorPairBitsWithinFrom_even
@@ -36102,6 +36624,311 @@ theorem HedgeWitness.exists_largeParityModel_rootParity_true_doSecond
         congrArg (fun bit : Bool => !bit) parityEq
 
 /-!
+### Transporting the large endpoint toggle to outcome sinks
+
+The root-parity witness above changes pair-root incidence at the action seed
+and one common root.  In the combined flow, the action endpoint is masked by
+the intervention while the root endpoint remains active.  To make that
+statement global, first compare the two executions recursively at every
+large-forest vertex that has not yet entered a readout route.  Incoming bits
+at an intervened vertex then agree, so its *effective* local source is also
+unchanged.  At free vertices the effective source is their pair incidence,
+which changes only at the selected common root.  Conservation therefore
+turns the same one-bit toggle into a complement of total outcome-sink parity.
+
+All recursion follows strict directed topological order.  The final witness
+case-splits only on a computed `Bool`, never on an arbitrary proposition.
+-/
+
+/-- Before the composed route reaches its readout portion, the baseline and
+endpoint-toggle executions have identical encoded bits.  An intervened node
+is fixed in both runs; a free node has unchanged incidence and recursively
+unchanged incoming parents. -/
+theorem HedgeWitness.largeOutcomeFlowModel_bit_eq_of_not_readout
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (child : Fin S.count) (inLarge : w.large child = true)
+    (notReadout : w.rootReadoutNodes child = false) :
+    hedgeIsSecond rich child
+        ((w.largeOutcomeFlowModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action)
+          (w.largeParityBaselineLatent rich) child) =
+      hedgeIsSecond rich child
+        ((w.largeOutcomeFlowModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action)
+          (w.largeParityToggleLatent rich) child) := by
+  have selected : w.largeOutcomeFlowNodes child = true := by
+    simp [HedgeWitness.largeOutcomeFlowNodes, NodeSet.union, inLarge]
+  cases freeEq : hedgeDoSecond rich q.action child with
+  | some value =>
+      rw [FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.evalNodeUnder]
+      unfold FiniteLatentSCM.equationUnder
+      simp [freeEq]
+  | none =>
+      have notSeed : child ≠ w.actionSeed := by
+        intro equal
+        subst child
+        rw [hedgeDoSecond_of_true rich q.action w.actionSeed_in_action] at freeEq
+        contradiction
+      have notRoot : child ≠ w.actionRoot := by
+        intro equal
+        subst child
+        have rootReadout := w.root_in_rootReadoutNodes w.actionRoot
+          w.actionRoot_in_roots
+        rw [notReadout] at rootReadout
+        contradiction
+      have baselineEq := hedgeFlowReadoutModel_evalNodeUnder_bit rich
+        w.largeOutcomeFlowNodes w.largeOutcomeFlowSuccessor
+        w.largeOutcomeFlowSuccessor_wellFormed (w.largeParityModel rich)
+        (hedgeForestIncidenceSource G w.large)
+        (hedgeDoSecond rich q.action) (w.largeParityBaselineLatent rich)
+        child selected freeEq
+      have toggleEq := hedgeFlowReadoutModel_evalNodeUnder_bit rich
+        w.largeOutcomeFlowNodes w.largeOutcomeFlowSuccessor
+        w.largeOutcomeFlowSuccessor_wellFormed (w.largeParityModel rich)
+        (hedgeForestIncidenceSource G w.large)
+        (hedgeDoSecond rich q.action) (w.largeParityToggleLatent rich)
+        child selected freeEq
+      simp only [hedgeForestIncidenceSource, inLarge, if_true] at baselineEq toggleEq
+      have baselineIncidence := hedgeXorPairBitsWithin_pairBitsOf
+        G w.large (w.largeParityBaselineLatent rich) child
+      have toggleIncidence := hedgeXorPairBitsWithin_pairBitsOf
+        G w.large (w.largeParityToggleLatent rich) child
+      unfold HedgeWitness.largeOutcomeFlowModel
+      simp only [HedgeWitness.largeParityModel, hedgeForestParityModel] at baselineEq toggleEq ⊢
+      rw [baselineEq, toggleEq,
+        baselineIncidence, toggleIncidence,
+        w.pairBitsOf_largeParityBaselineLatent rich,
+        w.pairBitsOf_largeParityToggleLatent rich,
+        hedgeXorPairBitsWithinFrom_zero,
+        w.actionRootTogglePairBits_spec child inLarge]
+      have targetFalse : w.actionRootToggleTarget child = false := by
+        simp [HedgeWitness.actionRootToggleTarget, notSeed, notRoot]
+      rw [targetFalse]
+      simp only [Bool.false_xor]
+      apply hedgeRoutingIncomingBits_congr_of_kept
+      intro parent found
+      have parentNotReadout :=
+        w.largeOutcomeFlowSuccessor_parent_not_readout notReadout found
+      have parentSelected :=
+        (childWellFormed_edge w.largeOutcomeFlowNodes
+          w.largeOutcomeFlowSuccessor
+          w.largeOutcomeFlowSuccessor_wellFormed found).1
+      have parentLarge : w.large parent = true := by
+        cases parentInLarge : w.large parent with
+        | true => rfl
+        | false =>
+            simp [HedgeWitness.largeOutcomeFlowNodes, NodeSet.union,
+              parentNotReadout, parentInLarge] at parentSelected
+      exact w.largeOutcomeFlowModel_bit_eq_of_not_readout rich parent
+        parentLarge parentNotReadout
+termination_by child.val
+decreasing_by
+  exact S.directed_earlier
+    (childWellFormed_edge w.largeOutcomeFlowNodes
+      w.largeOutcomeFlowSuccessor
+      w.largeOutcomeFlowSuccessor_wellFormed found).2.2
+
+/-- The effective local-source vectors of the two large executions differ at
+exactly `actionRoot`.  Action vertices themselves have the same forced bit
+and the same incoming parity; free vertices expose the explicit two-endpoint
+incidence toggle, whose action-seed endpoint cannot occur in the free case. -/
+theorem HedgeWitness.largeOutcomeFlowModel_localSource_toggle
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (node : Fin S.count) (selected : w.largeOutcomeFlowNodes node = true) :
+    let baselineBits := fun child => hedgeIsSecond rich child
+      ((w.largeOutcomeFlowModel rich).evalNodeUnder
+        (hedgeDoSecond rich q.action)
+        (w.largeParityBaselineLatent rich) child)
+    let toggleBits := fun child => hedgeIsSecond rich child
+      ((w.largeOutcomeFlowModel rich).evalNodeUnder
+        (hedgeDoSecond rich q.action)
+        (w.largeParityToggleLatent rich) child)
+    hedgeRoutingLocalSource w.largeOutcomeFlowSuccessor toggleBits node =
+      Bool.xor
+        (hedgeRoutingLocalSource w.largeOutcomeFlowSuccessor baselineBits node)
+        (decide (node = w.actionRoot)) := by
+  dsimp only
+  let baselineBits := fun child => hedgeIsSecond rich child
+    ((w.largeOutcomeFlowModel rich).evalNodeUnder
+      (hedgeDoSecond rich q.action)
+      (w.largeParityBaselineLatent rich) child)
+  let toggleBits := fun child => hedgeIsSecond rich child
+    ((w.largeOutcomeFlowModel rich).evalNodeUnder
+      (hedgeDoSecond rich q.action)
+      (w.largeParityToggleLatent rich) child)
+  cases inAction : q.action node with
+  | true =>
+      have notReadout : w.rootReadoutNodes node = false := by
+        cases readout : w.rootReadoutNodes node with
+        | false => rfl
+        | true =>
+            have avoids := w.rootReadoutNodes_avoids_action node readout
+            rw [inAction] at avoids
+            contradiction
+      have notRoot : node ≠ w.actionRoot := by
+        intro equal
+        subst node
+        rw [w.actionRoot_not_in_action] at inAction
+        contradiction
+      have baselineBit : baselineBits node = true := by
+        unfold baselineBits
+        rw [FiniteLatentSCM.evalNodeUnder]
+        unfold FiniteLatentSCM.equationUnder
+        rw [hedgeDoSecond_of_true rich q.action inAction]
+        exact hedgeIsSecond_second rich node
+      have toggleBit : toggleBits node = true := by
+        unfold toggleBits
+        rw [FiniteLatentSCM.evalNodeUnder]
+        unfold FiniteLatentSCM.equationUnder
+        rw [hedgeDoSecond_of_true rich q.action inAction]
+        exact hedgeIsSecond_second rich node
+      have incomingEq :
+          hedgeRoutingIncomingBits w.largeOutcomeFlowSuccessor
+              baselineBits node =
+            hedgeRoutingIncomingBits w.largeOutcomeFlowSuccessor
+              toggleBits node := by
+        apply hedgeRoutingIncomingBits_congr_of_kept
+        intro parent found
+        have parentNotReadout :=
+          w.largeOutcomeFlowSuccessor_parent_not_readout notReadout found
+        have parentSelected :=
+          (childWellFormed_edge w.largeOutcomeFlowNodes
+            w.largeOutcomeFlowSuccessor
+            w.largeOutcomeFlowSuccessor_wellFormed found).1
+        have parentLarge : w.large parent = true := by
+          cases parentInLarge : w.large parent with
+          | true => rfl
+          | false =>
+              simp [HedgeWitness.largeOutcomeFlowNodes, NodeSet.union,
+                parentNotReadout, parentInLarge] at parentSelected
+        exact w.largeOutcomeFlowModel_bit_eq_of_not_readout rich parent
+          parentLarge parentNotReadout
+      unfold hedgeRoutingLocalSource
+      change Bool.xor (toggleBits node)
+          (hedgeRoutingIncomingBits w.largeOutcomeFlowSuccessor
+            toggleBits node) =
+        Bool.xor
+          (Bool.xor (baselineBits node)
+            (hedgeRoutingIncomingBits w.largeOutcomeFlowSuccessor
+              baselineBits node))
+          (decide (node = w.actionRoot))
+      rw [baselineBit, toggleBit, incomingEq]
+      simp [notRoot]
+  | false =>
+      have free := hedgeDoSecond_of_false rich q.action inAction
+      rw [w.largeOutcomeFlowModel_localSource_of_free rich
+          (w.largeParityBaselineLatent rich) node selected free,
+        w.largeOutcomeFlowModel_localSource_of_free rich
+          (w.largeParityToggleLatent rich) node selected free]
+      cases inLarge : w.large node with
+      | false =>
+          have notRoot : node ≠ w.actionRoot := by
+            intro equal
+            subst node
+            have rootInLarge := w.actionRoot_in_large
+            rw [inLarge] at rootInLarge
+            contradiction
+          simp [notRoot]
+      | true =>
+          have notSeed : node ≠ w.actionSeed := by
+            intro equal
+            subst node
+            rw [w.actionSeed_in_action] at inAction
+            contradiction
+          rw [hedgeXorPairBitsWithin_pairBitsOf,
+            hedgeXorPairBitsWithin_pairBitsOf,
+            w.pairBitsOf_largeParityBaselineLatent rich,
+            w.pairBitsOf_largeParityToggleLatent rich,
+            hedgeXorPairBitsWithinFrom_zero,
+            w.actionRootTogglePairBits_spec node inLarge]
+          unfold HedgeWitness.actionRootToggleTarget
+          simp [notSeed]
+
+/-- The endpoint toggle complements total parity at the combined flow's
+query-outcome sinks.  Conservation moves the pointwise local-source toggle
+to the sinks, and the finite node list contains `actionRoot` exactly once. -/
+theorem HedgeWitness.largeOutcomeFlowModel_sinkParity_toggle
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    let sinks := keptSinks w.largeOutcomeFlowNodes
+      w.largeOutcomeFlowSuccessor
+    hedgeNodeXor sinks (fun node => hedgeIsSecond rich node
+        ((w.largeOutcomeFlowModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action)
+          (w.largeParityToggleLatent rich) node)) =
+      !hedgeNodeXor sinks (fun node => hedgeIsSecond rich node
+        ((w.largeOutcomeFlowModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action)
+          (w.largeParityBaselineLatent rich) node)) := by
+  dsimp only
+  let baselineBits := fun node => hedgeIsSecond rich node
+    ((w.largeOutcomeFlowModel rich).evalNodeUnder
+      (hedgeDoSecond rich q.action)
+      (w.largeParityBaselineLatent rich) node)
+  let toggleBits := fun node => hedgeIsSecond rich node
+    ((w.largeOutcomeFlowModel rich).evalNodeUnder
+      (hedgeDoSecond rich q.action)
+      (w.largeParityToggleLatent rich) node)
+  rw [hedgeRoutingFlow_conservation_localSource w.largeOutcomeFlowNodes
+      w.largeOutcomeFlowSuccessor
+      w.largeOutcomeFlowSuccessor_wellFormed toggleBits,
+    hedgeRoutingFlow_conservation_localSource w.largeOutcomeFlowNodes
+      w.largeOutcomeFlowSuccessor
+      w.largeOutcomeFlowSuccessor_wellFormed baselineBits]
+  unfold hedgeNodeXor
+  have rewritten :
+      (NodeSet.members w.largeOutcomeFlowNodes).foldl
+          (fun total node => Bool.xor total
+            (hedgeRoutingLocalSource w.largeOutcomeFlowSuccessor
+              toggleBits node)) false =
+        (NodeSet.members w.largeOutcomeFlowNodes).foldl
+          (fun total node => Bool.xor total
+            (Bool.xor
+              (hedgeRoutingLocalSource w.largeOutcomeFlowSuccessor
+                baselineBits node)
+              (decide (node = w.actionRoot)))) false := by
+    apply foldl_congr_of_mem
+    intro total node member
+    rw [w.largeOutcomeFlowModel_localSource_toggle rich node
+      ((NodeSet.mem_members_iff w.largeOutcomeFlowNodes node).mp member)]
+  rw [rewritten, foldl_xor_pointwise,
+    foldl_xor_indicator_of_mem_nodup
+      (NodeSet.members w.largeOutcomeFlowNodes) w.actionRoot
+      ((NodeSet.mem_members_iff w.largeOutcomeFlowNodes w.actionRoot).mpr
+        (by simp [HedgeWitness.largeOutcomeFlowNodes, NodeSet.union,
+          w.actionRoot_in_large]))
+      (NodeSet.nodup_members w.largeOutcomeFlowNodes)]
+  simp [baselineBits]
+
+/-- One of the two explicit latent assignments has odd combined sink parity
+in the large model.  This is the outcome-level counterpart of the earlier
+common-root witness and is again obtained by a computable Boolean split. -/
+theorem HedgeWitness.exists_largeOutcomeFlowModel_sinkParity_true_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Exists fun u : (hedgeLatentExtension G).Assignment =>
+      hedgeNodeXor
+        (keptSinks w.largeOutcomeFlowNodes w.largeOutcomeFlowSuccessor)
+        (fun node => hedgeIsSecond rich node
+          ((w.largeOutcomeFlowModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action) u node)) = true := by
+  let baselineParity := hedgeNodeXor
+    (keptSinks w.largeOutcomeFlowNodes w.largeOutcomeFlowSuccessor)
+    (fun node => hedgeIsSecond rich node
+      ((w.largeOutcomeFlowModel rich).evalNodeUnder
+        (hedgeDoSecond rich q.action)
+        (w.largeParityBaselineLatent rich) node))
+  cases parityEq : baselineParity with
+  | true => exact ⟨w.largeParityBaselineLatent rich, parityEq⟩
+  | false =>
+      refine ⟨w.largeParityToggleLatent rich, ?_⟩
+      rw [w.largeOutcomeFlowModel_sinkParity_toggle rich]
+      simpa [baselineParity] using
+        congrArg (fun bit : Bool => !bit) parityEq
+
+/-!
 ### Root parity of the action-free small forest
 
 The all-root transport layer needs a source invariant from the two original
@@ -36243,6 +37070,279 @@ theorem hedgeDoSecondIntervention_targets
   cases selected : action node <;>
     simp [hedgeDoSecondIntervention, HardIntervention.targets,
       hedgeDoSecond, selected]
+
+/-!
+### Separation on the original query outcome
+
+The two composed flows share the canonical root-readout sink set, and that
+set lies inside `q.outcome`.  Odd parity on those sinks is therefore a local
+event for an interventional query whose kernel is exactly the original `q`.
+The small combined model misses the event for every latent assignment; one
+of the two explicit large assignments hits it.  Equal product denominators
+then turn positive-versus-zero event mass into genuine kernel separation.
+
+This closes the *interventional separation* part of the general hedge leaf.
+It deliberately does not assert observational equivalence or positivity of
+the combined models; those are separate obligations below the final
+`CounterexampleIn` package.
+-/
+
+/-- Odd parity of the distinguished-value bits at the common canonical
+readout sinks.  These sinks are query outcomes, even though the event ignores
+any additional coordinates in `q.outcome`. -/
+def HedgeWitness.outcomeSinkParityEvent
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Event S.Assignment :=
+  hedgeRootParityEvent rich
+    (keptSinks w.rootReadoutNodes w.rootReadoutSuccessor)
+
+/-- Sink parity is local to the original outcome set.  Locality first holds
+on the smaller sink set and is then weakened along the proved subset. -/
+theorem HedgeWitness.outcomeSinkParityEvent_local
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    EventDependsOnlyOn q.outcome (w.outcomeSinkParityEvent rich) := by
+  intro left right agree
+  apply hedgeRootParityEvent_local rich
+    (keptSinks w.rootReadoutNodes w.rootReadoutSuccessor) left right
+  intro node inSinks
+  exact agree node (w.rootReadoutSinks_subset_outcome node inSinks)
+
+/-- Local event query for sink parity under the hedge's original action. -/
+def HedgeWitness.outcomeSinkParityInterventionalQuery
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    InterventionalQuery S where
+  intervention := hedgeDoSecondIntervention rich q.action
+  outcomeNodes := q.outcome
+  action_outcome_disjoint := by
+    rw [hedgeDoSecondIntervention_targets rich q.action]
+    exact q.action_outcome_disjoint
+  event := w.outcomeSinkParityEvent rich
+  event_local := w.outcomeSinkParityEvent_local rich
+
+/-- Forgetting the fixed sink event recovers the original distributional
+kernel query, including exactly the same action and outcome node sets. -/
+theorem HedgeWitness.outcomeSinkParityInterventionalQuery_kernelQuery_eq
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    (w.outcomeSinkParityInterventionalQuery rich).kernelQuery = q := by
+  cases q
+  simp [HedgeWitness.outcomeSinkParityInterventionalQuery,
+    InterventionalQuery.kernelQuery, hedgeDoSecondIntervention_targets]
+
+/-- The fixed-event query evaluates as the ordinary interventional event
+mass.  Hedge failure guarantees a nonempty action, so the query semantics
+selects the interventional rather than observational branch. -/
+theorem HedgeWitness.outcomeSinkParityInterventionalQuery_value
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (model : ExactModel S) :
+    (w.outcomeSinkParityInterventionalQuery rich).value model =
+      model.interventionalValue (hedgeDoSecond rich q.action)
+        (w.outcomeSinkParityEvent rich) := by
+  rcases w.large_meets_intervention with ⟨node, _inLarge, inAction⟩
+  have actionNonempty : finAny S.count q.action = true :=
+    finAny_eq_true_of q.action node inAction
+  have targetNonempty :
+      finAny S.count (hedgeDoSecondIntervention rich q.action).targets = true := by
+    rw [hedgeDoSecondIntervention_targets rich q.action]
+    exact actionNonempty
+  unfold InterventionalQuery.value InterventionalQuery.distribution
+  change
+    (if finAny S.count (hedgeDoSecondIntervention rich q.action).targets then
+        model.interventionalDist (hedgeDoSecond rich q.action)
+      else model.observationalDist).probVal
+        (w.outcomeSinkParityEvent rich) = _
+  rw [if_pos targetNonempty]
+  rfl
+
+/-- Every small combined execution gives even parity on the common canonical
+sink set.  The equality of sink sets converts the earlier small-flow theorem
+to the event used by the original query. -/
+theorem HedgeWitness.smallOutcomeFlowModel_outcomeSinkParityEvent_false
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    w.outcomeSinkParityEvent rich
+        ((w.smallOutcomeFlowModel rich).evalUnder
+          (hedgeDoSecond rich q.action) u) = false := by
+  unfold HedgeWitness.outcomeSinkParityEvent hedgeRootParityEvent
+  rw [← w.smallOutcomeFlowSinks_eq_rootReadoutSinks]
+  exact w.smallOutcomeFlowModel_sinkParity_doSecond rich u
+
+/-- The explicit large odd-sink witness hits the same canonical sink event. -/
+theorem HedgeWitness.exists_largeOutcomeFlowModel_outcomeSinkParityEvent_true
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Exists fun u : (hedgeLatentExtension G).Assignment =>
+      w.outcomeSinkParityEvent rich
+        ((w.largeOutcomeFlowModel rich).evalUnder
+          (hedgeDoSecond rich q.action) u) = true := by
+  rcases w.exists_largeOutcomeFlowModel_sinkParity_true_doSecond rich with
+    ⟨u, odd⟩
+  refine ⟨u, ?_⟩
+  unfold HedgeWitness.outcomeSinkParityEvent hedgeRootParityEvent
+  rw [← w.largeOutcomeFlowSinks_eq_rootReadoutSinks]
+  exact odd
+
+/-- Both combined models retain definitionally the same finite product prior. -/
+theorem HedgeWitness.outcomeFlowModel_prior_eq
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    (w.largeOutcomeFlowModel rich).prior =
+      (w.smallOutcomeFlowModel rich).prior :=
+  rfl
+
+/-- The large sink-parity event has positive natural numerator.  The explicit
+odd latent atom has unit uniform-product mass and embeds into the event. -/
+theorem HedgeWitness.largeOutcomeFlowModel_outcomeSinkParityEventMass_pos
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    0 < FiniteProbRecord.eventMass
+      (w.largeOutcomeFlowModel rich).prior.atoms
+      (fun u => w.outcomeSinkParityEvent rich
+        ((w.largeOutcomeFlowModel rich).evalUnder
+          (hedgeDoSecond rich q.action) u)) := by
+  rcases w.exists_largeOutcomeFlowModel_outcomeSinkParityEvent_true rich with
+    ⟨u, odd⟩
+  let sinkParity : Event ((hedgeLatentExtension G).Assignment) := fun v =>
+    w.outcomeSinkParityEvent rich
+      ((w.largeOutcomeFlowModel rich).evalUnder
+        (hedgeDoSecond rich q.action) v)
+  have singletonMass :
+      FiniteProbRecord.eventMass
+          (w.largeOutcomeFlowModel rich).prior.atoms
+          (FiniteProbRecord.singletonEvent u) = 1 := by
+    simpa [HedgeWitness.largeOutcomeFlowModel, hedgeFlowReadoutModel,
+      HedgeWitness.largeParityModel, hedgeForestParityModel] using
+      hedgePrior_eventMass_singleton G u
+  have subset : forall v,
+      FiniteProbRecord.singletonEvent u v = true → sinkParity v = true := by
+    intro v member
+    have equal : v = u := of_decide_eq_true (by
+      simpa [FiniteProbRecord.singletonEvent] using member)
+    simpa [sinkParity, equal] using odd
+  have monotone := FiniteProbRecord.eventMass_mono
+    (w.largeOutcomeFlowModel rich).prior.atoms
+    (FiniteProbRecord.singletonEvent u) sinkParity subset
+  change 0 < FiniteProbRecord.eventMass
+    (w.largeOutcomeFlowModel rich).prior.atoms sinkParity
+  exact Nat.lt_of_lt_of_le
+    (Nat.lt_of_lt_of_eq Nat.zero_lt_one singletonMass.symm) monotone
+
+/-- The corresponding small-model event numerator is zero pointwise. -/
+theorem HedgeWitness.smallOutcomeFlowModel_outcomeSinkParityEventMass_zero
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    FiniteProbRecord.eventMass
+      (w.smallOutcomeFlowModel rich).prior.atoms
+      (fun u => w.outcomeSinkParityEvent rich
+        ((w.smallOutcomeFlowModel rich).evalUnder
+          (hedgeDoSecond rich q.action) u)) = 0 := by
+  rw [FiniteProbRecord.eventMass_congr
+    (w.smallOutcomeFlowModel rich).prior.atoms
+    (fun u => w.outcomeSinkParityEvent rich
+      ((w.smallOutcomeFlowModel rich).evalUnder
+        (hedgeDoSecond rich q.action) u))
+    (fun _ => false)
+    (w.smallOutcomeFlowModel_outcomeSinkParityEvent_false rich)]
+  exact FiniteProbRecord.eventMass_false _
+
+/-- Positive large numerator versus zero small numerator, over equal positive
+denominators, refutes equivalence of the two interventional event values. -/
+theorem HedgeWitness.outcomeFlowModels_sinkParity_not_equiv_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Not (QProb.Equiv
+      ((w.largeOutcomeFlowModel rich).interventionalValue
+        (hedgeDoSecond rich q.action) (w.outcomeSinkParityEvent rich))
+      ((w.smallOutcomeFlowModel rich).interventionalValue
+        (hedgeDoSecond rich q.action) (w.outcomeSinkParityEvent rich))) := by
+  intro equivalent
+  have largeEq := FiniteLatentSCM.interventionalValue_eq
+    (w.largeOutcomeFlowModel rich) (hedgeDoSecond rich q.action)
+    (w.outcomeSinkParityEvent rich)
+  have smallEq := FiniteLatentSCM.interventionalValue_eq
+    (w.smallOutcomeFlowModel rich) (hedgeDoSecond rich q.action)
+    (w.outcomeSinkParityEvent rich)
+  have priorEquivalent : QProb.Equiv
+      ((w.largeOutcomeFlowModel rich).prior.probVal (fun u =>
+        w.outcomeSinkParityEvent rich
+          ((w.largeOutcomeFlowModel rich).evalUnder
+            (hedgeDoSecond rich q.action) u)))
+      ((w.smallOutcomeFlowModel rich).prior.probVal (fun u =>
+        w.outcomeSinkParityEvent rich
+          ((w.smallOutcomeFlowModel rich).evalUnder
+            (hedgeDoSecond rich q.action) u))) :=
+    QProb.equiv_trans (QProb.equiv_symm largeEq)
+      (QProb.equiv_trans equivalent smallEq)
+  have massEqual :
+      FiniteProbRecord.eventMass
+          (w.largeOutcomeFlowModel rich).prior.atoms
+          (fun u => w.outcomeSinkParityEvent rich
+            ((w.largeOutcomeFlowModel rich).evalUnder
+              (hedgeDoSecond rich q.action) u)) =
+        FiniteProbRecord.eventMass
+          (w.smallOutcomeFlowModel rich).prior.atoms
+          (fun u => w.outcomeSinkParityEvent rich
+            ((w.smallOutcomeFlowModel rich).evalUnder
+              (hedgeDoSecond rich q.action) u)) := by
+    have multiplied :
+        FiniteProbRecord.eventMass
+            (w.largeOutcomeFlowModel rich).prior.atoms
+            (fun u => w.outcomeSinkParityEvent rich
+              ((w.largeOutcomeFlowModel rich).evalUnder
+                (hedgeDoSecond rich q.action) u)) *
+          (w.smallOutcomeFlowModel rich).prior.den =
+        FiniteProbRecord.eventMass
+            (w.smallOutcomeFlowModel rich).prior.atoms
+            (fun u => w.outcomeSinkParityEvent rich
+              ((w.smallOutcomeFlowModel rich).evalUnder
+                (hedgeDoSecond rich q.action) u)) *
+          (w.largeOutcomeFlowModel rich).prior.den := by
+      simpa [QProb.Equiv, FiniteProbRecord.probVal] using priorEquivalent
+    have sameDenominator :
+        (w.largeOutcomeFlowModel rich).prior.den =
+          (w.smallOutcomeFlowModel rich).prior.den := by
+      rw [w.outcomeFlowModel_prior_eq rich]
+    rw [sameDenominator] at multiplied
+    exact Nat.eq_of_mul_eq_mul_right
+      (w.smallOutcomeFlowModel rich).prior.den_pos multiplied
+  rw [w.smallOutcomeFlowModel_outcomeSinkParityEventMass_zero rich] at massEqual
+  have positive :=
+    w.largeOutcomeFlowModel_outcomeSinkParityEventMass_pos rich
+  exact Nat.not_lt_zero 0 (massEqual ▸ positive)
+
+/-- The packaged local event query inherits the sink-parity separation. -/
+theorem HedgeWitness.outcomeSinkParityInterventionalQuery_not_equiv
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Not (QProb.Equiv
+      ((w.outcomeSinkParityInterventionalQuery rich).value
+        (w.largeOutcomeFlowModel rich))
+      ((w.outcomeSinkParityInterventionalQuery rich).value
+        (w.smallOutcomeFlowModel rich))) := by
+  simpa [w.outcomeSinkParityInterventionalQuery_value rich] using
+    w.outcomeFlowModels_sinkParity_not_equiv_doSecond rich
+
+/-- The combined models disagree on the full original distributional kernel.
+The fixed-event-to-kernel implication is constructive, and the final `simpa`
+transports across the proved equality with `q` without rewriting the
+query-indexed hedge witness itself. -/
+theorem HedgeWitness.outcomeFlowModels_query_separated
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Not (q.ValueEquivalent (w.largeOutcomeFlowModel rich)
+      (w.smallOutcomeFlowModel rich)) := by
+  intro equivalent
+  apply
+    (w.outcomeSinkParityInterventionalQuery rich).not_kernelValueEquivalent_of_not_value
+      (w.largeOutcomeFlowModel rich) (w.smallOutcomeFlowModel rich)
+      (w.outcomeSinkParityInterventionalQuery_not_equiv rich)
+  simpa only [w.outcomeSinkParityInterventionalQuery_kernelQuery_eq rich] using
+    equivalent
 
 /-- Event query that observes odd parity on the common roots under the
 original hedge action.  Common roots belong to the small forest, so the
