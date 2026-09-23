@@ -19,7 +19,9 @@ identify the two cores.  For the general global-Markov step,
 `ObservedGraph.moralLeftSide` computes the left component of the open
 ancestral moral graph, and `FiniteLatentSCM.latentMoralLeftSide` lifts that
 separator to the concrete latent coordinates of any compatible model;
-shared-root incidence is proved unable to cross the partition.
+shared-root incidence is proved unable to cross the partition.  Generic
+agreement cylinders over left and right open ancestral regions are then
+routed to complementary halves of the canonical independent latent product.
 -/
 
 namespace FiniteLatentSCM
@@ -412,6 +414,78 @@ theorem latentMoralLeftSide_eq_child
             openChild otherOpen
           rw [childSide, otherSide] at equalSides
           contradiction
+
+/-- Every latent root relevant to a node family contained in the left open
+ancestral moral component is selected by `latentMoralLeftSide`.
+
+The hypotheses are deliberately stated as four small containment facts.  A
+later do-rule proof may choose whichever backward-closed region is convenient
+for evaluation, while this lemma records only the properties of its free
+vertices that the moral separator needs. -/
+theorem latentMoralLeftSide_eq_true_of_relevant
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (mutilation : GraphMutilation S)
+    (left right conditioned nodes : NodeSet S)
+    (intervention : (i : Fin S.count) -> Option (S.Value i))
+    (free : forall child, intervention child = none ->
+      mutilation.removeIncoming child = false)
+    (ancestral : NodeSet.Subset nodes (fun child =>
+      G.ancestorOf mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        (.observed child)))
+    (openNodes : NodeSet.Subset nodes (fun child => !conditioned child))
+    (onLeft : NodeSet.Subset nodes (fun child =>
+      G.moralLeftSide mutilation left right conditioned (.observed child)))
+    (root : Fin model.latent.count)
+    (relevant : model.latentRelevantUnder intervention nodes root = true) :
+    model.latentMoralLeftSide G mutilation left right conditioned root =
+      true := by
+  rcases (model.latentRelevantUnder_eq_true_iff intervention nodes root).mp
+      relevant with
+    ⟨child, selected, notIntervened, incident⟩
+  have childSide := model.latentMoralLeftSide_eq_child G projected
+    mutilation left right conditioned root child incident
+    (free child notIntervened) (ancestral child selected)
+    (by simpa using openNodes child selected)
+  exact childSide.trans (onLeft child selected)
+
+/-- Every latent root relevant to a node family contained in the right open
+ancestral moral component is unselected by `latentMoralLeftSide`.
+
+Together with `latentMoralLeftSide_eq_true_of_relevant`, this turns the
+canonical graph cut into complementary coordinate families of the model's
+actual finite latent product. -/
+theorem latentMoralLeftSide_eq_false_of_relevant
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (mutilation : GraphMutilation S)
+    (left right conditioned nodes : NodeSet S)
+    (intervention : (i : Fin S.count) -> Option (S.Value i))
+    (free : forall child, intervention child = none ->
+      mutilation.removeIncoming child = false)
+    (ancestral : NodeSet.Subset nodes (fun child =>
+      G.ancestorOf mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        (.observed child)))
+    (openNodes : NodeSet.Subset nodes (fun child => !conditioned child))
+    (onRight : NodeSet.Subset nodes (fun child =>
+      !G.moralLeftSide mutilation left right conditioned (.observed child)))
+    (root : Fin model.latent.count)
+    (relevant : model.latentRelevantUnder intervention nodes root = true) :
+    model.latentMoralLeftSide G mutilation left right conditioned root =
+      false := by
+  rcases (model.latentRelevantUnder_eq_true_iff intervention nodes root).mp
+      relevant with
+    ⟨child, selected, notIntervened, incident⟩
+  have childSide := model.latentMoralLeftSide_eq_child G projected
+    mutilation left right conditioned root child incident
+    (free child notIntervened) (ancestral child selected)
+    (by simpa using openNodes child selected)
+  have rightSide : G.moralLeftSide mutilation left right conditioned
+      (.observed child) = false :=
+    by simpa using onRight child selected
+  exact childSide.trans rightSide
 
 /-- A set contains every non-intervened directed parent of each of its
 members. -/
@@ -4548,6 +4622,96 @@ theorem agreesOn_evalUnder_dependsOnSelected
   intro left right rootsAgree
   exact agreesOn_evalUnder_congr_of_rootAgreement model intervention
     relevant observed reference closed contained left right rootsAgree
+
+/-!
+### Agreement cylinders across the canonical moral cut
+
+The two lemmas below connect the graph-theoretic separator to the product
+factorization API.  They intentionally retain an arbitrary backward-closed
+evaluation region: the three do-calculus rules use different interventions
+and may enlarge an outcome cylinder by fixed action vertices, but only its
+free ancestral vertices determine which latent coordinates are observed.
+-/
+
+/-- A cylinder supported in the left open ancestral moral component depends
+only on the concrete latent coordinates selected by the canonical cut. -/
+theorem agreesOn_evalUnder_dependsOnMoralLeftSide
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (mutilation : GraphMutilation S)
+    (left right conditioned relevant observed : NodeSet S)
+    (intervention : (i : Fin S.count) -> Option (S.Value i))
+    (reference : S.Assignment)
+    (closed : model.BackwardClosedUnder intervention relevant)
+    (contained : NodeSet.Subset observed relevant)
+    (free : forall child, intervention child = none ->
+      mutilation.removeIncoming child = false)
+    (ancestral : NodeSet.Subset relevant (fun child =>
+      G.ancestorOf mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        (.observed child)))
+    (openNodes : NodeSet.Subset relevant (fun child => !conditioned child))
+    (onLeft : NodeSet.Subset relevant (fun child =>
+      G.moralLeftSide mutilation left right conditioned (.observed child))) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value
+      (model.latentMoralLeftSide G mutilation left right conditioned)
+      (fun roots => Kernel.agreesOn observed reference
+        (model.evalUnder intervention roots)) := by
+  apply CanonicalFactorization.DependsOnSelected.subset model.latent.count
+    model.latent.Value
+    (fun roots => Kernel.agreesOn observed reference
+      (model.evalUnder intervention roots))
+  · intro root relevantRoot
+    exact model.latentMoralLeftSide_eq_true_of_relevant G projected
+      mutilation left right conditioned relevant intervention free ancestral
+      openNodes onLeft root relevantRoot
+  · exact agreesOn_evalUnder_dependsOnSelected model intervention
+      relevant observed reference closed contained
+
+/-- A cylinder supported in the right open ancestral moral component depends
+only on the coordinates unselected by the canonical cut.  The proof first
+views the cylinder as depending on the complement mask, then converts that
+statement to the unselected-coordinate formulation expected by product
+independence. -/
+theorem agreesOn_evalUnder_dependsOnMoralRightSide
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (mutilation : GraphMutilation S)
+    (left right conditioned relevant observed : NodeSet S)
+    (intervention : (i : Fin S.count) -> Option (S.Value i))
+    (reference : S.Assignment)
+    (closed : model.BackwardClosedUnder intervention relevant)
+    (contained : NodeSet.Subset observed relevant)
+    (free : forall child, intervention child = none ->
+      mutilation.removeIncoming child = false)
+    (ancestral : NodeSet.Subset relevant (fun child =>
+      G.ancestorOf mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        (.observed child)))
+    (openNodes : NodeSet.Subset relevant (fun child => !conditioned child))
+    (onRight : NodeSet.Subset relevant (fun child =>
+      !G.moralLeftSide mutilation left right conditioned (.observed child))) :
+    CanonicalFactorization.DependsOnUnselected model.latent.count
+      model.latent.Value
+      (model.latentMoralLeftSide G mutilation left right conditioned)
+      (fun roots => Kernel.agreesOn observed reference
+        (model.evalUnder intervention roots)) := by
+  apply CanonicalFactorization.DependsOnUnselected.of_compl_selected
+    model.latent.count model.latent.Value
+    (model.latentMoralLeftSide G mutilation left right conditioned)
+  apply CanonicalFactorization.DependsOnSelected.subset model.latent.count
+    model.latent.Value
+    (fun roots => Kernel.agreesOn observed reference
+      (model.evalUnder intervention roots))
+  · intro root relevantRoot
+    have onRightRoot :=
+      model.latentMoralLeftSide_eq_false_of_relevant G projected
+        mutilation left right conditioned relevant intervention free ancestral
+        openNodes onRight root relevantRoot
+    simp [onRightRoot]
+  · exact agreesOn_evalUnder_dependsOnSelected model intervention
+      relevant observed reference closed contained
 
 /-- If two backward-closed regions share no latent root, a cylinder over the
 right region depends only on coordinates unselected by the left region. -/
