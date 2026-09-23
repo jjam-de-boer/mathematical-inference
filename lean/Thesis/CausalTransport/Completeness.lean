@@ -361,7 +361,9 @@ induction.  The remaining inhabitants are:
   total root parity (`exists_largeParityModel_rootParity_true_doSecond`);
   hence the odd common-root event has positive interventional mass in the
   large model and zero mass in the small model
-  (`parityModels_rootParity_not_equiv_doSecond`);
+  (`parityModels_rootParity_not_equiv_doSecond`), and event-to-kernel
+  extensionality packages the unsoftened pair as an unrestricted-class
+  `rootParityCounterexample` for the corresponding common-root query;
   `hedgeCoordinateSupportLatents` factors complete latent assignments
   into pair-root and private coordinates, so every observed atom has the same
   number of equal-weight preimages and
@@ -36191,6 +36193,114 @@ def hedgeRootParityEvent (rich : ObservedSignature.ValueRich S)
   fun assignment => hedgeNodeXor roots (fun node =>
     hedgeIsSecond rich node (assignment node))
 
+/-- Event-level disagreement for a local interventional query refutes
+equivalence of its entire distributional kernel.  The forward implication is
+proved constructively: kernel cells determine all singleton masses of the
+projected outcome law, and finite singleton extensionality determines the
+local event. -/
+theorem InterventionalQuery.not_kernelValueEquivalent_of_not_value
+    (q : InterventionalQuery S) (left right : ExactModel S)
+    (separated : Not (QProb.Equiv (q.value left) (q.value right))) :
+    Not (q.kernelQuery.ValueEquivalent left right) := by
+  intro kernelEquivalent
+  apply separated
+  have projectedEquivalent : QProb.Equiv
+      ((q.projectedDistribution left).probVal q.event)
+      ((q.projectedDistribution right).probVal q.event) :=
+    FiniteProbRecord.probVal_extensional_of_singletons
+      (q.projectedDistribution left) (q.projectedDistribution right)
+      S.assignmentEnumeration S.assignmentEnumeration_nodup
+      S.assignmentEnumeration_complete
+      (q.projectedSingleton_equiv left right kernelEquivalent) q.event
+  exact QProb.equiv_trans
+    (QProb.equiv_symm (q.projectedEvent_equiv_value left))
+    (QProb.equiv_trans projectedEquivalent
+      (q.projectedEvent_equiv_value right))
+
+/-- Root parity depends only on the coordinates selected by `roots`. -/
+theorem hedgeRootParityEvent_local
+    (rich : ObservedSignature.ValueRich S) (roots : NodeSet S) :
+    EventDependsOnlyOn roots (hedgeRootParityEvent rich roots) := by
+  intro left right agree
+  unfold hedgeRootParityEvent hedgeNodeXor
+  apply foldl_congr_of_mem
+  intro total node member
+  change Bool.xor total (hedgeIsSecond rich node (left node)) =
+    Bool.xor total (hedgeIsSecond rich node (right node))
+  rw [agree node ((NodeSet.mem_members_iff roots node).mp member)]
+
+/-- Hard intervention assigning the distinguished second value to every
+selected action vertex. -/
+def hedgeDoSecondIntervention (rich : ObservedSignature.ValueRich S)
+    (action : NodeSet S) : HardIntervention S where
+  value := hedgeDoSecond rich action
+
+/-- The support of `hedgeDoSecondIntervention` is exactly its action set. -/
+theorem hedgeDoSecondIntervention_targets
+    (rich : ObservedSignature.ValueRich S) (action : NodeSet S) :
+    (hedgeDoSecondIntervention rich action).targets = action := by
+  funext node
+  cases selected : action node <;>
+    simp [hedgeDoSecondIntervention, HardIntervention.targets,
+      hedgeDoSecond, selected]
+
+/-- Event query that observes odd parity on the common roots under the
+original hedge action.  Common roots belong to the small forest, so the
+intervention and outcome selections are disjoint. -/
+def HedgeWitness.rootParityInterventionalQuery
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    InterventionalQuery S where
+  intervention := hedgeDoSecondIntervention rich q.action
+  outcomeNodes := w.roots
+  action_outcome_disjoint := by
+    intro node inAction
+    have inQueryAction : q.action node = true := by
+      rw [← hedgeDoSecondIntervention_targets rich q.action]
+      exact inAction
+    cases inRoot : w.roots node with
+    | false => rfl
+    | true =>
+        have inSmall := (w.small_forest.roots_exact node).mp inRoot |>.1
+        have notAction := w.small_avoids_intervention node inSmall
+        exact False.elim
+          (Bool.false_ne_true (notAction.symm.trans inQueryAction))
+  event := hedgeRootParityEvent rich w.roots
+  event_local := hedgeRootParityEvent_local rich w.roots
+
+/-- Distributional kernel underlying the common-root parity event query. -/
+def HedgeWitness.rootParityQuery
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    JointKernelQuery S :=
+  (w.rootParityInterventionalQuery rich).kernelQuery
+
+/-- The event-query value unfolds to the parity models' ordinary
+interventional value.  A hedge action is nonempty because its large forest
+meets the action. -/
+theorem HedgeWitness.rootParityInterventionalQuery_value
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (model : ExactModel S) :
+    (w.rootParityInterventionalQuery rich).value model =
+      model.interventionalValue (hedgeDoSecond rich q.action)
+        (hedgeRootParityEvent rich w.roots) := by
+  rcases w.large_meets_intervention with ⟨node, _inLarge, inAction⟩
+  have actionNonempty : finAny S.count q.action = true :=
+    finAny_eq_true_of q.action node inAction
+  have targetNonempty :
+      finAny S.count (hedgeDoSecondIntervention rich q.action).targets = true := by
+    rw [hedgeDoSecondIntervention_targets rich q.action]
+    exact actionNonempty
+  unfold InterventionalQuery.value InterventionalQuery.distribution
+  change
+    (if finAny S.count (hedgeDoSecondIntervention rich q.action).targets then
+        model.interventionalDist (hedgeDoSecond rich q.action)
+      else model.observationalDist).probVal
+        (hedgeRootParityEvent rich w.roots) = _
+  rw [if_pos targetNonempty]
+  rfl
+
 /-- Every small-model latent assignment misses the odd common-root event
 under the query intervention. -/
 theorem HedgeWitness.smallParityModel_rootParityEvent_false_doSecond
@@ -36325,6 +36435,19 @@ theorem HedgeWitness.parityModels_rootParity_not_equiv_doSecond
   rw [w.smallParityModel_rootParityEventMass_zero_doSecond rich] at massEqual
   have positive := w.largeParityModel_rootParityEventMass_pos_doSecond rich
   exact Nat.not_lt_zero 0 (massEqual ▸ positive)
+
+/-- The packaged local event query inherits the same interventional
+separation. -/
+theorem HedgeWitness.rootParityInterventionalQuery_not_equiv
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Not (QProb.Equiv
+      ((w.rootParityInterventionalQuery rich).value
+        (w.largeParityModel rich))
+      ((w.rootParityInterventionalQuery rich).value
+        (w.smallParityModel rich))) := by
+  simpa [w.rootParityInterventionalQuery_value rich] using
+    w.parityModels_rootParity_not_equiv_doSecond rich
 
 /-- The required-incidence evenness of a c-forest depends only on its roots. -/
 theorem CForest.requiredIncidence_even_iff_rootBits_even
@@ -36767,6 +36890,26 @@ theorem HedgeWitness.parityModels_observationally_equivalent
     S.assignmentEnumeration S.assignmentEnumeration_nodup
     S.assignmentEnumeration_complete
     (w.parityModels_observational_singleton_equiv rich) event
+
+/-- Complete unrestricted-class counterexample for the common-root parity
+query.  This packages compatibility, observational equivalence, and kernel
+separation in the same record required by published hedge completeness.  The
+remaining general-hedge work is precisely to transport this query from the
+common roots to the original outcome and then restore observational
+positivity. -/
+def HedgeWitness.rootParityCounterexample
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    CounterexampleIn (GraphModelClass.all G) (w.rootParityQuery rich) where
+  left := w.largeParityModel rich
+  right := w.smallParityModel rich
+  left_mem := w.largeParityModel_compatible rich
+  right_mem := w.smallParityModel_compatible rich
+  observationally_equal := w.parityModels_observationally_equivalent rich
+  query_separated :=
+    (w.rootParityInterventionalQuery rich).not_kernelValueEquivalent_of_not_value
+      (w.largeParityModel rich) (w.smallParityModel rich)
+      (w.rootParityInterventionalQuery_not_equiv rich)
 
 /-- A single selected internal root contributes one at an incident endpoint. -/
 theorem hedgeXorPairBitsWithinFrom_of_one
