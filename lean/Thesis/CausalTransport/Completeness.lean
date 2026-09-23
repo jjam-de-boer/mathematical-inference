@@ -317,7 +317,9 @@ induction.  The remaining inhabitants are:
   reachable query outcome for every forest root without choice;
   `rootReadoutRoute` computes corresponding duplicate-free directed routes,
   proves that their edges survive `G_{\overline{X}}`, and supplies
-  deterministic predecessor maps; `parityReadoutOutcome` and
+  deterministic predecessor maps; `rootReadoutSuccessor` resolves route
+  intersections into a well-formed acyclic no-splitting routing forest whose
+  sinks are query outcomes; `parityReadoutOutcome` and
   `parityReadoutRoute` retain the action-branch specialization;
   `largeReadoutParityModel` and `smallReadoutParityModel` then wrap the two
   parity models with graph-compatible mechanisms that copy the encoded bit
@@ -9114,6 +9116,152 @@ theorem routePredecessor_rel_of_eq_some
               simpa [routePredecessor, same] using found
             exact inductionHypothesis consecutive.2 tailFound
 
+/-- Return the vertex immediately after the first occurrence of `target` in a
+route.  This is the forward dual of `routePredecessor`. -/
+def routeSuccessor {α : Type} [DecidableEq α] :
+    List α → α → Option α
+  | parent :: child :: rest, target =>
+      if parent = target then some child
+      else routeSuccessor (child :: rest) target
+  | _, _target => none
+
+/-- Any successor returned by the scan is an actual consecutive edge. -/
+theorem routeSuccessor_rel_of_eq_some
+    {α : Type} [DecidableEq α] (relation : α → α → Prop)
+    (route : List α) (parent child : α)
+    (consecutive : PathSpecification.Consecutive relation route)
+    (found : routeSuccessor route parent = some child) :
+    relation parent child := by
+  induction route with
+  | nil => simp [routeSuccessor] at found
+  | cons first tail inductionHypothesis =>
+      cases tail with
+      | nil => simp [routeSuccessor] at found
+      | cons second rest =>
+          if same : first = parent then
+            subst first
+            have childEq : second = child := by
+              simpa [routeSuccessor] using found
+            subst child
+            exact consecutive.1
+          else
+            have tailFound :
+                routeSuccessor (second :: rest) parent = some child := by
+              simpa [routeSuccessor, same] using found
+            exact inductionHypothesis consecutive.2 tailFound
+
+/-- Both endpoints returned by a successor scan occur on the scanned route. -/
+theorem routeSuccessor_mem
+    {α : Type} [DecidableEq α] (route : List α) (parent child : α)
+    (found : routeSuccessor route parent = some child) :
+    parent ∈ route ∧ child ∈ route := by
+  induction route with
+  | nil => simp [routeSuccessor] at found
+  | cons first tail inductionHypothesis =>
+      cases tail with
+      | nil => simp [routeSuccessor] at found
+      | cons second rest =>
+          if same : first = parent then
+            subst first
+            have childEq : second = child := by
+              simpa [routeSuccessor] using found
+            subst child
+            simp
+          else
+            have tailFound :
+                routeSuccessor (second :: rest) parent = some child := by
+              simpa [routeSuccessor, same] using found
+            have members := inductionHypothesis tailFound
+            exact ⟨List.mem_cons_of_mem first members.1,
+              List.mem_cons_of_mem first members.2⟩
+
+/-- A nonterminal member of a duplicate-free route has a successor. -/
+theorem routeSuccessor_isSome_of_mem_of_not_last
+    {α : Type} [DecidableEq α] (route : List α) (target : α)
+    (nodup : route.Nodup) (member : target ∈ route)
+    (notLast : route.getLast? ≠ some target) :
+    (routeSuccessor route target).isSome = true := by
+  induction route with
+  | nil => simp at member
+  | cons first tail inductionHypothesis =>
+      cases tail with
+      | nil =>
+          have targetEq : target = first := List.mem_singleton.mp member
+          have same : first = target := targetEq.symm
+          subst first
+          exact False.elim (notLast rfl)
+      | cons second rest =>
+          if same : first = target then
+            simp [routeSuccessor, same]
+          else
+            have tailMember : target ∈ second :: rest := by
+              rcases List.mem_cons.mp member with equal | later
+              · exact False.elim (same equal.symm)
+              · exact later
+            have tailNodup : (second :: rest).Nodup :=
+              (List.nodup_cons.mp nodup).2
+            have tailNotLast :
+                (second :: rest).getLast? ≠ some target := by
+              intro equal
+              apply notLast
+              simpa [List.getLast?_cons_cons] using equal
+            simpa [routeSuccessor, same] using
+              inductionHypothesis tailNodup tailMember tailNotLast
+
+/-- Select the first route in a list that supplies a successor for `parent`. -/
+def firstRouteSuccessor {α : Type} [DecidableEq α] :
+    List (List α) → α → Option α
+  | [], _parent => none
+  | route :: routes, parent =>
+      match routeSuccessor route parent with
+      | some child => some child
+      | none => firstRouteSuccessor routes parent
+
+/-- A successful multi-route lookup comes from one of the listed routes. -/
+theorem firstRouteSuccessor_eq_some
+    {α : Type} [DecidableEq α]
+    (routes : List (List α)) (parent child : α)
+    (found : firstRouteSuccessor routes parent = some child) :
+    Exists fun route =>
+      route ∈ routes ∧ routeSuccessor route parent = some child := by
+  induction routes with
+  | nil => simp [firstRouteSuccessor] at found
+  | cons route routes inductionHypothesis =>
+      cases routeFound : routeSuccessor route parent with
+      | none =>
+          have tailFound : firstRouteSuccessor routes parent = some child := by
+            simpa [firstRouteSuccessor, routeFound] using found
+          rcases inductionHypothesis tailFound with
+            ⟨witness, member, equal⟩
+          exact ⟨witness, List.mem_cons_of_mem route member, equal⟩
+      | some candidate =>
+          have candidateEq : candidate = child := by
+            simpa [firstRouteSuccessor, routeFound] using found
+          subst candidate
+          exact ⟨route, List.mem_cons_self, routeFound⟩
+
+/-- If any listed route supplies a successor, the first-successful-route
+search also supplies one. -/
+theorem firstRouteSuccessor_isSome_of_member
+    {α : Type} [DecidableEq α]
+    (routes : List (List α)) (route : List α) (parent : α)
+    (routeMember : route ∈ routes)
+    (hasSuccessor : (routeSuccessor route parent).isSome = true) :
+    (firstRouteSuccessor routes parent).isSome = true := by
+  induction routes with
+  | nil => simp at routeMember
+  | cons first rest inductionHypothesis =>
+      cases firstFound : routeSuccessor first parent with
+      | some child => simp [firstRouteSuccessor, firstFound]
+      | none =>
+          have routeInRest : route ∈ rest := by
+            rcases List.mem_cons.mp routeMember with equal | later
+            · subst first
+              simp [firstFound] at hasSuccessor
+            · exact later
+          simpa [firstRouteSuccessor, firstFound] using
+            inductionHypothesis routeInRest
+
 /-- If a value is preserved across every consecutive pair, its values at the
 two advertised endpoints agree. -/
 theorem PathSpecification.Consecutive.end_eq_start_of_step_eq
@@ -9260,6 +9408,237 @@ theorem HedgeWitness.rootReadoutParent_mutilatedDirected
     (w.rootReadoutRoute root) parent child
     (w.rootReadoutRoute_consecutive root rootIn)
   simpa [HedgeWitness.rootReadoutParent] using found
+
+/-- Canonical routes for all hedge roots, in the stable enumeration order of
+the root set. -/
+def HedgeWitness.rootReadoutRoutes
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) : List (List (Fin S.count)) :=
+  (NodeSet.members w.roots).map w.rootReadoutRoute
+
+/-!
+The all-root readout must not choose two different outgoing edges at an
+intersection.  `rootReadoutSuccessor` therefore takes the first available
+route successor at each vertex.  Once routes merge they follow one selected
+suffix, giving an acyclic no-splitting routing forest.  Query outcomes are
+forced to be sinks, so encountering an outcome truncates any longer route.
+-/
+
+/-- First-route successor map for the complete root-to-outcome routing
+forest, with every query outcome made a sink. -/
+def HedgeWitness.rootReadoutSuccessor
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) : ForestChild S :=
+  fun parent =>
+    if q.outcome parent then none
+    else firstRouteSuccessor w.rootReadoutRoutes parent
+
+/-- Every selected routing successor is an edge of the action-mutilated
+observed graph. -/
+theorem HedgeWitness.rootReadoutSuccessor_mutilatedDirected
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) {parent child : Fin S.count}
+    (found : w.rootReadoutSuccessor parent = some child) :
+    mutilatedDirected S q.action parent child = true := by
+  unfold HedgeWitness.rootReadoutSuccessor at found
+  split at found
+  · contradiction
+  · rcases firstRouteSuccessor_eq_some
+        w.rootReadoutRoutes parent child found with
+      ⟨route, routeMember, routeFound⟩
+    rcases List.mem_map.mp routeMember with
+      ⟨root, rootMember, routeEq⟩
+    have rootIn := (NodeSet.mem_members_iff w.roots root).mp rootMember
+    subst route
+    exact routeSuccessor_rel_of_eq_some
+      (fun left right => mutilatedDirected S q.action left right = true)
+      (w.rootReadoutRoute root) parent child
+      (w.rootReadoutRoute_consecutive root rootIn) routeFound
+
+/-- A routing successor is in particular a genuine directed edge of the
+original signature. -/
+theorem HedgeWitness.rootReadoutSuccessor_directed
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) {parent child : Fin S.count}
+    (found : w.rootReadoutSuccessor parent = some child) :
+    S.directed parent child = true := by
+  have edge := w.rootReadoutSuccessor_mutilatedDirected found
+  unfold mutilatedDirected at edge
+  split at edge
+  · contradiction
+  · exact edge
+
+/-- Routing successors are strictly later in the observed topological order. -/
+theorem HedgeWitness.rootReadoutSuccessor_earlier
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) {parent child : Fin S.count}
+    (found : w.rootReadoutSuccessor parent = some child) :
+    parent.val < child.val :=
+  mutilatedDirected_earlier S q.action
+    (w.rootReadoutSuccessor_mutilatedDirected found)
+
+/-- Query outcomes are terminal vertices of the routing forest. -/
+theorem HedgeWitness.rootReadoutSuccessor_of_outcome
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) {parent : Fin S.count}
+    (outcome : q.outcome parent = true) :
+    w.rootReadoutSuccessor parent = none := by
+  simp [HedgeWitness.rootReadoutSuccessor, outcome]
+
+/-- Vertices used by at least one canonical root-to-outcome route. -/
+def HedgeWitness.rootReadoutNodes
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) : NodeSet S :=
+  fun node => decide (node ∈ w.rootReadoutRoutes.flatten)
+
+/-- Boolean membership in the routing node set is ordinary flattened-list
+membership. -/
+theorem HedgeWitness.rootReadoutNodes_iff
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (node : Fin S.count) :
+    w.rootReadoutNodes node = true ↔
+      node ∈ w.rootReadoutRoutes.flatten := by
+  simp [HedgeWitness.rootReadoutNodes]
+
+/-- Both endpoints of every selected routing edge belong to the routing node
+set. -/
+theorem HedgeWitness.rootReadoutSuccessor_nodes
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) {parent child : Fin S.count}
+    (found : w.rootReadoutSuccessor parent = some child) :
+    w.rootReadoutNodes parent = true ∧
+      w.rootReadoutNodes child = true := by
+  unfold HedgeWitness.rootReadoutSuccessor at found
+  split at found
+  · contradiction
+  · rcases firstRouteSuccessor_eq_some
+        w.rootReadoutRoutes parent child found with
+      ⟨route, routeMember, routeFound⟩
+    have members := routeSuccessor_mem route parent child routeFound
+    constructor
+    · apply (w.rootReadoutNodes_iff parent).mpr
+      exact List.mem_flatten.mpr ⟨route, routeMember, members.1⟩
+    · apply (w.rootReadoutNodes_iff child).mpr
+      exact List.mem_flatten.mpr ⟨route, routeMember, members.2⟩
+
+/-- Every routing vertex outside the query outcome set has a selected
+successor. -/
+theorem HedgeWitness.rootReadoutSuccessor_exists_of_node
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (node : Fin S.count)
+    (nodeIn : w.rootReadoutNodes node = true)
+    (notOutcome : q.outcome node = false) :
+    Exists fun child => w.rootReadoutSuccessor node = some child := by
+  have flatMember := (w.rootReadoutNodes_iff node).mp nodeIn
+  rcases List.mem_flatten.mp flatMember with
+    ⟨route, routeMember, nodeMember⟩
+  rcases List.mem_map.mp routeMember with
+    ⟨root, rootMember, routeEq⟩
+  have rootIn := (NodeSet.mem_members_iff w.roots root).mp rootMember
+  subst route
+  have notLast : (w.rootReadoutRoute root).getLast? ≠ some node := by
+    intro equal
+    have endpoint := w.rootReadoutRoute_finishes root rootIn
+    have nodeEq : w.rootReadoutOutcome root = node :=
+      Option.some.inj (endpoint.symm.trans equal)
+    have selected := w.rootReadoutOutcome_in_outcome root
+    rw [nodeEq, notOutcome] at selected
+    contradiction
+  have routeSome := routeSuccessor_isSome_of_mem_of_not_last
+    (w.rootReadoutRoute root) node
+    (w.rootReadoutRoute_nodup root rootIn) nodeMember notLast
+  have firstSome := firstRouteSuccessor_isSome_of_member
+    w.rootReadoutRoutes (w.rootReadoutRoute root) node
+    (List.mem_map.mpr ⟨root, rootMember, rfl⟩) routeSome
+  have allSome : (w.rootReadoutSuccessor node).isSome = true := by
+    simp [HedgeWitness.rootReadoutSuccessor, notOutcome, firstSome]
+  exact Option.isSome_iff_exists.mp allSome
+
+/-- Every hedge root belongs to the union of its canonical readout routes. -/
+theorem HedgeWitness.root_in_rootReadoutNodes
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count)
+    (rootIn : w.roots root = true) :
+    w.rootReadoutNodes root = true := by
+  apply (w.rootReadoutNodes_iff root).mpr
+  apply List.mem_flatten.mpr
+  refine ⟨w.rootReadoutRoute root, ?_, ?_⟩
+  · exact List.mem_map.mpr
+      ⟨root, (NodeSet.mem_members_iff w.roots root).mpr rootIn, rfl⟩
+  · have starts := w.rootReadoutRoute_starts root rootIn
+    cases routeEq : w.rootReadoutRoute root with
+    | nil => simp [routeEq] at starts
+    | cons head tail =>
+        have headEq : head = root := by
+          rw [routeEq] at starts
+          simpa using Option.some.inj starts
+        simp [headEq]
+
+/-- A routing sink is necessarily a query outcome. -/
+theorem HedgeWitness.rootReadoutSuccessor_none_is_outcome
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (node : Fin S.count)
+    (nodeIn : w.rootReadoutNodes node = true)
+    (sink : w.rootReadoutSuccessor node = none) :
+    q.outcome node = true := by
+  cases outcome : q.outcome node with
+  | true => rfl
+  | false =>
+      rcases w.rootReadoutSuccessor_exists_of_node node nodeIn outcome with
+        ⟨child, found⟩
+      rw [sink] at found
+      contradiction
+
+/-- The routing successor map mentions only selected vertices and valid
+directed edges. -/
+theorem HedgeWitness.rootReadoutSuccessor_wellFormed
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    childWellFormedBool w.rootReadoutNodes
+      w.rootReadoutSuccessor = true := by
+  unfold childWellFormedBool
+  apply List.all_eq_true.mpr
+  intro parent _member
+  cases parentIn : w.rootReadoutNodes parent with
+  | false =>
+      have successorNone : w.rootReadoutSuccessor parent = none := by
+        cases successorEq : w.rootReadoutSuccessor parent with
+        | none => rfl
+        | some child =>
+            have inside := (w.rootReadoutSuccessor_nodes successorEq).1
+            rw [parentIn] at inside
+            contradiction
+      simp [successorNone]
+  | true =>
+      cases successorEq : w.rootReadoutSuccessor parent with
+      | none => rfl
+      | some child =>
+          have childIn := (w.rootReadoutSuccessor_nodes successorEq).2
+          have edge := w.rootReadoutSuccessor_directed successorEq
+          simp [childIn, edge]
+
+/-- Outcome sink reached by following the no-splitting routing forest from a
+selected hedge root. -/
+def HedgeWitness.rootReadoutSink
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count)
+    (rootIn : w.roots root = true) : Fin S.count :=
+  forestSink w.rootReadoutNodes w.rootReadoutSuccessor
+    w.rootReadoutSuccessor_wellFormed root
+    (w.root_in_rootReadoutNodes root rootIn)
+
+/-- Following the selected routing forest from any hedge root terminates at
+a vertex in the query outcome set. -/
+theorem HedgeWitness.rootReadoutSink_in_outcome
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (root : Fin S.count)
+    (rootIn : w.roots root = true) :
+    q.outcome (w.rootReadoutSink root rootIn) = true := by
+  have sinkSpec := forestSink_spec w.rootReadoutNodes
+    w.rootReadoutSuccessor w.rootReadoutSuccessor_wellFormed root
+    (w.root_in_rootReadoutNodes root rootIn)
+  exact w.rootReadoutSuccessor_none_is_outcome
+    (w.rootReadoutSink root rootIn) sinkSpec.1 sinkSpec.2
 
 /-- Canonical action-root-to-outcome route carried by the hedge witness. -/
 def HedgeWitness.parityReadoutRoute
