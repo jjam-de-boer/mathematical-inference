@@ -319,7 +319,13 @@ induction.  The remaining inhabitants are:
   proves that their edges survive `G_{\overline{X}}`, and supplies
   deterministic predecessor maps; `rootReadoutSuccessor` resolves route
   intersections into a well-formed acyclic no-splitting routing forest whose
-  sinks are query outcomes; `parityReadoutOutcome` and
+  sinks are query outcomes; `hedgeRoutingFlow_conservation` proves that any
+  local XOR flow on this forest carries total hedge-root parity to total sink
+  parity, and `exists_outcome_bit_of_rootReadoutFlow` extracts a queried sink
+  carrying an odd readout without choice; `hedgeFlowReadoutModel` realizes
+  that recurrence as graph-compatible mechanisms, while
+  `rootFlowReadoutModel_sinkParity_doSecond` closes its end-to-end transport
+  theorem under the query intervention; `parityReadoutOutcome` and
   `parityReadoutRoute` retain the action-branch specialization;
   `largeReadoutParityModel` and `smallReadoutParityModel` then wrap the two
   parity models with graph-compatible mechanisms that copy the encoded bit
@@ -9573,6 +9579,23 @@ theorem HedgeWitness.root_in_rootReadoutNodes
           rw [routeEq] at starts
           simpa using Option.some.inj starts
         simp [headEq]
+
+/-- Every vertex used by the union of canonical root routes is free under the
+query intervention.  This lifts the route-local avoidance theorem through
+the flattened, root-indexed route enumeration. -/
+theorem HedgeWitness.rootReadoutNodes_avoids_action
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (node : Fin S.count)
+    (nodeIn : w.rootReadoutNodes node = true) :
+    q.action node = false := by
+  have flatMember := (w.rootReadoutNodes_iff node).mp nodeIn
+  rcases List.mem_flatten.mp flatMember with
+    ⟨route, routeMember, nodeMember⟩
+  rcases List.mem_map.mp routeMember with
+    ⟨root, rootMember, routeEq⟩
+  have rootIn := (NodeSet.mem_members_iff w.roots root).mp rootMember
+  subst route
+  exact w.rootReadoutRoute_avoids_action root rootIn node nodeMember
 
 /-- A routing sink is necessarily a query outcome. -/
 theorem HedgeWitness.rootReadoutSuccessor_none_is_outcome
@@ -29028,6 +29051,21 @@ theorem foldl_congr {α β} (f g : α → β → α) (init : α) (xs : List β)
       simp [hstep]
       exact ih _
 
+/-- Pointwise fold congruence whose step proof may use membership in the
+fixed input list.  This form is useful for node-set folds: semantic equations
+usually hold only on selected vertices, and `NodeSet.members` carries exactly
+that evidence. -/
+theorem foldl_congr_of_mem {α β} (f g : α → β → α) (init : α)
+    (xs : List β)
+    (step : forall acc x, x ∈ xs → f acc x = g acc x) :
+    xs.foldl f init = xs.foldl g init := by
+  induction xs generalizing init with
+  | nil => rfl
+  | cons head tail inductionHypothesis =>
+      rw [List.foldl, List.foldl, step init head (by simp)]
+      exact inductionHypothesis _ (fun acc x member =>
+        step acc x (by simp [member]))
+
 /-- An XOR fold with an arbitrary accumulator is its zero-based fold plus that accumulator. -/
 theorem foldl_xor_init {α} (bits : α → Bool) (xs : List α) (init : Bool) :
     xs.foldl (fun acc x => Bool.xor acc (bits x)) init =
@@ -31614,6 +31652,17 @@ theorem HedgeWitness.parityReadoutParent_free_under_doSecond
     (action_false_of_mutilatedDirected q.action
       (w.parityReadoutParent_mutilatedDirected found))
 
+/-- Every vertex of the all-root routing forest remains free under the query
+intervention.  Unlike the single-route predecessor lemma, this also covers
+sources and merge vertices that have no indexed predecessor. -/
+theorem HedgeWitness.rootReadoutNodes_free_under_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (node : Fin S.count) (selected : w.rootReadoutNodes node = true) :
+    hedgeDoSecond rich q.action node = none :=
+  hedgeDoSecond_of_false rich q.action
+    (w.rootReadoutNodes_avoids_action node selected)
+
 /-- Under `do(X = second)`, the wrapped large model exposes its root parity at
 the selected query outcome. -/
 theorem HedgeWitness.largeReadoutParityModel_parityReadoutOutcome_bit_doSecond
@@ -32582,6 +32631,591 @@ theorem hedgePairRootContributionWithin_parity
 def hedgeNodeXor (nodes : NodeSet S) (bits : Fin S.count → Bool) : Bool :=
   (NodeSet.members nodes).foldl
     (fun total node => Bool.xor total (bits node)) false
+
+/-- Extending a Boolean vector by zero from a subset to a larger node family
+does not change its XOR. -/
+theorem hedgeNodeXor_mask_of_subset
+    (small large : NodeSet S) (subset : NodeSet.Subset small large)
+    (bits : Fin S.count → Bool) :
+    hedgeNodeXor large (fun node => if small node then bits node else false) =
+      hedgeNodeXor small bits := by
+  unfold hedgeNodeXor NodeSet.members NodeSet.enumerated
+  rw [List.foldl_filter, List.foldl_filter]
+  apply foldl_congr
+  intro total node
+  cases selected : small node with
+  | true =>
+      have inside := subset node selected
+      simp [selected, inside]
+  | false =>
+      cases large node <;> simp [selected]
+
+/-- A true finite XOR has at least one true summand.  The induction follows
+the input list directly and therefore extracts the witness constructively. -/
+theorem exists_true_of_foldl_xor_eq_true
+    {α : Type} (bits : α → Bool) : forall xs : List α,
+    xs.foldl (fun total x => Bool.xor total (bits x)) false = true →
+      Exists fun x => x ∈ xs ∧ bits x = true
+  | [], parity => by simp at parity
+  | head :: tail, parity => by
+      cases headBit : bits head with
+      | true => exact ⟨head, by simp, headBit⟩
+      | false =>
+          have tailParity :
+              tail.foldl (fun total x => Bool.xor total (bits x)) false =
+                true := by
+            simpa [headBit] using parity
+          rcases exists_true_of_foldl_xor_eq_true bits tail tailParity with
+            ⟨x, member, selected⟩
+          exact ⟨x, by simp [member], selected⟩
+
+/-!
+### Conservation for no-splitting readout flows
+
+The canonical all-root readout is a `ForestChild`: every routing vertex sends
+its bit to at most one successor, while several streams may merge at a later
+vertex.  The following algebra is deliberately independent of the hedge
+mechanisms.  It says that any Boolean labelling satisfying the local flow
+equation
+
+`value(v) = source(v) XOR XOR { value(u) | successor(u) = v }`
+
+has total sink parity equal to total source parity.  This is the finite,
+constructive replacement for following one distinguished root: merging never
+loses information because it is addition in `Bool`'s XOR group.
+-/
+
+/-- Contribution of one routed parent to a prospective child. -/
+def hedgeRoutingParentEntry (kept : ForestChild S)
+    (bits : Fin S.count → Bool) (child parent : Fin S.count) : Bool :=
+  if kept parent = some child then bits parent else false
+
+/-- XOR of the bits entering `child` through a no-splitting successor map. -/
+def hedgeRoutingIncomingBits (kept : ForestChild S)
+    (bits : Fin S.count → Bool) (child : Fin S.count) : Bool :=
+  (List.finRange S.count).foldl
+    (fun total parent => Bool.xor total
+      (hedgeRoutingParentEntry kept bits child parent)) false
+
+/-- A selected parent's bit when it has a routing successor, and zero at a
+routing sink or outside the routing node set. -/
+def hedgeRoutingNonSinkBit (nodes : NodeSet S) (kept : ForestChild S)
+    (bits : Fin S.count → Bool) (parent : Fin S.count) : Bool :=
+  if nodes parent then
+    match kept parent with
+    | none => false
+    | some _child => bits parent
+  else
+    false
+
+/-- For one fixed parent, the XOR over all possible receiving children is
+its bit exactly when the parent is a selected non-sink.  Well-formedness puts
+the unique selected child inside `nodes`; off-set parents have no successor. -/
+theorem hedgeRoutingParentEntry_fold_of_wellFormed
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (wellFormed : childWellFormedBool nodes kept = true)
+    (bits : Fin S.count → Bool) (parent : Fin S.count) :
+    (NodeSet.members nodes).foldl
+        (fun total child => Bool.xor total
+          (hedgeRoutingParentEntry kept bits child parent)) false =
+      hedgeRoutingNonSinkBit nodes kept bits parent := by
+  cases parentInside : nodes parent
+  · have parentNone := childWellFormed_off nodes kept wellFormed parentInside
+    unfold hedgeRoutingNonSinkBit
+    rw [if_neg (by simp [parentInside])]
+    exact foldl_unchanged _ false (NodeSet.members nodes) (fun total child => by
+      simp [hedgeRoutingParentEntry, parentNone])
+  · cases parentChild : kept parent with
+    | none =>
+        unfold hedgeRoutingNonSinkBit
+        rw [if_pos parentInside, parentChild]
+        exact foldl_unchanged _ false (NodeSet.members nodes)
+          (fun total child => by
+            simp [hedgeRoutingParentEntry, parentChild])
+    | some selectedChild =>
+        have edgeData := childWellFormed_edge nodes kept wellFormed parentChild
+        have childMember : selectedChild ∈ NodeSet.members nodes :=
+          (NodeSet.mem_members_iff nodes selectedChild).mpr edgeData.2.1
+        have rowEq :
+            (NodeSet.members nodes).foldl
+                (fun total child => Bool.xor total
+                  (hedgeRoutingParentEntry kept bits child parent)) false =
+              (NodeSet.members nodes).foldl
+                (fun total child =>
+                  if child = selectedChild then
+                    Bool.xor total (bits parent)
+                  else total) false := by
+          apply foldl_congr
+          intro total child
+          by_cases same : child = selectedChild
+          · subst child
+            simp [hedgeRoutingParentEntry, parentChild]
+          · have reverse : selectedChild ≠ child :=
+              fun equal => same equal.symm
+            simp [hedgeRoutingParentEntry, parentChild, same, reverse]
+        rw [rowEq, foldl_xor_bit_of_mem_nodup
+          (NodeSet.members nodes) childMember (NodeSet.nodup_members nodes)]
+        simp [hedgeRoutingNonSinkBit, parentInside, parentChild]
+
+/-- Transposing child and parent folds counts each routed non-sink exactly
+once, independently of how many streams merge at one child. -/
+theorem hedgeNodeXor_routingIncoming_of_wellFormed
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (wellFormed : childWellFormedBool nodes kept = true)
+    (bits : Fin S.count → Bool) :
+    hedgeNodeXor nodes (hedgeRoutingIncomingBits kept bits) =
+      (List.finRange S.count).foldl
+        (fun total parent => Bool.xor total
+          (hedgeRoutingNonSinkBit nodes kept bits parent)) false := by
+  unfold hedgeNodeXor hedgeRoutingIncomingBits
+  rw [foldl_xor_swap]
+  apply foldl_congr
+  intro total parent
+  rw [hedgeRoutingParentEntry_fold_of_wellFormed
+    nodes kept wellFormed bits parent]
+
+/-- The full enumeration with an explicit node guard is the same as folding
+the non-sink contribution over `NodeSet.members`. -/
+theorem hedgeNodeXor_routingNonSink_members
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (bits : Fin S.count → Bool) :
+    (List.finRange S.count).foldl
+        (fun total parent => Bool.xor total
+          (hedgeRoutingNonSinkBit nodes kept bits parent)) false =
+      (NodeSet.members nodes).foldl
+        (fun total parent => Bool.xor total
+          (match kept parent with
+          | none => false
+          | some _child => bits parent)) false := by
+  unfold NodeSet.members NodeSet.enumerated
+  rw [List.foldl_filter]
+  apply foldl_congr
+  intro total parent
+  cases inside : nodes parent <;>
+    simp [hedgeRoutingNonSinkBit, inside]
+
+/-- The member list of the routing sinks is obtained by filtering selected
+vertices for the absence of a successor. -/
+theorem keptSinks_members (nodes : NodeSet S) (kept : ForestChild S) :
+    NodeSet.members (keptSinks nodes kept) =
+      (NodeSet.members nodes).filter fun node => decide (kept node = none) := by
+  unfold NodeSet.members NodeSet.enumerated
+  rw [List.filter_filter]
+  apply List.filter_congr
+  intro node _member
+  apply Bool.eq_iff_iff.mpr
+  rw [Bool.and_eq_true, decide_eq_true_eq]
+  constructor
+  · intro sink
+    have parts := (keptSinks_iff nodes kept node).mp sink
+    exact ⟨parts.2, parts.1⟩
+  · intro parts
+    exact (keptSinks_iff nodes kept node).mpr ⟨parts.2, parts.1⟩
+
+/-- XORing all selected values with all selected non-sink values cancels
+every internal stream and leaves precisely the routing-sink parity. -/
+theorem hedgeNodeXor_split_keptSinks
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (bits : Fin S.count → Bool) :
+    Bool.xor
+        (hedgeNodeXor nodes bits)
+        ((NodeSet.members nodes).foldl
+          (fun total parent => Bool.xor total
+            (match kept parent with
+            | none => false
+            | some _child => bits parent)) false) =
+      hedgeNodeXor (keptSinks nodes kept) bits := by
+  unfold hedgeNodeXor
+  rw [← foldl_xor_pointwise]
+  have pointwise :
+      (NodeSet.members nodes).foldl
+          (fun total node => Bool.xor total
+            (Bool.xor (bits node)
+              (match kept node with
+              | none => false
+              | some _child => bits node))) false =
+        (NodeSet.members nodes).foldl
+          (fun total node => Bool.xor total
+            (if kept node = none then bits node else false)) false := by
+    apply foldl_congr
+    intro total node
+    cases childEq : kept node with
+    | none => cases bits node <;> rfl
+    | some child => cases bits node <;> rfl
+  rw [pointwise, keptSinks_members nodes kept, List.foldl_filter]
+  apply foldl_congr
+  intro total node
+  by_cases sink : kept node = none <;> simp [sink]
+
+/--
+Finite XOR-flow conservation for a well-formed no-splitting routing forest.
+No acyclicity or choice principle is needed for the algebra itself: each
+selected non-sink contributes on the left once as a node value and once as
+the unique incoming contribution to its successor, so it cancels.  The
+hedge's strict topological routing order is used later to establish the local
+flow equations from recursive SCM evaluation.
+-/
+theorem hedgeRoutingFlow_conservation
+    (nodes : NodeSet S) (kept : ForestChild S)
+    (wellFormed : childWellFormedBool nodes kept = true)
+    (source bits : Fin S.count → Bool)
+    (flow : forall node, nodes node = true →
+      bits node = Bool.xor (source node)
+        (hedgeRoutingIncomingBits kept bits node)) :
+    hedgeNodeXor (keptSinks nodes kept) bits =
+      hedgeNodeXor nodes source := by
+  have allNodes :
+      hedgeNodeXor nodes bits =
+        Bool.xor (hedgeNodeXor nodes source)
+          (hedgeNodeXor nodes (hedgeRoutingIncomingBits kept bits)) := by
+    unfold hedgeNodeXor
+    have rewritten :
+        (NodeSet.members nodes).foldl
+            (fun total node => Bool.xor total (bits node)) false =
+          (NodeSet.members nodes).foldl
+            (fun total node => Bool.xor total
+              (Bool.xor (source node)
+                (hedgeRoutingIncomingBits kept bits node))) false := by
+      apply foldl_congr_of_mem
+      intro total node member
+      rw [flow node ((NodeSet.mem_members_iff nodes node).mp member)]
+    rw [rewritten, foldl_xor_pointwise]
+  have incoming := hedgeNodeXor_routingIncoming_of_wellFormed
+    nodes kept wellFormed bits
+  rw [hedgeNodeXor_routingNonSink_members nodes kept bits] at incoming
+  have split := hedgeNodeXor_split_keptSinks nodes kept bits
+  rw [allNodes, incoming] at split
+  symm
+  rw [← split]
+  generalize hedgeNodeXor nodes source = sourceParity
+  generalize
+    (NodeSet.members nodes).foldl
+      (fun total parent => Bool.xor total
+        (match kept parent with
+        | none => false
+        | some _child => bits parent)) false = nonSinkParity
+  cases sourceParity <;> cases nonSinkParity <;> rfl
+
+/-!
+The hedge's canonical all-root route forest now inherits the generic
+conservation law.  Its source vector is the supplied bit vector masked to the
+common c-forest roots.  Every selected root lies on a route, and every routing
+sink belongs to the query outcome, so odd source parity must be visible at at
+least one queried vertex.
+-/
+
+/-- The roots of a hedge are contained in its canonical routing node set. -/
+theorem HedgeWitness.roots_subset_rootReadoutNodes
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    NodeSet.Subset w.roots w.rootReadoutNodes :=
+  fun root rootIn => w.root_in_rootReadoutNodes root rootIn
+
+/-- Every sink of the canonical all-root routing forest is a query outcome. -/
+theorem HedgeWitness.rootReadoutSinks_subset_outcome
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) :
+    NodeSet.Subset
+      (keptSinks w.rootReadoutNodes w.rootReadoutSuccessor) q.outcome := by
+  intro node sink
+  have parts :=
+    (keptSinks_iff w.rootReadoutNodes w.rootReadoutSuccessor node).mp sink
+  exact w.rootReadoutSuccessor_none_is_outcome node parts.1 parts.2
+
+/-- Source-to-sink parity conservation specialized to the hedge's canonical
+all-root readout.  `sourceBits` need only be meaningful at hedge roots; the
+local equation injects zero at every other routing vertex. -/
+theorem HedgeWitness.rootReadoutFlow_conservation
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q)
+    (sourceBits routedBits : Fin S.count → Bool)
+    (flow : forall node, w.rootReadoutNodes node = true →
+      routedBits node =
+        Bool.xor (if w.roots node then sourceBits node else false)
+          (hedgeRoutingIncomingBits w.rootReadoutSuccessor routedBits node)) :
+    hedgeNodeXor
+        (keptSinks w.rootReadoutNodes w.rootReadoutSuccessor) routedBits =
+      hedgeNodeXor w.roots sourceBits := by
+  calc
+    hedgeNodeXor
+        (keptSinks w.rootReadoutNodes w.rootReadoutSuccessor) routedBits =
+      hedgeNodeXor w.rootReadoutNodes
+        (fun node => if w.roots node then sourceBits node else false) :=
+      hedgeRoutingFlow_conservation w.rootReadoutNodes
+        w.rootReadoutSuccessor w.rootReadoutSuccessor_wellFormed
+        (fun node => if w.roots node then sourceBits node else false)
+        routedBits flow
+    _ = hedgeNodeXor w.roots sourceBits :=
+      hedgeNodeXor_mask_of_subset w.roots w.rootReadoutNodes
+        w.roots_subset_rootReadoutNodes sourceBits
+
+/-- If the injected hedge-root parity is odd, some queried routing sink
+carries a true output bit.  This is the root-uniform observability statement
+needed by the eventual multi-root countermodel. -/
+theorem HedgeWitness.exists_outcome_bit_of_rootReadoutFlow
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q)
+    (sourceBits routedBits : Fin S.count → Bool)
+    (flow : forall node, w.rootReadoutNodes node = true →
+      routedBits node =
+        Bool.xor (if w.roots node then sourceBits node else false)
+          (hedgeRoutingIncomingBits w.rootReadoutSuccessor routedBits node))
+    (odd : hedgeNodeXor w.roots sourceBits = true) :
+    Exists fun outcome =>
+      q.outcome outcome = true ∧ routedBits outcome = true := by
+  have sinkParity :
+      hedgeNodeXor
+          (keptSinks w.rootReadoutNodes w.rootReadoutSuccessor) routedBits =
+        true := by
+    rw [w.rootReadoutFlow_conservation sourceBits routedBits flow, odd]
+  rcases exists_true_of_foldl_xor_eq_true routedBits
+      (NodeSet.members
+        (keptSinks w.rootReadoutNodes w.rootReadoutSuccessor))
+      sinkParity with
+    ⟨outcome, member, outputBit⟩
+  have sink :=
+    (NodeSet.mem_members_iff
+      (keptSinks w.rootReadoutNodes w.rootReadoutSuccessor) outcome).mp member
+  exact ⟨outcome, w.rootReadoutSinks_subset_outcome outcome sink, outputBit⟩
+
+/-!
+### Executable additive readout mechanisms
+
+The single-route wrapper above overwrites a child by one parent's bit.  That
+operation cannot represent several hedge roots whose routes merge.  The
+wrapper below implements the flow equation proved by the preceding section:
+on a routing vertex it XORs a caller-supplied local injection with the bits of
+all parents whose selected successor is that vertex.  The successor map is
+still a genuine directed-edge map, so the resulting model changes mechanisms
+without changing its latent projection.
+
+`sourceBit` is kept abstract on purpose.  The later hedge construction must
+choose an injection that exposes the *difference* of the two base parity
+circuits at their common roots.  This layer proves transport and compatibility
+only; it does not claim observational equivalence for an arbitrary injection.
+-/
+
+/-- Replace every selected routing mechanism by an additive Boolean-flow
+mechanism, retaining the base model verbatim away from the routing forest. -/
+def hedgeFlowReadoutModel (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (successor : ForestChild S)
+    (base : ExactModel S)
+    (sourceBit : forall child, S.ParentValues child →
+      base.latent.Inputs child → Bool) : ExactModel S where
+  latent := base.latent
+  factor := base.factor
+  prior := base.prior
+  product_law := base.product_law
+  mechanism := fun child parents inputs =>
+    if nodes child then
+      hedgeParityValue rich child
+        (Bool.xor (sourceBit child parents inputs)
+          (hedgeForestParentBitsFrom rich successor child parents))
+    else
+      base.mechanism child parents inputs
+
+/-- Additive readout changes only structural mechanisms, so compatibility is
+inherited from the base model's unchanged latent extension and projection. -/
+theorem hedgeFlowReadoutModel_compatible
+    (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (successor : ForestChild S)
+    (base : ExactModel S)
+    (sourceBit : forall child, S.ParentValues child →
+      base.latent.Inputs child → Bool)
+    (compatible : Compatible base G) :
+    Compatible
+      (hedgeFlowReadoutModel rich nodes successor base sourceBit) G := by
+  exact ⟨compatible.1, fun i j => compatible.2 i j⟩
+
+/-- For a well-formed routing map, the typed directed-parent fold used by an
+SCM mechanism is exactly the abstract incoming-flow fold.  A proposed
+successor is guaranteed to be a directed edge; all other parents contribute
+zero on both sides. -/
+theorem hedgeForestParentBitsFrom_eq_routingIncomingBits
+    (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (successor : ForestChild S)
+    (wellFormed : childWellFormedBool nodes successor = true)
+    (values : S.Assignment) (child : Fin S.count) :
+    hedgeForestParentBitsFrom rich successor child
+        (fun parent _edge => values parent) =
+      hedgeRoutingIncomingBits successor
+        (fun parent => hedgeIsSecond rich parent (values parent)) child := by
+  unfold hedgeForestParentBitsFrom hedgeRoutingIncomingBits
+  apply foldl_congr
+  intro total parent
+  cases selected : successor parent with
+  | none =>
+      simp [hedgeRoutingParentEntry, selected]
+  | some selectedChild =>
+      by_cases same : selectedChild = child
+      · subst selectedChild
+        have edge :=
+          (childWellFormed_edge nodes successor wellFormed selected).2.2
+        simp [hedgeRoutingParentEntry, selected, edge]
+      · by_cases edge : S.directed parent child = true <;>
+          simp [hedgeRoutingParentEntry, selected, same, edge]
+
+/-- At a free routing vertex, recursive SCM evaluation satisfies the exact
+local XOR-flow equation: local injection plus the evaluated bits of every
+selected routing parent. -/
+theorem hedgeFlowReadoutModel_evalNodeUnder_bit
+    (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (successor : ForestChild S)
+    (wellFormed : childWellFormedBool nodes successor = true)
+    (base : ExactModel S)
+    (sourceBit : forall child, S.ParentValues child →
+      base.latent.Inputs child → Bool)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (u : base.latent.Assignment) (child : Fin S.count)
+    (selected : nodes child = true) (free : intervention child = none) :
+    let routed := hedgeFlowReadoutModel rich nodes successor base sourceBit
+    hedgeIsSecond rich child (routed.evalNodeUnder intervention u child) =
+      Bool.xor
+        (sourceBit child
+          (fun parent _edge => routed.evalNodeUnder intervention u parent)
+          (fun root _incident => u root))
+        (hedgeRoutingIncomingBits successor (fun parent =>
+          hedgeIsSecond rich parent
+            (routed.evalNodeUnder intervention u parent)) child) := by
+  dsimp only
+  rw [FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder
+  rw [free]
+  simp only [hedgeFlowReadoutModel, selected, ↓reduceIte,
+    hedgeIsSecond_parityValue]
+  congr 1
+  exact hedgeForestParentBitsFrom_eq_routingIncomingBits rich nodes successor
+    wellFormed
+    (fun parent =>
+      (hedgeFlowReadoutModel rich nodes successor base sourceBit).evalNodeUnder
+        intervention u parent)
+    child
+
+/-- Canonical additive wrapper for a hedge.  Only hedge roots inject a local
+source bit; all other routing vertices merely XOR and forward incoming flow. -/
+def HedgeWitness.rootFlowReadoutModel
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (base : ExactModel S)
+    (rootBit : forall child, S.ParentValues child →
+      base.latent.Inputs child → Bool) : ExactModel S :=
+  hedgeFlowReadoutModel rich w.rootReadoutNodes w.rootReadoutSuccessor base
+    (fun child parents inputs =>
+      if w.roots child then rootBit child parents inputs else false)
+
+/-- The canonical root-flow wrapper preserves compatibility with `G`. -/
+theorem HedgeWitness.rootFlowReadoutModel_compatible
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (base : ExactModel S)
+    (rootBit : forall child, S.ParentValues child →
+      base.latent.Inputs child → Bool)
+    (compatible : Compatible base G) :
+    Compatible (w.rootFlowReadoutModel rich base rootBit) G :=
+  hedgeFlowReadoutModel_compatible rich w.rootReadoutNodes
+    w.rootReadoutSuccessor base
+    (fun child parents inputs =>
+      if w.roots child then rootBit child parents inputs else false)
+    compatible
+
+/-- Under any intervention that leaves the routing forest free, the total bit
+at its outcome sinks equals the total local bit injected at all hedge roots.
+This theorem is the mechanism-level realization of
+`rootReadoutFlow_conservation`. -/
+theorem HedgeWitness.rootFlowReadoutModel_sinkParity
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (base : ExactModel S)
+    (rootBit : forall child, S.ParentValues child →
+      base.latent.Inputs child → Bool)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (u : base.latent.Assignment)
+    (routeFree : forall node, w.rootReadoutNodes node = true →
+      intervention node = none) :
+    let routed := w.rootFlowReadoutModel rich base rootBit
+    hedgeNodeXor
+        (keptSinks w.rootReadoutNodes w.rootReadoutSuccessor)
+        (fun node => hedgeIsSecond rich node
+          (routed.evalNodeUnder intervention u node)) =
+      hedgeNodeXor w.roots (fun node =>
+        rootBit node
+          (fun parent _edge => routed.evalNodeUnder intervention u parent)
+          (fun root _incident => u root)) := by
+  dsimp only
+  apply w.rootReadoutFlow_conservation
+  intro node selected
+  exact hedgeFlowReadoutModel_evalNodeUnder_bit rich w.rootReadoutNodes
+    w.rootReadoutSuccessor w.rootReadoutSuccessor_wellFormed base
+    (fun child parents inputs =>
+      if w.roots child then rootBit child parents inputs else false)
+    intervention u node selected (routeFree node selected)
+
+/-- The query's canonical `do(X = second)` intervention satisfies the freedom
+hypothesis of the root-flow parity theorem automatically. -/
+theorem HedgeWitness.rootFlowReadoutModel_sinkParity_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (base : ExactModel S)
+    (rootBit : forall child, S.ParentValues child →
+      base.latent.Inputs child → Bool)
+    (u : base.latent.Assignment) :
+    let routed := w.rootFlowReadoutModel rich base rootBit
+    hedgeNodeXor
+        (keptSinks w.rootReadoutNodes w.rootReadoutSuccessor)
+        (fun node => hedgeIsSecond rich node
+          (routed.evalNodeUnder (hedgeDoSecond rich q.action) u node)) =
+      hedgeNodeXor w.roots (fun node =>
+        rootBit node
+          (fun parent _edge =>
+            routed.evalNodeUnder (hedgeDoSecond rich q.action) u parent)
+          (fun root _incident => u root)) := by
+  exact w.rootFlowReadoutModel_sinkParity rich base rootBit
+    (hedgeDoSecond rich q.action) u
+    (w.rootReadoutNodes_free_under_doSecond rich)
+
+/-- Odd total root injection under the query intervention is observable at a
+queried routing sink.  The returned outcome is concrete data extracted from
+the finite sink list, not from a proposition-level choice. -/
+theorem HedgeWitness.rootFlowReadoutModel_exists_outcome_bit_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (base : ExactModel S)
+    (rootBit : forall child, S.ParentValues child →
+      base.latent.Inputs child → Bool)
+    (u : base.latent.Assignment)
+    (odd :
+      let routed := w.rootFlowReadoutModel rich base rootBit
+      hedgeNodeXor w.roots (fun node =>
+        rootBit node
+          (fun parent _edge =>
+            routed.evalNodeUnder (hedgeDoSecond rich q.action) u parent)
+          (fun root _incident => u root)) = true) :
+    let routed := w.rootFlowReadoutModel rich base rootBit
+    Exists fun outcome =>
+      q.outcome outcome = true ∧
+        hedgeIsSecond rich outcome
+          (routed.evalNodeUnder (hedgeDoSecond rich q.action) u outcome) =
+            true := by
+  dsimp only at odd ⊢
+  let routed := w.rootFlowReadoutModel rich base rootBit
+  let routedBits := fun node => hedgeIsSecond rich node
+    (routed.evalNodeUnder (hedgeDoSecond rich q.action) u node)
+  have sinkParity :=
+    w.rootFlowReadoutModel_sinkParity_doSecond rich base rootBit u
+  have sinkTrue :
+      hedgeNodeXor
+          (keptSinks w.rootReadoutNodes w.rootReadoutSuccessor) routedBits =
+        true := by
+    simpa [routed, routedBits, odd] using sinkParity
+  rcases exists_true_of_foldl_xor_eq_true routedBits
+      (NodeSet.members
+        (keptSinks w.rootReadoutNodes w.rootReadoutSuccessor))
+      sinkTrue with
+    ⟨outcome, member, outputBit⟩
+  have sink :=
+    (NodeSet.mem_members_iff
+      (keptSinks w.rootReadoutNodes w.rootReadoutSuccessor) outcome).mp member
+  exact ⟨outcome, w.rootReadoutSinks_subset_outcome outcome sink, outputBit⟩
 
 /-- Restricted incidence is the rootwise fold of single-root contributions. -/
 theorem hedgeXorPairBitsWithinFrom_eq_contribution_fold
