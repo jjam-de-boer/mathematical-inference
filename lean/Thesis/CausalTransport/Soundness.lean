@@ -15,7 +15,11 @@ separate so that each stage can be audited independently.  Empty-`W` rule 1
 and empty-`W` rule 2 now inhabit their product-partition witnesses from
 path d-separation and a projected graph: rule 2 uses open ancestral cores
 in `G_{\overline{X}\underline{Z}}` so a directed `Z → Y` edge does not
-identify the two cores.
+identify the two cores.  For the general global-Markov step,
+`ObservedGraph.moralLeftSide` computes the left component of the open
+ancestral moral graph, and `FiniteLatentSCM.latentMoralLeftSide` lifts that
+separator to the concrete latent coordinates of any compatible model;
+shared-root incidence is proved unable to cross the partition.
 -/
 
 namespace FiniteLatentSCM
@@ -203,6 +207,211 @@ theorem latentRelevantUnder_mono (model : FiniteLatentSCM S)
     ⟨child, selected, notIntervened, incident⟩
   exact model.latentRelevantUnder_of_incident lighter nodes root child
     selected (freeOfHeavier child notIntervened) incident
+
+/-!
+### Lifting the moral separator to concrete latent roots
+
+`ObservedGraph.moralLeftSide` partitions the canonical expanded graph.  A
+compatible model can use an arbitrary finite canonical latent extension, so
+the soundness proof must transfer that graph partition to the model's actual
+latent coordinates.  Shared incidence projects to a bidirected edge; two
+free ancestral children of one concrete root are therefore connected through
+the corresponding canonical latent-pair vertex and must lie on the same side.
+This is the key invariant that the earlier ad-hoc overlap Booleans did not
+express.
+-/
+
+/-- Two distinct observed children of one concrete latent root are joined by
+the projected bidirected graph. -/
+theorem bidirected_of_shared_latent
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (root : Fin model.latent.count) {left right : Fin S.count}
+    (different : left ≠ right)
+    (leftIncident : model.latent.incident root left = true)
+    (rightIncident : model.latent.incident root right = true) :
+    G.bidirected left right = true := by
+  have neq : Nat.beq left.val right.val = false := by
+    cases equal : Nat.beq left.val right.val with
+    | false => rfl
+    | true =>
+        exact False.elim
+          (different (Fin.ext (Nat.eq_of_beq_eq_true equal)))
+  have shared :
+      finAny model.latent.count (fun latent =>
+        model.latent.incident latent left &&
+          model.latent.incident latent right) = true :=
+    finAny_eq_true_of _ root
+      (Bool.and_eq_true_iff.mpr ⟨leftIncident, rightIncident⟩)
+  have modelEdge : model.observedGraph.bidirected left right = true := by
+    simp [FiniteLatentSCM.observedGraph, LatentExtension.observedGraph,
+      LatentExtension.projectedBidirected, neq, shared]
+  rw [projected left right] at modelEdge
+  exact modelEdge
+
+/--
+Free ancestral children of the same concrete latent root occupy the same
+canonical moral side.  The proof walks from the first observed child through
+the projected latent-pair vertex to the second; closure of `moralLeftSide`
+then works in either direction.
+-/
+theorem moralLeftSide_eq_of_shared_latent
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (mutilation : GraphMutilation S)
+    (left right conditioned : NodeSet S)
+    (root : Fin model.latent.count) (first second : Fin S.count)
+    (firstIncident : model.latent.incident root first = true)
+    (secondIncident : model.latent.incident root second = true)
+    (firstFree : mutilation.removeIncoming first = false)
+    (secondFree : mutilation.removeIncoming second = false)
+    (firstAncestor : G.ancestorOf mutilation
+      (NodeSet.union left (NodeSet.union right conditioned))
+      (.observed first) = true)
+    (secondAncestor : G.ancestorOf mutilation
+      (NodeSet.union left (NodeSet.union right conditioned))
+      (.observed second) = true)
+    (firstOpen : conditioned first = false)
+    (secondOpen : conditioned second = false) :
+    G.moralLeftSide mutilation left right conditioned (.observed first) =
+      G.moralLeftSide mutilation left right conditioned (.observed second) := by
+  by_cases same : first = second
+  · subst second
+    rfl
+  · have bidirected := model.bidirected_of_shared_latent G projected
+        root same firstIncident secondIncident
+    let latent : SeparationNode S := .latentPair first second
+    have edgeFirst :
+        G.expandedMutilatedEdge mutilation latent (.observed first) = true := by
+      have self : finBeq first first = true :=
+        (finBeq_eq_true_iff first first).mpr rfl
+      simp [latent, ObservedGraph.expandedMutilatedEdge, bidirected,
+        firstFree, self]
+    have edgeSecond :
+        G.expandedMutilatedEdge mutilation latent (.observed second) = true := by
+      have self : finBeq second second = true :=
+        (finBeq_eq_true_iff second second).mpr rfl
+      simp [latent, ObservedGraph.expandedMutilatedEdge, bidirected,
+        secondFree, self]
+    have latentAncestor : G.ancestorOf mutilation
+        (NodeSet.union left (NodeSet.union right conditioned)) latent = true :=
+      G.ancestorOf_prepend mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        edgeFirst firstAncestor
+    have firstMoral : G.MoralOpenEdge mutilation
+        (NodeSet.union left (NodeSet.union right conditioned)) conditioned
+        (.observed first) latent = true :=
+      G.moralOpenEdge_of_ancestral mutilation
+        (NodeSet.union left (NodeSet.union right conditioned)) conditioned
+        (by simp [ObservedGraph.blockedBy, firstOpen]) (by
+          dsimp [latent]
+          rfl)
+        (G.ancestralMoralEdge_of_adjacent mutilation
+          (NodeSet.union left (NodeSet.union right conditioned))
+          firstAncestor latentAncestor (Or.inr edgeFirst))
+    have secondMoral : G.MoralOpenEdge mutilation
+        (NodeSet.union left (NodeSet.union right conditioned)) conditioned
+        latent (.observed second) = true :=
+      G.moralOpenEdge_of_ancestral mutilation
+        (NodeSet.union left (NodeSet.union right conditioned)) conditioned
+        (by
+          dsimp [latent]
+          rfl)
+        (by simp [ObservedGraph.blockedBy, secondOpen])
+        (G.ancestralMoralEdge_of_adjacent mutilation
+          (NodeSet.union left (NodeSet.union right conditioned))
+          latentAncestor secondAncestor (Or.inl edgeSecond))
+    apply Bool.eq_iff_iff.mpr
+    constructor
+    · intro firstIn
+      have latentIn := G.moralLeftSide_closed mutilation
+        left right conditioned firstIn firstMoral
+      exact G.moralLeftSide_closed mutilation left right conditioned
+        latentIn secondMoral
+    · intro secondIn
+      have latentIn := G.moralLeftSide_closed mutilation left right conditioned
+        secondIn (G.moralOpenEdge_symmetric mutilation
+          (NodeSet.union left (NodeSet.union right conditioned)) conditioned
+          secondMoral)
+      exact G.moralLeftSide_closed mutilation left right conditioned
+        latentIn (G.moralOpenEdge_symmetric mutilation
+          (NodeSet.union left (NodeSet.union right conditioned)) conditioned
+          firstMoral)
+
+/-- Concrete latent roots assigned to the left moral side.  Only incident
+children that are free, ancestral to the relevant cylinders, and open under
+conditioning participate in the test. -/
+def latentMoralLeftSide
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (mutilation : GraphMutilation S)
+    (left right conditioned : NodeSet S)
+    (root : Fin model.latent.count) : Bool :=
+  finAny S.count (fun child =>
+    model.latent.incident root child &&
+      !(mutilation.removeIncoming child) &&
+      G.ancestorOf mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        (.observed child) &&
+      !(conditioned child) &&
+      G.moralLeftSide mutilation left right conditioned (.observed child))
+
+/-- For every relevant incident child, the concrete latent-root partition is
+exactly that child's canonical moral side.  Hence one latent coordinate can
+never straddle the separator. -/
+theorem latentMoralLeftSide_eq_child
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (mutilation : GraphMutilation S)
+    (left right conditioned : NodeSet S)
+    (root : Fin model.latent.count) (child : Fin S.count)
+    (incident : model.latent.incident root child = true)
+    (free : mutilation.removeIncoming child = false)
+    (ancestor : G.ancestorOf mutilation
+      (NodeSet.union left (NodeSet.union right conditioned))
+      (.observed child) = true)
+    (openChild : conditioned child = false) :
+    model.latentMoralLeftSide G mutilation left right conditioned root =
+      G.moralLeftSide mutilation left right conditioned (.observed child) := by
+  cases childSide : G.moralLeftSide mutilation left right conditioned
+      (.observed child) with
+  | true =>
+      apply finAny_eq_true_of _ child
+      simp [incident, free, ancestor, openChild, childSide]
+  | false =>
+      apply (finAny_eq_false_iff _).mpr
+      intro other
+      cases selected :
+          (model.latent.incident root other &&
+            !(mutilation.removeIncoming other) &&
+            G.ancestorOf mutilation
+              (NodeSet.union left (NodeSet.union right conditioned))
+              (.observed other) &&
+            !(conditioned other) &&
+            G.moralLeftSide mutilation left right conditioned
+              (.observed other)) with
+      | false => rfl
+      | true =>
+          have parts := Bool.and_eq_true_iff.mp selected
+          have partsA := Bool.and_eq_true_iff.mp parts.1
+          have partsB := Bool.and_eq_true_iff.mp partsA.1
+          have partsC := Bool.and_eq_true_iff.mp partsB.1
+          have otherIncident : model.latent.incident root other = true :=
+            partsC.1
+          have otherFree : mutilation.removeIncoming other = false := by
+            simpa using partsC.2
+          have otherAncestor : G.ancestorOf mutilation
+              (NodeSet.union left (NodeSet.union right conditioned))
+              (.observed other) = true := partsB.2
+          have otherOpen : conditioned other = false := by
+            simpa using partsA.2
+          have otherSide : G.moralLeftSide mutilation left right conditioned
+              (.observed other) = true := parts.2
+          have equalSides := moralLeftSide_eq_of_shared_latent
+            model G projected mutilation left right conditioned root child other
+            incident otherIncident free otherFree ancestor otherAncestor
+            openChild otherOpen
+          rw [childSide, otherSide] at equalSides
+          contradiction
 
 /-- A set contains every non-intervened directed parent of each of its
 members. -/
