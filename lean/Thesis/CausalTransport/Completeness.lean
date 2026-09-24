@@ -271,22 +271,29 @@ induction.  The remaining inhabitants are:
   (`hedgeMix_interventional_first_mass_lt`,
   `hedgeMix_interventional_first_not_equiv`);
   observational agreement of the two mix masks is still required for a
-  `CounterexampleIn` in general; a seed-plus-sink action mask agrees with
-  the empty mix once every directed child of the seed shares its pair-root
-  switch (`hedgeMixModel_observationally_equivalent_of_shared_switch`;
-  extra action vertices may sit in the mask if they have no outgoing
-  directed edges); singleton action is the special case
-  `hedgeMask_of_singleton`;
+  `CounterexampleIn` in general; an arbitrary action mask agrees with the
+  empty mix when every edge leaving a masked vertex preserves pair-root
+  incidence (`hedgeMixModel_observationally_equivalent_of_edge_shared_switch`),
+  proved by induction over the graph's topological node order; the earlier
+  seed-plus-sink condition is a specialization
+  (`hedgeMixModel_observationally_equivalent_of_shared_switch`), and
+  singleton action is the special case `hedgeMask_of_singleton`;
   unique-child bows are the special case
   (`hedgeMixModel_observationally_equivalent_of_bow`), and the same
   hypotheses inhabit `hedgeBowCounterexampleIn` in the positive class;
   composite-outcome cylinders split as a singleton coordinate times
   the complementary cylinder (`agreesOn_split_coord`); a shared-switch
-  outcome that is any set of directed children of a seed-or-sink action
-  inhabits `hedgeChildren_not_valueEquivalent` /
-  `hedgeSharedSwitchCounterexampleIn` (`hedgeWitnessSharedSwitchReady`
-  tests subset of those children and seed-or-sink extras, not a singleton
-  action); the action-wide `second` assignment `hedgeActionReference`
+  outcome that is any set of directed children of one seed is separated
+  whenever that seed is their unique action parent
+  (`hedgeChildren_not_valueEquivalent`); combining this with edge-wise
+  observational agreement permits non-sink extra action vertices in
+  `hedgeEdgeSharedChildrenCounterexampleIn`; the executable test and package
+  are `hedgeWitnessEdgeSharedReady` and
+  `hedgeEdgeSharedChildrenCounterexampleIn_of_ready`; the seed-plus-sink
+  `hedgeSharedSwitchCounterexampleIn` remains a convenient specialization
+  (`hedgeWitnessSharedSwitchReady` tests subset of those children and
+  seed-or-sink extras, not a singleton action); the action-wide `second`
+  assignment `hedgeActionReference`
   matches `hedgeDoSecond` without a singleton hypothesis
   (`hedgeDoSecond_eq_action_intervention`);
   `HedgeWitness` now stores `actionSeed`/`outcomeSeed` as data (member-list
@@ -32315,6 +32322,36 @@ theorem hedgeParentBitsFrom_of_no_masked_parent
     simp [hdir]
 
 /--
+Masked parent parity vanishes when every masked directed parent carries the
+distinguished `first` label.  This is the many-parent counterpart of
+`hedgeParentBitsFrom_of_no_masked_parent`: masked parents may now be present,
+but each contributes the zero bit to the XOR fold.
+
+Keeping this lemma independent of `hedgeMixModel` is useful for the general
+shared-switch argument below.  The recursive model proof establishes the
+`first`-label premise from earlier vertices, while this finite fold performs
+the purely Boolean aggregation.
+-/
+theorem hedgeParentBitsFrom_false_of_masked_parents_first
+    (rich : ObservedSignature.ValueRich S) (mask : NodeSet S)
+    (child : Fin S.count)
+    (get : forall parent, S.directed parent child = true → S.Value parent)
+    (hfirst : forall parent (edge : S.directed parent child = true),
+      mask parent = true → hedgeIsSecond rich parent (get parent edge) = false) :
+    hedgeParentBitsFrom rich mask child get = false := by
+  unfold hedgeParentBitsFrom
+  refine foldl_unchanged _ false (List.finRange S.count) ?_
+  intro acc parent
+  if edge : S.directed parent child = true then
+    cases selected : mask parent with
+    | false =>
+        simp [edge]
+    | true =>
+        simp [edge, hfirst parent edge selected]
+  else
+    simp [edge]
+
+/--
 A unique masked directed parent contributes exactly its `ValueRich`
 second-bit to the parent-bit XOR.
 -/
@@ -38530,6 +38567,126 @@ theorem hedgeMask_of_singleton {mask : NodeSet S} {x : Fin S.count}
       p = x ∨ forall c, S.directed p c = false :=
   fun p hm => Or.inl (h p hm)
 
+/-!
+### Acyclic shared-switch masks
+
+The seed-plus-sink result below is intentionally elementary, but its
+single-seed hypothesis is stronger than the mix mechanism actually needs.
+For observational agreement it is enough that every edge leaving a masked
+parent preserves the complete pair-root incidence vector.  When a child's
+switch is on, the same switch is therefore on at each masked parent.  Directed
+acyclicity lets us inspect those parents first; inductively they agree with the
+empty-mask model and hence emit `first`.  Every masked parent bit is zero, so
+the child also emits `first`, exactly as it does under the empty mask.
+
+This condition is deliberately stated as a hypothesis.  Arbitrary hedge
+forests need not preserve all pair-root incidence across their directed edges,
+especially in the presence of extra bidirected arms in the ambient graph.
+-/
+
+/--
+Pointwise observational equality for an arbitrary mask whose every outgoing
+directed edge shares the parent's pair-root switch.  The recursion is on the
+topological node index: every directed parent has a strictly smaller index.
+-/
+theorem hedgeMixModel_evalNode_eq_of_edge_shared_switch
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (mask : NodeSet S)
+    (shared : forall parent child,
+      mask parent = true → S.directed parent child = true →
+        forall root,
+          (hedgeLatentExtension G).incident (hedgePairRoot G root) parent =
+            (hedgeLatentExtension G).incident (hedgePairRoot G root) child)
+    (u : (hedgeLatentExtension G).Assignment) (child : Fin S.count) :
+    (hedgeMixModel G rich mask).evalNodeUnder
+        (FiniteLatentSCM.noIntervention S) u child =
+      (hedgeMixModel G rich NodeSet.empty).evalNodeUnder
+        (FiniteLatentSCM.noIntervention S) u child := by
+  rw [hedgeMixModel_evalNode G rich mask u child]
+  rw [hedgeMixModel_evalNode G rich NodeSet.empty u child]
+  rw [hedgeParentBitsFrom_empty]
+  cases childSwitch :
+      hedgeXorPairBits G child (fun latent _ => u latent) with
+  | false =>
+      simp [hedgeMixFrom_false]
+  | true =>
+      have parentBitsFalse :
+          hedgeParentBitsFrom rich mask child
+              (fun parent _ =>
+                (hedgeMixModel G rich mask).evalNodeUnder
+                  (FiniteLatentSCM.noIntervention S) u parent) = false := by
+        apply hedgeParentBitsFrom_false_of_masked_parents_first
+        intro parent edge selected
+        have parentSwitch :
+            hedgeXorPairBits G parent (fun latent _ => u latent) = true := by
+          have sameSwitch :=
+            hedgeXorPairBits_eq_of_incident_eq G u
+              (shared parent child selected edge)
+          exact sameSwitch.trans childSwitch
+        have parentAgreement :=
+          hedgeMixModel_evalNode_eq_of_edge_shared_switch G rich mask shared
+            u parent
+        have emptyParentFirst :
+            (hedgeMixModel G rich NodeSet.empty).evalNodeUnder
+                (FiniteLatentSCM.noIntervention S) u parent =
+              rich.first parent := by
+          rw [hedgeMixModel_evalNode G rich NodeSet.empty u parent,
+            hedgeParentBitsFrom_empty, parentSwitch,
+            hedgeMixFrom_true_first]
+        rw [parentAgreement, emptyParentFirst, hedgeIsSecond_first]
+      rw [parentBitsFalse, hedgeMixFrom_true_first]
+termination_by child.val
+decreasing_by
+  exact S.directed_earlier edge
+
+/-- The acyclic shared-switch equality holds for the complete observed output. -/
+theorem hedgeMixModel_eval_eq_of_edge_shared_switch
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (mask : NodeSet S)
+    (shared : forall parent child,
+      mask parent = true → S.directed parent child = true →
+        forall root,
+          (hedgeLatentExtension G).incident (hedgePairRoot G root) parent =
+            (hedgeLatentExtension G).incident (hedgePairRoot G root) child)
+    (u : (hedgeLatentExtension G).Assignment) :
+    (hedgeMixModel G rich mask).eval u =
+      (hedgeMixModel G rich NodeSet.empty).eval u := by
+  funext child
+  simpa [FiniteLatentSCM.eval] using
+    hedgeMixModel_evalNode_eq_of_edge_shared_switch G rich mask shared u child
+
+/--
+Any acyclic shared-switch mask produces the same observational law as the
+empty mask.  The two models have definitionally the same product prior, and
+the preceding induction identifies their observed evaluations latent point
+by latent point; no probability reindexing or choice of a preimage is needed.
+-/
+theorem hedgeMixModel_observationally_equivalent_of_edge_shared_switch
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (mask : NodeSet S)
+    (shared : forall parent child,
+      mask parent = true → S.directed parent child = true →
+        forall root,
+          (hedgeLatentExtension G).incident (hedgePairRoot G root) parent =
+            (hedgeLatentExtension G).incident (hedgePairRoot G root) child) :
+    ObservationallyEquivalent
+      (hedgeMixModel G rich NodeSet.empty)
+      (hedgeMixModel G rich mask) := by
+  intro event
+  have evaluation (u : (hedgeLatentExtension G).Assignment) :
+      (hedgeMixModel G rich NodeSet.empty).eval u =
+        (hedgeMixModel G rich mask).eval u :=
+    (hedgeMixModel_eval_eq_of_edge_shared_switch G rich mask shared u).symm
+  refine QProb.equiv_trans
+    (FiniteLatentSCM.observationalValue_eq
+      (hedgeMixModel G rich NodeSet.empty) event) ?_
+  refine QProb.equiv_trans ?_
+    (QProb.equiv_symm
+      (FiniteLatentSCM.observationalValue_eq
+        (hedgeMixModel G rich mask) event))
+  exact FiniteProbRecord.probVal_congr _ _ _
+    (fun u => congrArg event (evaluation u))
+
 /--
 Seed-plus-sink mix models agree observationally once every directed child
 of the masked seed shares that seed's pair-root switch.  Extra mask
@@ -38553,66 +38710,11 @@ theorem hedgeMixModel_evalNode_eq_of_shared_switch (G : ObservedGraph S)
         (FiniteLatentSCM.noIntervention S) u child =
       (hedgeMixModel G rich NodeSet.empty).evalNodeUnder
         (FiniteLatentSCM.noIntervention S) u child := by
-  rw [hedgeMixModel_evalNode G rich mask u child]
-  rw [hedgeMixModel_evalNode G rich NodeSet.empty u child]
-  rw [hedgeParentBitsFrom_empty]
-  cases hxor : hedgeXorPairBits G child (fun latent _ => u latent) with
-  | false =>
-      simp [hedgeMixFrom_false]
-  | true =>
-      have hpb :
-          hedgeParentBitsFrom rich mask child
-            (fun parent _ =>
-              (hedgeMixModel G rich mask).evalNodeUnder
-                (FiniteLatentSCM.noIntervention S) u parent) = false := by
-        if hpar : S.directed x child = true then
-          have hxnone :
-              hedgeParentBitsFrom rich mask x
-                (fun parent _ =>
-                  (hedgeMixModel G rich mask).evalNodeUnder
-                    (FiniteLatentSCM.noIntervention S) u parent) = false :=
-            hedgeParentBitsFrom_of_no_masked_parent rich mask x _ (fun p hm hd =>
-              have hp : p = x := hedgeMaskParent_eq_seed hmask hm hd
-              have hlt := S.directed_earlier hd
-              (Nat.ne_of_lt hlt) (congrArg Fin.val hp))
-          have hxeval :
-              (hedgeMixModel G rich mask).evalNodeUnder
-                  (FiniteLatentSCM.noIntervention S) u x =
-                hedgeMixFrom rich x
-                  (hedgeXorPairBits G x (fun latent _ => u latent)) false
-                  (hedgePrivateDecode S x
-                    (hedgePrivateIndex G x (fun latent _ => u latent))) := by
-            rw [hedgeMixModel_evalNode G rich mask u x, hxnone]
-          if hmx : mask x = true then
-            have hbit :=
-              hedgeParentBitsFrom_of_unique rich mask
-                (fun parent _ =>
-                  (hedgeMixModel G rich mask).evalNodeUnder
-                    (FiniteLatentSCM.noIntervention S) u parent)
-                hpar hmx (fun p hm hd => hedgeMaskParent_eq_seed hmask hm hd)
-            rw [hbit]
-            change
-              hedgeIsSecond rich x
-                ((hedgeMixModel G rich mask).evalNodeUnder
-                  (FiniteLatentSCM.noIntervention S) u x) = false
-            rw [hxeval]
-            have hxorX :
-                hedgeXorPairBits G x (fun latent _ => u latent) =
-                  hedgeXorPairBits G child (fun latent _ => u latent) :=
-              hedgeXorPairBits_eq_of_incident_eq G (fun latent => u latent)
-                (hinc child hpar)
-            rw [hxorX, hxor, hedgeMixFrom_true_first, hedgeIsSecond_first]
-          else
-            exact hedgeParentBitsFrom_of_no_masked_parent rich mask child _
-              (fun p hm hd =>
-                have hp : p = x := hedgeMaskParent_eq_seed hmask hm hd
-                hmx (hp ▸ hm))
-        else
-          exact hedgeParentBitsFrom_of_no_masked_parent rich mask child _
-            (fun p hm hd =>
-              have hp : p = x := hedgeMaskParent_eq_seed hmask hm hd
-              hpar (by simpa [hp] using hd))
-      rw [hpb, hedgeMixFrom_true_first]
+  apply hedgeMixModel_evalNode_eq_of_edge_shared_switch G rich mask
+  intro parent c selected edge root
+  have parentEq : parent = x := hedgeMaskParent_eq_seed hmask selected edge
+  subst parent
+  exact hinc c edge root
 
 theorem hedgeMixModel_eval_eq_of_shared_switch (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) (mask : NodeSet S)
@@ -38648,25 +38750,11 @@ theorem hedgeMixModel_observationally_equivalent_of_shared_switch
     ObservationallyEquivalent
       (hedgeMixModel G rich NodeSet.empty)
       (hedgeMixModel G rich mask) := by
-  intro event
-  have heval (u : (hedgeLatentExtension G).Assignment) :
-      (hedgeMixModel G rich NodeSet.empty).eval u =
-        (hedgeMixModel G rich mask).eval u :=
-    (hedgeMixModel_eval_eq_of_shared_switch G rich mask hmask hinc u).symm
-  refine QProb.equiv_trans
-    (FiniteLatentSCM.observationalValue_eq
-      (hedgeMixModel G rich NodeSet.empty) event) ?_
-  refine QProb.equiv_trans ?_
-    (QProb.equiv_symm
-      (FiniteLatentSCM.observationalValue_eq
-        (hedgeMixModel G rich mask) event))
-  have hprior :
-      (hedgeMixModel G rich NodeSet.empty).prior =
-        (hedgeMixModel G rich mask).prior :=
-    rfl
-  rw [hprior]
-  exact FiniteProbRecord.probVal_congr _ _ _
-    (fun u => congrArg event (heval u))
+  apply hedgeMixModel_observationally_equivalent_of_edge_shared_switch
+  intro parent child selected edge root
+  have parentEq : parent = x := hedgeMaskParent_eq_seed hmask selected edge
+  subst parent
+  exact hinc child edge root
 
 /-- Unique-child bows share the parent's switch at their only child. -/
 theorem hedgeMix_bow_shared_switch {G : ObservedGraph S}
@@ -38844,19 +38932,19 @@ theorem agreesOn_hedgeBowReference_eq_first
 
 /--
 `P(Y = first | do(X = second))` for a composite outcome that is a set of
-directed children of a seed-or-sink action, all sharing the action seed's
-pair-root switch.  Extra action vertices may be sinks; they do not
-contribute parent bits.  The extra mass is still the copy branch
-`xorBits = true`, which emits `first` at every such child when parents
-are ignored and `second` when the action parent is copied.
+directed children of one action seed, all sharing that seed's pair-root
+switch.  Extra action vertices may have outgoing edges; they merely must not
+be additional parents of a queried child.  The extra mass is the copy branch
+`xorBits = true`, which emits `first` at every such child when parents are
+ignored and `second` when the unique action parent is copied.
 -/
 theorem hedgeMix_interventional_children_mass_lt (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) {x y : Fin S.count}
     (action outcome : NodeSet S) (root : Fin (pairRootCount G))
     (hdir : S.directed x y = true) (hx : action x = true)
     (hy : outcome y = true)
-    (hsink : forall p, action p = true →
-      p = x ∨ forall c, S.directed p c = false)
+    (hunique : forall i, outcome i = true →
+      forall p, action p = true → S.directed p i = true → p = x)
     (hfree : forall i, outcome i = true → action i = false)
     (hchildren : forall i, outcome i = true → S.directed x i = true)
     (hincChildren : forall c, S.directed x c = true →
@@ -38889,9 +38977,6 @@ theorem hedgeMix_interventional_children_mass_lt (G : ObservedGraph S)
       Kernel.agreesOn outcome (hedgeActionReference rich action)
         ((hedgeMixModel G rich NodeSet.empty).evalUnder
           (hedgeDoSecond rich action) u)
-  have huniq_child (i : Fin S.count) (hi : outcome i = true) :
-      forall p, action p = true → S.directed p i = true → p = x :=
-    fun p hp hd => hedgeMaskParent_eq_seed hsink hp hd
   have hxor_eq (i : Fin S.count) (hi : outcome i = true)
       (u : (hedgeLatentExtension G).Assignment) :
       hedgeXorPairBits G i (fun latent _ => u latent) =
@@ -38920,7 +39005,7 @@ theorem hedgeMix_interventional_children_mass_lt (G : ObservedGraph S)
     intro u hextra hact
     have hyval :=
       hedgeMixModel_evalUnder_doSecond_action_child G rich action u hdir hx
-        (hfree y hy) (huniq_child y hy)
+        (hfree y hy) (hunique y hy)
     have hxorY : hedgeXorPairBits G y (fun latent _ => u latent) = true :=
       hextra
     rw [hxorY, hedgeMixFrom_true_second] at hyval
@@ -38966,7 +39051,7 @@ theorem hedgeMix_interventional_children_mass_lt (G : ObservedGraph S)
                 rw [hxor_eq i hi u]
                 exact hxor
               rw [hedgeMixModel_evalUnder_doSecond_action_child G rich action u
-                (hchildren i hi) hx hc (huniq_child i hi),
+                (hchildren i hi) hx hc (hunique i hi),
                 hedgeMixModel_evalUnder_doSecond_empty_child G rich action u hc,
                 hxorI]
               simp [hedgeMixFrom_false])
@@ -39032,8 +39117,8 @@ theorem hedgeMix_interventional_children_not_equiv (G : ObservedGraph S)
     (action outcome : NodeSet S) (root : Fin (pairRootCount G))
     (hdir : S.directed x y = true) (hx : action x = true)
     (hy : outcome y = true)
-    (hsink : forall p, action p = true →
-      p = x ∨ forall c, S.directed p c = false)
+    (hunique : forall i, outcome i = true →
+      forall p, action p = true → S.directed p i = true → p = x)
     (hfree : forall i, outcome i = true → action i = false)
     (hchildren : forall i, outcome i = true → S.directed x i = true)
     (hincChildren : forall c, S.directed x c = true →
@@ -39074,7 +39159,7 @@ theorem hedgeMix_interventional_children_not_equiv (G : ObservedGraph S)
     QProb.equiv_trans (QProb.equiv_symm hact) (QProb.equiv_trans heq hemp)
   have hlt :=
     hedgeMix_interventional_children_mass_lt G rich action outcome root hdir hx
-      hy hsink hfree hchildren hincChildren hincy
+      hy hunique hfree hchildren hincChildren hincy
   have hprior :
       (hedgeMixModel G rich action).prior =
         (hedgeMixModel G rich NodeSet.empty).prior :=
@@ -39242,17 +39327,19 @@ theorem hedgeBow_not_valueEquivalent (G : ObservedGraph S)
               (QProb.equiv_trans hq hpR)))
 
 /--
-On a shared-switch query whose outcome is any set of directed children of
-a seed-or-sink action, the empty-mask and action-mask mix models disagree at
-the action-wide `second` reference.
+On a shared-switch query whose outcome vertices are directed children of one
+action seed, the empty-mask and action-mask mix models disagree at the
+action-wide `second` reference.  Other action vertices are permitted; the
+only local restriction is that the seed is the unique action parent of every
+queried child.
 -/
 theorem hedgeChildren_not_valueEquivalent (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) (q : JointKernelQuery S)
     {x y : Fin S.count} (root : Fin (pairRootCount G))
     (hdir : S.directed x y = true)
     (hx : q.action x = true)
-    (hsink : forall p, q.action p = true →
-      p = x ∨ forall c, S.directed p c = false)
+    (hunique : forall i, q.outcome i = true →
+      forall p, q.action p = true → S.directed p i = true → p = x)
     (hy : q.outcome y = true)
     (hchildren : forall i, q.outcome i = true → S.directed x i = true)
     (hincChildren : forall c, S.directed x c = true →
@@ -39335,10 +39422,47 @@ theorem hedgeChildren_not_valueEquivalent (G : ObservedGraph S)
         rfl
       exact
         hedgeMix_interventional_children_not_equiv G rich q.action q.outcome
-          root hdir hx hy hsink hfree hchildren hincChildren hincy
+          root hdir hx hy hunique hfree hchildren hincChildren hincy
           (QProb.equiv_symm
             (QProb.equiv_trans (QProb.equiv_symm hpL)
               (QProb.equiv_trans hq hpR)))
+
+/--
+Positive counterexample for a general acyclic shared-switch action mask.
+Every masked edge must preserve pair-root incidence, which gives
+observational agreement by topological induction.  Query separation needs
+only one action seed reaching every outcome and being the unique action
+parent there.  In particular, non-sink extra action vertices are allowed when
+they satisfy the same edge-wise switch condition and do not also parent a
+queried child.
+-/
+def hedgeEdgeSharedChildrenCounterexampleIn (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) (q : JointKernelQuery S)
+    {x y : Fin S.count} (root : Fin (pairRootCount G))
+    (hdir : S.directed x y = true)
+    (hx : q.action x = true)
+    (hy : q.outcome y = true)
+    (hchildren : forall i, q.outcome i = true → S.directed x i = true)
+    (hunique : forall i, q.outcome i = true →
+      forall p, q.action p = true → S.directed p i = true → p = x)
+    (shared : forall parent child,
+      q.action parent = true → S.directed parent child = true →
+        forall r,
+          (hedgeLatentExtension G).incident (hedgePairRoot G r) parent =
+            (hedgeLatentExtension G).incident (hedgePairRoot G r) child)
+    (hincy : (hedgeLatentExtension G).incident (hedgePairRoot G root) y =
+        true) :
+    CounterexampleIn (GraphModelClass.positive G) q where
+  left := hedgeMixModel G rich NodeSet.empty
+  right := hedgeMixModel G rich q.action
+  left_mem := hedgeMixModel_mem_positive G rich NodeSet.empty
+  right_mem := hedgeMixModel_mem_positive G rich q.action
+  observationally_equal :=
+    hedgeMixModel_observationally_equivalent_of_edge_shared_switch G rich
+      q.action shared
+  query_separated :=
+    hedgeChildren_not_valueEquivalent G rich q root hdir hx hunique hy
+      hchildren (fun child edge r => shared x child hx edge r) hincy
 
 /--
 A seed-or-sink-action hedge whose outcome is any set of directed children
@@ -39362,17 +39486,16 @@ def hedgeSharedSwitchCounterexampleIn (G : ObservedGraph S)
           (hedgeLatentExtension G).incident (hedgePairRoot G r) c)
     (hincy : (hedgeLatentExtension G).incident (hedgePairRoot G root) y =
         true) :
-    CounterexampleIn (GraphModelClass.positive G) q where
-  left := hedgeMixModel G rich NodeSet.empty
-  right := hedgeMixModel G rich q.action
-  left_mem := hedgeMixModel_mem_positive G rich NodeSet.empty
-  right_mem := hedgeMixModel_mem_positive G rich q.action
-  observationally_equal :=
-    hedgeMixModel_observationally_equivalent_of_shared_switch G rich
-      q.action hsink hincChildren
-  query_separated :=
-    hedgeChildren_not_valueEquivalent G rich q root hdir hx hsink hy
-      hchildren hincChildren hincy
+    CounterexampleIn (GraphModelClass.positive G) q :=
+  hedgeEdgeSharedChildrenCounterexampleIn G rich q root hdir hx hy hchildren
+    (fun _i _hi p selected edge =>
+      hedgeMaskParent_eq_seed hsink selected edge)
+    (fun parent child selected edge root => by
+      have parentEq : parent = x :=
+        hedgeMaskParent_eq_seed hsink selected edge
+      subst parent
+      exact hincChildren child edge root)
+    hincy
 
 /--
 A bow-arc hedge query is not identifiable in the positive class: the
@@ -39776,6 +39899,87 @@ theorem sharedSwitchChildrenBool_hedgeIncident
     sharedSwitchChildrenBool_spec h hd root
 
 /--
+Every directed edge leaving the selected action mask preserves pair-root
+incidence.  This is the finite Boolean form of the hypothesis used by
+`hedgeMixModel_observationally_equivalent_of_edge_shared_switch`; unlike
+`actionSeedAndSinkExtrasBool`, it permits extra action vertices with outgoing
+edges.
+-/
+def actionEdgesSharePairRootSwitchBool (G : ObservedGraph S)
+    (action : NodeSet S) : Bool :=
+  (NodeSet.enumerated S).all fun parent =>
+    !(action parent) ||
+      (NodeSet.enumerated S).all fun child =>
+        !(S.directed parent child) ||
+          hedgePairRootIncidentEqBool G parent child
+
+/-- Recover edge-wise pair-root equality from the executable action test. -/
+theorem actionEdgesSharePairRootSwitchBool_spec
+    {G : ObservedGraph S} {action : NodeSet S}
+    (h : actionEdgesSharePairRootSwitchBool G action = true)
+    {parent child : Fin S.count}
+    (selected : action parent = true)
+    (edge : S.directed parent child = true)
+    (root : Fin (pairRootCount G)) :
+    pairRootIncident G root parent = pairRootIncident G root child := by
+  have parentOk :=
+    (List.all_eq_true.mp h) parent (NodeSet.mem_enumerated S parent)
+  have childrenOk :
+      (NodeSet.enumerated S).all (fun c =>
+        !(S.directed parent c) ||
+          hedgePairRootIncidentEqBool G parent c) = true := by
+    simpa [selected] using parentOk
+  have childOk :=
+    (List.all_eq_true.mp childrenOk) child (NodeSet.mem_enumerated S child)
+  simp [edge] at childOk
+  exact hedgePairRootIncidentEqBool_spec childOk root
+
+/-- The same action-edge test, stated on the concrete hedge latent extension. -/
+theorem actionEdgesSharePairRootSwitchBool_hedgeIncident
+    {G : ObservedGraph S} {action : NodeSet S}
+    (h : actionEdgesSharePairRootSwitchBool G action = true)
+    {parent child : Fin S.count}
+    (selected : action parent = true)
+    (edge : S.directed parent child = true)
+    (root : Fin (pairRootCount G)) :
+    (hedgeLatentExtension G).incident (hedgePairRoot G root) parent =
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) child := by
+  simpa [hedgeLatentExtension, hedgeIncident_pair] using
+    actionEdgesSharePairRootSwitchBool_spec h selected edge root
+
+/--
+Test that `seed` is the only action vertex with a directed edge into any
+queried outcome.  Vertices outside the outcome are intentionally ignored:
+the interventional separation proof only reads the queried cylinder.
+-/
+def uniqueActionParentAtOutcomesBool (S : ObservedSignature)
+    (action outcome : NodeSet S) (seed : Fin S.count) : Bool :=
+  (NodeSet.enumerated S).all fun child =>
+    !(outcome child) ||
+      (NodeSet.enumerated S).all fun parent =>
+        !(action parent) || !(S.directed parent child) ||
+          decide (parent = seed)
+
+/-- Recover uniqueness of the action parent at every selected outcome. -/
+theorem uniqueActionParentAtOutcomesBool_spec
+    {S : ObservedSignature} {action outcome : NodeSet S}
+    {seed : Fin S.count}
+    (h : uniqueActionParentAtOutcomesBool S action outcome seed = true) :
+    forall child, outcome child = true →
+      forall parent, action parent = true →
+        S.directed parent child = true → parent = seed := by
+  intro child inOutcome parent inAction edge
+  have childOk :=
+    (List.all_eq_true.mp h) child (NodeSet.mem_enumerated S child)
+  have parentsOk :
+      (NodeSet.enumerated S).all (fun p =>
+        !(action p) || !(S.directed p child) || decide (p = seed)) = true := by
+    simpa [inOutcome] using childOk
+  have parentOk :=
+    (List.all_eq_true.mp parentsOk) parent (NodeSet.mem_enumerated S parent)
+  simpa [inAction, edge] using parentOk
+
+/--
 Every bidirected neighbour of `node` is `neighbor`.  This is the ADMG
 form of identical pair-root incidence at one endpoint.
 -/
@@ -39793,6 +39997,64 @@ theorem uniqueBidirectedNeighborBool_spec
     (List.all_eq_true.mp h) i (NodeSet.mem_enumerated S i)
   simp [hedge] at ok
   exact ok
+
+/-!
+### Executable recognition of the generalized positive mix leaf
+
+The theorem-level edge-shared counterexample above is useful only if the
+finite failure pipeline can recognize its hypotheses.  The readiness test
+below keeps every condition computational: subset, parent uniqueness,
+edge-wise switch equality, and incident-root existence are all Boolean scans
+over canonical duplicate-free enumerations.
+-/
+
+/--
+Boolean tests that a `HedgeWitness` fits the generalized edge-shared mix
+construction.  Compared with `hedgeWitnessSharedSwitchReady`, extra action
+vertices need not be sinks.  Their outgoing edges must preserve pair-root
+incidence, and no such extra vertex may also parent a queried outcome.
+-/
+def hedgeWitnessEdgeSharedReady (G : ObservedGraph S)
+    (q : JointKernelQuery S) (w : HedgeWitness G q) : Bool :=
+  q.action w.actionSeed &&
+    (NodeSet.subsetBool q.outcome (fun i => S.directed w.actionSeed i) &&
+      (uniqueActionParentAtOutcomesBool S q.action q.outcome w.actionSeed &&
+        (S.directed w.actionSeed w.outcomeSeed &&
+          (actionEdgesSharePairRootSwitchBool G q.action &&
+            (List.finRange (pairRootCount G)).any (fun root =>
+              (hedgeLatentExtension G).incident (hedgePairRoot G root)
+                w.outcomeSeed)))))
+
+/--
+Successful generalized readiness produces a positive-class counterexample.
+The incident pair-root is selected by the existing finite first-match search;
+all universal premises are recovered from their Boolean scans.
+-/
+def hedgeEdgeSharedChildrenCounterexampleIn_of_ready
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (q : JointKernelQuery S) (w : HedgeWitness G q)
+    (h : hedgeWitnessEdgeSharedReady G q w = true) :
+    CounterexampleIn (GraphModelClass.positive G) q :=
+  let hAction := (Bool.and_eq_true_iff.mp h).1
+  let hRest := (Bool.and_eq_true_iff.mp h).2
+  let hOutcome := (Bool.and_eq_true_iff.mp hRest).1
+  let hRest2 := (Bool.and_eq_true_iff.mp hRest).2
+  let hUnique := (Bool.and_eq_true_iff.mp hRest2).1
+  let hRest3 := (Bool.and_eq_true_iff.mp hRest2).2
+  let hDirected := (Bool.and_eq_true_iff.mp hRest3).1
+  let hRest4 := (Bool.and_eq_true_iff.mp hRest3).2
+  let hShared := (Bool.and_eq_true_iff.mp hRest4).1
+  let hRoot := (Bool.and_eq_true_iff.mp hRest4).2
+  hedgeEdgeSharedChildrenCounterexampleIn G rich q
+    (firstIncidentPairRoot G w.outcomeSeed hRoot)
+    hDirected hAction w.outcomeSeed_in_outcome
+    ((NodeSet.subsetBool_eq_true_iff q.outcome
+      (fun i => S.directed w.actionSeed i)).mp hOutcome)
+    (uniqueActionParentAtOutcomesBool_spec hUnique)
+    (fun _parent _child selected edge root =>
+      actionEdgesSharePairRootSwitchBool_hedgeIncident hShared selected edge
+        root)
+    (firstIncidentPairRoot_incident G w.outcomeSeed hRoot)
 
 /--
 Boolean tests that a `HedgeWitness` is a seed-or-sink-action query whose
@@ -39895,8 +40157,12 @@ def hedgeBowCounterexampleIn_of_ready (G : ObservedGraph S)
     hedge
 
 /--
-A `HedgeWitness` yields a positive-class counterexample exactly when its
-Boolean bow tests succeed.  Failure is `none`, not an `Exists` unpacking.
+Run the executable positive-mix leaves in backward-compatible order.  The
+established seed-plus-sink constructor remains the first branch
+so callers that inspect the returned witness keep its canonical proof term;
+the edge-shared branch then covers genuinely new non-sink action masks, and
+the bow test remains as a narrow fallback.  Failure is `none`, never an
+`Exists` unpacking into data.
 -/
 def hedgeCounterexampleIn? (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) (q : JointKernelQuery S)
@@ -39904,10 +40170,22 @@ def hedgeCounterexampleIn? (G : ObservedGraph S)
     Option (CounterexampleIn (GraphModelClass.positive G) q) :=
   if h : hedgeWitnessSharedSwitchReady G q w = true then
     some (hedgeSharedSwitchCounterexampleIn_of_ready G rich q w h)
+  else if hedge : hedgeWitnessEdgeSharedReady G q w = true then
+    some (hedgeEdgeSharedChildrenCounterexampleIn_of_ready G rich q w hedge)
   else if hbow : hedgeWitnessBowReady G q w = true then
     some (hedgeBowCounterexampleIn_of_ready G rich q w hbow)
   else
     none
+
+theorem hedgeCounterexampleIn?_isSome_of_edge_shared
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (q : JointKernelQuery S) (w : HedgeWitness G q)
+    (h : hedgeWitnessEdgeSharedReady G q w = true) :
+    (hedgeCounterexampleIn? G rich q w).isSome = true := by
+  dsimp [hedgeCounterexampleIn?]
+  split
+  · simp
+  · simp
 
 theorem hedgeCounterexampleIn?_isSome_of_shared_switch
     (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
@@ -39922,24 +40200,29 @@ theorem hedgeCounterexampleIn?_isSome_iff
     (q : JointKernelQuery S) (w : HedgeWitness G q) :
     (hedgeCounterexampleIn? G rich q w).isSome =
       (hedgeWitnessSharedSwitchReady G q w ||
-        hedgeWitnessBowReady G q w) := by
+        hedgeWitnessEdgeSharedReady G q w ||
+          hedgeWitnessBowReady G q w) := by
   dsimp [hedgeCounterexampleIn?]
   split
   · next h =>
-      simp [h]
+    simp [h]
   · next h =>
-      split
-      · next hbow =>
-          simp [h, hbow]
-      · next hbow =>
-          simp [h, hbow]
+    split
+    · next hedge =>
+        simp [h, hedge]
+    · next hedge =>
+        split
+        · next hbow =>
+            simp [h, hedge, hbow]
+        · next hbow =>
+            simp [h, hedge, hbow]
 
 /--
-ID-failure extraction followed by the Boolean shared-switch tests.
-`none` means either the finite hedge search missed or the extracted
-witness is not a seed-or-sink-action shared-switch (outcome a subset of
-the action seed's directed children; extra action vertices, if any, are
-sinks) or bow query on its stored seeds.
+ID-failure extraction followed by the Boolean edge-shared, seed-plus-sink,
+and bow tests.  `none` means either the finite hedge search missed or the
+extracted witness satisfies none of those positive mix leaves.  The first
+leaf permits non-sink extra action vertices when every outgoing action edge
+shares its pair-root switch and only the stored seed parents queried outcomes.
 -/
 def hedgeCounterexample? (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) (q : JointKernelQuery S)
