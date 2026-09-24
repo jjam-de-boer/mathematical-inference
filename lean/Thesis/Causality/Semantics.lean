@@ -350,6 +350,24 @@ noncomputable def sum_map_congr_mem (values : List X)
       exact add_congr (h value (by simp))
         (ih (fun member memberIn => h member (by simp [memberIn])))
 
+/--
+Finite sums preserve merely inhabited pointwise equivalence without choosing
+a global family of equivalence witnesses.  The list recursion opens one
+`Nonempty` at a time while its result remains proposition-valued, so this is
+the constructive bridge used by extensional kernel relations whose public
+interface intentionally hides proof data behind `Nonempty`.
+-/
+theorem sum_map_congr_nonempty (values : List X) (left right : X -> Result)
+    (h : forall value, Nonempty (Equivalent (left value) (right value))) :
+    Nonempty (Equivalent (sum (values.map left)) (sum (values.map right))) := by
+  induction values with
+  | nil =>
+      exact ⟨refl _⟩
+  | cons value values ih =>
+      rcases h value with ⟨head⟩
+      rcases ih with ⟨tail⟩
+      exact ⟨add_congr head tail⟩
+
 theorem sum_some_map (values : List X) (value : X -> QProb) :
     sum (values.map (fun item => some (value item))) =
       some (QProb.listSum (values.map value)) := by
@@ -1047,6 +1065,25 @@ noncomputable def marginalize_congrAt (model : FiniteLatentSCM S)
       (marginalAssignments S nodes assignment)
       (fun variant => left.denote model variant)
       (fun variant => right.denote model variant) h)
+
+/--
+Lift propositionally inhabited pointwise equivalence through a finite
+marginal.  Unlike `marginalize_congrAt`, this form does not expose a function
+that chooses Type-valued evidence for every assignment; it follows the finite
+enumeration and retains only an inhabited result.
+-/
+theorem marginalize_congrAt_nonempty (model : FiniteLatentSCM S)
+    (nodes : NodeSet S) (assignment : S.Assignment) {left right}
+    (h : forall variant,
+      Nonempty (EquivalentAt model left right variant)) :
+    Nonempty
+      (EquivalentAt model (.marginalize nodes left) (.marginalize nodes right)
+        assignment) := by
+  simpa only [denote] using
+    ProbabilityResult.sum_map_congr_nonempty
+      (marginalAssignments S nodes assignment)
+      (fun variant => left.denote model variant)
+      (fun variant => right.denote model variant) h
 
 theorem actionFree_hasAction_false (kernel : Kernel S)
     (actionFree : (ProbabilityTerm.kernel kernel).ActionFree) :

@@ -4227,13 +4227,16 @@ theorem marginal_numerator_union
       cases z i <;> simp
     simp [Kernel.numeratorEvent, Kernel.agreesOn_union, yTrue, zTrue, wTrue]
 
-/-- Finite marginalization partitions a joint cylinder over its marginalized values. -/
-noncomputable def marginalization_soundAt
+/--
+Finite marginalization partitions a joint cylinder over its marginalized
+values.  Support of the source kernel alone is sufficient: the proof rewrites
+the source numerator as a finite sum with a common positive denominator, so
+definedness of the marginal endpoint is a consequence rather than a premise.
+-/
+noncomputable def marginalization_equivalentAt
     (model : FiniteLatentSCM S) (x y z w : NodeSet S)
     (assignment : S.Assignment) (disjoint : FourWayDisjoint x y z w)
-    (leftSupported : SupportedAt model (.kernel ⟨y, x, w⟩) assignment)
-    (_rightSupported : SupportedAt model
-      (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩)) assignment) :
+    (leftSupported : SupportedAt model (.kernel ⟨y, x, w⟩) assignment) :
     EquivalentAt model
       (.kernel ⟨y, x, w⟩)
       (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩)) assignment := by
@@ -4328,6 +4331,34 @@ noncomputable def marginalization_soundAt
       (by
         simpa only [List.map_map, Function.comp_apply] using
           ProbabilityResult.symm rightCanonical))
+
+/-- Source support transports across finite marginalization. -/
+noncomputable def marginalization_supportedAt
+    (model : FiniteLatentSCM S) (x y z w : NodeSet S)
+    (assignment : S.Assignment) (disjoint : FourWayDisjoint x y z w)
+    (leftSupported : SupportedAt model (.kernel ⟨y, x, w⟩) assignment) :
+    SupportedAt model
+      (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩)) assignment :=
+  SupportedAt.of_equivalent
+    (marginalization_equivalentAt model x y z w assignment disjoint
+      leftSupported)
+    leftSupported
+
+/--
+Compatibility wrapper for the primitive-soundness signature, which supplies
+support at both endpoints.  The second witness is intentionally unnecessary:
+`marginalization_supportedAt` can reconstruct it from the source.
+-/
+noncomputable def marginalization_soundAt
+    (model : FiniteLatentSCM S) (x y z w : NodeSet S)
+    (assignment : S.Assignment) (disjoint : FourWayDisjoint x y z w)
+    (leftSupported : SupportedAt model (.kernel ⟨y, x, w⟩) assignment)
+    (_rightSupported : SupportedAt model
+      (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩)) assignment) :
+    EquivalentAt model
+      (.kernel ⟨y, x, w⟩)
+      (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩)) assignment :=
+  marginalization_equivalentAt model x y z w assignment disjoint leftSupported
 
 /-- Conditioning is the quotient of a joint kernel by its conditioning kernel. -/
 noncomputable def conditioning_soundAt
@@ -4562,6 +4593,70 @@ noncomputable def chain_soundAt
       (ProbabilityResult.symm rightCanonical))
 
 end ProbabilityTerm
+
+/--
+Equality of a joint interventional kernel descends to every sub-outcome.
+The proof is deliberately constructive despite `ValueEquivalent` hiding each
+pointwise witness behind `Nonempty`: `sum_map_congr_nonempty` opens those
+witnesses one finite marginal cell at a time and returns only an inhabited
+equivalence.  No function selecting evidence for all assignments is formed.
+-/
+theorem JointKernelQuery.valueEquivalent_restrictOutcome
+    (q : JointKernelQuery S) (left right : ExactModel S)
+    (equivalent : q.ValueEquivalent left right)
+    (outcome : NodeSet S) (subset : NodeSet.Subset outcome q.outcome) :
+    (q.restrictOutcome outcome subset).ValueEquivalent left right := by
+  intro assignment
+  let rest := NodeSet.diff q.outcome outcome
+  have unionEq : NodeSet.union outcome rest = q.outcome := by
+    simpa [rest] using NodeSet.union_diff_eq subset
+  let disjoint : FourWayDisjoint q.action outcome rest NodeSet.empty :=
+    { xy := NodeSet.disjoint_of_subset_right q.action_outcome_disjoint subset
+      xz := NodeSet.disjoint_of_subset_right q.action_outcome_disjoint
+        (NodeSet.diff_subset_left q.outcome outcome)
+      xw := NodeSet.disjoint_empty_right q.action
+      yz := by simpa [rest] using NodeSet.disjoint_diff q.outcome outcome
+      yw := NodeSet.disjoint_empty_right outcome
+      zw := NodeSet.disjoint_empty_right rest }
+  have leftMarginal :=
+    ProbabilityTerm.marginalization_equivalentAt left q.action outcome rest
+      NodeSet.empty assignment disjoint
+      ((q.restrictOutcome outcome subset).supportedAt left assignment)
+  have rightMarginal :=
+    ProbabilityTerm.marginalization_equivalentAt right q.action outcome rest
+      NodeSet.empty assignment disjoint
+      ((q.restrictOutcome outcome subset).supportedAt right assignment)
+  have leftMarginal' :
+      ProbabilityResult.Equivalent
+        ((q.restrictOutcome outcome subset).sourceTerm.denote left assignment)
+        ((ProbabilityTerm.marginalize rest q.sourceTerm).denote left
+          assignment) := by
+    simpa only [JointKernelQuery.restrictOutcome_sourceTerm,
+      JointKernelQuery.sourceTerm, unionEq] using leftMarginal
+  have rightMarginal' :
+      ProbabilityResult.Equivalent
+        ((q.restrictOutcome outcome subset).sourceTerm.denote right assignment)
+        ((ProbabilityTerm.marginalize rest q.sourceTerm).denote right
+          assignment) := by
+    simpa only [JointKernelQuery.restrictOutcome_sourceTerm,
+      JointKernelQuery.sourceTerm, unionEq] using rightMarginal
+  have middle :
+      Nonempty
+        (ProbabilityResult.Equivalent
+          ((ProbabilityTerm.marginalize rest q.sourceTerm).denote left
+            assignment)
+          ((ProbabilityTerm.marginalize rest q.sourceTerm).denote right
+            assignment)) := by
+    simpa only [ProbabilityTerm.denote] using
+      ProbabilityResult.sum_map_congr_nonempty
+        (ProbabilityTerm.marginalAssignments S rest assignment)
+        (fun variant => q.sourceTerm.denote left variant)
+        (fun variant => q.sourceTerm.denote right variant)
+        equivalent
+  rcases middle with ⟨middleEq⟩
+  exact ⟨ProbabilityResult.trans leftMarginal'
+    (ProbabilityResult.trans middleEq
+      (ProbabilityResult.symm rightMarginal'))⟩
 
 namespace Kernel
 

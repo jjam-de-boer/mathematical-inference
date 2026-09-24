@@ -84,6 +84,27 @@ def JointKernelQuery.sourceTerm (q : JointKernelQuery S) : ProbabilityTerm S :=
       action := q.action
       condition := NodeSet.empty }
 
+/--
+The marginal joint query on a selected subset of the original outcome.  Its
+action is unchanged, and action/outcome disjointness descends along the given
+subset proof.  Semantic preservation of `ValueEquivalent` under this
+restriction is proved with finite marginalization in `Soundness`.
+-/
+def JointKernelQuery.restrictOutcome (q : JointKernelQuery S)
+    (outcome : NodeSet S) (subset : NodeSet.Subset outcome q.outcome) :
+    JointKernelQuery S where
+  outcome := outcome
+  action := q.action
+  action_outcome_disjoint :=
+    NodeSet.disjoint_of_subset_right q.action_outcome_disjoint subset
+
+@[simp] theorem JointKernelQuery.restrictOutcome_sourceTerm
+    (q : JointKernelQuery S) (outcome : NodeSet S)
+    (subset : NodeSet.Subset outcome q.outcome) :
+    (q.restrictOutcome outcome subset).sourceTerm =
+      .kernel ⟨outcome, q.action, NodeSet.empty⟩ :=
+  rfl
+
 def ConditionalKernelQuery.sourceTerm (q : ConditionalKernelQuery S) :
     ProbabilityTerm S :=
   .kernel

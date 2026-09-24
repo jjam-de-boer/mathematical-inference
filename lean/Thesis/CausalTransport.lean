@@ -6,6 +6,7 @@ import Thesis.CausalTransport.FiniteSource
 import Thesis.CausalTransport.Soundness
 import Thesis.CausalTransport.Completeness
 import Thesis.CausalTransport.HedgeOutcomeFlow
+import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.Counterfactual
 import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.CausalTransport.HiddenDAG
@@ -38,11 +39,13 @@ are not consequences of path d-separation in all configurations.
 
 `Completeness` develops the executable ID side for the positive model class:
 successful special cases compile to supported certificates, finite search
-extracts hedge data from many checked failure shapes, and shared-switch hedge
-models provide positive counterexamples for the covered queries.  A complete
-`PublishedCompleteness` inhabitant still needs structural compilation of
-arbitrary successful traces, a general failure-to-hedge bridge, and a
-positive countermodel for an arbitrary hedge.  `HedgeOutcomeFlow` proves exact
+extracts hedge data from checked failures, and shared-switch hedge models
+provide positive counterexamples for the covered queries.  `HedgePositive`
+uses finite marginalization to reduce full-query separation to one suitable
+outcome coordinate, without choosing a family of pointwise equivalences.  A
+complete `PublishedCompleteness` inhabitant still needs structural compilation
+of arbitrary successful traces and a positive countermodel for an arbitrary
+hedge.  `HedgeOutcomeFlow` proves exact
 finite support formulas for the general routed hedge models and packages an
 unrestricted original-query counterexample when readout routing does not
 re-enter `large \ small`; removing that geometric hypothesis and preserving

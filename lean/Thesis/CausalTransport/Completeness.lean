@@ -39225,16 +39225,18 @@ theorem hedgeDoSecond_eq_bow_intervention
       simp [hedgeDoSecond, hi, hedgeBowReference]
 
 /--
-On a bow query `P(Y | do(X))` the empty-mask and action-mask mix models
-disagree at the bow reference, so they are not value-equivalent.
+On a singleton-outcome query `P(Y | do(X))`, the empty-mask and action-mask
+mix models disagree at the bow reference whenever `x` is the unique action
+parent of `y`.  Other action vertices may have outgoing edges away from this
+queried coordinate.
 -/
 theorem hedgeBow_not_valueEquivalent (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) (q : JointKernelQuery S)
     {x y : Fin S.count} (root : Fin (pairRootCount G))
     (hdir : S.directed x y = true)
     (hx : q.action x = true)
-    (hsink : forall p, q.action p = true →
-      p = x ∨ forall c, S.directed p c = false)
+    (hunique : forall p, q.action p = true →
+      S.directed p y = true → p = x)
     (hy : q.outcome y = true)
     (houtcome : forall i, q.outcome i = true → i = y)
     (hincy : (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
@@ -39316,12 +39318,9 @@ theorem hedgeBow_not_valueEquivalent (G : ObservedGraph S)
               (fun a => decide (a y = rich.first y))) := by
         rw [hdistR]
         exact FiniteProbRecord.probVal_congr _ _ _ hevent
-      have huniq :
-          forall p, q.action p = true → S.directed p y = true → p = x :=
-        fun p hm hd => hedgeMaskParent_eq_seed hsink hm hd
       exact
         hedgeMix_interventional_first_not_equiv G rich q.action root hdir hx
-          hyfree huniq hincy
+          hyfree hunique hincy
           (QProb.equiv_symm
             (QProb.equiv_trans (QProb.equiv_symm hpL)
               (QProb.equiv_trans hq hpR)))
