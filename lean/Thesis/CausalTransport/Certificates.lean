@@ -64,6 +64,25 @@ def PublishedIdentificationCertificate.compile
 /-! ## Structural composition of published certificates -/
 
 /--
+The reflexive published certificate for an action-free probability term.
+This is the neutral element used by structural certificate folds.
+-/
+noncomputable def PublishedIdentificationCertificate.refl
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {correct : DSeparationCorrectness G} (term : ProbabilityTerm S)
+    (actionFree : term.ActionFree) :
+    PublishedIdentificationCertificate C correct term where
+  formula := term
+  actionFree := actionFree
+  derivation :=
+    DoCalculusDerivation.refl
+      (G := G) (separation := pathRuleSeparation G) term
+  supported := fun _model _member _assignment sourceSupported => by
+    dsimp [PathDoCalculusDerivation.compile,
+      DoCalculusDerivation.mapRules]
+    exact ⟨sourceSupported, ⟨sourceSupported, ()⟩⟩
+
+/--
 Compose two published reductions whose intermediate probability term agrees
 definitionally.  The support tree is composed in the same order: support of
 the first endpoint feeds the second certificate, and both recursive support

@@ -449,6 +449,14 @@ theorem identifyJoint_eq_identified_iff_successTrace
     identifyFuel_eq_identified_iff_successTrace (identificationFuel S) G
       NodeSet.full q.outcome q.action (observationalJointTerm S) term
 
+/-- A top-level structural success trace always ends in an action-free term. -/
+theorem JointIdentificationSuccessTrace.actionFree
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    {term : ProbabilityTerm S}
+    (trace : JointIdentificationSuccessTrace G q term) : term.ActionFree :=
+  IdentificationSuccessTrace.actionFree trace
+    (observationalJointTerm_actionFree S)
+
 /-- The public unfinished sentinel is exactly a top-level unfinished trace. -/
 theorem identifyJoint_eq_unfinished_iff_unfinishedTrace
     (G : ObservedGraph S) (q : JointKernelQuery S) :
@@ -18145,6 +18153,57 @@ theorem identifyJoint_eq_identified_of_identifiable
       let extracted := trace.extractedHedge G q
       exact False.elim
         ((hedgeCounterexample extracted.witness).not_identifiable
+          identifiable)
+
+/-!
+### Reducing joint completeness to trace compilation and hedge semantics
+
+The totality and failure-to-hedge results above remove all control-flow
+uncertainty from the public joint theorem.  What remains is represented below
+as a structural compiler: every successful trace must produce a certificate
+whose displayed formula is exactly the engine result.  Keeping that equality
+as data prevents a future implementation from satisfying the interface with
+an unrelated action-free expression.
+-/
+
+/-- A published joint certificate aligned with the result indexed by a
+successful structural ID trace. -/
+structure PublishedJointSuccessCompilation
+    {S : ObservedSignature} {G : ObservedGraph S}
+    (C : GraphModelClass G) (correct : DSeparationCorrectness G)
+    (q : JointKernelQuery S) (term : ProbabilityTerm S) where
+  certificate : PublishedJointCertificate C correct q
+  formula_eq : certificate.formula = term
+
+/-- The remaining branch-generic program for successful public joint ID. -/
+structure PublishedJointTraceCompiler
+    {S : ObservedSignature} (G : ObservedGraph S)
+    (C : GraphModelClass G) (correct : DSeparationCorrectness G) where
+  compile : forall (q : JointKernelQuery S) (term : ProbabilityTerm S),
+    JointIdentificationSuccessTrace G q term ->
+      PublishedJointSuccessCompilation C correct q term
+
+/--
+A structural trace compiler and a countermodel for every extracted hedge
+already imply semantic joint completeness.  The failed branch contradicts
+identifiability; the successful branch returns the compiler's inspectable
+certificate.  No unfinished branch exists by the rank theorem.
+-/
+noncomputable def PublishedJointTraceCompiler.certificateOfIdentifiable
+    {S : ObservedSignature.{0}} {G : ObservedGraph S}
+    {C : GraphModelClass G} {correct : DSeparationCorrectness G}
+    (compiler : PublishedJointTraceCompiler G C correct)
+    (hedgeCounterexample : forall q,
+      HedgeWitness G q -> CounterexampleIn C q)
+    (q : JointKernelQuery S) (identifiable : C.identifiable q) :
+    PublishedJointCertificate C correct q := by
+  cases identifyJoint_terminalTrace G q with
+  | identified term trace =>
+      exact (compiler.compile q term trace).certificate
+  | failed fail trace =>
+      let extracted := trace.extractedHedge G q
+      exact False.elim
+        ((hedgeCounterexample q extracted.witness).not_identifiable
           identifiable)
 
 /--

@@ -1656,7 +1656,50 @@ theorem eq_identified {S : ObservedSignature} {G : ObservedGraph S}
       simpa [identifyFuel, actionNonempty, ancestral, freeComponents,
         run, assemble] using combinedResult
 
+/--
+A structural success trace preserves action-freedom from its current term to
+its identified result.  This packages the executable invariant under the
+trace index, so a certificate compiler can obtain its syntactic target field
+without re-running a branch analysis.
+-/
+theorem actionFree {S : ObservedSignature} {G : ObservedGraph S}
+    {fuel : Nat} {remaining outcome action : NodeSet S}
+    {current term : ProbabilityTerm S}
+    (trace :
+      IdentificationSuccessTrace G fuel remaining outcome action current term)
+    (currentFree : current.ActionFree) : term.ActionFree :=
+  identifyFuel_identified_actionFree fuel G remaining outcome action current
+    currentFree trace.eq_identified
+
 end IdentificationSuccessTrace
+
+namespace IdentificationProductSuccessTrace
+
+/--
+Every term aligned with a successful product trace is action-free whenever
+the shared current expression is action-free.  The proof follows the
+Type-valued factor list rather than inspecting membership in a computed
+outcome list.
+-/
+theorem actionFree {S : ObservedSignature} {G : ObservedGraph S}
+    {fuel : Nat} {remaining : NodeSet S} {current : ProbabilityTerm S}
+    {components : List (NodeSet S)} {terms : List (ProbabilityTerm S)}
+    (traces : IdentificationProductSuccessTrace G fuel remaining current
+      components terms)
+    (currentFree : current.ActionFree) :
+    forall term, term ∈ terms -> term.ActionFree :=
+  match traces with
+  | .nil => by
+      intro term member
+      simp at member
+  | .cons component term rest terms headResult headTrace tail => by
+      intro candidate member
+      rcases List.mem_cons.mp member with equal | later
+      · subst candidate
+        exact headTrace.actionFree currentFree
+      · exact actionFree tail currentFree candidate later
+
+end IdentificationProductSuccessTrace
 
 namespace IdentificationSuccessTrace
 
