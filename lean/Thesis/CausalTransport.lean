@@ -5,6 +5,7 @@ import Thesis.CausalTransport.Correspondence
 import Thesis.CausalTransport.FiniteSource
 import Thesis.CausalTransport.Soundness
 import Thesis.CausalTransport.Completeness
+import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.Counterfactual
 import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.CausalTransport.HiddenDAG
@@ -41,9 +42,14 @@ extracts hedge data from many checked failure shapes, and shared-switch hedge
 models provide positive counterexamples for the covered queries.  A complete
 `PublishedCompleteness` inhabitant still needs structural compilation of
 arbitrary successful traces, a general failure-to-hedge bridge, and a
-countermodel for an arbitrary hedge.  `IdentificationInduction` supplies exact
-success, failure, and unfinished traces so this work can proceed by one lemma
-per recursive ID branch rather than by enumerating deeper branch-name stacks.
+positive countermodel for an arbitrary hedge.  `HedgeOutcomeFlow` proves exact
+finite support formulas for the general routed hedge models and packages an
+unrestricted original-query counterexample when readout routing does not
+re-enter `large \ small`; removing that geometric hypothesis and preserving
+strict positivity remain the countermodel obligations.  `IdentificationInduction`
+supplies exact success, failure, and unfinished traces so this work can proceed
+by one lemma per recursive ID branch rather than by enumerating deeper
+branch-name stacks.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations
