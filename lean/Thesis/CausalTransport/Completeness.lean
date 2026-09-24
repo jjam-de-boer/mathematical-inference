@@ -265,11 +265,12 @@ induction.  The remaining inhabitants are:
   so the query cell uses `hedgeMixModel` (pair-root XOR switches between
   copying a `ValueRich` parent label and the private decode), also
   compatible and positive (`hedgeMixModel_mem_positive`);
-  under `do(X = second)`, a unique directed parent in the action together
-  with an incident pair-root strictly increases the empty-mask mass of
-  `Y = first` relative to the action-mask copy
-  (`hedgeMix_interventional_first_mass_lt`,
-  `hedgeMix_interventional_first_not_equiv`);
+  under `do(X = second)`, odd action-parent parity together with an incident
+  pair-root strictly increases the empty-mask mass of `Y = first` relative to
+  the action-mask copy
+  (`hedgeMix_interventional_first_mass_lt_of_parentParity`,
+  `hedgeMix_interventional_first_not_equiv_of_parentParity`); the earlier
+  unique-parent lemmas remain compatibility specializations;
   observational agreement of the two mix masks is still required for a
   `CounterexampleIn` in general; an arbitrary action mask agrees with the
   empty mix when every edge leaving a masked vertex preserves pair-root
@@ -29405,6 +29406,19 @@ def hedgeParentBitsFrom (rich : ObservedSignature.ValueRich S)
       else acc)
     false
 
+/--
+Parity of the directed parents of `child` selected by an action set.  This is
+the graph-only value computed by `hedgeParentBitsFrom` under the intervention
+that pins every selected parent to its `ValueRich` second label.
+-/
+def actionParentParity (action : NodeSet S) (child : Fin S.count) : Bool :=
+  (List.finRange S.count).foldl
+    (fun acc parent =>
+      if S.directed parent child then
+        if action parent then !acc else acc
+      else acc)
+    false
+
 theorem foldl_unchanged {α β} (f : α → β → α) (init : α) (xs : List β)
     (hstep : forall acc x, f acc x = acc) :
     xs.foldl f init = init := by
@@ -32226,6 +32240,35 @@ theorem foldl_xor_bit_at (n : Nat) (x : Fin n) (bit : Bool) :
       (fun acc p => if p = x then Bool.xor acc bit else acc) false = bit :=
   foldl_xor_bit_of_mem_nodup _ (List.mem_finRange x) (nodup_finRange n) bit
 
+/-- A unique selected directed parent gives odd action-parent parity. -/
+theorem actionParentParity_eq_true_of_unique
+    (action : NodeSet S) {x child : Fin S.count}
+    (edge : S.directed x child = true) (selected : action x = true)
+    (unique : forall parent, action parent = true →
+      S.directed parent child = true → parent = x) :
+    actionParentParity action child = true := by
+  unfold actionParentParity
+  have step (acc : Bool) (parent : Fin S.count) :
+      (if S.directed parent child then
+          if action parent then !acc else acc
+        else acc) =
+      if parent = x then !acc else acc := by
+    if equal : parent = x then
+      subst parent
+      simp [edge, selected]
+    else
+      cases inAction : action parent with
+      | false =>
+          simp [equal]
+      | true =>
+          cases parentEdge : S.directed parent child with
+          | false =>
+              simp [equal]
+          | true =>
+              exact False.elim (equal (unique parent inAction parentEdge))
+  rw [foldl_congr _ _ false (List.finRange S.count) step]
+  exact foldl_xor_true_at S.count x
+
 theorem hedgeIsSecond_second (rich : ObservedSignature.ValueRich S)
     (i : Fin S.count) :
     hedgeIsSecond rich i (rich.second i) = true := by
@@ -32246,6 +32289,35 @@ theorem hedgeMixModel_evalNodeUnder_doSecond (G : ObservedGraph S)
   rw [FiniteLatentSCM.evalNodeUnder]
   unfold FiniteLatentSCM.equationUnder
   rw [hedgeDoSecond_of_true rich action hact]
+
+/--
+Under the action-wide `second` intervention, the mix parent bit is exactly
+the parity of all directed action parents.  This removes the artificial
+unique-parent restriction from the separation argument: three, five, or any
+other odd number of action parents contributes the same `true` copy bit.
+-/
+theorem hedgeParentBitsFrom_doSecond_eq_actionParentParity
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (action : NodeSet S) (u : (hedgeLatentExtension G).Assignment)
+    (child : Fin S.count) :
+    hedgeParentBitsFrom rich action child
+        (fun parent _ =>
+          (hedgeMixModel G rich action).evalNodeUnder
+            (hedgeDoSecond rich action) u parent) =
+      actionParentParity action child := by
+  unfold hedgeParentBitsFrom actionParentParity
+  apply foldl_congr
+  intro acc parent
+  if edge : S.directed parent child = true then
+    cases selected : action parent with
+    | false =>
+        simp [edge]
+    | true =>
+        simp [edge,
+          hedgeMixModel_evalNodeUnder_doSecond G rich action action u selected,
+          hedgeIsSecond_second]
+  else
+    simp [edge]
 
 /--
 Masked parent-bits under `hedgeDoSecond` are `true` when exactly one
@@ -38216,17 +38288,17 @@ theorem eventMass_union_disjoint {Ω : Type _}
 
 /--
 `P(Y = first | do(X = second))` is strictly larger for the empty-mask mix
-than for the action-mask mix, once `Y` has an incident pair-root and a
-unique directed parent in the action.  The extra mass is the copy branch
+than for the action-mask mix when `Y` has an incident pair-root and an odd
+number of directed action parents.  The extra mass is the copy branch
 `xorBits = true`, which emits `first` when parents are ignored and `second`
-when the action parent is copied.
+when the action-parent parity is copied.
 -/
-theorem hedgeMix_interventional_first_mass_lt (G : ObservedGraph S)
-    (rich : ObservedSignature.ValueRich S) {x y : Fin S.count}
+theorem hedgeMix_interventional_first_mass_lt_of_parentParity
+    (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) {y : Fin S.count}
     (action : NodeSet S) (root : Fin (pairRootCount G))
-    (hdir : S.directed x y = true) (hx : action x = true)
     (hy : action y = false)
-    (huniq : forall p, action p = true → S.directed p y = true → p = x)
+    (hparity : actionParentParity action y = true)
     (hinc : (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
     FiniteProbRecord.eventMass
         (hedgeMixModel G rich action).prior.atoms
@@ -38260,8 +38332,8 @@ theorem hedgeMix_interventional_first_mass_lt (G : ObservedGraph S)
           (fun parent _ =>
             (hedgeMixModel G rich action).evalNodeUnder
               (hedgeDoSecond rich action) u parent) = true :=
-    hedgeParentBitsFrom_of_unique_doSecond G rich action action u hdir hx hx
-      huniq
+    (hedgeParentBitsFrom_doSecond_eq_actionParentParity G rich action u y).trans
+      hparity
   have hactionEval (u : (hedgeLatentExtension G).Assignment) :
       (hedgeMixModel G rich action).evalUnder (hedgeDoSecond rich action) u y =
         hedgeMixFrom rich y
@@ -38354,16 +38426,44 @@ theorem hedgeMix_interventional_first_mass_lt (G : ObservedGraph S)
   exact Nat.lt_add_of_pos_left hextra_pos
 
 /--
-The two mix models therefore disagree on the interventional cylinder
-`Y = first` under `do(X = second)`: their rational values are not
-`QProb.Equiv`.
+Unique-parent compatibility form of
+`hedgeMix_interventional_first_mass_lt_of_parentParity`.
 -/
-theorem hedgeMix_interventional_first_not_equiv (G : ObservedGraph S)
+theorem hedgeMix_interventional_first_mass_lt (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) {x y : Fin S.count}
     (action : NodeSet S) (root : Fin (pairRootCount G))
     (hdir : S.directed x y = true) (hx : action x = true)
     (hy : action y = false)
     (huniq : forall p, action p = true → S.directed p y = true → p = x)
+    (hinc : (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
+    FiniteProbRecord.eventMass
+        (hedgeMixModel G rich action).prior.atoms
+        (fun u =>
+          decide
+            ((hedgeMixModel G rich action).evalUnder
+                (hedgeDoSecond rich action) u y =
+              rich.first y)) <
+      FiniteProbRecord.eventMass
+        (hedgeMixModel G rich NodeSet.empty).prior.atoms
+        (fun u =>
+          decide
+            ((hedgeMixModel G rich NodeSet.empty).evalUnder
+                (hedgeDoSecond rich action) u y =
+              rich.first y)) :=
+  hedgeMix_interventional_first_mass_lt_of_parentParity G rich action root hy
+    (actionParentParity_eq_true_of_unique action hdir hx huniq) hinc
+
+/--
+The two mix models therefore disagree on the interventional cylinder
+`Y = first` under `do(X = second)`: their rational values are not
+`QProb.Equiv`.
+-/
+theorem hedgeMix_interventional_first_not_equiv_of_parentParity
+    (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) {y : Fin S.count}
+    (action : NodeSet S) (root : Fin (pairRootCount G))
+    (hy : action y = false)
+    (hparity : actionParentParity action y = true)
     (hinc : (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
     Not
       (QProb.Equiv
@@ -38398,8 +38498,8 @@ theorem hedgeMix_interventional_first_not_equiv (G : ObservedGraph S)
                 rich.first y))) :=
     QProb.equiv_trans (QProb.equiv_symm hact) (QProb.equiv_trans heq hemp)
   have hlt :=
-    hedgeMix_interventional_first_mass_lt G rich action root hdir hx hy huniq
-      hinc
+    hedgeMix_interventional_first_mass_lt_of_parentParity G rich action root hy
+      hparity hinc
   have hprior :
       (hedgeMixModel G rich action).prior =
         (hedgeMixModel G rich NodeSet.empty).prior :=
@@ -38449,8 +38549,49 @@ theorem hedgeMix_interventional_first_not_equiv (G : ObservedGraph S)
   exact Nat.ne_of_lt hlt hnums
 
 /--
-A directed child of a singleton action, free under `do(X = second)`, copies
-the action parent's `second` bit when the mix mask includes that parent.
+Unique-parent compatibility form of
+`hedgeMix_interventional_first_not_equiv_of_parentParity`.
+-/
+theorem hedgeMix_interventional_first_not_equiv (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) {x y : Fin S.count}
+    (action : NodeSet S) (root : Fin (pairRootCount G))
+    (hdir : S.directed x y = true) (hx : action x = true)
+    (hy : action y = false)
+    (huniq : forall p, action p = true → S.directed p y = true → p = x)
+    (hinc : (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
+    Not
+      (QProb.Equiv
+        ((hedgeMixModel G rich action).interventionalValue
+          (hedgeDoSecond rich action)
+          (fun a => decide (a y = rich.first y)))
+        ((hedgeMixModel G rich NodeSet.empty).interventionalValue
+          (hedgeDoSecond rich action)
+          (fun a => decide (a y = rich.first y)))) :=
+  hedgeMix_interventional_first_not_equiv_of_parentParity G rich action root hy
+    (actionParentParity_eq_true_of_unique action hdir hx huniq) hinc
+
+/--
+A free mix child with odd action-parent parity copies the distinguished
+`second` bit under `do(X = second)`.
+-/
+theorem hedgeMixModel_evalUnder_doSecond_action_child_of_parentParity
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (action : NodeSet S) (u : (hedgeLatentExtension G).Assignment)
+    {child : Fin S.count} (free : action child = false)
+    (parity : actionParentParity action child = true) :
+    (hedgeMixModel G rich action).evalUnder (hedgeDoSecond rich action) u child =
+      hedgeMixFrom rich child
+        (hedgeXorPairBits G child (fun latent _ => u latent)) true
+        (hedgePrivateDecode S child
+          (hedgePrivateIndex G child (fun latent _ => u latent))) := by
+  unfold FiniteLatentSCM.evalUnder
+  rw [hedgeMixModel_evalNodeUnder_free G rich action action u free]
+  rw [hedgeParentBitsFrom_doSecond_eq_actionParentParity G rich action u child,
+    parity]
+
+/--
+A directed child of a unique action parent is the one-parent special case of
+odd action-parent parity.
 -/
 theorem hedgeMixModel_evalUnder_doSecond_action_child (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) (action : NodeSet S)
@@ -38462,11 +38603,9 @@ theorem hedgeMixModel_evalUnder_doSecond_action_child (G : ObservedGraph S)
       hedgeMixFrom rich c
         (hedgeXorPairBits G c (fun latent _ => u latent)) true
         (hedgePrivateDecode S c
-          (hedgePrivateIndex G c (fun latent _ => u latent))) := by
-  unfold FiniteLatentSCM.evalUnder
-  rw [hedgeMixModel_evalNodeUnder_free G rich action action u hc]
-  rw [hedgeParentBitsFrom_of_unique_doSecond G rich action action u hdir hx hx
-    huniq]
+          (hedgePrivateIndex G c (fun latent _ => u latent))) :=
+  hedgeMixModel_evalUnder_doSecond_action_child_of_parentParity G rich action u
+    hc (actionParentParity_eq_true_of_unique action hdir hx huniq)
 
 /--
 The empty mix mask ignores parents, so a free child under `do(X = second)`
@@ -39225,18 +39364,17 @@ theorem hedgeDoSecond_eq_bow_intervention
       simp [hedgeDoSecond, hi, hedgeBowReference]
 
 /--
-On a singleton-outcome query `P(Y | do(X))`, the empty-mask and action-mask
-mix models disagree at the bow reference whenever `x` is the unique action
-parent of `y`.  Other action vertices may have outgoing edges away from this
-queried coordinate.
+On a singleton-outcome query, the empty-mask and action-mask mix models
+disagree at the action-wide reference whenever the selected outcome has odd
+action-parent parity.  The distinguished action node is needed only to show
+that the query kernel is genuinely interventional.
 -/
-theorem hedgeBow_not_valueEquivalent (G : ObservedGraph S)
+theorem hedgeSingletonOutcome_not_valueEquivalent_of_parentParity
+    (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) (q : JointKernelQuery S)
     {x y : Fin S.count} (root : Fin (pairRootCount G))
-    (hdir : S.directed x y = true)
     (hx : q.action x = true)
-    (hunique : forall p, q.action p = true →
-      S.directed p y = true → p = x)
+    (hparity : actionParentParity q.action y = true)
     (hy : q.outcome y = true)
     (houtcome : forall i, q.outcome i = true → i = y)
     (hincy : (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
@@ -39319,11 +39457,33 @@ theorem hedgeBow_not_valueEquivalent (G : ObservedGraph S)
         rw [hdistR]
         exact FiniteProbRecord.probVal_congr _ _ _ hevent
       exact
-        hedgeMix_interventional_first_not_equiv G rich q.action root hdir hx
-          hyfree hunique hincy
+        hedgeMix_interventional_first_not_equiv_of_parentParity G rich q.action
+          root hyfree hparity hincy
           (QProb.equiv_symm
             (QProb.equiv_trans (QProb.equiv_symm hpL)
               (QProb.equiv_trans hq hpR)))
+
+/--
+Unique-parent specialization of singleton-outcome parity separation.  Other
+action vertices may still have outgoing edges away from the queried node.
+-/
+theorem hedgeBow_not_valueEquivalent (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) (q : JointKernelQuery S)
+    {x y : Fin S.count} (root : Fin (pairRootCount G))
+    (hdir : S.directed x y = true)
+    (hx : q.action x = true)
+    (hunique : forall p, q.action p = true →
+      S.directed p y = true → p = x)
+    (hy : q.outcome y = true)
+    (houtcome : forall i, q.outcome i = true → i = y)
+    (hincy : (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
+    Not
+      (q.ValueEquivalent
+        (hedgeMixModel G rich NodeSet.empty)
+        (hedgeMixModel G rich q.action)) :=
+  hedgeSingletonOutcome_not_valueEquivalent_of_parentParity G rich q root hx
+    (actionParentParity_eq_true_of_unique q.action hdir hx hunique) hy houtcome
+    hincy
 
 /--
 On a shared-switch query whose outcome vertices are directed children of one
