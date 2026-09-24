@@ -144,6 +144,90 @@ def sum : List Result -> Result
   | [] => some QProb.zero
   | value :: values => add value (sum values)
 
+/-- Support of an addition exposes support of its left summand. -/
+def supported_left_of_add {left right : Result}
+    (supported : Supported (add left right)) : Supported left := by
+  cases left with
+  | none =>
+      rcases supported with ⟨value, equivalent⟩
+      cases right <;> cases equivalent
+  | some value =>
+      exact ⟨value, .value (QProb.equiv_refl value)⟩
+
+/-- Support of an addition exposes support of its right summand. -/
+def supported_right_of_add {left right : Result}
+    (supported : Supported (add left right)) : Supported right := by
+  cases right with
+  | none =>
+      rcases supported with ⟨value, equivalent⟩
+      cases left <;> cases equivalent
+  | some value =>
+      exact ⟨value, .value (QProb.equiv_refl value)⟩
+
+/-- Support of a multiplication exposes support of its left factor. -/
+def supported_left_of_multiply {left right : Result}
+    (supported : Supported (multiply left right)) : Supported left := by
+  cases left with
+  | none =>
+      rcases supported with ⟨value, equivalent⟩
+      cases right <;> cases equivalent
+  | some value =>
+      exact ⟨value, .value (QProb.equiv_refl value)⟩
+
+/-- Support of a multiplication exposes support of its right factor. -/
+def supported_right_of_multiply {left right : Result}
+    (supported : Supported (multiply left right)) : Supported right := by
+  cases right with
+  | none =>
+      rcases supported with ⟨value, equivalent⟩
+      cases left <;> cases equivalent
+  | some value =>
+      exact ⟨value, .value (QProb.equiv_refl value)⟩
+
+/-- Support of a quotient exposes support of its numerator. -/
+def supported_numerator_of_divide {numerator denominator : Result}
+    (supported : Supported (divide numerator denominator)) :
+    Supported numerator := by
+  cases numerator with
+  | none =>
+      rcases supported with ⟨value, equivalent⟩
+      cases denominator <;> cases equivalent
+  | some value =>
+      exact ⟨value, .value (QProb.equiv_refl value)⟩
+
+/-- Support of a quotient exposes support of its denominator. -/
+def supported_denominator_of_divide {numerator denominator : Result}
+    (supported : Supported (divide numerator denominator)) :
+    Supported denominator := by
+  cases denominator with
+  | none =>
+      rcases supported with ⟨value, equivalent⟩
+      cases numerator <;> cases equivalent
+  | some value =>
+      exact ⟨value, .value (QProb.equiv_refl value)⟩
+
+/--
+Every mapped member of a supported finite sum is itself supported.  The
+explicit decidable equality follows the concrete source list instead of
+eliminating propositional membership into support data; this keeps the
+construction choice-free.
+-/
+noncomputable def supported_map_of_mem_sum {X : Type} [DecidableEq X]
+    (values : List X) (term : X -> Result) (value : X)
+    (member : value ∈ values)
+    (supported : Supported (sum (values.map term))) : Supported (term value) := by
+  induction values with
+  | nil =>
+      simp at member
+  | cons head tail inductionHypothesis =>
+      if equal : value = head then
+        subst value
+        exact supported_left_of_add supported
+      else
+        have later : value ∈ tail :=
+          (List.mem_cons.mp member).resolve_left equal
+        exact inductionHypothesis later (supported_right_of_add supported)
+
 def add_congr {left left' right right' : Result}
     (hleft : Equivalent left left') (hright : Equivalent right right') :
     Equivalent (add left right) (add left' right') := by
@@ -318,6 +402,26 @@ noncomputable def sum_map_supported (values : List X) (term : X -> Result)
       exact ⟨QProb.zero, refl _⟩
   | cons value values ih =>
       exact add_supported (supported value) ih
+
+/--
+A finite mapped sum is supported when every value that actually occurs in
+the enumerated list is supported.  Unlike `sum_map_supported`, this sharper
+form does not ask the caller to prove an irrelevant global statement about
+values outside the finite enumeration.
+-/
+noncomputable def sum_map_supported_of_mem (values : List X)
+    (term : X -> Result)
+    (supported : forall value, value ∈ values ->
+      Sigma fun result => Equivalent (term value) (some result)) :
+    Sigma fun result => Equivalent (sum (values.map term)) (some result) := by
+  induction values with
+  | nil =>
+      exact ⟨QProb.zero, refl _⟩
+  | cons value values inductionHypothesis =>
+      exact add_supported
+        (supported value (List.mem_cons.mpr (Or.inl rfl)))
+        (inductionHypothesis fun member memberIn =>
+          supported member (List.mem_cons.mpr (Or.inr memberIn)))
 
 end ProbabilityResult
 
