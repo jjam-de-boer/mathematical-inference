@@ -9,11 +9,11 @@ open Probability
 /-!
 # Positive hedge counterexamples detected through outcome marginals
 
-`Completeness` proves observational equality of the positive hedge mix under
-an edge-wise shared-switch condition.  Its composite-cylinder separation
-lemma asks every queried outcome to be a direct child of one action seed.
-That is stronger than semantic non-identifiability requires: equality of the
-full outcome kernel would imply equality of every outcome marginal.
+`Completeness` provides both the complete-switch hedge mix and a one-root
+variant localized to a selected bidirected edge.  Earlier composite-cylinder
+separation asked every queried outcome to be a direct child of one action
+seed.  That is stronger than semantic non-identifiability requires: equality
+of the full outcome kernel would imply equality of every outcome marginal.
 
 This module performs that reduction constructively.  It imports the finite
 marginalization identity from `Soundness`, while keeping the two main theorem
@@ -22,17 +22,79 @@ witnesses are hidden behind `Nonempty`; the marginal proof folds those
 inhabited witnesses over the finite assignment enumeration and never chooses
 a global witness family.
 
-The resulting leaf permits arbitrary additional query outcomes.  It needs
-only one queried outcome with a directed action parent, an incident pair-root,
-and preservation of pair-root incidence along the edges leaving that chosen
-parent.  Finite selectors choose both the outcome and its parent pivot.
-The right-hand model changes only the pivot's structural equation, while the
-query continues to intervene on its complete action set.  Thus neither
-unique-parent, odd-parity, nor global restrictions on unrelated action
-vertices are required.
+The strongest resulting leaf permits arbitrary additional query outcomes.  It
+needs only one queried outcome and action parent joined by both a directed and
+a bidirected edge.  Finite selectors choose the outcome and parent; the
+bidirected edge canonically chooses its pair-root.  The right-hand model
+changes only the pivot's structural equation, while the query continues to
+intervene on its complete action set.  Thus neither unique-parent, odd-parity,
+identical bidirected neighbourhoods, nor restrictions on unrelated action
+vertices and outgoing edges are required.  The complete-switch construction
+remains as an independent fallback.
 -/
 
 /-! ## The theorem-level marginal counterexample -/
+
+/--
+A directed-and-bidirected bow from an action pivot to one queried outcome is
+already enough for a positive full-query counterexample.  The selected
+pair-root is the root representing that bow.  Localizing the mix switch to
+this root makes the two models observationally equal even when either endpoint
+has arbitrary additional bidirected neighbours and the pivot has arbitrary
+additional directed children.
+
+As in the broader marginal construction below, equality of the complete query
+would imply equality after restricting to `{y}`.  The one-root singleton
+separation theorem contradicts that marginal equality.
+-/
+def hedgeSingleRootBowMarginalCounterexampleIn
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (q : JointKernelQuery S) {pivot y : Fin S.count}
+    (parentSelected : q.action pivot = true)
+    (directed : S.directed pivot y = true)
+    (bidirected : G.bidirected pivot y = true)
+    (outcomeSelected : q.outcome y = true) :
+    CounterexampleIn (GraphModelClass.positive G) q :=
+  let root := pairRootBetween G bidirected
+  let pivotMask := NodeSet.singleton pivot
+  {
+    left := hedgeSingleRootMixModel G rich root NodeSet.empty
+    right := hedgeSingleRootMixModel G rich root pivotMask
+    left_mem := hedgeSingleRootMixModel_mem_positive G rich root NodeSet.empty
+    right_mem := hedgeSingleRootMixModel_mem_positive G rich root pivotMask
+    observationally_equal :=
+      hedgeSingleRootMixModel_observationally_equivalent_singleton G rich
+        root pivot (hedgePairRootBetween_incident_left G bidirected)
+    query_separated := by
+      intro completeEquivalent
+      let singletonOutcome := NodeSet.singleton y
+      have singletonSubset : NodeSet.Subset singletonOutcome q.outcome :=
+        NodeSet.singleton_subset_of_mem outcomeSelected
+      let singletonQuery := q.restrictOutcome singletonOutcome singletonSubset
+      have singletonEquivalent :
+          singletonQuery.ValueEquivalent
+            (hedgeSingleRootMixModel G rich root NodeSet.empty)
+            (hedgeSingleRootMixModel G rich root pivotMask) := by
+        exact JointKernelQuery.valueEquivalent_restrictOutcome q
+          (hedgeSingleRootMixModel G rich root NodeSet.empty)
+          (hedgeSingleRootMixModel G rich root pivotMask) completeEquivalent
+          singletonOutcome singletonSubset
+      have singletonSeparated :
+          Not
+            (singletonQuery.ValueEquivalent
+              (hedgeSingleRootMixModel G rich root NodeSet.empty)
+              (hedgeSingleRootMixModel G rich root pivotMask)) := by
+        apply hedgeSingleRootSingletonOutcome_not_valueEquivalent G rich
+          singletonQuery root
+        · exact parentSelected
+        · exact directed
+        · simp [singletonQuery, singletonOutcome,
+            JointKernelQuery.restrictOutcome, NodeSet.singleton]
+        · intro candidate selected
+          exact (NodeSet.singleton_eq_true_iff y candidate).mp selected
+        · exact hedgePairRootBetween_incident_right G bidirected
+      exact singletonSeparated singletonEquivalent
+  }
 
 /--
 The positive singleton-pivot mix pair separates the complete query as soon as
@@ -126,6 +188,106 @@ def hedgeEdgeSharedMarginalCounterexampleIn
     (fun child edge r => shared pivot child parentSelected edge r) incident
 
 /-! ## Executable readiness and failure-pipeline integration -/
+
+/-- Whether `child` has a parent in the action that also forms a bidirected bow. -/
+def bowActionParentExistsBool (G : ObservedGraph S)
+    (action : NodeSet S) (child : Fin S.count) : Bool :=
+  (NodeSet.enumerated S).any fun parent =>
+    action parent && (S.directed parent child && G.bidirected parent child)
+
+/-- First action parent witnessing a directed-and-bidirected bow into `child`. -/
+def firstBowActionParent (G : ObservedGraph S)
+    (action : NodeSet S) (child : Fin S.count)
+    (existsParent : bowActionParentExistsBool G action child = true) :
+    Fin S.count :=
+  listFirstAny (NodeSet.enumerated S)
+    (fun parent =>
+      action parent && (S.directed parent child && G.bidirected parent child))
+    existsParent
+
+theorem firstBowActionParent_selected (G : ObservedGraph S)
+    (action : NodeSet S) (child : Fin S.count)
+    (existsParent : bowActionParentExistsBool G action child = true) :
+    action (firstBowActionParent G action child existsParent) = true :=
+  (Bool.and_eq_true_iff.mp
+    (listFirstAny_pred (NodeSet.enumerated S)
+      (fun parent =>
+        action parent &&
+          (S.directed parent child && G.bidirected parent child))
+      existsParent)).1
+
+theorem firstBowActionParent_directed (G : ObservedGraph S)
+    (action : NodeSet S) (child : Fin S.count)
+    (existsParent : bowActionParentExistsBool G action child = true) :
+    S.directed (firstBowActionParent G action child existsParent) child = true :=
+  (Bool.and_eq_true_iff.mp
+    (Bool.and_eq_true_iff.mp
+      (listFirstAny_pred (NodeSet.enumerated S)
+        (fun parent =>
+          action parent &&
+            (S.directed parent child && G.bidirected parent child))
+        existsParent)).2).1
+
+theorem firstBowActionParent_bidirected (G : ObservedGraph S)
+    (action : NodeSet S) (child : Fin S.count)
+    (existsParent : bowActionParentExistsBool G action child = true) :
+    G.bidirected (firstBowActionParent G action child existsParent) child =
+      true :=
+  (Bool.and_eq_true_iff.mp
+    (Bool.and_eq_true_iff.mp
+      (listFirstAny_pred (NodeSet.enumerated S)
+        (fun parent =>
+          action parent &&
+            (S.directed parent child && G.bidirected parent child))
+        existsParent)).2).2
+
+/-- Local bow readiness at one candidate query outcome. -/
+def hedgeMarginalBowOutcomeReadyBool (G : ObservedGraph S)
+    (q : JointKernelQuery S) (outcome : Fin S.count) : Bool :=
+  q.outcome outcome && bowActionParentExistsBool G q.action outcome
+
+/-- Whether any queried outcome has an action parent forming a bow. -/
+def hedgeMarginalBowQueryReady (G : ObservedGraph S)
+    (q : JointKernelQuery S) : Bool :=
+  (NodeSet.enumerated S).any (hedgeMarginalBowOutcomeReadyBool G q)
+
+/-- First queried outcome accepted by the bow-marginal test. -/
+def firstHedgeMarginalBowOutcome (G : ObservedGraph S)
+    (q : JointKernelQuery S)
+    (ready : hedgeMarginalBowQueryReady G q = true) : Fin S.count :=
+  listFirstAny (NodeSet.enumerated S)
+    (hedgeMarginalBowOutcomeReadyBool G q) ready
+
+theorem firstHedgeMarginalBowOutcome_in_outcome (G : ObservedGraph S)
+    (q : JointKernelQuery S)
+    (ready : hedgeMarginalBowQueryReady G q = true) :
+    q.outcome (firstHedgeMarginalBowOutcome G q ready) = true :=
+  (Bool.and_eq_true_iff.mp
+    (listFirstAny_pred (NodeSet.enumerated S)
+      (hedgeMarginalBowOutcomeReadyBool G q) ready)).1
+
+theorem firstHedgeMarginalBowOutcome_parent_ready (G : ObservedGraph S)
+    (q : JointKernelQuery S)
+    (ready : hedgeMarginalBowQueryReady G q = true) :
+    bowActionParentExistsBool G q.action
+        (firstHedgeMarginalBowOutcome G q ready) = true :=
+  (Bool.and_eq_true_iff.mp
+    (listFirstAny_pred (NodeSet.enumerated S)
+      (hedgeMarginalBowOutcomeReadyBool G q) ready)).2
+
+/-- Query-wide bow readiness packages the root-local positive counterexample. -/
+def hedgeSingleRootBowMarginalCounterexampleIn_of_query_ready
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (q : JointKernelQuery S)
+    (ready : hedgeMarginalBowQueryReady G q = true) :
+    CounterexampleIn (GraphModelClass.positive G) q :=
+  let outcome := firstHedgeMarginalBowOutcome G q ready
+  let parentReady := firstHedgeMarginalBowOutcome_parent_ready G q ready
+  hedgeSingleRootBowMarginalCounterexampleIn G rich q
+    (firstBowActionParent_selected G q.action outcome parentReady)
+    (firstBowActionParent_directed G q.action outcome parentReady)
+    (firstBowActionParent_bidirected G q.action outcome parentReady)
+    (firstHedgeMarginalBowOutcome_in_outcome G q ready)
 
 /-- Whether `child` has at least one directed parent in the action set. -/
 def actionParentExistsBool (action : NodeSet S) (child : Fin S.count) : Bool :=
@@ -482,17 +644,22 @@ def hedgeEdgeSharedMarginalCounterexampleIn_of_ready
     (firstIncidentPairRoot_incident G w.outcomeSeed incident)
 
 /--
-Enhanced executable positive counterexample search.  The query-wide marginal
-leaf is tried first because any outcome with one shared-switch action parent
-suffices.  The original search remains the fallback and retains all
-established bow and seed-plus-sink cases.
+Enhanced executable positive counterexample search.  The root-local bow leaf
+is tried first because it tolerates arbitrary extra directed children and
+bidirected arms.  The complete-switch marginal leaf remains as an independent
+fallback, followed by the original seed-based search.
 -/
 def hedgePositiveCounterexampleIn? (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) (q : JointKernelQuery S)
     (w : HedgeWitness G q) :
     Option (CounterexampleIn (GraphModelClass.positive G) q) :=
-  if ready : hedgeMarginalPivotQueryReady G q = true then
-    some (hedgeMarginalPivotCounterexampleIn_of_query_ready G rich q ready)
+  if bowReady : hedgeMarginalBowQueryReady G q = true then
+    some
+      (hedgeSingleRootBowMarginalCounterexampleIn_of_query_ready G rich q
+        bowReady)
+  else if pivotReady : hedgeMarginalPivotQueryReady G q = true then
+    some
+      (hedgeMarginalPivotCounterexampleIn_of_query_ready G rich q pivotReady)
   else
     hedgeCounterexampleIn? G rich q w
 
@@ -500,12 +667,17 @@ theorem hedgePositiveCounterexampleIn?_isSome_iff
     (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
     (q : JointKernelQuery S) (w : HedgeWitness G q) :
     (hedgePositiveCounterexampleIn? G rich q w).isSome =
-      (hedgeMarginalPivotQueryReady G q ||
-        (hedgeCounterexampleIn? G rich q w).isSome) := by
+      (hedgeMarginalBowQueryReady G q ||
+        (hedgeMarginalPivotQueryReady G q ||
+          (hedgeCounterexampleIn? G rich q w).isSome)) := by
   dsimp [hedgePositiveCounterexampleIn?]
   split
   · next ready => simp [ready]
-  · next notReady => simp [notReady]
+  · next notReady =>
+      simp [notReady]
+      split
+      · next ready => simp [ready]
+      · next notReady => simp [notReady]
 
 /-- Apply the enhanced positive search after constructive hedge extraction. -/
 def hedgePositiveCounterexample? (G : ObservedGraph S)

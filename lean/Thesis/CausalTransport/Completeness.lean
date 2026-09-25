@@ -278,6 +278,14 @@ induction.  The remaining inhabitants are:
   (`hedgeSingletonOutcome_not_valueEquivalent_of_parentBit`), so the
   singleton-mask specialization can alter just one useful action parent while
   the query still intervenes on every action coordinate;
+  `hedgeSingleRootMixModel` localizes the switch itself to one pair-root while
+  retaining the complete latent extension; it is compatible, strictly
+  positive, and observationally equal across a singleton pivot mask whenever
+  that root is incident to the pivot
+  (`hedgeSingleRootMixModel_observationally_equivalent_singleton`); if the
+  same root is incident to a queried child, the one-root mass gap yields
+  `hedgeSingleRootSingletonOutcome_not_valueEquivalent`, eliminating all
+  restrictions on other bidirected arms and outgoing pivot edges for a bow;
   observational agreement of the two mix masks is still required for a
   `CounterexampleIn` in general; an arbitrary action mask agrees with the
   empty mix when every edge leaving a masked vertex preserves pair-root
@@ -32049,6 +32057,184 @@ theorem hedgeMixModel_mem_positive (G : ObservedGraph S)
     (GraphModelClass.positive G).Mem (hedgeMixModel G rich mask) :=
   ⟨hedgeMixModel_compatible G rich mask, hedgeMixModel_positive G rich mask⟩
 
+/-!
+### A mix localized to one pair-root
+
+`hedgeMixModel` switches on the XOR of every pair-root incident to a node.
+That makes its pointwise observational coupling require complete pair-root
+incidence equality across each active directed edge.  For a bow, this is much
+stronger than necessary: one common pair-root already supplies the random
+switch used by the separation argument.
+
+The model below ignores all other pair-roots in its mechanism while retaining
+them in the latent extension.  Its projected graph therefore remains exactly
+`G`, and the all-false pair-root assignment still realizes every observed
+atom through private noise.  Localizing the switch, rather than deleting
+latent coordinates, is what preserves both compatibility and positivity.
+-/
+
+/--
+Read one selected pair-root at `child`, returning `false` when that root is
+not incident to the child.  The dependent input is accessed only in the
+incident branch.
+-/
+def hedgePairRootBit (G : ObservedGraph S)
+    (root : Fin (pairRootCount G)) (child : Fin S.count)
+    (inputs : (hedgeLatentExtension G).Inputs child) : Bool :=
+  if incident :
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) child = true
+  then
+    cast (hedgeLatentValue_pair G root)
+      (inputs (hedgePairRoot G root) incident)
+  else
+    false
+
+/--
+Positive hedge mix whose switch is one selected pair-root.  `mask` still
+chooses the directed parents whose `second` bits are copied.
+-/
+def hedgeSingleRootMixModel (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) (mask : NodeSet S) : ExactModel S where
+  latent := hedgeLatentExtension G
+  factor := hedgeLatentFactor G
+  prior :=
+    FiniteProduct.record (hedgeLatentCount G) (hedgeLatentValue G)
+      (hedgeLatentFactor G)
+  product_law := fun events => by
+    simpa [LatentExtension.rectangularEvent, hedgeLatentExtension] using
+      FiniteProduct.record_rectangular_probVal
+        (hedgeLatentCount G) (hedgeLatentValue G) (hedgeLatentFactor G) events
+  mechanism := fun child parents inputs =>
+    hedgeMixFrom rich child
+      (hedgePairRootBit G root child inputs)
+      (hedgeParentBitsFrom rich mask child parents)
+      (hedgePrivateDecode S child (hedgePrivateIndex G child inputs))
+
+/-- Ignoring unused pair-roots does not change the model's projected graph. -/
+theorem hedgeSingleRootMixModel_compatible (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) (mask : NodeSet S) :
+    Compatible (hedgeSingleRootMixModel G rich root mask) G :=
+  ⟨hedgeLatentExtension_canonical G, fun i j => by
+    simpa [FiniteLatentSCM.observedGraph, LatentExtension.observedGraph,
+      hedgeSingleRootMixModel] using hedgeLatentExtension_projected G i j⟩
+
+/-- The all-false support assignment turns every selected-root switch off. -/
+theorem hedgePairRootBit_support_false (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) (target : S.Assignment)
+    (child : Fin S.count) :
+    hedgePairRootBit G root child
+        (fun latent _ =>
+          hedgeSupportLatent G rich NodeSet.empty target latent) = false := by
+  unfold hedgePairRootBit
+  split
+  · next incident =>
+      exact hedgeSupportLatent_pair G rich NodeSet.empty target root
+  · rfl
+
+/-- Every observed assignment has an explicit preimage in a root-local mix. -/
+theorem hedgeSingleRootMixModel_evalNode_support
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) (mask : NodeSet S)
+    (target : S.Assignment) (child : Fin S.count) :
+    (hedgeSingleRootMixModel G rich root mask).evalNodeUnder
+        (FiniteLatentSCM.noIntervention S)
+        (hedgeSupportLatent G rich NodeSet.empty target) child =
+      target child := by
+  rw [FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder FiniteLatentSCM.noIntervention
+  simp only [hedgeSingleRootMixModel]
+  rw [hedgePairRootBit_support_false G rich root target child,
+    hedgeMixFrom_false]
+  rw [hedgeSupportLatent_private, hedgeParentBitsFrom_empty,
+    hedgeToggle_false, hedgePrivateDecode_index]
+
+theorem hedgeSingleRootMixModel_eval_support
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) (mask : NodeSet S)
+    (target : S.Assignment) :
+    (hedgeSingleRootMixModel G rich root mask).eval
+        (hedgeSupportLatent G rich NodeSet.empty target) = target := by
+  funext child
+  exact hedgeSingleRootMixModel_evalNode_support G rich root mask target child
+
+/--
+Every root-local mix is observationally positive.  A rectangular singleton
+around the explicit all-false support assignment has positive product mass
+and lies inside the requested observed singleton event.
+-/
+theorem hedgeSingleRootMixModel_positive (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) (mask : NodeSet S) :
+    ObservationallyPositive (hedgeSingleRootMixModel G rich root mask) := by
+  intro assignment
+  have evaluates :=
+    hedgeSingleRootMixModel_eval_support G rich root mask assignment
+  have subset :
+      forall u,
+        (hedgeLatentExtension G).rectangularEvent
+            (fun latent value =>
+              decide
+                (value =
+                  hedgeSupportLatent G rich NodeSet.empty assignment latent))
+            u = true →
+          FiniteProbRecord.singletonEvent assignment
+            ((hedgeSingleRootMixModel G rich root mask).eval u) = true := by
+    intro u rectangular
+    have assignmentEq :
+        u = hedgeSupportLatent G rich NodeSet.empty assignment := by
+      funext latent
+      have coordinate :=
+        (FiniteProduct.rectangularEvent_eq_true_iff
+            (hedgeLatentCount G) (hedgeLatentValue G)
+            (fun index value =>
+              decide
+                (value =
+                  hedgeSupportLatent G rich NodeSet.empty assignment index))
+            u).mp
+          (by simpa [LatentExtension.rectangularEvent, hedgeLatentExtension]
+            using rectangular) latent
+      exact of_decide_eq_true coordinate
+    simp [assignmentEq, evaluates, FiniteProbRecord.singletonEvent]
+  have monotone :=
+    FiniteProbRecord.eventMass_mono
+      (hedgeSingleRootMixModel G rich root mask).prior.atoms _ _ subset
+  have rectangularMass := by
+    simpa [hedgeSingleRootMixModel, FiniteProduct.record,
+      LatentExtension.rectangularEvent, hedgeLatentExtension] using
+      FiniteProduct.eventMass_atoms
+        (hedgeLatentCount G) (hedgeLatentValue G) (hedgeLatentFactor G)
+        (fun latent value =>
+          decide
+            (value =
+              hedgeSupportLatent G rich NodeSet.empty assignment latent))
+  have productPositive :=
+    natProduct_pos _ _
+      (fun latent => by
+        simpa [FiniteProbRecord.singletonEvent] using
+          hedgeLatentFactor_support_pos G rich NodeSet.empty assignment latent)
+  have priorPositive :
+      0 <
+        FiniteProbRecord.eventMass
+          (hedgeSingleRootMixModel G rich root mask).prior.atoms
+          (fun u =>
+            FiniteProbRecord.singletonEvent assignment
+              ((hedgeSingleRootMixModel G rich root mask).eval u)) :=
+    Nat.lt_of_lt_of_le (rectangularMass ▸ productPositive) monotone
+  simpa [FiniteLatentSCM.observationalDist, FiniteProbRecord.probVal,
+    FiniteProbRecord.map, hedgeSingleRootMixModel,
+    FiniteProbRecord.eventMass_map_labels] using priorPositive
+
+theorem hedgeSingleRootMixModel_mem_positive (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) (mask : NodeSet S) :
+    (GraphModelClass.positive G).Mem
+      (hedgeSingleRootMixModel G rich root mask) :=
+  ⟨hedgeSingleRootMixModel_compatible G rich root mask,
+    hedgeSingleRootMixModel_positive G rich root mask⟩
+
 /-- Hard intervention that sets every selected node to its `ValueRich` second label. -/
 def hedgeDoSecond (rich : ObservedSignature.ValueRich S) (action : NodeSet S) :
     (i : Fin S.count) -> Option (S.Value i) :=
@@ -38452,6 +38638,309 @@ theorem eventMass_union_disjoint {Ω : Type _}
         omega
       · exact False.elim (h value hE hF)
 
+/-- A free node in the one-root model evaluates through its local mix. -/
+theorem hedgeSingleRootMixModel_evalNodeUnder_of_none
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) (mask : NodeSet S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (u : (hedgeLatentExtension G).Assignment) {child : Fin S.count}
+    (free : intervention child = none) :
+    (hedgeSingleRootMixModel G rich root mask).evalNodeUnder
+        intervention u child =
+      hedgeMixFrom rich child
+        (hedgePairRootBit G root child (fun latent _ => u latent))
+        (hedgeParentBitsFrom rich mask child
+          (fun parent _ =>
+            (hedgeSingleRootMixModel G rich root mask).evalNodeUnder
+              intervention u parent))
+        (hedgePrivateDecode S child
+          (hedgePrivateIndex G child (fun latent _ => u latent))) := by
+  rw [FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder
+  rw [free]
+  rfl
+
+/-- Interventions override a selected one-root mix node definitionally. -/
+theorem hedgeSingleRootMixModel_evalNodeUnder_doSecond
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) (mask action : NodeSet S)
+    (u : (hedgeLatentExtension G).Assignment) {node : Fin S.count}
+    (selected : action node = true) :
+    (hedgeSingleRootMixModel G rich root mask).evalNodeUnder
+        (hedgeDoSecond rich action) u node = rich.second node := by
+  rw [FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder
+  rw [hedgeDoSecond_of_true rich action selected]
+
+/--
+With a singleton mask, a selected directed pivot is the unique contributor to
+the child's parent bit under the all-`second` query intervention.
+-/
+theorem hedgeSingleRootMix_parentBits_singleton_doSecond
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) (action : NodeSet S)
+    (u : (hedgeLatentExtension G).Assignment) {pivot child : Fin S.count}
+    (selected : action pivot = true)
+    (edge : S.directed pivot child = true) :
+    hedgeParentBitsFrom rich (NodeSet.singleton pivot) child
+        (fun parent _ =>
+          (hedgeSingleRootMixModel G rich root
+            (NodeSet.singleton pivot)).evalNodeUnder
+              (hedgeDoSecond rich action) u parent) = true := by
+  rw [hedgeParentBitsFrom_of_unique rich (NodeSet.singleton pivot)
+    (fun parent _ =>
+      (hedgeSingleRootMixModel G rich root
+        (NodeSet.singleton pivot)).evalNodeUnder
+          (hedgeDoSecond rich action) u parent)
+    edge (by simp [NodeSet.singleton])
+    (fun parent inMask _parentEdge =>
+      (NodeSet.singleton_eq_true_iff pivot parent).mp inMask)]
+  rw [hedgeSingleRootMixModel_evalNodeUnder_doSecond G rich root
+    (NodeSet.singleton pivot) action u selected, hedgeIsSecond_second]
+
+/-- The designated extra latent assignment turns on its selected root bit. -/
+theorem hedgeMixExtraLatent_pairRootBit
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) {child : Fin S.count}
+    (incident :
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) child = true) :
+    hedgePairRootBit G root child
+        (fun latent _ => hedgeMixExtraLatent G rich root latent) = true := by
+  simp [hedgePairRootBit, incident, hedgeMixExtraLatent,
+    hedgeSupportLatentWithPairs_pair, hedgeOnePairBits_self]
+
+/--
+For a one-root mix, turning on an incident selected root contributes a strict
+extra mass of `Y = first` to the empty mask.  This is the root-local analogue
+of `hedgeMix_interventional_first_mass_lt_of_parentBit`; unrelated pair-roots
+play no role in either event.
+-/
+theorem hedgeSingleRootMix_interventional_first_mass_lt_of_parentBit
+    (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) {y : Fin S.count}
+    (root : Fin (pairRootCount G)) (mask : NodeSet S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (free : intervention y = none)
+    (parentBit : forall u : (hedgeLatentExtension G).Assignment,
+      hedgeParentBitsFrom rich mask y
+          (fun parent _ =>
+            (hedgeSingleRootMixModel G rich root mask).evalNodeUnder
+              intervention u parent) = true)
+    (incident :
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
+    FiniteProbRecord.eventMass
+        (hedgeSingleRootMixModel G rich root mask).prior.atoms
+        (fun u =>
+          decide
+            ((hedgeSingleRootMixModel G rich root mask).evalUnder
+                intervention u y = rich.first y)) <
+      FiniteProbRecord.eventMass
+        (hedgeSingleRootMixModel G rich root NodeSet.empty).prior.atoms
+        (fun u =>
+          decide
+            ((hedgeSingleRootMixModel G rich root NodeSet.empty).evalUnder
+                intervention u y = rich.first y)) := by
+  let extra : Event ((hedgeLatentExtension G).Assignment) :=
+    fun u => hedgePairRootBit G root y (fun latent _ => u latent)
+  let maskedFirst : Event ((hedgeLatentExtension G).Assignment) :=
+    fun u =>
+      decide
+        ((hedgeSingleRootMixModel G rich root mask).evalUnder intervention u y =
+          rich.first y)
+  let emptyFirst : Event ((hedgeLatentExtension G).Assignment) :=
+    fun u =>
+      decide
+        ((hedgeSingleRootMixModel G rich root NodeSet.empty).evalUnder
+            intervention u y = rich.first y)
+  have maskedEval (u : (hedgeLatentExtension G).Assignment) :
+      (hedgeSingleRootMixModel G rich root mask).evalUnder intervention u y =
+        hedgeMixFrom rich y
+          (hedgePairRootBit G root y (fun latent _ => u latent)) true
+          (hedgePrivateDecode S y
+            (hedgePrivateIndex G y (fun latent _ => u latent))) := by
+    unfold FiniteLatentSCM.evalUnder
+    rw [hedgeSingleRootMixModel_evalNodeUnder_of_none G rich root mask
+      intervention u free]
+    rw [parentBit u]
+  have emptyEval (u : (hedgeLatentExtension G).Assignment) :
+      (hedgeSingleRootMixModel G rich root NodeSet.empty).evalUnder
+          intervention u y =
+        hedgeMixFrom rich y
+          (hedgePairRootBit G root y (fun latent _ => u latent)) false
+          (hedgePrivateDecode S y
+            (hedgePrivateIndex G y (fun latent _ => u latent))) := by
+    unfold FiniteLatentSCM.evalUnder
+    rw [hedgeSingleRootMixModel_evalNodeUnder_of_none G rich root
+      NodeSet.empty intervention u free]
+    rw [hedgeParentBitsFrom_empty]
+  have disjointExtra : disjoint extra maskedFirst := by
+    intro u extraTrue maskedTrue
+    have valueEq := maskedEval u
+    have switchTrue :
+        hedgePairRootBit G root y (fun latent _ => u latent) = true :=
+      extraTrue
+    rw [switchTrue, hedgeMixFrom_true_second] at valueEq
+    have valueFirst :
+        (hedgeSingleRootMixModel G rich root mask).evalUnder intervention u y =
+          rich.first y :=
+      of_decide_eq_true (by simpa [maskedFirst] using maskedTrue)
+    exact rich.different y (valueFirst.symm.trans valueEq)
+  have emptyAsUnion (u : (hedgeLatentExtension G).Assignment) :
+      emptyFirst u = union extra maskedFirst u := by
+    simp [emptyFirst, extra, maskedFirst, union, emptyEval u, maskedEval u]
+    cases switch : hedgePairRootBit G root y (fun latent _ => u latent) with
+    | true =>
+        have different : rich.second y ≠ rich.first y :=
+          fun equal => rich.different y equal.symm
+        simp [hedgeMixFrom_true_first, hedgeMixFrom_true_second, different]
+    | false =>
+        simp [hedgeMixFrom_false]
+  have unionMass :
+      FiniteProbRecord.eventMass
+          (hedgeSingleRootMixModel G rich root NodeSet.empty).prior.atoms
+          emptyFirst =
+        FiniteProbRecord.eventMass
+            (hedgeSingleRootMixModel G rich root NodeSet.empty).prior.atoms
+            extra +
+          FiniteProbRecord.eventMass
+            (hedgeSingleRootMixModel G rich root NodeSet.empty).prior.atoms
+            maskedFirst := by
+    have congruent :=
+      FiniteProbRecord.eventMass_congr
+        (hedgeSingleRootMixModel G rich root NodeSet.empty).prior.atoms
+        emptyFirst (union extra maskedFirst) emptyAsUnion
+    exact congruent.trans
+      (eventMass_union_disjoint
+        (hedgeSingleRootMixModel G rich root NodeSet.empty).prior.atoms
+        extra maskedFirst disjointExtra)
+  have extraPositive :
+      0 <
+        FiniteProbRecord.eventMass
+          (hedgeSingleRootMixModel G rich root NodeSet.empty).prior.atoms
+          extra := by
+    have extraTrue := hedgeMixExtraLatent_pairRootBit G rich root incident
+    have singletonMass :=
+      hedgePrior_eventMass_singleton G (hedgeMixExtraLatent G rich root)
+    have singletonSubset :
+        forall v,
+          FiniteProbRecord.singletonEvent (hedgeMixExtraLatent G rich root) v =
+              true →
+            extra v = true := by
+      intro v selected
+      have equal : v = hedgeMixExtraLatent G rich root :=
+        of_decide_eq_true
+          (by simpa [FiniteProbRecord.singletonEvent] using selected)
+      simpa [equal] using extraTrue
+    have monotone :=
+      FiniteProbRecord.eventMass_mono
+        (FiniteProduct.record (hedgeLatentCount G) (hedgeLatentValue G)
+          (hedgeLatentFactor G)).atoms
+        (FiniteProbRecord.singletonEvent (hedgeMixExtraLatent G rich root))
+        extra singletonSubset
+    exact Nat.lt_of_lt_of_le
+      (Nat.lt_of_lt_of_eq Nat.zero_lt_one singletonMass.symm) monotone
+  have atomsEqual :
+      (hedgeSingleRootMixModel G rich root mask).prior.atoms =
+        (hedgeSingleRootMixModel G rich root NodeSet.empty).prior.atoms :=
+    rfl
+  change
+    FiniteProbRecord.eventMass
+        (hedgeSingleRootMixModel G rich root mask).prior.atoms maskedFirst <
+      FiniteProbRecord.eventMass
+        (hedgeSingleRootMixModel G rich root NodeSet.empty).prior.atoms
+        emptyFirst
+  rw [atomsEqual, unionMass]
+  exact Nat.lt_add_of_pos_left extraPositive
+
+/-- The strict one-root mass gap rules out equivalent interventional values. -/
+theorem hedgeSingleRootMix_interventional_first_not_equiv_of_parentBit
+    (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) {y : Fin S.count}
+    (root : Fin (pairRootCount G)) (mask : NodeSet S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (free : intervention y = none)
+    (parentBit : forall u : (hedgeLatentExtension G).Assignment,
+      hedgeParentBitsFrom rich mask y
+          (fun parent _ =>
+            (hedgeSingleRootMixModel G rich root mask).evalNodeUnder
+              intervention u parent) = true)
+    (incident :
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
+    Not
+      (QProb.Equiv
+        ((hedgeSingleRootMixModel G rich root mask).interventionalValue
+          intervention (fun a => decide (a y = rich.first y)))
+        ((hedgeSingleRootMixModel G rich root NodeSet.empty).interventionalValue
+          intervention (fun a => decide (a y = rich.first y)))) := by
+  intro equivalent
+  have maskedValue :=
+    FiniteLatentSCM.interventionalValue_eq
+      (hedgeSingleRootMixModel G rich root mask) intervention
+      (fun a => decide (a y = rich.first y))
+  have emptyValue :=
+    FiniteLatentSCM.interventionalValue_eq
+      (hedgeSingleRootMixModel G rich root NodeSet.empty) intervention
+      (fun a => decide (a y = rich.first y))
+  have priorEquivalent :
+      QProb.Equiv
+        ((hedgeSingleRootMixModel G rich root mask).prior.probVal
+          (fun u =>
+            decide
+              ((hedgeSingleRootMixModel G rich root mask).evalUnder
+                  intervention u y = rich.first y)))
+        ((hedgeSingleRootMixModel G rich root NodeSet.empty).prior.probVal
+          (fun u =>
+            decide
+              ((hedgeSingleRootMixModel G rich root NodeSet.empty).evalUnder
+                  intervention u y = rich.first y))) :=
+    QProb.equiv_trans (QProb.equiv_symm maskedValue)
+      (QProb.equiv_trans equivalent emptyValue)
+  have strictlyLess :=
+    hedgeSingleRootMix_interventional_first_mass_lt_of_parentBit G rich root
+      mask intervention free parentBit incident
+  have priorEqual :
+      (hedgeSingleRootMixModel G rich root mask).prior =
+        (hedgeSingleRootMixModel G rich root NodeSet.empty).prior :=
+    rfl
+  have massesEqual :
+      FiniteProbRecord.eventMass
+          (hedgeSingleRootMixModel G rich root mask).prior.atoms
+          (fun u =>
+            decide
+              ((hedgeSingleRootMixModel G rich root mask).evalUnder
+                  intervention u y = rich.first y)) =
+        FiniteProbRecord.eventMass
+          (hedgeSingleRootMixModel G rich root NodeSet.empty).prior.atoms
+          (fun u =>
+            decide
+              ((hedgeSingleRootMixModel G rich root NodeSet.empty).evalUnder
+                  intervention u y = rich.first y)) := by
+    have crossProduct :
+        FiniteProbRecord.eventMass
+            (hedgeSingleRootMixModel G rich root mask).prior.atoms
+            (fun u =>
+              decide
+                ((hedgeSingleRootMixModel G rich root mask).evalUnder
+                    intervention u y = rich.first y)) *
+          (hedgeSingleRootMixModel G rich root NodeSet.empty).prior.den =
+        FiniteProbRecord.eventMass
+            (hedgeSingleRootMixModel G rich root NodeSet.empty).prior.atoms
+            (fun u =>
+              decide
+                ((hedgeSingleRootMixModel G rich root NodeSet.empty).evalUnder
+                    intervention u y = rich.first y)) *
+          (hedgeSingleRootMixModel G rich root mask).prior.den := by
+      simpa [QProb.Equiv, FiniteProbRecord.probVal] using priorEquivalent
+    have denominatorsEqual :
+        (hedgeSingleRootMixModel G rich root mask).prior.den =
+          (hedgeSingleRootMixModel G rich root NodeSet.empty).prior.den := by
+      rw [priorEqual]
+    rw [denominatorsEqual] at crossProduct
+    exact Nat.eq_of_mul_eq_mul_right
+      (hedgeSingleRootMixModel G rich root NodeSet.empty).prior.den_pos
+      crossProduct
+  exact Nat.ne_of_lt strictlyLess massesEqual
+
 /--
 Whenever an intervention leaves `Y` free and makes its action-mask parent bit
 true, `P(Y = first)` is strictly larger for the empty-mask mix than for the
@@ -39057,6 +39546,160 @@ theorem hedgeMixModel_observationally_equivalent_of_edge_shared_switch
   exact FiniteProbRecord.probVal_congr _ _ _
     (fun u => congrArg event (evaluation u))
 
+/-!
+### Observational equality for one-root switches
+
+For a switch localized to `root`, a masked parent need not share its complete
+incidence vector with a child.  It is enough that whenever the selected root
+is incident to the child it is also incident to that parent.  If the child's
+switch is on, both nodes then read the same Boolean coordinate; the earlier
+parent emits `first`, so its contribution to the child's parent parity is
+zero.  If the root is absent from the child, the mix uses private noise and
+ignores parent parity altogether.
+-/
+
+/-- Observational evaluation equation for a one-root mix. -/
+theorem hedgeSingleRootMixModel_evalNode (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) (mask : NodeSet S)
+    (u : (hedgeLatentExtension G).Assignment) (child : Fin S.count) :
+    (hedgeSingleRootMixModel G rich root mask).evalNodeUnder
+        (FiniteLatentSCM.noIntervention S) u child =
+      hedgeMixFrom rich child
+        (hedgePairRootBit G root child (fun latent _ => u latent))
+        (hedgeParentBitsFrom rich mask child
+          (fun parent _ =>
+            (hedgeSingleRootMixModel G rich root mask).evalNodeUnder
+              (FiniteLatentSCM.noIntervention S) u parent))
+        (hedgePrivateDecode S child
+          (hedgePrivateIndex G child (fun latent _ => u latent))) := by
+  rw [FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder FiniteLatentSCM.noIntervention
+  rfl
+
+/--
+Pointwise observational equality when selected-root incidence propagates
+backward from every child switch to each masked directed parent.
+-/
+theorem hedgeSingleRootMixModel_evalNode_eq_of_switch_backward
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) (mask : NodeSet S)
+    (switchBackward : forall parent child,
+      mask parent = true → S.directed parent child = true →
+        (hedgeLatentExtension G).incident (hedgePairRoot G root) child = true →
+          (hedgeLatentExtension G).incident (hedgePairRoot G root) parent = true)
+    (u : (hedgeLatentExtension G).Assignment) (child : Fin S.count) :
+    (hedgeSingleRootMixModel G rich root mask).evalNodeUnder
+        (FiniteLatentSCM.noIntervention S) u child =
+      (hedgeSingleRootMixModel G rich root NodeSet.empty).evalNodeUnder
+        (FiniteLatentSCM.noIntervention S) u child := by
+  rw [hedgeSingleRootMixModel_evalNode G rich root mask u child]
+  rw [hedgeSingleRootMixModel_evalNode G rich root NodeSet.empty u child]
+  rw [hedgeParentBitsFrom_empty]
+  cases childSwitch :
+      hedgePairRootBit G root child (fun latent _ => u latent) with
+  | false =>
+      simp [hedgeMixFrom_false]
+  | true =>
+      have childIncident :
+          (hedgeLatentExtension G).incident (hedgePairRoot G root) child =
+            true := by
+        cases incident :
+            (hedgeLatentExtension G).incident (hedgePairRoot G root) child
+        · simp [hedgePairRootBit, incident] at childSwitch
+        · rfl
+      have parentBitsFalse :
+          hedgeParentBitsFrom rich mask child
+              (fun parent _ =>
+                (hedgeSingleRootMixModel G rich root mask).evalNodeUnder
+                  (FiniteLatentSCM.noIntervention S) u parent) = false := by
+        apply hedgeParentBitsFrom_false_of_masked_parents_first
+        intro parent edge selected
+        have parentIncident :=
+          switchBackward parent child selected edge childIncident
+        have parentSwitch :
+            hedgePairRootBit G root parent (fun latent _ => u latent) = true :=
+          by
+            simpa [hedgePairRootBit, parentIncident, childIncident] using
+              childSwitch
+        have parentAgreement :=
+          hedgeSingleRootMixModel_evalNode_eq_of_switch_backward G rich root
+            mask switchBackward u parent
+        have emptyParentFirst :
+            (hedgeSingleRootMixModel G rich root NodeSet.empty).evalNodeUnder
+                (FiniteLatentSCM.noIntervention S) u parent =
+              rich.first parent := by
+          rw [hedgeSingleRootMixModel_evalNode G rich root NodeSet.empty u
+            parent, hedgeParentBitsFrom_empty, parentSwitch,
+            hedgeMixFrom_true_first]
+        rw [parentAgreement, emptyParentFirst, hedgeIsSecond_first]
+      rw [parentBitsFalse, hedgeMixFrom_true_first]
+termination_by child.val
+decreasing_by
+  exact S.directed_earlier edge
+
+theorem hedgeSingleRootMixModel_eval_eq_of_switch_backward
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) (mask : NodeSet S)
+    (switchBackward : forall parent child,
+      mask parent = true → S.directed parent child = true →
+        (hedgeLatentExtension G).incident (hedgePairRoot G root) child = true →
+          (hedgeLatentExtension G).incident (hedgePairRoot G root) parent = true)
+    (u : (hedgeLatentExtension G).Assignment) :
+    (hedgeSingleRootMixModel G rich root mask).eval u =
+      (hedgeSingleRootMixModel G rich root NodeSet.empty).eval u := by
+  funext child
+  simpa [FiniteLatentSCM.eval] using
+    hedgeSingleRootMixModel_evalNode_eq_of_switch_backward G rich root mask
+      switchBackward u child
+
+/-- Equal pointwise evaluations give observational equality of one-root mixes. -/
+theorem hedgeSingleRootMixModel_observationally_equivalent_of_switch_backward
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) (mask : NodeSet S)
+    (switchBackward : forall parent child,
+      mask parent = true → S.directed parent child = true →
+        (hedgeLatentExtension G).incident (hedgePairRoot G root) child = true →
+          (hedgeLatentExtension G).incident (hedgePairRoot G root) parent = true) :
+    ObservationallyEquivalent
+      (hedgeSingleRootMixModel G rich root NodeSet.empty)
+      (hedgeSingleRootMixModel G rich root mask) := by
+  intro event
+  have evaluation (u : (hedgeLatentExtension G).Assignment) :
+      (hedgeSingleRootMixModel G rich root NodeSet.empty).eval u =
+        (hedgeSingleRootMixModel G rich root mask).eval u :=
+    (hedgeSingleRootMixModel_eval_eq_of_switch_backward G rich root mask
+      switchBackward u).symm
+  refine QProb.equiv_trans
+    (FiniteLatentSCM.observationalValue_eq
+      (hedgeSingleRootMixModel G rich root NodeSet.empty) event) ?_
+  refine QProb.equiv_trans ?_
+    (QProb.equiv_symm
+      (FiniteLatentSCM.observationalValue_eq
+        (hedgeSingleRootMixModel G rich root mask) event))
+  exact FiniteProbRecord.probVal_congr _ _ _
+    (fun u => congrArg event (evaluation u))
+
+/--
+A singleton pivot mask satisfies the backward-switch condition as soon as the
+selected root is incident to the pivot.  No condition is imposed on the
+pivot's other bidirected neighbours or directed children.
+-/
+theorem hedgeSingleRootMixModel_observationally_equivalent_singleton
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (root : Fin (pairRootCount G)) (pivot : Fin S.count)
+    (pivotIncident :
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) pivot = true) :
+    ObservationallyEquivalent
+      (hedgeSingleRootMixModel G rich root NodeSet.empty)
+      (hedgeSingleRootMixModel G rich root (NodeSet.singleton pivot)) := by
+  apply hedgeSingleRootMixModel_observationally_equivalent_of_switch_backward
+  intro parent _child inMask _edge _childIncident
+  have parentEq : parent = pivot :=
+    (NodeSet.singleton_eq_true_iff pivot parent).mp inMask
+  subst parent
+  exact pivotIncident
+
 /--
 Seed-plus-sink mix models agree observationally once every directed child
 of the masked seed shares that seed's pair-root switch.  Extra mask
@@ -39593,6 +40236,138 @@ theorem hedgeDoSecond_eq_bow_intervention
       have hp : i = x := haction i hi
       subst hp
       simp [hedgeDoSecond, hi, hedgeBowReference]
+
+/--
+Kernel-level bridge from a singleton interventional event gap to failure of
+query value-equivalence.  This statement is independent of the hedge model:
+it rewrites the unconditional query kernel at one reference assignment,
+identifies its singleton outcome cylinder, and transports an assumed kernel
+equivalence to the forbidden interventional equivalence.
+-/
+theorem JointKernelQuery.not_valueEquivalent_of_singleton_interventional
+    (q : JointKernelQuery S) (left right : ExactModel S)
+    {x y : Fin S.count} (value : S.Value y)
+    (hx : q.action x = true)
+    (reference : S.Assignment)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (referenceY : reference y = value)
+    (interventionEq :
+      (fun i => if q.action i then some (reference i) else none) = intervention)
+    (hy : q.outcome y = true)
+    (houtcome : forall i, q.outcome i = true → i = y)
+    (separated :
+      Not
+        (QProb.Equiv
+          (right.interventionalValue intervention
+            (fun a => decide (a y = value)))
+          (left.interventionalValue intervention
+            (fun a => decide (a y = value))))) :
+    Not (q.ValueEquivalent left right) := by
+  intro valueEquivalent
+  let ref : S.Assignment := reference
+  have refY : ref y = value := referenceY
+  have hasAction :
+      (Kernel.mk q.outcome q.action NodeSet.empty).hasAction = true :=
+    finAny_eq_true_of q.action x hx
+  have doEq :
+      (Kernel.mk q.outcome q.action NodeSet.empty).intervention ref =
+        intervention := by
+    unfold Kernel.intervention
+    exact interventionEq
+  have eventEq (sample : S.Assignment) :
+      Kernel.agreesOn q.outcome ref sample =
+        decide (sample y = value) := by
+    have unique := agreesOn_of_unique_node q.outcome ref sample hy houtcome
+    simpa [refY] using unique
+  have leftDenote :=
+    Kernel.unconditionalDenote left q.outcome q.action ref
+  have rightDenote :=
+    Kernel.unconditionalDenote right q.outcome q.action ref
+  rcases valueEquivalent ref with ⟨denotesEquivalent⟩
+  have someEquivalent :
+      ProbabilityResult.Equivalent
+        (some
+          (((Kernel.mk q.outcome q.action NodeSet.empty).distribution
+              left ref).probVal
+            (Kernel.agreesOn q.outcome ref)))
+        (some
+          (((Kernel.mk q.outcome q.action NodeSet.empty).distribution
+              right ref).probVal
+            (Kernel.agreesOn q.outcome ref))) :=
+    ProbabilityResult.trans (ProbabilityResult.symm leftDenote)
+      (ProbabilityResult.trans denotesEquivalent rightDenote)
+  cases someEquivalent with
+  | value queryEquivalent =>
+      have leftDistribution :
+          (Kernel.mk q.outcome q.action NodeSet.empty).distribution left ref =
+            left.interventionalDist intervention := by
+        unfold Kernel.distribution
+        rw [if_pos hasAction, doEq]
+      have rightDistribution :
+          (Kernel.mk q.outcome q.action NodeSet.empty).distribution right ref =
+            right.interventionalDist intervention := by
+        unfold Kernel.distribution
+        rw [if_pos hasAction, doEq]
+      have leftProbability :
+          QProb.Equiv
+            (((Kernel.mk q.outcome q.action NodeSet.empty).distribution
+                left ref).probVal
+              (Kernel.agreesOn q.outcome ref))
+            (left.interventionalValue intervention
+              (fun a => decide (a y = value))) := by
+        rw [leftDistribution]
+        exact FiniteProbRecord.probVal_congr _ _ _ eventEq
+      have rightProbability :
+          QProb.Equiv
+            (((Kernel.mk q.outcome q.action NodeSet.empty).distribution
+                right ref).probVal
+              (Kernel.agreesOn q.outcome ref))
+            (right.interventionalValue intervention
+              (fun a => decide (a y = value))) := by
+        rw [rightDistribution]
+        exact FiniteProbRecord.probVal_congr _ _ _ eventEq
+      exact separated
+        (QProb.equiv_symm
+          (QProb.equiv_trans (QProb.equiv_symm leftProbability)
+            (QProb.equiv_trans queryEquivalent rightProbability)))
+
+/--
+Singleton-outcome separation for a one-root mix.  Incidence at the outcome
+supplies the strict interventional mass gap.  The eventual counterexample
+also asks for incidence at the action pivot, which independently supplies
+observational equality of the singleton mask.
+-/
+theorem hedgeSingleRootSingletonOutcome_not_valueEquivalent
+    (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) (q : JointKernelQuery S)
+    {pivot y : Fin S.count} (root : Fin (pairRootCount G))
+    (selected : q.action pivot = true)
+    (edge : S.directed pivot y = true)
+    (hy : q.outcome y = true)
+    (houtcome : forall i, q.outcome i = true → i = y)
+    (outcomeIncident :
+      (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
+    Not
+      (q.ValueEquivalent
+        (hedgeSingleRootMixModel G rich root NodeSet.empty)
+        (hedgeSingleRootMixModel G rich root (NodeSet.singleton pivot))) := by
+  apply q.not_valueEquivalent_of_singleton_interventional
+    (hedgeSingleRootMixModel G rich root NodeSet.empty)
+    (hedgeSingleRootMixModel G rich root (NodeSet.singleton pivot))
+    (rich.first y) selected
+    (hedgeActionReference rich q.action) (hedgeDoSecond rich q.action)
+  · exact hedgeActionReference_of_false rich q.action
+      (q.outcome_action_disjoint y hy)
+  · exact hedgeDoSecond_eq_action_intervention rich q.action
+  · exact hy
+  · exact houtcome
+  · apply hedgeSingleRootMix_interventional_first_not_equiv_of_parentBit
+    · exact hedgeDoSecond_of_false rich q.action
+        (q.outcome_action_disjoint y hy)
+    · intro u
+      exact hedgeSingleRootMix_parentBits_singleton_doSecond G rich root
+        q.action u selected edge
+    · exact outcomeIncident
 
 /--
 Generic singleton-outcome separation from an intervention that makes the
