@@ -4871,6 +4871,36 @@ theorem agreesOn_evalUnder_dependsOnUnselected_across
       rw [evalRelevant] at hfalse
       cases hfalse
 
+/--
+A cylinder depends only on unselected coordinates whenever every latent root
+relevant to its backward-closed evaluation region is explicitly outside the
+selected mask.
+
+Unlike `agreesOn_evalUnder_dependsOnUnselected_across`, the selected mask may
+combine relevance families from several interventions.  This is needed by
+rule 3, whose common selected factor contains both the `Y` ancestors under
+`do(X ∪ W)` and the invariant-`W` ancestors under `do(X ∪ Z)`.
+-/
+theorem agreesOn_evalUnder_dependsOnUnselected_of_relevance_avoids
+    (model : FiniteLatentSCM S)
+    (selected : Fin model.latent.count -> Bool)
+    (intervention : (i : Fin S.count) -> Option (S.Value i))
+    (relevant observed : NodeSet S) (reference : S.Assignment)
+    (closed : model.BackwardClosedUnder intervention relevant)
+    (contained : NodeSet.Subset observed relevant)
+    (avoids : forall root,
+      model.latentRelevantUnder intervention relevant root = true ->
+        selected root = false) :
+    CanonicalFactorization.DependsOnUnselected model.latent.count
+      model.latent.Value selected
+      (fun roots => Kernel.agreesOn observed reference
+        (model.evalUnder intervention roots)) := by
+  intro left right rootsAgree
+  apply agreesOn_evalUnder_congr_of_rootAgreement model intervention
+    relevant observed reference closed contained
+  intro root relevantRoot
+  exact rootsAgree root (avoids root relevantRoot)
+
 /-- Adding hard interventions at nodes that already have their requested
 values under a base intervention does not change the evaluated assignment. -/
 theorem evalUnder_union_intervention_eq_of_agreesOn
@@ -11508,6 +11538,25 @@ def rule3WInterventionInvariant (G : ObservedGraph S)
     (x z w : NodeSet S) : NodeSet S :=
   NodeSet.diff w (rule3WInterventionSensitive G x z w)
 
+/--
+Latent coordinates used by the common side of the rule-3 factorization: the
+ancestors of `Y` after fixing `X ∪ W`, together with the ancestors of the
+intervention-invariant `W` block under `do(X ∪ Z)`.
+-/
+def rule3YInvariantLatentMask (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (assignment : S.Assignment) : Fin model.latent.count -> Bool :=
+  fun root =>
+    model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root ||
+      model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+          (rule3WInterventionInvariant G x z w)) root
+
 theorem rule3WInterventionSensitive_subset_w (G : ObservedGraph S)
     (x z w : NodeSet S) :
     NodeSet.Subset (rule3WInterventionSensitive G x z w) w := by
@@ -12071,6 +12120,165 @@ def Rule3GivenWFactorization.of_node_split
               ((rule3Right x y z w).intervention assignment) roots) := by
       simpa using split
     rw [← split', Kernel.agreesOn_union, ← commonInvariant roots]
+
+/--
+Instantiate the rule-3 node split with the part of `W` that is pointwise
+invariant under adding `do(Z)` and its intervention-sensitive complement.
+
+The selected latent mask contains every coordinate needed by `Y` under
+`do(X ∪ W)` and by the invariant `W` cylinder under `do(X ∪ Z)`.
+Consequently all dependency and intervention-invariance fields of
+`Rule3GivenWFactorization` are automatic.  The only remaining hypotheses say
+that the sensitive `W` cylinder, under each of its two interventions, avoids
+that selected mask.
+
+These two avoidance statements are deliberately explicit.  They are valid
+in an important rule-3 subcase, but path d-separation alone need not put *all*
+intervention-invariant `W` vertices on the `Y` side of the moral separator.
+The fully general construction must refine the invariant block by moral side
+rather than silently treating these hypotheses as universal consequences.
+-/
+def Rule3GivenWFactorization.of_intervention_split
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (leftResidualAvoids : forall root,
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+            (rule3WInterventionSensitive G x z w)) root = true ->
+        rule3YInvariantLatentMask model G x y z w assignment root = false)
+    (rightResidualAvoids : forall root,
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G x
+            (rule3WInterventionSensitive G x z w)) root = true ->
+        rule3YInvariantLatentMask model G x y z w assignment root = false) :
+    Rule3GivenWFactorization model G x y z w assignment := by
+  let yInt :=
+    (Kernel.mk NodeSet.empty (NodeSet.union x w)
+      NodeSet.empty).intervention assignment
+  let leftInt :=
+    (Kernel.mk NodeSet.empty (NodeSet.union x z)
+      NodeSet.empty).intervention assignment
+  let rightInt :=
+    (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment
+  let yRelevant :=
+    FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y
+  let common := rule3WInterventionInvariant G x z w
+  let residual := rule3WInterventionSensitive G x z w
+  let commonRelevant :=
+    FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) common
+  let leftResidualRelevant :=
+    FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) residual
+  let rightResidualRelevant :=
+    FiniteLatentSCM.ancestralInBar G x residual
+  let selected := rule3YInvariantLatentMask model G x y z w assignment
+  have yDepends : CanonicalFactorization.DependsOnSelected
+      model.latent.count model.latent.Value selected
+      (fun roots => Kernel.agreesOn y assignment
+        (model.evalUnder yInt roots)) := by
+    refine CanonicalFactorization.DependsOnSelected.subset
+      model.latent.count model.latent.Value
+      (selected := model.latentRelevantUnder yInt yRelevant)
+      (selected' := selected)
+      (fun roots => Kernel.agreesOn y assignment
+        (model.evalUnder yInt roots)) ?_ ?_
+    · intro root relevantRoot
+      simp [selected, rule3YInvariantLatentMask, yInt, yRelevant,
+        relevantRoot]
+    · exact agreesOn_evalUnder_dependsOnSelected model yInt yRelevant y
+        assignment
+        (by
+          dsimp [yInt, yRelevant]
+          exact FiniteLatentSCM.observedAncestorOf_backwardClosedUnder
+            model G (NodeSet.union x w) y assignment)
+        (by
+          dsimp [yRelevant]
+          exact FiniteLatentSCM.ancestralInBar_contains_targets G
+            (NodeSet.union x w) y)
+  have commonDepends : CanonicalFactorization.DependsOnSelected
+      model.latent.count model.latent.Value selected
+      (fun roots => Kernel.agreesOn common assignment
+        (model.evalUnder leftInt roots)) := by
+    refine CanonicalFactorization.DependsOnSelected.subset
+      model.latent.count model.latent.Value
+      (selected := model.latentRelevantUnder leftInt commonRelevant)
+      (selected' := selected)
+      (fun roots => Kernel.agreesOn common assignment
+        (model.evalUnder leftInt roots)) ?_ ?_
+    · intro root relevantRoot
+      simp [selected, rule3YInvariantLatentMask, leftInt, common,
+        commonRelevant, relevantRoot]
+    · exact agreesOn_evalUnder_dependsOnSelected model leftInt
+        commonRelevant common assignment
+        (by
+          dsimp [leftInt, commonRelevant, common]
+          exact FiniteLatentSCM.observedAncestorOf_backwardClosedUnder
+            model G (NodeSet.union x z)
+              (rule3WInterventionInvariant G x z w) assignment)
+        (by
+          dsimp [commonRelevant, common]
+          exact FiniteLatentSCM.ancestralInBar_contains_targets G
+            (NodeSet.union x z)
+              (rule3WInterventionInvariant G x z w))
+  have leftResidualDepends :
+      CanonicalFactorization.DependsOnUnselected
+        model.latent.count model.latent.Value selected
+        (fun roots => Kernel.agreesOn residual assignment
+          (model.evalUnder leftInt roots)) :=
+    agreesOn_evalUnder_dependsOnUnselected_of_relevance_avoids model
+      selected leftInt leftResidualRelevant residual assignment
+      (by
+        dsimp [leftInt, leftResidualRelevant, residual]
+        exact FiniteLatentSCM.observedAncestorOf_backwardClosedUnder
+          model G (NodeSet.union x z)
+            (rule3WInterventionSensitive G x z w) assignment)
+      (by
+        dsimp [leftResidualRelevant, residual]
+        exact FiniteLatentSCM.ancestralInBar_contains_targets G
+          (NodeSet.union x z)
+            (rule3WInterventionSensitive G x z w))
+      (by
+        intro root relevantRoot
+        exact leftResidualAvoids root (by
+          simpa [leftInt, leftResidualRelevant, residual] using relevantRoot))
+  have rightResidualDepends :
+      CanonicalFactorization.DependsOnUnselected
+        model.latent.count model.latent.Value selected
+        (fun roots => Kernel.agreesOn residual assignment
+          (model.evalUnder rightInt roots)) :=
+    agreesOn_evalUnder_dependsOnUnselected_of_relevance_avoids model
+      selected rightInt rightResidualRelevant residual assignment
+      (by
+        dsimp [rightInt, rightResidualRelevant, residual]
+        exact FiniteLatentSCM.observedAncestorOf_backwardClosedUnder
+          model G x (rule3WInterventionSensitive G x z w) assignment)
+      (by
+        dsimp [rightResidualRelevant, residual]
+        exact FiniteLatentSCM.ancestralInBar_contains_targets G x
+          (rule3WInterventionSensitive G x z w))
+      (by
+        intro root relevantRoot
+        exact rightResidualAvoids root (by
+          simpa [rightInt, rightResidualRelevant, residual]
+            using relevantRoot))
+  apply Rule3GivenWFactorization.of_node_split model G x y z w assignment
+    selected common residual
+    (by
+      dsimp [common, residual]
+      exact rule3WInterventionSplit_union G x z w)
+    (by
+      intro roots
+      dsimp [common]
+      exact agreesOn_rule3WInterventionInvariant model G x y z w assignment
+        roots)
+  · simpa [yInt] using yDepends
+  · simpa [leftInt, rule3Left, Kernel.intervention] using commonDepends
+  · simpa [leftInt, rule3Left, Kernel.intervention]
+      using leftResidualDepends
+  · simpa [rightInt, rule3Right, Kernel.intervention]
+      using rightResidualDepends
 
 /--
 Compile the common/residual `W` decomposition into the rectangular rule-3

@@ -37,8 +37,12 @@ inhabited.  Rule 3 now exposes the correct common/residual factorization of
 its conditioned `W` cylinder: latent dependence shared by `Y` and `W` is kept
 as a common factor rather than incorrectly excluded.  The general graph layer
 now splits `W` into intervention-invariant and intervention-sensitive blocks
-and proves the invariant block unchanged by adding `do(Z)`; it must still
-route the Y-side and residual latent dependencies across the moral separator.
+and proves the invariant block unchanged by adding `do(Z)`.  A checked
+constructor compiles that split whenever the two sensitive cylinders avoid
+the combined `Y`/invariant latent mask.  Those avoidance facts are genuine
+subcase hypotheses, not universal consequences of path d-separation: the
+general proof must still refine the invariant block by moral side and route
+the residual dependencies across that separator.
 Rule 1 and rule 2 likewise still require their remaining path-derived
 partitions.  The legacy extra Boolean hypotheses accepted by
 `PathDoRulePartitionWitnesses.ofPath` are not consequences of path
