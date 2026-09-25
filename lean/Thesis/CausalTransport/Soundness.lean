@@ -24,9 +24,13 @@ agreement cylinders over left and right open ancestral regions are then
 routed to complementary halves of the canonical independent latent product.
 For rule 3, `Rule3GivenWFactorization` records the more delicate conditioned
 case: a `W` factor shared with `Y` is retained on the selected roots, while
-only the intervention-sensitive residual factors are separated.  This avoids
-the false general requirement that conditioned `W` share no latent root with
-`Y`.
+only the intervention-sensitive residual factors are separated.  Topological
+local conditioning factors fix earlier `W` coordinates before reading each
+equation, so conditioned non-colliders do not spuriously transmit latent
+relevance into later factors.  Finite root reachability then constructs the
+`Y`-connected component and reduces general rule 3 to proving that its common
+nodes are intervention-invariant.  This avoids the false general requirement
+that conditioned `W` share no latent root with `Y`.
 -/
 
 namespace FiniteLatentSCM
@@ -4953,6 +4957,333 @@ theorem evalUnder_union_intervention_eq_of_agreesOn
                 baseSelected, addedSelected] using extensionValue
             subst value
             exact addedAgrees node addedSelected
+
+/-!
+### Topological local factors for a conditioning cylinder
+
+Agreement on a family of conditioned variables is not, in general, a
+rectangle in the latent roots of its full ancestral evaluation: an earlier
+conditioned node can transmit a root into every later descendant even though
+conditioning blocks that transmission in the factor graph.  The correct
+finite factorization fixes earlier conditioned coordinates before evaluating
+each local equation.  Topological ordering of `ObservedSignature.directed`
+makes this construction constructive.
+-/
+
+/-- Conditioned vertices strictly earlier than `child` in the signature's
+fixed topological order. -/
+def conditioningPrefix (condition : NodeSet S) (child : Fin S.count) :
+    NodeSet S :=
+  fun node => condition node && decide (node.val < child.val)
+
+/-- The action used to read one local conditioning factor. -/
+def localConditionAction (baseAction condition : NodeSet S)
+    (child : Fin S.count) : NodeSet S :=
+  NodeSet.union baseAction (conditioningPrefix condition child)
+
+/-- The local equality constraint at one conditioned node, after every
+earlier conditioned coordinate has been fixed to its reference value. -/
+def localConditionFactor (model : FiniteLatentSCM S)
+    (baseAction condition : NodeSet S) (reference : S.Assignment)
+    (child : Fin S.count) (roots : model.latent.Assignment) : Bool :=
+  decide
+    (model.evalUnder
+      ((Kernel.mk NodeSet.empty
+        (localConditionAction baseAction condition child)
+        NodeSet.empty).intervention reference) roots child = reference child)
+
+/-- Conjunction of the local constraints indexed by `selected`; the full
+conditioning family remains visible to every factor through its topological
+prefix. -/
+def localConditionEvent (model : FiniteLatentSCM S)
+    (baseAction condition selected : NodeSet S) (reference : S.Assignment)
+    (roots : model.latent.Assignment) : Bool :=
+  finAll S.count (fun child =>
+    if selected child then
+      localConditionFactor model baseAction condition reference child roots
+    else true)
+
+/-- Agreement on the complete conditioning cylinder is exactly the
+conjunction of its topological local factors. -/
+theorem agreesOn_evalUnder_eq_localConditionEvent
+    (model : FiniteLatentSCM S) (baseAction condition : NodeSet S)
+    (reference : S.Assignment) (roots : model.latent.Assignment) :
+    Kernel.agreesOn condition reference
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty baseAction NodeSet.empty).intervention
+            reference) roots) =
+      localConditionEvent model baseAction condition condition reference
+        roots := by
+  let base :=
+    (Kernel.mk NodeSet.empty baseAction NodeSet.empty).intervention reference
+  apply Bool.eq_iff_iff.mpr
+  constructor
+  · intro agreement
+    have components := (finAll_eq_true_iff _).mp (by
+      simpa [Kernel.agreesOn, base] using agreement)
+    apply (finAll_eq_true_iff _).mpr
+    intro child
+    cases selected : condition child with
+    | false =>
+        simp
+    | true =>
+        have earlierAgreement : Kernel.agreesOn
+            (conditioningPrefix condition child) reference
+            (model.evalUnder base roots) = true := by
+          unfold Kernel.agreesOn
+          apply (finAll_eq_true_iff _).mpr
+          intro node
+          cases earlier : conditioningPrefix condition child node with
+          | false => simp
+          | true =>
+              have earlierParts : condition node = true ∧
+                  node.val < child.val := by
+                simpa [conditioningPrefix] using earlier
+              have nodeSelected : condition node = true := earlierParts.1
+              have nodeComponent := components node
+              simpa [earlier, nodeSelected] using nodeComponent
+        have evaluationsEqual :
+            model.evalUnder
+                ((Kernel.mk NodeSet.empty
+                  (localConditionAction baseAction condition child)
+                  NodeSet.empty).intervention reference) roots =
+              model.evalUnder base roots := by
+          simpa [localConditionAction, base] using
+            (evalUnder_union_intervention_eq_of_agreesOn model baseAction
+              (conditioningPrefix condition child) reference roots
+              earlierAgreement)
+        have childValue : model.evalUnder base roots child = reference child := by
+          have childComponent := components child
+          simpa [selected] using childComponent
+        have localValue :
+            model.evalUnder
+              ((Kernel.mk NodeSet.empty
+                (localConditionAction baseAction condition child)
+                NodeSet.empty).intervention reference) roots child =
+              reference child := by
+          rw [evaluationsEqual]
+          exact childValue
+        simp [localConditionFactor, localValue]
+  · intro localAgreement
+    have localComponents := (finAll_eq_true_iff _).mp (by
+      simpa [localConditionEvent] using localAgreement)
+    have selectedAgreesByValue : forall value,
+        forall child : Fin S.count, child.val = value ->
+          condition child = true ->
+            model.evalUnder base roots child = reference child := by
+      intro value
+      induction value using Nat.strongRecOn with
+      | ind value ih =>
+          intro child childValue selected
+          have earlierAgreement : Kernel.agreesOn
+              (conditioningPrefix condition child) reference
+              (model.evalUnder base roots) = true := by
+            unfold Kernel.agreesOn
+            apply (finAll_eq_true_iff _).mpr
+            intro node
+            cases earlier : conditioningPrefix condition child node with
+            | false => simp
+            | true =>
+                have parts : condition node = true ∧
+                    node.val < child.val := by
+                  simpa [conditioningPrefix] using earlier
+                have nodeEarlier : node.val < value := by
+                  simpa [childValue] using parts.2
+                have nodeValue := ih node.val nodeEarlier node rfl parts.1
+                simp [nodeValue]
+          have evaluationsEqual :
+              model.evalUnder
+                  ((Kernel.mk NodeSet.empty
+                    (localConditionAction baseAction condition child)
+                    NodeSet.empty).intervention reference) roots =
+                model.evalUnder base roots := by
+            simpa [localConditionAction, base] using
+              (evalUnder_union_intervention_eq_of_agreesOn model baseAction
+                (conditioningPrefix condition child) reference roots
+                earlierAgreement)
+          have localComponent := localComponents child
+          have localValue :
+              model.evalUnder
+                ((Kernel.mk NodeSet.empty
+                  (localConditionAction baseAction condition child)
+                  NodeSet.empty).intervention reference) roots child =
+                reference child := by
+            have decided : decide
+                (model.evalUnder
+                  ((Kernel.mk NodeSet.empty
+                    (localConditionAction baseAction condition child)
+                    NodeSet.empty).intervention reference) roots child =
+                  reference child) = true := by
+              simpa [selected, localConditionFactor] using localComponent
+            exact of_decide_eq_true decided
+          rw [evaluationsEqual] at localValue
+          exact localValue
+    unfold Kernel.agreesOn
+    apply (finAll_eq_true_iff _).mpr
+    intro child
+    cases selected : condition child with
+    | false => simp
+    | true =>
+        have value := selectedAgreesByValue child.val child rfl selected
+        simpa [base, selected] using value
+
+/-- Selecting a union of local factors is pointwise conjunction of the two
+selected subfamilies. -/
+theorem localConditionEvent_union
+    (model : FiniteLatentSCM S)
+    (baseAction condition left right : NodeSet S)
+    (reference : S.Assignment) (roots : model.latent.Assignment) :
+    localConditionEvent model baseAction condition
+        (NodeSet.union left right) reference roots =
+      (localConditionEvent model baseAction condition left reference roots &&
+        localConditionEvent model baseAction condition right reference
+          roots) := by
+  apply Bool.eq_iff_iff.mpr
+  constructor
+  · intro unionTrue
+    have components := (finAll_eq_true_iff _).mp (by
+      simpa [localConditionEvent] using unionTrue)
+    apply Bool.and_eq_true_iff.mpr
+    constructor <;> apply (finAll_eq_true_iff _).mpr <;> intro child
+    · cases selected : left child with
+      | false => simp
+      | true =>
+          have unionSelected : NodeSet.union left right child = true := by
+            simp [NodeSet.union, selected]
+          simpa [selected, unionSelected] using components child
+    · cases selected : right child with
+      | false => simp
+      | true =>
+          have unionSelected : NodeSet.union left right child = true := by
+            simp [NodeSet.union, selected]
+          simpa [selected, unionSelected] using components child
+  · intro parts
+    rcases Bool.and_eq_true_iff.mp parts with ⟨leftTrue, rightTrue⟩
+    have leftComponents := (finAll_eq_true_iff _).mp (by
+      simpa [localConditionEvent] using leftTrue)
+    have rightComponents := (finAll_eq_true_iff _).mp (by
+      simpa [localConditionEvent] using rightTrue)
+    apply (finAll_eq_true_iff _).mpr
+    intro child
+    cases leftSelected : left child <;> cases rightSelected : right child
+    · simp [NodeSet.union, leftSelected, rightSelected]
+    · simpa [NodeSet.union, leftSelected, rightSelected] using
+        rightComponents child
+    · simpa [NodeSet.union, leftSelected, rightSelected] using
+        leftComponents child
+    · simpa [NodeSet.union, leftSelected, rightSelected] using
+        leftComponents child
+
+/-- A local conditioning subfamily depends only on selected roots when every
+root relevant to each displayed factor is routed into the selected mask. -/
+theorem localConditionEvent_dependsOnSelected
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (baseAction condition factors : NodeSet S)
+    (reference : S.Assignment)
+    (selected : Fin model.latent.count -> Bool)
+    (routes : forall child, factors child = true -> forall root,
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty
+            (localConditionAction baseAction condition child)
+            NodeSet.empty).intervention reference)
+          (FiniteLatentSCM.ancestralInBar G
+            (localConditionAction baseAction condition child)
+            (NodeSet.singleton child)) root = true ->
+        selected root = true) :
+    CanonicalFactorization.DependsOnSelected model.latent.count
+      model.latent.Value selected
+      (localConditionEvent model baseAction condition factors reference) := by
+  intro left right rootsAgree
+  unfold localConditionEvent
+  apply finAll_congr
+  intro child
+  cases factorSelected : factors child with
+  | false => rfl
+  | true =>
+      simp only [↓reduceIte]
+      unfold localConditionFactor
+      let action := localConditionAction baseAction condition child
+      let intervention :=
+        (Kernel.mk NodeSet.empty action NodeSet.empty).intervention reference
+      let relevant :=
+        FiniteLatentSCM.ancestralInBar G action (NodeSet.singleton child)
+      have evaluated : model.evalUnder intervention left child =
+          model.evalUnder intervention right child := by
+        exact model.evalNodeUnder_eq_of_rootAgreement intervention relevant
+          (by
+            dsimp [intervention, relevant, action]
+            exact FiniteLatentSCM.observedAncestorOf_backwardClosedUnder
+              model G (localConditionAction baseAction condition child)
+                (NodeSet.singleton child) reference)
+          left right
+          (by
+            intro root relevantRoot
+            exact rootsAgree root (routes child factorSelected root (by
+              simpa [intervention, relevant, action] using relevantRoot)))
+          child
+          (by
+            dsimp [relevant, action]
+            exact FiniteLatentSCM.ancestralInBar_contains_targets G
+              (localConditionAction baseAction condition child)
+                (NodeSet.singleton child) child
+                ((NodeSet.singleton_eq_true_iff child child).mpr rfl))
+      simpa [intervention, action] using congrArg
+        (fun value => decide (value = reference child)) evaluated
+
+/-- The complementary routing principle for local conditioning factors. -/
+theorem localConditionEvent_dependsOnUnselected
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (baseAction condition factors : NodeSet S)
+    (reference : S.Assignment)
+    (selected : Fin model.latent.count -> Bool)
+    (routes : forall child, factors child = true -> forall root,
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty
+            (localConditionAction baseAction condition child)
+            NodeSet.empty).intervention reference)
+          (FiniteLatentSCM.ancestralInBar G
+            (localConditionAction baseAction condition child)
+            (NodeSet.singleton child)) root = true ->
+        selected root = false) :
+    CanonicalFactorization.DependsOnUnselected model.latent.count
+      model.latent.Value selected
+      (localConditionEvent model baseAction condition factors reference) := by
+  intro left right rootsAgree
+  unfold localConditionEvent
+  apply finAll_congr
+  intro child
+  cases factorSelected : factors child with
+  | false => rfl
+  | true =>
+      simp only [↓reduceIte]
+      unfold localConditionFactor
+      let action := localConditionAction baseAction condition child
+      let intervention :=
+        (Kernel.mk NodeSet.empty action NodeSet.empty).intervention reference
+      let relevant :=
+        FiniteLatentSCM.ancestralInBar G action (NodeSet.singleton child)
+      have evaluated : model.evalUnder intervention left child =
+          model.evalUnder intervention right child := by
+        exact model.evalNodeUnder_eq_of_rootAgreement intervention relevant
+          (by
+            dsimp [intervention, relevant, action]
+            exact FiniteLatentSCM.observedAncestorOf_backwardClosedUnder
+              model G (localConditionAction baseAction condition child)
+                (NodeSet.singleton child) reference)
+          left right
+          (by
+            intro root relevantRoot
+            exact rootsAgree root (routes child factorSelected root (by
+              simpa [intervention, relevant, action] using relevantRoot)))
+          child
+          (by
+            dsimp [relevant, action]
+            exact FiniteLatentSCM.ancestralInBar_contains_targets G
+              (localConditionAction baseAction condition child)
+                (NodeSet.singleton child) child
+                ((NodeSet.singleton_eq_true_iff child child).mpr rfl))
+      simpa [intervention, action] using congrArg
+        (fun value => decide (value = reference child)) evaluated
 
 /--
 On the cylinder where the added action already matches the reference,
@@ -11439,6 +11770,55 @@ theorem agreesOn_rule3Y_eq_of_empty_w
     (ObservedGraph.nonAncestorsOf_of_isEmpty G (GraphMutilation.bar x) z w hw)
     separated roots
 
+/-- Evaluation agrees nodewise after adding `do(Z)` whenever no selected
+`Z` vertex reaches the observed family in `G_{\overline{X ∪ Z}}`. -/
+theorem evalUnder_bar_union_eq_on_of_z_not_ancestral
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z nodes : NodeSet S) (assignment : S.Assignment)
+    (zAvoids : forall i, z i = true ->
+      FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) nodes i = false)
+    (roots : model.latent.Assignment) :
+    forall child, nodes child = true ->
+      model.evalUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+            NodeSet.empty).intervention assignment) roots child =
+        model.evalUnder
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+          roots child := by
+  intro child childInNodes
+  have childAncestor :
+      FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) nodes child =
+        true :=
+    FiniteLatentSCM.observedAncestorOf_self G
+      (GraphMutilation.bar (NodeSet.union x z)) nodes childInNodes
+  have closed :=
+    FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+      (NodeSet.union x z) nodes assignment
+  have interventionsAgree : forall i,
+      FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) nodes i = true ->
+        ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+          NodeSet.empty).intervention assignment i) =
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment
+            i) := by
+    intro i ancestor
+    have outsideZ : z i = false := by
+      cases selected : z i with
+      | false => rfl
+      | true =>
+          have impossible := zAvoids i selected
+          rw [ancestor] at impossible
+          contradiction
+    have unionAtI : NodeSet.union x z i = x i := by
+      simp [NodeSet.union, outsideZ]
+    simp [Kernel.intervention, unionAtI]
+  exact FiniteLatentSCM.evalUnder_eq_on_of_intervention_agree_on_closed
+    model
+    ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+      NodeSet.empty).intervention assignment)
+    ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+    (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) nodes)
+    roots closed interventionsAgree child childAncestor
+
 /--
 A cylinder is invariant under adding `do(Z)` whenever no `Z` vertex reaches
 its nodes in `G_{\overline{X ∪ Z}}`.
@@ -11466,57 +11846,12 @@ theorem agreesOn_evalUnder_bar_union_eq_of_z_not_ancestral
   apply finAll_congr
   intro child
   cases hnodes : nodes child with
-  | false =>
-      rfl
+  | false => rfl
   | true =>
-      have hanc :
-          FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) nodes child =
-            true :=
-        FiniteLatentSCM.observedAncestorOf_self G
-          (GraphMutilation.bar (NodeSet.union x z)) nodes hnodes
-      have hclosed :=
-        FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
-          (NodeSet.union x z) nodes assignment
-      have hagree :
-          forall i,
-            FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) nodes i =
-                true ->
-              ((Kernel.mk NodeSet.empty (NodeSet.union x z)
-                NodeSet.empty).intervention assignment i) =
-                ((Kernel.mk NodeSet.empty x
-                  NodeSet.empty).intervention assignment i) := by
-        intro i hi
-        have hz : z i = false := by
-          cases hzi : z i with
-          | false =>
-              rfl
-          | true =>
-              have hfalse := zAvoids i hzi
-              rw [hi] at hfalse
-              contradiction
-        have hinterL :
-            (Kernel.mk NodeSet.empty (NodeSet.union x z)
-                NodeSet.empty).intervention assignment i =
-              (if NodeSet.union x z i then some (assignment i)
-                else none) := by
-          simp [Kernel.intervention]
-        have hinterR :
-            (Kernel.mk NodeSet.empty x NodeSet.empty).intervention
-                assignment i =
-              (if x i then some (assignment i) else none) := by
-          simp [Kernel.intervention]
-        have hxZ : NodeSet.union x z i = x i := by
-          simp [NodeSet.union, hz]
-        simp [hinterL, hinterR, hxZ]
-      have heval :=
-        FiniteLatentSCM.evalUnder_eq_on_of_intervention_agree_on_closed
-          model
-          ((Kernel.mk NodeSet.empty (NodeSet.union x z)
-            NodeSet.empty).intervention assignment)
-          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
-          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) nodes)
-          roots hclosed hagree child hanc
-      simp [heval]
+      have evaluated :=
+        evalUnder_bar_union_eq_on_of_z_not_ancestral model G x z nodes
+          assignment zAvoids roots child hnodes
+      simp [evaluated]
 
 /--
 The conditioned `W` vertices that can be reached from `Z` in
@@ -11649,6 +11984,335 @@ theorem agreesOn_rule3WInterventionInvariant
         rule3_z_not_ancestral_invariant_w G x z w sourceInZ)
       roots
   simpa [rule3Left, rule3Right, Kernel.intervention] using invariant
+
+/-!
+### The `Y`-connected component of the rule-3 conditioner
+
+The intervention split above is useful but too coarse for the general rule:
+an invariant `W` vertex need not share any dependency with `Y`, and two
+conditioned vertices can couple latent coordinates that were otherwise on
+different sides.  The finite component below therefore works at the level
+of the actual latent product.  Two roots are adjacent when they can both
+affect the same `W` cylinder under either rule-3 intervention.  Starting from
+the roots needed by `Y`, finite reachability then closes the selected family
+under every conditioning factor.
+
+This is the constructive factor-graph analogue of taking the `Y` component
+of the ancestral moral graph.  It uses only bounded Boolean reachability on
+the explicitly enumerated latent roots.
+-/
+
+/-- A latent root can affect the agreement constraint for one conditioned
+`W` vertex under at least one of the two rule-3 interventions. -/
+def rule3WConditionRootRelevant (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    (assignment : S.Assignment) (child : Fin S.count)
+    (root : Fin model.latent.count) : Bool :=
+  w child &&
+    (model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty
+          (localConditionAction (NodeSet.union x z) w child)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G
+          (localConditionAction (NodeSet.union x z) w child)
+          (NodeSet.singleton child)) root ||
+      model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (localConditionAction x w child)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (localConditionAction x w child)
+          (NodeSet.singleton child)) root)
+
+/-- Two latent coordinates are joined when one conditioned `W` equation can
+observe both of them under the left or right rule-3 intervention. -/
+def rule3WConditionRootAdjacent (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    (assignment : S.Assignment)
+    (left right : Fin model.latent.count) : Bool :=
+  finAny S.count (fun child =>
+    rule3WConditionRootRelevant model G x z w assignment child left &&
+      rule3WConditionRootRelevant model G x z w assignment child right)
+
+/-- The latent component generated by the `Y` cylinder and closed through
+all rule-3 conditioning factors. -/
+def rule3YConditionLatentComponent (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (assignment : S.Assignment) (root : Fin model.latent.count) : Bool :=
+  finAny model.latent.count (fun seed =>
+    model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) seed &&
+      FiniteReachability.within finBeq
+        (List.ofFn (fun latent : Fin model.latent.count => latent))
+        (rule3WConditionRootAdjacent model G x z w assignment)
+        (List.ofFn (fun latent : Fin model.latent.count => latent)).length
+        seed root)
+
+/-- A conditioned vertex belongs to the common block exactly when one of
+its relevant roots lies in the `Y`-connected component. -/
+def rule3WConditionCommon (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (assignment : S.Assignment) : NodeSet S :=
+  fun child =>
+    finAny model.latent.count (fun root =>
+      rule3WConditionRootRelevant model G x z w assignment child root &&
+        rule3YConditionLatentComponent model G x y z w assignment root)
+
+/-- Every other conditioned vertex is assigned to the complementary
+residual block. -/
+def rule3WConditionResidual (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (assignment : S.Assignment) : NodeSet S :=
+  NodeSet.diff w (rule3WConditionCommon model G x y z w assignment)
+
+theorem rule3WConditionRootAdjacent_of_relevant
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    (child : Fin S.count) (left right : Fin model.latent.count)
+    (leftRelevant : rule3WConditionRootRelevant model G x z w assignment
+      child left = true)
+    (rightRelevant : rule3WConditionRootRelevant model G x z w assignment
+      child right = true) :
+    rule3WConditionRootAdjacent model G x z w assignment left right = true :=
+  finAny_eq_true_of _ child
+    (Bool.and_eq_true_iff.mpr ⟨leftRelevant, rightRelevant⟩)
+
+/-- Every seed root is in the component, via the reflexive bounded walk. -/
+theorem rule3YConditionLatentComponent_of_y_relevant
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (root : Fin model.latent.count)
+    (relevant : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) root = true) :
+    rule3YConditionLatentComponent model G x y z w assignment root = true := by
+  apply finAny_eq_true_of _ root
+  apply Bool.and_eq_true_iff.mpr
+  refine ⟨relevant, ?_⟩
+  have complete : forall latent : Fin model.latent.count,
+      latent ∈ List.ofFn (fun i : Fin model.latent.count => i) :=
+    fun latent => List.mem_ofFn.mpr ⟨latent, rfl⟩
+  exact (FiniteReachability.within_eq_true_iff_boundedWalk finBeq
+    (List.ofFn (fun latent : Fin model.latent.count => latent))
+    (rule3WConditionRootAdjacent model G x z w assignment)
+    finBeq_eq_true_iff complete
+    (List.ofFn (fun latent : Fin model.latent.count => latent)).length
+    root root).mpr
+      (FiniteReachability.BoundedWalk.refl _ _ root)
+
+/-- The generated root family is closed across every conditioning-factor
+edge. -/
+theorem rule3YConditionLatentComponent_closed
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (left right : Fin model.latent.count)
+    (leftIn : rule3YConditionLatentComponent model G x y z w assignment
+      left = true)
+    (edge : rule3WConditionRootAdjacent model G x z w assignment
+      left right = true) :
+    rule3YConditionLatentComponent model G x y z w assignment right = true := by
+  rcases (finAny_eq_true_iff _).mp (by
+      simpa [rule3YConditionLatentComponent] using leftIn) with
+    ⟨seed, seedData⟩
+  rcases Bool.and_eq_true_iff.mp seedData with
+    ⟨seedRelevant, seedReachesLeft⟩
+  let roots := List.ofFn (fun latent : Fin model.latent.count => latent)
+  let adjacent := rule3WConditionRootAdjacent model G x z w assignment
+  have complete : forall latent : Fin model.latent.count, latent ∈ roots :=
+    fun latent => List.mem_ofFn.mpr ⟨latent, rfl⟩
+  have seedToLeft : FiniteReachability.BoundedWalk adjacent roots.length
+      seed left :=
+    (FiniteReachability.within_eq_true_iff_boundedWalk finBeq roots adjacent
+      finBeq_eq_true_iff complete roots.length seed left).mp
+      (by simpa [roots, adjacent] using seedReachesLeft)
+  have leftToRight : FiniteReachability.BoundedWalk adjacent 1 left right :=
+    ⟨1, Nat.le_refl _,
+      ⟨FiniteReachability.ExactWalk.step (by simpa [adjacent] using edge)
+        (FiniteReachability.ExactWalk.refl right)⟩⟩
+  have seedToRightReachable : FiniteReachability.Reachable adjacent seed right :=
+    FiniteReachability.Reachable.of_bounded
+      (FiniteReachability.BoundedWalk.trans seedToLeft leftToRight)
+  have seedToRight : FiniteReachability.BoundedWalk adjacent roots.length
+      seed right :=
+    FiniteReachability.boundedWalk_of_reachable finBeq roots adjacent
+      finBeq_eq_true_iff complete seedToRightReachable
+  have found : FiniteReachability.within finBeq roots adjacent roots.length
+      seed right = true :=
+    (FiniteReachability.within_eq_true_iff_boundedWalk finBeq roots adjacent
+      finBeq_eq_true_iff complete roots.length seed right).mpr seedToRight
+  apply (finAny_eq_true_iff _).mpr
+  exact ⟨seed, Bool.and_eq_true_iff.mpr ⟨seedRelevant,
+    by simpa [roots, adjacent] using found⟩⟩
+
+/-- Every root relevant to a common conditioning factor belongs to the
+generated component. -/
+theorem rule3WConditionCommon_root_selected
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (child : Fin S.count) (root : Fin model.latent.count)
+    (common : rule3WConditionCommon model G x y z w assignment child = true)
+    (relevant : rule3WConditionRootRelevant model G x z w assignment
+      child root = true) :
+    rule3YConditionLatentComponent model G x y z w assignment root = true := by
+  rcases (finAny_eq_true_iff _).mp (by
+      simpa [rule3WConditionCommon] using common) with ⟨pivot, pivotData⟩
+  rcases Bool.and_eq_true_iff.mp pivotData with
+    ⟨pivotRelevant, pivotSelected⟩
+  exact rule3YConditionLatentComponent_closed model G x y z w assignment
+    pivot root pivotSelected
+    (rule3WConditionRootAdjacent_of_relevant model G x z w assignment
+      child pivot root pivotRelevant relevant)
+
+/-- A residual factor contains no root from the generated component. -/
+theorem rule3WConditionResidual_root_unselected
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (child : Fin S.count) (root : Fin model.latent.count)
+    (residual : rule3WConditionResidual model G x y z w assignment child =
+      true)
+    (relevant : rule3WConditionRootRelevant model G x z w assignment
+      child root = true) :
+    rule3YConditionLatentComponent model G x y z w assignment root = false := by
+  have notCommon :
+      rule3WConditionCommon model G x y z w assignment child = false :=
+    NodeSet.Disjoint.diff_right w
+      (rule3WConditionCommon model G x y z w assignment) child residual
+  cases selected :
+      rule3YConditionLatentComponent model G x y z w assignment root with
+  | false => rfl
+  | true =>
+      have common :
+          rule3WConditionCommon model G x y z w assignment child = true :=
+        finAny_eq_true_of _ root
+          (Bool.and_eq_true_iff.mpr ⟨relevant, selected⟩)
+      rw [common] at notCommon
+      contradiction
+
+theorem rule3WConditionCommon_subset_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    NodeSet.Subset (rule3WConditionCommon model G x y z w assignment) w := by
+  intro child common
+  rcases (finAny_eq_true_iff _).mp (by
+      simpa [rule3WConditionCommon] using common) with ⟨root, rootData⟩
+  have relevant : rule3WConditionRootRelevant model G x z w assignment
+      child root = true := (Bool.and_eq_true_iff.mp rootData).1
+  exact (Bool.and_eq_true_iff.mp relevant).1
+
+/-- The connected common block and its complement cover all of `W`. -/
+theorem rule3WConditionSplit_union
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) :
+    NodeSet.union (rule3WConditionCommon model G x y z w assignment)
+      (rule3WConditionResidual model G x y z w assignment) = w := by
+  funext child
+  have subset := rule3WConditionCommon_subset_w model G x y z w assignment
+    child
+  simp [rule3WConditionResidual, NodeSet.union, NodeSet.diff]
+  cases hw : w child with
+  | false =>
+      cases hc : rule3WConditionCommon model G x y z w assignment child with
+      | false => simp
+      | true => exact (Bool.false_ne_true (hw.symm.trans (subset hc))).elim
+  | true =>
+      cases hc : rule3WConditionCommon model G x y z w assignment child <;>
+        simp
+
+/-- A local `W` factor is unchanged by adding `do(Z)` when its vertex lies
+in the intervention-invariant block.  Earlier conditioned vertices are
+already fixed on both sides; adding them to the base action only removes
+more incoming edges and therefore preserves the non-ancestry argument. -/
+theorem rule3LocalConditionFactor_eq_of_intervention_invariant
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    (child : Fin S.count)
+    (invariant : rule3WInterventionInvariant G x z w child = true)
+    (roots : model.latent.Assignment) :
+    localConditionFactor model (NodeSet.union x z) w assignment child roots =
+      localConditionFactor model x w assignment child roots := by
+  let base := localConditionAction x w child
+  have actionEq : NodeSet.union base z =
+      localConditionAction (NodeSet.union x z) w child := by
+    funext node
+    simp only [base, localConditionAction, NodeSet.union]
+    cases hx : x node <;> cases hz : z node <;>
+      cases hp : conditioningPrefix w child node <;> rfl
+  have zAvoids : forall source, z source = true ->
+      FiniteLatentSCM.ancestralInBar G (NodeSet.union base z)
+        (NodeSet.singleton child) source = false := by
+    intro source sourceInZ
+    cases ancestor : FiniteLatentSCM.ancestralInBar G
+        (NodeSet.union base z) (NodeSet.singleton child) source with
+    | false => rfl
+    | true =>
+        have ancestorLocalLeft : FiniteLatentSCM.ancestralInBar G
+            (localConditionAction (NodeSet.union x z) w child)
+            (NodeSet.singleton child) source = true := by
+          simpa [actionEq] using ancestor
+        have incomingSubset : NodeSet.Subset (NodeSet.union x z)
+            (localConditionAction (NodeSet.union x z) w child) :=
+          NodeSet.subset_union_left (NodeSet.union x z)
+            (conditioningPrefix w child)
+        have ancestorWithoutPrefix : FiniteLatentSCM.ancestralInBar G
+            (NodeSet.union x z) (NodeSet.singleton child) source = true :=
+          FiniteLatentSCM.observedAncestorOf_bar_of_incoming_subset G
+            incomingSubset (NodeSet.singleton child) ancestorLocalLeft
+        have singletonSubset : NodeSet.Subset (NodeSet.singleton child)
+            (rule3WInterventionInvariant G x z w) := by
+          intro target targetIsChild
+          have same := (NodeSet.singleton_eq_true_iff child target).mp
+            targetIsChild
+          subst target
+          exact invariant
+        have reachesInvariant : FiniteLatentSCM.ancestralInBar G
+            (NodeSet.union x z) (rule3WInterventionInvariant G x z w)
+            source = true :=
+          FiniteLatentSCM.ancestralInBar_mono G (NodeSet.union x z)
+            singletonSubset ancestorWithoutPrefix
+        have impossible :=
+          rule3_z_not_ancestral_invariant_w G x z w sourceInZ
+        rw [reachesInvariant] at impossible
+        contradiction
+  have evaluated :=
+    evalUnder_bar_union_eq_on_of_z_not_ancestral model G base z
+      (NodeSet.singleton child) assignment zAvoids roots child
+      ((NodeSet.singleton_eq_true_iff child child).mpr rfl)
+  unfold localConditionFactor
+  have evaluated' :
+      model.evalUnder
+          ((Kernel.mk NodeSet.empty
+            (localConditionAction (NodeSet.union x z) w child)
+            NodeSet.empty).intervention assignment) roots child =
+        model.evalUnder
+          ((Kernel.mk NodeSet.empty (localConditionAction x w child)
+            NodeSet.empty).intervention assignment) roots child := by
+    simpa [base, actionEq] using evaluated
+  exact congrArg (fun value => decide (value = assignment child)) evaluated'
+
+/-- The conjunction of all connected common factors is therefore identical
+under the left and right rule-3 interventions. -/
+theorem rule3LocalConditionCommon_eq_of_subset_invariant
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (subsetInvariant : NodeSet.Subset
+      (rule3WConditionCommon model G x y z w assignment)
+      (rule3WInterventionInvariant G x z w))
+    (roots : model.latent.Assignment) :
+    localConditionEvent model (NodeSet.union x z) w
+        (rule3WConditionCommon model G x y z w assignment) assignment roots =
+      localConditionEvent model x w
+        (rule3WConditionCommon model G x y z w assignment) assignment
+        roots := by
+  unfold localConditionEvent
+  apply finAll_congr
+  intro child
+  cases common : rule3WConditionCommon model G x y z w assignment child with
+  | false => rfl
+  | true =>
+      simp only [↓reduceIte]
+      exact rule3LocalConditionFactor_eq_of_intervention_invariant model G
+        x z w assignment child (subsetInvariant child common) roots
 
 /-- When no `Z` vertex ancestors `W` in `G_{\overline{X}}`, the `W`
 cylinders under `do(X ∪ Z)` and `do(X)` coincide: intervening on `Z`
@@ -12120,6 +12784,174 @@ def Rule3GivenWFactorization.of_node_split
               ((rule3Right x y z w).intervention assignment) roots) := by
       simpa using split
     rw [← split', Kernel.agreesOn_union, ← commonInvariant roots]
+
+/--
+Build the rule-3 common/residual factorization from topological local
+conditioning factors.
+
+The selected mask is the finite component generated by the `Y` roots and by
+roots co-occurring in one local `W` factor.  Component closure therefore puts
+every common factor wholly on selected roots and every residual factor wholly
+on unselected roots.  The one graph-shaped premise says that the connected
+common nodes lie in the intervention-invariant block; the preceding local
+invariance theorem then identifies their left and right factors pointwise.
+-/
+def Rule3GivenWFactorization.of_local_condition_component
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (commonSubsetInvariant : NodeSet.Subset
+      (rule3WConditionCommon model G x y z w assignment)
+      (rule3WInterventionInvariant G x z w)) :
+    Rule3GivenWFactorization model G x y z w assignment := by
+  let yInt :=
+    (Kernel.mk NodeSet.empty (NodeSet.union x w)
+      NodeSet.empty).intervention assignment
+  let yRelevant :=
+    FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y
+  let selected :=
+    rule3YConditionLatentComponent model G x y z w assignment
+  let common := rule3WConditionCommon model G x y z w assignment
+  let residual := rule3WConditionResidual model G x y z w assignment
+  let commonEvent := localConditionEvent model (NodeSet.union x z) w
+    common assignment
+  let leftResidualEvent := localConditionEvent model (NodeSet.union x z) w
+    residual assignment
+  let rightResidualEvent := localConditionEvent model x w residual assignment
+  have commonSubsetW : NodeSet.Subset common w := by
+    simpa [common] using
+      rule3WConditionCommon_subset_w model G x y z w assignment
+  have residualSubsetW : NodeSet.Subset residual w := by
+    dsimp [residual]
+    exact NodeSet.diff_subset_left w
+      (rule3WConditionCommon model G x y z w assignment)
+  have covers : NodeSet.union common residual = w := by
+    simpa [common, residual] using
+      rule3WConditionSplit_union model G x y z w assignment
+  have yDepends : CanonicalFactorization.DependsOnSelected
+      model.latent.count model.latent.Value selected
+      (fun roots => Kernel.agreesOn y assignment
+        (model.evalUnder yInt roots)) := by
+    refine CanonicalFactorization.DependsOnSelected.subset
+      model.latent.count model.latent.Value
+      (selected := model.latentRelevantUnder yInt yRelevant)
+      (selected' := selected)
+      (fun roots => Kernel.agreesOn y assignment
+        (model.evalUnder yInt roots)) ?_ ?_
+    · intro root relevantRoot
+      exact rule3YConditionLatentComponent_of_y_relevant model G x y z w
+        assignment root (by simpa [yInt, yRelevant] using relevantRoot)
+    · exact agreesOn_evalUnder_dependsOnSelected model yInt yRelevant y
+        assignment
+        (by
+          dsimp [yInt, yRelevant]
+          exact FiniteLatentSCM.observedAncestorOf_backwardClosedUnder
+            model G (NodeSet.union x w) y assignment)
+        (by
+          dsimp [yRelevant]
+          exact FiniteLatentSCM.ancestralInBar_contains_targets G
+            (NodeSet.union x w) y)
+  have commonDepends : CanonicalFactorization.DependsOnSelected
+      model.latent.count model.latent.Value selected commonEvent := by
+    dsimp [commonEvent]
+    apply localConditionEvent_dependsOnSelected model G
+    intro child childCommon root relevantRoot
+    have childInW := commonSubsetW child childCommon
+    have combined : rule3WConditionRootRelevant model G x z w assignment
+        child root = true := by
+      simp [rule3WConditionRootRelevant, childInW, relevantRoot]
+    exact rule3WConditionCommon_root_selected model G x y z w assignment
+      child root (by simpa [common] using childCommon) combined
+  have leftResidualDepends : CanonicalFactorization.DependsOnUnselected
+      model.latent.count model.latent.Value selected leftResidualEvent := by
+    dsimp [leftResidualEvent]
+    apply localConditionEvent_dependsOnUnselected model G
+    intro child childResidual root relevantRoot
+    have childInW := residualSubsetW child childResidual
+    have combined : rule3WConditionRootRelevant model G x z w assignment
+        child root = true := by
+      simp [rule3WConditionRootRelevant, childInW, relevantRoot]
+    exact rule3WConditionResidual_root_unselected model G x y z w assignment
+      child root (by simpa [residual] using childResidual) combined
+  have rightResidualDepends : CanonicalFactorization.DependsOnUnselected
+      model.latent.count model.latent.Value selected rightResidualEvent := by
+    dsimp [rightResidualEvent]
+    apply localConditionEvent_dependsOnUnselected model G
+    intro child childResidual root relevantRoot
+    have childInW := residualSubsetW child childResidual
+    have combined : rule3WConditionRootRelevant model G x z w assignment
+        child root = true := by
+      simp [rule3WConditionRootRelevant, childInW, relevantRoot]
+    exact rule3WConditionResidual_root_unselected model G x y z w assignment
+      child root (by simpa [residual] using childResidual) combined
+  have commonInvariant : forall roots,
+      commonEvent roots =
+        localConditionEvent model x w common assignment roots := by
+    intro roots
+    dsimp [commonEvent, common]
+    exact rule3LocalConditionCommon_eq_of_subset_invariant model G
+      x y z w assignment commonSubsetInvariant roots
+  refine
+    { selected := selected
+      commonCondition := commonEvent
+      leftResidual := leftResidualEvent
+      rightResidual := rightResidualEvent
+      yDepends := by simpa [yInt] using yDepends
+      commonConditionDepends := commonDepends
+      leftResidualDepends := leftResidualDepends
+      rightResidualDepends := rightResidualDepends
+      leftCondition := ?_
+      rightCondition := ?_ }
+  · funext roots
+    simp only [productPreimage, Kernel.conditionEvent, Probability.inter]
+    rw [show (rule3Left x y z w).condition = w from rfl]
+    have full := agreesOn_evalUnder_eq_localConditionEvent model
+      (NodeSet.union x z) w assignment roots
+    have split := localConditionEvent_union model (NodeSet.union x z) w
+      common residual assignment roots
+    have selectedCover := congrArg
+      (fun nodes => localConditionEvent model (NodeSet.union x z) w nodes
+        assignment roots) covers
+    have splitFullRaw : localConditionEvent model (NodeSet.union x z) w w
+        assignment roots =
+          (localConditionEvent model (NodeSet.union x z) w common assignment
+              roots &&
+            localConditionEvent model (NodeSet.union x z) w residual
+              assignment roots) :=
+      selectedCover.symm.trans split
+    have splitFull : localConditionEvent model (NodeSet.union x z) w w
+        assignment roots = (commonEvent roots && leftResidualEvent roots) := by
+      simpa [commonEvent, leftResidualEvent] using splitFullRaw
+    have interventionEq :
+        (rule3Left x y z w).intervention assignment =
+          (Kernel.mk NodeSet.empty (NodeSet.union x z)
+            NodeSet.empty).intervention assignment := by
+      funext child
+      simp [rule3Left, Kernel.intervention]
+    rw [interventionEq, full, splitFull]
+  · funext roots
+    simp only [productPreimage, Kernel.conditionEvent, Probability.inter]
+    rw [show (rule3Right x y z w).condition = w from rfl]
+    have full := agreesOn_evalUnder_eq_localConditionEvent model x w
+      assignment roots
+    have split := localConditionEvent_union model x w common residual
+      assignment roots
+    have selectedCover := congrArg
+      (fun nodes => localConditionEvent model x w nodes assignment roots)
+      covers
+    have splitFullRaw : localConditionEvent model x w w assignment roots =
+        (localConditionEvent model x w common assignment roots &&
+          localConditionEvent model x w residual assignment roots) :=
+      selectedCover.symm.trans split
+    have splitFull : localConditionEvent model x w w assignment roots =
+        (localConditionEvent model x w common assignment roots &&
+          rightResidualEvent roots) := by
+      simpa [rightResidualEvent] using splitFullRaw
+    have interventionEq :
+        (rule3Right x y z w).intervention assignment =
+          (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment := by
+      funext child
+      simp [rule3Right, Kernel.intervention]
+    rw [interventionEq, full, splitFull, ← commonInvariant roots]
 
 /--
 Instantiate the rule-3 node split with the part of `W` that is pointwise
@@ -12674,6 +13506,31 @@ def rule3RectangularWitness_of_path_factorization
                     factorization
 
 /--
+Rule 3 reduced to the graph statement exposed by the topological local
+conditioning component: every `Y`-connected `W` factor is unchanged by
+adding `do(Z)`.  Once that subset is known, the local factorization supplies
+all selected/unselected coordinate judgements automatically.
+-/
+def rule3RectangularWitness_of_path_local_condition_component
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (separated : PathSpecification.PathDSeparated G
+      { removeIncoming :=
+          NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+        removeOutgoing := NodeSet.empty }
+      y z (NodeSet.union x w))
+    (commonSubsetInvariant : NodeSet.Subset
+      (rule3WConditionCommon model G x y z w assignment)
+      (rule3WInterventionInvariant G x z w)) :
+    ProductRectangularCrossProductWitnessAt model
+      (rule3Left x y z w) (rule3Right x y z w) assignment :=
+  rule3RectangularWitness_of_path_factorization model G x y z w assignment
+    disjoint separated
+    (Rule3GivenWFactorization.of_local_condition_component model G x y z w
+      assignment commonSubsetInvariant)
+
+/--
 Backward-compatible rule-3 assembler for the stronger no-overlap premise.
 The premise is first embedded into the general common/residual
 factorization; downstream cross-product algebra no longer relies on the
@@ -12923,6 +13780,57 @@ def PathDoRulePartitionWitnesses.ofPathFactorizedRule3
     Kernel.rule3RectangularWitness_of_path_factorization model G
       x y z w assignment disjoint separated
       (hRule3Factorization x y z w assignment separated)
+
+/--
+Specialize the factorized rule-3 assembler to the checked topological local
+component.  This exposes one graph obligation for rule 3 rather than an
+opaque event factorization: path separation must place every `Y`-connected
+conditioning factor in the intervention-invariant `W` block.
+-/
+def PathDoRulePartitionWitnesses.ofPathLocalConditionComponent
+    (G : ObservedGraph S) (model : FiniteLatentSCM S)
+    (projected : HasProjectedGraph model G)
+    (hRule1Overlap : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
+      PathSpecification.PathDSeparated
+        G (.bar x) y z (NodeSet.union x w) →
+      Kernel.rule1WSplitClosedAncestralLatentsOverlap
+        model G x y z w assignment = false)
+    (hRule1Unsel : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
+      PathSpecification.PathDSeparated
+        G (.bar x) y z (NodeSet.union x w) →
+      Kernel.rule1WSplitClosedUnselectedMeetsZCore
+        model G x y z w assignment = false)
+    (hRule2Extra : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
+      PathSpecification.PathDSeparated
+        G (.barUnderline x z) y z (NodeSet.union x w) →
+      Kernel.rule2WSplitSelectedClosedExtraLatent
+        model G x z w assignment = false)
+    (hRule2MeetsY : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
+      PathSpecification.PathDSeparated
+        G (.barUnderline x z) y z (NodeSet.union x w) →
+      Kernel.rule2SelectedMeetsYAncestral
+        model G x y z w assignment = false)
+    (hRule3CommonInvariant : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
+      PathSpecification.PathDSeparated G
+        { removeIncoming :=
+            NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+          removeOutgoing := NodeSet.empty }
+        y z (NodeSet.union x w) →
+      NodeSet.Subset
+        (Kernel.rule3WConditionCommon model G x y z w assignment)
+        (Kernel.rule3WInterventionInvariant G x z w)) :
+    PathDoRulePartitionWitnesses G model :=
+  PathDoRulePartitionWitnesses.ofPathFactorizedRule3 G model projected
+    hRule1Overlap hRule1Unsel hRule2Extra hRule2MeetsY
+    (fun x y z w assignment separated =>
+      Kernel.Rule3GivenWFactorization.of_local_condition_component model G
+        x y z w assignment
+        (hRule3CommonInvariant x y z w assignment separated))
 
 /--
 Compatibility assembler for the former rule-3 no-overlap premise.  New

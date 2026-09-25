@@ -40,9 +40,13 @@ now splits `W` into intervention-invariant and intervention-sensitive blocks
 and proves the invariant block unchanged by adding `do(Z)`.  A checked
 constructor compiles that split whenever the two sensitive cylinders avoid
 the combined `Y`/invariant latent mask.  Those avoidance facts are genuine
-subcase hypotheses, not universal consequences of path d-separation: the
-general proof must still refine the invariant block by moral side and route
-the residual dependencies across that separator.
+subcase hypotheses, not universal consequences of path d-separation.  The
+general construction instead factors the `W` cylinder into topological local
+equations, closes the `Y` roots through factors that share coordinates, and
+automatically routes common and residual factors to complementary latent
+components.  Its remaining rule-3 graph leaf is the precise subset statement
+that every `Y`-connected local factor lies in the intervention-invariant
+block.
 Rule 1 and rule 2 likewise still require their remaining path-derived
 partitions.  The legacy extra Boolean hypotheses accepted by
 `PathDoRulePartitionWitnesses.ofPath` are not consequences of path
