@@ -32145,10 +32145,125 @@ theorem hedgeDoSecond_eq_action_intervention
       simp [hedgeDoSecond, hi, hedgeActionReference]
 
 /--
-An unintervened mix child is the mix of its pair-root XOR, masked parent
-bits, and private decode.  Used to read the copy branch as a constant
-under `hedgeDoSecond`.
+Reference assignment with one distinguished action vertex at `second` and
+every other coordinate at `first`.  Unlike `hedgeActionReference`, this lets a
+single chosen parent contribute the mix XOR even when the outcome has several
+action parents.
 -/
+def hedgeActionPivotReference (rich : ObservedSignature.ValueRich S)
+    (action : NodeSet S) (pivot : Fin S.count) : S.Assignment :=
+  fun i =>
+    if action i then
+      if i = pivot then rich.second i else rich.first i
+    else rich.first i
+
+theorem hedgeActionPivotReference_pivot
+    (rich : ObservedSignature.ValueRich S) (action : NodeSet S)
+    {pivot : Fin S.count} (selected : action pivot = true) :
+    hedgeActionPivotReference rich action pivot pivot = rich.second pivot := by
+  simp [hedgeActionPivotReference, selected]
+
+theorem hedgeActionPivotReference_of_ne
+    (rich : ObservedSignature.ValueRich S) (action : NodeSet S)
+    {pivot i : Fin S.count} (different : i ≠ pivot) :
+    hedgeActionPivotReference rich action pivot i = rich.first i := by
+  cases selected : action i <;>
+    simp [hedgeActionPivotReference, selected, different]
+
+theorem hedgeActionPivotReference_of_false
+    (rich : ObservedSignature.ValueRich S) (action : NodeSet S)
+    (pivot : Fin S.count) {i : Fin S.count} (free : action i = false) :
+    hedgeActionPivotReference rich action pivot i = rich.first i := by
+  simp [hedgeActionPivotReference, free]
+
+/-- Hard intervention induced by `hedgeActionPivotReference`. -/
+def hedgeDoPivot (rich : ObservedSignature.ValueRich S)
+    (action : NodeSet S) (pivot : Fin S.count) :
+    (i : Fin S.count) → Option (S.Value i) :=
+  fun i =>
+    if action i then
+      some (hedgeActionPivotReference rich action pivot i)
+    else none
+
+theorem hedgeDoPivot_of_true (rich : ObservedSignature.ValueRich S)
+    (action : NodeSet S) (pivot : Fin S.count) {i : Fin S.count}
+    (selected : action i = true) :
+    hedgeDoPivot rich action pivot i =
+      some (hedgeActionPivotReference rich action pivot i) := by
+  simp [hedgeDoPivot, selected]
+
+theorem hedgeDoPivot_of_false (rich : ObservedSignature.ValueRich S)
+    (action : NodeSet S) (pivot : Fin S.count) {i : Fin S.count}
+    (free : action i = false) :
+    hedgeDoPivot rich action pivot i = none := by
+  simp [hedgeDoPivot, free]
+
+theorem hedgeDoPivot_eq_action_intervention
+    (rich : ObservedSignature.ValueRich S) (action : NodeSet S)
+    (pivot : Fin S.count) :
+    (fun i =>
+      if action i then
+        some (hedgeActionPivotReference rich action pivot i)
+      else none) =
+      hedgeDoPivot rich action pivot :=
+  rfl
+
+/--
+At a selected vertex, evaluation under the pivot intervention is exactly the
+chosen reference value, independently of the model's parent mask.
+-/
+theorem hedgeMixModel_evalNodeUnder_doPivot
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (mask action : NodeSet S) (pivot : Fin S.count)
+    (u : (hedgeLatentExtension G).Assignment) {i : Fin S.count}
+    (selected : action i = true) :
+    (hedgeMixModel G rich mask).evalNodeUnder
+        (hedgeDoPivot rich action pivot) u i =
+      hedgeActionPivotReference rich action pivot i := by
+  rw [FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder
+  rw [hedgeDoPivot_of_true rich action pivot selected]
+
+/--
+The selected action value contributes a second-bit exactly at the pivot.
+-/
+theorem hedgeIsSecond_actionPivotReference
+    (rich : ObservedSignature.ValueRich S) (action : NodeSet S)
+    {pivot i : Fin S.count} (selected : action i = true) :
+    hedgeIsSecond rich i (hedgeActionPivotReference rich action pivot i) =
+      decide (i = pivot) := by
+  if equal : i = pivot then
+    subst i
+    simp [hedgeActionPivotReference, selected, hedgeIsSecond]
+  else
+    simp [hedgeActionPivotReference, selected, equal, hedgeIsSecond,
+      rich.different]
+
+/--
+A node left free by an arbitrary intervention evaluates through the mix
+mechanism.  This generic form supports both the all-`second` and one-pivot
+query assignments.
+-/
+theorem hedgeMixModel_evalNodeUnder_of_none (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) (mask : NodeSet S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (u : (hedgeLatentExtension G).Assignment) {child : Fin S.count}
+    (free : intervention child = none) :
+    (hedgeMixModel G rich mask).evalNodeUnder intervention u child =
+      hedgeMixFrom rich child
+        (hedgeXorPairBits G child (fun latent _ => u latent))
+        (hedgeParentBitsFrom rich mask child
+          (fun parent _ =>
+            (hedgeMixModel G rich mask).evalNodeUnder
+              intervention u parent))
+        (hedgePrivateDecode S child
+          (hedgePrivateIndex G child (fun latent _ => u latent))) := by
+  rw [FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder
+  rw [free]
+  rfl
+
+/-- All-`second` specialization of free-node mix evaluation. -/
 theorem hedgeMixModel_evalNodeUnder_free (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) (mask action : NodeSet S)
     (u : (hedgeLatentExtension G).Assignment) {child : Fin S.count}
@@ -32162,11 +32277,9 @@ theorem hedgeMixModel_evalNodeUnder_free (G : ObservedGraph S)
             (hedgeMixModel G rich mask).evalNodeUnder
               (hedgeDoSecond rich action) u parent))
         (hedgePrivateDecode S child
-          (hedgePrivateIndex G child (fun latent _ => u latent))) := by
-  rw [FiniteLatentSCM.evalNodeUnder]
-  unfold FiniteLatentSCM.equationUnder
-  rw [hedgeDoSecond_of_false rich action hfree]
-  rfl
+          (hedgePrivateIndex G child (fun latent _ => u latent))) :=
+  hedgeMixModel_evalNodeUnder_of_none G rich mask (hedgeDoSecond rich action) u
+    (hedgeDoSecond_of_false rich action hfree)
 
 /-- Folding a step that is the identity off `pivot` leaves the accumulator
 unchanged when `pivot` is absent from the list. -/
@@ -32318,6 +32431,52 @@ theorem hedgeParentBitsFrom_doSecond_eq_actionParentParity
           hedgeIsSecond_second]
   else
     simp [edge]
+
+/--
+The pivot intervention makes the action-mask parent XOR true at every child
+of the selected pivot.  Additional action parents contribute `first`, hence
+zero, so neither uniqueness nor odd cardinality is required.
+-/
+theorem hedgeParentBitsFrom_doPivot_eq_true
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (action : NodeSet S) (u : (hedgeLatentExtension G).Assignment)
+    {pivot child : Fin S.count} (selected : action pivot = true)
+    (edge : S.directed pivot child = true) :
+    hedgeParentBitsFrom rich action child
+        (fun parent _ =>
+          (hedgeMixModel G rich action).evalNodeUnder
+            (hedgeDoPivot rich action pivot) u parent) = true := by
+  unfold hedgeParentBitsFrom
+  have step (acc : Bool) (parent : Fin S.count) :
+      (if parentEdge : S.directed parent child = true then
+          if action parent then
+            Bool.xor acc
+              (hedgeIsSecond rich parent
+                ((hedgeMixModel G rich action).evalNodeUnder
+                  (hedgeDoPivot rich action pivot) u parent))
+          else acc
+        else acc) =
+      if parent = pivot then !acc else acc := by
+    if equal : parent = pivot then
+      subst parent
+      simp [edge, selected,
+        hedgeMixModel_evalNodeUnder_doPivot G rich action action pivot u,
+        hedgeIsSecond_actionPivotReference]
+    else
+      cases parentEdge : S.directed parent child with
+      | false =>
+          simp [equal]
+      | true =>
+          cases parentSelected : action parent with
+          | false =>
+              simp [equal]
+          | true =>
+              simp [equal,
+                hedgeMixModel_evalNodeUnder_doPivot G rich action action pivot u
+                  parentSelected,
+                hedgeIsSecond_actionPivotReference rich action parentSelected]
+  rw [foldl_congr _ _ false (List.finRange S.count) step]
+  exact foldl_xor_true_at S.count pivot
 
 /--
 Masked parent-bits under `hedgeDoSecond` are `true` when exactly one
@@ -38287,71 +38446,71 @@ theorem eventMass_union_disjoint {Ω : Type _}
       · exact False.elim (h value hE hF)
 
 /--
-`P(Y = first | do(X = second))` is strictly larger for the empty-mask mix
-than for the action-mask mix when `Y` has an incident pair-root and an odd
-number of directed action parents.  The extra mass is the copy branch
-`xorBits = true`, which emits `first` when parents are ignored and `second`
-when the action-parent parity is copied.
+Whenever an intervention leaves `Y` free and makes its action-mask parent bit
+true, `P(Y = first)` is strictly larger for the empty-mask mix than for the
+action-mask mix.  The extra mass is the copy branch `xorBits = true`, which
+emits `first` when parents are ignored and `second` when that parent bit is
+copied.
 -/
-theorem hedgeMix_interventional_first_mass_lt_of_parentParity
+theorem hedgeMix_interventional_first_mass_lt_of_parentBit
     (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) {y : Fin S.count}
-    (action : NodeSet S) (root : Fin (pairRootCount G))
-    (hy : action y = false)
-    (hparity : actionParentParity action y = true)
+    (action : NodeSet S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (root : Fin (pairRootCount G))
+    (free : intervention y = none)
+    (parentBit : forall u : (hedgeLatentExtension G).Assignment,
+      hedgeParentBitsFrom rich action y
+          (fun parent _ =>
+            (hedgeMixModel G rich action).evalNodeUnder intervention u parent) =
+        true)
     (hinc : (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
     FiniteProbRecord.eventMass
         (hedgeMixModel G rich action).prior.atoms
         (fun u =>
           decide
             ((hedgeMixModel G rich action).evalUnder
-                (hedgeDoSecond rich action) u y =
+                intervention u y =
               rich.first y)) <
       FiniteProbRecord.eventMass
         (hedgeMixModel G rich NodeSet.empty).prior.atoms
         (fun u =>
           decide
             ((hedgeMixModel G rich NodeSet.empty).evalUnder
-                (hedgeDoSecond rich action) u y =
+                intervention u y =
               rich.first y)) := by
   let extra : Event ((hedgeLatentExtension G).Assignment) :=
     fun u => hedgeXorPairBits G y (fun latent _ => u latent)
   let actionFirst : Event ((hedgeLatentExtension G).Assignment) :=
     fun u =>
       decide
-        ((hedgeMixModel G rich action).evalUnder (hedgeDoSecond rich action) u y =
+        ((hedgeMixModel G rich action).evalUnder intervention u y =
           rich.first y)
   let emptyFirst : Event ((hedgeLatentExtension G).Assignment) :=
     fun u =>
       decide
         ((hedgeMixModel G rich NodeSet.empty).evalUnder
-            (hedgeDoSecond rich action) u y =
+            intervention u y =
           rich.first y)
-  have hparent (u : (hedgeLatentExtension G).Assignment) :
-      hedgeParentBitsFrom rich action y
-          (fun parent _ =>
-            (hedgeMixModel G rich action).evalNodeUnder
-              (hedgeDoSecond rich action) u parent) = true :=
-    (hedgeParentBitsFrom_doSecond_eq_actionParentParity G rich action u y).trans
-      hparity
   have hactionEval (u : (hedgeLatentExtension G).Assignment) :
-      (hedgeMixModel G rich action).evalUnder (hedgeDoSecond rich action) u y =
+      (hedgeMixModel G rich action).evalUnder intervention u y =
         hedgeMixFrom rich y
           (hedgeXorPairBits G y (fun latent _ => u latent)) true
           (hedgePrivateDecode S y
             (hedgePrivateIndex G y (fun latent _ => u latent))) := by
     unfold FiniteLatentSCM.evalUnder
-    rw [hedgeMixModel_evalNodeUnder_free G rich action action u hy]
-    rw [hparent u]
+    rw [hedgeMixModel_evalNodeUnder_of_none G rich action intervention u free]
+    rw [parentBit u]
   have hemptyEval (u : (hedgeLatentExtension G).Assignment) :
       (hedgeMixModel G rich NodeSet.empty).evalUnder
-          (hedgeDoSecond rich action) u y =
+          intervention u y =
         hedgeMixFrom rich y
           (hedgeXorPairBits G y (fun latent _ => u latent)) false
           (hedgePrivateDecode S y
             (hedgePrivateIndex G y (fun latent _ => u latent))) := by
     unfold FiniteLatentSCM.evalUnder
-    rw [hedgeMixModel_evalNodeUnder_free G rich NodeSet.empty action u hy]
+    rw [hedgeMixModel_evalNodeUnder_of_none G rich NodeSet.empty intervention u
+      free]
     rw [hedgeParentBitsFrom_empty]
   have hdis : disjoint extra actionFirst := by
     intro u hextra hact
@@ -38360,7 +38519,7 @@ theorem hedgeMix_interventional_first_mass_lt_of_parentParity
         hedgeXorPairBits G y (fun latent _ => u latent) = true := hextra
     rw [hxor, hedgeMixFrom_true_second] at hyval
     have hyfirst :
-        (hedgeMixModel G rich action).evalUnder (hedgeDoSecond rich action) u y =
+        (hedgeMixModel G rich action).evalUnder intervention u y =
           rich.first y :=
       of_decide_eq_true (by simpa [actionFirst] using hact)
     exact rich.different y (hyfirst.symm.trans hyval)
@@ -38424,6 +38583,39 @@ theorem hedgeMix_interventional_first_mass_lt_of_parentParity
         (hedgeMixModel G rich NodeSet.empty).prior.atoms emptyFirst
   rw [hatoms, hmass_union]
   exact Nat.lt_add_of_pos_left hextra_pos
+
+/--
+All-`second` specialization of the generic parent-bit mass separation.  Odd
+action-parent parity is exactly the parent bit produced by this intervention.
+-/
+theorem hedgeMix_interventional_first_mass_lt_of_parentParity
+    (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) {y : Fin S.count}
+    (action : NodeSet S) (root : Fin (pairRootCount G))
+    (hy : action y = false)
+    (hparity : actionParentParity action y = true)
+    (hinc : (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
+    FiniteProbRecord.eventMass
+        (hedgeMixModel G rich action).prior.atoms
+        (fun u =>
+          decide
+            ((hedgeMixModel G rich action).evalUnder
+                (hedgeDoSecond rich action) u y =
+              rich.first y)) <
+      FiniteProbRecord.eventMass
+        (hedgeMixModel G rich NodeSet.empty).prior.atoms
+        (fun u =>
+          decide
+            ((hedgeMixModel G rich NodeSet.empty).evalUnder
+                (hedgeDoSecond rich action) u y =
+              rich.first y)) :=
+  hedgeMix_interventional_first_mass_lt_of_parentBit G rich action
+    (hedgeDoSecond rich action) root
+    (hedgeDoSecond_of_false rich action hy)
+    (fun u =>
+      (hedgeParentBitsFrom_doSecond_eq_actionParentParity G rich action u y).trans
+        hparity)
+    hinc
 
 /--
 Unique-parent compatibility form of
