@@ -23,9 +23,9 @@ inhabited witnesses over the finite assignment enumeration and never chooses
 a global witness family.
 
 The resulting leaf permits arbitrary additional query outcomes.  It needs
-only one stored outcome seed with a directed action parent, an incident
-pair-root, and preservation of pair-root incidence along the edges leaving
-that chosen parent.  A finite selector chooses such a parent as the pivot.
+only one queried outcome with a directed action parent, an incident pair-root,
+and preservation of pair-root incidence along the edges leaving that chosen
+parent.  Finite selectors choose both the outcome and its parent pivot.
 The right-hand model changes only the pivot's structural equation, while the
 query continues to intervene on its complete action set.  Thus neither
 unique-parent, odd-parity, nor global restrictions on unrelated action
@@ -249,6 +249,93 @@ theorem sharedSwitchChildrenBool_of_actionEdgesSharePairRootSwitchBool
   simpa [actionEdgesSharePairRootSwitchBool, sharedSwitchChildrenBool,
     selected] using parentOk
 
+/-!
+### Selecting the marginal coordinate
+
+The hedge extractor stores one reachable outcome for constructions that need
+a canonical sink.  Marginal separation is less rigid: any queried coordinate
+with the local pivot geometry suffices.  The following second finite search
+therefore ranges over the complete outcome set instead of committing to the
+stored seed.  This matters when the stored outcome has no usable parent but a
+different queried coordinate does.
+-/
+
+/-- Local singleton-pivot readiness at one candidate outcome coordinate. -/
+def hedgeMarginalPivotOutcomeReadyBool (G : ObservedGraph S)
+    (q : JointKernelQuery S) (outcome : Fin S.count) : Bool :=
+  q.outcome outcome &&
+    (sharedSwitchActionParentExistsBool G q.action outcome &&
+      (List.finRange (pairRootCount G)).any (fun root =>
+        (hedgeLatentExtension G).incident (hedgePairRoot G root) outcome))
+
+/--
+Whether some queried outcome admits the localized marginal construction.
+-/
+def hedgeMarginalPivotQueryReady (G : ObservedGraph S)
+    (q : JointKernelQuery S) : Bool :=
+  (NodeSet.enumerated S).any (hedgeMarginalPivotOutcomeReadyBool G q)
+
+/-- First query outcome accepted by the localized marginal test. -/
+def firstHedgeMarginalPivotOutcome (G : ObservedGraph S)
+    (q : JointKernelQuery S)
+    (ready : hedgeMarginalPivotQueryReady G q = true) : Fin S.count :=
+  listFirstAny (NodeSet.enumerated S)
+    (hedgeMarginalPivotOutcomeReadyBool G q) ready
+
+/-- The selected marginal coordinate really belongs to the query outcome. -/
+theorem firstHedgeMarginalPivotOutcome_in_outcome (G : ObservedGraph S)
+    (q : JointKernelQuery S)
+    (ready : hedgeMarginalPivotQueryReady G q = true) :
+    q.outcome (firstHedgeMarginalPivotOutcome G q ready) = true :=
+  (Bool.and_eq_true_iff.mp
+    (listFirstAny_pred (NodeSet.enumerated S)
+      (hedgeMarginalPivotOutcomeReadyBool G q) ready)).1
+
+/-- The selected marginal coordinate has a suitable shared-switch parent. -/
+theorem firstHedgeMarginalPivotOutcome_parent_ready
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    (ready : hedgeMarginalPivotQueryReady G q = true) :
+    sharedSwitchActionParentExistsBool G q.action
+        (firstHedgeMarginalPivotOutcome G q ready) = true :=
+  (Bool.and_eq_true_iff.mp
+    (Bool.and_eq_true_iff.mp
+      (listFirstAny_pred (NodeSet.enumerated S)
+        (hedgeMarginalPivotOutcomeReadyBool G q) ready)).2).1
+
+/-- The selected marginal coordinate carries a nonconstant pair-root switch. -/
+theorem firstHedgeMarginalPivotOutcome_incident_ready
+    (G : ObservedGraph S) (q : JointKernelQuery S)
+    (ready : hedgeMarginalPivotQueryReady G q = true) :
+    (List.finRange (pairRootCount G)).any (fun root =>
+      (hedgeLatentExtension G).incident (hedgePairRoot G root)
+        (firstHedgeMarginalPivotOutcome G q ready)) = true :=
+  (Bool.and_eq_true_iff.mp
+    (Bool.and_eq_true_iff.mp
+      (listFirstAny_pred (NodeSet.enumerated S)
+        (hedgeMarginalPivotOutcomeReadyBool G q) ready)).2).2
+
+/-- Query-wide readiness directly packages the localized counterexample. -/
+def hedgeMarginalPivotCounterexampleIn_of_query_ready
+    (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
+    (q : JointKernelQuery S)
+    (ready : hedgeMarginalPivotQueryReady G q = true) :
+    CounterexampleIn (GraphModelClass.positive G) q :=
+  let outcome := firstHedgeMarginalPivotOutcome G q ready
+  let parentReady :=
+    firstHedgeMarginalPivotOutcome_parent_ready G q ready
+  let incidentReady :=
+    firstHedgeMarginalPivotOutcome_incident_ready G q ready
+  hedgePivotSharedMarginalCounterexampleIn G rich q
+    (firstIncidentPairRoot G outcome incidentReady)
+    (firstSharedSwitchActionParent_selected G q.action outcome parentReady)
+    (firstSharedSwitchActionParent_directed G q.action outcome parentReady)
+    (firstHedgeMarginalPivotOutcome_in_outcome G q ready)
+    (fun _child edge root =>
+      sharedSwitchChildrenBool_hedgeIncident
+        (firstSharedSwitchActionParent_children G q.action outcome parentReady)
+        edge root)
+    (firstIncidentPairRoot_incident G outcome incidentReady)
+
 /--
 Boolean readiness for the marginal edge-shared leaf.  Unlike
 `hedgeWitnessEdgeSharedReady`, it imposes no shape restriction on outcomes
@@ -302,6 +389,23 @@ def hedgeWitnessMarginalPivotReady (G : ObservedGraph S)
     (List.finRange (pairRootCount G)).any (fun root =>
       (hedgeLatentExtension G).incident (hedgePairRoot G root)
         w.outcomeSeed)
+
+/--
+Readiness at the extractor's stored outcome is contained in the query-wide
+search.  This lemma records the coverage relation explicitly, so replacing
+the old search cannot silently lose any established case.
+-/
+theorem hedgeMarginalPivotQueryReady_of_witness_ready
+    (G : ObservedGraph S) (q : JointKernelQuery S) (w : HedgeWitness G q)
+    (ready : hedgeWitnessMarginalPivotReady G q w = true) :
+    hedgeMarginalPivotQueryReady G q = true := by
+  have parentReady := (Bool.and_eq_true_iff.mp ready).1
+  have incidentReady := (Bool.and_eq_true_iff.mp ready).2
+  apply List.any_eq_true.mpr
+  refine ⟨w.outcomeSeed, NodeSet.mem_enumerated S w.outcomeSeed, ?_⟩
+  exact Bool.and_eq_true_iff.mpr
+    ⟨w.outcomeSeed_in_outcome,
+      Bool.and_eq_true_iff.mpr ⟨parentReady, incidentReady⟩⟩
 
 /-- The former global marginal test implies the localized pivot test. -/
 theorem hedgeWitnessMarginalPivotReady_of_marginalEdgeSharedReady
@@ -378,17 +482,17 @@ def hedgeEdgeSharedMarginalCounterexampleIn_of_ready
     (firstIncidentPairRoot_incident G w.outcomeSeed incident)
 
 /--
-Enhanced executable positive counterexample search.  The localized marginal
-leaf is tried first because it needs only one shared-switch action parent of
-the stored outcome.  The original search remains the fallback and retains all
+Enhanced executable positive counterexample search.  The query-wide marginal
+leaf is tried first because any outcome with one shared-switch action parent
+suffices.  The original search remains the fallback and retains all
 established bow and seed-plus-sink cases.
 -/
 def hedgePositiveCounterexampleIn? (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) (q : JointKernelQuery S)
     (w : HedgeWitness G q) :
     Option (CounterexampleIn (GraphModelClass.positive G) q) :=
-  if ready : hedgeWitnessMarginalPivotReady G q w = true then
-    some (hedgePivotSharedMarginalCounterexampleIn_of_ready G rich q w ready)
+  if ready : hedgeMarginalPivotQueryReady G q = true then
+    some (hedgeMarginalPivotCounterexampleIn_of_query_ready G rich q ready)
   else
     hedgeCounterexampleIn? G rich q w
 
@@ -396,7 +500,7 @@ theorem hedgePositiveCounterexampleIn?_isSome_iff
     (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
     (q : JointKernelQuery S) (w : HedgeWitness G q) :
     (hedgePositiveCounterexampleIn? G rich q w).isSome =
-      (hedgeWitnessMarginalPivotReady G q w ||
+      (hedgeMarginalPivotQueryReady G q ||
         (hedgeCounterexampleIn? G rich q w).isSome) := by
   dsimp [hedgePositiveCounterexampleIn?]
   split
