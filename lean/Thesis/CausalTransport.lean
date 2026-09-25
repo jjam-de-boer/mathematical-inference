@@ -36,9 +36,12 @@ witnesses are supplied.  Several empty and one-sided cases are already
 inhabited.  Rule 3 now exposes the correct common/residual factorization of
 its conditioned `W` cylinder: latent dependence shared by `Y` and `W` is kept
 as a common factor rather than incorrectly excluded.  The general graph layer
-must construct that node split, while rule 1 and rule 2 still require their
-remaining path-derived partitions.  The legacy extra Boolean hypotheses
-accepted by `PathDoRulePartitionWitnesses.ofPath` are not consequences of path
+now splits `W` into intervention-invariant and intervention-sensitive blocks
+and proves the invariant block unchanged by adding `do(Z)`; it must still
+route the Y-side and residual latent dependencies across the moral separator.
+Rule 1 and rule 2 likewise still require their remaining path-derived
+partitions.  The legacy extra Boolean hypotheses accepted by
+`PathDoRulePartitionWitnesses.ofPath` are not consequences of path
 d-separation in all configurations; new work should target
 `ofPathFactorizedRule3`.
 

@@ -11409,6 +11409,198 @@ theorem agreesOn_rule3Y_eq_of_empty_w
     (ObservedGraph.nonAncestorsOf_of_isEmpty G (GraphMutilation.bar x) z w hw)
     separated roots
 
+/--
+A cylinder is invariant under adding `do(Z)` whenever no `Z` vertex reaches
+its nodes in `G_{\overline{X ∪ Z}}`.
+
+The ancestral set is backward-closed for the heavier intervention.  On that
+set the two interventions agree, because a selected `Z` coordinate would
+contradict the supplied non-ancestry fact.  This lemma is stated independently
+of rule 3 so a future common block of `W` can use it directly.
+-/
+theorem agreesOn_evalUnder_bar_union_eq_of_z_not_ancestral
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z nodes : NodeSet S) (assignment : S.Assignment)
+    (zAvoids : forall i, z i = true ->
+      FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) nodes i = false)
+    (roots : model.latent.Assignment) :
+    Kernel.agreesOn nodes assignment
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+            NodeSet.empty).intervention assignment) roots) =
+      Kernel.agreesOn nodes assignment
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+          roots) := by
+  unfold Kernel.agreesOn
+  apply finAll_congr
+  intro child
+  cases hnodes : nodes child with
+  | false =>
+      rfl
+  | true =>
+      have hanc :
+          FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) nodes child =
+            true :=
+        FiniteLatentSCM.observedAncestorOf_self G
+          (GraphMutilation.bar (NodeSet.union x z)) nodes hnodes
+      have hclosed :=
+        FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+          (NodeSet.union x z) nodes assignment
+      have hagree :
+          forall i,
+            FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) nodes i =
+                true ->
+              ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+                NodeSet.empty).intervention assignment i) =
+                ((Kernel.mk NodeSet.empty x
+                  NodeSet.empty).intervention assignment i) := by
+        intro i hi
+        have hz : z i = false := by
+          cases hzi : z i with
+          | false =>
+              rfl
+          | true =>
+              have hfalse := zAvoids i hzi
+              rw [hi] at hfalse
+              contradiction
+        have hinterL :
+            (Kernel.mk NodeSet.empty (NodeSet.union x z)
+                NodeSet.empty).intervention assignment i =
+              (if NodeSet.union x z i then some (assignment i)
+                else none) := by
+          simp [Kernel.intervention]
+        have hinterR :
+            (Kernel.mk NodeSet.empty x NodeSet.empty).intervention
+                assignment i =
+              (if x i then some (assignment i) else none) := by
+          simp [Kernel.intervention]
+        have hxZ : NodeSet.union x z i = x i := by
+          simp [NodeSet.union, hz]
+        simp [hinterL, hinterR, hxZ]
+      have heval :=
+        FiniteLatentSCM.evalUnder_eq_on_of_intervention_agree_on_closed
+          model
+          ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+            NodeSet.empty).intervention assignment)
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) nodes)
+          roots hclosed hagree child hanc
+      simp [heval]
+
+/--
+The conditioned `W` vertices that can be reached from `Z` in
+`G_{\overline{X ∪ Z}}`.  These are exactly the vertices whose agreement
+cylinder may change when `do(Z)` is added; they form the residual block of the
+rule-3 node split.
+-/
+def rule3WInterventionSensitive (G : ObservedGraph S)
+    (x z w : NodeSet S) : NodeSet S :=
+  fun child =>
+    w child &&
+      NodeSet.meetsBool
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+          (NodeSet.singleton child)) z
+
+/-- The complementary `W` block is pointwise invariant under adding
+`do(Z)`. -/
+def rule3WInterventionInvariant (G : ObservedGraph S)
+    (x z w : NodeSet S) : NodeSet S :=
+  NodeSet.diff w (rule3WInterventionSensitive G x z w)
+
+theorem rule3WInterventionSensitive_subset_w (G : ObservedGraph S)
+    (x z w : NodeSet S) :
+    NodeSet.Subset (rule3WInterventionSensitive G x z w) w := by
+  intro child selected
+  exact (Bool.and_eq_true_iff.mp selected).1
+
+/-- The invariant and sensitive blocks are disjoint by construction. -/
+theorem rule3WInterventionSplit_disjoint (G : ObservedGraph S)
+    (x z w : NodeSet S) :
+    NodeSet.Disjoint (rule3WInterventionInvariant G x z w)
+      (rule3WInterventionSensitive G x z w) :=
+  NodeSet.Disjoint.diff_right w (rule3WInterventionSensitive G x z w)
+
+/-- The invariant and sensitive blocks cover all conditioned vertices. -/
+theorem rule3WInterventionSplit_union (G : ObservedGraph S)
+    (x z w : NodeSet S) :
+    NodeSet.union (rule3WInterventionInvariant G x z w)
+      (rule3WInterventionSensitive G x z w) = w := by
+  funext child
+  have subset := rule3WInterventionSensitive_subset_w G x z w child
+  simp [rule3WInterventionInvariant, NodeSet.union, NodeSet.diff]
+  cases hw : w child with
+  | false =>
+      cases hs : rule3WInterventionSensitive G x z w child with
+      | false => simp
+      | true => exact (Bool.false_ne_true (hw.symm.trans (subset hs))).elim
+  | true =>
+      cases hs : rule3WInterventionSensitive G x z w child <;> simp
+
+/-- No `Z` vertex ancestors the invariant block: any such walk would make
+its endpoint intervention-sensitive by definition. -/
+theorem rule3_z_not_ancestral_invariant_w
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    {source : Fin S.count} (sourceInZ : z source = true) :
+    FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+      (rule3WInterventionInvariant G x z w) source = false := by
+  cases hanc :
+      FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+        (rule3WInterventionInvariant G x z w) source with
+  | false => rfl
+  | true =>
+      rcases (G.observedAncestorOf_eq_true_iff
+          (GraphMutilation.bar (NodeSet.union x z))
+          (rule3WInterventionInvariant G x z w) source).mp hanc with
+        ⟨target, targetInvariant, walk⟩
+      have targetInW : w target = true :=
+        NodeSet.diff_subset_left w
+          (rule3WInterventionSensitive G x z w) target targetInvariant
+      have targetNotSensitive :
+          rule3WInterventionSensitive G x z w target = false := by
+        have disjoint := rule3WInterventionSplit_disjoint G x z w
+          target targetInvariant
+        exact disjoint
+      have sourceAncestorsTarget :
+          FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+            (NodeSet.singleton target) source = true :=
+        (G.observedAncestorOf_eq_true_iff
+          (GraphMutilation.bar (NodeSet.union x z))
+          (NodeSet.singleton target) source).mpr
+          ⟨target, (NodeSet.singleton_eq_true_iff target target).mpr rfl,
+            walk⟩
+      have meetsZ :
+          NodeSet.meetsBool
+            (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z)
+              (NodeSet.singleton target)) z = true :=
+        (NodeSet.meetsBool_eq_true_iff _ _).mpr
+          ⟨source, sourceAncestorsTarget, sourceInZ⟩
+      have targetSensitive :
+          rule3WInterventionSensitive G x z w target = true :=
+        Bool.and_eq_true_iff.mpr ⟨targetInW, meetsZ⟩
+      rw [targetSensitive] at targetNotSensitive
+      contradiction
+
+/-- The invariant `W` block has the same agreement cylinder under
+`do(X ∪ Z)` and `do(X)`. -/
+theorem agreesOn_rule3WInterventionInvariant
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (roots : model.latent.Assignment) :
+    Kernel.agreesOn (rule3WInterventionInvariant G x z w) assignment
+        (model.evalUnder
+          ((rule3Left x y z w).intervention assignment) roots) =
+      Kernel.agreesOn (rule3WInterventionInvariant G x z w) assignment
+        (model.evalUnder
+          ((rule3Right x y z w).intervention assignment) roots) := by
+  have invariant :=
+    agreesOn_evalUnder_bar_union_eq_of_z_not_ancestral model G x z
+      (rule3WInterventionInvariant G x z w) assignment
+      (fun source sourceInZ =>
+        rule3_z_not_ancestral_invariant_w G x z w sourceInZ)
+      roots
+  simpa [rule3Left, rule3Right, Kernel.intervention] using invariant
+
 /-- When no `Z` vertex ancestors `W` in `G_{\overline{X}}`, the `W`
 cylinders under `do(X ∪ Z)` and `do(X)` coincide: intervening on `Z`
 cannot reach `W`. -/
@@ -11423,57 +11615,14 @@ theorem agreesOn_rule3W_eq_of_z_avoids_w
       Kernel.agreesOn w assignment
         (model.evalUnder
           ((rule3Right x y z w).intervention assignment) roots) := by
-  unfold Kernel.agreesOn
-  apply finAll_congr
-  intro child
-  cases hw : w child with
-  | false =>
-      rfl
-  | true =>
-      have hanc :
-          FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w child =
-            true :=
-        FiniteLatentSCM.observedAncestorOf_self G
-          (GraphMutilation.bar (NodeSet.union x z)) w hw
-      have hclosed :=
-        FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
-          (NodeSet.union x z) w assignment
-      have hagree :
-          forall i, FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w i =
-              true ->
-            ((rule3Left x y z w).intervention assignment i) =
-              ((rule3Right x y z w).intervention assignment i) := by
-        intro i hi
-        have hz : z i = false := by
-          cases hzi : z i with
-          | false =>
-              rfl
-          | true =>
-              have hfalse :=
-                FiniteLatentSCM.rule3_z_not_ancestral_w_of_z_avoids_w G x z w
-                  hrem hzi
-              simpa [FiniteLatentSCM.ancestralInBar] using
-                (hfalse.symm.trans hi)
-        have hinterL :
-            (rule3Left x y z w).intervention assignment i =
-              (if NodeSet.union x z i then some (assignment i)
-                else none) := by
-          simp [rule3Left, Kernel.intervention]
-        have hinterR :
-            (rule3Right x y z w).intervention assignment i =
-              (if x i then some (assignment i) else none) := by
-          simp [rule3Right, Kernel.intervention]
-        have hxZ : NodeSet.union x z i = x i := by
-          simp [NodeSet.union, hz]
-        simp [hinterL, hinterR, hxZ]
-      have heval :=
-        FiniteLatentSCM.evalUnder_eq_on_of_intervention_agree_on_closed
-          model
-          ((rule3Left x y z w).intervention assignment)
-          ((rule3Right x y z w).intervention assignment)
-          (FiniteLatentSCM.ancestralInBar G (NodeSet.union x z) w)
-          roots hclosed hagree child hanc
-      simp [heval]
+  have invariant :=
+    agreesOn_evalUnder_bar_union_eq_of_z_not_ancestral model G x z w
+      assignment
+      (fun i hzi =>
+        FiniteLatentSCM.rule3_z_not_ancestral_w_of_z_avoids_w G x z w
+          hrem hzi)
+      roots
+  simpa [rule3Left, rule3Right, Kernel.intervention] using invariant
 
 /-- `Y` under `do(X ∪ W ∪ Z)` equals `Y` under `do(X ∪ W)`: d-separation
 in the rule-3 side graph forbids `Z` from ancestoring `Y` after incoming
