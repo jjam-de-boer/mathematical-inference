@@ -33,9 +33,14 @@ reachability searches to active-path separation.
 latent factorization needed by the three do-calculus rules.  Its checked
 adapters can assemble `PublishedSoundness` once the outstanding path-to-product
 witnesses are supplied.  Several empty and one-sided cases are already
-inhabited.  The general case must construct a residual cross-product witness;
-the extra Boolean hypotheses accepted by `PathDoRulePartitionWitnesses.ofPath`
-are not consequences of path d-separation in all configurations.
+inhabited.  Rule 3 now exposes the correct common/residual factorization of
+its conditioned `W` cylinder: latent dependence shared by `Y` and `W` is kept
+as a common factor rather than incorrectly excluded.  The general graph layer
+must construct that node split, while rule 1 and rule 2 still require their
+remaining path-derived partitions.  The legacy extra Boolean hypotheses
+accepted by `PathDoRulePartitionWitnesses.ofPath` are not consequences of path
+d-separation in all configurations; new work should target
+`ofPathFactorizedRule3`.
 
 `Completeness` develops the executable ID side for the positive model class:
 successful special cases compile to supported certificates, the two terminal

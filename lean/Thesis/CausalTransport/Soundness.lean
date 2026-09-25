@@ -22,6 +22,11 @@ separator to the concrete latent coordinates of any compatible model;
 shared-root incidence is proved unable to cross the partition.  Generic
 agreement cylinders over left and right open ancestral regions are then
 routed to complementary halves of the canonical independent latent product.
+For rule 3, `Rule3GivenWFactorization` records the more delicate conditioned
+case: a `W` factor shared with `Y` is retained on the selected roots, while
+only the intervention-sensitive residual factors are separated.  This avoids
+the false general requirement that conditioned `W` share no latent root with
+`Y`.
 -/
 
 namespace FiniteLatentSCM
@@ -11035,6 +11040,78 @@ structure ProductRectangularCrossProductWitnessAt
       ((productRecord model).probVal rightNumerator.unselectedPart)
       ((productRecord model).probVal leftCondition.unselectedPart))
 
+/--
+Assemble a rectangular cross-product from factors shared in the only places
+where the cross identity requires them to agree.
+
+The two numerator events have the same selected-coordinate factor, and the
+two conditioning events have the same selected-coordinate factor.  Their
+unselected factors may differ between the left and right interventions.  The
+selected cross identity is therefore reflexive, while the unselected identity
+is commutativity of multiplication.
+
+This shape is strictly more general than putting an entire conditioning
+cylinder on the unselected side.  In particular, a rule-3 conditioner `W`
+may legitimately share latent roots with `Y`: that common part belongs in
+`selectedCondition`, while only the intervention-sensitive residuals need to
+lie on the complementary coordinates.
+-/
+def ProductRectangularCrossProductWitnessAt.of_shared_factors
+    (model : FiniteLatentSCM S) (left right : Kernel S)
+    (assignment : S.Assignment)
+    (selected : Fin model.latent.count -> Bool)
+    (selectedNumerator selectedCondition leftResidual rightResidual :
+      model.latent.Assignment -> Bool)
+    (selectedNumeratorDepends : CanonicalFactorization.DependsOnSelected
+      model.latent.count model.latent.Value selected selectedNumerator)
+    (selectedConditionDepends : CanonicalFactorization.DependsOnSelected
+      model.latent.count model.latent.Value selected selectedCondition)
+    (leftResidualDepends : CanonicalFactorization.DependsOnUnselected
+      model.latent.count model.latent.Value selected leftResidual)
+    (rightResidualDepends : CanonicalFactorization.DependsOnUnselected
+      model.latent.count model.latent.Value selected rightResidual)
+    (leftNumerator :
+      productPreimage model left assignment (left.numeratorEvent assignment) =
+        Probability.inter selectedNumerator leftResidual)
+    (rightCondition :
+      productPreimage model right assignment (right.conditionEvent assignment) =
+        Probability.inter selectedCondition rightResidual)
+    (rightNumerator :
+      productPreimage model right assignment
+          (right.numeratorEvent assignment) =
+        Probability.inter selectedNumerator rightResidual)
+    (leftCondition :
+      productPreimage model left assignment (left.conditionEvent assignment) =
+        Probability.inter selectedCondition leftResidual) :
+    ProductRectangularCrossProductWitnessAt model left right assignment where
+  selected := selected
+  leftNumerator :=
+    { selectedPart := selectedNumerator
+      unselectedPart := leftResidual
+      selectedDepends := selectedNumeratorDepends
+      unselectedDepends := leftResidualDepends
+      factorization := leftNumerator }
+  rightCondition :=
+    { selectedPart := selectedCondition
+      unselectedPart := rightResidual
+      selectedDepends := selectedConditionDepends
+      unselectedDepends := rightResidualDepends
+      factorization := rightCondition }
+  rightNumerator :=
+    { selectedPart := selectedNumerator
+      unselectedPart := rightResidual
+      selectedDepends := selectedNumeratorDepends
+      unselectedDepends := rightResidualDepends
+      factorization := rightNumerator }
+  leftCondition :=
+    { selectedPart := selectedCondition
+      unselectedPart := leftResidual
+      selectedDepends := selectedConditionDepends
+      unselectedDepends := leftResidualDepends
+      factorization := leftCondition }
+  selectedCross := QProb.equiv_refl _
+  unselectedCross := QProb.mul_comm _ _
+
 /-- Componentwise rectangular cross identities imply the kernel-level
 canonical-product cross identity. -/
 theorem ProductRectangularCrossProductWitnessAt.toCrossProduct
@@ -11701,11 +11778,158 @@ theorem rule3YWLatentSeparatedAcross_right_of_overlap
   | true =>
       simp [hyRel, hR] at hall
 
-/-- Given-`W` rule 3: if the `Y` mask under `do(X ∪ W)` shares no latent
-with `W` under either kernel intervention, the four events are rectangles
-on that mask.  The extra overlap Bool is not a theorem of path
-d-separation (`U → Y` and `U → W` remain). -/
-def rule3RectangularWitness_of_given_w
+/--
+The factorization actually needed by the nontrivial given-`W` case of rule 3.
+
+After conditioning is rewritten as intervention on `W`, the `Y` cylinder is
+the same on both sides by the rule-3 path condition.  The two original `W`
+cylinders may nevertheless share latent roots with that common `Y` cylinder.
+Such shared dependence is represented by `commonCondition`, while the parts
+of `W` that differ between `do(X ∪ Z)` and `do(X)` are kept in the two
+residual events on unselected roots.
+
+Unlike `rule3YWLatentOverlap = false`, this interface does not demand that
+`Y` and `W` be independent.  It records only the common/residual decomposition
+needed for cancellation in the conditional cross product.
+-/
+structure Rule3GivenWFactorization
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment) where
+  selected : Fin model.latent.count -> Bool
+  commonCondition : model.latent.Assignment -> Bool
+  leftResidual : model.latent.Assignment -> Bool
+  rightResidual : model.latent.Assignment -> Bool
+  yDepends : CanonicalFactorization.DependsOnSelected
+    model.latent.count model.latent.Value selected
+    (fun roots =>
+      Kernel.agreesOn y assignment
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+            NodeSet.empty).intervention assignment) roots))
+  commonConditionDepends : CanonicalFactorization.DependsOnSelected
+    model.latent.count model.latent.Value selected commonCondition
+  leftResidualDepends : CanonicalFactorization.DependsOnUnselected
+    model.latent.count model.latent.Value selected leftResidual
+  rightResidualDepends : CanonicalFactorization.DependsOnUnselected
+    model.latent.count model.latent.Value selected rightResidual
+  leftCondition :
+    productPreimage model (rule3Left x y z w) assignment
+        ((rule3Left x y z w).conditionEvent assignment) =
+      Probability.inter commonCondition leftResidual
+  rightCondition :
+    productPreimage model (rule3Right x y z w) assignment
+        ((rule3Right x y z w).conditionEvent assignment) =
+      Probability.inter commonCondition rightResidual
+
+/--
+Build the rule-3 common/residual event factorization from an actual split of
+the conditioned vertices.
+
+The `common` block may depend on the same selected latent roots as `Y`, but
+its agreement cylinder must be unchanged by adding the `Z` intervention.
+The complementary `residual` block may have different cylinders on the two
+sides, provided both depend only on unselected roots.  This is the graph-level
+shape expected from a moral separator: dependence shared by `Y` and `W` is
+retained and cancelled, rather than incorrectly ruled out.
+-/
+def Rule3GivenWFactorization.of_node_split
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (selected : Fin model.latent.count -> Bool)
+    (common residual : NodeSet S)
+    (covers : NodeSet.union common residual = w)
+    (commonInvariant : forall roots,
+      Kernel.agreesOn common assignment
+          (model.evalUnder
+            ((rule3Left x y z w).intervention assignment) roots) =
+        Kernel.agreesOn common assignment
+          (model.evalUnder
+            ((rule3Right x y z w).intervention assignment) roots))
+    (yDepends : CanonicalFactorization.DependsOnSelected
+      model.latent.count model.latent.Value selected
+      (fun roots =>
+        Kernel.agreesOn y assignment
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment) roots)))
+    (commonDepends : CanonicalFactorization.DependsOnSelected
+      model.latent.count model.latent.Value selected
+      (fun roots =>
+        Kernel.agreesOn common assignment
+          (model.evalUnder
+            ((rule3Left x y z w).intervention assignment) roots)))
+    (leftResidualDepends : CanonicalFactorization.DependsOnUnselected
+      model.latent.count model.latent.Value selected
+      (fun roots =>
+        Kernel.agreesOn residual assignment
+          (model.evalUnder
+            ((rule3Left x y z w).intervention assignment) roots)))
+    (rightResidualDepends : CanonicalFactorization.DependsOnUnselected
+      model.latent.count model.latent.Value selected
+      (fun roots =>
+        Kernel.agreesOn residual assignment
+          (model.evalUnder
+            ((rule3Right x y z w).intervention assignment) roots))) :
+    Rule3GivenWFactorization model G x y z w assignment where
+  selected := selected
+  commonCondition := fun roots =>
+    Kernel.agreesOn common assignment
+      (model.evalUnder
+        ((rule3Left x y z w).intervention assignment) roots)
+  leftResidual := fun roots =>
+    Kernel.agreesOn residual assignment
+      (model.evalUnder
+        ((rule3Left x y z w).intervention assignment) roots)
+  rightResidual := fun roots =>
+    Kernel.agreesOn residual assignment
+      (model.evalUnder
+        ((rule3Right x y z w).intervention assignment) roots)
+  yDepends := yDepends
+  commonConditionDepends := commonDepends
+  leftResidualDepends := leftResidualDepends
+  rightResidualDepends := rightResidualDepends
+  leftCondition := by
+    funext roots
+    simp only [productPreimage, Kernel.conditionEvent, Probability.inter]
+    rw [show (rule3Left x y z w).condition = w from rfl]
+    have split := congrArg
+      (fun nodes => Kernel.agreesOn nodes assignment
+        (model.evalUnder
+          ((rule3Left x y z w).intervention assignment) roots)) covers
+    have split' :
+        Kernel.agreesOn (NodeSet.union common residual) assignment
+            (model.evalUnder
+              ((rule3Left x y z w).intervention assignment) roots) =
+          Kernel.agreesOn w assignment
+            (model.evalUnder
+              ((rule3Left x y z w).intervention assignment) roots) := by
+      simpa using split
+    rw [← split', Kernel.agreesOn_union]
+  rightCondition := by
+    funext roots
+    simp only [productPreimage, Kernel.conditionEvent, Probability.inter]
+    rw [show (rule3Right x y z w).condition = w from rfl]
+    have split := congrArg
+      (fun nodes => Kernel.agreesOn nodes assignment
+        (model.evalUnder
+          ((rule3Right x y z w).intervention assignment) roots)) covers
+    have split' :
+        Kernel.agreesOn (NodeSet.union common residual) assignment
+            (model.evalUnder
+              ((rule3Right x y z w).intervention assignment) roots) =
+          Kernel.agreesOn w assignment
+            (model.evalUnder
+              ((rule3Right x y z w).intervention assignment) roots) := by
+      simpa using split
+    rw [← split', Kernel.agreesOn_union, ← commonInvariant roots]
+
+/--
+Compile the common/residual `W` decomposition into the rectangular rule-3
+cross product.  The proof uses the path condition only to rewrite both
+numerators onto the same `Y`-under-`do(X ∪ W)` cylinder; factor independence
+then follows from the supplied coordinate dependencies.
+-/
+def rule3RectangularWitness_of_given_w_factorization
     (model : FiniteLatentSCM S) (G : ObservedGraph S)
     (x y z w : NodeSet S) (assignment : S.Assignment)
     (disjoint : FourWayDisjoint x y z w)
@@ -11714,17 +11938,89 @@ def rule3RectangularWitness_of_given_w
           NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
         removeOutgoing := NodeSet.empty }
       y z (NodeSet.union x w))
-    (hoverlap : rule3YWLatentOverlap model G x y z w assignment = false) :
+    (factorization : Rule3GivenWFactorization model G x y z w assignment) :
     ProductRectangularCrossProductWitnessAt model
       (rule3Left x y z w) (rule3Right x y z w) assignment := by
+  let yCyl : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn y assignment
+      (model.evalUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment) roots)
+  let leftCondition :=
+    productPreimage model (rule3Left x y z w) assignment
+      ((rule3Left x y z w).conditionEvent assignment)
+  let rightCondition :=
+    productPreimage model (rule3Right x y z w) assignment
+      ((rule3Right x y z w).conditionEvent assignment)
+  have leftConditionFactor :
+      leftCondition = Probability.inter factorization.commonCondition
+        factorization.leftResidual := by
+    simpa [leftCondition] using factorization.leftCondition
+  have rightConditionFactor :
+      rightCondition = Probability.inter factorization.commonCondition
+        factorization.rightResidual := by
+    simpa [rightCondition] using factorization.rightCondition
+  have leftNumeratorGivenW :
+      productPreimage model (rule3Left x y z w) assignment
+          ((rule3Left x y z w).numeratorEvent assignment) =
+        Probability.inter leftCondition yCyl := by
+    funext roots
+    simp only [productPreimage, Kernel.numeratorEvent,
+      Kernel.conditionEvent, Probability.inter, leftCondition, yCyl]
+    exact agreesOn_rule3Left_numerator_eq_given_w model G x y z w
+      assignment disjoint separated roots
+  have rightNumeratorGivenW :
+      productPreimage model (rule3Right x y z w) assignment
+          ((rule3Right x y z w).numeratorEvent assignment) =
+        Probability.inter rightCondition yCyl := by
+    funext roots
+    simp only [productPreimage, Kernel.numeratorEvent,
+      Kernel.conditionEvent, Probability.inter, rightCondition, yCyl]
+    exact agreesOn_rule3Right_evalUnder_union_eq model x y z w assignment
+      roots
+  apply ProductRectangularCrossProductWitnessAt.of_shared_factors model
+    (rule3Left x y z w) (rule3Right x y z w) assignment
+    factorization.selected
+    (Probability.inter yCyl factorization.commonCondition)
+    factorization.commonCondition factorization.leftResidual
+    factorization.rightResidual
+  · exact CanonicalFactorization.DependsOnSelected.inter
+      model.latent.count model.latent.Value factorization.selected
+      yCyl factorization.commonCondition (by
+        simpa [yCyl] using factorization.yDepends)
+      factorization.commonConditionDepends
+  · exact factorization.commonConditionDepends
+  · exact factorization.leftResidualDepends
+  · exact factorization.rightResidualDepends
+  · rw [leftNumeratorGivenW, leftConditionFactor]
+    funext roots
+    exact bool_and_rot_left (factorization.commonCondition roots)
+      (factorization.leftResidual roots) (yCyl roots)
+  · exact rightConditionFactor
+  · rw [rightNumeratorGivenW, rightConditionFactor]
+    funext roots
+    exact bool_and_rot_left (factorization.commonCondition roots)
+      (factorization.rightResidual roots) (yCyl roots)
+  · exact leftConditionFactor
+
+/--
+The earlier no-overlap argument is the degenerate common/residual
+factorization whose common `W` factor is `true`.  Keeping it as an explicit
+constructor both preserves the useful special case and documents precisely
+what the stronger hypothesis buys: every left and right `W` cylinder can be
+placed wholly on the coordinates complementary to the `Y` mask.
+-/
+def Rule3GivenWFactorization.of_no_overlap
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (hoverlap : rule3YWLatentOverlap model G x y z w assignment = false) :
+    Rule3GivenWFactorization model G x y z w assignment := by
   let yInt :=
     (Kernel.mk NodeSet.empty (NodeSet.union x w)
       NodeSet.empty).intervention assignment
   let yMask :=
     model.latentRelevantUnder yInt
       (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y)
-  let yCyl : model.latent.Assignment -> Bool := fun roots =>
-    Kernel.agreesOn y assignment (model.evalUnder yInt roots)
   let wLeft : model.latent.Assignment -> Bool := fun roots =>
     Kernel.agreesOn w assignment
       (model.evalUnder ((rule3Left x y z w).intervention assignment) roots)
@@ -11759,7 +12055,9 @@ def rule3RectangularWitness_of_given_w
     FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G x w
       assignment
   have yDepends : CanonicalFactorization.DependsOnSelected
-      model.latent.count model.latent.Value yMask yCyl :=
+      model.latent.count model.latent.Value yMask
+      (fun roots => Kernel.agreesOn y assignment
+        (model.evalUnder yInt roots)) :=
     agreesOn_evalUnder_dependsOnSelected model yInt
       (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) y) y
       assignment yClosed yContained
@@ -11784,79 +12082,45 @@ def rule3RectangularWitness_of_given_w
         wContainedR
         (rule3YWLatentSeparatedAcross_right_of_overlap model G x y z w
           assignment hoverlap)
-  have hnumL :
-      productPreimage model (rule3Left x y z w) assignment
-          ((rule3Left x y z w).numeratorEvent assignment) =
-        Probability.inter yCyl wLeft := by
-    funext roots
-    simp only [productPreimage, Kernel.numeratorEvent]
-    have hout : (rule3Left x y z w).outcome = y := rfl
-    have hcond : (rule3Left x y z w).condition = w := rfl
-    rw [hout, hcond]
-    rw [agreesOn_rule3Left_numerator_eq_given_w model G x y z w assignment
-      disjoint separated roots]
-    rw [Bool.and_comm]
-    rfl
-  have hnumR :
-      productPreimage model (rule3Right x y z w) assignment
-          ((rule3Right x y z w).numeratorEvent assignment) =
-        Probability.inter yCyl wRight := by
-    funext roots
-    simp only [productPreimage, Kernel.numeratorEvent]
-    have hout : (rule3Right x y z w).outcome = y := rfl
-    have hcond : (rule3Right x y z w).condition = w := rfl
-    rw [hout, hcond]
-    rw [agreesOn_rule3Right_evalUnder_union_eq model x y z w assignment roots]
-    rw [Bool.and_comm]
-    rfl
-  have hcondL :
-      productPreimage model (rule3Left x y z w) assignment
-          ((rule3Left x y z w).conditionEvent assignment) =
-        wLeft := by
-    funext roots
-    simp [productPreimage, Kernel.conditionEvent, rule3Left, wLeft]
-  have hcondR :
-      productPreimage model (rule3Right x y z w) assignment
-          ((rule3Right x y z w).conditionEvent assignment) =
-        wRight := by
-    funext roots
-    simp [productPreimage, Kernel.conditionEvent, rule3Right, wRight]
   exact
     { selected := yMask
-      leftNumerator :=
-        { selectedPart := yCyl
-          unselectedPart := wLeft
-          selectedDepends := yDepends
-          unselectedDepends := wLeftDepends
-          factorization := hnumL }
-      rightCondition :=
-        { selectedPart := fun _ => true
-          unselectedPart := wRight
-          selectedDepends :=
-            CanonicalFactorization.DependsOnSelected.const _ _ _ true
-          unselectedDepends := wRightDepends
-          factorization := by
-            funext roots
-            simp only [Probability.inter, Bool.true_and]
-            exact congrArg (fun e => e roots) hcondR.symm }
-      rightNumerator :=
-        { selectedPart := yCyl
-          unselectedPart := wRight
-          selectedDepends := yDepends
-          unselectedDepends := wRightDepends
-          factorization := hnumR }
-      leftCondition :=
-        { selectedPart := fun _ => true
-          unselectedPart := wLeft
-          selectedDepends :=
-            CanonicalFactorization.DependsOnSelected.const _ _ _ true
-          unselectedDepends := wLeftDepends
-          factorization := by
-            funext roots
-            simp only [Probability.inter, Bool.true_and]
-            exact congrArg (fun e => e roots) hcondL.symm }
-      selectedCross := QProb.equiv_refl _
-      unselectedCross := QProb.mul_comm _ _ }
+      commonCondition := fun _ => true
+      leftResidual := wLeft
+      rightResidual := wRight
+      yDepends := by simpa [yInt] using yDepends
+      commonConditionDepends :=
+        CanonicalFactorization.DependsOnSelected.const _ _ _ true
+      leftResidualDepends := wLeftDepends
+      rightResidualDepends := wRightDepends
+      leftCondition := by
+        funext roots
+        simp [productPreimage, Kernel.conditionEvent, rule3Left, wLeft,
+          Probability.inter]
+      rightCondition := by
+        funext roots
+        simp [productPreimage, Kernel.conditionEvent, rule3Right, wRight,
+          Probability.inter] }
+
+/-- Given-`W` rule 3: if the `Y` mask under `do(X ∪ W)` shares no latent
+with `W` under either kernel intervention, the four events are rectangles
+on that mask.  The extra overlap Bool is not a theorem of path
+d-separation (`U → Y` and `U → W` remain). -/
+def rule3RectangularWitness_of_given_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (separated : PathSpecification.PathDSeparated G
+      { removeIncoming :=
+          NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+        removeOutgoing := NodeSet.empty }
+      y z (NodeSet.union x w))
+    (hoverlap : rule3YWLatentOverlap model G x y z w assignment = false) :
+    ProductRectangularCrossProductWitnessAt model
+      (rule3Left x y z w) (rule3Right x y z w) assignment :=
+  rule3RectangularWitness_of_given_w_factorization model G x y z w assignment
+    disjoint separated
+    (Rule3GivenWFactorization.of_no_overlap model G x y z w assignment
+      hoverlap)
 
 /-- Empty-outcome rule 3: the `Y` mask is vacant, so given-`W` overlap
 is false and the rectangle inhabits. -/
@@ -12008,12 +12272,12 @@ def rule3RectangularWitness_of_empty_w
     (rule3YWLatentOverlap_eq_false_of_empty_w model G x y z w assignment hw)
 
 /--
-Rule 3 from path d-separation.  Empty `Z` is a kernel identity; empty
-`Y` or empty `W` forces overlap false; `Z(W) = Z` uses matching `Y`/`W`
-cylinders.  The remaining extra Bool is given-`W` overlap of nonempty
-`Y` with nonempty `W` when `Z(W) ≠ Z`.
+Rule 3 from path d-separation and the common/residual factorization of its
+genuinely cross-interventional case.  Empty `Z`, empty `Y`, empty `W`, and
+`Z(W) = Z` retain their direct constructions; only the remaining branch uses
+the supplied factorization.
 -/
-def rule3RectangularWitness_of_path
+def rule3RectangularWitness_of_path_factorization
     (model : FiniteLatentSCM S) (G : ObservedGraph S)
     (x y z w : NodeSet S) (assignment : S.Assignment)
     (disjoint : FourWayDisjoint x y z w)
@@ -12022,8 +12286,7 @@ def rule3RectangularWitness_of_path
           NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
         removeOutgoing := NodeSet.empty }
       y z (NodeSet.union x w))
-    (hoverlap :
-      rule3YWLatentOverlap model G x y z w assignment = false) :
+    (factorization : Rule3GivenWFactorization model G x y z w assignment) :
     ProductRectangularCrossProductWitnessAt model
       (rule3Left x y z w) (rule3Right x y z w) assignment := by
   cases hz : NodeSet.isEmpty z with
@@ -12049,8 +12312,33 @@ def rule3RectangularWitness_of_path
                     ((NodeSet.equal_eq_true_iff _ _).mp hrem)
                     separated
               | false =>
-                  exact rule3RectangularWitness_of_given_w model G
-                    x y z w assignment disjoint separated hoverlap
+                  exact rule3RectangularWitness_of_given_w_factorization
+                    model G x y z w assignment disjoint separated
+                    factorization
+
+/--
+Backward-compatible rule-3 assembler for the stronger no-overlap premise.
+The premise is first embedded into the general common/residual
+factorization; downstream cross-product algebra no longer relies on the
+misleading idea that all valid rule-3 queries must satisfy it.
+-/
+def rule3RectangularWitness_of_path
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (separated : PathSpecification.PathDSeparated G
+      { removeIncoming :=
+          NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+        removeOutgoing := NodeSet.empty }
+      y z (NodeSet.union x w))
+    (hoverlap :
+      rule3YWLatentOverlap model G x y z w assignment = false) :
+    ProductRectangularCrossProductWitnessAt model
+      (rule3Left x y z w) (rule3Right x y z w) assignment :=
+  rule3RectangularWitness_of_path_factorization model G x y z w assignment
+    disjoint separated
+    (Rule3GivenWFactorization.of_no_overlap model G x y z w assignment
+      hoverlap)
 
 theorem ProductCrossProductEquivalentAt.toDistribution
     {model : FiniteLatentSCM S} {left right : Kernel S}
@@ -12210,21 +12498,79 @@ structure PathDoRulePartitionWitnesses (G : ObservedGraph S)
        y z (NodeSet.union x w)) ->
     Kernel.ProductRectangularCrossProductWitnessAt model
       (rule3Left x y z w) (rule3Right x y z w) assignment
-  -- `rule3RectangularWitness_of_path` cases empty `Z`/`Y`/`W` and
-  -- `Z(W) = Z` before asking for given-`W` overlap.  Overlap of nonempty
-  -- `Y` with nonempty `W` when `Z(W) ≠ Z` remains.
+  -- `rule3RectangularWitness_of_path_factorization` cases empty
+  -- `Z`/`Y`/`W` and `Z(W) = Z` before using the common/residual `W`
+  -- decomposition.  Unlike the older no-overlap leaf, this decomposition
+  -- permits the ordinary latent dependence of nonempty `Y` and `W`.
   -- `rule2PartitionWitness_of_path` cases empty `Z`/`W` and the
   -- `An(Z)`-avoiding split before asking for the extra-latent gap and
   -- the mixed `An(Z)`–`An(Y)` meet.
 
 /--
-Assemble the three path-do-rule partition witnesses from path
-d-separation, a projected graph, and the remaining extra Bools.
+Assemble the three path-do-rule partition witnesses from path d-separation,
+a projected graph, the remaining rule-1/rule-2 Bools, and the rule-3
+common/residual factorization.
 
-The Bools are required only on queries that survive the cheap empty /
-one-sided cases inside each `of_path` assembler; they are still
-stated for every separated query so the package does not hide a
-case split from the caller.
+The rule-1/rule-2 Bools and the rule-3 factorization are required only on
+queries that survive the cheap empty or one-sided branches inside the local
+assemblers.  They are stated uniformly here so this package does not hide a
+case split from its caller.
+-/
+def PathDoRulePartitionWitnesses.ofPathFactorizedRule3
+    (G : ObservedGraph S) (model : FiniteLatentSCM S)
+    (projected : HasProjectedGraph model G)
+    (hRule1Overlap : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
+      PathSpecification.PathDSeparated
+        G (.bar x) y z (NodeSet.union x w) →
+      Kernel.rule1WSplitClosedAncestralLatentsOverlap
+        model G x y z w assignment = false)
+    (hRule1Unsel : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
+      PathSpecification.PathDSeparated
+        G (.bar x) y z (NodeSet.union x w) →
+      Kernel.rule1WSplitClosedUnselectedMeetsZCore
+        model G x y z w assignment = false)
+    (hRule2Extra : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
+      PathSpecification.PathDSeparated
+        G (.barUnderline x z) y z (NodeSet.union x w) →
+      Kernel.rule2WSplitSelectedClosedExtraLatent
+        model G x z w assignment = false)
+    (hRule2MeetsY : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
+      PathSpecification.PathDSeparated
+        G (.barUnderline x z) y z (NodeSet.union x w) →
+      Kernel.rule2SelectedMeetsYAncestral
+        model G x y z w assignment = false)
+    (hRule3Factorization : forall (x y z w : NodeSet S)
+      (assignment : S.Assignment),
+      PathSpecification.PathDSeparated G
+        { removeIncoming :=
+            NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
+          removeOutgoing := NodeSet.empty }
+        y z (NodeSet.union x w) →
+      Kernel.Rule3GivenWFactorization model G x y z w assignment) :
+    PathDoRulePartitionWitnesses G model where
+  rule1 := fun x y z w assignment _disjoint separated =>
+    Kernel.rule1PartitionWitness_of_path model G projected
+      x y z w assignment separated
+      (hRule1Overlap x y z w assignment separated)
+      (hRule1Unsel x y z w assignment separated)
+  rule2 := fun x y z w assignment disjoint separated =>
+    Kernel.rule2PartitionWitness_of_path model G projected
+      x y z w assignment disjoint separated
+      (hRule2Extra x y z w assignment separated)
+      (hRule2MeetsY x y z w assignment separated)
+  rule3 := fun x y z w assignment disjoint separated =>
+    Kernel.rule3RectangularWitness_of_path_factorization model G
+      x y z w assignment disjoint separated
+      (hRule3Factorization x y z w assignment separated)
+
+/--
+Compatibility assembler for the former rule-3 no-overlap premise.  New
+global-Markov work should target `ofPathFactorizedRule3`: path separation
+does not in general imply that `Y` and conditioned `W` share no latent root.
 -/
 def PathDoRulePartitionWitnesses.ofPath
     (G : ObservedGraph S) (model : FiniteLatentSCM S)
@@ -12261,21 +12607,12 @@ def PathDoRulePartitionWitnesses.ofPath
           removeOutgoing := NodeSet.empty }
         y z (NodeSet.union x w) →
       Kernel.rule3YWLatentOverlap model G x y z w assignment = false) :
-    PathDoRulePartitionWitnesses G model where
-  rule1 := fun x y z w assignment _disjoint separated =>
-    Kernel.rule1PartitionWitness_of_path model G projected
-      x y z w assignment separated
-      (hRule1Overlap x y z w assignment separated)
-      (hRule1Unsel x y z w assignment separated)
-  rule2 := fun x y z w assignment disjoint separated =>
-    Kernel.rule2PartitionWitness_of_path model G projected
-      x y z w assignment disjoint separated
-      (hRule2Extra x y z w assignment separated)
-      (hRule2MeetsY x y z w assignment separated)
-  rule3 := fun x y z w assignment disjoint separated =>
-    Kernel.rule3RectangularWitness_of_path model G
-      x y z w assignment disjoint separated
-      (hRule3Overlap x y z w assignment separated)
+    PathDoRulePartitionWitnesses G model :=
+  PathDoRulePartitionWitnesses.ofPathFactorizedRule3 G model projected
+    hRule1Overlap hRule1Unsel hRule2Extra hRule2MeetsY
+    (fun x y z w assignment separated =>
+      Kernel.Rule3GivenWFactorization.of_no_overlap model G x y z w
+        assignment (hRule3Overlap x y z w assignment separated))
 
 def PathDoRulePartitionWitnesses.toProductCrossProductLaws
     {G : ObservedGraph S} {model : FiniteLatentSCM S}
