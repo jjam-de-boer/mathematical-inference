@@ -80,6 +80,10 @@ induction.  The remaining inhabitants are:
   inhabits `emptyOutcomeIdentifiedPublishedCertificate` and matches
   the empty-free-c-component engine output
   (`identifyJoint_eq_identified_of_empty_free`);
+  the public structural trace's `emptyAction` and `emptyFree` constructors
+  now compile directly to formula-aligned packages
+  (`publishedJointSuccessLeafCompilation?`), rather than being rediscovered
+  by a front-end query heuristic;
   the same d-separation plus two empty-action marginalizations onto
   `An(Y)_{G_{\overline{X}}}` inhabits
   `firstShrinkEmptyIdentifiedPublishedCertificate`, whose formula is
@@ -18197,6 +18201,83 @@ structure PublishedJointSuccessCompilation
     (q : JointKernelQuery S) (term : ProbabilityTerm S) where
   certificate : PublishedJointCertificate C correct q
   formula_eq : certificate.formula = term
+
+/-!
+### Terminal constructors of the structural success compiler
+
+The public trace begins at `remaining = V` and `current = P(V)`.  Its two
+nonrecursive terminal constructors therefore line up exactly with certificates
+already proved above:
+
+* `emptyAction` is the ordinary observational marginal of `P(V)`;
+* `emptyFree` forces `V \ X = ∅`, hence the disjoint outcome is empty and ID
+  returns the full marginal `∑_V P(V)`.
+
+Packaging these cases at the trace boundary is deliberately different from a
+front-end query heuristic: the returned `formula_eq` is indexed by the actual
+term stored in the success trace.
+-/
+
+/-- Compile the top-level empty-action trace target. -/
+noncomputable def PublishedJointSuccessCompilation.ofEmptyAction
+    {S : ObservedSignature} {G : ObservedGraph S}
+    {C : GraphModelClass G} (correct : DSeparationCorrectness G)
+    (q : JointKernelQuery S)
+    (emptyAction : NodeSet.isEmpty q.action = true) :
+    PublishedJointSuccessCompilation C correct q
+      (.marginalize (NodeSet.diff NodeSet.full q.outcome)
+        (observationalJointTerm S)) where
+  certificate := emptyActionIdentifiedPublishedCertificate correct q emptyAction
+  formula_eq := rfl
+
+/-- Compile the top-level no-free-component trace target. -/
+noncomputable def PublishedJointSuccessCompilation.ofEmptyFree
+    {S : ObservedSignature} {G : ObservedGraph S}
+    {C : GraphModelClass G} (correct : DSeparationCorrectness G)
+    (q : JointKernelQuery S)
+    (noFreeComponents :
+      G.cComponents (NodeSet.diff NodeSet.full q.action) = []) :
+    PublishedJointSuccessCompilation C correct q
+      (.marginalize NodeSet.full (observationalJointTerm S)) where
+  certificate :=
+    let emptyOutcome := outcome_isEmpty_of_empty_free G q noFreeComponents
+    emptyOutcomeIdentifiedPublishedCertificate correct q emptyOutcome
+  formula_eq := by
+    exact emptyOutcomeIdentifiedTerm_eq q
+      (outcome_isEmpty_of_empty_free G q noFreeComponents)
+
+/--
+Compile exactly the two terminal constructors of a public structural success
+trace.  Recursive shrink/restriction/product traces and the nonrecursive
+maximal-component chain remain `none`; callers can inspect this option without
+asserting that those branches have already been solved.
+-/
+noncomputable def publishedJointSuccessLeafCompilation?
+    {S : ObservedSignature} {G : ObservedGraph S}
+    {C : GraphModelClass G} (correct : DSeparationCorrectness G)
+    (q : JointKernelQuery S) (term : ProbabilityTerm S)
+    (trace : JointIdentificationSuccessTrace G q term) :
+    Option (PublishedJointSuccessCompilation C correct q term) := by
+  cases trace with
+  | emptyAction _fuel _remaining _outcome _action _current actionEmpty =>
+      have emptyAction : NodeSet.isEmpty q.action = true := by
+        simpa [NodeSet.inter_full_right] using actionEmpty
+      exact some (by
+        simpa [NodeSet.inter_full_right] using
+          PublishedJointSuccessCompilation.ofEmptyAction correct q emptyAction)
+  | emptyFree _fuel _remaining _outcome _action _current _actionNonempty
+      _ancestral noFreeComponents =>
+      have noFreeComponents' :
+          G.cComponents (NodeSet.diff NodeSet.full q.action) = [] := by
+        simpa [NodeSet.inter_full_right] using noFreeComponents
+      exact some (by
+        simpa using
+          PublishedJointSuccessCompilation.ofEmptyFree correct q
+            noFreeComponents')
+  | chain => exact none
+  | shrink => exact none
+  | restrict => exact none
+  | product => exact none
 
 /-- The remaining branch-generic program for successful public joint ID. -/
 structure PublishedJointTraceCompiler

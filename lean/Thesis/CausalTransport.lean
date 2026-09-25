@@ -38,7 +38,8 @@ the extra Boolean hypotheses accepted by `PathDoRulePartitionWitnesses.ofPath`
 are not consequences of path d-separation in all configurations.
 
 `Completeness` develops the executable ID side for the positive model class:
-successful special cases compile to supported certificates, finite search
+successful special cases compile to supported certificates, the two terminal
+success-trace constructors compile to formula-aligned packages, finite search
 extracts hedge data from checked failures, and shared-switch hedge models
 provide positive counterexamples for the covered queries.  `HedgePositive`
 uses finite marginalization to reduce full-query separation to one suitable
