@@ -273,7 +273,11 @@ induction.  The remaining inhabitants are:
   unique-parent lemmas remain compatibility specializations; the generic
   parent-bit forms and `hedgeDoPivot` strengthen this again to any selected
   outcome with at least one directed action parent by assigning only one
-  chosen parent `second`;
+  chosen parent `second`; singleton-outcome separation also keeps the model
+  switch mask independent of the query action
+  (`hedgeSingletonOutcome_not_valueEquivalent_of_parentBit`), so the
+  singleton-mask specialization can alter just one useful action parent while
+  the query still intervenes on every action coordinate;
   observational agreement of the two mix masks is still required for a
   `CounterexampleIn` in general; an arbitrary action mask agrees with the
   empty mix when every edge leaving a masked vertex preserves pair-root
@@ -39592,13 +39596,21 @@ theorem hedgeDoSecond_eq_bow_intervention
 
 /--
 Generic singleton-outcome separation from an intervention that makes the
-action-mask parent bit true.  The reference and intervention are kept as
-explicit data so both the all-`second` and one-pivot assignments reuse the
-same kernel argument.
+model mask's parent bit true.  The model mask is deliberately independent of
+the query action: the latter determines which coordinates the causal query
+fixes, whereas the former determines which structural equations copy their
+directed-parent bit.  Keeping these roles separate permits a countermodel to
+change only one useful action parent while the query still intervenes on its
+complete action set.
+
+The reference and intervention are explicit data so the all-`second`,
+one-pivot, and singleton-mask constructions can share the same kernel
+argument.
 -/
 theorem hedgeSingletonOutcome_not_valueEquivalent_of_parentBit
     (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) (q : JointKernelQuery S)
+    (mask : NodeSet S)
     {x y : Fin S.count} (root : Fin (pairRootCount G))
     (hx : q.action x = true)
     (reference : S.Assignment)
@@ -39608,9 +39620,9 @@ theorem hedgeSingletonOutcome_not_valueEquivalent_of_parentBit
       (fun i => if q.action i then some (reference i) else none) = intervention)
     (free : intervention y = none)
     (parentBit : forall u : (hedgeLatentExtension G).Assignment,
-      hedgeParentBitsFrom rich q.action y
+      hedgeParentBitsFrom rich mask y
           (fun parent _ =>
-            (hedgeMixModel G rich q.action).evalNodeUnder intervention u
+            (hedgeMixModel G rich mask).evalNodeUnder intervention u
               parent) = true)
     (hy : q.outcome y = true)
     (houtcome : forall i, q.outcome i = true → i = y)
@@ -39618,11 +39630,11 @@ theorem hedgeSingletonOutcome_not_valueEquivalent_of_parentBit
     Not
       (q.ValueEquivalent
         (hedgeMixModel G rich NodeSet.empty)
-        (hedgeMixModel G rich q.action)) := by
+        (hedgeMixModel G rich mask)) := by
   intro hVE
   let ref : S.Assignment := reference
   let left : ExactModel S := hedgeMixModel G rich NodeSet.empty
-  let right : ExactModel S := hedgeMixModel G rich q.action
+  let right : ExactModel S := hedgeMixModel G rich mask
   have hrefy : ref y = rich.first y := referenceY
   have hHas :
       (Kernel.mk q.outcome q.action NodeSet.empty).hasAction = true :=
@@ -39685,7 +39697,7 @@ theorem hedgeSingletonOutcome_not_valueEquivalent_of_parentBit
         rw [hdistR]
         exact FiniteProbRecord.probVal_congr _ _ _ hevent
       exact
-        hedgeMix_interventional_first_not_equiv_of_parentBit G rich q.action
+        hedgeMix_interventional_first_not_equiv_of_parentBit G rich mask
           intervention root free parentBit hincy
           (QProb.equiv_symm
             (QProb.equiv_trans (QProb.equiv_symm hpL)
@@ -39708,7 +39720,8 @@ theorem hedgeSingletonOutcome_not_valueEquivalent_of_parentParity
       (q.ValueEquivalent
         (hedgeMixModel G rich NodeSet.empty)
         (hedgeMixModel G rich q.action)) :=
-  hedgeSingletonOutcome_not_valueEquivalent_of_parentBit G rich q root hx
+  hedgeSingletonOutcome_not_valueEquivalent_of_parentBit G rich q q.action
+    root hx
     (hedgeActionReference rich q.action) (hedgeDoSecond rich q.action)
     (hedgeActionReference_of_false rich q.action
       (q.outcome_action_disjoint y hy))
@@ -39737,7 +39750,8 @@ theorem hedgeSingletonOutcome_not_valueEquivalent_of_actionParent
       (q.ValueEquivalent
         (hedgeMixModel G rich NodeSet.empty)
         (hedgeMixModel G rich q.action)) :=
-  hedgeSingletonOutcome_not_valueEquivalent_of_parentBit G rich q root selected
+  hedgeSingletonOutcome_not_valueEquivalent_of_parentBit G rich q q.action
+    root selected
     (hedgeActionPivotReference rich q.action pivot)
     (hedgeDoPivot rich q.action pivot)
     (hedgeActionPivotReference_of_false rich q.action pivot
@@ -39747,6 +39761,45 @@ theorem hedgeSingletonOutcome_not_valueEquivalent_of_actionParent
       (q.outcome_action_disjoint y hy))
     (fun u =>
       hedgeParentBitsFrom_doPivot_eq_true G rich q.action u selected edge)
+    hy houtcome hincy
+
+/--
+Singleton-mask separation at an arbitrary directed action parent.  The query
+still intervenes on every action coordinate, but only `pivot` changes its
+structural equation between the two models.  Consequently the copied parent
+bit has exactly one contributor, independently of how many other action
+parents point to the selected outcome.
+
+This is the local form needed by positive hedge countermodels: observational
+agreement now has to control only the edges leaving `pivot`, rather than all
+edges leaving the query action.
+-/
+theorem hedgeSingletonOutcome_not_valueEquivalent_of_singletonMask
+    (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) (q : JointKernelQuery S)
+    {pivot y : Fin S.count} (root : Fin (pairRootCount G))
+    (selected : q.action pivot = true)
+    (edge : S.directed pivot y = true)
+    (hy : q.outcome y = true)
+    (houtcome : forall i, q.outcome i = true → i = y)
+    (hincy : (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
+    Not
+      (q.ValueEquivalent
+        (hedgeMixModel G rich NodeSet.empty)
+        (hedgeMixModel G rich (NodeSet.singleton pivot))) :=
+  hedgeSingletonOutcome_not_valueEquivalent_of_parentBit G rich q
+    (NodeSet.singleton pivot) root selected
+    (hedgeActionReference rich q.action) (hedgeDoSecond rich q.action)
+    (hedgeActionReference_of_false rich q.action
+      (q.outcome_action_disjoint y hy))
+    (hedgeDoSecond_eq_action_intervention rich q.action)
+    (hedgeDoSecond_of_false rich q.action (q.outcome_action_disjoint y hy))
+    (fun u =>
+      hedgeParentBitsFrom_of_unique_doSecond G rich
+        (NodeSet.singleton pivot) q.action u edge selected
+        (by simp [NodeSet.singleton])
+        (fun parent inMask _edge =>
+          (NodeSet.singleton_eq_true_iff pivot parent).mp inMask))
     hy houtcome hincy
 
 /--

@@ -42,9 +42,11 @@ successful special cases compile to supported certificates, finite search
 extracts hedge data from checked failures, and shared-switch hedge models
 provide positive counterexamples for the covered queries.  `HedgePositive`
 uses finite marginalization to reduce full-query separation to one suitable
-outcome coordinate with a directed action parent.  A finite pivot assignment
-removes both parent-uniqueness and odd-parity restrictions, without choosing
-a family of pointwise equivalences.  A complete `PublishedCompleteness`
+outcome coordinate with a directed action parent.  Its localized mix changes
+only one finitely selected parent, so observational agreement requires the
+shared-switch condition only on edges leaving that pivot.  This removes
+parent-uniqueness, odd-parity, and global restrictions on unrelated action
+vertices without choosing a family of pointwise equivalences.  A complete `PublishedCompleteness`
 inhabitant still needs structural compilation of arbitrary successful traces
 and a positive countermodel for an arbitrary hedge.  `HedgeOutcomeFlow`
 proves exact finite support formulas for the general routed hedge models and
