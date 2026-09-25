@@ -23,9 +23,11 @@ inhabited witnesses over the finite assignment enumeration and never chooses
 a global witness family.
 
 The resulting leaf permits arbitrary additional query outcomes.  It needs
-only one stored outcome seed with odd action-parent parity and an incident
-pair-root.  Extra action vertices may be non-sinks provided every edge leaving
-the action preserves pair-root incidence.
+only one stored outcome seed with some directed action parent and an incident
+pair-root.  A finite selector chooses one such parent as the pivot; every
+other action parent is assigned `first`, so neither uniqueness nor odd parity
+is required.  Extra action vertices may be non-sinks provided every edge
+leaving the action preserves pair-root incidence.
 -/
 
 /-! ## The theorem-level marginal counterexample -/
@@ -38,10 +40,10 @@ then supplies the contradiction.
 -/
 def hedgeEdgeSharedMarginalCounterexampleIn
     (G : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
-    (q : JointKernelQuery S) {x y : Fin S.count}
+    (q : JointKernelQuery S) {pivot y : Fin S.count}
     (root : Fin (pairRootCount G))
-    (actionSeed : q.action x = true)
-    (parentParity : actionParentParity q.action y = true)
+    (parentSelected : q.action pivot = true)
+    (parentEdge : S.directed pivot y = true)
     (outcomeSeed : q.outcome y = true)
     (shared : forall parent child,
       q.action parent = true → S.directed parent child = true →
@@ -77,10 +79,10 @@ def hedgeEdgeSharedMarginalCounterexampleIn
           (singletonQuery.ValueEquivalent
             (hedgeMixModel G rich NodeSet.empty)
             (hedgeMixModel G rich q.action)) := by
-      apply hedgeSingletonOutcome_not_valueEquivalent_of_parentParity G rich
+      apply hedgeSingletonOutcome_not_valueEquivalent_of_actionParent G rich
         singletonQuery root
-      · exact actionSeed
-      · exact parentParity
+      · exact parentSelected
+      · exact parentEdge
       · simp [singletonQuery, singletonOutcome,
           JointKernelQuery.restrictOutcome, NodeSet.singleton]
       · intro candidate selected
@@ -90,27 +92,67 @@ def hedgeEdgeSharedMarginalCounterexampleIn
 
 /-! ## Executable readiness and failure-pipeline integration -/
 
+/-- Whether `child` has at least one directed parent in the action set. -/
+def actionParentExistsBool (action : NodeSet S) (child : Fin S.count) : Bool :=
+  (NodeSet.enumerated S).any fun parent =>
+    action parent && S.directed parent child
+
+theorem actionParentExistsBool_eq_true_of
+    (action : NodeSet S) {parent child : Fin S.count}
+    (selected : action parent = true)
+    (edge : S.directed parent child = true) :
+    actionParentExistsBool action child = true :=
+  List.any_eq_true.mpr
+    ⟨parent, NodeSet.mem_enumerated S parent, by simp [selected, edge]⟩
+
+/--
+The first action parent of `child`, recovered from the finite node
+enumeration after the executable existence test succeeds.
+-/
+def firstActionParent (action : NodeSet S) (child : Fin S.count)
+    (existsParent : actionParentExistsBool action child = true) :
+    Fin S.count :=
+  listFirstAny (NodeSet.enumerated S)
+    (fun parent => action parent && S.directed parent child) existsParent
+
+theorem firstActionParent_selected
+    (action : NodeSet S) (child : Fin S.count)
+    (existsParent : actionParentExistsBool action child = true) :
+    action (firstActionParent action child existsParent) = true :=
+  (Bool.and_eq_true_iff.mp
+    (listFirstAny_pred (NodeSet.enumerated S)
+      (fun parent => action parent && S.directed parent child)
+      existsParent)).1
+
+theorem firstActionParent_directed
+    (action : NodeSet S) (child : Fin S.count)
+    (existsParent : actionParentExistsBool action child = true) :
+    S.directed (firstActionParent action child existsParent) child = true :=
+  (Bool.and_eq_true_iff.mp
+    (listFirstAny_pred (NodeSet.enumerated S)
+      (fun parent => action parent && S.directed parent child)
+      existsParent)).2
+
 /--
 Boolean readiness for the marginal edge-shared leaf.  Unlike
 `hedgeWitnessEdgeSharedReady`, it imposes no shape restriction on outcomes
-other than odd action-parent parity at the stored seed: unrelated queried
-coordinates are removed by finite marginalization before singleton
+other than the existence of an action parent at the stored seed: unrelated
+queried coordinates are removed by finite marginalization before singleton
 separation.
 -/
 def hedgeWitnessMarginalEdgeSharedReady (G : ObservedGraph S)
     (q : JointKernelQuery S) (w : HedgeWitness G q) : Bool :=
-  q.action w.actionSeed &&
-    (actionParentParity q.action w.outcomeSeed &&
-      (actionEdgesSharePairRootSwitchBool G q.action &&
-        (List.finRange (pairRootCount G)).any (fun root =>
-          (hedgeLatentExtension G).incident (hedgePairRoot G root)
-            w.outcomeSeed)))
+  actionParentExistsBool q.action w.outcomeSeed &&
+    (actionEdgesSharePairRootSwitchBool G q.action &&
+      (List.finRange (pairRootCount G)).any (fun root =>
+        (hedgeLatentExtension G).incident (hedgePairRoot G root)
+          w.outcomeSeed))
 
 /--
 The earlier all-outcomes edge-shared test is contained in the marginal test.
-Its direct edge and unique-parent scan make the selected outcome's parent
-parity odd; the outcome-subset requirement is no longer needed after
-marginalization.
+Its stored action-seed edge supplies an action parent of the selected outcome;
+the outcome-subset and unique-parent scans are no longer needed after
+marginalization and the pivot assignment.
 -/
 theorem hedgeWitnessMarginalEdgeSharedReady_of_edgeSharedReady
     (G : ObservedGraph S) (q : JointKernelQuery S) (w : HedgeWitness G q)
@@ -120,20 +162,17 @@ theorem hedgeWitnessMarginalEdgeSharedReady_of_edgeSharedReady
   let rest := (Bool.and_eq_true_iff.mp ready).2
   let _outcomes := (Bool.and_eq_true_iff.mp rest).1
   let rest2 := (Bool.and_eq_true_iff.mp rest).2
-  let unique := (Bool.and_eq_true_iff.mp rest2).1
+  let _unique := (Bool.and_eq_true_iff.mp rest2).1
   let rest3 := (Bool.and_eq_true_iff.mp rest2).2
   let directed := (Bool.and_eq_true_iff.mp rest3).1
   let rest4 := (Bool.and_eq_true_iff.mp rest3).2
   let shared := (Bool.and_eq_true_iff.mp rest4).1
   let incident := (Bool.and_eq_true_iff.mp rest4).2
-  have parity : actionParentParity q.action w.outcomeSeed = true :=
-    actionParentParity_eq_true_of_unique q.action directed actionSeed
-      (fun parent selected edge =>
-        uniqueActionParentAtOutcomesBool_spec unique w.outcomeSeed
-          w.outcomeSeed_in_outcome parent selected edge)
-  exact Bool.and_eq_true_iff.mpr ⟨actionSeed,
-    Bool.and_eq_true_iff.mpr ⟨parity,
-      Bool.and_eq_true_iff.mpr ⟨shared, incident⟩⟩⟩
+  have parentExists :
+      actionParentExistsBool q.action w.outcomeSeed = true :=
+    actionParentExistsBool_eq_true_of q.action actionSeed directed
+  exact Bool.and_eq_true_iff.mpr ⟨parentExists,
+    Bool.and_eq_true_iff.mpr ⟨shared, incident⟩⟩
 
 /-- Readiness of a witness packages the generalized positive counterexample. -/
 def hedgeEdgeSharedMarginalCounterexampleIn_of_ready
@@ -141,14 +180,14 @@ def hedgeEdgeSharedMarginalCounterexampleIn_of_ready
     (q : JointKernelQuery S) (w : HedgeWitness G q)
     (ready : hedgeWitnessMarginalEdgeSharedReady G q w = true) :
     CounterexampleIn (GraphModelClass.positive G) q :=
-  let actionSeed := (Bool.and_eq_true_iff.mp ready).1
+  let parentExists := (Bool.and_eq_true_iff.mp ready).1
   let rest := (Bool.and_eq_true_iff.mp ready).2
-  let parity := (Bool.and_eq_true_iff.mp rest).1
-  let rest2 := (Bool.and_eq_true_iff.mp rest).2
-  let shared := (Bool.and_eq_true_iff.mp rest2).1
-  let incident := (Bool.and_eq_true_iff.mp rest2).2
+  let shared := (Bool.and_eq_true_iff.mp rest).1
+  let incident := (Bool.and_eq_true_iff.mp rest).2
   hedgeEdgeSharedMarginalCounterexampleIn G rich q
-    (firstIncidentPairRoot G w.outcomeSeed incident) actionSeed parity
+    (firstIncidentPairRoot G w.outcomeSeed incident)
+    (firstActionParent_selected q.action w.outcomeSeed parentExists)
+    (firstActionParent_directed q.action w.outcomeSeed parentExists)
     w.outcomeSeed_in_outcome
     (fun _parent _child selected edge root =>
       actionEdgesSharePairRootSwitchBool_hedgeIncident shared selected edge

@@ -42,13 +42,14 @@ successful special cases compile to supported certificates, finite search
 extracts hedge data from checked failures, and shared-switch hedge models
 provide positive counterexamples for the covered queries.  `HedgePositive`
 uses finite marginalization to reduce full-query separation to one suitable
-outcome coordinate with odd action-parent parity, without choosing a family
-of pointwise equivalences.  A complete `PublishedCompleteness` inhabitant
-still needs structural compilation of arbitrary successful traces and a
-positive countermodel for an arbitrary hedge.  `HedgeOutcomeFlow` proves exact
-finite support formulas for the general routed hedge models and packages an
-unrestricted original-query counterexample when readout routing does not
-re-enter `large \ small`; removing that geometric hypothesis and preserving
+outcome coordinate with a directed action parent.  A finite pivot assignment
+removes both parent-uniqueness and odd-parity restrictions, without choosing
+a family of pointwise equivalences.  A complete `PublishedCompleteness`
+inhabitant still needs structural compilation of arbitrary successful traces
+and a positive countermodel for an arbitrary hedge.  `HedgeOutcomeFlow`
+proves exact finite support formulas for the general routed hedge models and
+packages an unrestricted original-query counterexample when readout routing
+does not re-enter `large \ small`; removing that geometric hypothesis and preserving
 strict positivity remain the countermodel obligations.  `IdentificationInduction`
 supplies exact success, failure, and unfinished traces so this work can proceed
 by one lemma per recursive ID branch rather than by enumerating deeper

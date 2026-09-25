@@ -270,7 +270,10 @@ induction.  The remaining inhabitants are:
   the action-mask copy
   (`hedgeMix_interventional_first_mass_lt_of_parentParity`,
   `hedgeMix_interventional_first_not_equiv_of_parentParity`); the earlier
-  unique-parent lemmas remain compatibility specializations;
+  unique-parent lemmas remain compatibility specializations; the generic
+  parent-bit forms and `hedgeDoPivot` strengthen this again to any selected
+  outcome with at least one directed action parent by assigning only one
+  chosen parent `second`;
   observational agreement of the two mix masks is still required for a
   `CounterexampleIn` in general; an arbitrary action mask agrees with the
   empty mix when every edge leaving a masked vertex preserves pair-root
@@ -38646,9 +38649,108 @@ theorem hedgeMix_interventional_first_mass_lt (G : ObservedGraph S)
     (actionParentParity_eq_true_of_unique action hdir hx huniq) hinc
 
 /--
-The two mix models therefore disagree on the interventional cylinder
-`Y = first` under `do(X = second)`: their rational values are not
-`QProb.Equiv`.
+The generic parent-bit mass gap gives inequivalent interventional
+probabilities for the cylinder `Y = first`.
+-/
+theorem hedgeMix_interventional_first_not_equiv_of_parentBit
+    (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) {y : Fin S.count}
+    (action : NodeSet S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (root : Fin (pairRootCount G))
+    (free : intervention y = none)
+    (parentBit : forall u : (hedgeLatentExtension G).Assignment,
+      hedgeParentBitsFrom rich action y
+          (fun parent _ =>
+            (hedgeMixModel G rich action).evalNodeUnder intervention u parent) =
+        true)
+    (hinc : (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
+    Not
+      (QProb.Equiv
+        ((hedgeMixModel G rich action).interventionalValue
+          intervention
+          (fun a => decide (a y = rich.first y)))
+        ((hedgeMixModel G rich NodeSet.empty).interventionalValue
+          intervention
+          (fun a => decide (a y = rich.first y)))) := by
+  intro heq
+  have hact :=
+    FiniteLatentSCM.interventionalValue_eq
+      (hedgeMixModel G rich action) intervention
+      (fun a => decide (a y = rich.first y))
+  have hemp :=
+    FiniteLatentSCM.interventionalValue_eq
+      (hedgeMixModel G rich NodeSet.empty) intervention
+      (fun a => decide (a y = rich.first y))
+  have hmass :
+      QProb.Equiv
+        ((hedgeMixModel G rich action).prior.probVal
+          (fun u =>
+            decide
+              ((hedgeMixModel G rich action).evalUnder
+                  intervention u y =
+                rich.first y)))
+        ((hedgeMixModel G rich NodeSet.empty).prior.probVal
+          (fun u =>
+            decide
+              ((hedgeMixModel G rich NodeSet.empty).evalUnder
+                  intervention u y =
+                rich.first y))) :=
+    QProb.equiv_trans (QProb.equiv_symm hact) (QProb.equiv_trans heq hemp)
+  have hlt :=
+    hedgeMix_interventional_first_mass_lt_of_parentBit G rich action
+      intervention root free parentBit hinc
+  have hprior :
+      (hedgeMixModel G rich action).prior =
+        (hedgeMixModel G rich NodeSet.empty).prior :=
+    rfl
+  have hnums :
+      FiniteProbRecord.eventMass
+          (hedgeMixModel G rich action).prior.atoms
+          (fun u =>
+            decide
+              ((hedgeMixModel G rich action).evalUnder
+                  intervention u y =
+                rich.first y)) =
+        FiniteProbRecord.eventMass
+          (hedgeMixModel G rich NodeSet.empty).prior.atoms
+          (fun u =>
+            decide
+              ((hedgeMixModel G rich NodeSet.empty).evalUnder
+                  intervention u y =
+                rich.first y)) := by
+    have hmul :
+        FiniteProbRecord.eventMass
+            (hedgeMixModel G rich action).prior.atoms
+            (fun u =>
+              decide
+                ((hedgeMixModel G rich action).evalUnder
+                    intervention u y =
+                  rich.first y)) *
+          (hedgeMixModel G rich NodeSet.empty).prior.den =
+          FiniteProbRecord.eventMass
+            (hedgeMixModel G rich NodeSet.empty).prior.atoms
+            (fun u =>
+              decide
+                ((hedgeMixModel G rich NodeSet.empty).evalUnder
+                    intervention u y =
+                  rich.first y)) *
+            (hedgeMixModel G rich action).prior.den := by
+      simpa [QProb.Equiv, FiniteProbRecord.probVal] using hmass
+    have hden :
+        (hedgeMixModel G rich action).prior.den =
+          (hedgeMixModel G rich NodeSet.empty).prior.den := by
+      rw [hprior]
+    rw [hden] at hmul
+    exact
+      Nat.eq_of_mul_eq_mul_right
+        (hedgeMixModel G rich NodeSet.empty).prior.den_pos
+        hmul
+  exact Nat.ne_of_lt hlt hnums
+
+/--
+All-`second` specialization of generic parent-bit inequivalence.  It retains
+the odd-parity API used by the existing positive hedge leaves.
 -/
 theorem hedgeMix_interventional_first_not_equiv_of_parentParity
     (G : ObservedGraph S)
@@ -38664,81 +38766,14 @@ theorem hedgeMix_interventional_first_not_equiv_of_parentParity
           (fun a => decide (a y = rich.first y)))
         ((hedgeMixModel G rich NodeSet.empty).interventionalValue
           (hedgeDoSecond rich action)
-          (fun a => decide (a y = rich.first y)))) := by
-  intro heq
-  have hact :=
-    FiniteLatentSCM.interventionalValue_eq
-      (hedgeMixModel G rich action) (hedgeDoSecond rich action)
-      (fun a => decide (a y = rich.first y))
-  have hemp :=
-    FiniteLatentSCM.interventionalValue_eq
-      (hedgeMixModel G rich NodeSet.empty) (hedgeDoSecond rich action)
-      (fun a => decide (a y = rich.first y))
-  have hmass :
-      QProb.Equiv
-        ((hedgeMixModel G rich action).prior.probVal
-          (fun u =>
-            decide
-              ((hedgeMixModel G rich action).evalUnder
-                  (hedgeDoSecond rich action) u y =
-                rich.first y)))
-        ((hedgeMixModel G rich NodeSet.empty).prior.probVal
-          (fun u =>
-            decide
-              ((hedgeMixModel G rich NodeSet.empty).evalUnder
-                  (hedgeDoSecond rich action) u y =
-                rich.first y))) :=
-    QProb.equiv_trans (QProb.equiv_symm hact) (QProb.equiv_trans heq hemp)
-  have hlt :=
-    hedgeMix_interventional_first_mass_lt_of_parentParity G rich action root hy
-      hparity hinc
-  have hprior :
-      (hedgeMixModel G rich action).prior =
-        (hedgeMixModel G rich NodeSet.empty).prior :=
-    rfl
-  have hnums :
-      FiniteProbRecord.eventMass
-          (hedgeMixModel G rich action).prior.atoms
-          (fun u =>
-            decide
-              ((hedgeMixModel G rich action).evalUnder
-                  (hedgeDoSecond rich action) u y =
-                rich.first y)) =
-        FiniteProbRecord.eventMass
-          (hedgeMixModel G rich NodeSet.empty).prior.atoms
-          (fun u =>
-            decide
-              ((hedgeMixModel G rich NodeSet.empty).evalUnder
-                  (hedgeDoSecond rich action) u y =
-                rich.first y)) := by
-    have hmul :
-        FiniteProbRecord.eventMass
-            (hedgeMixModel G rich action).prior.atoms
-            (fun u =>
-              decide
-                ((hedgeMixModel G rich action).evalUnder
-                    (hedgeDoSecond rich action) u y =
-                  rich.first y)) *
-          (hedgeMixModel G rich NodeSet.empty).prior.den =
-          FiniteProbRecord.eventMass
-            (hedgeMixModel G rich NodeSet.empty).prior.atoms
-            (fun u =>
-              decide
-                ((hedgeMixModel G rich NodeSet.empty).evalUnder
-                    (hedgeDoSecond rich action) u y =
-                  rich.first y)) *
-            (hedgeMixModel G rich action).prior.den := by
-      simpa [QProb.Equiv, FiniteProbRecord.probVal] using hmass
-    have hden :
-        (hedgeMixModel G rich action).prior.den =
-          (hedgeMixModel G rich NodeSet.empty).prior.den := by
-      rw [hprior]
-    rw [hden] at hmul
-    exact
-      Nat.eq_of_mul_eq_mul_right
-        (hedgeMixModel G rich NodeSet.empty).prior.den_pos
-        hmul
-  exact Nat.ne_of_lt hlt hnums
+          (fun a => decide (a y = rich.first y)))) :=
+  hedgeMix_interventional_first_not_equiv_of_parentBit G rich action
+    (hedgeDoSecond rich action) root
+    (hedgeDoSecond_of_false rich action hy)
+    (fun u =>
+      (hedgeParentBitsFrom_doSecond_eq_actionParentParity G rich action u y).trans
+        hparity)
+    hinc
 
 /--
 Unique-parent compatibility form of
@@ -39556,17 +39591,27 @@ theorem hedgeDoSecond_eq_bow_intervention
       simp [hedgeDoSecond, hi, hedgeBowReference]
 
 /--
-On a singleton-outcome query, the empty-mask and action-mask mix models
-disagree at the action-wide reference whenever the selected outcome has odd
-action-parent parity.  The distinguished action node is needed only to show
-that the query kernel is genuinely interventional.
+Generic singleton-outcome separation from an intervention that makes the
+action-mask parent bit true.  The reference and intervention are kept as
+explicit data so both the all-`second` and one-pivot assignments reuse the
+same kernel argument.
 -/
-theorem hedgeSingletonOutcome_not_valueEquivalent_of_parentParity
+theorem hedgeSingletonOutcome_not_valueEquivalent_of_parentBit
     (G : ObservedGraph S)
     (rich : ObservedSignature.ValueRich S) (q : JointKernelQuery S)
     {x y : Fin S.count} (root : Fin (pairRootCount G))
     (hx : q.action x = true)
-    (hparity : actionParentParity q.action y = true)
+    (reference : S.Assignment)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (referenceY : reference y = rich.first y)
+    (interventionEq :
+      (fun i => if q.action i then some (reference i) else none) = intervention)
+    (free : intervention y = none)
+    (parentBit : forall u : (hedgeLatentExtension G).Assignment,
+      hedgeParentBitsFrom rich q.action y
+          (fun parent _ =>
+            (hedgeMixModel G rich q.action).evalNodeUnder intervention u
+              parent) = true)
     (hy : q.outcome y = true)
     (houtcome : forall i, q.outcome i = true → i = y)
     (hincy : (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
@@ -39575,27 +39620,18 @@ theorem hedgeSingletonOutcome_not_valueEquivalent_of_parentParity
         (hedgeMixModel G rich NodeSet.empty)
         (hedgeMixModel G rich q.action)) := by
   intro hVE
-  let ref : S.Assignment := hedgeActionReference rich q.action
+  let ref : S.Assignment := reference
   let left : ExactModel S := hedgeMixModel G rich NodeSet.empty
   let right : ExactModel S := hedgeMixModel G rich q.action
-  have hyfree : q.action y = false := by
-    cases hact : q.action y with
-    | false =>
-        rfl
-    | true =>
-        exact False.elim
-          (Bool.false_ne_true
-            ((q.action_outcome_disjoint y hact).symm.trans hy))
-  have hrefy : ref y = rich.first y :=
-    hedgeActionReference_of_false rich q.action hyfree
+  have hrefy : ref y = rich.first y := referenceY
   have hHas :
       (Kernel.mk q.outcome q.action NodeSet.empty).hasAction = true :=
     finAny_eq_true_of q.action x hx
   have hdo :
       (Kernel.mk q.outcome q.action NodeSet.empty).intervention ref =
-        hedgeDoSecond rich q.action := by
+        intervention := by
     unfold Kernel.intervention
-    exact hedgeDoSecond_eq_action_intervention rich q.action
+    exact interventionEq
   have hevent (sample : S.Assignment) :
       Kernel.agreesOn q.outcome ref sample =
         decide (sample y = rich.first y) := by
@@ -39622,12 +39658,12 @@ theorem hedgeSingletonOutcome_not_valueEquivalent_of_parentParity
   | value hq =>
       have hdistL :
           (Kernel.mk q.outcome q.action NodeSet.empty).distribution left ref =
-            left.interventionalDist (hedgeDoSecond rich q.action) := by
+            left.interventionalDist intervention := by
         unfold Kernel.distribution
         rw [if_pos hHas, hdo]
       have hdistR :
           (Kernel.mk q.outcome q.action NodeSet.empty).distribution right ref =
-            right.interventionalDist (hedgeDoSecond rich q.action) := by
+            right.interventionalDist intervention := by
         unfold Kernel.distribution
         rw [if_pos hHas, hdo]
       have hpL :
@@ -39635,7 +39671,7 @@ theorem hedgeSingletonOutcome_not_valueEquivalent_of_parentParity
             (((Kernel.mk q.outcome q.action NodeSet.empty).distribution
                 left ref).probVal
               (Kernel.agreesOn q.outcome ref))
-            (left.interventionalValue (hedgeDoSecond rich q.action)
+            (left.interventionalValue intervention
               (fun a => decide (a y = rich.first y))) := by
         rw [hdistL]
         exact FiniteProbRecord.probVal_congr _ _ _ hevent
@@ -39644,16 +39680,74 @@ theorem hedgeSingletonOutcome_not_valueEquivalent_of_parentParity
             (((Kernel.mk q.outcome q.action NodeSet.empty).distribution
                 right ref).probVal
               (Kernel.agreesOn q.outcome ref))
-            (right.interventionalValue (hedgeDoSecond rich q.action)
+            (right.interventionalValue intervention
               (fun a => decide (a y = rich.first y))) := by
         rw [hdistR]
         exact FiniteProbRecord.probVal_congr _ _ _ hevent
       exact
-        hedgeMix_interventional_first_not_equiv_of_parentParity G rich q.action
-          root hyfree hparity hincy
+        hedgeMix_interventional_first_not_equiv_of_parentBit G rich q.action
+          intervention root free parentBit hincy
           (QProb.equiv_symm
             (QProb.equiv_trans (QProb.equiv_symm hpL)
               (QProb.equiv_trans hq hpR)))
+
+/--
+All-`second` singleton separation.  Odd action-parent parity supplies the
+generic parent-bit premise.
+-/
+theorem hedgeSingletonOutcome_not_valueEquivalent_of_parentParity
+    (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) (q : JointKernelQuery S)
+    {x y : Fin S.count} (root : Fin (pairRootCount G))
+    (hx : q.action x = true)
+    (hparity : actionParentParity q.action y = true)
+    (hy : q.outcome y = true)
+    (houtcome : forall i, q.outcome i = true → i = y)
+    (hincy : (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
+    Not
+      (q.ValueEquivalent
+        (hedgeMixModel G rich NodeSet.empty)
+        (hedgeMixModel G rich q.action)) :=
+  hedgeSingletonOutcome_not_valueEquivalent_of_parentBit G rich q root hx
+    (hedgeActionReference rich q.action) (hedgeDoSecond rich q.action)
+    (hedgeActionReference_of_false rich q.action
+      (q.outcome_action_disjoint y hy))
+    (hedgeDoSecond_eq_action_intervention rich q.action)
+    (hedgeDoSecond_of_false rich q.action (q.outcome_action_disjoint y hy))
+    (fun u =>
+      (hedgeParentBitsFrom_doSecond_eq_actionParentParity G rich q.action u
+        y).trans hparity)
+    hy houtcome hincy
+
+/--
+One-pivot singleton separation.  Any directed action parent can be selected
+as the unique `second` contributor, while all other action parents are pinned
+to `first`; no uniqueness or parity hypothesis remains.
+-/
+theorem hedgeSingletonOutcome_not_valueEquivalent_of_actionParent
+    (G : ObservedGraph S)
+    (rich : ObservedSignature.ValueRich S) (q : JointKernelQuery S)
+    {pivot y : Fin S.count} (root : Fin (pairRootCount G))
+    (selected : q.action pivot = true)
+    (edge : S.directed pivot y = true)
+    (hy : q.outcome y = true)
+    (houtcome : forall i, q.outcome i = true → i = y)
+    (hincy : (hedgeLatentExtension G).incident (hedgePairRoot G root) y = true) :
+    Not
+      (q.ValueEquivalent
+        (hedgeMixModel G rich NodeSet.empty)
+        (hedgeMixModel G rich q.action)) :=
+  hedgeSingletonOutcome_not_valueEquivalent_of_parentBit G rich q root selected
+    (hedgeActionPivotReference rich q.action pivot)
+    (hedgeDoPivot rich q.action pivot)
+    (hedgeActionPivotReference_of_false rich q.action pivot
+      (q.outcome_action_disjoint y hy))
+    (hedgeDoPivot_eq_action_intervention rich q.action pivot)
+    (hedgeDoPivot_of_false rich q.action pivot
+      (q.outcome_action_disjoint y hy))
+    (fun u =>
+      hedgeParentBitsFrom_doPivot_eq_true G rich q.action u selected edge)
+    hy houtcome hincy
 
 /--
 Unique-parent specialization of singleton-outcome parity separation.  Other
