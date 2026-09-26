@@ -29,8 +29,10 @@ local conditioning factors fix earlier `W` coordinates before reading each
 equation, so conditioned non-colliders do not spuriously transmit latent
 relevance into later factors.  Finite root reachability then constructs the
 `Y`-connected component and reduces general rule 3 to proving that its common
-nodes are intervention-invariant.  This avoids the false general requirement
-that conditioned `W` share no latent root with `Y`.
+nodes are locally intervention-invariant after earlier conditioned coordinates
+have been fixed.  This avoids both the false general requirement that
+conditioned `W` share no latent root with `Y` and the overly coarse demand that
+every common node be invariant before its conditioning prefix is fixed.
 -/
 
 namespace FiniteLatentSCM
@@ -12065,6 +12067,58 @@ def rule3WConditionResidual (model : FiniteLatentSCM S)
     (assignment : S.Assignment) : NodeSet S :=
   NodeSet.diff w (rule3WConditionCommon model G x y z w assignment)
 
+/-- A conditioned vertex whose *local* equation can still be reached from
+`Z` after earlier conditioned coordinates have been fixed. -/
+def rule3WLocalInterventionSensitive (G : ObservedGraph S)
+    (x z w : NodeSet S) : NodeSet S :=
+  fun child =>
+    w child &&
+      NodeSet.meetsBool
+        (FiniteLatentSCM.ancestralInBar G
+          (localConditionAction (NodeSet.union x z) w child)
+          (NodeSet.singleton child)) z
+
+/-- The complementary local factors are pointwise invariant under adding
+`do(Z)`.  This is finer than `rule3WInterventionInvariant`: fixing earlier
+conditioned vertices can block a directed `Z` path before it reaches the
+current local equation. -/
+def rule3WLocalInterventionInvariant (G : ObservedGraph S)
+    (x z w : NodeSet S) : NodeSet S :=
+  NodeSet.diff w (rule3WLocalInterventionSensitive G x z w)
+
+/-- No selected `Z` vertex reaches a locally invariant conditioning factor. -/
+theorem rule3_z_not_ancestral_local_invariant_w
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    {child source : Fin S.count}
+    (childInvariant : rule3WLocalInterventionInvariant G x z w child = true)
+    (sourceInZ : z source = true) :
+    FiniteLatentSCM.ancestralInBar G
+      (localConditionAction (NodeSet.union x z) w child)
+      (NodeSet.singleton child) source = false := by
+  have childNotSensitive :
+      rule3WLocalInterventionSensitive G x z w child = false :=
+    NodeSet.Disjoint.diff_right w
+      (rule3WLocalInterventionSensitive G x z w) child childInvariant
+  cases ancestor : FiniteLatentSCM.ancestralInBar G
+      (localConditionAction (NodeSet.union x z) w child)
+      (NodeSet.singleton child) source with
+  | false => rfl
+  | true =>
+      have meetsZ : NodeSet.meetsBool
+          (FiniteLatentSCM.ancestralInBar G
+            (localConditionAction (NodeSet.union x z) w child)
+            (NodeSet.singleton child)) z = true :=
+        (NodeSet.meetsBool_eq_true_iff _ _).mpr
+          ⟨source, ancestor, sourceInZ⟩
+      have childInW : w child = true :=
+        NodeSet.diff_subset_left w
+          (rule3WLocalInterventionSensitive G x z w) child childInvariant
+      have childSensitive :
+          rule3WLocalInterventionSensitive G x z w child = true := by
+        simp [rule3WLocalInterventionSensitive, childInW, meetsZ]
+      rw [childSensitive] at childNotSensitive
+      contradiction
+
 theorem rule3WConditionRootAdjacent_of_relevant
     (model : FiniteLatentSCM S) (G : ObservedGraph S)
     (x z w : NodeSet S) (assignment : S.Assignment)
@@ -12220,14 +12274,12 @@ theorem rule3WConditionSplit_union
         simp
 
 /-- A local `W` factor is unchanged by adding `do(Z)` when its vertex lies
-in the intervention-invariant block.  Earlier conditioned vertices are
-already fixed on both sides; adding them to the base action only removes
-more incoming edges and therefore preserves the non-ancestry argument. -/
-theorem rule3LocalConditionFactor_eq_of_intervention_invariant
+in the local intervention-invariant block. -/
+theorem rule3LocalConditionFactor_eq_of_local_invariant
     (model : FiniteLatentSCM S) (G : ObservedGraph S)
     (x z w : NodeSet S) (assignment : S.Assignment)
     (child : Fin S.count)
-    (invariant : rule3WInterventionInvariant G x z w child = true)
+    (invariant : rule3WLocalInterventionInvariant G x z w child = true)
     (roots : model.latent.Assignment) :
     localConditionFactor model (NodeSet.union x z) w assignment child roots =
       localConditionFactor model x w assignment child roots := by
@@ -12242,38 +12294,9 @@ theorem rule3LocalConditionFactor_eq_of_intervention_invariant
       FiniteLatentSCM.ancestralInBar G (NodeSet.union base z)
         (NodeSet.singleton child) source = false := by
     intro source sourceInZ
-    cases ancestor : FiniteLatentSCM.ancestralInBar G
-        (NodeSet.union base z) (NodeSet.singleton child) source with
-    | false => rfl
-    | true =>
-        have ancestorLocalLeft : FiniteLatentSCM.ancestralInBar G
-            (localConditionAction (NodeSet.union x z) w child)
-            (NodeSet.singleton child) source = true := by
-          simpa [actionEq] using ancestor
-        have incomingSubset : NodeSet.Subset (NodeSet.union x z)
-            (localConditionAction (NodeSet.union x z) w child) :=
-          NodeSet.subset_union_left (NodeSet.union x z)
-            (conditioningPrefix w child)
-        have ancestorWithoutPrefix : FiniteLatentSCM.ancestralInBar G
-            (NodeSet.union x z) (NodeSet.singleton child) source = true :=
-          FiniteLatentSCM.observedAncestorOf_bar_of_incoming_subset G
-            incomingSubset (NodeSet.singleton child) ancestorLocalLeft
-        have singletonSubset : NodeSet.Subset (NodeSet.singleton child)
-            (rule3WInterventionInvariant G x z w) := by
-          intro target targetIsChild
-          have same := (NodeSet.singleton_eq_true_iff child target).mp
-            targetIsChild
-          subst target
-          exact invariant
-        have reachesInvariant : FiniteLatentSCM.ancestralInBar G
-            (NodeSet.union x z) (rule3WInterventionInvariant G x z w)
-            source = true :=
-          FiniteLatentSCM.ancestralInBar_mono G (NodeSet.union x z)
-            singletonSubset ancestorWithoutPrefix
-        have impossible :=
-          rule3_z_not_ancestral_invariant_w G x z w sourceInZ
-        rw [reachesInvariant] at impossible
-        contradiction
+    have localAvoids := rule3_z_not_ancestral_local_invariant_w G x z w
+      invariant sourceInZ
+    simpa [actionEq] using localAvoids
   have evaluated :=
     evalUnder_bar_union_eq_on_of_z_not_ancestral model G base z
       (NodeSet.singleton child) assignment zAvoids roots child
@@ -12292,12 +12315,12 @@ theorem rule3LocalConditionFactor_eq_of_intervention_invariant
 
 /-- The conjunction of all connected common factors is therefore identical
 under the left and right rule-3 interventions. -/
-theorem rule3LocalConditionCommon_eq_of_subset_invariant
+theorem rule3LocalConditionCommon_eq_of_subset_local_invariant
     (model : FiniteLatentSCM S) (G : ObservedGraph S)
     (x y z w : NodeSet S) (assignment : S.Assignment)
     (subsetInvariant : NodeSet.Subset
       (rule3WConditionCommon model G x y z w assignment)
-      (rule3WInterventionInvariant G x z w))
+      (rule3WLocalInterventionInvariant G x z w))
     (roots : model.latent.Assignment) :
     localConditionEvent model (NodeSet.union x z) w
         (rule3WConditionCommon model G x y z w assignment) assignment roots =
@@ -12311,7 +12334,7 @@ theorem rule3LocalConditionCommon_eq_of_subset_invariant
   | false => rfl
   | true =>
       simp only [↓reduceIte]
-      exact rule3LocalConditionFactor_eq_of_intervention_invariant model G
+      exact rule3LocalConditionFactor_eq_of_local_invariant model G
         x z w assignment child (subsetInvariant child common) roots
 
 /-- When no `Z` vertex ancestors `W` in `G_{\overline{X}}`, the `W`
@@ -12793,15 +12816,16 @@ The selected mask is the finite component generated by the `Y` roots and by
 roots co-occurring in one local `W` factor.  Component closure therefore puts
 every common factor wholly on selected roots and every residual factor wholly
 on unselected roots.  The one graph-shaped premise says that the connected
-common nodes lie in the intervention-invariant block; the preceding local
-invariance theorem then identifies their left and right factors pointwise.
+common nodes lie in the locally intervention-invariant block; the preceding
+local invariance theorem then identifies their left and right factors
+pointwise.
 -/
 def Rule3GivenWFactorization.of_local_condition_component
     (model : FiniteLatentSCM S) (G : ObservedGraph S)
     (x y z w : NodeSet S) (assignment : S.Assignment)
-    (commonSubsetInvariant : NodeSet.Subset
+    (commonSubsetLocalInvariant : NodeSet.Subset
       (rule3WConditionCommon model G x y z w assignment)
-      (rule3WInterventionInvariant G x z w)) :
+      (rule3WLocalInterventionInvariant G x z w)) :
     Rule3GivenWFactorization model G x y z w assignment := by
   let yInt :=
     (Kernel.mk NodeSet.empty (NodeSet.union x w)
@@ -12888,8 +12912,8 @@ def Rule3GivenWFactorization.of_local_condition_component
         localConditionEvent model x w common assignment roots := by
     intro roots
     dsimp [commonEvent, common]
-    exact rule3LocalConditionCommon_eq_of_subset_invariant model G
-      x y z w assignment commonSubsetInvariant roots
+    exact rule3LocalConditionCommon_eq_of_subset_local_invariant model G
+      x y z w assignment commonSubsetLocalInvariant roots
   refine
     { selected := selected
       commonCondition := commonEvent
@@ -13520,15 +13544,15 @@ def rule3RectangularWitness_of_path_local_condition_component
           NodeSet.union x (G.nonAncestorsOf (GraphMutilation.bar x) z w),
         removeOutgoing := NodeSet.empty }
       y z (NodeSet.union x w))
-    (commonSubsetInvariant : NodeSet.Subset
+    (commonSubsetLocalInvariant : NodeSet.Subset
       (rule3WConditionCommon model G x y z w assignment)
-      (rule3WInterventionInvariant G x z w)) :
+      (rule3WLocalInterventionInvariant G x z w)) :
     ProductRectangularCrossProductWitnessAt model
       (rule3Left x y z w) (rule3Right x y z w) assignment :=
   rule3RectangularWitness_of_path_factorization model G x y z w assignment
     disjoint separated
     (Rule3GivenWFactorization.of_local_condition_component model G x y z w
-      assignment commonSubsetInvariant)
+      assignment commonSubsetLocalInvariant)
 
 /--
 Backward-compatible rule-3 assembler for the stronger no-overlap premise.
@@ -13785,7 +13809,8 @@ def PathDoRulePartitionWitnesses.ofPathFactorizedRule3
 Specialize the factorized rule-3 assembler to the checked topological local
 component.  This exposes one graph obligation for rule 3 rather than an
 opaque event factorization: path separation must place every `Y`-connected
-conditioning factor in the intervention-invariant `W` block.
+conditioning factor in the locally intervention-invariant `W` block obtained
+after its earlier conditioning prefix has been fixed.
 -/
 def PathDoRulePartitionWitnesses.ofPathLocalConditionComponent
     (G : ObservedGraph S) (model : FiniteLatentSCM S)
@@ -13814,7 +13839,7 @@ def PathDoRulePartitionWitnesses.ofPathLocalConditionComponent
         G (.barUnderline x z) y z (NodeSet.union x w) →
       Kernel.rule2SelectedMeetsYAncestral
         model G x y z w assignment = false)
-    (hRule3CommonInvariant : forall (x y z w : NodeSet S)
+    (hRule3CommonLocalInvariant : forall (x y z w : NodeSet S)
       (assignment : S.Assignment),
       PathSpecification.PathDSeparated G
         { removeIncoming :=
@@ -13823,14 +13848,14 @@ def PathDoRulePartitionWitnesses.ofPathLocalConditionComponent
         y z (NodeSet.union x w) →
       NodeSet.Subset
         (Kernel.rule3WConditionCommon model G x y z w assignment)
-        (Kernel.rule3WInterventionInvariant G x z w)) :
+        (Kernel.rule3WLocalInterventionInvariant G x z w)) :
     PathDoRulePartitionWitnesses G model :=
   PathDoRulePartitionWitnesses.ofPathFactorizedRule3 G model projected
     hRule1Overlap hRule1Unsel hRule2Extra hRule2MeetsY
     (fun x y z w assignment separated =>
       Kernel.Rule3GivenWFactorization.of_local_condition_component model G
         x y z w assignment
-        (hRule3CommonInvariant x y z w assignment separated))
+        (hRule3CommonLocalInvariant x y z w assignment separated))
 
 /--
 Compatibility assembler for the former rule-3 no-overlap premise.  New

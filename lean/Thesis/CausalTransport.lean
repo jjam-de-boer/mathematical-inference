@@ -45,8 +45,9 @@ general construction instead factors the `W` cylinder into topological local
 equations, closes the `Y` roots through factors that share coordinates, and
 automatically routes common and residual factors to complementary latent
 components.  Its remaining rule-3 graph leaf is the precise subset statement
-that every `Y`-connected local factor lies in the intervention-invariant
-block.
+that every `Y`-connected local factor lies in the *locally*
+intervention-invariant block, after earlier conditioned coordinates have been
+fixed.
 Rule 1 and rule 2 likewise still require their remaining path-derived
 partitions.  The legacy extra Boolean hypotheses accepted by
 `PathDoRulePartitionWitnesses.ofPath` are not consequences of path
