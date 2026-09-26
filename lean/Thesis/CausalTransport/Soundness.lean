@@ -5176,6 +5176,549 @@ theorem localConditionEvent_union
     · simpa [NodeSet.union, leftSelected, rightSelected] using
         leftComponents child
 
+/-!
+### Local-factor walks in the rule-3 side graph
+
+The factor graph below records latent roots rather than observed paths.  To
+connect its finite reachability relation back to path d-separation, each root
+relevance witness must first be represented inside the graph used by rule 3.
+The lemmas in this section isolate that translation.  Topological order is
+load-bearing: every proper predecessor on a directed walk into `child` is
+strictly earlier than `child`, so a conditioned predecessor belongs to the
+fixed prefix and cannot occur on the walk.
+-/
+
+/-- Directed walks are nondecreasing in the signature's fixed topological
+order.  This weak form includes the reflexive walk and is convenient when a
+vertex is selected from an arbitrary suffix. -/
+theorem observedDirectedWalk_source_le_target
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) length source target) :
+    source.val <= target.val := by
+  induction walk with
+  | refl => exact Nat.le_refl _
+  | @step length source middle target first rest ih =>
+      have directed : S.directed source middle = true := by
+        exact (Bool.and_eq_true_iff.mp
+          (Bool.and_eq_true_iff.mp first).1).1
+      exact Nat.le_trans (Nat.le_of_lt (S.directed_earlier directed)) ih
+
+/-- Every displayed vertex of a directed walk occurs no later than its
+target in topological order. -/
+theorem observedDirectedWalk_node_le_target_of_mem
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    {length : Nat} {source target node : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) length source target)
+    (member : node ∈ walk.nodes) :
+    node.val <= target.val := by
+  rcases walk.suffix_of_mem member with
+    ⟨_suffixLength, _bound, suffix⟩
+  rcases suffix with ⟨suffix⟩
+  exact observedDirectedWalk_source_le_target G mutilation suffix
+
+/-- Every proper vertex of a directed walk precedes its target in
+topological order. -/
+theorem observedDirectedWalk_node_lt_target_of_mem_ne
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    {length : Nat} {source target node : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) length source target)
+    (member : node ∈ walk.nodes) (different : node ≠ target) :
+    node.val < target.val := by
+  rcases walk.suffix_of_mem member with
+    ⟨_suffixLength, _bound, suffix⟩
+  rcases suffix with ⟨suffix⟩
+  have ordered := observedDirectedWalk_source_le_target G mutilation suffix
+  exact Nat.lt_of_le_of_ne ordered (fun equal =>
+    different (Fin.ext equal))
+
+/-- Split the last edge from a non-reflexive exact walk while retaining the
+fact that the prefix's vertices occurred in the original walk.  The result is
+Prop-valued, so this is constructive witness elimination rather than a choice
+operator. -/
+theorem exists_observedDirectedWalk_prefix_last
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) length source target)
+    (different : source ≠ target) :
+    Exists fun prefixLength : Nat =>
+      Exists fun parent : Fin S.count =>
+        Exists fun prefixWalk : FiniteReachability.ExactWalk
+          (G.observedDirectedEdge mutilation) prefixLength source parent =>
+          G.observedDirectedEdge mutilation parent target = true /\
+            forall node, node ∈ prefixWalk.nodes -> node ∈ walk.nodes := by
+  induction walk with
+  | refl node => exact (different rfl).elim
+  | @step length source middle target first rest ih =>
+      by_cases middleIsTarget : middle = target
+      · subst target
+        refine ⟨0, source,
+          FiniteReachability.ExactWalk.refl source, first, ?_⟩
+        intro node member
+        have nodeEq : node = source := by
+          simpa [FiniteReachability.ExactWalk.nodes] using member
+        subst node
+        simp [FiniteReachability.ExactWalk.nodes]
+      · rcases ih middleIsTarget with
+          ⟨prefixLength, parent, prefixWalk, last, subset⟩
+        let extended : FiniteReachability.ExactWalk
+            (G.observedDirectedEdge mutilation) (prefixLength + 1)
+            source parent :=
+          .step first prefixWalk
+        refine ⟨prefixLength + 1, parent, extended, last, ?_⟩
+        intro node member
+        have parts : node = source ∨ node ∈ prefixWalk.nodes := by
+          simpa [extended, FiniteReachability.ExactWalk.nodes] using member
+        rcases parts with same | later
+        · subst node
+          simp [FiniteReachability.ExactWalk.nodes]
+        · simp [FiniteReachability.ExactWalk.nodes, subset node later]
+
+/-- Moral-side membership is constant along an open directed walk contained
+in the ancestral graph.  Each directed edge is an open moral edge; closure in
+both directions yields Boolean equality without deciding any proposition. -/
+theorem moralLeftSide_eq_of_open_observed_walk
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (left right conditioned : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) length source target)
+    (openNodes : forall node, node ∈ walk.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed node) = false)
+    (ancestorNodes : forall node, node ∈ walk.nodes ->
+      G.ancestorOf mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        (.observed node) = true) :
+    G.moralLeftSide mutilation left right conditioned (.observed source) =
+      G.moralLeftSide mutilation left right conditioned
+        (.observed target) := by
+  induction walk with
+  | refl => rfl
+  | @step length source middle target first rest ih =>
+      have middleInFull : middle ∈
+          (FiniteReachability.ExactWalk.step first rest).nodes := by
+        simp [FiniteReachability.ExactWalk.nodes]
+        exact Or.inr rest.mem_source
+      have sourceAncestor := ancestorNodes source (by
+        simp [FiniteReachability.ExactWalk.nodes])
+      have middleAncestor := ancestorNodes middle middleInFull
+      have sourceOpen := openNodes source (by
+        simp [FiniteReachability.ExactWalk.nodes])
+      have middleOpen := openNodes middle middleInFull
+      have expanded : G.expandedMutilatedEdge mutilation
+          (.observed source) (.observed middle) = true := first
+      have moral := G.moralOpenEdge_of_directed mutilation
+        (NodeSet.union left (NodeSet.union right conditioned)) conditioned
+        expanded sourceAncestor middleAncestor sourceOpen middleOpen
+      have firstSides :
+          G.moralLeftSide mutilation left right conditioned
+              (.observed source) =
+            G.moralLeftSide mutilation left right conditioned
+              (.observed middle) := by
+        apply Bool.eq_iff_iff.mpr
+        constructor
+        · intro sourceIn
+          exact G.moralLeftSide_closed mutilation left right conditioned
+            sourceIn moral
+        · intro middleIn
+          exact G.moralLeftSide_closed mutilation left right conditioned
+            middleIn
+            (G.moralOpenEdge_symmetric mutilation
+              (NodeSet.union left (NodeSet.union right conditioned))
+              conditioned moral)
+      have restOpen : forall node, node ∈ rest.nodes ->
+          ObservedGraph.blockedBy conditioned (.observed node) = false := by
+        intro node member
+        exact openNodes node (by
+          simp [FiniteReachability.ExactWalk.nodes]
+          exact Or.inr member)
+      have restAncestor : forall node, node ∈ rest.nodes ->
+          G.ancestorOf mutilation
+            (NodeSet.union left (NodeSet.union right conditioned))
+            (.observed node) = true := by
+        intro node member
+        exact ancestorNodes node (by
+          simp [FiniteReachability.ExactWalk.nodes]
+          exact Or.inr member)
+      exact firstSides.trans (ih restOpen restAncestor)
+
+/-- Two directed routes into one conditioned vertex have sources on the
+same moral side.  Their open prefixes reach the final parents; moralization
+then marries those parents at the conditioned collider.  This is the precise
+graph operation represented by one local conditioning factor. -/
+theorem moralLeftSide_eq_of_open_observed_walks_to_conditioned
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (left right conditioned : NodeSet S)
+    {leftLength rightLength : Nat}
+    {leftSource rightSource child : Fin S.count}
+    (leftWalk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) leftLength leftSource child)
+    (rightWalk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge mutilation) rightLength rightSource child)
+    (leftDifferent : leftSource ≠ child)
+    (rightDifferent : rightSource ≠ child)
+    (childConditioned : conditioned child = true)
+    (leftProperOpen : forall node, node ∈ leftWalk.nodes -> node ≠ child ->
+      ObservedGraph.blockedBy conditioned (.observed node) = false)
+    (rightProperOpen : forall node, node ∈ rightWalk.nodes ->
+      node ≠ child ->
+      ObservedGraph.blockedBy conditioned (.observed node) = false) :
+    G.moralLeftSide mutilation left right conditioned
+        (.observed leftSource) =
+      G.moralLeftSide mutilation left right conditioned
+        (.observed rightSource) := by
+  rcases exists_observedDirectedWalk_prefix_last G mutilation leftWalk
+      leftDifferent with
+    ⟨leftPrefixLength, leftParent, leftPrefix, leftLast, leftSubset⟩
+  rcases exists_observedDirectedWalk_prefix_last G mutilation rightWalk
+      rightDifferent with
+    ⟨rightPrefixLength, rightParent, rightPrefix, rightLast,
+      rightSubset⟩
+  let targets := NodeSet.union left (NodeSet.union right conditioned)
+  have childTarget : targets child = true := by
+    simp [targets, NodeSet.union, childConditioned]
+  have leftLastDirected : S.directed leftParent child = true :=
+    (Bool.and_eq_true_iff.mp
+      (Bool.and_eq_true_iff.mp leftLast).1).1
+  have rightLastDirected : S.directed rightParent child = true :=
+    (Bool.and_eq_true_iff.mp
+      (Bool.and_eq_true_iff.mp rightLast).1).1
+  have leftParentEarlier : leftParent.val < child.val :=
+    S.directed_earlier leftLastDirected
+  have rightParentEarlier : rightParent.val < child.val :=
+    S.directed_earlier rightLastDirected
+  have leftPrefixNotChild : forall node, node ∈ leftPrefix.nodes ->
+      node ≠ child := by
+    intro node member equal
+    have nodeLe := observedDirectedWalk_node_le_target_of_mem G mutilation
+      leftPrefix member
+    subst node
+    exact (Nat.not_lt_of_ge nodeLe leftParentEarlier).elim
+  have rightPrefixNotChild : forall node, node ∈ rightPrefix.nodes ->
+      node ≠ child := by
+    intro node member equal
+    have nodeLe := observedDirectedWalk_node_le_target_of_mem G mutilation
+      rightPrefix member
+    subst node
+    exact (Nat.not_lt_of_ge nodeLe rightParentEarlier).elim
+  have leftPrefixOpen : forall node, node ∈ leftPrefix.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed node) = false := by
+    intro node member
+    exact leftProperOpen node (leftSubset node member)
+      (leftPrefixNotChild node member)
+  have rightPrefixOpen : forall node, node ∈ rightPrefix.nodes ->
+      ObservedGraph.blockedBy conditioned (.observed node) = false := by
+    intro node member
+    exact rightProperOpen node (rightSubset node member)
+      (rightPrefixNotChild node member)
+  have leftPrefixAncestor : forall node, node ∈ leftPrefix.nodes ->
+      G.ancestorOf mutilation targets (.observed node) = true := by
+    intro node member
+    have observed := G.observedAncestorOf_of_mem_walk mutilation targets
+      leftWalk childTarget (leftSubset node member)
+    exact FiniteLatentSCM.ancestorOf_of_observedAncestorOf G mutilation
+      targets node observed
+  have rightPrefixAncestor : forall node, node ∈ rightPrefix.nodes ->
+      G.ancestorOf mutilation targets (.observed node) = true := by
+    intro node member
+    have observed := G.observedAncestorOf_of_mem_walk mutilation targets
+      rightWalk childTarget (rightSubset node member)
+    exact FiniteLatentSCM.ancestorOf_of_observedAncestorOf G mutilation
+      targets node observed
+  have leftSourceToParent := moralLeftSide_eq_of_open_observed_walk G
+    mutilation left right conditioned leftPrefix leftPrefixOpen (by
+      simpa [targets] using leftPrefixAncestor)
+  have rightSourceToParent := moralLeftSide_eq_of_open_observed_walk G
+    mutilation left right conditioned rightPrefix rightPrefixOpen (by
+      simpa [targets] using rightPrefixAncestor)
+  have leftParentAncestor : G.ancestorOf mutilation targets
+      (.observed leftParent) = true :=
+    leftPrefixAncestor leftParent leftPrefix.mem_target
+  have rightParentAncestor : G.ancestorOf mutilation targets
+      (.observed rightParent) = true :=
+    rightPrefixAncestor rightParent rightPrefix.mem_target
+  have childAncestor : G.ancestorOf mutilation targets
+      (.observed child) = true :=
+    G.ancestorOf_target mutilation targets childTarget
+  have leftParentOpen := leftPrefixOpen leftParent leftPrefix.mem_target
+  have rightParentOpen := rightPrefixOpen rightParent rightPrefix.mem_target
+  have parentSides :
+      G.moralLeftSide mutilation left right conditioned
+          (.observed leftParent) =
+        G.moralLeftSide mutilation left right conditioned
+          (.observed rightParent) := by
+    by_cases sameParent : leftParent = rightParent
+    · subst rightParent
+      rfl
+    · have leftExpanded : G.expandedMutilatedEdge mutilation
+          (.observed leftParent) (.observed child) = true := leftLast
+      have rightExpanded : G.expandedMutilatedEdge mutilation
+          (.observed rightParent) (.observed child) = true := rightLast
+      have observedDifferent :
+          (SeparationNode.observed leftParent : SeparationNode S) ≠
+            .observed rightParent := by
+        intro equal
+        cases equal
+        exact sameParent rfl
+      have collider : PathSpecification.IsCollider G mutilation
+          (.observed leftParent) (.observed child)
+          (.observed rightParent) := ⟨leftExpanded, rightExpanded⟩
+      have ancestralMoral := G.ancestralMoralEdge_of_collider mutilation
+        targets leftParentAncestor childAncestor rightParentAncestor
+        observedDifferent collider
+      have moral := G.moralOpenEdge_of_ancestral mutilation targets
+        conditioned leftParentOpen rightParentOpen ancestralMoral
+      apply Bool.eq_iff_iff.mpr
+      constructor
+      · intro leftIn
+        exact G.moralLeftSide_closed mutilation left right conditioned
+          leftIn moral
+      · intro rightIn
+        exact G.moralLeftSide_closed mutilation left right conditioned
+          rightIn
+          (G.moralOpenEdge_symmetric mutilation targets conditioned moral)
+  exact leftSourceToParent.trans
+    (parentSides.trans rightSourceToParent.symm)
+
+/-- An internal vertex of a local-factor ancestry walk is open after
+conditioning on `conditionedBase ∪ condition`.  Membership after the source
+keeps it outside the incoming cut; topological order then rules out membership
+in the conditioning family itself. -/
+theorem localConditionWalk_internal_open
+    (G : ObservedGraph S)
+    (baseAction conditionedBase condition : NodeSet S)
+    (baseSubset : NodeSet.Subset conditionedBase baseAction)
+    (child : Fin S.count)
+    {length : Nat} {source node : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge
+        (GraphMutilation.bar
+          (localConditionAction baseAction condition child)))
+      length source child)
+    (member : node ∈ walk.nodes) (notSource : node ≠ source)
+    (notTarget : node ≠ child) :
+    ObservedGraph.blockedBy (NodeSet.union conditionedBase condition)
+      (.observed node) = false := by
+  have outsideAction :
+      localConditionAction baseAction condition child node = false := by
+    have incoming :=
+      PathSpecification.directed_walk_mem_not_removeIncoming G
+        (GraphMutilation.bar
+          (localConditionAction baseAction condition child))
+        walk member notSource
+    simpa [GraphMutilation.bar] using incoming
+  have outsideBase : conditionedBase node = false := by
+    cases selected : conditionedBase node with
+    | false => rfl
+    | true =>
+        have inBase : baseAction node = true := baseSubset node selected
+        have inAction :
+            localConditionAction baseAction condition child node = true := by
+          simp [localConditionAction, NodeSet.union, inBase]
+        rw [inAction] at outsideAction
+        contradiction
+  have outsideCondition : condition node = false := by
+    cases selected : condition node with
+    | false => rfl
+    | true =>
+        have earlier := observedDirectedWalk_node_lt_target_of_mem_ne
+          G
+          (GraphMutilation.bar
+            (localConditionAction baseAction condition child))
+          walk member notTarget
+        have inPrefix : conditioningPrefix condition child node = true := by
+          simp [conditioningPrefix, selected, earlier]
+        have inAction :
+            localConditionAction baseAction condition child node = true := by
+          simp [localConditionAction, NodeSet.union, inPrefix]
+        rw [inAction] at outsideAction
+        contradiction
+  simp [ObservedGraph.blockedBy, NodeSet.union, outsideBase,
+    outsideCondition]
+
+/-- A root-incidence source that is free under the local intervention is
+also open in the rule-3 conditioning set.  Unlike an internal walk vertex,
+the source has no incoming edge from which freeness could be recovered, so
+the relevance witness supplies it explicitly. -/
+theorem localConditionWalk_source_open_of_free
+    (G : ObservedGraph S)
+    (baseAction conditionedBase condition : NodeSet S)
+    (baseSubset : NodeSet.Subset conditionedBase baseAction)
+    (reference : S.Assignment) (child : Fin S.count)
+    {length : Nat} {source : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge
+        (GraphMutilation.bar
+          (localConditionAction baseAction condition child)))
+      length source child)
+    (different : source ≠ child)
+    (free :
+      ((Kernel.mk NodeSet.empty
+        (localConditionAction baseAction condition child)
+        NodeSet.empty).intervention reference) source = none) :
+    ObservedGraph.blockedBy (NodeSet.union conditionedBase condition)
+      (.observed source) = false := by
+  have outsideAction :
+      localConditionAction baseAction condition child source = false := by
+    simpa [Kernel.intervention] using free
+  have sourceMember : source ∈ walk.nodes := walk.mem_source
+  have earlier := observedDirectedWalk_node_lt_target_of_mem_ne G
+    (GraphMutilation.bar
+      (localConditionAction baseAction condition child))
+    walk sourceMember different
+  have outsideBase : conditionedBase source = false := by
+    cases selected : conditionedBase source with
+    | false => rfl
+    | true =>
+        have inBase := baseSubset source selected
+        have inAction :
+            localConditionAction baseAction condition child source = true := by
+          simp [localConditionAction, NodeSet.union, inBase]
+        rw [inAction] at outsideAction
+        contradiction
+  have outsideCondition : condition source = false := by
+    cases selected : condition source with
+    | false => rfl
+    | true =>
+        have inPrefix : conditioningPrefix condition child source = true := by
+          simp [conditioningPrefix, selected, earlier]
+        have inAction :
+            localConditionAction baseAction condition child source = true := by
+          simp [localConditionAction, NodeSet.union, inPrefix]
+        rw [inAction] at outsideAction
+        contradiction
+  simp [ObservedGraph.blockedBy, NodeSet.union, outsideBase,
+    outsideCondition]
+
+/-- A left local-factor walk uses a stricter incoming cut than the rule-3
+side-condition graph, because the latter removes only `Z(W) ⊆ Z`. -/
+def remapRule3LeftLocalConditionWalk
+    (G : ObservedGraph S) (x z w : NodeSet S) (child : Fin S.count)
+    {length : Nat} {source : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge
+        (GraphMutilation.bar
+          (localConditionAction (NodeSet.union x z) w child)))
+      length source child) :
+    FiniteReachability.ExactWalk
+      (G.observedDirectedEdge
+        (GraphMutilation.bar
+          (NodeSet.union x
+            (G.nonAncestorsOf (GraphMutilation.bar x) z w))))
+      length source child :=
+  FiniteLatentSCM.remapBarWalk_of_incoming_subset G (by
+    intro node selected
+    rcases Bool.or_eq_true_iff.mp selected with inX | inRemovable
+    · simp [localConditionAction, NodeSet.union, inX]
+    · have inZ :=
+        ObservedGraph.nonAncestorsOf_subset_actions G
+          (GraphMutilation.bar x) z w node inRemovable
+      simp [localConditionAction, NodeSet.union, inZ]) walk
+
+@[simp] theorem remapRule3LeftLocalConditionWalk_nodes
+    (G : ObservedGraph S) (x z w : NodeSet S) (child : Fin S.count)
+    {length : Nat} {source : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge
+        (GraphMutilation.bar
+          (localConditionAction (NodeSet.union x z) w child)))
+      length source child) :
+    (remapRule3LeftLocalConditionWalk G x z w child walk).nodes =
+      walk.nodes :=
+  FiniteLatentSCM.remapBarWalk_of_incoming_subset_nodes G _ walk
+
+/-- A right local-factor walk also embeds into the rule-3 graph.  The only
+extra cut there is at `Z(W)`.  Such a vertex cannot occur after the walk's
+source: its remaining suffix reaches the selected `W` endpoint already in
+`G_{̅X}`, contradicting the definition of `Z(W)`. -/
+def remapRule3RightLocalConditionWalk
+    (G : ObservedGraph S) (x z w : NodeSet S) (child : Fin S.count)
+    (childInW : w child = true)
+    {length : Nat} {source : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge
+        (GraphMutilation.bar (localConditionAction x w child)))
+      length source child) :
+    FiniteReachability.ExactWalk
+      (G.observedDirectedEdge
+        (GraphMutilation.bar
+          (NodeSet.union x
+            (G.nonAncestorsOf (GraphMutilation.bar x) z w))))
+      length source child :=
+  match walk with
+  | .refl node => .refl node
+  | @FiniteReachability.ExactWalk.step _ _ len src middle target first rest =>
+      have firstParts :
+          S.directed src middle = true ∧
+            localConditionAction x w target middle = false := by
+        have outer := Bool.and_eq_true_iff.mp first
+        have inner := Bool.and_eq_true_iff.mp outer.1
+        exact ⟨inner.1, by
+          simpa [GraphMutilation.bar] using outer.2⟩
+      have outsideRemovable :
+          G.nonAncestorsOf (GraphMutilation.bar x) z w middle = false := by
+        cases removable :
+            G.nonAncestorsOf (GraphMutilation.bar x) z w middle with
+        | false => rfl
+        | true =>
+            have xSubset : NodeSet.Subset x
+                (localConditionAction x w target) := by
+              intro node selected
+              simp [localConditionAction, NodeSet.union, selected]
+            have restInBarX :=
+              FiniteLatentSCM.remapBarWalk_of_incoming_subset G xSubset rest
+            have ancestor :
+                G.observedAncestorOf (GraphMutilation.bar x) w middle =
+                  true :=
+              G.observedAncestorOf_of_mem_walk (GraphMutilation.bar x) w
+                restInBarX childInW restInBarX.mem_source
+            simp [ObservedGraph.nonAncestorsOf, ancestor] at removable
+      have outsideX : x middle = false := by
+        cases selected : x middle with
+        | false => rfl
+        | true =>
+            have inAction : localConditionAction x w target middle = true := by
+              simp [localConditionAction, NodeSet.union, selected]
+            have impossible := firstParts.2
+            rw [inAction] at impossible
+            contradiction
+      have mappedFirst : G.observedDirectedEdge
+          (GraphMutilation.bar
+            (NodeSet.union x
+              (G.nonAncestorsOf (GraphMutilation.bar x) z w)))
+          src middle = true := by
+        unfold ObservedGraph.observedDirectedEdge
+        exact Bool.and_eq_true_iff.mpr
+          ⟨Bool.and_eq_true_iff.mpr ⟨firstParts.1, rfl⟩,
+            by
+              change Bool.not (NodeSet.union x
+                (G.nonAncestorsOf (GraphMutilation.bar x) z w) middle) = true
+              simp [NodeSet.union, outsideX, outsideRemovable]⟩
+      .step mappedFirst
+        (remapRule3RightLocalConditionWalk G x z w target childInW rest)
+
+@[simp] theorem remapRule3RightLocalConditionWalk_nodes
+    (G : ObservedGraph S) (x z w : NodeSet S) (child : Fin S.count)
+    (childInW : w child = true)
+    {length : Nat} {source : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge
+        (GraphMutilation.bar (localConditionAction x w child)))
+      length source child) :
+    (remapRule3RightLocalConditionWalk G x z w child childInW walk).nodes =
+      walk.nodes := by
+  cases walk with
+  | refl => rfl
+  | step first rest =>
+      simp only [remapRule3RightLocalConditionWalk,
+        FiniteReachability.ExactWalk.nodes]
+      rw [remapRule3RightLocalConditionWalk_nodes G x z w child childInW
+        rest]
+
 /-- A local conditioning subfamily depends only on selected roots when every
 root relevant to each displayed factor is routed into the selected mask. -/
 theorem localConditionEvent_dependsOnSelected
@@ -12024,6 +12567,124 @@ def rule3WConditionRootRelevant (model : FiniteLatentSCM S)
         (FiniteLatentSCM.ancestralInBar G (localConditionAction x w child)
           (NodeSet.singleton child)) root)
 
+/-- A checked observed route witnessing that one concrete latent root can
+affect a local conditioning factor.  The route has already been embedded in
+the graph of rule 3's path side condition.  Its endpoint may be conditioned,
+but every proper route vertex is open given `X ∪ W`.
+
+Keeping the incident source as data is important: a relevance witness can
+start at the factor vertex itself, in which case that source is conditioned
+and `properOpen` is deliberately vacuous there. -/
+def Rule3LocalConditionRootWalk (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    (child : Fin S.count) (root : Fin model.latent.count) : Prop :=
+  Exists fun source : Fin S.count =>
+    model.latent.incident root source = true /\
+      Exists fun length : Nat =>
+        Exists fun walk : FiniteReachability.ExactWalk
+          (G.observedDirectedEdge
+            (GraphMutilation.bar
+              (NodeSet.union x
+                (G.nonAncestorsOf (GraphMutilation.bar x) z w))))
+          length source child =>
+          forall node, node ∈ walk.nodes -> node ≠ child ->
+            ObservedGraph.blockedBy (NodeSet.union x w) (.observed node) =
+              false
+
+/-- Unpack a root-relevance Boolean into a route in the rule-3 graph.
+Left-factor ancestry maps by incoming-cut inclusion.  Right-factor ancestry
+uses `remapRule3RightLocalConditionWalk`, whose suffix argument excludes the
+additional `Z(W)` cut constructively. -/
+def rule3LocalConditionRootWalk_of_relevant
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    (child : Fin S.count) (root : Fin model.latent.count)
+    (relevant : rule3WConditionRootRelevant model G x z w assignment
+      child root = true) :
+    Rule3LocalConditionRootWalk model G x z w child root := by
+  have relevantParts := Bool.and_eq_true_iff.mp relevant
+  have childInW : w child = true := relevantParts.1
+  cases leftRelevant : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty
+        (localConditionAction (NodeSet.union x z) w child)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G
+        (localConditionAction (NodeSet.union x z) w child)
+        (NodeSet.singleton child)) root with
+  | true =>
+    let action := localConditionAction (NodeSet.union x z) w child
+    let intervention :=
+      (Kernel.mk NodeSet.empty action NodeSet.empty).intervention assignment
+    let ancestors := FiniteLatentSCM.ancestralInBar G action
+      (NodeSet.singleton child)
+    rcases (model.latentRelevantUnder_eq_true_iff intervention ancestors
+        root).mp (by
+          simpa [intervention, ancestors, action] using leftRelevant) with
+      ⟨source, sourceAncestor, sourceFree, sourceIncident⟩
+    rcases (G.observedAncestorOf_eq_true_iff (GraphMutilation.bar action)
+        (NodeSet.singleton child) source).mp (by
+          simpa [FiniteLatentSCM.ancestralInBar, ancestors, action] using
+            sourceAncestor) with ⟨target, targetSelected, bounded⟩
+    have targetEq : target = child :=
+      (NodeSet.singleton_eq_true_iff child target).mp targetSelected
+    subst target
+    rcases bounded with ⟨length, _bound, exactWalk⟩
+    rcases exactWalk with ⟨walk⟩
+    let mapped := remapRule3LeftLocalConditionWalk G x z w child walk
+    refine ⟨source, sourceIncident, length, mapped, ?_⟩
+    intro node member notTarget
+    have originalMember : node ∈ walk.nodes := by
+      simpa [mapped] using member
+    by_cases atSource : node = source
+    · subst node
+      exact localConditionWalk_source_open_of_free G
+        (NodeSet.union x z) x w (NodeSet.subset_union_left x z)
+        assignment child walk notTarget (by
+          simpa [intervention, action] using sourceFree)
+    · exact localConditionWalk_internal_open G
+        (NodeSet.union x z) x w (NodeSet.subset_union_left x z)
+        child walk originalMember atSource notTarget
+  | false =>
+    have rightRelevant : model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (localConditionAction x w child)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G
+          (localConditionAction x w child) (NodeSet.singleton child)) root =
+          true := by
+      simpa [leftRelevant] using relevantParts.2
+    let action := localConditionAction x w child
+    let intervention :=
+      (Kernel.mk NodeSet.empty action NodeSet.empty).intervention assignment
+    let ancestors := FiniteLatentSCM.ancestralInBar G action
+      (NodeSet.singleton child)
+    rcases (model.latentRelevantUnder_eq_true_iff intervention ancestors
+        root).mp (by
+          simpa [intervention, ancestors, action] using rightRelevant) with
+      ⟨source, sourceAncestor, sourceFree, sourceIncident⟩
+    rcases (G.observedAncestorOf_eq_true_iff (GraphMutilation.bar action)
+        (NodeSet.singleton child) source).mp (by
+          simpa [FiniteLatentSCM.ancestralInBar, ancestors, action] using
+            sourceAncestor) with ⟨target, targetSelected, bounded⟩
+    have targetEq : target = child :=
+      (NodeSet.singleton_eq_true_iff child target).mp targetSelected
+    subst target
+    rcases bounded with ⟨length, _bound, exactWalk⟩
+    rcases exactWalk with ⟨walk⟩
+    let mapped := remapRule3RightLocalConditionWalk G x z w child childInW
+      walk
+    refine ⟨source, sourceIncident, length, mapped, ?_⟩
+    intro node member notTarget
+    have originalMember : node ∈ walk.nodes := by
+      simpa [mapped] using member
+    by_cases atSource : node = source
+    · subst node
+      exact localConditionWalk_source_open_of_free G x x w
+        (fun _node selected => selected) assignment child walk notTarget
+        (by simpa [intervention, action] using sourceFree)
+    · exact localConditionWalk_internal_open G x x w
+        (fun _node selected => selected) child walk originalMember atSource
+        notTarget
+
 /-- Two latent coordinates are joined when one conditioned `W` equation can
 observe both of them under the left or right rule-3 intervention. -/
 def rule3WConditionRootAdjacent (model : FiniteLatentSCM S)
@@ -12085,6 +12746,63 @@ current local equation. -/
 def rule3WLocalInterventionInvariant (G : ObservedGraph S)
     (x z w : NodeSet S) : NodeSet S :=
   NodeSet.diff w (rule3WLocalInterventionSensitive G x z w)
+
+/-- An exact rule-3-graph route from a selected `Z` endpoint into one locally
+sensitive conditioning factor.  All proper vertices are open given `X ∪ W`;
+the terminal `W` vertex is retained as the activated collider at which this
+route will meet the factor-component side. -/
+def Rule3LocalSensitivityWalk (G : ObservedGraph S)
+    (x z w : NodeSet S) (child : Fin S.count) : Prop :=
+  Exists fun source : Fin S.count =>
+    z source = true /\
+      Exists fun length : Nat =>
+        Exists fun walk : FiniteReachability.ExactWalk
+          (G.observedDirectedEdge
+            (GraphMutilation.bar
+              (NodeSet.union x
+                (G.nonAncestorsOf (GraphMutilation.bar x) z w))))
+          length source child =>
+          forall node, node ∈ walk.nodes -> node ≠ child ->
+            ObservedGraph.blockedBy (NodeSet.union x w) (.observed node) =
+              false
+
+/-- Unpack local intervention sensitivity into its open route from `Z`.
+The caller supplies only the elementary endpoint fact that `Z` is open under
+the conditioning family; `FourWayDisjoint` provides exactly this fact in the
+published rule-3 application. -/
+def rule3LocalSensitivityWalk_of_sensitive
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    (child : Fin S.count)
+    (sensitive : rule3WLocalInterventionSensitive G x z w child = true)
+    (zOpen : forall source, z source = true ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed source) =
+        false) :
+    Rule3LocalSensitivityWalk G x z w child := by
+  have parts := Bool.and_eq_true_iff.mp sensitive
+  have childInW : w child = true := parts.1
+  rcases (NodeSet.meetsBool_eq_true_iff _ _).mp parts.2 with
+    ⟨source, sourceAncestor, sourceInZ⟩
+  let action := localConditionAction (NodeSet.union x z) w child
+  rcases (G.observedAncestorOf_eq_true_iff (GraphMutilation.bar action)
+      (NodeSet.singleton child) source).mp (by
+        simpa [FiniteLatentSCM.ancestralInBar, action] using
+          sourceAncestor) with ⟨target, targetSelected, bounded⟩
+  have targetEq : target = child :=
+    (NodeSet.singleton_eq_true_iff child target).mp targetSelected
+  subst target
+  rcases bounded with ⟨length, _bound, exactWalk⟩
+  rcases exactWalk with ⟨walk⟩
+  let mapped := remapRule3LeftLocalConditionWalk G x z w child walk
+  refine ⟨source, sourceInZ, length, mapped, ?_⟩
+  intro node member notTarget
+  have originalMember : node ∈ walk.nodes := by
+    simpa [mapped] using member
+  by_cases atSource : node = source
+  · subst node
+    exact zOpen source sourceInZ
+  · exact localConditionWalk_internal_open G
+      (NodeSet.union x z) x w (NodeSet.subset_union_left x z)
+      child walk originalMember atSource notTarget
 
 /-- No selected `Z` vertex reaches a locally invariant conditioning factor. -/
 theorem rule3_z_not_ancestral_local_invariant_w
