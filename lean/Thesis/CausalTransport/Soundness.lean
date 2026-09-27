@@ -1970,6 +1970,22 @@ def remapMinimalBarWalkToBarUnderline
       .step (observedDirectedEdge_barUnderline_of_bar G x z first hparent)
         (remapMinimalBarWalkToBarUnderline G x z rest parts.2 restAvoid)
 
+@[simp] theorem remapMinimalBarWalkToBarUnderline_nodes
+    (G : ObservedGraph S) (x z : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge (GraphMutilation.bar x)) length source target)
+    (simple : walk.nodes.Nodup)
+    (havoid : forall n, n ∈ walk.nodes -> n ≠ target -> z n = false) :
+    (remapMinimalBarWalkToBarUnderline G x z walk simple havoid).nodes =
+      walk.nodes := by
+  induction walk with
+  | refl => rfl
+  | @step length source middle target first rest ih =>
+      simp only [remapMinimalBarWalkToBarUnderline,
+        FiniteReachability.ExactWalk.nodes]
+      rw [ih _ _]
+
 /-- Vertices of a `G_{\overline{X ∪ Z}}` walk that starts outside `X ∪ Z`
 never meet `Z`: the source is free, and every later vertex has incoming
 arrows intact, hence is also outside `X ∪ Z`. -/
@@ -2028,6 +2044,21 @@ def remapBarUnionWalkToBarUnderline
       .step
         (observedDirectedEdge_barUnderline_of_barUnion G x z first hparent)
         (remapBarUnionWalkToBarUnderline G x z rest restNotZ)
+
+@[simp] theorem remapBarUnionWalkToBarUnderline_nodes
+    (G : ObservedGraph S) (x z : NodeSet S)
+    {length : Nat} {source target : Fin S.count}
+    (walk : FiniteReachability.ExactWalk
+      (G.observedDirectedEdge
+        (GraphMutilation.bar (NodeSet.union x z))) length source target)
+    (hnotZ : forall n, n ∈ walk.nodes -> z n = false) :
+    (remapBarUnionWalkToBarUnderline G x z walk hnotZ).nodes = walk.nodes := by
+  induction walk with
+  | refl => rfl
+  | @step length source middle target first rest ih =>
+      simp only [remapBarUnionWalkToBarUnderline,
+        FiniteReachability.ExactWalk.nodes]
+      rw [ih _]
 
 /-- Ancestry of `Z` in `G_{\overline{X}}` is ancestry in
 `G_{\overline{X}\underline{Z}}`: a shortest walk into `Z` never leaves
@@ -12877,6 +12908,641 @@ def rule2PartitionWitness_of_local_condition_component
           residualConditionEvent roots) := by
             rw [wEventSplit roots]
             ac_rfl
+
+/-- An observed route witnessing relevance of one concrete root to a local
+rule-2 `W` factor.  The route is embedded in
+`G_{̅X̲Z}`; every proper route vertex is open given `X ∪ W`, while the
+terminal factor vertex may itself be conditioned. -/
+def Rule2LocalConditionRootWalk (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    (child : Fin S.count) (root : Fin model.latent.count) : Prop :=
+  Exists fun source : Fin S.count =>
+    model.latent.incident root source = true /\
+      (GraphMutilation.barUnderline x z).removeIncoming source = false /\
+        Exists fun length : Nat =>
+          Exists fun walk : FiniteReachability.ExactWalk
+            (G.observedDirectedEdge (GraphMutilation.barUnderline x z))
+            length source child =>
+            forall node, node ∈ walk.nodes -> node ≠ child ->
+              ObservedGraph.blockedBy (NodeSet.union x w) (.observed node) =
+                false
+
+/-- Unpack local rule-2 factor relevance into its route in
+`G_{̅X̲Z}`.
+
+The original route cuts `X ∪ Z` and the earlier `W` prefix.  Removing only
+`X ∪ Z` embeds it in `G_{̅(X ∪ Z)}`.  Its free source and every later
+route vertex lie outside `Z`, so the route also survives the outgoing `Z`
+cut.  Topological prefix arguments make every proper vertex open under the
+published conditioner `X ∪ W`. -/
+def rule2LocalConditionRootWalk_of_relevant
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    (child : Fin S.count) (root : Fin model.latent.count)
+    (relevant : rule2WConditionRootRelevant model G x z w assignment
+      child root = true) :
+    Rule2LocalConditionRootWalk model G x z w child root := by
+  have parts := Bool.and_eq_true_iff.mp relevant
+  have childInW : w child = true := parts.1
+  let baseAction := NodeSet.union x z
+  let action := localConditionAction baseAction w child
+  let intervention :=
+    (Kernel.mk NodeSet.empty action NodeSet.empty).intervention assignment
+  let ancestors := FiniteLatentSCM.ancestralInBar G action
+    (NodeSet.singleton child)
+  rcases (model.latentRelevantUnder_eq_true_iff intervention ancestors
+      root).mp (by simpa [intervention, ancestors, action, baseAction] using
+        parts.2) with
+    ⟨source, sourceAncestor, sourceFree, sourceIncident⟩
+  rcases (G.observedAncestorOf_eq_true_iff (GraphMutilation.bar action)
+      (NodeSet.singleton child) source).mp (by
+        simpa [FiniteLatentSCM.ancestralInBar, ancestors, action] using
+          sourceAncestor) with ⟨target, targetSelected, bounded⟩
+  have targetEq : target = child :=
+    (NodeSet.singleton_eq_true_iff child target).mp targetSelected
+  subst target
+  rcases bounded with ⟨length, _bound, exactWalk⟩
+  rcases exactWalk with ⟨walk⟩
+  have baseSubset : NodeSet.Subset baseAction action := by
+    intro node selected
+    simp [action, localConditionAction, NodeSet.union, selected]
+  let barUnionWalk := FiniteLatentSCM.remapBarWalk_of_incoming_subset G
+    baseSubset walk
+  have barUnionNodes : barUnionWalk.nodes = walk.nodes := by
+    simpa [barUnionWalk] using
+      FiniteLatentSCM.remapBarWalk_of_incoming_subset_nodes G baseSubset walk
+  have sourceOutsideAction : action source = false := by
+    simpa [intervention, Kernel.intervention] using sourceFree
+  have sourceOutsideBase : baseAction source = false := by
+    cases selected : baseAction source with
+    | false => rfl
+    | true =>
+        have inAction : action source = true := by
+          simp [action, localConditionAction, NodeSet.union, selected]
+        rw [inAction] at sourceOutsideAction
+        contradiction
+  have noZ : forall node, node ∈ barUnionWalk.nodes -> z node = false := by
+    intro node member
+    exact FiniteLatentSCM.barUnion_walk_vertices_not_in_z G x z
+      barUnionWalk (by simpa [baseAction] using sourceOutsideBase) member
+  let mapped := FiniteLatentSCM.remapBarUnionWalkToBarUnderline G x z
+    barUnionWalk noZ
+  have mappedNodes : mapped.nodes = walk.nodes := by
+    calc
+      mapped.nodes = barUnionWalk.nodes := by simp [mapped]
+      _ = walk.nodes := barUnionNodes
+  have sourceOutsideX : x source = false := by
+    have outside := Bool.or_eq_false_iff.mp (by
+      simpa [baseAction, NodeSet.union] using sourceOutsideBase)
+    exact outside.1
+  have sourceIncoming :
+      (GraphMutilation.barUnderline x z).removeIncoming source = false := by
+    simpa [GraphMutilation.barUnderline] using sourceOutsideX
+  refine ⟨source, sourceIncident, sourceIncoming, length, mapped, ?_⟩
+  intro node member notTarget
+  have originalMember : node ∈ walk.nodes := by
+    rw [mappedNodes] at member
+    exact member
+  by_cases atSource : node = source
+  · subst node
+    exact localConditionWalk_source_open_of_free G baseAction x w
+      (NodeSet.subset_union_left x z) assignment child walk notTarget (by
+        simpa [intervention, action] using sourceFree)
+  · exact localConditionWalk_internal_open G baseAction x w
+      (NodeSet.subset_union_left x z) child walk originalMember atSource
+      notTarget
+
+/-- A free ancestral observed representative showing that one concrete root
+lies on the `Z` side of rule 2's moral separator in `G_{̅X̲Z}`. -/
+def Rule2RootMoralZWitness (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (root : Fin model.latent.count) : Prop :=
+  let mutilation := GraphMutilation.barUnderline x z
+  let targets := NodeSet.union z (NodeSet.union y (NodeSet.union x w))
+  Exists fun source : Fin S.count =>
+    model.latent.incident root source = true /\
+      mutilation.removeIncoming source = false /\
+        G.ancestorOf mutilation targets (.observed source) = true /\
+          ObservedGraph.blockedBy (NodeSet.union x w) (.observed source) =
+              false /\
+            G.moralLeftSide mutilation z y (NodeSet.union x w)
+              (.observed source) = true
+
+/-- Every root needed by the `Z` cylinder under `do(X ∪ W)` has a free
+representative on the `Z` moral side in `G_{̅X̲Z}`.
+
+A minimal ancestry route into `Z` first embeds from `G_{̅(X ∪ W)}` into
+`G_{̅X}`.  Minimality ensures that no proper route vertex belongs to `Z`,
+so deleting arrows out of `Z` preserves the route. -/
+theorem rule2RootMoralZWitness_of_z_relevant
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (root : Fin model.latent.count)
+    (relevant : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) root = true) :
+    Rule2RootMoralZWitness model G x y z w root := by
+  let intervention :=
+    (Kernel.mk NodeSet.empty (NodeSet.union x w)
+      NodeSet.empty).intervention assignment
+  let ancestors := FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z
+  rcases (model.latentRelevantUnder_eq_true_iff intervention ancestors
+      root).mp (by simpa [intervention, ancestors] using relevant) with
+    ⟨source, sourceAncestor, sourceFree, sourceIncident⟩
+  rcases G.exists_minimal_walk_of_observedAncestorOf
+      (GraphMutilation.bar (NodeSet.union x w)) z source (by
+        simpa [FiniteLatentSCM.ancestralInBar, ancestors] using
+          sourceAncestor) with
+    ⟨zEnd, zEndInZ, length, walk, walkSimple, minimal⟩
+  have xSubset : NodeSet.Subset x (NodeSet.union x w) :=
+    NodeSet.subset_union_left x w
+  let barXWalk := FiniteLatentSCM.remapBarWalk_of_incoming_subset G xSubset
+    walk
+  have barXNodes : barXWalk.nodes = walk.nodes := by
+    simpa [barXWalk] using
+      FiniteLatentSCM.remapBarWalk_of_incoming_subset_nodes G xSubset walk
+  have barXSimple : barXWalk.nodes.Nodup := by
+    rw [barXNodes]
+    exact walkSimple
+  have barXAvoid : forall node, node ∈ barXWalk.nodes -> node ≠ zEnd ->
+      z node = false := by
+    intro node member different
+    rw [barXNodes] at member
+    exact FiniteReachability.ExactWalk.not_mem_targets_of_minimal_internal
+      walk minimal member different
+  let mapped := FiniteLatentSCM.remapMinimalBarWalkToBarUnderline G x z
+    barXWalk barXSimple barXAvoid
+  have mappedNodes : mapped.nodes = walk.nodes := by
+    calc
+      mapped.nodes = barXWalk.nodes := by simp [mapped]
+      _ = walk.nodes := barXNodes
+  have walkOpen : forall node, node ∈ walk.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed node) =
+        false := by
+    intro node member
+    by_cases atSource : node = source
+    · subst node
+      exact (FiniteLatentSCM.intervention_none_iff_unblocked
+        (NodeSet.union x w) assignment source).mp (by
+          simpa [intervention] using sourceFree)
+    · have incoming :=
+        PathSpecification.directed_walk_mem_not_removeIncoming G
+          (GraphMutilation.bar (NodeSet.union x w)) walk member atSource
+      simpa [GraphMutilation.bar, ObservedGraph.blockedBy] using incoming
+  have mappedOpen : forall node, node ∈ mapped.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed node) =
+        false := by
+    intro node member
+    rw [mappedNodes] at member
+    exact walkOpen node member
+  let mutilation := GraphMutilation.barUnderline x z
+  let targets := NodeSet.union z (NodeSet.union y (NodeSet.union x w))
+  have zEndTarget : targets zEnd = true := by
+    simp [targets, NodeSet.union, zEndInZ]
+  have mappedAncestor : forall node, node ∈ mapped.nodes ->
+      G.ancestorOf mutilation targets (.observed node) = true := by
+    intro node member
+    have observed := G.observedAncestorOf_of_mem_walk mutilation targets
+      mapped zEndTarget member
+    exact FiniteLatentSCM.ancestorOf_of_observedAncestorOf G mutilation
+      targets node observed
+  have sourceToZ := moralLeftSide_eq_of_open_observed_walk G mutilation
+    z y (NodeSet.union x w) mapped mappedOpen (by
+      simpa [targets] using mappedAncestor)
+  have zOpen := FiniteLatentSCM.blockedBy_false_of_mem_z x y z w disjoint
+    zEndInZ
+  have zSide := G.moralLeftSide_of_left mutilation z y
+    (NodeSet.union x w) zEnd zEndInZ (by
+      simpa [ObservedGraph.blockedBy] using zOpen)
+  have sourceOutsideX : x source = false := by
+    have sourceOpen := mappedOpen source mapped.mem_source
+    have outside : NodeSet.union x w source = false := by
+      simpa [ObservedGraph.blockedBy] using sourceOpen
+    exact (Bool.or_eq_false_iff.mp (by
+      simpa [NodeSet.union] using outside)).1
+  have sourceIncoming : mutilation.removeIncoming source = false := by
+    simpa [mutilation, GraphMutilation.barUnderline] using sourceOutsideX
+  exact ⟨source, sourceIncident, sourceIncoming,
+    mappedAncestor source mapped.mem_source,
+    mappedOpen source mapped.mem_source, sourceToZ.trans zSide⟩
+
+/-- An open ancestral parent of a local rule-2 conditioning factor on the
+`Z` side of the canonical separator in `G_{̅X̲Z}`.
+
+This is the factor-level invariant carried through the root component.  The
+factor child is conditioned and therefore is not itself open; recording an
+open parent is exactly what lets moralization transport the side label across
+another root that affects the same local factor. -/
+def Rule2FactorMoralZParent (G : ObservedGraph S)
+    (x y z w : NodeSet S) (child : Fin S.count) : Prop :=
+  let mutilation := GraphMutilation.barUnderline x z
+  let targets := NodeSet.union z (NodeSet.union y (NodeSet.union x w))
+  Exists fun parent : SeparationNode S =>
+    G.expandedMutilatedEdge mutilation parent (.observed child) = true /\
+      G.ancestorOf mutilation targets parent = true /\
+        ObservedGraph.blockedBy (NodeSet.union x w) parent = false /\
+          G.moralLeftSide mutilation z y (NodeSet.union x w) parent = true
+
+/-- Moralization at a conditioned rule-2 factor transfers its stored `Z`-side
+label to every other open ancestral parent of the same child.
+
+`SeparationNode` equality is split through its explicit Boolean code.  This
+keeps the argument constructive: no proposition-level decidable equality,
+excluded middle, or choice is introduced. -/
+theorem Rule2FactorMoralZParent.marries
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (child : Fin S.count)
+    (witness : Rule2FactorMoralZParent G x y z w child)
+    (childConditioned : NodeSet.union x w child = true)
+    (other : SeparationNode S)
+    (otherEdge : G.expandedMutilatedEdge
+      (GraphMutilation.barUnderline x z) other (.observed child) = true)
+    (otherAncestor : G.ancestorOf (GraphMutilation.barUnderline x z)
+      (NodeSet.union z (NodeSet.union y (NodeSet.union x w))) other = true)
+    (otherOpen : ObservedGraph.blockedBy (NodeSet.union x w) other = false) :
+    G.moralLeftSide (GraphMutilation.barUnderline x z) z y
+      (NodeSet.union x w) other = true := by
+  let mutilation := GraphMutilation.barUnderline x z
+  let targets := NodeSet.union z (NodeSet.union y (NodeSet.union x w))
+  rcases witness with
+    ⟨parent, parentEdge, parentAncestor, parentOpen, parentSide⟩
+  have equalityCases : SeparationNode.beq parent other = true ∨
+      SeparationNode.beq parent other = false := by
+    cases value : SeparationNode.beq parent other with
+    | false => exact Or.inr rfl
+    | true => exact Or.inl rfl
+  rcases equalityCases with sameValue | sameValue
+  · have same := (SeparationNode.beq_eq_true_iff parent other).mp sameValue
+    exact Eq.mp (congrArg (fun node =>
+      G.moralLeftSide mutilation z y (NodeSet.union x w) node = true) same)
+      parentSide
+  · have different : parent ≠ other :=
+      (SeparationNode.beq_eq_false_iff parent other).mp sameValue
+    have conditionedPart : x child = true ∨ w child = true :=
+      Bool.or_eq_true_iff.mp (by
+        simpa [NodeSet.union] using childConditioned)
+    have childTarget : targets child = true := by
+      rcases conditionedPart with childInX | childInW
+      · simp [targets, NodeSet.union, childInX]
+      · simp [targets, NodeSet.union, childInW]
+    have childAncestor : G.ancestorOf mutilation targets
+        (.observed child) = true :=
+      G.ancestorOf_target mutilation targets childTarget
+    have collider : PathSpecification.IsCollider G mutilation parent
+        (.observed child) other := ⟨parentEdge, otherEdge⟩
+    have ancestralMoral := G.ancestralMoralEdge_of_collider mutilation
+      targets parentAncestor childAncestor otherAncestor different collider
+    have moral := G.moralOpenEdge_of_ancestral mutilation targets
+      (NodeSet.union x w) parentOpen otherOpen ancestralMoral
+    have sameSide := moralLeftSide_eq_of_moralOpenEdge G mutilation z y
+      (NodeSet.union x w) moral
+    rw [parentSide] at sameSide
+    exact sameSide.symm
+
+/-- A rule-2 root already represented on the `Z` moral side supplies a
+`Z`-side parent for every local `W` factor it affects.
+
+For a nontrivial relevance route, the final directed predecessor is the
+required factor parent.  If the route is reflexive, projection materializes
+the shared concrete root as the canonical latent-pair vertex joining the
+stored `Z` representative directly to the factor child. -/
+theorem rule2FactorMoralZParent_of_root_witness
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (projected : HasProjectedGraph model G)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (child : Fin S.count) (root : Fin model.latent.count)
+    (rootWitness : Rule2RootMoralZWitness model G x y z w root)
+    (relevant : rule2WConditionRootRelevant model G x z w assignment
+      child root = true) :
+    Rule2FactorMoralZParent G x y z w child := by
+  let mutilation := GraphMutilation.barUnderline x z
+  let targets := NodeSet.union z (NodeSet.union y (NodeSet.union x w))
+  rcases rootWitness with
+    ⟨zSource, zIncident, zIncoming, zAncestor, zOpen, zSide⟩
+  rcases rule2LocalConditionRootWalk_of_relevant model G x z w assignment
+      child root relevant with
+    ⟨routeSource, routeIncident, routeIncoming, routeLength, route,
+      routeProperOpen⟩
+  have childInW : w child = true :=
+    (Bool.and_eq_true_iff.mp relevant).1
+  have childConditioned : NodeSet.union x w child = true := by
+    simp [NodeSet.union, childInW]
+  have childTarget : targets child = true := by
+    simp [targets, NodeSet.union, childInW]
+  by_cases routeReflexive : routeSource = child
+  · subst routeSource
+    have zDifferent : zSource ≠ child := by
+      intro same
+      subst zSource
+      have childOpen : NodeSet.union x w child = false := by
+        simpa [ObservedGraph.blockedBy] using zOpen
+      rw [childConditioned] at childOpen
+      contradiction
+    have bidirected := model.bidirected_of_shared_latent G projected root
+      zDifferent zIncident routeIncident
+    let latent : SeparationNode S := .latentPair zSource child
+    have zIncoming' : mutilation.removeIncoming zSource = false := by
+      simpa [mutilation] using zIncoming
+    have childIncoming' : mutilation.removeIncoming child = false := by
+      simpa [mutilation] using routeIncoming
+    have edgeZ : G.expandedMutilatedEdge mutilation latent
+        (.observed zSource) = true := by
+      have self : finBeq zSource zSource = true :=
+        (finBeq_eq_true_iff zSource zSource).mpr rfl
+      simp [latent, ObservedGraph.expandedMutilatedEdge, bidirected,
+        zIncoming', self]
+    have edgeChild : G.expandedMutilatedEdge mutilation latent
+        (.observed child) = true := by
+      have self : finBeq child child = true :=
+        (finBeq_eq_true_iff child child).mpr rfl
+      simp [latent, ObservedGraph.expandedMutilatedEdge, bidirected,
+        childIncoming', self]
+    have latentAncestor : G.ancestorOf mutilation targets latent = true :=
+      G.ancestorOf_prepend mutilation targets edgeZ zAncestor
+    have zLatentMoral : G.MoralOpenEdge mutilation targets
+        (NodeSet.union x w) (.observed zSource) latent = true :=
+      G.moralOpenEdge_of_ancestral mutilation targets (NodeSet.union x w)
+        zOpen (by dsimp [latent]; rfl)
+        (G.ancestralMoralEdge_of_adjacent mutilation targets zAncestor
+          latentAncestor (Or.inr edgeZ))
+    have sameSide := moralLeftSide_eq_of_moralOpenEdge G mutilation z y
+      (NodeSet.union x w) zLatentMoral
+    have latentSide : G.moralLeftSide mutilation z y (NodeSet.union x w)
+        latent = true := by
+      rw [zSide] at sameSide
+      exact sameSide.symm
+    exact ⟨latent, edgeChild, latentAncestor, by dsimp [latent]; rfl,
+      latentSide⟩
+  · have routeOpen := routeProperOpen routeSource route.mem_source
+      routeReflexive
+    have routeObservedAncestor := G.observedAncestorOf_of_mem_walk
+      mutilation targets route childTarget route.mem_source
+    have routeAncestor := FiniteLatentSCM.ancestorOf_of_observedAncestorOf
+      G mutilation targets routeSource routeObservedAncestor
+    have routeSameSide :=
+      FiniteLatentSCM.moralLeftSide_eq_of_shared_latent model G projected
+        mutilation z y (NodeSet.union x w) root zSource routeSource
+        zIncident routeIncident zIncoming routeIncoming zAncestor
+        routeAncestor (by
+          simpa [ObservedGraph.blockedBy] using zOpen) (by
+          simpa [ObservedGraph.blockedBy] using routeOpen)
+    have routeSide : G.moralLeftSide mutilation z y (NodeSet.union x w)
+        (.observed routeSource) = true := by
+      rw [zSide] at routeSameSide
+      exact routeSameSide.symm
+    rcases exists_observedDirectedWalk_prefix_last G mutilation route
+        routeReflexive with
+      ⟨prefixLength, parent, prefixWalk, last, prefixSubset⟩
+    have prefixNotChild : forall node, node ∈ prefixWalk.nodes ->
+        node ≠ child := by
+      intro node member equal
+      have parentDirected : S.directed parent child = true :=
+        (Bool.and_eq_true_iff.mp (Bool.and_eq_true_iff.mp last).1).1
+      have parentEarlier := S.directed_earlier parentDirected
+      have nodeLe := observedDirectedWalk_node_le_target_of_mem G mutilation
+        prefixWalk member
+      subst node
+      exact (Nat.not_lt_of_ge nodeLe parentEarlier).elim
+    have prefixOpen : forall node, node ∈ prefixWalk.nodes ->
+        ObservedGraph.blockedBy (NodeSet.union x w) (.observed node) =
+          false := by
+      intro node member
+      exact routeProperOpen node (prefixSubset node member)
+        (prefixNotChild node member)
+    have prefixAncestor : forall node, node ∈ prefixWalk.nodes ->
+        G.ancestorOf mutilation targets (.observed node) = true := by
+      intro node member
+      have observed := G.observedAncestorOf_of_mem_walk mutilation targets
+        route childTarget (prefixSubset node member)
+      exact FiniteLatentSCM.ancestorOf_of_observedAncestorOf G mutilation
+        targets node observed
+    have routeToParent := moralLeftSide_eq_of_open_observed_walk G
+      mutilation z y (NodeSet.union x w) prefixWalk prefixOpen (by
+        simpa [targets] using prefixAncestor)
+    have parentSide : G.moralLeftSide mutilation z y (NodeSet.union x w)
+        (.observed parent) = true := by
+      rw [routeSide] at routeToParent
+      exact routeToParent.symm
+    exact ⟨.observed parent, last,
+      prefixAncestor parent prefixWalk.mem_target,
+      prefixOpen parent prefixWalk.mem_target, parentSide⟩
+
+/-- A nonincident root relevant to a rule-2 factor with a `Z`-side parent
+obtains an ordinary observed `Z`-side representative from its nontrivial
+relevance route. -/
+theorem rule2RootMoralZWitness_of_factor_parent_relevant_not_incident
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (child : Fin S.count) (root : Fin model.latent.count)
+    (factorParent : Rule2FactorMoralZParent G x y z w child)
+    (relevant : rule2WConditionRootRelevant model G x z w assignment
+      child root = true)
+    (notIncident : model.latent.incident root child = false) :
+    Rule2RootMoralZWitness model G x y z w root := by
+  let mutilation := GraphMutilation.barUnderline x z
+  let targets := NodeSet.union z (NodeSet.union y (NodeSet.union x w))
+  rcases rule2LocalConditionRootWalk_of_relevant model G x z w assignment
+      child root relevant with
+    ⟨source, sourceIncident, sourceIncoming, length, route,
+      routeProperOpen⟩
+  have childInW : w child = true :=
+    (Bool.and_eq_true_iff.mp relevant).1
+  have childConditioned : NodeSet.union x w child = true := by
+    simp [NodeSet.union, childInW]
+  have childTarget : targets child = true := by
+    simp [targets, NodeSet.union, childInW]
+  have sourceDifferent : source ≠ child := by
+    intro equal
+    subst source
+    rw [sourceIncident] at notIncident
+    contradiction
+  have sourceOpen := routeProperOpen source route.mem_source sourceDifferent
+  have sourceObservedAncestor := G.observedAncestorOf_of_mem_walk
+    mutilation targets route childTarget route.mem_source
+  have sourceAncestor := FiniteLatentSCM.ancestorOf_of_observedAncestorOf
+    G mutilation targets source sourceObservedAncestor
+  rcases exists_observedDirectedWalk_prefix_last G mutilation route
+      sourceDifferent with
+    ⟨prefixLength, parent, prefixWalk, last, prefixSubset⟩
+  have prefixNotChild : forall node, node ∈ prefixWalk.nodes ->
+      node ≠ child := by
+    intro node member equal
+    have parentDirected : S.directed parent child = true :=
+      (Bool.and_eq_true_iff.mp (Bool.and_eq_true_iff.mp last).1).1
+    have parentEarlier := S.directed_earlier parentDirected
+    have nodeLe := observedDirectedWalk_node_le_target_of_mem G mutilation
+      prefixWalk member
+    subst node
+    exact (Nat.not_lt_of_ge nodeLe parentEarlier).elim
+  have prefixOpen : forall node, node ∈ prefixWalk.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed node) = false := by
+    intro node member
+    exact routeProperOpen node (prefixSubset node member)
+      (prefixNotChild node member)
+  have prefixAncestor : forall node, node ∈ prefixWalk.nodes ->
+      G.ancestorOf mutilation targets (.observed node) = true := by
+    intro node member
+    have observed := G.observedAncestorOf_of_mem_walk mutilation targets
+      route childTarget (prefixSubset node member)
+    exact FiniteLatentSCM.ancestorOf_of_observedAncestorOf G mutilation
+      targets node observed
+  have parentSide := Rule2FactorMoralZParent.marries G x y z w child
+    factorParent childConditioned (.observed parent) last
+    (prefixAncestor parent prefixWalk.mem_target)
+    (prefixOpen parent prefixWalk.mem_target)
+  have sourceToParent := moralLeftSide_eq_of_open_observed_walk G
+    mutilation z y (NodeSet.union x w) prefixWalk prefixOpen (by
+      simpa [targets] using prefixAncestor)
+  have sourceSide : G.moralLeftSide mutilation z y (NodeSet.union x w)
+      (.observed source) = true := by
+    rw [parentSide] at sourceToParent
+    exact sourceToParent
+  exact ⟨source, sourceIncident, sourceIncoming, sourceAncestor,
+    sourceOpen, sourceSide⟩
+
+/-- A free ancestral observed representative showing that one concrete root
+lies on the `Y` side, i.e. outside the `Z` moral component, for rule 2. -/
+def Rule2RootMoralYWitness (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x y z w : NodeSet S)
+    (root : Fin model.latent.count) : Prop :=
+  let mutilation := GraphMutilation.barUnderline x z
+  let targets := NodeSet.union z (NodeSet.union y (NodeSet.union x w))
+  Exists fun source : Fin S.count =>
+    model.latent.incident root source = true /\
+      mutilation.removeIncoming source = false /\
+        G.ancestorOf mutilation targets (.observed source) = true /\
+          ObservedGraph.blockedBy (NodeSet.union x w) (.observed source) =
+              false /\
+            G.moralLeftSide mutilation z y (NodeSet.union x w)
+              (.observed source) = false
+
+/-- Every root needed by `Y` after intervening on `X ∪ Z ∪ W` has a
+representative on the `Y` side of the rule-2 separator.  Its ancestry route
+has no `Z` vertex because `Z` is in the incoming cut, and therefore embeds
+into `G_{̅X̲Z}` edge for edge. -/
+theorem rule2RootMoralYWitness_of_y_relevant
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (separated : PathSpecification.PathDSeparated G
+      (GraphMutilation.barUnderline x z) y z (NodeSet.union x w))
+    (root : Fin model.latent.count)
+    (relevant : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty
+        (NodeSet.union (NodeSet.union x z) w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G
+        (NodeSet.union (NodeSet.union x z) w) y) root = true) :
+    Rule2RootMoralYWitness model G x y z w root := by
+  let fullAction := NodeSet.union (NodeSet.union x z) w
+  let intervention :=
+    (Kernel.mk NodeSet.empty fullAction NodeSet.empty).intervention assignment
+  let ancestors := FiniteLatentSCM.ancestralInBar G fullAction y
+  rcases (model.latentRelevantUnder_eq_true_iff intervention ancestors
+      root).mp (by simpa [intervention, ancestors, fullAction] using relevant)
+      with ⟨source, sourceAncestor, sourceFree, sourceIncident⟩
+  rcases G.exists_minimal_walk_of_observedAncestorOf
+      (GraphMutilation.bar fullAction) y source (by
+        simpa [FiniteLatentSCM.ancestralInBar, ancestors] using
+          sourceAncestor) with
+    ⟨yEnd, yEndInY, length, walk, walkSimple, _minimal⟩
+  have xzSubset : NodeSet.Subset (NodeSet.union x z) fullAction := by
+    exact NodeSet.subset_union_left (NodeSet.union x z) w
+  let barXZWalk := FiniteLatentSCM.remapBarWalk_of_incoming_subset G
+    xzSubset walk
+  have barXZNodes : barXZWalk.nodes = walk.nodes := by
+    simpa [barXZWalk] using
+      FiniteLatentSCM.remapBarWalk_of_incoming_subset_nodes G xzSubset walk
+  have sourceOutsideFull : fullAction source = false := by
+    simpa [intervention, Kernel.intervention] using sourceFree
+  have sourceOutsideXZ : NodeSet.union x z source = false := by
+    cases selected : NodeSet.union x z source with
+    | false => rfl
+    | true =>
+        have inFull : fullAction source = true := by
+          exact NodeSet.subset_union_left (NodeSet.union x z) w source
+            selected
+        rw [inFull] at sourceOutsideFull
+        contradiction
+  have noZ : forall node, node ∈ barXZWalk.nodes -> z node = false := by
+    intro node member
+    exact FiniteLatentSCM.barUnion_walk_vertices_not_in_z G x z barXZWalk
+      sourceOutsideXZ member
+  let mapped := FiniteLatentSCM.remapBarUnionWalkToBarUnderline G x z
+    barXZWalk noZ
+  have mappedNodes : mapped.nodes = walk.nodes := by
+    calc
+      mapped.nodes = barXZWalk.nodes := by simp [mapped]
+      _ = walk.nodes := barXZNodes
+  have walkOpen : forall node, node ∈ walk.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed node) =
+        false := by
+    intro node member
+    have outsideFull : fullAction node = false := by
+      by_cases atSource : node = source
+      · subst node
+        exact sourceOutsideFull
+      · have incoming :=
+          PathSpecification.directed_walk_mem_not_removeIncoming G
+            (GraphMutilation.bar fullAction) walk member atSource
+        simpa [GraphMutilation.bar] using incoming
+    have outsideX : x node = false := by
+      cases selected : x node with
+      | false => rfl
+      | true =>
+          have inFull : fullAction node = true := by
+            simp [fullAction, NodeSet.union, selected]
+          rw [inFull] at outsideFull
+          contradiction
+    have outsideW : w node = false := by
+      cases selected : w node with
+      | false => rfl
+      | true =>
+          have inFull : fullAction node = true := by
+            simp [fullAction, NodeSet.union, selected]
+          rw [inFull] at outsideFull
+          contradiction
+    simp [ObservedGraph.blockedBy, NodeSet.union, outsideX, outsideW]
+  have mappedOpen : forall node, node ∈ mapped.nodes ->
+      ObservedGraph.blockedBy (NodeSet.union x w) (.observed node) =
+        false := by
+    intro node member
+    rw [mappedNodes] at member
+    exact walkOpen node member
+  let mutilation := GraphMutilation.barUnderline x z
+  let targets := NodeSet.union z (NodeSet.union y (NodeSet.union x w))
+  have yEndTarget : targets yEnd = true := by
+    simp [targets, NodeSet.union, yEndInY]
+  have mappedAncestor : forall node, node ∈ mapped.nodes ->
+      G.ancestorOf mutilation targets (.observed node) = true := by
+    intro node member
+    have observed := G.observedAncestorOf_of_mem_walk mutilation targets
+      mapped yEndTarget member
+    exact FiniteLatentSCM.ancestorOf_of_observedAncestorOf G mutilation
+      targets node observed
+  have sourceToY := moralLeftSide_eq_of_open_observed_walk G mutilation
+    z y (NodeSet.union x w) mapped mappedOpen (by
+      simpa [targets] using mappedAncestor)
+  have yOpen := FiniteLatentSCM.blockedBy_false_of_mem_y x y z w disjoint
+    yEndInY
+  have ySide : G.moralLeftSide mutilation z y (NodeSet.union x w)
+      (.observed yEnd) = false :=
+    G.moralLeftSide_not_of_right mutilation z y (NodeSet.union x w)
+      (PathSpecification.PathDSeparated.symm separated) yEnd yEndInY (by
+        simpa [ObservedGraph.blockedBy] using yOpen)
+  have sourceOutsideX : x source = false := by
+    have sourceOpen := mappedOpen source mapped.mem_source
+    have outside : NodeSet.union x w source = false := by
+      simpa [ObservedGraph.blockedBy] using sourceOpen
+    exact (Bool.or_eq_false_iff.mp (by
+      simpa [NodeSet.union] using outside)).1
+  have sourceIncoming : mutilation.removeIncoming source = false := by
+    simpa [mutilation, GraphMutilation.barUnderline] using sourceOutsideX
+  exact ⟨source, sourceIncident, sourceIncoming,
+    mappedAncestor source mapped.mem_source,
+    mappedOpen source mapped.mem_source, sourceToY.trans ySide⟩
 
 /-- Empty-cylinder events are constant, so they depend on no coordinates. -/
 theorem agreesOn_empty_eq_true
