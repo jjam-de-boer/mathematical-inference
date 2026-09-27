@@ -557,6 +557,36 @@ theorem evalUnder_eq_on_of_intervention_agree_on_closed
   model.evalNodeUnder_eq_of_intervention_agree_on_closed
     left right nodes roots closed agree child hmem
 
+/-- Evaluation at `child` is insensitive to intervention differences strictly
+after `child` in the signature's fixed topological order.
+
+The prefix through `child` is backward-closed because every directed parent
+has a smaller index.  This small generic lemma is the semantic reason that a
+rule-2 local factor may intervene on *all* vertices of the opposite
+conditioning block: vertices later than the factor being read cannot affect
+its structural equation. -/
+theorem evalNodeUnder_eq_of_intervention_agree_through
+    (model : FiniteLatentSCM S)
+    (left right : (i : Fin S.count) -> Option (S.Value i))
+    (roots : model.latent.Assignment) (child : Fin S.count)
+    (agree : forall node, node.val <= child.val -> left node = right node) :
+    model.evalNodeUnder left roots child =
+      model.evalNodeUnder right roots child := by
+  let through : NodeSet S := fun node => decide (node.val <= child.val)
+  have closed : model.BackwardClosedUnder left through := by
+    intro parent current currentThrough _currentFree edge
+    have currentLe : current.val <= child.val :=
+      of_decide_eq_true (by simpa [through] using currentThrough)
+    have parentLt : parent.val < current.val := S.directed_earlier edge
+    have parentLe : parent.val <= child.val :=
+      Nat.le_trans (Nat.le_of_lt parentLt) currentLe
+    simpa [through] using decide_eq_true parentLe
+  exact model.evalNodeUnder_eq_of_intervention_agree_on_closed
+    left right through roots closed (by
+      intro node nodeThrough
+      exact agree node (of_decide_eq_true (by
+        simpa [through] using nodeThrough))) child (by simp [through])
+
 /--
 Ancestors of a target set in `G_{\overline{X}}` are backward-closed under
 `do(X)`: every remaining directed parent of a non-intervened ancestor is
@@ -12210,6 +12240,643 @@ def rule2PartitionWitness (model : FiniteLatentSCM S)
         rw [evaluationsEqual]
         rw [wSplit, Kernel.agreesOn_union wSelected wUnselected]
         simp [zHolds]
+
+/-!
+### Rule 2 through cross-intervention local factors
+
+The older rule-2 split above fixes the raw `An(Z)` latent mask.  That mask is
+too coarse in the general conditioned case: a root may affect both `Y` and
+`Z` only through a conditioned `W` noncollider, while path separation remains
+valid.  The general construction instead factors the joint `Z ∪ W`
+cylinder topologically.  A local `Z` factor is read under `do(X ∪ W)` and a
+local `W` factor under `do(X ∪ Z)`.  Together they are exactly the original
+joint cylinder under `do(X)`.
+-/
+
+/-- A local joint factor for a `Z` vertex can intervene on every `W` vertex.
+Only earlier vertices can influence the factor, and every earlier `W` vertex
+already occurs in the joint topological prefix. -/
+theorem rule2JointLocalConditionFactor_eq_z
+    (model : FiniteLatentSCM S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (child : Fin S.count) (childInZ : z child = true)
+    (roots : model.latent.Assignment) :
+    localConditionFactor model x (NodeSet.union z w) assignment child roots =
+      localConditionFactor model (NodeSet.union x w) z assignment child
+        roots := by
+  let jointAction := localConditionAction x (NodeSet.union z w) child
+  let zAction := localConditionAction (NodeSet.union x w) z child
+  have interventionAgree : forall node, node.val <= child.val ->
+      ((Kernel.mk NodeSet.empty jointAction NodeSet.empty).intervention
+          assignment) node =
+        ((Kernel.mk NodeSet.empty zAction NodeSet.empty).intervention
+          assignment) node := by
+    intro node through
+    have actionEq : jointAction node = zAction node := by
+      by_cases earlier : node.val < child.val
+      · dsimp [jointAction, zAction]
+        simp only [localConditionAction, conditioningPrefix, NodeSet.union,
+          earlier, decide_true, Bool.and_true]
+        ac_rfl
+      · have sameValue : node.val = child.val :=
+          Nat.le_antisymm through (Nat.le_of_not_gt earlier)
+        have sameNode : node = child := Fin.ext sameValue
+        subst node
+        have childOutsideX : x child = false :=
+          disjoint.xz.symm child childInZ
+        have childOutsideW : w child = false :=
+          disjoint.zw child childInZ
+        simp [jointAction, zAction, localConditionAction,
+          conditioningPrefix, NodeSet.union, childInZ, childOutsideX,
+          childOutsideW]
+    simp [Kernel.intervention, actionEq]
+  have evaluated := model.evalNodeUnder_eq_of_intervention_agree_through
+    ((Kernel.mk NodeSet.empty jointAction NodeSet.empty).intervention
+      assignment)
+    ((Kernel.mk NodeSet.empty zAction NodeSet.empty).intervention assignment)
+    roots child interventionAgree
+  simpa [localConditionFactor, jointAction, zAction,
+    FiniteLatentSCM.evalUnder] using congrArg
+      (fun value => decide (value = assignment child)) evaluated
+
+/-- The symmetric local statement for a `W` vertex: intervening on every
+`Z` vertex agrees with the joint topological prefix through that factor. -/
+theorem rule2JointLocalConditionFactor_eq_w
+    (model : FiniteLatentSCM S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (child : Fin S.count) (childInW : w child = true)
+    (roots : model.latent.Assignment) :
+    localConditionFactor model x (NodeSet.union z w) assignment child roots =
+      localConditionFactor model (NodeSet.union x z) w assignment child
+        roots := by
+  let jointAction := localConditionAction x (NodeSet.union z w) child
+  let wAction := localConditionAction (NodeSet.union x z) w child
+  have interventionAgree : forall node, node.val <= child.val ->
+      ((Kernel.mk NodeSet.empty jointAction NodeSet.empty).intervention
+          assignment) node =
+        ((Kernel.mk NodeSet.empty wAction NodeSet.empty).intervention
+          assignment) node := by
+    intro node through
+    have actionEq : jointAction node = wAction node := by
+      by_cases earlier : node.val < child.val
+      · dsimp [jointAction, wAction]
+        simp only [localConditionAction, conditioningPrefix, NodeSet.union,
+          earlier, decide_true, Bool.and_true]
+        ac_rfl
+      · have sameValue : node.val = child.val :=
+          Nat.le_antisymm through (Nat.le_of_not_gt earlier)
+        have sameNode : node = child := Fin.ext sameValue
+        subst node
+        have childOutsideX : x child = false :=
+          disjoint.xw.symm child childInW
+        have childOutsideZ : z child = false :=
+          disjoint.zw.symm child childInW
+        simp [jointAction, wAction, localConditionAction,
+          conditioningPrefix, NodeSet.union, childInW, childOutsideX,
+          childOutsideZ]
+    simp [Kernel.intervention, actionEq]
+  have evaluated := model.evalNodeUnder_eq_of_intervention_agree_through
+    ((Kernel.mk NodeSet.empty jointAction NodeSet.empty).intervention
+      assignment)
+    ((Kernel.mk NodeSet.empty wAction NodeSet.empty).intervention assignment)
+    roots child interventionAgree
+  simpa [localConditionFactor, jointAction, wAction,
+    FiniteLatentSCM.evalUnder] using congrArg
+      (fun value => decide (value = assignment child)) evaluated
+
+/-- The `Z` subfamily of the joint topological cylinder is the standalone
+`Z` cylinder under `do(X ∪ W)`. -/
+theorem rule2JointLocalConditionZ_eq
+    (model : FiniteLatentSCM S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (roots : model.latent.Assignment) :
+    localConditionEvent model x (NodeSet.union z w) z assignment roots =
+      localConditionEvent model (NodeSet.union x w) z z assignment roots := by
+  unfold localConditionEvent
+  apply finAll_congr
+  intro child
+  cases selected : z child with
+  | false => simp
+  | true =>
+      simp only [↓reduceIte]
+      exact rule2JointLocalConditionFactor_eq_z model x y z w assignment
+        disjoint child selected roots
+
+/-- The `W` subfamily of the same joint cylinder is the standalone `W`
+cylinder under `do(X ∪ Z)`. -/
+theorem rule2JointLocalConditionW_eq
+    (model : FiniteLatentSCM S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (roots : model.latent.Assignment) :
+    localConditionEvent model x (NodeSet.union z w) w assignment roots =
+      localConditionEvent model (NodeSet.union x z) w w assignment roots := by
+  unfold localConditionEvent
+  apply finAll_congr
+  intro child
+  cases selected : w child with
+  | false => simp
+  | true =>
+      simp only [↓reduceIte]
+      exact rule2JointLocalConditionFactor_eq_w model x y z w assignment
+        disjoint child selected roots
+
+/-- Cross-intervention factorization of the rule-2 conditioning cylinder.
+
+For every latent assignment, observing `Z ∪ W` under `do(X)` is exactly
+the conjunction of observing `Z` under `do(X ∪ W)` and observing `W`
+under `do(X ∪ Z)`.  The proof is pointwise and constructive: all three
+cylinders are expanded into their topological local factors, after which the
+two preceding prefix lemmas identify the factors one by one. -/
+theorem agreesOn_rule2_cross_condition_factorization
+    (model : FiniteLatentSCM S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (roots : model.latent.Assignment) :
+    Kernel.agreesOn (NodeSet.union z w) assignment
+        (model.evalUnder
+          ((Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment)
+          roots) =
+      (Kernel.agreesOn z assignment
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+              NodeSet.empty).intervention assignment) roots) &&
+        Kernel.agreesOn w assignment
+          (model.evalUnder
+            ((Kernel.mk NodeSet.empty (NodeSet.union x z)
+              NodeSet.empty).intervention assignment) roots)) := by
+  have joint := agreesOn_evalUnder_eq_localConditionEvent model x
+    (NodeSet.union z w) assignment roots
+  have split := localConditionEvent_union model x (NodeSet.union z w)
+    z w assignment roots
+  have zFactors := rule2JointLocalConditionZ_eq model x y z w assignment
+    disjoint roots
+  have wFactors := rule2JointLocalConditionW_eq model x y z w assignment
+    disjoint roots
+  have zCylinder := agreesOn_evalUnder_eq_localConditionEvent model
+    (NodeSet.union x w) z assignment roots
+  have wCylinder := agreesOn_evalUnder_eq_localConditionEvent model
+    (NodeSet.union x z) w assignment roots
+  rw [joint, split, zFactors, wFactors, ← zCylinder, ← wCylinder]
+
+/-- One latent root can affect the local equality constraint for a
+conditioned `W` vertex under `do(X ∪ Z)`. -/
+def rule2WConditionRootRelevant (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    (assignment : S.Assignment) (child : Fin S.count)
+    (root : Fin model.latent.count) : Bool :=
+  w child &&
+    model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty
+        (localConditionAction (NodeSet.union x z) w child)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G
+        (localConditionAction (NodeSet.union x z) w child)
+        (NodeSet.singleton child)) root
+
+/-- Two latent roots are adjacent when the same local rule-2 conditioning
+factor can observe both of them. -/
+def rule2WConditionRootAdjacent (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    (assignment : S.Assignment)
+    (left right : Fin model.latent.count) : Bool :=
+  finAny S.count (fun child =>
+    rule2WConditionRootRelevant model G x z w assignment child left &&
+      rule2WConditionRootRelevant model G x z w assignment child right)
+
+/-- The finite latent component generated by roots needed for the `Z`
+cylinder under `do(X ∪ W)`, closed through local `W` factors read under
+`do(X ∪ Z)`. -/
+def rule2ZConditionLatentComponent (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    (assignment : S.Assignment) (root : Fin model.latent.count) : Bool :=
+  finAny model.latent.count (fun seed =>
+    model.latentRelevantUnder
+        ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+          NodeSet.empty).intervention assignment)
+        (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) seed &&
+      FiniteReachability.within finBeq
+        (List.ofFn (fun latent : Fin model.latent.count => latent))
+        (rule2WConditionRootAdjacent model G x z w assignment)
+        (List.ofFn (fun latent : Fin model.latent.count => latent)).length
+        seed root)
+
+/-- A local `W` factor belongs to the selected rule-2 block when one of its
+relevant roots lies in the component generated by `Z`. -/
+def rule2WConditionSelected (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    (assignment : S.Assignment) : NodeSet S :=
+  fun child =>
+    finAny model.latent.count (fun root =>
+      rule2WConditionRootRelevant model G x z w assignment child root &&
+        rule2ZConditionLatentComponent model G x z w assignment root)
+
+/-- Every remaining local `W` factor belongs to the complementary rule-2
+block. -/
+def rule2WConditionResidual (model : FiniteLatentSCM S)
+    (G : ObservedGraph S) (x z w : NodeSet S)
+    (assignment : S.Assignment) : NodeSet S :=
+  NodeSet.diff w (rule2WConditionSelected model G x z w assignment)
+
+theorem rule2WConditionRootAdjacent_of_relevant
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    (child : Fin S.count) (left right : Fin model.latent.count)
+    (leftRelevant : rule2WConditionRootRelevant model G x z w assignment
+      child left = true)
+    (rightRelevant : rule2WConditionRootRelevant model G x z w assignment
+      child right = true) :
+    rule2WConditionRootAdjacent model G x z w assignment left right = true :=
+  finAny_eq_true_of _ child
+    (Bool.and_eq_true_iff.mpr ⟨leftRelevant, rightRelevant⟩)
+
+/-- Every `Z`-relevant seed root lies in the generated component by a
+reflexive bounded walk. -/
+theorem rule2ZConditionLatentComponent_of_z_relevant
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    (root : Fin model.latent.count)
+    (relevant : model.latentRelevantUnder
+      ((Kernel.mk NodeSet.empty (NodeSet.union x w)
+        NodeSet.empty).intervention assignment)
+      (FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z) root = true) :
+    rule2ZConditionLatentComponent model G x z w assignment root = true := by
+  apply finAny_eq_true_of _ root
+  apply Bool.and_eq_true_iff.mpr
+  refine ⟨relevant, ?_⟩
+  have complete : forall latent : Fin model.latent.count,
+      latent ∈ List.ofFn (fun i : Fin model.latent.count => i) :=
+    fun latent => List.mem_ofFn.mpr ⟨latent, rfl⟩
+  exact (FiniteReachability.within_eq_true_iff_boundedWalk finBeq
+    (List.ofFn (fun latent : Fin model.latent.count => latent))
+    (rule2WConditionRootAdjacent model G x z w assignment)
+    finBeq_eq_true_iff complete
+    (List.ofFn (fun latent : Fin model.latent.count => latent)).length
+    root root).mpr
+      (FiniteReachability.BoundedWalk.refl _ _ root)
+
+/-- The generated rule-2 component is closed across every local-factor
+adjacency edge. -/
+theorem rule2ZConditionLatentComponent_closed
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    (left right : Fin model.latent.count)
+    (leftIn : rule2ZConditionLatentComponent model G x z w assignment
+      left = true)
+    (edge : rule2WConditionRootAdjacent model G x z w assignment
+      left right = true) :
+    rule2ZConditionLatentComponent model G x z w assignment right = true := by
+  rcases (finAny_eq_true_iff _).mp (by
+      simpa [rule2ZConditionLatentComponent] using leftIn) with
+    ⟨seed, seedData⟩
+  rcases Bool.and_eq_true_iff.mp seedData with
+    ⟨seedRelevant, seedReachesLeft⟩
+  let roots := List.ofFn (fun latent : Fin model.latent.count => latent)
+  let adjacent := rule2WConditionRootAdjacent model G x z w assignment
+  have complete : forall latent : Fin model.latent.count, latent ∈ roots :=
+    fun latent => List.mem_ofFn.mpr ⟨latent, rfl⟩
+  have seedToLeft : FiniteReachability.BoundedWalk adjacent roots.length
+      seed left :=
+    (FiniteReachability.within_eq_true_iff_boundedWalk finBeq roots adjacent
+      finBeq_eq_true_iff complete roots.length seed left).mp
+      (by simpa [roots, adjacent] using seedReachesLeft)
+  have leftToRight : FiniteReachability.BoundedWalk adjacent 1 left right :=
+    ⟨1, Nat.le_refl _,
+      ⟨FiniteReachability.ExactWalk.step (by simpa [adjacent] using edge)
+        (FiniteReachability.ExactWalk.refl right)⟩⟩
+  have seedToRightReachable : FiniteReachability.Reachable adjacent seed right :=
+    FiniteReachability.Reachable.of_bounded
+      (FiniteReachability.BoundedWalk.trans seedToLeft leftToRight)
+  have seedToRight : FiniteReachability.BoundedWalk adjacent roots.length
+      seed right :=
+    FiniteReachability.boundedWalk_of_reachable finBeq roots adjacent
+      finBeq_eq_true_iff complete seedToRightReachable
+  have found : FiniteReachability.within finBeq roots adjacent roots.length
+      seed right = true :=
+    (FiniteReachability.within_eq_true_iff_boundedWalk finBeq roots adjacent
+      finBeq_eq_true_iff complete roots.length seed right).mpr seedToRight
+  apply (finAny_eq_true_iff _).mpr
+  exact ⟨seed, Bool.and_eq_true_iff.mpr ⟨seedRelevant,
+    by simpa [roots, adjacent] using found⟩⟩
+
+/-- Every root of a selected rule-2 factor belongs to the generated
+component. -/
+theorem rule2WConditionSelected_root_in_component
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    (child : Fin S.count) (root : Fin model.latent.count)
+    (selected : rule2WConditionSelected model G x z w assignment child =
+      true)
+    (relevant : rule2WConditionRootRelevant model G x z w assignment
+      child root = true) :
+    rule2ZConditionLatentComponent model G x z w assignment root = true := by
+  rcases (finAny_eq_true_iff _).mp (by
+      simpa [rule2WConditionSelected] using selected) with
+    ⟨pivot, pivotData⟩
+  rcases Bool.and_eq_true_iff.mp pivotData with
+    ⟨pivotRelevant, pivotInComponent⟩
+  exact rule2ZConditionLatentComponent_closed model G x z w assignment
+    pivot root pivotInComponent
+    (rule2WConditionRootAdjacent_of_relevant model G x z w assignment
+      child pivot root pivotRelevant relevant)
+
+/-- Every root of a residual rule-2 factor lies outside the generated
+component. -/
+theorem rule2WConditionResidual_root_outside_component
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment)
+    (child : Fin S.count) (root : Fin model.latent.count)
+    (residual : rule2WConditionResidual model G x z w assignment child =
+      true)
+    (relevant : rule2WConditionRootRelevant model G x z w assignment
+      child root = true) :
+    rule2ZConditionLatentComponent model G x z w assignment root = false := by
+  have notSelected :
+      rule2WConditionSelected model G x z w assignment child = false :=
+    NodeSet.Disjoint.diff_right w
+      (rule2WConditionSelected model G x z w assignment) child residual
+  cases component :
+      rule2ZConditionLatentComponent model G x z w assignment root with
+  | false => rfl
+  | true =>
+      have selected :
+          rule2WConditionSelected model G x z w assignment child = true :=
+        finAny_eq_true_of _ root
+          (Bool.and_eq_true_iff.mpr ⟨relevant, component⟩)
+      rw [selected] at notSelected
+      contradiction
+
+theorem rule2WConditionSelected_subset_w
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment) :
+    NodeSet.Subset (rule2WConditionSelected model G x z w assignment) w := by
+  intro child selected
+  rcases (finAny_eq_true_iff _).mp (by
+      simpa [rule2WConditionSelected] using selected) with ⟨root, rootData⟩
+  have relevant : rule2WConditionRootRelevant model G x z w assignment
+      child root = true := (Bool.and_eq_true_iff.mp rootData).1
+  exact (Bool.and_eq_true_iff.mp relevant).1
+
+/-- The selected and residual local-factor blocks cover all of `W`. -/
+theorem rule2WConditionSplit_union
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x z w : NodeSet S) (assignment : S.Assignment) :
+    NodeSet.union (rule2WConditionSelected model G x z w assignment)
+      (rule2WConditionResidual model G x z w assignment) = w := by
+  funext child
+  have subset := rule2WConditionSelected_subset_w model G x z w assignment
+    child
+  simp [rule2WConditionResidual, NodeSet.union, NodeSet.diff]
+  cases hw : w child with
+  | false =>
+      cases hs : rule2WConditionSelected model G x z w assignment child with
+      | false => rfl
+      | true =>
+          have impossible := subset hs
+          rw [hw] at impossible
+          contradiction
+  | true =>
+      cases rule2WConditionSelected model G x z w assignment child <;> rfl
+
+/-- Assemble the full rule-2 conditional-independence witness from the local
+`Z` component once graph separation has shown that every root needed by `Y`
+lies outside that component.
+
+All other routing facts are automatic: the `Z` cylinder seeds the component,
+selected `W` factors are closed into it, and residual factors avoid it by
+definition.  The four kernel-event equalities use the cross-intervention
+factorization above plus SCM composition after the displayed conditioning
+cylinders hold. -/
+def rule2PartitionWitness_of_local_condition_component
+    (model : FiniteLatentSCM S) (G : ObservedGraph S)
+    (x y z w : NodeSet S) (assignment : S.Assignment)
+    (disjoint : FourWayDisjoint x y z w)
+    (yAvoids : forall root,
+      model.latentRelevantUnder
+          ((Kernel.mk NodeSet.empty
+            (NodeSet.union (NodeSet.union x z) w)
+            NodeSet.empty).intervention assignment)
+          (FiniteLatentSCM.ancestralInBar G
+            (NodeSet.union (NodeSet.union x z) w) y) root = true ->
+        rule2ZConditionLatentComponent model G x z w assignment root =
+          false) :
+    ProductConditionalIndependenceWitnessAt model
+      (rule2Right x y z w) (rule2Left x y z w) assignment := by
+  let baseIntervention :=
+    (Kernel.mk NodeSet.empty x NodeSet.empty).intervention assignment
+  let extendedIntervention :=
+    (Kernel.mk NodeSet.empty (NodeSet.union x z)
+      NodeSet.empty).intervention assignment
+  let zIntervention :=
+    (Kernel.mk NodeSet.empty (NodeSet.union x w)
+      NodeSet.empty).intervention assignment
+  let yIntervention :=
+    (Kernel.mk NodeSet.empty (NodeSet.union (NodeSet.union x z) w)
+      NodeSet.empty).intervention assignment
+  let zRelevant :=
+    FiniteLatentSCM.ancestralInBar G (NodeSet.union x w) z
+  let yRelevant :=
+    FiniteLatentSCM.ancestralInBar G
+      (NodeSet.union (NodeSet.union x z) w) y
+  let component :=
+    rule2ZConditionLatentComponent model G x z w assignment
+  let selectedW := rule2WConditionSelected model G x z w assignment
+  let residualW := rule2WConditionResidual model G x z w assignment
+  let zEvent : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn z assignment (model.evalUnder zIntervention roots)
+  let yEvent : model.latent.Assignment -> Bool := fun roots =>
+    Kernel.agreesOn y assignment (model.evalUnder yIntervention roots)
+  let selectedConditionEvent :=
+    localConditionEvent model (NodeSet.union x z) w selectedW assignment
+  let residualConditionEvent :=
+    localConditionEvent model (NodeSet.union x z) w residualW assignment
+  have selectedWSubset : NodeSet.Subset selectedW w := by
+    simpa [selectedW] using
+      rule2WConditionSelected_subset_w model G x z w assignment
+  have residualWSubset : NodeSet.Subset residualW w := by
+    dsimp [residualW]
+    exact NodeSet.diff_subset_left w
+      (rule2WConditionSelected model G x z w assignment)
+  have covers : NodeSet.union selectedW residualW = w := by
+    simpa [selectedW, residualW] using
+      rule2WConditionSplit_union model G x z w assignment
+  have zDepends : CanonicalFactorization.DependsOnSelected
+      model.latent.count model.latent.Value component zEvent := by
+    refine CanonicalFactorization.DependsOnSelected.subset
+      model.latent.count model.latent.Value
+      (selected := model.latentRelevantUnder zIntervention zRelevant)
+      (selected' := component) zEvent ?_ ?_
+    · intro root relevantRoot
+      exact rule2ZConditionLatentComponent_of_z_relevant model G x z w
+        assignment root (by
+          simpa [zIntervention, zRelevant] using relevantRoot)
+    · exact agreesOn_evalUnder_dependsOnSelected model zIntervention
+        zRelevant z assignment (by
+          dsimp [zIntervention, zRelevant]
+          exact FiniteLatentSCM.observedAncestorOf_backwardClosedUnder
+            model G (NodeSet.union x w) z assignment) (by
+          dsimp [zRelevant]
+          exact FiniteLatentSCM.ancestralInBar_contains_targets G
+            (NodeSet.union x w) z)
+  have selectedConditionDepends :
+      CanonicalFactorization.DependsOnSelected model.latent.count
+        model.latent.Value component selectedConditionEvent := by
+    dsimp [selectedConditionEvent]
+    apply localConditionEvent_dependsOnSelected model G
+    intro child childSelected root relevantRoot
+    have childInW := selectedWSubset child childSelected
+    have combined : rule2WConditionRootRelevant model G x z w assignment
+        child root = true := by
+      simp [rule2WConditionRootRelevant, childInW, relevantRoot]
+    exact rule2WConditionSelected_root_in_component model G x z w
+      assignment child root (by simpa [selectedW] using childSelected)
+      combined
+  have yDepends : CanonicalFactorization.DependsOnUnselected
+      model.latent.count model.latent.Value component yEvent := by
+    exact agreesOn_evalUnder_dependsOnUnselected_of_relevance_avoids model
+      component yIntervention yRelevant y assignment (by
+        dsimp [yIntervention, yRelevant]
+        exact FiniteLatentSCM.observedAncestorOf_backwardClosedUnder model G
+          (NodeSet.union (NodeSet.union x z) w) y assignment) (by
+        dsimp [yRelevant]
+        exact FiniteLatentSCM.ancestralInBar_contains_targets G
+          (NodeSet.union (NodeSet.union x z) w) y) (by
+        intro root relevantRoot
+        exact yAvoids root (by
+          simpa [yIntervention, yRelevant] using relevantRoot))
+  have residualConditionDepends :
+      CanonicalFactorization.DependsOnUnselected model.latent.count
+        model.latent.Value component residualConditionEvent := by
+    dsimp [residualConditionEvent]
+    apply localConditionEvent_dependsOnUnselected model G
+    intro child childResidual root relevantRoot
+    have childInW := residualWSubset child childResidual
+    have combined : rule2WConditionRootRelevant model G x z w assignment
+        child root = true := by
+      simp [rule2WConditionRootRelevant, childInW, relevantRoot]
+    exact rule2WConditionResidual_root_outside_component model G x z w
+      assignment child root (by simpa [residualW] using childResidual)
+      combined
+  have wEventSplit : forall roots,
+      Kernel.agreesOn w assignment
+          (model.evalUnder extendedIntervention roots) =
+        (selectedConditionEvent roots && residualConditionEvent roots) := by
+    intro roots
+    have full := agreesOn_evalUnder_eq_localConditionEvent model
+      (NodeSet.union x z) w assignment roots
+    have split := localConditionEvent_union model (NodeSet.union x z) w
+      selectedW residualW assignment roots
+    have selectedCover := congrArg
+      (fun nodes => localConditionEvent model (NodeSet.union x z) w nodes
+        assignment roots) covers
+    have splitFullRaw :
+        localConditionEvent model (NodeSet.union x z) w w assignment roots =
+          (localConditionEvent model (NodeSet.union x z) w selectedW
+              assignment roots &&
+            localConditionEvent model (NodeSet.union x z) w residualW
+              assignment roots) :=
+      selectedCover.symm.trans split
+    have splitFull :
+        localConditionEvent model (NodeSet.union x z) w w assignment roots =
+          (selectedConditionEvent roots && residualConditionEvent roots) := by
+      simpa [selectedConditionEvent, residualConditionEvent] using splitFullRaw
+    rw [full, splitFull]
+  refine
+    { selected := component
+      selectedOutcome := zEvent
+      selectedCondition := selectedConditionEvent
+      unselectedOutcome := yEvent
+      unselectedCondition := residualConditionEvent
+      selectedOutcomeDepends := zDepends
+      selectedConditionDepends := selectedConditionDepends
+      unselectedOutcomeDepends := yDepends
+      unselectedConditionDepends := residualConditionDepends
+      leftNumerator := ?_
+      rightCondition := ?_
+      rightNumerator := ?_
+      leftCondition := ?_ }
+  · funext roots
+    simp only [productPreimage, rule2Right, Kernel.numeratorEvent,
+      Probability.inter]
+    change
+      (Kernel.agreesOn y assignment
+          (model.evalUnder baseIntervention roots) &&
+        Kernel.agreesOn (NodeSet.union z w) assignment
+          (model.evalUnder baseIntervention roots)) = _
+    have composition := agreesOn_and_evalUnder_union_eq model x
+      (NodeSet.union z w) y assignment roots
+    have cross := agreesOn_rule2_cross_condition_factorization model
+      x y z w assignment disjoint roots
+    calc
+      _ = (Kernel.agreesOn (NodeSet.union z w) assignment
+            (model.evalUnder baseIntervention roots) &&
+          Kernel.agreesOn y assignment
+            (model.evalUnder baseIntervention roots)) := Bool.and_comm _ _
+      _ = (Kernel.agreesOn (NodeSet.union z w) assignment
+            (model.evalUnder baseIntervention roots) && yEvent roots) := by
+          simpa [baseIntervention, yIntervention, yEvent,
+            NodeSet.union_assoc] using composition
+      _ = ((zEvent roots &&
+            Kernel.agreesOn w assignment
+              (model.evalUnder extendedIntervention roots)) &&
+          yEvent roots) := by
+          rw [show Kernel.agreesOn (NodeSet.union z w) assignment
+              (model.evalUnder baseIntervention roots) =
+                (zEvent roots && Kernel.agreesOn w assignment
+                  (model.evalUnder extendedIntervention roots)) by
+            simpa [baseIntervention, extendedIntervention, zIntervention,
+              zEvent] using cross]
+      _ = ((zEvent roots && selectedConditionEvent roots) &&
+          (yEvent roots && residualConditionEvent roots)) := by
+          rw [wEventSplit roots]
+          ac_rfl
+  · funext roots
+    simp only [productPreimage, rule2Left, Kernel.conditionEvent,
+      Probability.inter]
+    change Kernel.agreesOn w assignment
+      (model.evalUnder extendedIntervention roots) = _
+    exact wEventSplit roots
+  · funext roots
+    simp only [productPreimage, rule2Left, Kernel.numeratorEvent,
+      Probability.inter]
+    change
+      (Kernel.agreesOn y assignment
+          (model.evalUnder extendedIntervention roots) &&
+        Kernel.agreesOn w assignment
+          (model.evalUnder extendedIntervention roots)) = _
+    have composition := agreesOn_and_evalUnder_union_eq model
+      (NodeSet.union x z) w y assignment roots
+    calc
+      _ = (Kernel.agreesOn w assignment
+            (model.evalUnder extendedIntervention roots) &&
+          Kernel.agreesOn y assignment
+            (model.evalUnder extendedIntervention roots)) := Bool.and_comm _ _
+      _ = (Kernel.agreesOn w assignment
+            (model.evalUnder extendedIntervention roots) && yEvent roots) := by
+          simpa [extendedIntervention, yIntervention, yEvent] using composition
+      _ = (selectedConditionEvent roots &&
+          (yEvent roots && residualConditionEvent roots)) := by
+          rw [wEventSplit roots]
+          ac_rfl
+  · funext roots
+    simp only [productPreimage, rule2Right, Kernel.conditionEvent,
+      Probability.inter]
+    change Kernel.agreesOn (NodeSet.union z w) assignment
+      (model.evalUnder baseIntervention roots) = _
+    have cross := agreesOn_rule2_cross_condition_factorization model
+      x y z w assignment disjoint roots
+    calc
+      _ = (zEvent roots && Kernel.agreesOn w assignment
+          (model.evalUnder extendedIntervention roots)) := by
+            simpa [baseIntervention, extendedIntervention, zIntervention,
+              zEvent] using cross
+      _ = ((zEvent roots && selectedConditionEvent roots) &&
+          residualConditionEvent roots) := by
+            rw [wEventSplit roots]
+            ac_rfl
 
 /-- Empty-cylinder events are constant, so they depend on no coordinates. -/
 theorem agreesOn_empty_eq_true
