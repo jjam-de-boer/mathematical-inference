@@ -34072,6 +34072,93 @@ theorem hedgeFlowReadoutModel_evalNodeUnder_bit
         intervention u parent)
     child
 
+/-- Invert the additive routing equation at one free selected vertex.
+
+`hedgeRoutingLocalSource` XORs the vertex output with every routed incoming
+bit.  The forward mechanism XORed exactly those incoming bits with the local
+injection, so the second XOR cancels them and recovers `sourceBit`.  Keeping
+this lemma generic is important for observational fiber counting: both hedge
+models use the same inversion principle even though their forest incidence
+sources and combined successor maps differ. -/
+theorem hedgeFlowReadoutModel_localSource_of_free
+    (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (successor : ForestChild S)
+    (wellFormed : childWellFormedBool nodes successor = true)
+    (base : ExactModel S)
+    (sourceBit : forall child, S.ParentValues child →
+      base.latent.Inputs child → Bool)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (u : base.latent.Assignment) (child : Fin S.count)
+    (selected : nodes child = true) (free : intervention child = none) :
+    let routed := hedgeFlowReadoutModel rich nodes successor base sourceBit
+    let bits := fun node => hedgeIsSecond rich node
+      (routed.evalNodeUnder intervention u node)
+    hedgeRoutingLocalSource successor bits child =
+      sourceBit child
+        (fun parent _edge => routed.evalNodeUnder intervention u parent)
+        (fun root _incident => u root) := by
+  dsimp only
+  let routed := hedgeFlowReadoutModel rich nodes successor base sourceBit
+  let bits := fun node => hedgeIsSecond rich node
+    (routed.evalNodeUnder intervention u node)
+  have equation := hedgeFlowReadoutModel_evalNodeUnder_bit rich nodes
+    successor wellFormed base sourceBit intervention u child selected free
+  change bits child = Bool.xor
+    (sourceBit child
+      (fun parent _edge => routed.evalNodeUnder intervention u parent)
+      (fun root _incident => u root))
+    (hedgeRoutingIncomingBits successor bits child) at equation
+  unfold hedgeRoutingLocalSource
+  change Bool.xor (bits child)
+      (hedgeRoutingIncomingBits successor bits child) = _
+  rw [equation]
+  generalize
+    sourceBit child
+      (fun parent _edge => routed.evalNodeUnder intervention u parent)
+      (fun root _incident => u root) = source
+  generalize hedgeRoutingIncomingBits successor bits child = incoming
+  cases source <;> cases incoming <;> rfl
+
+/-- Observational sink parity of an additive readout is exactly the parity of
+its local injections over all selected vertices.
+
+No intervention is present, so every selected structural equation can be
+inverted by `hedgeFlowReadoutModel_localSource_of_free`.  Conservation then
+removes every internal routed edge in pairs.  This generic statement keeps
+the combinatorial cancellation separate from the hedge-specific proof that
+pair-root incidence has even total parity. -/
+theorem hedgeFlowReadoutModel_sinkParity_observational
+    (rich : ObservedSignature.ValueRich S)
+    (nodes : NodeSet S) (successor : ForestChild S)
+    (wellFormed : childWellFormedBool nodes successor = true)
+    (base : ExactModel S)
+    (sourceBit : forall child, S.ParentValues child →
+      base.latent.Inputs child → Bool)
+    (u : base.latent.Assignment) :
+    let routed := hedgeFlowReadoutModel rich nodes successor base sourceBit
+    hedgeNodeXor (keptSinks nodes successor) (fun node =>
+        hedgeIsSecond rich node (routed.eval u node)) =
+      hedgeNodeXor nodes (fun child =>
+        sourceBit child
+          (fun parent _edge => routed.eval u parent)
+          (fun root _incident => u root)) := by
+  dsimp only
+  let routed := hedgeFlowReadoutModel rich nodes successor base sourceBit
+  let bits := fun node => hedgeIsSecond rich node (routed.eval u node)
+  rw [hedgeRoutingFlow_conservation_localSource nodes successor wellFormed bits]
+  unfold hedgeNodeXor
+  apply foldl_congr_of_mem
+  intro total child member
+  have selected := (NodeSet.mem_members_iff nodes child).mp member
+  have recovered := hedgeFlowReadoutModel_localSource_of_free rich nodes
+    successor wellFormed base sourceBit (FiniteLatentSCM.noIntervention S)
+    u child selected rfl
+  change hedgeRoutingLocalSource successor bits child =
+    sourceBit child
+      (fun parent _edge => routed.eval u parent)
+      (fun root _incident => u root) at recovered
+  rw [recovered]
+
 /-- Canonical additive wrapper for a hedge.  Only hedge roots inject a local
 source bit; all other routing vertices merely XOR and forward incoming flow. -/
 def HedgeWitness.rootFlowReadoutModel
@@ -34264,6 +34351,55 @@ theorem HedgeWitness.smallOutcomeFlowModel_compatible
     (hedgeForestIncidenceSource G w.small)
     (w.smallParityModel_compatible rich)
 
+/-- In an observational run of the combined large model, the assignment
+itself determines the local pair-root source at every selected flow vertex.
+
+This is the inverse form of the structural equation.  It is more useful for
+support counting than the forward equation: a proposed observed target fixes
+the left-hand side through `hedgeRoutingLocalSource`, while the right-hand
+side is exactly the incidence constraint imposed on the latent pair bits. -/
+theorem HedgeWitness.largeOutcomeFlowModel_observational_localSource
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (hedgeLatentExtension G).Assignment)
+    (child : Fin S.count) (selected : w.largeOutcomeFlowNodes child = true) :
+    let bits := fun node => hedgeIsSecond rich node
+      ((w.largeOutcomeFlowModel rich).eval u node)
+    hedgeRoutingLocalSource w.largeOutcomeFlowSuccessor bits child =
+      if w.large child then
+        hedgeXorPairBitsWithin G w.large child (fun latent _ => u latent)
+      else false := by
+  have recovered := hedgeFlowReadoutModel_localSource_of_free rich
+    w.largeOutcomeFlowNodes w.largeOutcomeFlowSuccessor
+    w.largeOutcomeFlowSuccessor_wellFormed (w.largeParityModel rich)
+    (hedgeForestIncidenceSource G w.large)
+    (FiniteLatentSCM.noIntervention S) u child selected rfl
+  simpa [HedgeWitness.largeOutcomeFlowModel,
+    hedgeForestIncidenceSource, FiniteLatentSCM.eval] using recovered
+
+/-- The small combined flow has the same observational inversion principle,
+with incidence restricted to the inner c-forest.  Route-only vertices inject
+zero; recording that fact explicitly will become the route-consistency part
+of the two models' common observational support. -/
+theorem HedgeWitness.smallOutcomeFlowModel_observational_localSource
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (hedgeLatentExtension G).Assignment)
+    (child : Fin S.count) (selected : w.smallOutcomeFlowNodes child = true) :
+    let bits := fun node => hedgeIsSecond rich node
+      ((w.smallOutcomeFlowModel rich).eval u node)
+    hedgeRoutingLocalSource w.smallOutcomeFlowSuccessor bits child =
+      if w.small child then
+        hedgeXorPairBitsWithin G w.small child (fun latent _ => u latent)
+      else false := by
+  have recovered := hedgeFlowReadoutModel_localSource_of_free rich
+    w.smallOutcomeFlowNodes w.smallOutcomeFlowSuccessor
+    w.smallOutcomeFlowSuccessor_wellFormed (w.smallParityModel rich)
+    (hedgeForestIncidenceSource G w.small)
+    (FiniteLatentSCM.noIntervention S) u child selected rfl
+  simpa [HedgeWitness.smallOutcomeFlowModel,
+    hedgeForestIncidenceSource, FiniteLatentSCM.eval] using recovered
+
 /-- At a free vertex of the combined large flow, cancelling its incoming
 routed bits recovers exactly the pair-root incidence injected by the large
 c-forest.  This packages the structural equation in the effective-source
@@ -34281,31 +34417,13 @@ theorem HedgeWitness.largeOutcomeFlowModel_localSource_of_free
       if w.large child then
         hedgeXorPairBitsWithin G w.large child (fun latent _ => u latent)
       else false := by
-  dsimp only
-  let bits := fun node => hedgeIsSecond rich node
-    ((w.largeOutcomeFlowModel rich).evalNodeUnder
-      (hedgeDoSecond rich q.action) u node)
-  have equation := hedgeFlowReadoutModel_evalNodeUnder_bit rich
+  have recovered := hedgeFlowReadoutModel_localSource_of_free rich
     w.largeOutcomeFlowNodes w.largeOutcomeFlowSuccessor
     w.largeOutcomeFlowSuccessor_wellFormed (w.largeParityModel rich)
     (hedgeForestIncidenceSource G w.large)
     (hedgeDoSecond rich q.action) u child selected free
-  change bits child = Bool.xor
-    (if w.large child then
-      hedgeXorPairBitsWithin G w.large child (fun latent _ => u latent)
-    else false)
-    (hedgeRoutingIncomingBits w.largeOutcomeFlowSuccessor bits child) at equation
-  unfold hedgeRoutingLocalSource
-  change Bool.xor (bits child)
-      (hedgeRoutingIncomingBits w.largeOutcomeFlowSuccessor bits child) = _
-  rw [equation]
-  generalize
-    (if w.large child then
-      hedgeXorPairBitsWithin G w.large child (fun latent _ => u latent)
-    else false) = source
-  generalize hedgeRoutingIncomingBits w.largeOutcomeFlowSuccessor bits child =
-    incoming
-  cases source <;> cases incoming <;> rfl
+  simpa [HedgeWitness.largeOutcomeFlowModel,
+    hedgeForestIncidenceSource] using recovered
 
 /-- Restricted incidence is the rootwise fold of single-root contributions. -/
 theorem hedgeXorPairBitsWithinFrom_eq_contribution_fold
@@ -34384,6 +34502,47 @@ theorem hedgeNodeXor_incidenceSource_union
     rw [hedgeXorPairBitsWithin_pairBitsOf]
   rw [converted]
   exact hedgeNodeXor_incidence G nodes (hedgePairBitsOf G u)
+
+/-- Every observational output of the combined large model has even parity
+on its canonical outcome sinks.  The readout forest can merge and reroute
+streams, but it cannot change total parity: after conservation, the only
+remaining sources are the two-ended pair-root incidences inside `large`. -/
+theorem HedgeWitness.largeOutcomeFlowModel_sinkParity_observational
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgeNodeXor
+        (keptSinks w.largeOutcomeFlowNodes w.largeOutcomeFlowSuccessor)
+        (fun node => hedgeIsSecond rich node
+          ((w.largeOutcomeFlowModel rich).eval u node)) = false := by
+  unfold HedgeWitness.largeOutcomeFlowModel
+  rw [hedgeFlowReadoutModel_sinkParity_observational rich
+    w.largeOutcomeFlowNodes w.largeOutcomeFlowSuccessor
+    w.largeOutcomeFlowSuccessor_wellFormed (w.largeParityModel rich)
+    (hedgeForestIncidenceSource G w.large) u]
+  simpa [HedgeWitness.largeOutcomeFlowNodes,
+    hedgeForestIncidenceSource] using
+      hedgeNodeXor_incidenceSource_union G w.large w.rootReadoutNodes u
+
+/-- The combined small model satisfies the identical observational sink
+parity invariant.  Here conservation exposes incidence internal to `small`;
+the larger readout-node union contributes only zero local sources. -/
+theorem HedgeWitness.smallOutcomeFlowModel_sinkParity_observational
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (hedgeLatentExtension G).Assignment) :
+    hedgeNodeXor
+        (keptSinks w.smallOutcomeFlowNodes w.smallOutcomeFlowSuccessor)
+        (fun node => hedgeIsSecond rich node
+          ((w.smallOutcomeFlowModel rich).eval u node)) = false := by
+  unfold HedgeWitness.smallOutcomeFlowModel
+  rw [hedgeFlowReadoutModel_sinkParity_observational rich
+    w.smallOutcomeFlowNodes w.smallOutcomeFlowSuccessor
+    w.smallOutcomeFlowSuccessor_wellFormed (w.smallParityModel rich)
+    (hedgeForestIncidenceSource G w.small) u]
+  simpa [HedgeWitness.smallOutcomeFlowNodes,
+    hedgeForestIncidenceSource] using
+      hedgeNodeXor_incidenceSource_union G w.small w.rootReadoutNodes u
 
 /-- Every latent assignment of the combined small model has even parity over
 its query-outcome sinks under `do(X = second)`.  Both the small forest and the
