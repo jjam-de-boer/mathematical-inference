@@ -7,6 +7,7 @@ import Thesis.CausalTransport.Soundness
 import Thesis.CausalTransport.Completeness
 import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
+import Thesis.CausalTransport.CompletenessAssembly
 import Thesis.CausalTransport.Counterfactual
 import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.CausalTransport.HiddenDAG
@@ -21,8 +22,9 @@ Stable facade for external-theorem interfaces and their finite transports.
 
 `Certificates` defines the shared certificate shapes, while `Correspondence`
 states the graph-indexed `PublishedSoundness` and `PublishedCompleteness`
-boundaries.  These records make the remaining published-theorem obligations
-explicit: importing this facade does not assume either theorem as an axiom.
+boundaries.  These records make theorem ownership explicit: soundness is
+inhabited constructively below, while importing this facade still does not
+assume completeness as an axiom.
 
 `FiniteSource` supplies an independently executable finite-table semantics,
 proves preservation into the intrinsic semantics, and exposes source-level
@@ -30,29 +32,12 @@ adapters.  `DSeparationCorrectness` connects the finite ancestry and moral
 reachability searches to active-path separation.
 
 `Soundness` develops the graph-independent probability algebra and the finite
-latent factorization needed by the three do-calculus rules.  Its checked
-adapters can assemble `PublishedSoundness` once the outstanding path-to-product
-witnesses are supplied.  Several empty and one-sided cases are already
-inhabited.  Rule 3 now exposes the correct common/residual factorization of
-its conditioned `W` cylinder: latent dependence shared by `Y` and `W` is kept
-as a common factor rather than incorrectly excluded.  The general graph layer
-now splits `W` into intervention-invariant and intervention-sensitive blocks
-and proves the invariant block unchanged by adding `do(Z)`.  A checked
-constructor compiles that split whenever the two sensitive cylinders avoid
-the combined `Y`/invariant latent mask.  Those avoidance facts are genuine
-subcase hypotheses, not universal consequences of path d-separation.  The
-general construction instead factors the `W` cylinder into topological local
-equations, closes the `Y` roots through factors that share coordinates, and
-automatically routes common and residual factors to complementary latent
-components.  Its remaining rule-3 graph leaf is the precise subset statement
-that every `Y`-connected local factor lies in the *locally*
-intervention-invariant block, after earlier conditioned coordinates have been
-fixed.
-Rule 1 and rule 2 likewise still require their remaining path-derived
-partitions.  The legacy extra Boolean hypotheses accepted by
-`PathDoRulePartitionWitnesses.ofPath` are not consequences of path
-d-separation in all configurations; new work should target
-`ofPathFactorizedRule3`.
+latent factorization needed by the three do-calculus rules.  The factorized
+path arguments now construct every rule partition directly from projected
+graph compatibility, and `ObservedGraph.publishedSoundness` assembles those
+partitions with d-separation correctness into the complete published record.
+The older hypothesis-bearing adapters remain useful as documented local
+interfaces, but they are no longer obligations of the public theorem.
 
 `Completeness` develops the executable ID side for the positive model class:
 successful special cases compile to supported certificates, the two terminal
@@ -73,7 +58,11 @@ does not re-enter `large \ small`; removing that geometric hypothesis and preser
 strict positivity remain the countermodel obligations.  `IdentificationInduction`
 supplies exact success, failure, and unfinished traces so this work can proceed
 by one lemma per recursive ID branch rather than by enumerating deeper
-branch-name stacks.
+branch-name stacks.  `CompletenessAssembly` is the one-way integration layer:
+it imports the completed soundness theorem without creating a dependency from
+`Completeness` back to `Soundness`.  Its support-sensitive Bayes constructor
+now combines arbitrary joint certificates into a conditional certificate,
+requiring denominator positivity only where the source conditional is defined.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations
