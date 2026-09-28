@@ -3785,5 +3785,1195 @@ theorem HedgeWitness.carrierDefectParityModels_observationally_equivalent
     S.assignmentEnumeration_complete
     (w.carrierDefectParityModels_observational_singleton_equiv rich) event
 
+/-! ## Interventional parity of the positive carrier pair -/
+
+/-!
+The observational proof above deliberately treats complete assignments as
+finite support objects.  Separation is more transparent at the structural
+level.  Prefixing the inactive defect (`false`) leaves every forest equation's
+distinguished bit unchanged: the carrier may choose a different background
+label, but `hedgeIsSecond_parityCarrierValue` removes that label.  The two
+lemmas below formalize this comparison recursively along the stored forest
+edges.  Restricting the statement to selected forest vertices is important:
+those are exactly the vertices inspected by root parity, and their kept
+parents remain in the same forest by `CForest.child_edge`.
+-/
+
+/-- With the private defect inactive, the large carrier has exactly the
+distinguished bits of the faithful large parity circuit under any
+intervention. -/
+theorem HedgeWitness.largeCarrierDefectParityModel_bit_eq_base_false
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (old : (hedgeLatentExtension G).Assignment)
+    (child : Fin S.count) (selected : w.large child = true) :
+    hedgeIsSecond rich child
+        ((w.largeCarrierDefectParityModel rich).evalNodeUnder intervention
+          (hedgeDefectAssignment G old false) child) =
+      hedgeIsSecond rich child
+        ((w.largeParityModel rich).evalNodeUnder intervention old child) := by
+  cases freeEq : intervention child with
+  | some value =>
+      rw [FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.evalNodeUnder]
+      unfold FiniteLatentSCM.equationUnder
+      simp [freeEq]
+  | none =>
+      have carrierEquation := hedgeCarrierDefectModel_evalNodeUnder_bit
+        G rich w.actionRoot (w.largeParityModel rich).mechanism intervention
+        (hedgeDefectAssignment G old false) child freeEq
+      change hedgeIsSecond rich child
+          ((w.largeCarrierDefectParityModel rich).evalNodeUnder intervention
+            (hedgeDefectAssignment G old false) child) =
+        Bool.xor
+          (hedgeIsSecond rich child
+            ((w.largeParityModel rich).mechanism child
+              (fun parent _edge =>
+                (w.largeCarrierDefectParityModel rich).evalNodeUnder
+                  intervention (hedgeDefectAssignment G old false) parent)
+              (hedgeDefectOldInputs G w.actionRoot child
+                (fun root _incident =>
+                  hedgeDefectAssignment G old false root))))
+          (hedgeIndependentDefectBit G w.actionRoot child
+            (fun root _incident =>
+              hedgeDefectAssignment G old false root)) at carrierEquation
+      rw [hedgeDefectOldInputs_assignment,
+        hedgeIndependentDefectBit_eq_bitOf,
+        hedgeDefectBitOf_assignment] at carrierEquation
+      simp only [ite_self, Bool.xor_false] at carrierEquation
+      have carrierStructural := hedgeForestParityOutput_bit_of_mem G rich
+        w.large w.child child
+        (fun parent _edge =>
+          (w.largeCarrierDefectParityModel rich).evalNodeUnder intervention
+            (hedgeDefectAssignment G old false) parent)
+        (fun root _incident => old root) selected
+      change hedgeIsSecond rich child
+          ((w.largeParityModel rich).mechanism child
+            (fun parent _edge =>
+              (w.largeCarrierDefectParityModel rich).evalNodeUnder intervention
+                (hedgeDefectAssignment G old false) parent)
+            (fun root _incident => old root)) = _ at carrierStructural
+      have baseEquation := w.largeParityModel_evalNodeUnder_bit rich
+        intervention old child freeEq selected
+      calc
+        _ = hedgeIsSecond rich child
+              ((w.largeParityModel rich).mechanism child
+                (fun parent _edge =>
+                  (w.largeCarrierDefectParityModel rich).evalNodeUnder
+                    intervention (hedgeDefectAssignment G old false) parent)
+                (fun root _incident => old root)) := carrierEquation
+        _ = Bool.xor
+              (hedgeXorPairBitsWithin G w.large child
+                (fun root _incident => old root))
+              (hedgeForestParentBitsFrom rich w.child child
+                (fun parent _edge =>
+                  (w.largeCarrierDefectParityModel rich).evalNodeUnder
+                    intervention (hedgeDefectAssignment G old false) parent)) :=
+          carrierStructural
+        _ = Bool.xor
+              (hedgeXorPairBitsWithin G w.large child
+                (fun root _incident => old root))
+              (hedgeForestParentBitsFrom rich w.child child
+                (fun parent _edge =>
+                  (w.largeParityModel rich).evalNodeUnder intervention old
+                    parent)) := by
+          apply congrArg (Bool.xor
+            (hedgeXorPairBitsWithin G w.large child
+              (fun root _incident => old root)))
+          apply hedgeForestParentBitsFrom_congr_of_kept
+          intro parent edge kept
+          exact w.largeCarrierDefectParityModel_bit_eq_base_false rich
+            intervention old parent
+            (w.large_forest.child_edge parent child kept).1
+        _ = _ := baseEquation.symm
+termination_by child.val
+decreasing_by
+  exact S.directed_earlier edge
+
+/-- With the private defect inactive, the nested carrier likewise reproduces
+the faithful small-forest bit circuit on every small-forest vertex. -/
+theorem HedgeWitness.smallCarrierDefectParityModel_bit_eq_base_false
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (old : (hedgeLatentExtension G).Assignment)
+    (child : Fin S.count) (selected : w.small child = true) :
+    hedgeIsSecond rich child
+        ((w.smallCarrierDefectParityModel rich).evalNodeUnder intervention
+          (hedgeDefectAssignment G old false) child) =
+      hedgeIsSecond rich child
+        ((w.smallParityModel rich).evalNodeUnder intervention old child) := by
+  cases freeEq : intervention child with
+  | some value =>
+      rw [FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.evalNodeUnder]
+      unfold FiniteLatentSCM.equationUnder
+      simp [freeEq]
+  | none =>
+      have carrierEquation := hedgeCarrierDefectModel_evalNodeUnder_bit
+        G rich w.actionRoot (w.smallParityModel rich).mechanism intervention
+        (hedgeDefectAssignment G old false) child freeEq
+      change hedgeIsSecond rich child
+          ((w.smallCarrierDefectParityModel rich).evalNodeUnder intervention
+            (hedgeDefectAssignment G old false) child) =
+        Bool.xor
+          (hedgeIsSecond rich child
+            ((w.smallParityModel rich).mechanism child
+              (fun parent _edge =>
+                (w.smallCarrierDefectParityModel rich).evalNodeUnder
+                  intervention (hedgeDefectAssignment G old false) parent)
+              (hedgeDefectOldInputs G w.actionRoot child
+                (fun root _incident =>
+                  hedgeDefectAssignment G old false root))))
+          (hedgeIndependentDefectBit G w.actionRoot child
+            (fun root _incident =>
+              hedgeDefectAssignment G old false root)) at carrierEquation
+      rw [hedgeDefectOldInputs_assignment,
+        hedgeIndependentDefectBit_eq_bitOf,
+        hedgeDefectBitOf_assignment] at carrierEquation
+      simp only [ite_self, Bool.xor_false] at carrierEquation
+      have carrierStructural : hedgeIsSecond rich child
+          ((w.smallParityModel rich).mechanism child
+            (fun parent _edge =>
+              (w.smallCarrierDefectParityModel rich).evalNodeUnder intervention
+                (hedgeDefectAssignment G old false) parent)
+            (fun root _incident => old root)) =
+          Bool.xor
+            (hedgeXorPairBitsWithin G w.small child
+              (fun root _incident => old root))
+            (hedgeForestParentBitsFrom rich
+              (restrictChild w.small w.child) child
+              (fun parent _edge =>
+                (w.smallCarrierDefectParityModel rich).evalNodeUnder
+                  intervention (hedgeDefectAssignment G old false)
+                  parent)) := by
+        rw [w.smallParityMechanism_of_small rich child _ _ selected]
+        exact hedgeForestParityOutput_bit_of_mem G rich w.small
+          (restrictChild w.small w.child) child _ _ selected
+      have baseEquation := w.smallParityModel_evalNodeUnder_bit rich
+        intervention old child freeEq selected
+      calc
+        _ = hedgeIsSecond rich child
+              ((w.smallParityModel rich).mechanism child
+                (fun parent _edge =>
+                  (w.smallCarrierDefectParityModel rich).evalNodeUnder
+                    intervention (hedgeDefectAssignment G old false) parent)
+                (fun root _incident => old root)) := carrierEquation
+        _ = Bool.xor
+              (hedgeXorPairBitsWithin G w.small child
+                (fun root _incident => old root))
+              (hedgeForestParentBitsFrom rich
+                (restrictChild w.small w.child) child
+                (fun parent _edge =>
+                  (w.smallCarrierDefectParityModel rich).evalNodeUnder
+                    intervention (hedgeDefectAssignment G old false)
+                    parent)) := carrierStructural
+        _ = Bool.xor
+              (hedgeXorPairBitsWithin G w.small child
+                (fun root _incident => old root))
+              (hedgeForestParentBitsFrom rich
+                (restrictChild w.small w.child) child
+                (fun parent _edge =>
+                  (w.smallParityModel rich).evalNodeUnder intervention old
+                    parent)) := by
+          apply congrArg (Bool.xor
+            (hedgeXorPairBitsWithin G w.small child
+              (fun root _incident => old root)))
+          apply hedgeForestParentBitsFrom_congr_of_kept
+          intro parent edge kept
+          exact w.smallCarrierDefectParityModel_bit_eq_base_false rich
+            intervention old parent
+            (w.small_forest.child_edge parent child kept).1
+        _ = _ := baseEquation.symm
+termination_by child.val
+decreasing_by
+  exact S.directed_earlier edge
+
+/-- The inactive-defect large carrier and the faithful large circuit have the
+same total bit on the common hedge roots. -/
+theorem HedgeWitness.largeCarrierDefectParityModel_rootParity_false
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (old : (hedgeLatentExtension G).Assignment) :
+    hedgeNodeXor w.roots (fun node =>
+        hedgeIsSecond rich node
+          ((w.largeCarrierDefectParityModel rich).evalNodeUnder intervention
+            (hedgeDefectAssignment G old false) node)) =
+      hedgeNodeXor w.roots (fun node =>
+        hedgeIsSecond rich node
+          ((w.largeParityModel rich).evalNodeUnder intervention old node)) := by
+  unfold hedgeNodeXor
+  apply foldl_congr_of_mem
+  intro total node member
+  apply congrArg (Bool.xor total)
+  exact w.largeCarrierDefectParityModel_bit_eq_base_false rich
+    intervention old node
+    ((w.large_forest.roots_exact node).mp
+      ((NodeSet.mem_members_iff w.roots node).mp member)).1
+
+/-- The inactive-defect nested carrier and faithful nested circuit also have
+the same total common-root bit. -/
+theorem HedgeWitness.smallCarrierDefectParityModel_rootParity_false
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (intervention : (i : Fin S.count) → Option (S.Value i))
+    (old : (hedgeLatentExtension G).Assignment) :
+    hedgeNodeXor w.roots (fun node =>
+        hedgeIsSecond rich node
+          ((w.smallCarrierDefectParityModel rich).evalNodeUnder intervention
+            (hedgeDefectAssignment G old false) node)) =
+      hedgeNodeXor w.roots (fun node =>
+        hedgeIsSecond rich node
+          ((w.smallParityModel rich).evalNodeUnder intervention old node)) := by
+  unfold hedgeNodeXor
+  apply foldl_congr_of_mem
+  intro total node member
+  apply congrArg (Bool.xor total)
+  exact w.smallCarrierDefectParityModel_bit_eq_base_false rich
+    intervention old node
+    ((w.small_forest.roots_exact node).mp
+      ((NodeSet.mem_members_iff w.roots node).mp member)).1
+
+/-!
+Changing the private coordinate from `false` to an arbitrary defect does not
+require a second global evaluation argument.  At a selected forest vertex the
+carrier equation sees the defect only when that vertex is `actionRoot`.
+Every kept parent of another vertex is different from `actionRoot`, because a
+c-forest root has no stored child.  Structural recursion therefore shows that
+all other forest bits remain equal to their faithful base bits.
+-/
+
+/-- Under the hedge intervention, a large-carrier bit is the faithful large
+bit XOR the private defect exactly at the selected common root. -/
+theorem HedgeWitness.largeCarrierDefectParityModel_bit_eq_base_xor_defect
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (old : (hedgeLatentExtension G).Assignment) (defect : Bool)
+    (child : Fin S.count) (selected : w.large child = true) :
+    hedgeIsSecond rich child
+        ((w.largeCarrierDefectParityModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action)
+          (hedgeDefectAssignment G old defect) child) =
+      Bool.xor
+        (hedgeIsSecond rich child
+          ((w.largeParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action) old child))
+        (if child = w.actionRoot then defect else false) := by
+  cases freeEq : hedgeDoSecond rich q.action child with
+  | some value =>
+      have notRoot : child ≠ w.actionRoot := by
+        intro equal
+        subst child
+        rw [hedgeDoSecond_of_false rich q.action
+          w.actionRoot_not_in_action] at freeEq
+        contradiction
+      rw [FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.evalNodeUnder]
+      unfold FiniteLatentSCM.equationUnder
+      simp [freeEq, notRoot]
+  | none =>
+      have carrierEquation := hedgeCarrierDefectModel_evalNodeUnder_bit
+        G rich w.actionRoot (w.largeParityModel rich).mechanism
+        (hedgeDoSecond rich q.action) (hedgeDefectAssignment G old defect)
+        child freeEq
+      change hedgeIsSecond rich child
+          ((w.largeCarrierDefectParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action)
+            (hedgeDefectAssignment G old defect) child) =
+        Bool.xor
+          (hedgeIsSecond rich child
+            ((w.largeParityModel rich).mechanism child
+              (fun parent _edge =>
+                (w.largeCarrierDefectParityModel rich).evalNodeUnder
+                  (hedgeDoSecond rich q.action)
+                  (hedgeDefectAssignment G old defect) parent)
+              (hedgeDefectOldInputs G w.actionRoot child
+                (fun root _incident =>
+                  hedgeDefectAssignment G old defect root))))
+          (hedgeIndependentDefectBit G w.actionRoot child
+            (fun root _incident =>
+              hedgeDefectAssignment G old defect root)) at carrierEquation
+      rw [hedgeDefectOldInputs_assignment,
+        hedgeIndependentDefectBit_eq_bitOf,
+        hedgeDefectBitOf_assignment] at carrierEquation
+      have carrierStructural := hedgeForestParityOutput_bit_of_mem G rich
+        w.large w.child child
+        (fun parent _edge =>
+          (w.largeCarrierDefectParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action)
+            (hedgeDefectAssignment G old defect) parent)
+        (fun root _incident => old root) selected
+      change hedgeIsSecond rich child
+          ((w.largeParityModel rich).mechanism child
+            (fun parent _edge =>
+              (w.largeCarrierDefectParityModel rich).evalNodeUnder
+                (hedgeDoSecond rich q.action)
+                (hedgeDefectAssignment G old defect) parent)
+            (fun root _incident => old root)) = _ at carrierStructural
+      have baseEquation := w.largeParityModel_evalNodeUnder_bit rich
+        (hedgeDoSecond rich q.action) old child freeEq selected
+      have parentBitsEq :
+          hedgeForestParentBitsFrom rich w.child child
+              (fun parent _edge =>
+                (w.largeCarrierDefectParityModel rich).evalNodeUnder
+                  (hedgeDoSecond rich q.action)
+                  (hedgeDefectAssignment G old defect) parent) =
+            hedgeForestParentBitsFrom rich w.child child
+              (fun parent _edge =>
+                (w.largeParityModel rich).evalNodeUnder
+                  (hedgeDoSecond rich q.action) old parent) := by
+        apply hedgeForestParentBitsFrom_congr_of_kept
+        intro parent edge kept
+        have parentNotRoot : parent ≠ w.actionRoot := by
+          intro equal
+          subst parent
+          rw [w.actionRoot_child_none] at kept
+          contradiction
+        simpa [parentNotRoot] using
+          w.largeCarrierDefectParityModel_bit_eq_base_xor_defect rich old
+            defect parent (w.large_forest.child_edge parent child kept).1
+      calc
+        _ = Bool.xor
+              (hedgeIsSecond rich child
+                ((w.largeParityModel rich).mechanism child
+                  (fun parent _edge =>
+                    (w.largeCarrierDefectParityModel rich).evalNodeUnder
+                      (hedgeDoSecond rich q.action)
+                      (hedgeDefectAssignment G old defect) parent)
+                  (fun root _incident => old root)))
+              (if child = w.actionRoot then defect else false) :=
+          carrierEquation
+        _ = Bool.xor
+              (Bool.xor
+                (hedgeXorPairBitsWithin G w.large child
+                  (fun root _incident => old root))
+                (hedgeForestParentBitsFrom rich w.child child
+                  (fun parent _edge =>
+                    (w.largeCarrierDefectParityModel rich).evalNodeUnder
+                      (hedgeDoSecond rich q.action)
+                      (hedgeDefectAssignment G old defect) parent)))
+              (if child = w.actionRoot then defect else false) :=
+          congrArg
+            (fun bit => Bool.xor bit
+              (if child = w.actionRoot then defect else false))
+            carrierStructural
+        _ = Bool.xor
+              (Bool.xor
+                (hedgeXorPairBitsWithin G w.large child
+                  (fun root _incident => old root))
+                (hedgeForestParentBitsFrom rich w.child child
+                  (fun parent _edge =>
+                    (w.largeParityModel rich).evalNodeUnder
+                      (hedgeDoSecond rich q.action) old parent)))
+              (if child = w.actionRoot then defect else false) := by
+          rw [parentBitsEq]
+        _ = _ := congrArg
+          (fun bit => Bool.xor bit
+            (if child = w.actionRoot then defect else false))
+          baseEquation.symm
+termination_by child.val
+decreasing_by
+  exact S.directed_earlier edge
+
+/-- The same one-coordinate XOR law holds in the restricted small forest. -/
+theorem HedgeWitness.smallCarrierDefectParityModel_bit_eq_base_xor_defect
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (old : (hedgeLatentExtension G).Assignment) (defect : Bool)
+    (child : Fin S.count) (selected : w.small child = true) :
+    hedgeIsSecond rich child
+        ((w.smallCarrierDefectParityModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action)
+          (hedgeDefectAssignment G old defect) child) =
+      Bool.xor
+        (hedgeIsSecond rich child
+          ((w.smallParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action) old child))
+        (if child = w.actionRoot then defect else false) := by
+  cases freeEq : hedgeDoSecond rich q.action child with
+  | some value =>
+      have notRoot : child ≠ w.actionRoot := by
+        intro equal
+        subst child
+        rw [hedgeDoSecond_of_false rich q.action
+          w.actionRoot_not_in_action] at freeEq
+        contradiction
+      rw [FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.evalNodeUnder]
+      unfold FiniteLatentSCM.equationUnder
+      simp [freeEq, notRoot]
+  | none =>
+      have carrierEquation := hedgeCarrierDefectModel_evalNodeUnder_bit
+        G rich w.actionRoot (w.smallParityModel rich).mechanism
+        (hedgeDoSecond rich q.action) (hedgeDefectAssignment G old defect)
+        child freeEq
+      change hedgeIsSecond rich child
+          ((w.smallCarrierDefectParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action)
+            (hedgeDefectAssignment G old defect) child) =
+        Bool.xor
+          (hedgeIsSecond rich child
+            ((w.smallParityModel rich).mechanism child
+              (fun parent _edge =>
+                (w.smallCarrierDefectParityModel rich).evalNodeUnder
+                  (hedgeDoSecond rich q.action)
+                  (hedgeDefectAssignment G old defect) parent)
+              (hedgeDefectOldInputs G w.actionRoot child
+                (fun root _incident =>
+                  hedgeDefectAssignment G old defect root))))
+          (hedgeIndependentDefectBit G w.actionRoot child
+            (fun root _incident =>
+              hedgeDefectAssignment G old defect root)) at carrierEquation
+      rw [hedgeDefectOldInputs_assignment,
+        hedgeIndependentDefectBit_eq_bitOf,
+        hedgeDefectBitOf_assignment] at carrierEquation
+      have carrierStructural : hedgeIsSecond rich child
+          ((w.smallParityModel rich).mechanism child
+            (fun parent _edge =>
+              (w.smallCarrierDefectParityModel rich).evalNodeUnder
+                (hedgeDoSecond rich q.action)
+                (hedgeDefectAssignment G old defect) parent)
+            (fun root _incident => old root)) =
+          Bool.xor
+            (hedgeXorPairBitsWithin G w.small child
+              (fun root _incident => old root))
+            (hedgeForestParentBitsFrom rich
+              (restrictChild w.small w.child) child
+              (fun parent _edge =>
+                (w.smallCarrierDefectParityModel rich).evalNodeUnder
+                  (hedgeDoSecond rich q.action)
+                  (hedgeDefectAssignment G old defect) parent)) := by
+        rw [w.smallParityMechanism_of_small rich child _ _ selected]
+        exact hedgeForestParityOutput_bit_of_mem G rich w.small
+          (restrictChild w.small w.child) child _ _ selected
+      have baseEquation := w.smallParityModel_evalNodeUnder_bit rich
+        (hedgeDoSecond rich q.action) old child freeEq selected
+      have parentBitsEq :
+          hedgeForestParentBitsFrom rich (restrictChild w.small w.child) child
+              (fun parent _edge =>
+                (w.smallCarrierDefectParityModel rich).evalNodeUnder
+                  (hedgeDoSecond rich q.action)
+                  (hedgeDefectAssignment G old defect) parent) =
+            hedgeForestParentBitsFrom rich (restrictChild w.small w.child)
+              child (fun parent _edge =>
+                (w.smallParityModel rich).evalNodeUnder
+                  (hedgeDoSecond rich q.action) old parent) := by
+        apply hedgeForestParentBitsFrom_congr_of_kept
+        intro parent edge kept
+        have parentNotRoot : parent ≠ w.actionRoot := by
+          intro equal
+          subst parent
+          have rootNone :=
+            ((w.small_forest.roots_exact w.actionRoot).mp
+              w.actionRoot_in_roots).2
+          rw [rootNone] at kept
+          contradiction
+        simpa [parentNotRoot] using
+          w.smallCarrierDefectParityModel_bit_eq_base_xor_defect rich old
+            defect parent (w.small_forest.child_edge parent child kept).1
+      calc
+        _ = Bool.xor
+              (hedgeIsSecond rich child
+                ((w.smallParityModel rich).mechanism child
+                  (fun parent _edge =>
+                    (w.smallCarrierDefectParityModel rich).evalNodeUnder
+                      (hedgeDoSecond rich q.action)
+                      (hedgeDefectAssignment G old defect) parent)
+                  (fun root _incident => old root)))
+              (if child = w.actionRoot then defect else false) :=
+          carrierEquation
+        _ = Bool.xor
+              (Bool.xor
+                (hedgeXorPairBitsWithin G w.small child
+                  (fun root _incident => old root))
+                (hedgeForestParentBitsFrom rich
+                  (restrictChild w.small w.child) child
+                  (fun parent _edge =>
+                    (w.smallCarrierDefectParityModel rich).evalNodeUnder
+                      (hedgeDoSecond rich q.action)
+                      (hedgeDefectAssignment G old defect) parent)))
+              (if child = w.actionRoot then defect else false) :=
+          congrArg
+            (fun bit => Bool.xor bit
+              (if child = w.actionRoot then defect else false))
+            carrierStructural
+        _ = Bool.xor
+              (Bool.xor
+                (hedgeXorPairBitsWithin G w.small child
+                  (fun root _incident => old root))
+                (hedgeForestParentBitsFrom rich
+                  (restrictChild w.small w.child) child
+                  (fun parent _edge =>
+                    (w.smallParityModel rich).evalNodeUnder
+                      (hedgeDoSecond rich q.action) old parent)))
+              (if child = w.actionRoot then defect else false) := by
+          rw [parentBitsEq]
+        _ = _ := congrArg
+          (fun bit => Bool.xor bit
+            (if child = w.actionRoot then defect else false))
+          baseEquation.symm
+termination_by child.val
+decreasing_by
+  exact S.directed_earlier edge
+
+/-- Total large-carrier root parity is faithful large parity XOR the private
+defect.  The proof uses the unique occurrence of `actionRoot` in the
+duplicate-free root list. -/
+theorem HedgeWitness.largeCarrierDefectParityModel_rootParity
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (old : (hedgeLatentExtension G).Assignment) (defect : Bool) :
+    hedgeNodeXor w.roots (fun node =>
+        hedgeIsSecond rich node
+          ((w.largeCarrierDefectParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action)
+            (hedgeDefectAssignment G old defect) node)) =
+      Bool.xor
+        (hedgeNodeXor w.roots (fun node =>
+          hedgeIsSecond rich node
+            ((w.largeParityModel rich).evalNodeUnder
+              (hedgeDoSecond rich q.action) old node)))
+        defect := by
+  cases defect with
+  | false =>
+      simpa using w.largeCarrierDefectParityModel_rootParity_false rich
+        (hedgeDoSecond rich q.action) old
+  | true =>
+      let base := fun node =>
+        hedgeIsSecond rich node
+          ((w.largeParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action) old node)
+      let carrier := fun node =>
+        hedgeIsSecond rich node
+          ((w.largeCarrierDefectParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action)
+            (hedgeDefectAssignment G old true) node)
+      have pointwise : forall node, w.roots node = true →
+          carrier node = Bool.xor (base node)
+            (decide (node = w.actionRoot)) := by
+        intro node root
+        have inLarge := (w.large_forest.roots_exact node).mp root |>.1
+        simpa [base, carrier] using
+          w.largeCarrierDefectParityModel_bit_eq_base_xor_defect rich old
+            true node inLarge
+      unfold hedgeNodeXor
+      have rewritten :
+          (NodeSet.members w.roots).foldl
+              (fun total node => Bool.xor total (carrier node)) false =
+            (NodeSet.members w.roots).foldl
+              (fun total node => Bool.xor total
+                (Bool.xor (base node)
+                  (decide (node = w.actionRoot)))) false := by
+        apply foldl_congr_of_mem
+        intro total node member
+        rw [pointwise node
+          ((NodeSet.mem_members_iff w.roots node).mp member)]
+      rw [rewritten, foldl_xor_pointwise,
+        foldl_xor_indicator_of_mem_nodup (NodeSet.members w.roots)
+          w.actionRoot
+          ((NodeSet.mem_members_iff w.roots w.actionRoot).mpr
+            w.actionRoot_in_roots)
+          (NodeSet.nodup_members w.roots)]
+
+/-- Total small-carrier root parity is faithful small parity XOR the same
+private defect. -/
+theorem HedgeWitness.smallCarrierDefectParityModel_rootParity
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (old : (hedgeLatentExtension G).Assignment) (defect : Bool) :
+    hedgeNodeXor w.roots (fun node =>
+        hedgeIsSecond rich node
+          ((w.smallCarrierDefectParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action)
+            (hedgeDefectAssignment G old defect) node)) =
+      Bool.xor
+        (hedgeNodeXor w.roots (fun node =>
+          hedgeIsSecond rich node
+            ((w.smallParityModel rich).evalNodeUnder
+              (hedgeDoSecond rich q.action) old node)))
+        defect := by
+  cases defect with
+  | false =>
+      simpa using w.smallCarrierDefectParityModel_rootParity_false rich
+        (hedgeDoSecond rich q.action) old
+  | true =>
+      let base := fun node =>
+        hedgeIsSecond rich node
+          ((w.smallParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action) old node)
+      let carrier := fun node =>
+        hedgeIsSecond rich node
+          ((w.smallCarrierDefectParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action)
+            (hedgeDefectAssignment G old true) node)
+      have pointwise : forall node, w.roots node = true →
+          carrier node = Bool.xor (base node)
+            (decide (node = w.actionRoot)) := by
+        intro node root
+        have inSmall := (w.small_forest.roots_exact node).mp root |>.1
+        simpa [base, carrier] using
+          w.smallCarrierDefectParityModel_bit_eq_base_xor_defect rich old
+            true node inSmall
+      unfold hedgeNodeXor
+      have rewritten :
+          (NodeSet.members w.roots).foldl
+              (fun total node => Bool.xor total (carrier node)) false =
+            (NodeSet.members w.roots).foldl
+              (fun total node => Bool.xor total
+                (Bool.xor (base node)
+                  (decide (node = w.actionRoot)))) false := by
+        apply foldl_congr_of_mem
+        intro total node member
+        rw [pointwise node
+          ((NodeSet.mem_members_iff w.roots node).mp member)]
+      rw [rewritten, foldl_xor_pointwise,
+        foldl_xor_indicator_of_mem_nodup (NodeSet.members w.roots)
+          w.actionRoot
+          ((NodeSet.mem_members_iff w.roots w.actionRoot).mpr
+            w.actionRoot_in_roots)
+          (NodeSet.nodup_members w.roots)]
+
+/-- The faithful small forest has even root parity, so its positive carrier's
+odd-root event is exactly the event that the private defect is active. -/
+theorem HedgeWitness.smallCarrierDefectParityModel_rootParity_eq_defect
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (old : (hedgeLatentExtension G).Assignment) (defect : Bool) :
+    hedgeNodeXor w.roots (fun node =>
+        hedgeIsSecond rich node
+          ((w.smallCarrierDefectParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action)
+            (hedgeDefectAssignment G old defect) node)) = defect := by
+  rw [w.smallCarrierDefectParityModel_rootParity rich old defect,
+    w.smallParityModel_rootParity_doSecond rich old]
+  simp
+
+/-- Some inactive-defect large-carrier execution still has odd common-root
+parity.  It is the faithful odd witness lifted through the carrier wrapper. -/
+theorem HedgeWitness.exists_largeCarrierDefectParityModel_rootParity_true_false
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Exists fun old : (hedgeLatentExtension G).Assignment =>
+      hedgeNodeXor w.roots (fun node =>
+        hedgeIsSecond rich node
+          ((w.largeCarrierDefectParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action)
+            (hedgeDefectAssignment G old false) node)) = true := by
+  rcases w.exists_largeParityModel_rootParity_true_doSecond rich with
+    ⟨old, odd⟩
+  refine ⟨old, ?_⟩
+  rw [w.largeCarrierDefectParityModel_rootParity_false rich
+    (hedgeDoSecond rich q.action) old]
+  exact odd
+
+/-! ### Exact finite masses of the carrier root-parity event -/
+
+/-- Duplicate-free exhaustive enumeration of the original hedge latent
+assignments.  Deduplication is constructive because the dependent assignment
+type already has the finite decidable equality instance used throughout the
+hedge development. -/
+def hedgeLatentAssignmentEnum (G : ObservedGraph S) :
+    List (hedgeLatentExtension G).Assignment :=
+  deduplicate
+    (FiniteProduct.enumeration (hedgeLatentCount G) (hedgeLatentValue G)
+      (hedgeLatentEnum G))
+
+theorem hedgeLatentAssignmentEnum_complete (G : ObservedGraph S)
+    (old : (hedgeLatentExtension G).Assignment) :
+    old ∈ hedgeLatentAssignmentEnum G := by
+  unfold hedgeLatentAssignmentEnum
+  rw [mem_deduplicate]
+  exact FiniteProduct.enumeration_complete (hedgeLatentCount G)
+    (hedgeLatentValue G) (hedgeLatentEnum G)
+    (hedgeLatentEnum_complete G) old
+
+theorem hedgeLatentAssignmentEnum_nodup (G : ObservedGraph S) :
+    (hedgeLatentAssignmentEnum G).Nodup := by
+  unfold hedgeLatentAssignmentEnum
+  exact deduplicate_nodup _
+
+/-- Product of a vector whose zero coordinate is `zeroWeight` and whose
+successor coordinates all have weight one.  The induction follows the
+terminal-coordinate recursion of `FiniteProduct.natProduct`; at each positive
+length the terminal coordinate is a successor, leaving the same statement on
+the initial segment. -/
+theorem FiniteProduct.natProduct_one_except_zero
+    (n zeroWeight : Nat) (weights : Fin (n + 1) → Nat)
+    (atZero : weights 0 = zeroWeight)
+    (atSucc : forall index : Fin n, weights index.succ = 1) :
+    FiniteProduct.natProduct (n + 1) weights = zeroWeight := by
+  induction n with
+  | zero =>
+      simpa [FiniteProduct.natProduct] using atZero
+  | succ n inductionHypothesis =>
+      rw [FiniteProduct.natProduct]
+      have lastOne : weights (Fin.last (n + 1)) = 1 := by
+        simpa using atSucc (Fin.last n)
+      rw [lastOne, Nat.one_mul]
+      apply inductionHypothesis (fun index => weights index.castSucc)
+      · simpa using atZero
+      · intro index
+        simpa using atSucc index.castSucc
+
+/-- A complete augmented latent assignment has natural singleton numerator
+two when its defect is inactive and one when it is active.  All original
+pair and private coordinates have unit weight. -/
+theorem hedgeDefectPrior_eventMass_singleton_eq_defectWeight
+    (G : ObservedGraph S)
+    (u : (root : Fin (hedgeDefectLatentCount G)) →
+      hedgeDefectLatentValue G root) :
+    FiniteProbRecord.eventMass (hedgeDefectPrior G).atoms
+        (FiniteProbRecord.singletonEvent u) =
+      if hedgeDefectBitOf G u then 1 else 2 := by
+  rw [hedgeDefectPrior_eventMass_singleton]
+  apply FiniteProduct.natProduct_one_except_zero (hedgeLatentCount G)
+  · change (if hedgeDefectBitOf G u then 1 else 2) = _
+    rfl
+  · intro old
+    simp [hedgeDefectLatentWeight]
+
+/-- Specialization of the preceding mass formula to a prefixed assignment. -/
+theorem hedgeDefectPrior_eventMass_assignment (G : ObservedGraph S)
+    (old : (hedgeLatentExtension G).Assignment) (defect : Bool) :
+    FiniteProbRecord.eventMass (hedgeDefectPrior G).atoms
+        (FiniteProbRecord.singletonEvent
+          (hedgeDefectAssignment G old defect)) =
+      if defect then 1 else 2 := by
+  rw [hedgeDefectPrior_eventMass_singleton_eq_defectWeight,
+    hedgeDefectBitOf_assignment]
+
+/-- Natural event mass is additive on disjoint Boolean events. -/
+theorem FiniteProbRecord.eventMass_union_disjoint
+    {Omega : Type _} (atoms : List (Omega × Nat))
+    (left right : Event Omega) (disjoint : Probability.disjoint left right) :
+    FiniteProbRecord.eventMass atoms (Probability.union left right) =
+      FiniteProbRecord.eventMass atoms left +
+        FiniteProbRecord.eventMass atoms right := by
+  induction atoms with
+  | nil => rfl
+  | cons atom atoms inductionHypothesis =>
+      rcases atom with ⟨sample, weight⟩
+      cases leftAt : left sample <;> cases rightAt : right sample
+      · simp [FiniteProbRecord.eventMass, Probability.union,
+          leftAt, rightAt, inductionHypothesis]
+      · simp [FiniteProbRecord.eventMass, Probability.union,
+          leftAt, rightAt, inductionHypothesis]
+        omega
+      · simp [FiniteProbRecord.eventMass, Probability.union,
+          leftAt, rightAt, inductionHypothesis]
+        omega
+      · exact False.elim (disjoint sample leftAt rightAt)
+
+/-- Exact mass of a duplicate-free finite union of singleton events.  This is
+the natural-numerator counterpart of
+`FiniteProbRecord.probVal_membership_equiv_listSum`; keeping it at the
+numerator level makes the strict carrier comparison ordinary arithmetic. -/
+theorem FiniteProbRecord.eventMass_membership_eq_sum_singletons
+    {Omega : Type _} [DecidableEq Omega]
+    (atoms : List (Omega × Nat)) (values : List Omega)
+    (nodup : values.Nodup) :
+    FiniteProbRecord.eventMass atoms
+        (FiniteProbRecord.membershipEvent values) =
+      (values.map fun value =>
+        FiniteProbRecord.eventMass atoms
+          (FiniteProbRecord.singletonEvent value)).sum := by
+  induction values with
+  | nil =>
+      change FiniteProbRecord.eventMass atoms (fun _ => false) = 0
+      exact FiniteProbRecord.eventMass_false atoms
+  | cons value values inductionHypothesis =>
+      have fresh : value ∉ values := (List.nodup_cons.mp nodup).1
+      have tailNodup : values.Nodup := (List.nodup_cons.mp nodup).2
+      rw [FiniteProbRecord.membershipEvent_cons]
+      rw [FiniteProbRecord.eventMass_union_disjoint atoms _ _
+        (FiniteProbRecord.singleton_membership_disjoint fresh),
+        inductionHypothesis tailNodup]
+      rfl
+
+/-- A list of weights, each one or two, has sum strictly greater than its
+length as soon as one listed element receives weight two. -/
+theorem List.length_lt_sum_one_or_two_of_true
+    {Alpha : Type _} (values : List Alpha) (marked : Alpha → Bool)
+    (witness : Exists fun value => value ∈ values ∧ marked value = true) :
+    values.length <
+      (values.map fun value => if marked value then 2 else 1).sum := by
+  have lengthLe : forall entries : List Alpha,
+      entries.length ≤
+        (entries.map fun entry => if marked entry then 2 else 1).sum := by
+    intro entries
+    induction entries with
+    | nil => simp
+    | cons entry rest inductionHypothesis =>
+        cases markedAt : marked entry <;>
+          simp [markedAt] <;> omega
+  induction values with
+  | nil =>
+      rcases witness with ⟨value, member, _marked⟩
+      cases member
+  | cons value values inductionHypothesis =>
+      rcases witness with ⟨chosen, member, chosenMarked⟩
+      cases List.mem_cons.mp member with
+      | inl equal =>
+          subst chosen
+          simp [chosenMarked]
+          have tailBound := lengthLe values
+          omega
+      | inr tailMember =>
+          have tailStrict := inductionHypothesis
+            ⟨chosen, tailMember, chosenMarked⟩
+          cases markedAt : marked value <;>
+            simp [markedAt] <;> omega
+
+/-- Faithful large root parity as a Boolean function of the old latent
+assignment. -/
+def HedgeWitness.largeBaseRootParity
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (old : (hedgeLatentExtension G).Assignment) : Bool :=
+  hedgeNodeXor w.roots (fun node =>
+    hedgeIsSecond rich node
+      ((w.largeParityModel rich).evalNodeUnder
+        (hedgeDoSecond rich q.action) old node))
+
+/-- For each old assignment, choose the unique defect that makes the large
+carrier's common-root parity odd. -/
+def HedgeWitness.largeCarrierRootParitySupport
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    List (w.largeCarrierDefectParityModel rich).latent.Assignment :=
+  (hedgeLatentAssignmentEnum G).map fun old =>
+    hedgeDefectAssignment G old (!(w.largeBaseRootParity rich old))
+
+/-- Small faithful parity is always even, so the small carrier is odd exactly
+on assignments whose prefixed defect is `true`. -/
+def HedgeWitness.smallCarrierRootParitySupport
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    List (w.smallCarrierDefectParityModel rich).latent.Assignment :=
+  (hedgeLatentAssignmentEnum G).map fun old =>
+    hedgeDefectAssignment G old true
+
+/-- Recovering old successor coordinates proves injectivity even though the
+large support chooses a defect value that varies with the old assignment. -/
+theorem HedgeWitness.largeCarrierRootParitySupport_nodup
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    (w.largeCarrierRootParitySupport rich).Nodup := by
+  unfold HedgeWitness.largeCarrierRootParitySupport
+  apply nodup_map_of_injective
+  · intro left right equal
+    have recovered := congrArg (hedgeDefectOldAssignment G) equal
+    simpa using recovered
+  · exact hedgeLatentAssignmentEnum_nodup G
+
+theorem HedgeWitness.smallCarrierRootParitySupport_nodup
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    (w.smallCarrierRootParitySupport rich).Nodup := by
+  unfold HedgeWitness.smallCarrierRootParitySupport
+  apply nodup_map_of_injective
+  · intro left right equal
+    exact hedgeDefectAssignment_injective_old G true equal
+  · exact hedgeLatentAssignmentEnum_nodup G
+
+/-- Pull the odd common-root event back to the augmented latent space of the
+large carrier under the hedge intervention. -/
+def HedgeWitness.largeCarrierRootParityLatentEvent
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Event (w.largeCarrierDefectParityModel rich).latent.Assignment :=
+  fun u => hedgeRootParityEvent rich w.roots
+    ((w.largeCarrierDefectParityModel rich).evalUnder
+      (hedgeDoSecond rich q.action) u)
+
+/-- The analogous latent pullback for the nested carrier. -/
+def HedgeWitness.smallCarrierRootParityLatentEvent
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Event (w.smallCarrierDefectParityModel rich).latent.Assignment :=
+  fun u => hedgeRootParityEvent rich w.roots
+    ((w.smallCarrierDefectParityModel rich).evalUnder
+      (hedgeDoSecond rich q.action) u)
+
+/-- The explicit large support contains exactly the augmented assignments
+whose intervened common-root parity is odd.  Reconstruction through
+`hedgeDefectOldAssignment` handles an arbitrary augmented assignment; the
+Boolean XOR equation then forces its defect to be the support's computed
+choice. -/
+theorem HedgeWitness.largeCarrierRootParitySupport_mem_iff
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (w.largeCarrierDefectParityModel rich).latent.Assignment) :
+    u ∈ w.largeCarrierRootParitySupport rich ↔
+      w.largeCarrierRootParityLatentEvent rich u = true := by
+  constructor
+  · intro member
+    rcases List.mem_map.mp member with ⟨old, _oldMember, equal⟩
+    rw [← equal]
+    unfold HedgeWitness.largeCarrierRootParityLatentEvent
+    unfold hedgeRootParityEvent
+    change hedgeNodeXor w.roots (fun node =>
+      hedgeIsSecond rich node
+        ((w.largeCarrierDefectParityModel rich).evalNodeUnder
+          (hedgeDoSecond rich q.action)
+          (hedgeDefectAssignment G old
+            (!(w.largeBaseRootParity rich old))) node)) = true
+    rw [w.largeCarrierDefectParityModel_rootParity rich old
+      (!(w.largeBaseRootParity rich old))]
+    change Bool.xor (w.largeBaseRootParity rich old)
+      (!(w.largeBaseRootParity rich old)) = true
+    cases w.largeBaseRootParity rich old <;> rfl
+  · intro eventTrue
+    let old := hedgeDefectOldAssignment G u
+    let defect := hedgeDefectBitOf G u
+    have recovered : hedgeDefectAssignment G old defect = u := by
+      exact hedgeDefectAssignment_recover G u
+    have forced : defect = !(w.largeBaseRootParity rich old) := by
+      have eventReindexed := eventTrue
+      rw [← recovered] at eventReindexed
+      unfold HedgeWitness.largeCarrierRootParityLatentEvent at eventReindexed
+      unfold hedgeRootParityEvent at eventReindexed
+      change hedgeNodeXor w.roots (fun node =>
+        hedgeIsSecond rich node
+          ((w.largeCarrierDefectParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action)
+            (hedgeDefectAssignment G old defect) node)) = true at eventReindexed
+      rw [w.largeCarrierDefectParityModel_rootParity rich old defect] at eventReindexed
+      change Bool.xor (w.largeBaseRootParity rich old) defect = true at eventReindexed
+      cases baseEq : w.largeBaseRootParity rich old <;>
+        cases defectEq : defect <;>
+        simp [baseEq, defectEq] at eventReindexed ⊢
+    unfold HedgeWitness.largeCarrierRootParitySupport
+    apply List.mem_map.mpr
+    refine ⟨old, hedgeLatentAssignmentEnum_complete G old, ?_⟩
+    rw [← forced]
+    exact recovered
+
+/-- The small support is exactly the same event pullback: pointwise small
+carrier parity equals the defect, so precisely the `true` prefix is kept. -/
+theorem HedgeWitness.smallCarrierRootParitySupport_mem_iff
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (u : (w.smallCarrierDefectParityModel rich).latent.Assignment) :
+    u ∈ w.smallCarrierRootParitySupport rich ↔
+      w.smallCarrierRootParityLatentEvent rich u = true := by
+  constructor
+  · intro member
+    rcases List.mem_map.mp member with ⟨old, _oldMember, equal⟩
+    rw [← equal]
+    unfold HedgeWitness.smallCarrierRootParityLatentEvent
+    unfold hedgeRootParityEvent
+    exact w.smallCarrierDefectParityModel_rootParity_eq_defect rich old true
+  · intro eventTrue
+    let old := hedgeDefectOldAssignment G u
+    let defect := hedgeDefectBitOf G u
+    have recovered : hedgeDefectAssignment G old defect = u := by
+      exact hedgeDefectAssignment_recover G u
+    have defectTrue : defect = true := by
+      have eventReindexed := eventTrue
+      rw [← recovered] at eventReindexed
+      unfold HedgeWitness.smallCarrierRootParityLatentEvent at eventReindexed
+      unfold hedgeRootParityEvent at eventReindexed
+      change hedgeNodeXor w.roots (fun node =>
+        hedgeIsSecond rich node
+          ((w.smallCarrierDefectParityModel rich).evalNodeUnder
+            (hedgeDoSecond rich q.action)
+            (hedgeDefectAssignment G old defect) node)) = true at eventReindexed
+      rw [w.smallCarrierDefectParityModel_rootParity_eq_defect rich old defect]
+        at eventReindexed
+      exact eventReindexed
+    unfold HedgeWitness.smallCarrierRootParitySupport
+    apply List.mem_map.mpr
+    refine ⟨old, hedgeLatentAssignmentEnum_complete G old, ?_⟩
+    rw [← defectTrue]
+    exact recovered
+
+/-- Natural numerator of the large odd-root event, expressed as one or two
+units per old latent assignment.  Faithful-even assignments select active
+defect weight one; faithful-odd assignments select inactive defect weight
+two. -/
+theorem HedgeWitness.largeCarrierRootParityEventMass_eq
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    FiniteProbRecord.eventMass
+        (w.largeCarrierDefectParityModel rich).prior.atoms
+        (w.largeCarrierRootParityLatentEvent rich) =
+      ((hedgeLatentAssignmentEnum G).map fun old =>
+        if w.largeBaseRootParity rich old then 2 else 1).sum := by
+  let support := w.largeCarrierRootParitySupport rich
+  have eventEq : w.largeCarrierRootParityLatentEvent rich =
+      FiniteProbRecord.membershipEvent support := by
+    funext u
+    apply Bool.eq_iff_iff.mpr
+    simpa [support, FiniteProbRecord.membershipEvent] using
+      (w.largeCarrierRootParitySupport_mem_iff rich u).symm
+  rw [eventEq,
+    FiniteProbRecord.eventMass_membership_eq_sum_singletons _ support
+      (by
+        simpa [support] using
+          w.largeCarrierRootParitySupport_nodup rich)]
+  unfold support HedgeWitness.largeCarrierRootParitySupport
+  simp only [List.map_map]
+  apply congrArg List.sum
+  apply List.map_congr_left
+  intro old _oldMember
+  change FiniteProbRecord.eventMass (hedgeDefectPrior G).atoms
+      (FiniteProbRecord.singletonEvent
+        (hedgeDefectAssignment G old (!(w.largeBaseRootParity rich old)))) =
+    (if w.largeBaseRootParity rich old then 2 else 1)
+  rw [hedgeDefectPrior_eventMass_assignment]
+  cases w.largeBaseRootParity rich old <;> rfl
+
+/-- Every small odd-root support point uses active-defect weight one, so its
+natural numerator is exactly the number of old latent assignments. -/
+theorem HedgeWitness.smallCarrierRootParityEventMass_eq
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    FiniteProbRecord.eventMass
+        (w.smallCarrierDefectParityModel rich).prior.atoms
+        (w.smallCarrierRootParityLatentEvent rich) =
+      (hedgeLatentAssignmentEnum G).length := by
+  let support := w.smallCarrierRootParitySupport rich
+  have eventEq : w.smallCarrierRootParityLatentEvent rich =
+      FiniteProbRecord.membershipEvent support := by
+    funext u
+    apply Bool.eq_iff_iff.mpr
+    simpa [support, FiniteProbRecord.membershipEvent] using
+      (w.smallCarrierRootParitySupport_mem_iff rich u).symm
+  rw [eventEq,
+    FiniteProbRecord.eventMass_membership_eq_sum_singletons _ support
+      (by
+        simpa [support] using
+          w.smallCarrierRootParitySupport_nodup rich)]
+  unfold support HedgeWitness.smallCarrierRootParitySupport
+  simp only [List.map_map]
+  have singletonOne : forall old : (hedgeLatentExtension G).Assignment,
+      FiniteProbRecord.eventMass (hedgeDefectPrior G).atoms
+          (FiniteProbRecord.singletonEvent
+            (hedgeDefectAssignment G old true)) = 1 := by
+    intro old
+    simpa using hedgeDefectPrior_eventMass_assignment G old true
+  change ((hedgeLatentAssignmentEnum G).map fun old =>
+    FiniteProbRecord.eventMass (hedgeDefectPrior G).atoms
+      (FiniteProbRecord.singletonEvent
+        (hedgeDefectAssignment G old true))).sum = _
+  simp only [singletonOne]
+  induction hedgeLatentAssignmentEnum G with
+  | nil => rfl
+  | cons _old rest inductionHypothesis =>
+      simp [inductionHypothesis]
+      omega
+
+/-- The biased defect makes the large odd-root numerator strictly exceed the
+small one.  Strictness comes from the already constructed faithful odd large
+assignment, which is present in the exhaustive old-latent enumeration. -/
+theorem HedgeWitness.smallCarrierRootParityEventMass_lt_large
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    FiniteProbRecord.eventMass
+        (w.smallCarrierDefectParityModel rich).prior.atoms
+        (w.smallCarrierRootParityLatentEvent rich) <
+      FiniteProbRecord.eventMass
+        (w.largeCarrierDefectParityModel rich).prior.atoms
+        (w.largeCarrierRootParityLatentEvent rich) := by
+  rw [w.smallCarrierRootParityEventMass_eq rich,
+    w.largeCarrierRootParityEventMass_eq rich]
+  apply List.length_lt_sum_one_or_two_of_true
+  rcases w.exists_largeParityModel_rootParity_true_doSecond rich with
+    ⟨old, odd⟩
+  refine ⟨old, hedgeLatentAssignmentEnum_complete G old, ?_⟩
+  exact odd
+
+/-! ### Positive root-parity counterexample -/
+
+/-- The full-support carrier models disagree on the odd common-root event
+under `do(X = second)`.  Their priors have the same positive denominator, so
+the strict natural-numerator inequality above rules out rational
+equivalence. -/
+theorem HedgeWitness.carrierDefectParityModels_rootParity_not_equiv_doSecond
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Not (QProb.Equiv
+      ((w.largeCarrierDefectParityModel rich).interventionalValue
+        (hedgeDoSecond rich q.action)
+        (hedgeRootParityEvent rich w.roots))
+      ((w.smallCarrierDefectParityModel rich).interventionalValue
+        (hedgeDoSecond rich q.action)
+        (hedgeRootParityEvent rich w.roots))) := by
+  intro equivalent
+  have largeEq := FiniteLatentSCM.interventionalValue_eq
+    (w.largeCarrierDefectParityModel rich) (hedgeDoSecond rich q.action)
+    (hedgeRootParityEvent rich w.roots)
+  have smallEq := FiniteLatentSCM.interventionalValue_eq
+    (w.smallCarrierDefectParityModel rich) (hedgeDoSecond rich q.action)
+    (hedgeRootParityEvent rich w.roots)
+  have priorEquivalent : QProb.Equiv
+      ((w.largeCarrierDefectParityModel rich).prior.probVal
+        (w.largeCarrierRootParityLatentEvent rich))
+      ((w.smallCarrierDefectParityModel rich).prior.probVal
+        (w.smallCarrierRootParityLatentEvent rich)) := by
+    exact QProb.equiv_trans (QProb.equiv_symm largeEq)
+      (QProb.equiv_trans equivalent smallEq)
+  have multiplied :
+      FiniteProbRecord.eventMass
+          (w.largeCarrierDefectParityModel rich).prior.atoms
+          (w.largeCarrierRootParityLatentEvent rich) *
+        (w.smallCarrierDefectParityModel rich).prior.den =
+      FiniteProbRecord.eventMass
+          (w.smallCarrierDefectParityModel rich).prior.atoms
+          (w.smallCarrierRootParityLatentEvent rich) *
+        (w.largeCarrierDefectParityModel rich).prior.den := by
+    simpa [QProb.Equiv, FiniteProbRecord.probVal] using priorEquivalent
+  have sameDenominator :
+      (w.largeCarrierDefectParityModel rich).prior.den =
+        (w.smallCarrierDefectParityModel rich).prior.den := by
+    rw [w.carrierDefectParityModel_prior_eq rich]
+  rw [sameDenominator] at multiplied
+  have massEqual :
+      FiniteProbRecord.eventMass
+          (w.largeCarrierDefectParityModel rich).prior.atoms
+          (w.largeCarrierRootParityLatentEvent rich) =
+        FiniteProbRecord.eventMass
+          (w.smallCarrierDefectParityModel rich).prior.atoms
+          (w.smallCarrierRootParityLatentEvent rich) :=
+    Nat.eq_of_mul_eq_mul_right
+      (w.smallCarrierDefectParityModel rich).prior.den_pos multiplied
+  have strict := w.smallCarrierRootParityEventMass_lt_large rich
+  exact Nat.ne_of_lt strict massEqual.symm
+
+/-- The canonical root-parity event query inherits the positive carrier
+separation. -/
+theorem HedgeWitness.carrierDefectRootParityInterventionalQuery_not_equiv
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    Not (QProb.Equiv
+      ((w.rootParityInterventionalQuery rich).value
+        (w.largeCarrierDefectParityModel rich))
+      ((w.rootParityInterventionalQuery rich).value
+        (w.smallCarrierDefectParityModel rich))) := by
+  simpa [w.rootParityInterventionalQuery_value rich] using
+    w.carrierDefectParityModels_rootParity_not_equiv_doSecond rich
+
+/-- Full positive-class counterexample for the canonical common-root parity
+query associated with an arbitrary hedge witness.  This is the positive
+counterpart of `HedgeWitness.rootParityCounterexample`: compatibility,
+strict observational positivity, observational equivalence, and
+interventional separation are now all inhabited by the same carrier pair. -/
+def HedgeWitness.positiveRootParityCounterexample
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
+    CounterexampleIn (GraphModelClass.positive G) (w.rootParityQuery rich) where
+  left := w.largeCarrierDefectParityModel rich
+  right := w.smallCarrierDefectParityModel rich
+  left_mem := ⟨w.largeCarrierDefectParityModel_compatible rich,
+    w.largeCarrierDefectParityModel_positive rich⟩
+  right_mem := ⟨w.smallCarrierDefectParityModel_compatible rich,
+    w.smallCarrierDefectParityModel_positive rich⟩
+  observationally_equal :=
+    w.carrierDefectParityModels_observationally_equivalent rich
+  query_separated :=
+    (w.rootParityInterventionalQuery rich).not_kernelValueEquivalent_of_not_value
+      (w.largeCarrierDefectParityModel rich)
+      (w.smallCarrierDefectParityModel rich)
+      (w.carrierDefectRootParityInterventionalQuery_not_equiv rich)
+
 end Causality
 end Thesis
