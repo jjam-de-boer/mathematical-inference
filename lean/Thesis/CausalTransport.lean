@@ -22,6 +22,7 @@ import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.HedgeNoise
 import Thesis.CausalTransport.CompletenessAssembly
+import Thesis.CausalTransport.ConditionalCompilation
 import Thesis.CausalTransport.Counterfactual
 import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.CausalTransport.HiddenDAG
@@ -65,7 +66,7 @@ parent-uniqueness, odd-parity, identical-neighbourhood assumptions, and all
 restrictions on the pivot's other outgoing edges without choosing a family of
 pointwise equivalences.  A complete `PublishedCompleteness`
 inhabitant still needs a positive countermodel for an arbitrary original-query
-hedge and general conditional identification.  `ChainCompilation`
+hedge and the failure-side conditional non-identifiability argument.  `ChainCompilation`
 supplies the probability-algebra foundation of that compiler: an exact,
 support-carrying observational chain certificate on any finite host, including
 hosts with topological gaps.  It does not identify a recursive ID input with
@@ -154,7 +155,7 @@ general original-query hedge countermodel leaf in the same model class;
 termination, literal-output compilation, and structural failure extraction are
 proved internally.  This conditional assembly is not a completed
 `PublishedCompleteness` package: the positive hedge leaf and general conditional
-identification still remain open.
+failure-side non-identifiability still remain open.
 `HedgeNoise` supplies the independent finite-noise step of the remaining routed
 countermodel: biased XOR channels retain separation after any finite number of
 private flips, and full-alphabet carriers realize every background label.
@@ -162,6 +163,15 @@ It applies those results to the existing positive root-parity signal without
 claiming that a signal distribution is itself a graph-compatible routed SCM.
 The observational-equivalence and root-to-original-outcome mechanisms remain
 the semantic obligations.
+`ConditionalCompilation` constructs supported, literal-output certificates
+for every successful run of recursive IDC over the corrected joint engine.
+Each successful single-conditioner rule-2 test is retained, arbitrary exchange
+sequences are covered by fuel induction, and termination follows from strict
+conditioner decrease.  The terminal Bayes denominator marginalizes the one
+identified numerator certificate rather than making another ID call.  This
+proves success correctness and identifiability, not the converse: an
+irreducible terminal joint failure still needs a conditional countermodel or
+the equivalent semantic non-identifiability argument.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations

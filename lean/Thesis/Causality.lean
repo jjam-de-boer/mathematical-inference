@@ -5,6 +5,7 @@ import Thesis.Causality.HardIntervention
 import Thesis.Causality.Identification
 import Thesis.Causality.IdentificationSearch
 import Thesis.Causality.IdentificationKernel
+import Thesis.Causality.ConditionalIdentificationKernel
 import Thesis.Causality.IdentificationInduction
 import Thesis.Causality.Reductions
 import Thesis.Causality.CompactHiddenDAG
@@ -36,6 +37,9 @@ traces for failed, successful, and unfinished arbitrary nested ID runs; then
 `IdentificationKernel` provides the replacement current-kernel recursion,
 separating ordinary ancestral pruning from action augmentation and retaining
 the actual recursive input when extracting chain factors; then
+`ConditionalIdentificationKernel` performs arbitrary finite sequences of IDC
+rule-2 conditioner promotions and delegates its terminal joint call to that
+corrected engine; then
 `Modalities` and `Structural`; then
 `Counterfactual`, `Multiworld`, and the modules below `ExecutedMultiworld`.
 `ModalRealization` and `ModalCounterfactual` connect the executable edit paths

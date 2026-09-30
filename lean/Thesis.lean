@@ -11,6 +11,7 @@ import Thesis.Examples.KernelProductCompilation
 import Thesis.Examples.KernelSuccessCompilation
 import Thesis.Examples.KernelFailureExtraction
 import Thesis.Examples.HedgeNoise
+import Thesis.Examples.ConditionalCompilation
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -49,4 +50,9 @@ denominators, deterministic input support, the zero-noise boundary, and erasure
 of separation by fair noise.  A three-value carrier checks support beyond the
 two parity labels, and an actual extracted hedge checks its root-signal gap
 after any finite biased-noise count.  This is not yet original-outcome routing.
+Conditional regressions distinguish recursive IDC from Bayes alone: one query
+has a failed joint numerator but succeeds after a rule-2 promotion, and a
+longer query exchanges two conditioners while retaining the remaining given
+set.  Terminal Bayes, empty conditioners, the empty signature, insufficient
+fuel, and retained terminal failure are also checked with the general compiler.
 -/
