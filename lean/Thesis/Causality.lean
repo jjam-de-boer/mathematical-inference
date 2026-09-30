@@ -4,6 +4,7 @@ import Thesis.Causality.Model
 import Thesis.Causality.HardIntervention
 import Thesis.Causality.Identification
 import Thesis.Causality.IdentificationSearch
+import Thesis.Causality.IdentificationKernel
 import Thesis.Causality.IdentificationInduction
 import Thesis.Causality.Reductions
 import Thesis.Causality.CompactHiddenDAG
@@ -31,6 +32,9 @@ source is `Graph`, `Derivation`, `Model`, `HardIntervention`, `Reductions`,
 `CompactHiddenDAG`, `PairRoot`, `Semantics`, `Identification`, and
 `IdentificationSearch`; `IdentificationInduction` supplies exact structural
 traces for failed, successful, and unfinished arbitrary nested ID runs; then
+`IdentificationKernel` provides the replacement current-kernel recursion,
+separating ordinary ancestral pruning from action augmentation and retaining
+the actual recursive input when extracting chain factors; then
 `Modalities` and `Structural`; then
 `Counterfactual`, `Multiworld`, and the modules below `ExecutedMultiworld`.
 `ModalRealization` and `ModalCounterfactual` connect the executable edit paths

@@ -6,6 +6,7 @@ import Thesis.CausalTransport.FiniteSource
 import Thesis.CausalTransport.Soundness
 import Thesis.CausalTransport.Completeness
 import Thesis.CausalTransport.ChainCompilation
+import Thesis.CausalTransport.KernelIdentification
 import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.CompletenessAssembly
@@ -57,10 +58,17 @@ supplies the probability-algebra foundation of that compiler: an exact,
 support-carrying observational chain certificate on any finite host, including
 hosts with topological gaps.  It does not identify a recursive ID input with
 the host's observational marginal.  The front-door regression in
-`Thesis.Examples.IdentificationRegression` proves that a current successful
-engine formula is incorrect in a positive compatible model: executable
-recursion must be repaired before the exact-output success compiler can
-exist.  A total, action-free engine result is not itself a certificate.
+`Thesis.Examples.IdentificationRegression` proves that a legacy successful
+engine formula is incorrect in a positive compatible model: its exact-output
+success compiler cannot exist.  A total, action-free engine result is not
+itself a certificate.
+`IdentificationKernel` now implements the replacement recursion with
+current-input prefix quotients, uncut ancestral pruning, and the separate
+action-augmentation branch.  `KernelIdentification` proves a quadratic
+fuel bound for every invocation of that replacement.  Compilation of its
+successful branches and lifting its failures to the original-query hedge
+countermodel remain completeness obligations, rather than being inferred
+from the old engine's trace library.
 `HedgeOutcomeFlow`
 proves exact finite support formulas for the general routed hedge models and
 packages an unrestricted original-query counterexample when readout routing

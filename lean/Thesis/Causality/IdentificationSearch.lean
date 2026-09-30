@@ -1858,7 +1858,9 @@ theorem findHedgeWitnessSets_eq_some_of_selection
 /--
 Result of one executable ID run.
 
-* `identified` carries an observational expression for `P(outcome | do(action))`.
+* `identified` carries a candidate observational expression.  Its semantic
+  correctness requires a supported certificate; the constructor alone does
+  not establish it, and the legacy engine has a checked counterexample.
 * `failed` is ID's hedge branch: `C(G) = {G}` and `C(G \ X) = {S}`, with the
   working sets needed to thin a `HedgeWitness`.
 * `unfinished` is an implementation sentinel, not a third mathematical case.
@@ -2790,7 +2792,11 @@ def identifyFuel (fuel : Nat) (G : ObservedGraph S)
           identifyNext G kept outcome action
             (.marginalize (NodeSet.diff remaining kept) current)
 
-/-- Top-level ID for a joint kernel query on the full observed graph. -/
+/-- Legacy top-level ID on the full observed graph.  Its general output
+correctness is refuted by the positive front-door regression; the continuing
+completeness development uses `identifyJointKernel` from
+`IdentificationKernel` instead.  This entry point remains for the checked
+legacy trace library and its already certified special cases. -/
 def identifyJoint (G : ObservedGraph S) (q : JointKernelQuery S) :
     IdentificationOutcome S :=
   identifyFuel (identificationFuel S) G NodeSet.full q.outcome q.action

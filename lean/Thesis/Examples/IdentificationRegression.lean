@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.Soundness
 import Thesis.CausalTransport.Completeness
+import Thesis.Causality.IdentificationKernel
 
 namespace Thesis
 namespace Causality
@@ -11,7 +12,7 @@ open Probability
 /-!
 # Positive front-door regression for executable identification
 
-This module records a load-bearing discrepancy in the current ID engine,
+This module records a load-bearing discrepancy in the legacy ID engine,
 not an extra assumption and not a completed identification theorem.  In the
 three-node graph `X → M → Y`, with `X ↔ Y`, `identifyJoint` returns a formula
 for `P(Y | do(X))`.  In the explicit positive compatible model below the
@@ -31,9 +32,12 @@ The final theorem makes the consequence for completeness explicit: a
 formula cannot exist.  Published soundness would turn such a certificate
 into the false equality `1/2 = 9/16`.  This does not refute mathematical
 identification completeness; it requires repairing the executable recursion
-before demanding certificates for its displayed outputs.  Once that repair
-lands, replace the negative engine assertions with a positive correctness
-regression on this same model rather than removing the example.
+before demanding certificates for its displayed outputs.  The replacement
+`identifyJointKernel` is checked below against this same positive model and
+does recover the correct value.  The negative assertions remain specific
+to the legacy engine and its formula-aligned compiler; they must not be
+transferred to the replacement recursion or mistaken for a refutation of
+mathematical completeness.
 -/
 
 /-! ## The front-door graph and a strictly positive compatible model -/
@@ -130,9 +134,9 @@ def query : JointKernelQuery signature where
     rfl
 
 /-- Extract the actual displayed engine formula, with a harmless fallback
-only to make this definition total.  `engine_identified` proves that the
+only to make this definition total.  `legacyEngine_identified` proves that the
 fallback is not used; a failed or unfinished run cannot fake the regression. -/
-def engineFormula : ProbabilityTerm signature :=
+def legacyEngineFormula : ProbabilityTerm signature :=
   match identifyJoint graph query with
   | .identified term => term
   | _ => unitProbabilityTerm signature
@@ -159,8 +163,8 @@ private def equivalentOfValueTest (result : ProbabilityResult.Result) (expected 
 
 set_option maxRecDepth 100000 in
 /-- The current executable run genuinely takes the identified branch. -/
-theorem engine_identified :
-    identifyJoint graph query = .identified engineFormula := by rfl
+theorem legacyEngine_identified :
+    identifyJoint graph query = .identified legacyEngineFormula := by rfl
 
 set_option maxRecDepth 100000 in
 /-- Intervening on `X` does not change `Y = U xor E`, so the requested
@@ -175,8 +179,8 @@ set_option maxHeartbeats 1000000 in
 /-- The displayed engine expression evaluates instead to `9/16`.
 `decide +kernel` checks ordinary finite reduction; it does not use
 `native_decide` or introduce a reduction axiom. -/
-def engineAtReferenceNineSixteenths :
-    ProbabilityResult.Equivalent (engineFormula.denote model reference)
+def legacyEngineAtReferenceNineSixteenths :
+    ProbabilityResult.Equivalent (legacyEngineFormula.denote model reference)
       (some ⟨9, 16, by decide⟩) :=
   equivalentOfValueTest _ _ (by decide +kernel)
 
@@ -224,12 +228,12 @@ theorem model_positive : ObservationallyPositive model := by
 /-- The source kernel and displayed engine formula disagree at a supported
 assignment.  Positivity and compatibility above exclude regularity or graph
 mismatch as explanations for the difference. -/
-theorem engineFormula_not_equivalent :
+theorem legacyEngineFormula_not_equivalent :
     ¬ Nonempty (ProbabilityTerm.EquivalentAt model query.sourceTerm
-      engineFormula reference) := by
+      legacyEngineFormula reference) := by
   intro ⟨equivalent⟩
   let forced := ProbabilityResult.trans (ProbabilityResult.symm sourceAtReferenceHalf)
-    (ProbabilityResult.trans equivalent engineAtReferenceNineSixteenths)
+    (ProbabilityResult.trans equivalent legacyEngineAtReferenceNineSixteenths)
   cases forced with
   | value impossible =>
       exact (by decide : ¬ QProb.Equiv ⟨1, 2, by decide⟩ ⟨9, 16, by decide⟩)
@@ -239,7 +243,7 @@ theorem engineFormula_not_equivalent :
 graph.  A compiler would have to certify the identified trace; completed
 published soundness then contradicts the two exact value checks above.
 This theorem pinpoints an engine-repair obligation, not a missing axiom. -/
-theorem traceCompiler_is_uninhabited :
+theorem legacyTraceCompiler_is_uninhabited :
     ¬ Nonempty (PublishedJointTraceCompiler graph (GraphModelClass.positive graph)
       graph.dSeparationCorrectness) := by
   intro ⟨compiler⟩
@@ -248,21 +252,113 @@ theorem traceCompiler_is_uninhabited :
       let compiled := compiler.compile query term trace
       have identified : identifyJoint graph query = .identified term := by
         exact trace.eq_identified
-      have termEqual : term = engineFormula := by
-        have resultsEqual := identified.symm.trans engine_identified
+      have termEqual : term = legacyEngineFormula := by
+        have resultsEqual := identified.symm.trans legacyEngine_identified
         injection resultsEqual
-      have formulaEqual : compiled.certificate.formula = engineFormula :=
+      have formulaEqual : compiled.certificate.formula = legacyEngineFormula :=
         compiled.formula_eq.trans termEqual
       let supported : query.sourceTerm.SupportedAt model reference :=
         ⟨⟨1, 2, by decide⟩, sourceAtReferenceHalf⟩
       let sound := compiled.certificate.compile.denotational_soundAt
         graph.publishedSoundness model ⟨model_compatible, model_positive⟩
         reference supported
-      exact engineFormula_not_equivalent ⟨formulaEqual ▸ sound⟩
+      exact legacyEngineFormula_not_equivalent ⟨formulaEqual ▸ sound⟩
   | failed fail trace =>
       have failed : identifyJoint graph query = .failed fail := trace.eq_failed
-      rw [engine_identified] at failed
+      rw [legacyEngine_identified] at failed
       cases failed
+
+/-! ## Positive correctness regression for the current-kernel replacement -/
+
+/-- Extract the replacement engine's actual returned expression.  The
+following branch equation checks that the fallback is not used. -/
+def kernelEngineFormula : ProbabilityTerm signature :=
+  match identifyJointKernel graph query with
+  | .identified term => term
+  | _ => unitProbabilityTerm signature
+
+set_option maxRecDepth 100000 in
+/-- The replacement handles the full front-door query, not a manually
+supplied adjustment expression or a special-case model branch. -/
+theorem kernelEngine_identified :
+    identifyJointKernel graph query = .identified kernelEngineFormula := by rfl
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 1000000 in
+/-- Prefix quotients of the actual current kernel yield the correct `1/2`,
+in contrast to the legacy output `9/16`.  Ordinary kernel reduction checks
+the entire generated expression, including its nested sums and divisions. -/
+def kernelEngineAtReferenceHalf :
+    ProbabilityResult.Equivalent (kernelEngineFormula.denote model reference)
+      (some ⟨1, 2, by decide⟩) :=
+  equivalentOfValueTest _ _ (by decide +kernel)
+
+/-- The replacement formula and the requested interventional source agree
+at the regression assignment.  This is a checked instance, not the general
+semantic soundness or completeness theorem for all ID runs. -/
+def kernelEngine_equivalent_source :
+    ProbabilityTerm.EquivalentAt model query.sourceTerm kernelEngineFormula
+      reference :=
+  ProbabilityResult.trans sourceAtReferenceHalf
+    (ProbabilityResult.symm kernelEngineAtReferenceHalf)
+
+/-! ## A regression that actually exercises action augmentation -/
+
+/-- Intervene on the mediator rather than on `X`.  All three vertices are
+ordinary ancestors of `Y`, but cutting incoming arrows at `M` removes `X`
+from that ancestor set.  The additional-action branch must therefore run. -/
+def mediatorQuery : JointKernelQuery signature where
+  outcome := NodeSet.singleton y
+  action := NodeSet.singleton mediator
+  action_outcome_disjoint := by
+    intro node selected
+    have equal := (NodeSet.singleton_eq_true_iff mediator node).mp selected
+    subst node
+    rfl
+
+set_option maxRecDepth 100000 in
+/-- The incoming-cut test adds exactly `X`, rather than shrinking the
+current distribution by observationally marginalizing it away. -/
+theorem mediatorAdditionalAction_members :
+    NodeSet.members (identificationAdditionalAction graph NodeSet.full
+      mediatorQuery.outcome mediatorQuery.action) = [x] := by rfl
+
+/-- The actual replacement output for the mediator intervention.  This
+case uses augmentation followed by the ordinary recursive ID branches. -/
+def kernelMediatorFormula : ProbabilityTerm signature :=
+  match identifyJointKernel graph mediatorQuery with
+  | .identified term => term
+  | _ => unitProbabilityTerm signature
+
+set_option maxRecDepth 100000 in
+/-- The query is identified by the generic engine with its public bound. -/
+theorem kernelMediator_identified :
+    identifyJointKernel graph mediatorQuery = .identified kernelMediatorFormula := by rfl
+
+set_option maxRecDepth 100000 in
+/-- The mediator is an unused allowed parent of `Y` in this compatible
+model, so intervening on it also leaves the outcome probability at `1/2`. -/
+def mediatorSourceAtReferenceHalf :
+    ProbabilityResult.Equivalent (mediatorQuery.sourceTerm.denote model reference)
+      (some ⟨1, 2, by decide⟩) :=
+  equivalentOfValueTest _ _ (by decide +kernel)
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 1000000 in
+/-- The complete generated expression after action augmentation agrees
+with the source value; the test checks all subsequent restrictions and
+current-input quotients as well, not just the Boolean `W` selection. -/
+def kernelMediatorAtReferenceHalf :
+    ProbabilityResult.Equivalent (kernelMediatorFormula.denote model reference)
+      (some ⟨1, 2, by decide⟩) :=
+  equivalentOfValueTest _ _ (by decide +kernel)
+
+/-- Checked source/output agreement for the nonempty-`W` regression. -/
+def kernelMediator_equivalent_source :
+    ProbabilityTerm.EquivalentAt model mediatorQuery.sourceTerm kernelMediatorFormula
+      reference :=
+  ProbabilityResult.trans mediatorSourceAtReferenceHalf
+    (ProbabilityResult.symm kernelMediatorAtReferenceHalf)
 
 end FrontDoorIdentification
 end Examples
