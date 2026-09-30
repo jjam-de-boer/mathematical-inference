@@ -12,6 +12,7 @@ import Thesis.Examples.KernelSuccessCompilation
 import Thesis.Examples.KernelFailureExtraction
 import Thesis.Examples.HedgeNoise
 import Thesis.Examples.HedgeReadout
+import Thesis.Examples.HedgeReadoutPullback
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 
@@ -58,6 +59,13 @@ outcome `Y`.  The new private source at `Y` has a proved product law, preserves
 full observational positivity and equality, and transports root separation
 to the original outcome kernel through the real SCM mechanism.  This checks
 the routing primitive without asserting the unrestricted routed theorem.
+A merging-readout regression extracts two common roots from an actual joint
+failure, XORs them at an unconfounded merge vertex, and then forwards that
+signal through another unconfounded vertex to the original queried outcome.
+The arbitrary finite-plan constructor supplies its positive countermodel;
+the computed event pullback, not an intermediate semantic premise, restores
+both roots.  Duplicate outcome checks also verify cancellation of the same
+private noise and of the repeated source parity.
 Conditional regressions distinguish recursive IDC from Bayes alone: one query
 has a failed joint numerator but succeeds after a rule-2 promotion, and a
 longer query exchanges two conditioners while retaining the remaining given

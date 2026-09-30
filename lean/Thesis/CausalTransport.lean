@@ -23,6 +23,8 @@ import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.HedgeNoise
 import Thesis.CausalTransport.HedgeReadout
 import Thesis.CausalTransport.HedgeReadoutSequence
+import Thesis.CausalTransport.HedgeReadoutPullback
+import Thesis.CausalTransport.HedgeRoutedCounterexample
 import Thesis.CausalTransport.CompletenessAssembly
 import Thesis.CausalTransport.ConditionalCompilation
 import Thesis.CausalTransport.ConditionalFailureExtraction
@@ -175,6 +177,19 @@ is inherited from the original models rather than requested separately at
 every intermediate update.  The remaining routing obligation is to connect
 the final outcome signal to all common roots, including routes that re-enter
 an internal vertex of the large forest.
+`HedgeReadoutPullback` supplies the interventional finite-plan induction:
+linear parent readouts substitute the final outcome parity backward through
+the entire actual SCM sequence.  Retained private bits give biased channels;
+even pivot multiplicities cancel the same noise and give identity channels.
+Both cases preserve and reflect event equality, with arbitrary merging and
+different noise records at different steps.  `HedgeRoutedCounterexample`
+combines that theorem with the observational and positivity invariants to
+construct a positive counterexample for the original joint query whenever
+an explicit increasing sink-pivot plan pulls its outcome event back to common
+root parity.  It assumes only those routing conditions, not the new models'
+semantic separation or observed-law equality.  Constructing such plans for
+arbitrary hedges, in particular internal-forest re-entry, is still required
+before the general completeness field is inhabited.
 `ConditionalCompilation` constructs supported, literal-output certificates
 for every successful run of recursive IDC over the corrected joint engine.
 Each successful single-conditioner rule-2 test is retained, arbitrary exchange

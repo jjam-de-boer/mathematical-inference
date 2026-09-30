@@ -624,6 +624,16 @@ theorem product_map_right_probVal (left : FiniteProbRecord Ω) (right : FinitePr
   simp only [product, map, probVal, QProb.Equiv, eventMass_weightedCartesian_bind,
     eventMass_map_labels]
 
+/-- Push a left-factor relabelling through an independent product event.
+This is the companion of `product_map_right_probVal`; a readout uses it
+when a parity event retains or cancels the fresh independent noise bit. -/
+theorem product_map_left_probVal (left : FiniteProbRecord Ω) (right : FiniteProbRecord X)
+    (encode : Ω -> Y) (event : Event (Y × X)) :
+    QProb.Equiv (((left.map encode).product right).probVal event)
+      ((left.product right).probVal (fun pair => event (encode pair.1, pair.2))) := by
+  simp only [product, map, probVal, QProb.Equiv, eventMass_weightedCartesian_bind,
+    List.map_map, Function.comp_def]
+
 /-- Bayesian conditioning with a proof-carrying finite support witness. -/
 def conditionOn (R : FiniteProbRecord Ω) (evidence : Event Ω)
     (hEvidence : R.EventPositive evidence) : FiniteProbRecord Ω where

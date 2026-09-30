@@ -28,6 +28,9 @@ signature is topologically ordered.  This closes the observational and
 support invariants of finite routing; it does not yet identify a routed
 outcome signal with root parity or cover re-entry into an internal forest
 vertex.  Those are distinct interventional obligations.
+`HedgeReadoutPullback` is the companion that now carries linear parity events
+back through arbitrary such plans, and `HedgeRoutedCounterexample` combines
+the two invariants once the pure routing identity has been established.
 -/
 
 variable {S : ObservedSignature.{0}}
