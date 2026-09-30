@@ -22,7 +22,7 @@ witnesses are hidden behind `Nonempty`; the marginal proof folds those
 inhabited witnesses over the finite assignment enumeration and never chooses
 a global witness family.
 
-The strongest resulting leaf permits arbitrary additional query outcomes.  It
+The localized action-parent leaf permits arbitrary additional query outcomes.  It
 needs only one queried outcome and action parent joined by both a directed and
 a bidirected edge.  Finite selectors choose the outcome and parent; the
 bidirected edge canonically chooses its pair-root.  The right-hand model
@@ -31,6 +31,14 @@ intervene on its complete action set.  Thus neither unique-parent, odd-parity,
 identical bidirected neighbourhoods, nor restrictions on unrelated action
 vertices and outgoing edges are required.  The complete-switch construction
 remains as an independent fallback.
+
+The general carrier construction later proves positive observationally
+equivalent countermodels separating the joint common-root parity signal for
+an arbitrary hedge.  Whenever every common root is already a requested
+outcome, finite marginalization restores a positive counterexample for the
+original query, retaining arbitrary additional outcomes and the entire action
+set.  Roots that only reach those outcomes still require the separate routed
+construction; this module does not assert that that general leaf is complete.
 -/
 
 /-! ## Full-alphabet carriers for a Boolean hedge signal -/
@@ -4974,6 +4982,46 @@ def HedgeWitness.positiveRootParityCounterexample
       (w.largeCarrierDefectParityModel rich)
       (w.smallCarrierDefectParityModel rich)
       (w.carrierDefectRootParityInterventionalQuery_not_equiv rich)
+
+/-- Positive countermodels for the original query whenever its outcomes
+already contain all common roots of the hedge.
+
+The carrier pair separates the joint common-root distribution under the
+original complete action.  If the full queried outcome distribution agreed,
+finite marginalization would make that root marginal agree too.  This
+argument permits arbitrary extra outcomes, multiple roots, arbitrary other
+action vertices, and the full finite observed alphabet; it does not require
+each outcome to be a child of one selected action parent.
+
+The hypothesis is essential to this constructor: a root merely *reaching*
+an outcome is not yet a selected outcome coordinate.  Such hedges still need
+the general root-to-outcome routing argument, so this is not a replacement
+for the unrestricted `PublishedCompleteness.hedge_counterexample` field. -/
+noncomputable def HedgeWitness.positiveCounterexampleOfRootsSubsetOutcome
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (rootsInOutcome : NodeSet.Subset w.roots q.outcome) :
+    CounterexampleIn (GraphModelClass.positive G) q := by
+  let roots := w.positiveRootParityCounterexample rich
+  have rootSource : (q.restrictOutcome w.roots rootsInOutcome).sourceTerm =
+      (w.rootParityQuery rich).sourceTerm := by
+    simp only [JointKernelQuery.restrictOutcome, HedgeWitness.rootParityQuery,
+      HedgeWitness.rootParityInterventionalQuery, InterventionalQuery.kernelQuery,
+      JointKernelQuery.sourceTerm, hedgeDoSecondIntervention_targets]
+  exact {
+    left := roots.left
+    right := roots.right
+    left_mem := roots.left_mem
+    right_mem := roots.right_mem
+    observationally_equal := roots.observationally_equal
+    query_separated := by
+      intro equivalent
+      apply roots.query_separated
+      have restricted := q.valueEquivalent_restrictOutcome roots.left roots.right
+        equivalent w.roots rootsInOutcome
+      intro assignment
+      simpa only [JointKernelQuery.ValueEquivalent, rootSource] using restricted assignment
+  }
 
 end Causality
 end Thesis

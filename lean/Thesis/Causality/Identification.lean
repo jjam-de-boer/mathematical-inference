@@ -836,6 +836,36 @@ theorem CounterexampleIn.not_identifiable
       counterexample.left_mem counterexample.right_mem
       counterexample.observationally_equal)
 
+/-- An explicit countermodel pair for a conditional query in a selected
+class.  Separation uses the query's agreement-on-common-support relation,
+not a difference in support domains: a conditional non-identifiability proof
+must exhibit a genuine value disagreement where both kernels are defined.
+
+This is the conditional counterpart of `CounterexampleIn`.  Model-class
+membership retains positivity or any other selected regularity assumptions
+when recursive IDC exchanges transport the same pair back to its source. -/
+structure ConditionalCounterexampleIn {S : ObservedSignature} {G : ObservedGraph S}
+    (C : GraphModelClass G) (query : ConditionalKernelQuery S) where
+  left : ExactModel S
+  right : ExactModel S
+  left_mem : C.Mem left
+  right_mem : C.Mem right
+  observationally_equal : ObservationallyEquivalent left right
+  query_separated : Not (query.ValueEquivalent left right)
+
+/-- A class-preserving conditional countermodel refutes semantic conditional
+identifiability directly; no excluded-middle test of that property is used. -/
+theorem ConditionalCounterexampleIn.not_identifiable
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {query : ConditionalKernelQuery S}
+    (counterexample : ConditionalCounterexampleIn C query) :
+    Not (C.conditionalIdentifiable query) := by
+  intro identifiable
+  exact counterexample.query_separated
+    (identifiable counterexample.left counterexample.right
+      counterexample.left_mem counterexample.right_mem
+      counterexample.observationally_equal)
+
 /-- Unrestricted compatible counterexample, recovered as the `all` class. -/
 abbrev Counterexample (G : ObservedGraph S) (q : JointKernelQuery S) :=
   CounterexampleIn (GraphModelClass.all G) q

@@ -12,6 +12,7 @@ import Thesis.Examples.KernelSuccessCompilation
 import Thesis.Examples.KernelFailureExtraction
 import Thesis.Examples.HedgeNoise
 import Thesis.Examples.ConditionalCompilation
+import Thesis.Examples.ConditionalFailureExtraction
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -55,4 +56,12 @@ has a failed joint numerator but succeeds after a rule-2 promotion, and a
 longer query exchanges two conditioners while retaining the remaining given
 set.  Terminal Bayes, empty conditioners, the empty signature, insufficient
 fuel, and retained terminal failure are also checked with the general compiler.
+Conditional failure regressions additionally check actual failed runs after
+zero, one, and two exchanges, exact retained forest coordinates, and uniform
+exhaustion of the terminal search.  A positive original-numerator countermodel
+for a terminal with queried roots is converted to conditional separation and
+transported through both exchanges without changing either model.  The
+intermediate nonempty given-set and actual finite-search choices are checked;
+this does not assert that every irreducible conditional terminal has a
+countermodel.
 -/

@@ -23,6 +23,7 @@ import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.HedgeNoise
 import Thesis.CausalTransport.CompletenessAssembly
 import Thesis.CausalTransport.ConditionalCompilation
+import Thesis.CausalTransport.ConditionalFailureExtraction
 import Thesis.CausalTransport.Counterfactual
 import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.CausalTransport.HiddenDAG
@@ -172,6 +173,23 @@ identified numerator certificate rather than making another ID call.  This
 proves success correctness and identifiability, not the converse: an
 irreducible terminal joint failure still needs a conditional countermodel or
 the equivalent semantic non-identifiability argument.
+`ConditionalFailureExtraction` supplies the matching general failure induction:
+every failed conditional invocation retains its actual irreducible terminal,
+exhausted singleton-exchange search, terminal numerator hedge, and complete
+original-query exchange trace.  A terminal conditional countermodel transports
+through that trace in the same positive model class using the same two models.
+The chain-rule leaf proves conditional separation whenever a numerator's
+countermodel pair agrees on the denominator; the empty-condition conversion
+does not require positivity.  Its final assembly constructor therefore makes
+the two remaining semantic families explicit rather than assuming that a
+failed numerator automatically separates its conditional.  Those families
+are not yet inhabited in general.
+The constructor `HedgeWitness.positiveCounterexampleOfRootsSubsetOutcome`
+in `HedgePositive` also restores the original joint query whenever all common
+roots are selected outcomes, by
+finite marginalization of the full positive carrier pair.  Arbitrary extra
+outcomes and multiple roots are covered.  Root-to-outcome reachability alone
+is not the subset hypothesis, so the unrestricted routing gap remains open.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations
