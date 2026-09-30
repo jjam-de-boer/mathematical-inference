@@ -5,6 +5,7 @@ import Thesis.Examples.TenureTrack
 import Thesis.Examples.IdentificationRegression
 import Thesis.Examples.KernelCompilation
 import Thesis.Examples.ComponentCompilation
+import Thesis.Examples.KernelRecursionCompilation
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -18,5 +19,8 @@ The current-input compilation regressions additionally exercise supported
 certificates on a gapped host, a nonempty external action, and an empty
 observed signature.  Component-extraction regressions additionally exercise
 graph-derived action deletion and exchange, a genuinely recursive extracted
-input, and the terminal complementary marginal.
+input, and the terminal complementary marginal.  The recursive branch
+regression composes nonempty action augmentation, containing-component
+action reindexing, and uncut ancestral pruning, and checks its certificate
+throughout the positive compatible model class.
 -/

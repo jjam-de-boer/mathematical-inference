@@ -143,6 +143,39 @@ noncomputable def PublishedIdentificationCertificate.prependDoRuleOfPositive
     exact ⟨sourceSupported, ⟨nestedSupported.endpoints.2,
       ⟨⟨sourceSupported, ⟨intermediate, ()⟩⟩, nestedSupported⟩⟩⟩
 
+/-- Prepend the reverse direction of one path-based do-rule.
+
+Action augmentation needs the symmetry of a rule-3 deletion: the parent
+query has fewer interventions, while the recursive certificate identifies
+the more-intervened kernel.  The explicit `symm` derivation retains the
+support tree for the original rule direction as well as its reversed
+endpoints.  Positivity supplies the extra-intervention kernel directly; no
+semantic soundness theorem is used to manufacture intermediate support. -/
+noncomputable def PublishedIdentificationCertificate.prependSymmetricDoRuleOfPositive
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {correct : DSeparationCorrectness G} {left right : Kernel S}
+    (obsPositive : forall {model}, C.Mem model -> ObservationallyPositive model)
+    (application : PathDoRuleApplication G left right)
+    (nested : PublishedIdentificationCertificate C correct (.kernel left)) :
+    PublishedIdentificationCertificate C correct (.kernel right) where
+  formula := nested.formula
+  actionFree := nested.actionFree
+  derivation := DoCalculusDerivation.trans
+    (G := G) (separation := pathRuleSeparation G)
+    (DoCalculusDerivation.symm
+      (G := G) (separation := pathRuleSeparation G)
+      (DoCalculusDerivation.doRule
+        (G := G) (separation := pathRuleSeparation G) application))
+    nested.derivation
+  supported := fun model member assignment sourceSupported => by
+    let intermediate :=
+      ((obsPositive member).kernelPositiveSupportedValue left assignment).toSupported
+    let nestedSupported := nested.supported model member assignment intermediate
+    dsimp [PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
+    exact ⟨sourceSupported, ⟨nestedSupported.endpoints.2,
+      ⟨⟨sourceSupported, ⟨intermediate,
+          ⟨intermediate, ⟨sourceSupported, ()⟩⟩⟩⟩, nestedSupported⟩⟩⟩
+
 /--
 Lift a published reduction through a finite marginalization.  Support of the
 source marginal yields support of each enumerated source summand; applying

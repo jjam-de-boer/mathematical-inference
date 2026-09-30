@@ -10,6 +10,8 @@ import Thesis.CausalTransport.KernelIdentification
 import Thesis.CausalTransport.KernelCompilation
 import Thesis.CausalTransport.KernelSeparation
 import Thesis.CausalTransport.ComponentCompilation
+import Thesis.CausalTransport.KernelRecursionSeparation
+import Thesis.CausalTransport.KernelRecursionCompilation
 import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.CompletenessAssembly
@@ -87,6 +89,15 @@ actions and supplying positive support for recursion.  It also compiles the
 terminal complementary marginal; unions of entire components and empty
 subsets are covered by its general closed-subset constructor.  Compilation
 of all recursive ID branches remains a separate completeness obligation.
+`KernelRecursionSeparation` proves incoming-cut non-ancestor isolation and
+connects full expanded ancestry to the engine's induced-host tests.  Its
+pruning and augmentation side conditions retain their different uncut and
+incoming-cut ancestry criteria.  `KernelRecursionCompilation` packages the
+certified current-input, positive-support, and parent-closure invariants;
+it transports arbitrary nested certificates through pruning, augmentation,
+and containing-component restriction without resetting the current expression.
+The multi-component product derivation and complete recursive success
+assembly are still required, as is the original-query hedge countermodel.
 `HedgeOutcomeFlow`
 proves exact finite support formulas for the general routed hedge models and
 packages an unrestricted original-query counterexample when readout routing

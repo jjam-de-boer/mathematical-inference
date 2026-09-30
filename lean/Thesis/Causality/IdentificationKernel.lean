@@ -108,6 +108,25 @@ theorem identificationAdditionalAction_disjoint_action (G : ObservedGraph S)
       rw [localSelected] at notSelected
       cases notSelected
 
+/-- The additional action also misses the local outcome.  Every outcome
+vertex is an ancestor of itself even after incoming arrows are cut, whereas
+the extra-action definition explicitly excludes that entire ancestral set. -/
+theorem identificationAdditionalAction_disjoint_outcome (G : ObservedGraph S)
+    (remaining outcome action : NodeSet S) :
+    NodeSet.Disjoint (identificationAdditionalAction G remaining outcome action)
+      (NodeSet.inter outcome remaining) := by
+  intro node selected
+  cases outcomeSelected : NodeSet.inter outcome remaining node with
+  | false => rfl
+  | true =>
+      have nodeRemaining := (Bool.and_eq_true_iff.mp outcomeSelected).2
+      have ancestor := ancestralSet_contains_targets G remaining
+        (GraphMutilation.bar (NodeSet.inter action remaining))
+        (NodeSet.inter outcome remaining) nodeRemaining outcomeSelected
+      have excluded := (Bool.and_eq_true_iff.mp selected).2
+      rw [ancestor] at excluded
+      cases excluded
+
 /-! ## The corrected fuel-bounded recursion -/
 
 /-- One generic current-kernel ID invocation.

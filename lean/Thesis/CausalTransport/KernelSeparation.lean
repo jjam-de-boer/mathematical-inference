@@ -321,6 +321,42 @@ private theorem exactWalk_to_isolated_eq
       rw [same, isolated _] at first
       cases first
 
+/-- Disjoint left endpoints are separated from a family of right vertices
+isolated in the relevant ancestral moral graph.  Both later-action deletion
+and non-ancestor deletion use this same finite-walk argument; their distinct
+graph proofs supply the isolation premise rather than assuming separation. -/
+theorem dSeparated_of_ancestrally_isolated_right
+    (G : ObservedGraph S) (mutilation : GraphMutilation S)
+    (left right conditioned : NodeSet S) (disjoint : NodeSet.Disjoint left right)
+    (rightIsolated : forall target, right target = true -> forall other,
+      G.ancestralMoralEdge mutilation
+        (NodeSet.union left (NodeSet.union right conditioned))
+        (.observed target) other = false) :
+    G.dSeparated mutilation left right conditioned = true := by
+  apply (G.dSeparated_eq_true_iff_no_moralReachable mutilation left right conditioned).mpr
+  rintro ⟨source, target, sourceSelected, _sourceOpen,
+    targetSelected, _targetOpen, reachable⟩
+  let targets := NodeSet.union left (NodeSet.union right conditioned)
+  have isolated : forall other,
+      G.MoralOpenEdge mutilation targets conditioned other (.observed target) = false := by
+    intro other
+    cases edge : G.MoralOpenEdge mutilation targets conditioned other (.observed target) with
+    | false => rfl
+    | true =>
+        have reverse := G.moralOpenEdge_symmetric mutilation targets conditioned edge
+        have moral := (MoralOpenEdge.unpacked G mutilation targets conditioned reverse).2.2
+        rw [rightIsolated target targetSelected other] at moral
+        cases moral
+  rcases (G.moralReachable_eq_true_iff mutilation targets conditioned
+    (.observed source) (.observed target)).mp reachable with
+    ⟨_length, _lengthBound, walk⟩
+  rcases walk with ⟨walk⟩
+  have same := exactWalk_to_isolated_eq walk isolated
+  have sameIndex : source = target := by injection same
+  have notRight := disjoint source sourceSelected
+  rw [sameIndex, targetSelected] at notRight
+  cases notRight
+
 /-- General separation of early left endpoints from later incoming-cut
 right endpoints.  All other target vertices must be early or incoming-cut;
 conditioned action vertices can therefore have arbitrary topological indices.
@@ -335,31 +371,19 @@ theorem dSeparated_of_late_cut_right
       NodeSet.union left (NodeSet.union right conditioned) node = true ->
         mutilation.removeIncoming node = true ∨ node.val ≤ bound) :
     G.dSeparated mutilation left right conditioned = true := by
-  apply (G.dSeparated_eq_true_iff_no_moralReachable mutilation left right conditioned).mpr
-  rintro ⟨source, target, sourceSelected, _sourceOpen,
-    targetSelected, _targetOpen, reachable⟩
-  let targets := NodeSet.union left (NodeSet.union right conditioned)
-  have targetData := rightLateCut target targetSelected
-  have isolated : forall other,
-      G.MoralOpenEdge mutilation targets conditioned other (.observed target) = false := by
-    intro other
-    cases edge : G.MoralOpenEdge mutilation targets conditioned other (.observed target) with
+  apply G.dSeparated_of_ancestrally_isolated_right mutilation left right conditioned
+  · intro node selected
+    cases alsoRight : right node with
     | false => rfl
     | true =>
-        have reverse := G.moralOpenEdge_symmetric mutilation targets conditioned edge
-        have moral := (MoralOpenEdge.unpacked G mutilation targets conditioned reverse).2.2
-        rw [G.ancestralMoralEdge_from_late_cut_false mutilation targets bound
-          targetsBefore target targetData.1 targetData.2 other] at moral
-        cases moral
-  rcases (G.moralReachable_eq_true_iff mutilation targets conditioned
-    (.observed source) (.observed target)).mp reachable with
-    ⟨_length, _lengthBound, walk⟩
-  rcases walk with ⟨walk⟩
-  have same := exactWalk_to_isolated_eq walk isolated
-  have sameIndex : source = target := by injection same
-  have before := leftBefore source sourceSelected
-  rw [sameIndex] at before
-  omega
+        have before := leftBefore node selected
+        have after := (rightLateCut node alsoRight).1
+        omega
+  · intro target selected other
+    have data := rightLateCut target selected
+    exact G.ancestralMoralEdge_from_late_cut_false mutilation
+      (NodeSet.union left (NodeSet.union right conditioned)) bound
+      targetsBefore target data.1 data.2 other
 
 /-! ## Rule 3 removes every later action from a topological factor -/
 
