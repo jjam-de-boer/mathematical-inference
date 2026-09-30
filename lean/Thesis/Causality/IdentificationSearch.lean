@@ -2497,10 +2497,18 @@ Observational factorization of a c-component, written as a product of
 chain-rule kernels.  This is `Q[S]` in Tian's notation, using global
 topological predecessors that still lie in `remaining` (Shpitser–Pearl 2006,
 step 4).
+
+`NodeSet.members` is in increasing topological order, whereas the primitive
+chain derivation splits off the latest vertex on the left.  Reversing the
+member list therefore makes the generated syntax later-first, exactly like
+`consecutiveChainKernels`.  The reversal is semantically immaterial because
+multiplication is commutative, but it is proof-theoretically essential:
+`DoCalculusDerivation` records the actual chain-rule tree and does not admit an
+unjustified syntactic commutativity rewrite.
 -/
 def chainProduct (remaining component : NodeSet S) : ProbabilityTerm S :=
   productTerms
-    ((NodeSet.members component).map (fun node =>
+    ((NodeSet.members component).reverse.map (fun node =>
       .kernel (chainKernel remaining node)))
 
 theorem chainProduct_actionFree (remaining component : NodeSet S) :

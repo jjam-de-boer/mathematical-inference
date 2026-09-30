@@ -5,6 +5,7 @@ import Thesis.CausalTransport.Correspondence
 import Thesis.CausalTransport.FiniteSource
 import Thesis.CausalTransport.Soundness
 import Thesis.CausalTransport.Completeness
+import Thesis.CausalTransport.ChainCompilation
 import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.CompletenessAssembly
@@ -51,7 +52,11 @@ parent-uniqueness, odd-parity, identical-neighbourhood assumptions, and all
 restrictions on the pivot's other outgoing edges without choosing a family of
 pointwise equivalences.  A complete `PublishedCompleteness`
 inhabitant still needs structural compilation of arbitrary successful traces
-and a positive countermodel for an arbitrary hedge.  `HedgeOutcomeFlow`
+and a positive countermodel for an arbitrary hedge.  `ChainCompilation`
+supplies the probability-algebra foundation of that compiler: an exact,
+support-carrying observational chain certificate on any finite host, including
+hosts with topological gaps.  It does not identify a recursive ID input with
+the host's observational marginal.  `HedgeOutcomeFlow`
 proves exact finite support formulas for the general routed hedge models and
 packages an unrestricted original-query counterexample when readout routing
 does not re-enter `large \ small`; removing that geometric hypothesis and preserving

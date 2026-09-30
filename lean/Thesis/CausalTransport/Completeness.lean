@@ -3310,10 +3310,10 @@ noncomputable def chainSingletonIdentifiedPublishedCertificate?
         none
   | _ => none
 
-/-- Consecutive two-vertex chain-rule term `∑_i P(i | Pa(i)) P(y | i, Pa(i))`.
-The engine writes the opposite multiply order; the two products are
-not syntactically equal, but this is the order `DoCalculusDerivation.chain`
-produces. -/
+/-- Consecutive two-vertex chain-rule term
+`∑_i P(y | pred(y)) P(i | pred(i))`.  The later vertex is on the left,
+matching both `chainProduct` in the engine and the order produced by
+`DoCalculusDerivation.chain`; no syntactic commutativity rule is assumed. -/
 def twoVertexChainTerm {S : ObservedSignature} (j : Fin S.count)
     (hpos : 0 < j.val) : ProbabilityTerm S :=
   .marginalize (NodeSet.singleton (predIndex j hpos))
