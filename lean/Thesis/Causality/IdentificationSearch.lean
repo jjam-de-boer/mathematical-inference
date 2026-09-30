@@ -2717,10 +2717,12 @@ theorem consecutiveSummed_succ_eq_interval {S : ObservedSignature}
   rw [consecutiveInterval, consecutiveSummed_succ]
 
 /--
-One fuel-bounded ID step on a current remaining vertex set and a current
-observational expression `current` for `P(remaining)`.
+One fuel-bounded syntactic ID step on a current remaining vertex set and a
+recursive input expression `current`.  After c-component restriction, that
+input need not be the host's ordinary observational marginal.
 
-The cases follow Shpitser–Pearl 2006, function ID:
+The intended branch skeleton follows Shpitser–Pearl 2006, function ID;
+the present semantic limitations are recorded after the list:
 
 1. empty action — marginalize to the outcome;
 2. discard non-ancestors of `Y` in `G_{\overline{X}}`;
@@ -2731,6 +2733,15 @@ The cases follow Shpitser–Pearl 2006, function ID:
    4.2 `S` is already a c-component of `G` — chain-rule expression;
    4.3 `S ⊂ S' ∈ C(G)` — recurse on `G_{S'}` with the restricted action
        `X ∩ S'` and the chain-rule joint on `S'`.
+
+The finite control flow is proved total in `Completeness`, but this is not
+yet a generally certified implementation of the published ID algorithm.
+`Examples.FrontDoorIdentification` in `IdentificationRegression` proves a
+positive compatible counterexample to one returned formula.  Ancestral
+shrinking in the incoming-cut graph and extraction of factors independently
+of `current` must be revisited before an exact-output success compiler can
+be inhabited.  An `identified` constructor alone is not a semantic
+identification certificate.
 -/
 def identifyFuel (fuel : Nat) (G : ObservedGraph S)
     (remaining outcome action : NodeSet S)

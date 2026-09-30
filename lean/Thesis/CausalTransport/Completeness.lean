@@ -21,7 +21,12 @@ record is not yet inhabited.  The executable fuel bound is proved total below,
 so public joint and conditional ID cannot return `unfinished`; every public
 joint failure also yields a hedge witness through its structural trace.  The
 remaining load-bearing obligations are the structural success compiler and
-the general hedge countermodel.
+the general hedge countermodel.  The former also requires repair of the
+executable recursion: `Examples.FrontDoorIdentification` in
+`IdentificationRegression` proves that one current identified formula is
+incorrect even in a positive compatible model, and consequently that the
+formula-aligned `PublishedJointTraceCompiler` cannot yet be inhabited.
+Control-flow totality must not be mistaken for semantic correctness.
 
 For arbitrary nested engine runs, use the exact trace relations in
 `IdentificationInduction`.  The branch-specific lemmas retained below are
@@ -18279,7 +18284,13 @@ noncomputable def publishedJointSuccessLeafCompilation?
   | restrict => exact none
   | product => exact none
 
-/-- The remaining branch-generic program for successful public joint ID. -/
+/-- The intended branch-generic program for successful public joint ID.
+
+The exact-output requirement is substantive, not an interface that can be
+filled by more branch unpackers.  `Examples.FrontDoorIdentification` proves
+that the current engine makes this record uninhabitable on a front-door
+graph.  Repairing recursive input handling is therefore a prerequisite to
+constructing this program; its field must not be assumed as an axiom. -/
 structure PublishedJointTraceCompiler
     {S : ObservedSignature} (G : ObservedGraph S)
     (C : GraphModelClass G) (correct : DSeparationCorrectness G) where

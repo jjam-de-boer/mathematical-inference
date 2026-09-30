@@ -56,7 +56,12 @@ and a positive countermodel for an arbitrary hedge.  `ChainCompilation`
 supplies the probability-algebra foundation of that compiler: an exact,
 support-carrying observational chain certificate on any finite host, including
 hosts with topological gaps.  It does not identify a recursive ID input with
-the host's observational marginal.  `HedgeOutcomeFlow`
+the host's observational marginal.  The front-door regression in
+`Thesis.Examples.IdentificationRegression` proves that a current successful
+engine formula is incorrect in a positive compatible model: executable
+recursion must be repaired before the exact-output success compiler can
+exist.  A total, action-free engine result is not itself a certificate.
+`HedgeOutcomeFlow`
 proves exact finite support formulas for the general routed hedge models and
 packages an unrestricted original-query counterexample when readout routing
 does not re-enter `large \ small`; removing that geometric hypothesis and preserving
