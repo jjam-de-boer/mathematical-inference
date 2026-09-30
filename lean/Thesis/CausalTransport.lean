@@ -20,6 +20,7 @@ import Thesis.CausalTransport.KernelHedgeTransport
 import Thesis.CausalTransport.KernelFailureExtraction
 import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
+import Thesis.CausalTransport.HedgeNoise
 import Thesis.CausalTransport.CompletenessAssembly
 import Thesis.CausalTransport.Counterfactual
 import Thesis.CausalTransport.HiddenDAGModel
@@ -154,6 +155,13 @@ termination, literal-output compilation, and structural failure extraction are
 proved internally.  This conditional assembly is not a completed
 `PublishedCompleteness` package: the positive hedge leaf and general conditional
 identification still remain open.
+`HedgeNoise` supplies the independent finite-noise step of the remaining routed
+countermodel: biased XOR channels retain separation after any finite number of
+private flips, and full-alphabet carriers realize every background label.
+It applies those results to the existing positive root-parity signal without
+claiming that a signal distribution is itself a graph-compatible routed SCM.
+The observational-equivalence and root-to-original-outcome mechanisms remain
+the semantic obligations.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations

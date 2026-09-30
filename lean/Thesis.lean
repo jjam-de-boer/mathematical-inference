@@ -10,6 +10,7 @@ import Thesis.Examples.ProductCompilation
 import Thesis.Examples.KernelProductCompilation
 import Thesis.Examples.KernelSuccessCompilation
 import Thesis.Examples.KernelFailureExtraction
+import Thesis.Examples.HedgeNoise
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -43,4 +44,9 @@ proper incoming-cut ancestry, uncut pruning, nonempty action augmentation,
 containing-component restriction, and a failed product factor.  They check
 hedges for the original queries with exact terminal forest coordinates, and
 also cover a recursive host with external actions and an arbitrary current term.
+Private-noise regressions check exact finite parity bias, unequal input
+denominators, deterministic input support, the zero-noise boundary, and erasure
+of separation by fair noise.  A three-value carrier checks support beyond the
+two parity labels, and an actual extracted hedge checks its root-signal gap
+after any finite biased-noise count.  This is not yet original-outcome routing.
 -/

@@ -6,6 +6,7 @@ import Thesis.Probability.FiniteCellProduct
 import Thesis.Probability.Urn
 import Thesis.Probability.QualitativeUrn
 import Thesis.Probability.FiniteRecord
+import Thesis.Probability.BooleanNoise
 import Thesis.Probability.Construction
 import Thesis.Probability.Distros
 
@@ -31,9 +32,12 @@ Reading order:
    an event-level plausibility interface;
 8. `FiniteRecord` gives weighted, common-denominator finite distributions and
    conditioning;
-9. `Construction` builds finite dependent products and the rational
+9. `BooleanNoise` proves finite biased XOR-channel injectivity, exact parity
+   bias through independent flips, and support restoration without real-valued
+   limiting arguments;
+10. `Construction` builds finite dependent products and the rational
    constructions used by causal models; and
-10. `Distros` packages named finite distros (Bernoulli, binomial, lattice
+11. `Distros` packages named finite distros (Bernoulli, binomial, lattice
     Gaussian, and the finite counterparts of the classical limiting
     families).
 
