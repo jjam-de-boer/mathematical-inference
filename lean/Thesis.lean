@@ -64,4 +64,10 @@ transported through both exchanges without changing either model.  The
 intermediate nonempty given-set and actual finite-search choices are checked;
 this does not assert that every irreducible conditional terminal has a
 countermodel.
+A further conditional failure regression retains a nonempty conditioner and
+blocks every exchange through an outcome-to-conditioner edge.  Its extracted
+hedge produces positive models that separate the actual conditional query:
+their denominator equality follows from the pair's private-background
+mechanisms outside the forest, not from an assumed denominator-identifiability
+theorem.  This checks a genuine irreducible terminal case as well as transport.
 -/

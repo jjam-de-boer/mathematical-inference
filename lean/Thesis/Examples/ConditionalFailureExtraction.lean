@@ -226,6 +226,114 @@ theorem original_left_unchanged : originalConditionalCounterexample.left =
 theorem original_right_unchanged : originalConditionalCounterexample.right =
     terminalJointCounterexample.right := rfl
 
+/-! ## A genuinely irreducible nonempty-condition countermodel -/
+
+/-- Extending the confounded chain by `Y → Z` prevents exchanging `Z`.
+The ambient directed edge is retained even though the constructed carrier
+pair uses the same private-background mechanism at `Z`.  Compatibility does
+not require every allowed parent to influence the equation. -/
+def blockedSignature : ObservedSignature where
+  count := 4
+  Value := fun _ => Bool
+  valueEnumeration := fun _ => [false, true]
+  value_complete := by intro _ value; cases value <;> simp
+  value_nodup := by intro _; simp
+  defaultValue := fun _ => false
+  valueDecidableEq := fun _ => inferInstance
+  directed := fun parent child => decide (child.val = parent.val + 1)
+  directed_earlier := by
+    intro parent child edge
+    have next := of_decide_eq_true edge
+    omega
+
+def blockedGraph : ObservedGraph blockedSignature where
+  bidirected := fun left right => decide (left ≠ right) && decide (left.val < 3) && decide (right.val < 3)
+  bidirected_symmetric := by
+    intro left right edge
+    simpa only [ne_comm, Bool.and_assoc, Bool.and_left_comm, Bool.and_comm] using edge
+  bidirected_irreflexive := by intro node; simp
+
+def blockedRich : ObservedSignature.ValueRich blockedSignature where
+  first := fun _ => false
+  second := fun _ => true
+  first_enumerated := by intro _; change false ∈ [false, true]; decide +kernel
+  second_enumerated := by intro _; change true ∈ [false, true]; decide +kernel
+  different := fun _ => Bool.false_ne_true
+
+def blockedOutcome : NodeSet blockedSignature := NodeSet.singleton ⟨2, by decide⟩
+def blockedHost : NodeSet blockedSignature := fun node => decide (node.val < 3)
+def blockedQuery : ConditionalKernelQuery blockedSignature where
+  outcome := blockedOutcome
+  action := fun node => decide (node.val < 2)
+  condition := NodeSet.singleton ⟨3, by decide⟩
+  action_outcome_disjoint := by
+    apply (NodeSet.disjointBool_eq_true_iff _ _).mp
+    decide +kernel
+  action_condition_disjoint := by
+    apply (NodeSet.disjointBool_eq_true_iff _ _).mp
+    decide +kernel
+  outcome_condition_disjoint := NodeSet.disjoint_singletons_of_ne (by decide)
+
+theorem blocked_condition_nonempty : NodeSet.isEmpty blockedQuery.condition = false := by decide +kernel
+theorem blocked_no_exchange : conditionalExchangeStep? blockedGraph blockedQuery = none := rfl
+
+/-- Product failure retains the first three vertices, not the whole
+four-node numerator host.  This is the actual engine's failed factor, not
+a forest prescribed independently by the countermodel test. -/
+private def blockedComputedFailure : IdentificationFail blockedSignature :=
+  match identifyJointKernel blockedGraph blockedQuery.jointNumerator with
+  | .failed fail => fail
+  | _ => ⟨NodeSet.empty, NodeSet.empty⟩
+
+theorem blocked_joint_failed : identifyJointKernel blockedGraph blockedQuery.jointNumerator =
+    .failed ⟨blockedHost, blockedOutcome⟩ := by
+  have failed : identifyJointKernel blockedGraph blockedQuery.jointNumerator =
+      .failed blockedComputedFailure := rfl
+  have large : blockedComputedFailure.remaining = blockedHost :=
+    (NodeSet.equal_eq_true_iff _ _).mp (by decide +kernel)
+  have small : blockedComputedFailure.free = blockedOutcome :=
+    (NodeSet.equal_eq_true_iff _ _).mp (by decide +kernel)
+  have coordinates : blockedComputedFailure = ⟨blockedHost, blockedOutcome⟩ := by
+    cases record : blockedComputedFailure with
+    | mk remaining free =>
+        rw [record] at large small
+        cases large
+        cases small
+        rfl
+  exact failed.trans (congrArg IdentificationOutcome.failed coordinates)
+
+theorem blocked_conditional_failed : identifyConditionalKernel blockedGraph blockedQuery =
+    .failed ⟨blockedHost, blockedOutcome⟩ := by
+  simpa only [identifyConditionalKernel, identifyConditionalKernelFuel, blocked_no_exchange]
+    using blocked_joint_failed
+
+noncomputable def blockedHedge := identifyJointKernelFailedHedge blockedQuery.jointNumerator blocked_joint_failed
+
+theorem blocked_roots_in_outcome : NodeSet.Subset blockedHedge.witness.roots blockedQuery.outcome := by
+  intro node root
+  have smallEqual : blockedHedge.witness.small = blockedOutcome := blockedHedge.small_eq
+  have selected := ((blockedHedge.witness.small_forest.roots_exact node).mp root).1
+  rw [smallEqual] at selected
+  exact selected
+
+theorem blocked_condition_outside_large : NodeSet.Disjoint blockedQuery.condition blockedHedge.witness.large := by
+  have largeEqual : blockedHedge.witness.large = blockedHost := blockedHedge.large_eq
+  rw [largeEqual]
+  apply (NodeSet.disjointBool_eq_true_iff _ _).mp
+  decide +kernel
+
+/-- An actual positive countermodel for an irreducible terminal with a
+nonempty conditioner.  The constructor proves agreement of its own pair
+on the denominator; no class-level denominator-identifiability hypothesis
+or external conditional countermodel is passed in. -/
+noncomputable def blockedCounterexample :=
+  blockedHedge.witness.positiveConditionalCounterexampleOfRootsSubsetOutcomeOfConditionOutsideLarge
+    blockedRich blocked_roots_in_outcome blocked_condition_outside_large
+
+theorem blocked_query_not_identifiable :
+    Not ((GraphModelClass.positive blockedGraph).conditionalIdentifiable blockedQuery) :=
+  blockedCounterexample.not_identifiable
+
 /-! ## Universe-polymorphic provenance remains independent of the final assembler -/
 
 universe u

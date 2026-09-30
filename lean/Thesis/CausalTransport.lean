@@ -190,6 +190,17 @@ roots are selected outcomes, by
 finite marginalization of the full positive carrier pair.  Arbitrary extra
 outcomes and multiple roots are covered.  Root-to-outcome reachability alone
 is not the subset hypothesis, so the unrestricted routing gap remains open.
+That pair has identical intervention responses on every coordinate outside
+the large forest, with the same latent units and prior.  Thus a conditioner
+outside the forest has a matched denominator without a class-level
+identifiability premise.  `ConditionalFailureExtraction` combines this fact
+with root separation into a positive conditional countermodel when the
+common roots are queried outcomes.  A nonempty-condition regression verifies
+an actual failed numerator and exhausted exchange search, while a directed
+outcome-to-conditioner edge makes the terminal genuinely irreducible.  The
+conditioner may therefore be a graphical descendant, not only an isolated
+coordinate.  The general routing and remaining conditional terminals are
+not silently included in these proved geometric cases.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations

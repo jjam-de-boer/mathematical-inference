@@ -39,6 +39,11 @@ outcome, finite marginalization restores a positive counterexample for the
 original query, retaining arbitrary additional outcomes and the entire action
 set.  Roots that only reach those outcomes still require the separate routed
 construction; this module does not assert that that general leaf is complete.
+Both carrier models also evaluate every coordinate outside the large forest
+identically under arbitrary interventions, using their common private
+backgrounds.  This yields pair-level equality of arbitrary joint marginals
+on those coordinates, even if they have graphical parents in the forest;
+it does not claim such kernels are identifiable across all compatible models.
 -/
 
 /-! ## Full-alphabet carriers for a Boolean hedge signal -/
@@ -1289,6 +1294,88 @@ theorem HedgeWitness.carrierDefectParityModel_prior_eq
     (w.largeCarrierDefectParityModel rich).prior =
       (w.smallCarrierDefectParityModel rich).prior :=
   rfl
+
+/-- The carrier countermodels evaluate every coordinate outside the large
+forest identically under an arbitrary intervention and the same latent unit.
+
+Outside `large`, both unsoftened mechanisms read only that coordinate's
+private background, not their directed parents.  The carrier wrappers have
+the same background and defect inputs as well.  Thus changes elsewhere in
+the forest cannot propagate into these outputs, even when the ambient graph
+contains a directed edge from a forest vertex to such a coordinate.  This
+is a property of the constructed pair, not a graphical independence claim
+about every compatible model. -/
+theorem HedgeWitness.carrierDefectParityModels_evalNodeUnder_eq_outsideLarge
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (intervention : (i : Fin S.count) -> Option (S.Value i))
+    (u : (w.largeCarrierDefectParityModel rich).latent.Assignment)
+    (child : Fin S.count) (outside : w.large child = false) :
+    (w.largeCarrierDefectParityModel rich).evalNodeUnder intervention u child =
+      (w.smallCarrierDefectParityModel rich).evalNodeUnder intervention u child := by
+  have outsideSmall : w.small child = false := by
+    cases selected : w.small child with
+    | false => rfl
+    | true =>
+        have inLarge := w.small_subset_large child selected
+        rw [outside] at inLarge
+        contradiction
+  rw [FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder
+  cases intervention child with
+  | some value => rfl
+  | none =>
+      simp only [HedgeWitness.largeCarrierDefectParityModel,
+        HedgeWitness.smallCarrierDefectParityModel, hedgeCarrierDefectModel,
+        HedgeWitness.largeParityModel, HedgeWitness.smallParityModel,
+        hedgeForestParityModel, hedgeNestedForestParityModel,
+        hedgeForestParityOutput, outsideSmall, outside, Bool.false_eq_true,
+        ↓reduceIte]
+
+/-- Every joint kernel on coordinates outside the large forest agrees in
+the two positive carrier models, for any action set.  The proof uses their
+common prior and pointwise coordinate equality; it does not ask whether that
+kernel is identifiable across the entire positive model class.
+
+The observational and interventional branches are both retained because a
+denominator may have an empty action.  Unconditional kernel semantics then
+turn the finite cylinder equality into supported result equivalence at each
+reference assignment. -/
+theorem HedgeWitness.carrierDefectParityModels_valueEquivalent_outsideLarge
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (query : JointKernelQuery S) (outside : NodeSet.Disjoint query.outcome w.large) :
+    query.ValueEquivalent (w.largeCarrierDefectParityModel rich)
+      (w.smallCarrierDefectParityModel rich) := by
+  intro reference
+  let left := w.largeCarrierDefectParityModel rich
+  let right := w.smallCarrierDefectParityModel rich
+  let kernel : Kernel S := ⟨query.outcome, query.action, NodeSet.empty⟩
+  let event := Kernel.agreesOn query.outcome reference
+  have underEqual (intervention : (i : Fin S.count) -> Option (S.Value i))
+      (u : left.latent.Assignment) :
+      event (left.evalUnder intervention u) = event (right.evalUnder intervention u) := by
+    apply Kernel.agreesOn_sample_congr
+    intro child selected
+    exact w.carrierDefectParityModels_evalNodeUnder_eq_outsideLarge rich
+      intervention u child (outside child selected)
+  have cylinderEqual : QProb.Equiv
+      ((kernel.distribution left reference).probVal event)
+      ((kernel.distribution right reference).probVal event) := by
+    unfold Kernel.distribution
+    split
+    · exact QProb.equiv_trans (left.interventionalValue_eq (kernel.intervention reference) event)
+        (QProb.equiv_trans
+          (left.prior.probVal_congr _ _ (underEqual (kernel.intervention reference)))
+          (QProb.equiv_symm (right.interventionalValue_eq (kernel.intervention reference) event)))
+    · exact QProb.equiv_trans (left.observationalValue_eq event)
+        (QProb.equiv_trans
+          (left.prior.probVal_congr _ _ (underEqual (FiniteLatentSCM.noIntervention S)))
+          (QProb.equiv_symm (right.observationalValue_eq event)))
+  exact ⟨ProbabilityResult.trans
+    (Kernel.unconditionalDenote left query.outcome query.action reference)
+    (ProbabilityResult.trans (.value cylinderEqual)
+      (ProbabilityResult.symm (Kernel.unconditionalDenote right query.outcome query.action reference)))⟩
 
 /-- A listed value with positive weight has positive singleton mass in the
 corresponding weighted atom list.  Duplicates, if present, only add further

@@ -28,8 +28,11 @@ The difficult terminal implication is deliberately not assumed to follow
 from a failed joint numerator.  We prove its general chain-rule case below:
 if that numerator's countermodel pair agrees on the denominator, it already
 separates the conditional.  A denominator-identifiable class supplies that
-agreement.  Irreducible terminals with a non-identifiable denominator still
-require the general conditional countermodel argument.
+agreement, but is not necessary: the positive carrier pair supplies it
+directly when the conditioner is outside the large forest and all common
+roots are queried outcomes.  General irreducible terminals without such a
+matched-denominator construction still require the remaining conditional
+countermodel argument.
 -/
 
 /-! ## Inspectable exchange traces and their semantic equality -/
@@ -300,6 +303,33 @@ def ConditionalCounterexampleIn.ofJointNumeratorOfEmptyCondition
         exact query.jointNumerator.supportedAt joint.right assignment
       simpa only [sourceEqual] using conditional assignment leftSupported rightSupported
   }
+
+/-- A positive conditional countermodel whenever every common root is a
+queried outcome and the conditioner lies outside the hedge's large forest.
+
+The root carrier pair separates the numerator by finite marginalization.
+Its conditioner coordinates agree pointwise under the intervention because
+both constructed mechanisms read the same private backgrounds outside the
+large forest.  The matched-denominator chain lemma therefore separates the
+conditional in that very pair.  No denominator-identifiability assumption
+is made: graphical descendants in the conditioner are allowed, provided
+they are outside this forest.  Nor does the construction need a successful
+exchange test; it can close an irreducible nonempty-condition terminal.
+
+These explicit geometric hypotheses do not hold for every hedge, so the
+general irreducible conditional countermodel leaf remains separate. -/
+noncomputable def HedgeWitness.positiveConditionalCounterexampleOfRootsSubsetOutcomeOfConditionOutsideLarge
+    {S : ObservedSignature.{0}} {graph : ObservedGraph S} {query : ConditionalKernelQuery S}
+    (w : HedgeWitness graph query.jointNumerator) (rich : ObservedSignature.ValueRich S)
+    (rootsInOutcome : NodeSet.Subset w.roots query.outcome)
+    (conditionOutside : NodeSet.Disjoint query.condition w.large) :
+    ConditionalCounterexampleIn (GraphModelClass.positive graph) query :=
+  let joint := w.positiveCounterexampleOfRootsSubsetOutcome rich
+    (rootsInOutcome.trans (NodeSet.subset_union_left query.outcome query.condition))
+  ConditionalCounterexampleIn.ofJointNumeratorOfDenominatorEquivalent
+    (C := GraphModelClass.positive graph) (fun member => member.2) query joint
+    (w.carrierDefectParityModels_valueEquivalent_outsideLarge rich
+      query.jointDenominator conditionOutside)
 
 /-! ## Restoring the original conditional and isolating the remaining leaf -/
 
