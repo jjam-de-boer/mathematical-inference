@@ -6,6 +6,7 @@ import Thesis.Examples.IdentificationRegression
 import Thesis.Examples.KernelCompilation
 import Thesis.Examples.ComponentCompilation
 import Thesis.Examples.KernelRecursionCompilation
+import Thesis.Examples.ProductCompilation
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -23,4 +24,7 @@ input, and the terminal complementary marginal.  The recursive branch
 regression composes nonempty action augmentation, containing-component
 action reindexing, and uncut ancestral pruning, and checks its certificate
 throughout the positive compatible model class.
+Product-regrouping regressions additionally exercise interleaving components,
+duplicate factors, certificate substitution, and an empty outer partition;
+their algebra does not impose observational positivity.
 -/

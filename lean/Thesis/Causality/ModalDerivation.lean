@@ -167,6 +167,12 @@ inductive ModalDerivationTrace (G : ObservedGraph S) :
   | chain (x y z w : NodeSet S)
       (disjoint : FourWayDisjoint x y z w) :
       ModalDerivationTrace G (.chain x y z w disjoint)
+  /-- Pure factor exchange creates no modal action/observation cell. -/
+  | multiplyComm (left right : ProbabilityTerm S) :
+      ModalDerivationTrace G (.multiplyComm left right)
+  /-- Pure regrouping retains the inspectable algebra step in the trace. -/
+  | multiplyAssoc (first second third : ProbabilityTerm S) :
+      ModalDerivationTrace G (.multiplyAssoc first second third)
   | marginalizeCongr (nodes : NodeSet S) {left right}
       {derivation : DoCalculusDerivation G left right} :
       ModalDerivationTrace G derivation ->
@@ -210,6 +216,8 @@ def DoCalculusDerivation.toModalTrace :
   | .conditioning x y z w disjoint =>
       .conditioning x y z w disjoint
   | .chain x y z w disjoint => .chain x y z w disjoint
+  | .multiplyComm first second => .multiplyComm first second
+  | .multiplyAssoc first second third => .multiplyAssoc first second third
   | .marginalizeCongr nodes derivation =>
       .marginalizeCongr nodes derivation.toModalTrace
   | .evaluateAtCongr assignment derivation =>
@@ -235,6 +243,8 @@ def ruleKinds : {derivation : DoCalculusDerivation G left right} ->
   | _, .marginalization .. => []
   | _, .conditioning .. => []
   | _, .chain .. => []
+  | _, .multiplyComm .. => []
+  | _, .multiplyAssoc .. => []
   | _, .marginalizeCongr _ trace => trace.ruleKinds
   | _, .evaluateAtCongr _ trace => trace.ruleKinds
   | _, .addCongr first second => first.ruleKinds ++ second.ruleKinds

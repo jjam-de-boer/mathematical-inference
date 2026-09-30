@@ -405,6 +405,39 @@ noncomputable def PublishedIdentificationCertificate.divideWithSupport
       ⟨sourceSupported,
         ⟨targetSupportedAt, ⟨numeratorSupported, denominatorSupported⟩⟩⟩
 
+/-!
+Two independently compiled expressions for the same kernel can be compared
+without invoking soundness.  The common source must be supported explicitly;
+its certificates then provide both intermediate support trees.  This is used
+when a component's chain expansion and its recursive ID output are compiled
+separately.  Symmetry alone cannot supply that intermediate support.
+-/
+
+/-- Compare two published reductions of one everywhere-supported source.
+The common source may contain interventions; only the final formula must be
+action-free.  No semantic equivalence is supplied as a new derivation rule:
+the tree is precisely the first derivation reversed, followed by the second. -/
+noncomputable def PublishedIdentificationCertificate.compareWithSupport
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {correct : DSeparationCorrectness G} {source : ProbabilityTerm S}
+    (first second : PublishedIdentificationCertificate C correct source)
+    (sourceSupported : forall (model : ExactModel S), C.Mem model -> forall reference,
+      source.SupportedAt model reference) :
+    PublishedIdentificationCertificate C correct first.formula where
+  formula := second.formula
+  actionFree := second.actionFree
+  derivation := DoCalculusDerivation.trans
+    (G := G) (separation := pathRuleSeparation G)
+    (DoCalculusDerivation.symm
+      (G := G) (separation := pathRuleSeparation G) first.derivation) second.derivation
+  supported := fun model member reference firstFormulaSupported => by
+    let commonSupported := sourceSupported model member reference
+    let firstSupported := first.supported model member reference commonSupported
+    let secondSupported := second.supported model member reference commonSupported
+    dsimp [PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
+    exact ⟨firstFormulaSupported, secondSupported.endpoints.2,
+      ⟨firstFormulaSupported, commonSupported, firstSupported⟩, secondSupported⟩
+
 /-- Restrict a certificate from a larger class to a subclass. -/
 def IdentificationCertificate.restrict
     {S : ObservedSignature} {G : ObservedGraph S} {C D : GraphModelClass G}

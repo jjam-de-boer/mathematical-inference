@@ -489,6 +489,23 @@ inductive DoCalculusDerivation (G : ObservedGraph S)
         (.multiply
           (.kernel ⟨y, x, NodeSet.union z w⟩)
           (.kernel ⟨z, x, w⟩))
+  /-- Exchange two factors without changing either partial expression.
+
+  This is ordinary rational multiplication, not a do-rule or an assumed
+  independence.  Its semantic proof also preserves failed support: a
+  product is undefined whenever either factor is undefined. -/
+  | multiplyComm (left right : ProbabilityTerm S) :
+      DoCalculusDerivation G (separation := separation)
+        (.multiply left right) (.multiply right left)
+  /-- Regroup three factors while retaining their order and multiplicity.
+
+  Recursive ID groups factors by c-component, whereas a topological chain
+  groups them by vertex.  Recording this step explicitly prevents a
+  syntactic endpoint equality from concealing an algebraic rearrangement. -/
+  | multiplyAssoc (first second third : ProbabilityTerm S) :
+      DoCalculusDerivation G (separation := separation)
+        (.multiply (.multiply first second) third)
+        (.multiply first (.multiply second third))
   | marginalizeCongr (nodes : NodeSet S) {left right} :
       DoCalculusDerivation G (separation := separation) left right ->
       DoCalculusDerivation G (separation := separation)
@@ -555,6 +572,10 @@ def DoCalculusDerivation.mapRules
       @DoCalculusDerivation.conditioning S G target x y z w disjoint
   | @DoCalculusDerivation.chain _ _ source x y z w disjoint =>
       @DoCalculusDerivation.chain S G target x y z w disjoint
+  | @DoCalculusDerivation.multiplyComm _ _ source first second =>
+      @DoCalculusDerivation.multiplyComm S G target first second
+  | @DoCalculusDerivation.multiplyAssoc _ _ source first second third =>
+      @DoCalculusDerivation.multiplyAssoc S G target first second third
   | @DoCalculusDerivation.marginalizeCongr _ _ source nodes first second
       derivation =>
       @DoCalculusDerivation.marginalizeCongr S G target nodes first second

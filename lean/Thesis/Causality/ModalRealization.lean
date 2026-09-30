@@ -663,6 +663,8 @@ noncomputable def OperationRealizations
   | .marginalization .. => Unit
   | .conditioning .. => Unit
   | .chain .. => Unit
+  | .multiplyComm .. => Unit
+  | .multiplyAssoc .. => Unit
   | .marginalizeCongr nodes inner =>
       forall variant,
         (member : variant ∈
@@ -704,6 +706,8 @@ noncomputable def realizeOperations
   | marginalization => exact Unit.unit
   | conditioning => exact Unit.unit
   | chain => exact Unit.unit
+  | multiplyComm => exact Unit.unit
+  | multiplyAssoc => exact Unit.unit
   | marginalizeCongr nodes inner ih =>
       exact fun variant member =>
         ih variant (supported.2.2 variant member)

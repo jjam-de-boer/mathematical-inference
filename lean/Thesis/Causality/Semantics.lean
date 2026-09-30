@@ -268,6 +268,36 @@ def multiply_congr {left left' right right' : Result}
       | value hrightValue =>
           exact .value (QProb.mul_congr hleftValue hrightValue)
 
+/-- Commutativity preserves both rational values and failed support.
+No positivity premise is needed, and an undefined factor is not silently
+replaced by zero.  These are intrinsic algebra laws, not fields added to
+the externally supplied primitive do-rule semantics. -/
+def multiply_comm (left right : Result) :
+    Equivalent (multiply left right) (multiply right left) := by
+  cases left with
+  | none => cases right <;> exact .unsupported
+  | some leftValue =>
+      cases right with
+      | none => exact .unsupported
+      | some rightValue => exact .value (QProb.mul_comm leftValue rightValue)
+
+/-- Associativity is valid even when one or more factors are undefined.
+The supported case is exactly the constructive cross-multiplication law
+for the existing finite-rational representation. -/
+def multiply_assoc (first second third : Result) :
+    Equivalent (multiply (multiply first second) third)
+      (multiply first (multiply second third)) := by
+  cases first with
+  | none => cases second <;> cases third <;> exact .unsupported
+  | some firstValue =>
+      cases second with
+      | none => cases third <;> exact .unsupported
+      | some secondValue =>
+          cases third with
+          | none => exact .unsupported
+          | some thirdValue =>
+              exact .value (QProb.mul_assoc firstValue secondValue thirdValue)
+
 def divide_congr {left left' right right' : Result}
     (hleft : Equivalent left left') (hright : Equivalent right right') :
     Equivalent (divide left right) (divide left' right') := by
@@ -1487,6 +1517,8 @@ def LocalDerivationSupport (model : FiniteLatentSCM S)
       | .marginalization _ _ _ _ _ => Unit
       | .conditioning _ _ _ _ _ => Unit
       | .chain _ _ _ _ _ => Unit
+      | .multiplyComm _ _ => Unit
+      | .multiplyAssoc _ _ _ => Unit
       | .marginalizeCongr nodes inner =>
           forall variant,
             variant ∈ ProbabilityTerm.marginalAssignments S nodes assignment ->
@@ -1540,6 +1572,10 @@ noncomputable def DoCalculusDerivation.denotational_soundAt
   | chain x y z w disjoint =>
       exact semantics.chain x y z w assignment disjoint
         supported.1 supported.2.1
+  | multiplyComm first second =>
+      exact ProbabilityResult.multiply_comm _ _
+  | multiplyAssoc first second third =>
+      exact ProbabilityResult.multiply_assoc _ _ _
   | marginalizeCongr nodes derivation ih =>
       apply ProbabilityTerm.marginalize_congrAt
       intro variant member

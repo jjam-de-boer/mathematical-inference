@@ -929,6 +929,8 @@ def FiniteSourceLocalDerivationSupport {T : FiniteTableSignature}
       | .marginalization _ _ _ _ _ => Unit
       | .conditioning _ _ _ _ _ => Unit
       | .chain _ _ _ _ _ => Unit
+      | .multiplyComm _ _ => Unit
+      | .multiplyAssoc _ _ _ => Unit
       | .marginalizeCongr nodes inner =>
           forall variant,
             variant ∈ ProbabilityTerm.marginalAssignments
@@ -979,6 +981,12 @@ noncomputable def FiniteSourceLocalDerivationSupport.toTarget
       exact ⟨model.termSupportedAt_to_target _ _ supported.1,
         model.termSupportedAt_to_target _ _ supported.2.1, ()⟩
   | chain =>
+      exact ⟨model.termSupportedAt_to_target _ _ supported.1,
+        model.termSupportedAt_to_target _ _ supported.2.1, ()⟩
+  | multiplyComm =>
+      exact ⟨model.termSupportedAt_to_target _ _ supported.1,
+        model.termSupportedAt_to_target _ _ supported.2.1, ()⟩
+  | multiplyAssoc =>
       exact ⟨model.termSupportedAt_to_target _ _ supported.1,
         model.termSupportedAt_to_target _ _ supported.2.1, ()⟩
   | marginalizeCongr nodes inner ih =>
@@ -1034,6 +1042,10 @@ noncomputable def DoCalculusDerivation.finiteSource_denotational_soundAt
   | chain x y z w disjoint =>
       exact semantics.chain x y z w assignment disjoint
         supported.1 supported.2.1
+  | multiplyComm first second =>
+      exact ProbabilityResult.multiply_comm _ _
+  | multiplyAssoc first second third =>
+      exact ProbabilityResult.multiply_assoc _ _ _
   | marginalizeCongr nodes derivation ih =>
       simpa only [FiniteTableSCM.TermEquivalentAt,
         FiniteTableSCM.termDenote] using

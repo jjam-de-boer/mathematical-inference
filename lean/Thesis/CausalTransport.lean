@@ -8,6 +8,7 @@ import Thesis.CausalTransport.Completeness
 import Thesis.CausalTransport.ChainCompilation
 import Thesis.CausalTransport.KernelIdentification
 import Thesis.CausalTransport.KernelCompilation
+import Thesis.CausalTransport.ProductCompilation
 import Thesis.CausalTransport.KernelSeparation
 import Thesis.CausalTransport.ComponentCompilation
 import Thesis.CausalTransport.KernelRecursionSeparation
@@ -98,6 +99,14 @@ it transports arbitrary nested certificates through pruning, augmentation,
 and containing-component restriction without resetting the current expression.
 The multi-component product derivation and complete recursive success
 assembly are still required, as is the original-query hedge countermodel.
+`ProductCompilation` supplies the product branch's graph-independent
+regrouping step: inspectable rational associativity and commutativity turn
+any indexed finite product into its nonempty partition blocks, including
+interleaving components and repeated indices.  Its permutation compiler
+uses explicit finite erasure with a constructive proof rather than the
+library erasure theorem's choice dependency.  It also substitutes certified
+factor reductions into products.  The graph-derived factor reductions and
+their integration into the recursive product branch remain to be assembled.
 `HedgeOutcomeFlow`
 proves exact finite support formulas for the general routed hedge models and
 packages an unrestricted original-query counterexample when readout routing
