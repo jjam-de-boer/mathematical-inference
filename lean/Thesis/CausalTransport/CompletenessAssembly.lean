@@ -1,6 +1,7 @@
 import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.KernelSuccessCompilation
+import Thesis.CausalTransport.KernelFailureExtraction
 
 namespace Thesis
 namespace Causality
@@ -34,6 +35,12 @@ published soundness turns its supported certificate into correctness and
 identifiability of every identified joint result.  These conclusions do not
 assert that every semantically identifiable query succeeds; that direction
 still requires the failure/hedge countermodel argument.
+
+`KernelFailureExtraction` now supplies the structural failure-to-original-query
+hedge argument for every run of the corrected joint program.  The joint
+assembly below therefore isolates exactly the remaining semantic leaf: a
+counterexample in the selected class for an arbitrary original-query hedge.
+It does not assume that all failure leaves already have positive countermodels.
 -/
 
 /-! ## Denotational correctness of every successful replacement joint run -/
@@ -66,6 +73,47 @@ theorem identifyJointKernel_identified_identifiable
     (result : identifyJointKernel G query = .identified term) : C.identifiable query :=
   JointIdentificationCertificate.identifiable G.publishedSoundness
     (identifyJointKernelPublishedCertificate correct obsPositive query result).compile
+
+/-! ## Joint completeness reduced to the general original-query hedge leaf -/
+
+/-- A public failure is semantically non-identifiable whenever every hedge
+has a counterexample in the *same* selected class.  The structural extractor
+has already restored the original query before this semantic leaf is used.
+For the positive class, an unrestricted or modified-query counterexample is
+not a substitute for the counterexample required by this interface. -/
+theorem identifyJointKernel_failed_not_identifiable_of_hedgeCounterexamples
+    {S : ObservedSignature.{0}} {G : ObservedGraph S} {C : GraphModelClass G}
+    (counterexamples : forall query, HedgeWitness G query -> CounterexampleIn C query)
+    (query : JointKernelQuery S) {fail : IdentificationFail S}
+    (result : identifyJointKernel G query = .failed fail) :
+    Not (C.identifiable query) :=
+  (counterexamples query (identifyJointKernelFailedHedge query result).witness).not_identifiable
+
+/-- Assemble the joint completeness field once the general hedge countermodel
+leaf is available.  This constructor follows the computed engine result:
+success uses the complete literal-output compiler, failure contradicts semantic
+identifiability through the extracted original-query hedge, and the unfinished
+case is ruled out by the proved public fuel bound.
+
+Pattern matching on the algorithm's result supplies the certificate data;
+there is no choice from a proposition and no excluded-middle case split on
+semantic identifiability.  The countermodel premise is deliberately explicit:
+this is not yet an inhabitant of `PublishedCompleteness`. -/
+noncomputable def publishedJointCertificateOfIdentifiableOfHedgeCounterexamples
+    {S : ObservedSignature.{0}} {G : ObservedGraph S} {C : GraphModelClass G}
+    (correct : DSeparationCorrectness G)
+    (obsPositive : forall {model}, C.Mem model -> ObservationallyPositive model)
+    (counterexamples : forall query, HedgeWitness G query -> CounterexampleIn C query)
+    (query : JointKernelQuery S) (identifiable : C.identifiable query) :
+    PublishedJointCertificate C correct query := by
+  cases result : identifyJointKernel G query with
+  | identified term =>
+      exact identifyJointKernelPublishedCertificate correct obsPositive query result
+  | failed fail =>
+      exact False.elim
+        (identifyJointKernel_failed_not_identifiable_of_hedgeCounterexamples counterexamples query result identifiable)
+  | unfinished =>
+      exact False.elim (identifyJointKernel_ne_unfinished G query result)
 
 /-! ## Support-sensitive Bayes assembly
 

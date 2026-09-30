@@ -16,6 +16,8 @@ import Thesis.CausalTransport.KernelRecursionSeparation
 import Thesis.CausalTransport.KernelRecursionCompilation
 import Thesis.CausalTransport.KernelProductCompilation
 import Thesis.CausalTransport.KernelSuccessCompilation
+import Thesis.CausalTransport.KernelHedgeTransport
+import Thesis.CausalTransport.KernelFailureExtraction
 import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.CompletenessAssembly
@@ -61,9 +63,8 @@ bidirected action-parent bow and reads only that bow's pair-root.  This removes
 parent-uniqueness, odd-parity, identical-neighbourhood assumptions, and all
 restrictions on the pivot's other outgoing edges without choosing a family of
 pointwise equivalences.  A complete `PublishedCompleteness`
-inhabitant still needs replacement-engine failure transport, a positive
-countermodel for an arbitrary original-query hedge, and general conditional
-identification.  `ChainCompilation`
+inhabitant still needs a positive countermodel for an arbitrary original-query
+hedge and general conditional identification.  `ChainCompilation`
 supplies the probability-algebra foundation of that compiler: an exact,
 support-carrying observational chain certificate on any finite host, including
 hosts with topological gaps.  It does not identify a recursive ID input with
@@ -77,9 +78,9 @@ current-input prefix quotients, uncut ancestral pruning, and the separate
 action-augmentation branch.  `KernelIdentification` proves a quadratic
 fuel bound for every invocation of that replacement.  `KernelSuccessCompilation`
 now compiles every successful invocation of the changed program by fuel
-induction.  Lifting its failures to the original-query hedge countermodel
-remains a completeness obligation; old failure traces do not establish that
-connection for a changed program.
+induction.  `KernelFailureExtraction` supplies the matching general failure
+induction for the changed program; old failure traces are not silently reused.
+The remaining semantic step is the positive original-query hedge countermodel.
 `KernelCompilation` now certifies host marginals and the complete topological
 chain product of an arbitrary certified current input, retaining external
 intervention parameters and the engine's exact prefix-quotient syntax.  Its
@@ -126,21 +127,33 @@ Every successful invocation has an inspectable supported derivation whose
 formula is the engine's literal returned term, with a positive target invariant.
 Its public joint wrapper constructs the observational initial input internally;
 it does not assume semantic identifiability or a hedge countermodel.
+`KernelHedgeTransport` constructs the immediate-failure common-root forests
+from the program's distinct uncut and incoming-cut ancestry guards, then lifts
+hedges through pruning, augmentation, containing components, and product factors.
+`KernelFailureExtraction` applies those transports by fuel induction to every
+failed invocation.  It retains exact failure/forest node-set alignment and
+constructs a hedge for the original public joint query without a model-class
+or counterexample assumption; its graph argument is universe-polymorphic.
 `HedgeOutcomeFlow`
 proves exact finite support formulas for the general routed hedge models and
 packages an unrestricted original-query counterexample when readout routing
 does not re-enter `large \ small`; removing that geometric hypothesis and preserving
 strict positivity remain the countermodel obligations.  `IdentificationInduction`
 supplies exact legacy success, failure, and unfinished traces; the replacement
-success compiler instead follows the changed program directly.  Remaining
-failure proofs must likewise target that program, not deeper legacy branch-name
-stacks.  `CompletenessAssembly` is the one-way integration layer:
+success and failure inductions instead follow the changed program directly,
+not deeper legacy branch-name stacks.  `CompletenessAssembly` is the one-way
+integration layer:
 it imports the completed soundness theorem without creating a dependency from
 `Completeness` back to `Soundness`.  Its support-sensitive Bayes constructor
 now combines arbitrary joint certificates into a conditional certificate,
 requiring denominator positivity only where the source conditional is defined.
 It also proves correctness and identifiability of every successful replacement
-joint result.  The converse needed for `PublishedCompleteness` remains open.
+joint result.  Its joint-completeness constructor now needs only the explicit
+general original-query hedge countermodel leaf in the same model class;
+termination, literal-output compilation, and structural failure extraction are
+proved internally.  This conditional assembly is not a completed
+`PublishedCompleteness` package: the positive hedge leaf and general conditional
+identification still remain open.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations

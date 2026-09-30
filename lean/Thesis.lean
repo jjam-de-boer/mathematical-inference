@@ -9,6 +9,7 @@ import Thesis.Examples.KernelRecursionCompilation
 import Thesis.Examples.ProductCompilation
 import Thesis.Examples.KernelProductCompilation
 import Thesis.Examples.KernelSuccessCompilation
+import Thesis.Examples.KernelFailureExtraction
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -37,4 +38,9 @@ automatically from the actual engine success equations, including front-door,
 nonempty augmentation, a recursive gapped host with external actions, empty
 outcomes, and the zero-node signature.  No hand-supplied child certificate is
 needed by the structural compiler.
+Structural failure-extraction regressions exercise immediate failure with a
+proper incoming-cut ancestry, uncut pruning, nonempty action augmentation,
+containing-component restriction, and a failed product factor.  They check
+hedges for the original queries with exact terminal forest coordinates, and
+also cover a recursive host with external actions and an arbitrary current term.
 -/
