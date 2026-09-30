@@ -7,6 +7,7 @@ import Thesis.Examples.KernelCompilation
 import Thesis.Examples.ComponentCompilation
 import Thesis.Examples.KernelRecursionCompilation
 import Thesis.Examples.ProductCompilation
+import Thesis.Examples.KernelProductCompilation
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -27,4 +28,7 @@ throughout the positive compatible model class.
 Product-regrouping regressions additionally exercise interleaving components,
 duplicate factors, certificate substitution, and an empty outer partition;
 their algebra does not impose observational positivity.
+The complete component-product regression additionally checks the actual
+replacement-engine output for a nonempty-action, two-component query and
+its denotation throughout the positive compatible model class.
 -/

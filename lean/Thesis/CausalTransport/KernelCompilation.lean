@@ -33,6 +33,20 @@ is imported.
 
 /-! ## Positivity of the exact replacement-engine expressions -/
 
+/-- A formula-aligned reduction retaining the positive target invariant.
+
+Recursive success compilation needs all three pieces: an inspectable
+certificate, equality with the engine's displayed formula, and positive
+support for subsequent quotient extraction.  Positivity refers to that
+explicit formula and is supplied independently of do-calculus soundness. -/
+structure PublishedPositiveIdentificationCompilation
+    {G : ObservedGraph S} (C : GraphModelClass G) (correct : DSeparationCorrectness G)
+    (source formula : ProbabilityTerm S) where
+  certificate : PublishedIdentificationCertificate C correct source
+  formula_eq : certificate.formula = formula
+  positive : forall (model : ExactModel S), C.Mem model -> forall reference,
+    ProbabilityResult.PositiveSupportedValue (formula.denote model reference)
+
 /-- The two prefix marginals of an everywhere-positive current expression
 are positive.  Consequently the exact quotient emitted by the replacement
 engine is supported and positive, including its first-node total-mass
@@ -289,18 +303,55 @@ theorem currentKernelFactorPublishedCertificate_formula
 
 /-! ## Whole-host chain compilation with the exact current-input syntax -/
 
-/-- An empty component contributes precisely the engine's unit term. -/
-theorem chainProductFrom_empty (remaining : NodeSet S)
-    (current : ProbabilityTerm S) :
-    chainProductFrom remaining current NodeSet.empty = unitProbabilityTerm S := by
+/-- A later-first product of arbitrary vertex-indexed factors.  Unlike a
+single current-input chain, a recursive product branch may use a different
+identified component expression for each vertex's quotient. -/
+def topologicalProductTerm (remaining : NodeSet S)
+    (factors : Fin S.count -> ProbabilityTerm S) : ProbabilityTerm S :=
+  productTerms ((NodeSet.members remaining).reverse.map factors)
+
+/-- The empty host contributes the engine's explicit unit for any factor
+family.  No representative vertex is selected from an empty host. -/
+theorem topologicalProductTerm_empty (factors : Fin S.count -> ProbabilityTerm S) :
+    topologicalProductTerm NodeSet.empty factors = unitProbabilityTerm S := by
   have emptyMembers : NodeSet.members (NodeSet.empty : NodeSet S) = [] := by
     change (NodeSet.enumerated S).filter (fun _ => false) = []
     induction NodeSet.enumerated S with
     | nil => rfl
     | cons _ _ inductionHypothesis => exact inductionHypothesis
-  unfold chainProductFrom
+  unfold topologicalProductTerm
   rw [emptyMembers]
   rfl
+
+/-- Numeric prefix compilation depends only on each selected factor's
+syntax.  The singleton convention is retained for an empty previous prefix. -/
+theorem topologicalProductTerm_prefix_succ_of_selected
+    (remaining : NodeSet S) (factors : Fin S.count -> ProbabilityTerm S)
+    (n : Nat) (bound : n < S.count) (selected : remaining ⟨n, bound⟩ = true) :
+    topologicalProductTerm (chainPrefix remaining (n + 1)) factors =
+      match NodeSet.members (chainPrefix remaining n) with
+      | [] => factors ⟨n, bound⟩
+      | _ :: _ => .multiply (factors ⟨n, bound⟩)
+          (topologicalProductTerm (chainPrefix remaining n) factors) := by
+  unfold topologicalProductTerm
+  rw [members_chainPrefix_succ remaining n bound, selected]
+  simp only [↓reduceIte, List.reverse_append, List.reverse_cons,
+    List.reverse_nil, List.nil_append, List.cons_append, List.map_cons]
+  cases members : NodeSet.members (chainPrefix remaining n) with
+  | nil => rfl
+  | cons head tail =>
+      apply productTerms_cons
+      intro empty
+      have lengthEqual := congrArg List.length empty
+      simp only [List.length_map, List.length_reverse,
+        List.length_cons, List.length_nil] at lengthEqual
+      exact Nat.succ_ne_zero _ lengthEqual
+
+/-- An empty component contributes precisely the engine's unit term. -/
+theorem chainProductFrom_empty (remaining : NodeSet S)
+    (current : ProbabilityTerm S) :
+    chainProductFrom remaining current NodeSet.empty = unitProbabilityTerm S :=
+  topologicalProductTerm_empty (fun node => chainFactorFrom remaining current node)
 
 /-- Crossing a selected component position puts its host-input quotient on
 the left of the earlier product.  The factor host and the selected product
@@ -315,20 +366,9 @@ theorem chainProductFrom_componentPrefix_succ_of_selected
       | [] => chainFactorFrom factorHost current ⟨n, bound⟩
       | _ :: _ =>
           .multiply (chainFactorFrom factorHost current ⟨n, bound⟩)
-            (chainProductFrom factorHost current (chainPrefix remaining n)) := by
-  unfold chainProductFrom
-  rw [members_chainPrefix_succ remaining n bound, selected]
-  simp only [↓reduceIte, List.reverse_append, List.reverse_cons,
-    List.reverse_nil, List.nil_append, List.cons_append, List.map_cons]
-  cases members : NodeSet.members (chainPrefix remaining n) with
-  | nil => rfl
-  | cons head tail =>
-      apply productTerms_cons
-      intro empty
-      have lengthEqual := congrArg List.length empty
-      simp only [List.length_map, List.length_reverse,
-        List.length_cons, List.length_nil] at lengthEqual
-      exact Nat.succ_ne_zero _ lengthEqual
+            (chainProductFrom factorHost current (chainPrefix remaining n)) :=
+  topologicalProductTerm_prefix_succ_of_selected remaining
+    (fun node => chainFactorFrom factorHost current node) n bound selected
 
 /-- The whole-host specialization retains the original public prefix
 identity, while the general identity above also serves component products. -/
@@ -374,16 +414,16 @@ private noncomputable def emptyHostCurrentKernelPublishedCertificate
 
 /-- A prefix package carries syntactic formula equality through the numeric
 induction.  Its source keeps the same external action at every prefix.  The
-source host may be a component of `factorHost`; every factor still reads the
-original host's current expression. -/
+factor family is arbitrary: whole-host compilation reads one current input,
+whereas a product branch may read different recursively identified components. -/
 private structure CurrentKernelPrefixCompilation
     {G : ObservedGraph S} (C : GraphModelClass G)
-    (correct : DSeparationCorrectness G) (factorHost remaining externalAction : NodeSet S)
-    (current : ProbabilityTerm S) (n : Nat) where
+    (correct : DSeparationCorrectness G) (remaining externalAction : NodeSet S)
+    (factorTerms : Fin S.count -> ProbabilityTerm S) (n : Nat) where
   certificate : PublishedIdentificationCertificate C correct
     (.kernel ⟨chainPrefix remaining n, externalAction, NodeSet.empty⟩)
   formula_eq : certificate.formula =
-    chainProductFrom factorHost current (chainPrefix remaining n)
+    topologicalProductTerm (chainPrefix remaining n) factorTerms
 
 /-- One topological induction compiles every finite host, including hosts
 with gaps.  The inductive chain split is primitive probability algebra; each
@@ -396,17 +436,16 @@ private noncomputable def currentKernelPrefixCompilation
     {G : ObservedGraph S} {C : GraphModelClass G}
     (correct : DSeparationCorrectness G)
     (obsPositive : forall {model}, C.Mem model -> ObservationallyPositive model)
-    (factorHost remaining externalAction : NodeSet S)
+    (remaining externalAction : NodeSet S)
     (outside : NodeSet.Disjoint externalAction remaining)
-    (current : ProbabilityTerm S)
+    (factorTerms : Fin S.count -> ProbabilityTerm S)
     (factors : forall (node : Fin S.count), remaining node = true ->
       PublishedIdentificationCertificate C correct
         (.kernel ⟨NodeSet.singleton node, externalAction, chainCondition remaining node⟩))
     (factorsAligned : forall (node : Fin S.count) (selected : remaining node = true),
-      (factors node selected).formula = chainFactorFrom factorHost current node)
+      (factors node selected).formula = factorTerms node)
     (n : Nat) (bound : n ≤ S.count) :
-    CurrentKernelPrefixCompilation C correct factorHost remaining externalAction
-      current n := by
+    CurrentKernelPrefixCompilation C correct remaining externalAction factorTerms n := by
   induction n with
   | zero =>
       let base := emptyHostCurrentKernelPublishedCertificate
@@ -416,8 +455,8 @@ private noncomputable def currentKernelPrefixCompilation
             ⟨chainPrefix remaining 0, externalAction, NodeSet.empty⟩ =
             .kernel ⟨NodeSet.empty, externalAction, NodeSet.empty⟩ by
           rw [chainPrefix_zero])
-        (show chainProductFrom factorHost current (chainPrefix remaining 0) =
-            base.formula by rw [chainPrefix_zero, chainProductFrom_empty]; rfl)
+        (show topologicalProductTerm (chainPrefix remaining 0) factorTerms =
+            base.formula by rw [chainPrefix_zero, topologicalProductTerm_empty]; rfl)
       exact ⟨certificate, rfl⟩
   | succ n inductionHypothesis =>
       have beforeBound : n < S.count := by omega
@@ -429,8 +468,8 @@ private noncomputable def currentKernelPrefixCompilation
                 ⟨chainPrefix remaining (n + 1), externalAction, NodeSet.empty⟩ =
                 .kernel ⟨chainPrefix remaining n, externalAction, NodeSet.empty⟩ by
               rw [chainPrefix_succ remaining n beforeBound, selected]; rfl)
-            (show chainProductFrom factorHost current
-                (chainPrefix remaining (n + 1)) = previous.certificate.formula by
+            (show topologicalProductTerm (chainPrefix remaining (n + 1)) factorTerms =
+                previous.certificate.formula by
               rw [chainPrefix_succ remaining n beforeBound, selected]
               exact previous.formula_eq.symm)
           exact ⟨certificate, rfl⟩
@@ -455,10 +494,10 @@ private noncomputable def currentKernelPrefixCompilation
                     .kernel ⟨NodeSet.singleton ⟨n, beforeBound⟩, externalAction,
                       chainPrefix remaining n⟩
                   rw [emptyPrefix, NodeSet.union_empty_right])
-                (show chainProductFrom factorHost current
-                    (chainPrefix remaining (n + 1)) = factor.formula by
-                  rw [chainProductFrom_componentPrefix_succ_of_selected factorHost remaining
-                    current n beforeBound selected, members]
+                (show topologicalProductTerm (chainPrefix remaining (n + 1)) factorTerms =
+                    factor.formula by
+                  rw [topologicalProductTerm_prefix_succ_of_selected remaining
+                    factorTerms n beforeBound selected, members]
                   exact (factorsAligned ⟨n, beforeBound⟩ selected).symm)
               exact ⟨certificate, rfl⟩
           | cons head tail =>
@@ -517,18 +556,63 @@ private noncomputable def currentKernelPrefixCompilation
                     .kernel ⟨NodeSet.union (NodeSet.singleton ⟨n, beforeBound⟩)
                       (chainPrefix remaining n), externalAction, NodeSet.empty⟩ by
                   rw [chainPrefix_succ remaining n beforeBound, selected]; rfl)
-                (show chainProductFrom factorHost current
-                    (chainPrefix remaining (n + 1)) = compiled.formula by
-                  rw [chainProductFrom_componentPrefix_succ_of_selected factorHost remaining
-                    current n beforeBound selected, members]
+                (show topologicalProductTerm (chainPrefix remaining (n + 1)) factorTerms =
+                    compiled.formula by
+                  rw [topologicalProductTerm_prefix_succ_of_selected remaining
+                    factorTerms n beforeBound selected, members]
                   change ProbabilityTerm.multiply _ _ =
                     ProbabilityTerm.multiply _ previous.certificate.formula
                   rw [previous.formula_eq]
                   exact congrArg
                     (fun term => ProbabilityTerm.multiply term
-                      (chainProductFrom factorHost current (chainPrefix remaining n)))
+                      (topologicalProductTerm (chainPrefix remaining n) factorTerms))
                     (factorsAligned ⟨n, beforeBound⟩ selected).symm)
               exact ⟨certificate, rfl⟩
+
+/-- Assemble a kernel from any formula-aligned family of its topological
+conditional factors.  This shared induction also supports factor families
+that read different component expressions; it does not assume a certificate
+for the whole source kernel in order to construct one. -/
+noncomputable def topologicalProductPublishedCertificate
+    {G : ObservedGraph S} {C : GraphModelClass G}
+    (correct : DSeparationCorrectness G)
+    (obsPositive : forall {model}, C.Mem model -> ObservationallyPositive model)
+    (remaining externalAction : NodeSet S)
+    (outside : NodeSet.Disjoint externalAction remaining)
+    (factorTerms : Fin S.count -> ProbabilityTerm S)
+    (factors : forall (node : Fin S.count), remaining node = true ->
+      PublishedIdentificationCertificate C correct
+        (.kernel ⟨NodeSet.singleton node, externalAction, chainCondition remaining node⟩))
+    (factorsAligned : forall (node : Fin S.count) (selected : remaining node = true),
+      (factors node selected).formula = factorTerms node) :
+    PublishedIdentificationCertificate C correct
+      (.kernel ⟨remaining, externalAction, NodeSet.empty⟩) := by
+  let prefixes := currentKernelPrefixCompilation correct obsPositive
+    remaining externalAction outside factorTerms factors factorsAligned
+    S.count (Nat.le_refl _)
+  exact prefixes.certificate.reindex
+    (show ProbabilityTerm.kernel ⟨remaining, externalAction, NodeSet.empty⟩ =
+        .kernel ⟨chainPrefix remaining S.count, externalAction, NodeSet.empty⟩ by
+      rw [chainPrefix_count])
+    (show topologicalProductTerm remaining factorTerms = prefixes.certificate.formula by
+      rw [prefixes.formula_eq, chainPrefix_count])
+
+/-- The generic fold preserves the exact supplied vertex-indexed syntax. -/
+theorem topologicalProductPublishedCertificate_formula
+    {G : ObservedGraph S} {C : GraphModelClass G}
+    (correct : DSeparationCorrectness G)
+    (obsPositive : forall {model}, C.Mem model -> ObservationallyPositive model)
+    (remaining externalAction : NodeSet S)
+    (outside : NodeSet.Disjoint externalAction remaining)
+    (factorTerms : Fin S.count -> ProbabilityTerm S)
+    (factors : forall (node : Fin S.count), remaining node = true ->
+      PublishedIdentificationCertificate C correct
+        (.kernel ⟨NodeSet.singleton node, externalAction, chainCondition remaining node⟩))
+    (factorsAligned : forall (node : Fin S.count) (selected : remaining node = true),
+      (factors node selected).formula = factorTerms node) :
+    (topologicalProductPublishedCertificate correct obsPositive remaining externalAction
+      outside factorTerms factors factorsAligned).formula =
+      topologicalProductTerm remaining factorTerms := rfl
 
 /-- Assemble a kernel certificate from formula-aligned certificates for
 its individual topological factors.
@@ -551,16 +635,9 @@ noncomputable def currentKernelProductPublishedCertificate
     (factorsAligned : forall (node : Fin S.count) (selected : remaining node = true),
       (factors node selected).formula = chainFactorFrom factorHost current node) :
     PublishedIdentificationCertificate C correct
-      (.kernel ⟨remaining, externalAction, NodeSet.empty⟩) := by
-  let prefixes := currentKernelPrefixCompilation correct obsPositive
-    factorHost remaining externalAction outside current factors factorsAligned
-    S.count (Nat.le_refl _)
-  exact prefixes.certificate.reindex
-    (show ProbabilityTerm.kernel ⟨remaining, externalAction, NodeSet.empty⟩ =
-        .kernel ⟨chainPrefix remaining S.count, externalAction, NodeSet.empty⟩ by
-      rw [chainPrefix_count])
-    (show chainProductFrom factorHost current remaining = prefixes.certificate.formula by
-      rw [prefixes.formula_eq, chainPrefix_count])
+      (.kernel ⟨remaining, externalAction, NodeSet.empty⟩) :=
+  topologicalProductPublishedCertificate correct obsPositive remaining externalAction
+    outside (fun node => chainFactorFrom factorHost current node) factors factorsAligned
 
 /-- The shared fold returns the exact later-first engine product, not
 merely a denotationally equivalent expression. -/

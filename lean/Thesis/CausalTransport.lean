@@ -10,9 +10,11 @@ import Thesis.CausalTransport.KernelIdentification
 import Thesis.CausalTransport.KernelCompilation
 import Thesis.CausalTransport.ProductCompilation
 import Thesis.CausalTransport.KernelSeparation
+import Thesis.CausalTransport.KernelPartition
 import Thesis.CausalTransport.ComponentCompilation
 import Thesis.CausalTransport.KernelRecursionSeparation
 import Thesis.CausalTransport.KernelRecursionCompilation
+import Thesis.CausalTransport.KernelProductCompilation
 import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.CompletenessAssembly
@@ -97,16 +99,27 @@ incoming-cut ancestry criteria.  `KernelRecursionCompilation` packages the
 certified current-input, positive-support, and parent-closure invariants;
 it transports arbitrary nested certificates through pruning, augmentation,
 and containing-component restriction without resetting the current expression.
-The multi-component product derivation and complete recursive success
-assembly are still required, as is the original-query hedge countermodel.
+Complete recursive success assembly is still required, as is the
+original-query hedge countermodel.
 `ProductCompilation` supplies the product branch's graph-independent
 regrouping step: inspectable rational associativity and commutativity turn
 any indexed finite product into its nonempty partition blocks, including
 interleaving components and repeated indices.  Its permutation compiler
 uses explicit finite erasure with a constructive proof rather than the
 library erasure theorem's choice dependency.  It also substitutes certified
-factor reductions into products.  The graph-derived factor reductions and
-their integration into the recursive product branch remain to be assembled.
+factor reductions into products.  `KernelPartition` proves that the actual
+collector is pairwise disjoint and its flattened component members are an
+exact permutation of the host vertices.  Its component lookup uses Boolean
+finite search, with success and uniqueness proved from the partition.
+`KernelProductCompilation` combines arbitrary independently identified
+components into their host joint, using reversed graph-derived factor rules,
+the shared topological fold, exact regrouping, and support-sensitive formula
+comparison.  Its complete split constructor retains the engine's exact
+complementary marginal and positive target invariant.  It does not assume
+the free joint's identification certificate, and covers arbitrary finite
+partitions, external actions, and interleaving components.  The remaining
+success-compiler obligation is induction over the replacement recursion,
+not another unproved graph factorization premise for the product branch.
 `HedgeOutcomeFlow`
 proves exact finite support formulas for the general routed hedge models and
 packages an unrestricted original-query counterexample when readout routing

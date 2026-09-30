@@ -27,7 +27,8 @@ checked throughout the positive graph-model class.
 
 This is a composed certificate regression, not a substitute for induction
 over arbitrary engine executions.  The general success compiler still must
-assemble every branch, especially the multi-component product branch.
+assemble every branch.  The multi-component product constructor and its
+exact engine-output regression are now in `KernelProductCompilation`.
 -/
 
 /-! ## Generate the actual recursive input distributions -/

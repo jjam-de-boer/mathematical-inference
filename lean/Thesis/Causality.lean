@@ -10,6 +10,7 @@ import Thesis.Causality.Reductions
 import Thesis.Causality.CompactHiddenDAG
 import Thesis.Causality.PairRoot
 import Thesis.Causality.Semantics
+import Thesis.Causality.ProbabilityTermEquality
 import Thesis.Causality.ModalDerivation
 import Thesis.Causality.Modalities
 import Thesis.Causality.ConservativeLearning
@@ -40,6 +41,9 @@ the actual recursive input when extracting chain factors; then
 `ModalRealization` and `ModalCounterfactual` connect the executable edit paths
 back to query semantics. `ModeTheory` names the existing one-shots as
 morphisms and the edit paths as a 1-category of named states.
+`ProbabilityTermEquality` supplies explicit finite syntax comparison for
+node selections, kernels, and complete expressions, without deciding
+denotational equivalence or using classical function equality.
 The facade excludes the external completeness
 interfaces; those begin in `Thesis.CausalTransport`.
 -/

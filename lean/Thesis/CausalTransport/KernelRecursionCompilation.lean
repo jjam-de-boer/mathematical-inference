@@ -24,8 +24,10 @@ visible: only pruning marginalizes the current expression.
 
 These are generic induction steps, not a bounded collection of branch-name
 stacks.  A complete success compiler must still apply them to every branch
-of `identifyKernelFuel`, including the c-component product branch.  No
-published completeness or soundness implementation is imported here.
+of `identifyKernelFuel`.  `KernelProductCompilation` now supplies the
+remaining generic c-component product step; complete recursion assembly is
+still separate.  No published completeness or soundness implementation is
+imported here.
 -/
 
 /-! ## The recursive current-expression invariant -/

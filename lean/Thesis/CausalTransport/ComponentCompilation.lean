@@ -89,35 +89,37 @@ theorem chainLaterOutside_after (remaining component : NodeSet S)
 
 /-! ## A component factor reduces to the actual current-input quotient -/
 
-/-- Compile one factor of the externally intervened component kernel.
+/-- The two graph-derived factor transformations, retained independently
+of any compiled current expression.  Component extraction uses them forward;
+the recursive product branch uses the same applications in reverse. -/
+private structure ComponentFactorRuleApplications (G : ObservedGraph S)
+    (remaining externalAction component : NodeSet S) (node : Fin S.count) where
+  exchange : PathDoRuleApplication G
+    (rule2Left externalAction (NodeSet.singleton node)
+      (NodeSet.diff (chainCondition remaining node) component) (chainCondition component node))
+    (rule2Right externalAction (NodeSet.singleton node)
+      (NodeSet.diff (chainCondition remaining node) component) (chainCondition component node))
+  deletion : PathDoRuleApplication G
+    (rule3Left
+      (NodeSet.union externalAction (NodeSet.diff (chainCondition remaining node) component))
+      (NodeSet.singleton node) (chainLaterOutside remaining component node) (chainCondition component node))
+    (rule3Right
+      (NodeSet.union externalAction (NodeSet.diff (chainCondition remaining node) component))
+      (NodeSet.singleton node) (chainLaterOutside remaining component node) (chainCondition component node))
 
-The source fixes `externalAction ∪ (remaining \ component)` and conditions
-only on component predecessors.  The target is exactly the quotient emitted
-by `chainFactorFrom remaining input.formula node`.  The two graph conditions
-are consequences of host and bidirected closure; no extra separation Boolean
-or semantic equality is passed by the caller.
-
-The construction is valid for unions of complete c-components too.  A
-listed c-component supplies its subset and bidirected-closure premises from
-the executable partition, as exposed by the wrapper below. -/
-noncomputable def currentKernelComponentFactorPublishedCertificate
-    {G : ObservedGraph S} {C : GraphModelClass G}
-    (correct : DSeparationCorrectness G)
-    (obsPositive : forall {model}, C.Mem model -> ObservationallyPositive model)
+/-- Both applications follow from parent and bidirected closure.  All
+disjointness and path-separation obligations are proved here once; neither
+direction of compilation receives an additional graph Boolean or semantic
+independence hypothesis from its caller. -/
+private noncomputable def componentFactorRuleApplicationsOfClosed
+    {G : ObservedGraph S}
     (remaining externalAction component : NodeSet S)
     (closed : G.KernelHostClosed remaining externalAction)
     (componentSubset : NodeSet.Subset component remaining)
     (bidirectedClosed : forall {source target}, component source = true ->
       remaining target = true -> G.bidirected source target = true -> component target = true)
-    (node : Fin S.count) (nodeInside : component node = true)
-    (input : PublishedIdentificationCertificate C correct
-      (.kernel ⟨remaining, externalAction, NodeSet.empty⟩))
-    (inputPositive : forall (model : ExactModel S), C.Mem model -> forall reference,
-      ProbabilityResult.PositiveSupportedValue (input.formula.denote model reference)) :
-    PublishedIdentificationCertificate C correct
-      (.kernel ⟨NodeSet.singleton node,
-        NodeSet.union externalAction (NodeSet.diff remaining component),
-        chainCondition component node⟩) := by
+    (node : Fin S.count) (nodeInside : component node = true) :
+    ComponentFactorRuleApplications G remaining externalAction component node := by
   let earlier := chainCondition component node
   let exchanged := NodeSet.diff (chainCondition remaining node) component
   let later := chainLaterOutside remaining component node
@@ -162,6 +164,54 @@ noncomputable def currentKernelComponentFactorPublishedCertificate
     yw := exchangeDisjoint.yw
     zw := laterEarlier
   }
+  exact {
+    exchange := DoRuleApplication.rule2 (G := G) (separation := pathRuleSeparation G)
+      externalAction (NodeSet.singleton node) exchanged earlier exchangeDisjoint
+      (G.pathDSeparated_rule2_outside_predecessors remaining externalAction component
+        closed componentSubset bidirectedClosed node nodeInside)
+    deletion := DoRuleApplication.rule3 (G := G) (separation := pathRuleSeparation G)
+      (NodeSet.union externalAction exchanged) (NodeSet.singleton node) later earlier
+      deleteDisjoint
+      (G.pathDSeparated_rule3_late_actions (NodeSet.union externalAction exchanged)
+        later earlier node (fun _ selected => chainLaterOutside_after remaining component
+          node nodeInside selected)
+        (fun _ selected => Nat.le_of_lt
+          (of_decide_eq_true (Bool.and_eq_true_iff.mp selected).2)))
+  }
+
+/-- Compile one factor of the externally intervened component kernel.
+
+The source fixes `externalAction ∪ (remaining \ component)` and conditions
+only on component predecessors.  The target is exactly the quotient emitted
+by `chainFactorFrom remaining input.formula node`.  The shared graph package
+above supplies both actual do-rule applications.
+
+The construction is valid for unions of complete c-components too.  A
+listed c-component supplies its subset and bidirected-closure premises from
+the executable partition, as exposed by the wrapper below. -/
+noncomputable def currentKernelComponentFactorPublishedCertificate
+    {G : ObservedGraph S} {C : GraphModelClass G}
+    (correct : DSeparationCorrectness G)
+    (obsPositive : forall {model}, C.Mem model -> ObservationallyPositive model)
+    (remaining externalAction component : NodeSet S)
+    (closed : G.KernelHostClosed remaining externalAction)
+    (componentSubset : NodeSet.Subset component remaining)
+    (bidirectedClosed : forall {source target}, component source = true ->
+      remaining target = true -> G.bidirected source target = true -> component target = true)
+    (node : Fin S.count) (nodeInside : component node = true)
+    (input : PublishedIdentificationCertificate C correct
+      (.kernel ⟨remaining, externalAction, NodeSet.empty⟩))
+    (inputPositive : forall (model : ExactModel S), C.Mem model -> forall reference,
+      ProbabilityResult.PositiveSupportedValue (input.formula.denote model reference)) :
+    PublishedIdentificationCertificate C correct
+      (.kernel ⟨NodeSet.singleton node,
+        NodeSet.union externalAction (NodeSet.diff remaining component),
+        chainCondition component node⟩) := by
+  let earlier := chainCondition component node
+  let exchanged := NodeSet.diff (chainCondition remaining node) component
+  let later := chainLaterOutside remaining component node
+  let rules := componentFactorRuleApplicationsOfClosed remaining externalAction component
+    closed componentSubset bidirectedClosed node nodeInside
   let factor := currentKernelFactorPublishedCertificate correct obsPositive
     remaining externalAction closed.action_disjoint node (componentSubset node nodeInside)
     input inputPositive
@@ -174,19 +224,9 @@ noncomputable def currentKernelComponentFactorPublishedCertificate
       rw [chainCondition_outside_union_inside remaining component componentSubset node])
     rfl
   let exchange := PublishedIdentificationCertificate.prependDoRuleOfPositive obsPositive
-    (DoRuleApplication.rule2 (G := G) (separation := pathRuleSeparation G)
-      externalAction (NodeSet.singleton node) exchanged earlier exchangeDisjoint
-      (G.pathDSeparated_rule2_outside_predecessors remaining externalAction component
-        closed componentSubset bidirectedClosed node nodeInside)) exchangedFactor
+    rules.exchange exchangedFactor
   let deleted := PublishedIdentificationCertificate.prependDoRuleOfPositive obsPositive
-    (DoRuleApplication.rule3 (G := G) (separation := pathRuleSeparation G)
-      (NodeSet.union externalAction exchanged) (NodeSet.singleton node) later earlier
-      deleteDisjoint
-      (G.pathDSeparated_rule3_late_actions (NodeSet.union externalAction exchanged)
-        later earlier node (fun _ selected => chainLaterOutside_after remaining component
-          node nodeInside selected)
-        (fun _ selected => Nat.le_of_lt
-          (of_decide_eq_true (Bool.and_eq_true_iff.mp selected).2)))) exchange
+    rules.deletion exchange
   exact deleted.reindex
     (show ProbabilityTerm.kernel ⟨NodeSet.singleton node,
         NodeSet.union externalAction (NodeSet.diff remaining component), earlier⟩ =
@@ -196,6 +236,54 @@ noncomputable def currentKernelComponentFactorPublishedCertificate
       simp only [rule3Left, NodeSet.union_assoc]
       rfl)
     (show chainFactorFrom remaining input.formula node = deleted.formula by rfl)
+
+/-- Reduce a host conditional factor using an already identified component
+factor.  This is the reverse graph bridge needed by the product branch.
+
+No certificate for the entire host distribution is required: requiring one
+would be circular when that distribution is precisely the product branch's
+output.  The caller's component factor can target any action-free expression;
+its exact target is preserved through the two reversed do-rule applications. -/
+noncomputable def currentKernelHostFactorOfComponentPublishedCertificate
+    {G : ObservedGraph S} {C : GraphModelClass G} {correct : DSeparationCorrectness G}
+    (obsPositive : forall {model}, C.Mem model -> ObservationallyPositive model)
+    (remaining externalAction component : NodeSet S)
+    (closed : G.KernelHostClosed remaining externalAction)
+    (componentSubset : NodeSet.Subset component remaining)
+    (bidirectedClosed : forall {source target}, component source = true ->
+      remaining target = true -> G.bidirected source target = true -> component target = true)
+    (node : Fin S.count) (nodeInside : component node = true)
+    (factor : PublishedIdentificationCertificate C correct
+      (.kernel ⟨NodeSet.singleton node,
+        NodeSet.union externalAction (NodeSet.diff remaining component),
+        chainCondition component node⟩)) :
+    PublishedIdentificationCertificate C correct
+      (.kernel ⟨NodeSet.singleton node, externalAction, chainCondition remaining node⟩) := by
+  let earlier := chainCondition component node
+  let exchanged := NodeSet.diff (chainCondition remaining node) component
+  let later := chainLaterOutside remaining component node
+  let rules := componentFactorRuleApplicationsOfClosed remaining externalAction component
+    closed componentSubset bidirectedClosed node nodeInside
+  let reindexed := factor.reindex
+    (show ProbabilityTerm.kernel (rule3Left (NodeSet.union externalAction exchanged)
+        (NodeSet.singleton node) later earlier) =
+        .kernel ⟨NodeSet.singleton node,
+          NodeSet.union externalAction (NodeSet.diff remaining component), earlier⟩ by
+      rw [chainOutside_eq_earlier_union_later remaining component node]
+      simp only [rule3Left, NodeSet.union_assoc]
+      rfl) rfl
+  let added := PublishedIdentificationCertificate.prependSymmetricDoRuleOfPositive obsPositive
+    rules.deletion reindexed
+  let exchange := PublishedIdentificationCertificate.prependSymmetricDoRuleOfPositive obsPositive
+    rules.exchange added
+  exact exchange.reindex
+    (show ProbabilityTerm.kernel ⟨NodeSet.singleton node, externalAction,
+        chainCondition remaining node⟩ =
+        .kernel (rule2Right externalAction (NodeSet.singleton node) exchanged earlier) by
+      change ProbabilityTerm.kernel ⟨NodeSet.singleton node, externalAction,
+        chainCondition remaining node⟩ = .kernel ⟨NodeSet.singleton node, externalAction,
+        NodeSet.union exchanged earlier⟩
+      rw [chainCondition_outside_union_inside remaining component componentSubset node]) rfl
 
 /-- Exact formula alignment for the component-factor compiler.  In
 particular, the current expression is not reset to an observational marginal
