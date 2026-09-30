@@ -74,6 +74,22 @@ inductive Equivalent : Result -> Result -> Type
 def Supported (result : Result) : Type :=
   Sigma fun value => Equivalent result (some value)
 
+/-- A supported partial result with a strictly positive displayed value.
+
+This is data in `Type`, not an existential proposition: a compiler may read
+the value and its support witness without choosing a representative.  Keeping
+this basic notion beside `Supported` also lets the completeness machinery
+establish positivity before importing any do-calculus soundness theorem. -/
+structure PositiveSupportedValue (result : Result) where
+  value : QProb
+  equivalent : Equivalent result (some value)
+  positive : 0 < value.num
+
+/-- Forget positivity while retaining the same constructive support value. -/
+def PositiveSupportedValue.toSupported {result : Result}
+    (positive : PositiveSupportedValue result) : Supported result :=
+  ⟨positive.value, positive.equivalent⟩
+
 def refl (result : Result) : Equivalent result result := by
   cases result with
   | none => exact .unsupported
@@ -440,6 +456,98 @@ noncomputable def sum_map_supported_of_mem (values : List X)
         (supported value (List.mem_cons.mpr (Or.inl rfl)))
         (inductionHypothesis fun member memberIn =>
           supported member (List.mem_cons.mpr (Or.inr memberIn)))
+
+/-! ## Positive support for recursive kernel expressions -/
+
+/-- A supported partial quotient contains a supported denominator with a
+positive numerator.  Inspecting the operands and the executable natural
+positivity test yields data in `Type`; no witness is selected from a
+propositional existence claim.  This basic support fact is independent of
+the graph, the selected model class, and do-calculus soundness. -/
+def positiveDenominatorOfSupportedDivide
+    {numerator denominator : Result}
+    (supported : Supported (divide numerator denominator)) :
+    PositiveSupportedValue denominator := by
+  cases numerator with
+  | none =>
+      rcases supported with ⟨value, equivalent⟩
+      cases denominator <;> cases equivalent
+  | some numeratorValue =>
+      cases denominator with
+      | none =>
+          rcases supported with ⟨value, equivalent⟩
+          cases equivalent
+      | some denominatorValue =>
+          by_cases positive : 0 < denominatorValue.num
+          · exact {
+              value := denominatorValue
+              equivalent := .value (QProb.equiv_refl denominatorValue)
+              positive := positive
+            }
+          · rw [divide, dif_neg positive] at supported
+            rcases supported with ⟨value, equivalent⟩
+            cases equivalent
+
+/-- Transport a positive support value across extensional result equality.
+Only the direction of the equality changes; the rational representative and
+its positivity proof remain explicit data. -/
+def PositiveSupportedValue.transport {left right : Result}
+    (equivalent : Equivalent left right)
+    (positive : PositiveSupportedValue left) :
+    PositiveSupportedValue right :=
+  ⟨positive.value, trans (symm equivalent) positive.equivalent,
+    positive.positive⟩
+
+/-- A product of positive supported results is positive and supported. -/
+def PositiveSupportedValue.multiply {left right : Result}
+    (leftPositive : PositiveSupportedValue left)
+    (rightPositive : PositiveSupportedValue right) :
+    PositiveSupportedValue (multiply left right) where
+  value := QProb.mul leftPositive.value rightPositive.value
+  equivalent := multiply_congr leftPositive.equivalent rightPositive.equivalent
+  positive := Nat.mul_pos leftPositive.positive rightPositive.positive
+
+/-- A positive denominator makes the quotient of two positive results
+defined.  Its numerator is the old numerator times the denominator's
+strictly positive rational denominator, so positivity is constructive too. -/
+def PositiveSupportedValue.divide {numerator denominator : Result}
+    (numeratorPositive : PositiveSupportedValue numerator)
+    (denominatorPositive : PositiveSupportedValue denominator) :
+    PositiveSupportedValue (divide numerator denominator) where
+  value := QProb.div numeratorPositive.value denominatorPositive.value
+    denominatorPositive.positive
+  equivalent := by
+    have operands := divide_congr numeratorPositive.equivalent
+      denominatorPositive.equivalent
+    simpa only [ProbabilityResult.divide, dif_pos denominatorPositive.positive]
+      using operands
+  positive := Nat.mul_pos numeratorPositive.positive
+    denominatorPositive.value.den_pos
+
+/-- A nonempty finite sum of positive supported terms remains positive.
+
+Only the head contributes to the strict lower bound; the tail needs support
+and has a nonnegative value.  Inspecting the list directly handles the empty
+case without a classical characterization of `list = []`.  In particular,
+this lemma is suitable for the enumerated marginals of recursive ID inputs. -/
+noncomputable def PositiveSupportedValue.sum_map (values : List X)
+    (term : X -> Result) (nonempty : values ≠ [])
+    (positive : forall value, value ∈ values ->
+      PositiveSupportedValue (term value)) :
+    PositiveSupportedValue (sum (values.map term)) := by
+  cases values with
+  | nil => exact False.elim (nonempty rfl)
+  | cons head tail =>
+      let headPositive := positive head (List.mem_cons.mpr (Or.inl rfl))
+      let tailSupported := sum_map_supported_of_mem tail term
+        (fun value member =>
+          (positive value (List.mem_cons.mpr (Or.inr member))).toSupported)
+      refine ⟨QProb.add headPositive.value tailSupported.1,
+        add_congr headPositive.equivalent tailSupported.2, ?_⟩
+      have leading := Nat.mul_pos headPositive.positive tailSupported.1.den_pos
+      change 0 < headPositive.value.num * tailSupported.1.den +
+        tailSupported.1.num * headPositive.value.den
+      omega
 
 end ProbabilityResult
 
@@ -1030,6 +1138,30 @@ def SupportedAt (model : FiniteLatentSCM S) (term : ProbabilityTerm S)
     (assignment : S.Assignment) : Type :=
   Sigma fun value =>
     ProbabilityResult.Equivalent (term.denote model assignment) (some value)
+
+/-- Marginalization preserves an everywhere-positive current expression.
+
+The reference itself occurs in the finite substitution list, even when no
+coordinates are summed or the signature is empty.  Thus the sum is nonempty;
+the positivity argument does not need a default selected vertex, an ordering
+assumption on the host, or a classical nonemptiness principle. -/
+noncomputable def marginalizePositiveSupportedValue
+    (model : FiniteLatentSCM S) (nodes : NodeSet S)
+    (term : ProbabilityTerm S) (reference : S.Assignment)
+    (positive : forall variant,
+      ProbabilityResult.PositiveSupportedValue (term.denote model variant)) :
+    ProbabilityResult.PositiveSupportedValue
+      ((ProbabilityTerm.marginalize nodes term).denote model reference) := by
+  apply ProbabilityResult.PositiveSupportedValue.sum_map
+    (marginalAssignments S nodes reference)
+    (fun variant => term.denote model variant)
+  · intro empty
+    have selfMember : reference ∈ marginalAssignments S nodes reference :=
+      (mem_marginalAssignments_iff S nodes reference reference).mpr
+        (fun _ _ => rfl)
+    rw [empty] at selfMember
+    cases selfMember
+  · exact fun variant _member => positive variant
 
 /-- Transport support along syntactic equality of terms.  Used by
 `DoCalculusDerivation.eqCongr` when a `NodeSet` covering rewrites a

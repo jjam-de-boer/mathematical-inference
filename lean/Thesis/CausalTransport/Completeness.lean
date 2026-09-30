@@ -57,13 +57,19 @@ and extraction of a `HedgeWitness` from ID failure by finite search over
 vertex selections and kept directed children inside the failing
 c-component.  Successful ID runs are action-free observational formulae.
 
-The detailed inventory below distinguishes proved leaves from the three
-fields still needed to inhabit `PublishedCompleteness`.  Its long list of
+The detailed inventory below records the legacy engine's proved leaves and
+the obligations identified at that checkpoint.  Its long list of
 finite-depth failure paths documents checked special cases already in the
 library; it is not a roadmap for adding ever-deeper path enumerations.
 Generic work on nested engine results belongs in `IdentificationInduction`,
 which exposes exact success, failure, and unfinished traces for structural
-induction.  The remaining inhabitants are:
+induction.  The legacy engine's unrestricted formula-aligned success compiler
+has since been refuted by the positive front-door regression; the local
+certificates below remain proved, but cannot be assembled into that global
+compiler.  Continuing general success compilation targets `identifyJointKernel`
+and its actual current expression.  `KernelCompilation` now supplies the
+supported whole-host prefix-quotient chain step, while graph-dependent
+c-component extraction remains separate.  The historical obligations were:
 
 * success of `identifyJoint` on a nonempty action implies a
   `DoCalculusDerivation` to the identified formula, hence a

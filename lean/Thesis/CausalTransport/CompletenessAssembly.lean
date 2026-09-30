@@ -9,12 +9,13 @@ open Probability
 /-!
 # Assembly lemmas for the published completeness theorem
 
-`Completeness` and the hedge modules deliberately develop the two difficult
-halves of identification completeness without importing the completed
-soundness theorem back into their proof machinery.  This module is the
-one-way assembly boundary: it may use `ObservedGraph.publishedSoundness` to
-connect an inspectable derivation with its denotation, but neither of the two
-main developments imports this file.
+`Completeness` and `Soundness` remain independent implementation modules.
+`HedgeOutcomeFlow` develops its countermodel semantics without importing
+soundness; `HedgePositive` uses the finite marginalization algebra from
+`Soundness` at a one-way integration boundary.  This module is a further
+assembly boundary: it may use `ObservedGraph.publishedSoundness` to connect
+an inspectable derivation with its denotation, but neither main theorem
+development imports this file.
 
 The first application is conditional identification.  Bayes compilation
 needs a strictly positive identified denominator only at assignments where
@@ -27,50 +28,13 @@ arbitrary numerator and denominator certificates without imposing a special
 syntactic shape on either formula.
 -/
 
-/-! ## Support-sensitive Bayes assembly -/
+/-! ## Support-sensitive Bayes assembly
 
-/-- A supported partial probability result whose displayed rational value is
-strictly positive.  Keeping the support witness in `Type` lets downstream
-certificate construction use the value directly without any choice
-principle. -/
-structure ProbabilityResult.PositiveSupportedValue
-    (result : ProbabilityResult.Result) where
-  value : QProb
-  equivalent : ProbabilityResult.Equivalent result (some value)
-  positive : 0 < value.num
-
-/--
-A supported partial quotient contains a supported denominator with positive
-numerator.  The result is data in `Type`: it is obtained by inspecting the
-two partial operands and the executable positivity test in
-`ProbabilityResult.divide`, without selecting a witness from a proposition.
+`ProbabilityResult.PositiveSupportedValue` and the primitive denominator
+support extractor live in `Causality.Semantics`: they can be reused by the
+current-kernel compiler without importing this soundness-dependent assembly
+boundary.  The lemmas below perform the genuinely graph-indexed transport.
 -/
-def ProbabilityResult.positiveDenominatorOfSupportedDivide
-    {numerator denominator : ProbabilityResult.Result}
-    (supported : ProbabilityResult.Supported
-      (ProbabilityResult.divide numerator denominator)) :
-    ProbabilityResult.PositiveSupportedValue denominator := by
-  cases numerator with
-  | none =>
-      rcases supported with ⟨value, equivalent⟩
-      cases denominator <;> cases equivalent
-  | some numeratorValue =>
-      cases denominator with
-      | none =>
-          rcases supported with ⟨value, equivalent⟩
-          cases equivalent
-      | some denominatorValue =>
-          by_cases positive : 0 < denominatorValue.num
-          · exact {
-              value := denominatorValue
-              equivalent :=
-              ProbabilityResult.Equivalent.value
-                (QProb.equiv_refl denominatorValue)
-              positive := positive
-            }
-          · rw [ProbabilityResult.divide, dif_neg positive] at supported
-            rcases supported with ⟨value, equivalent⟩
-            cases equivalent
 
 /--
 At a supported conditional-query assignment, the formula returned by an

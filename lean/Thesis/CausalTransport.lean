@@ -7,6 +7,7 @@ import Thesis.CausalTransport.Soundness
 import Thesis.CausalTransport.Completeness
 import Thesis.CausalTransport.ChainCompilation
 import Thesis.CausalTransport.KernelIdentification
+import Thesis.CausalTransport.KernelCompilation
 import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.CompletenessAssembly
@@ -69,6 +70,13 @@ fuel bound for every invocation of that replacement.  Compilation of its
 successful branches and lifting its failures to the original-query hedge
 countermodel remain completeness obligations, rather than being inferred
 from the old engine's trace library.
+`KernelCompilation` now certifies host marginals and the complete topological
+chain product of an arbitrary certified current input, retaining external
+intervention parameters and the engine's exact prefix-quotient syntax.  Its
+positive-support invariant is propagated directly by finite SCM consistency
+and probability algebra, without importing soundness.  The graph-dependent
+c-component extraction and recursive success compiler remain separate steps;
+a whole-host chain certificate alone does not identify a component.
 `HedgeOutcomeFlow`
 proves exact finite support formulas for the general routed hedge models and
 packages an unrestricted original-query counterexample when readout routing
