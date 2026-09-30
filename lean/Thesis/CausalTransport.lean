@@ -8,6 +8,8 @@ import Thesis.CausalTransport.Completeness
 import Thesis.CausalTransport.ChainCompilation
 import Thesis.CausalTransport.KernelIdentification
 import Thesis.CausalTransport.KernelCompilation
+import Thesis.CausalTransport.KernelSeparation
+import Thesis.CausalTransport.ComponentCompilation
 import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.CompletenessAssembly
@@ -74,9 +76,17 @@ from the old engine's trace library.
 chain product of an arbitrary certified current input, retaining external
 intervention parameters and the engine's exact prefix-quotient syntax.  Its
 positive-support invariant is propagated directly by finite SCM consistency
-and probability algebra, without importing soundness.  The graph-dependent
-c-component extraction and recursive success compiler remain separate steps;
-a whole-host chain certificate alone does not identify a component.
+and probability algebra, without importing soundness.  Its shared finite
+chain fold also assembles any family of certified component factors without
+duplicating the prefix induction.  `KernelSeparation` proves the rule-3 later-
+action and rule-2 outside-predecessor side conditions from topological order,
+recursive host parent closure, and actual c-component membership.
+`ComponentCompilation` uses those graph theorems to certify the exact
+current-input product for every listed host component, retaining external
+actions and supplying positive support for recursion.  It also compiles the
+terminal complementary marginal; unions of entire components and empty
+subsets are covered by its general closed-subset constructor.  Compilation
+of all recursive ID branches remains a separate completeness obligation.
 `HedgeOutcomeFlow`
 proves exact finite support formulas for the general routed hedge models and
 packages an unrestricted original-query counterexample when readout routing

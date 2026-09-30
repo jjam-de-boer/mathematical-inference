@@ -112,6 +112,37 @@ noncomputable def PublishedIdentificationCertificate.trans
         ⟨secondSupported.endpoints.2,
           ⟨firstSupported, secondSupported⟩⟩⟩
 
+/-- Prepend one path-based do-rule to an already compiled kernel.
+
+The intermediate endpoint can still carry interventions, so it cannot be
+packaged by the action-free reflexive certificate.  Instead this constructor
+retains the rule as an explicit derivation node and obtains the intermediate
+kernel's support directly from SCM consistency and observational positivity.
+Neither the formula's meaning nor do-calculus soundness is used to infer
+support.  The nested certificate supplies the action-free final expression
+and the remainder of the support tree. -/
+noncomputable def PublishedIdentificationCertificate.prependDoRuleOfPositive
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {correct : DSeparationCorrectness G} {left right : Kernel S}
+    (obsPositive : forall {model}, C.Mem model -> ObservationallyPositive model)
+    (application : PathDoRuleApplication G left right)
+    (nested : PublishedIdentificationCertificate C correct (.kernel right)) :
+    PublishedIdentificationCertificate C correct (.kernel left) where
+  formula := nested.formula
+  actionFree := nested.actionFree
+  derivation := DoCalculusDerivation.trans
+    (G := G) (separation := pathRuleSeparation G)
+    (DoCalculusDerivation.doRule
+      (G := G) (separation := pathRuleSeparation G) application)
+    nested.derivation
+  supported := fun model member assignment sourceSupported => by
+    let intermediate :=
+      ((obsPositive member).kernelPositiveSupportedValue right assignment).toSupported
+    let nestedSupported := nested.supported model member assignment intermediate
+    dsimp [PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
+    exact ⟨sourceSupported, ⟨nestedSupported.endpoints.2,
+      ⟨⟨sourceSupported, ⟨intermediate, ()⟩⟩, nestedSupported⟩⟩⟩
+
 /--
 Lift a published reduction through a finite marginalization.  Support of the
 source marginal yields support of each enumerated source summand; applying

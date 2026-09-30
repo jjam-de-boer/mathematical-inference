@@ -4,6 +4,7 @@ import Thesis.CausalTransport
 import Thesis.Examples.TenureTrack
 import Thesis.Examples.IdentificationRegression
 import Thesis.Examples.KernelCompilation
+import Thesis.Examples.ComponentCompilation
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -15,5 +16,7 @@ tenure-track example and checked identification regressions, so it is the
 appropriate root for the complete thesis build and the axiom audit.
 The current-input compilation regressions additionally exercise supported
 certificates on a gapped host, a nonempty external action, and an empty
-observed signature.
+observed signature.  Component-extraction regressions additionally exercise
+graph-derived action deletion and exchange, a genuinely recursive extracted
+input, and the terminal complementary marginal.
 -/
