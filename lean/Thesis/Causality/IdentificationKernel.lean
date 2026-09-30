@@ -195,9 +195,11 @@ def kernelIdentificationFuel (S : ObservedSignature) : Nat :=
   2 * S.count * (S.count + 2) + 2
 
 /-- Current-kernel joint ID on the full observed graph.  This is the
-replacement entry point for the completeness development; its result is
-still a candidate formula until the corresponding supported derivation is
-compiled. -/
+replacement entry point for the completeness development.  The syntax is
+computed here independently of certificates; `KernelSuccessCompilation`
+constructs a supported published derivation for every identified result.
+Semantic identifiability implying success still requires the failure/hedge
+argument and is not a consequence of this executable entry point alone. -/
 def identifyJointKernel (G : ObservedGraph S) (q : JointKernelQuery S) :
     IdentificationOutcome S :=
   identifyKernelFuel (kernelIdentificationFuel S) G NodeSet.full q.outcome q.action

@@ -15,6 +15,7 @@ import Thesis.CausalTransport.ComponentCompilation
 import Thesis.CausalTransport.KernelRecursionSeparation
 import Thesis.CausalTransport.KernelRecursionCompilation
 import Thesis.CausalTransport.KernelProductCompilation
+import Thesis.CausalTransport.KernelSuccessCompilation
 import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.CompletenessAssembly
@@ -60,8 +61,9 @@ bidirected action-parent bow and reads only that bow's pair-root.  This removes
 parent-uniqueness, odd-parity, identical-neighbourhood assumptions, and all
 restrictions on the pivot's other outgoing edges without choosing a family of
 pointwise equivalences.  A complete `PublishedCompleteness`
-inhabitant still needs structural compilation of arbitrary successful traces
-and a positive countermodel for an arbitrary hedge.  `ChainCompilation`
+inhabitant still needs replacement-engine failure transport, a positive
+countermodel for an arbitrary original-query hedge, and general conditional
+identification.  `ChainCompilation`
 supplies the probability-algebra foundation of that compiler: an exact,
 support-carrying observational chain certificate on any finite host, including
 hosts with topological gaps.  It does not identify a recursive ID input with
@@ -73,10 +75,11 @@ itself a certificate.
 `IdentificationKernel` now implements the replacement recursion with
 current-input prefix quotients, uncut ancestral pruning, and the separate
 action-augmentation branch.  `KernelIdentification` proves a quadratic
-fuel bound for every invocation of that replacement.  Compilation of its
-successful branches and lifting its failures to the original-query hedge
-countermodel remain completeness obligations, rather than being inferred
-from the old engine's trace library.
+fuel bound for every invocation of that replacement.  `KernelSuccessCompilation`
+now compiles every successful invocation of the changed program by fuel
+induction.  Lifting its failures to the original-query hedge countermodel
+remains a completeness obligation; old failure traces do not establish that
+connection for a changed program.
 `KernelCompilation` now certifies host marginals and the complete topological
 chain product of an arbitrary certified current input, retaining external
 intervention parameters and the engine's exact prefix-quotient syntax.  Its
@@ -90,8 +93,8 @@ recursive host parent closure, and actual c-component membership.
 current-input product for every listed host component, retaining external
 actions and supplying positive support for recursion.  It also compiles the
 terminal complementary marginal; unions of entire components and empty
-subsets are covered by its general closed-subset constructor.  Compilation
-of all recursive ID branches remains a separate completeness obligation.
+subsets are covered by its general closed-subset constructor.  The structural
+success compiler applies it to arbitrary containing-component recursion.
 `KernelRecursionSeparation` proves incoming-cut non-ancestor isolation and
 connects full expanded ancestry to the engine's induced-host tests.  Its
 pruning and augmentation side conditions retain their different uncut and
@@ -99,8 +102,8 @@ incoming-cut ancestry criteria.  `KernelRecursionCompilation` packages the
 certified current-input, positive-support, and parent-closure invariants;
 it transports arbitrary nested certificates through pruning, augmentation,
 and containing-component restriction without resetting the current expression.
-Complete recursive success assembly is still required, as is the
-original-query hedge countermodel.
+`KernelSuccessCompilation` now applies these constructors throughout the
+complete recursion; the original-query hedge countermodel remains separate.
 `ProductCompilation` supplies the product branch's graph-independent
 regrouping step: inspectable rational associativity and commutativity turn
 any indexed finite product into its nonempty partition blocks, including
@@ -117,21 +120,27 @@ the shared topological fold, exact regrouping, and support-sensitive formula
 comparison.  Its complete split constructor retains the engine's exact
 complementary marginal and positive target invariant.  It does not assume
 the free joint's identification certificate, and covers arbitrary finite
-partitions, external actions, and interleaving components.  The remaining
-success-compiler obligation is induction over the replacement recursion,
-not another unproved graph factorization premise for the product branch.
+partitions, external actions, and interleaving components.
+`KernelSuccessCompilation` completes that induction over `identifyKernelFuel`.
+Every successful invocation has an inspectable supported derivation whose
+formula is the engine's literal returned term, with a positive target invariant.
+Its public joint wrapper constructs the observational initial input internally;
+it does not assume semantic identifiability or a hedge countermodel.
 `HedgeOutcomeFlow`
 proves exact finite support formulas for the general routed hedge models and
 packages an unrestricted original-query counterexample when readout routing
 does not re-enter `large \ small`; removing that geometric hypothesis and preserving
 strict positivity remain the countermodel obligations.  `IdentificationInduction`
-supplies exact success, failure, and unfinished traces so this work can proceed
-by one lemma per recursive ID branch rather than by enumerating deeper
-branch-name stacks.  `CompletenessAssembly` is the one-way integration layer:
+supplies exact legacy success, failure, and unfinished traces; the replacement
+success compiler instead follows the changed program directly.  Remaining
+failure proofs must likewise target that program, not deeper legacy branch-name
+stacks.  `CompletenessAssembly` is the one-way integration layer:
 it imports the completed soundness theorem without creating a dependency from
 `Completeness` back to `Soundness`.  Its support-sensitive Bayes constructor
 now combines arbitrary joint certificates into a conditional certificate,
 requiring denominator positivity only where the source conditional is defined.
+It also proves correctness and identifiability of every successful replacement
+joint result.  The converse needed for `PublishedCompleteness` remains open.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations

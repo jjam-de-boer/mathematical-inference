@@ -23,11 +23,11 @@ outside incoming-cut ancestry.  Their different input operations remain
 visible: only pruning marginalizes the current expression.
 
 These are generic induction steps, not a bounded collection of branch-name
-stacks.  A complete success compiler must still apply them to every branch
-of `identifyKernelFuel`.  `KernelProductCompilation` now supplies the
-remaining generic c-component product step; complete recursion assembly is
-still separate.  No published completeness or soundness implementation is
-imported here.
+stacks.  `KernelProductCompilation` supplies the generic c-component product
+step, and `KernelSuccessCompilation` applies these constructors to every
+successful invocation of `identifyKernelFuel` by fuel induction.  The branch
+constructors remain separate reusable interfaces.  No published completeness
+or soundness implementation is imported here.
 -/
 
 /-! ## The recursive current-expression invariant -/

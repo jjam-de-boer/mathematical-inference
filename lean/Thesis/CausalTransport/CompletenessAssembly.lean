@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
+import Thesis.CausalTransport.KernelSuccessCompilation
 
 namespace Thesis
 namespace Causality
@@ -26,7 +27,45 @@ below extract the exact local positivity fact from source support, transport
 it through the identified denominator using published soundness, and package
 arbitrary numerator and denominator certificates without imposing a special
 syntactic shape on either formula.
+
+The replacement engine's full structural success compiler is now available
+independently in `KernelSuccessCompilation`.  At this integration boundary,
+published soundness turns its supported certificate into correctness and
+identifiability of every identified joint result.  These conclusions do not
+assert that every semantically identifiable query succeeds; that direction
+still requires the failure/hedge countermodel argument.
 -/
+
+/-! ## Denotational correctness of every successful replacement joint run -/
+
+/-- Every identified replacement-engine formula denotes the requested joint
+kernel, in every member of an observationally positive compatible model class
+and at every assignment.  The success compiler constructs the derivation;
+completed published soundness is used only here to interpret it. -/
+noncomputable def identifyJointKernel_identified_soundAt
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    (correct : DSeparationCorrectness G)
+    (obsPositive : forall {model}, C.Mem model -> ObservationallyPositive model)
+    (query : JointKernelQuery S) {term : ProbabilityTerm S}
+    (result : identifyJointKernel G query = .identified term)
+    (model : ExactModel S) (member : C.Mem model) (assignment : S.Assignment) :
+    ProbabilityTerm.EquivalentAt model query.sourceTerm term assignment :=
+  let certificate := identifyJointKernelPublishedCertificate correct obsPositive query result
+  certificate.compile.denotational_soundAt G.publishedSoundness model member assignment
+    (query.supportedAt model assignment)
+
+/-- An identified replacement-engine result proves semantic identifiability
+in the selected positive class.  This is the algorithm's success-to-semantics
+direction, not an assumed completeness interface or a guarantee of success
+for every identifiable query. -/
+theorem identifyJointKernel_identified_identifiable
+    {S : ObservedSignature.{0}} {G : ObservedGraph S} {C : GraphModelClass G}
+    (correct : DSeparationCorrectness G)
+    (obsPositive : forall {model}, C.Mem model -> ObservationallyPositive model)
+    (query : JointKernelQuery S) {term : ProbabilityTerm S}
+    (result : identifyJointKernel G query = .identified term) : C.identifiable query :=
+  JointIdentificationCertificate.identifiable G.publishedSoundness
+    (identifyJointKernelPublishedCertificate correct obsPositive query result).compile
 
 /-! ## Support-sensitive Bayes assembly
 

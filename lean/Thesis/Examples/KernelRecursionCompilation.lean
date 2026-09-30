@@ -26,9 +26,11 @@ from the initial observational package, and every nested support tree is
 checked throughout the positive graph-model class.
 
 This is a composed certificate regression, not a substitute for induction
-over arbitrary engine executions.  The general success compiler still must
-assemble every branch.  The multi-component product constructor and its
-exact engine-output regression are now in `KernelProductCompilation`.
+over arbitrary engine executions.  `KernelSuccessCompilation` now assembles
+every successful branch by fuel induction and its regressions exercise this
+same query without supplying these child certificates.  The multi-component
+product constructor and its exact engine-output regression are in
+`KernelProductCompilation`.
 -/
 
 /-! ## Generate the actual recursive input distributions -/

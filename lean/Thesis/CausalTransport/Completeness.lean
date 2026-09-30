@@ -20,16 +20,19 @@ runs, and positive countermodels for realizable hedge shapes.  The published
 record is not yet inhabited.  The executable fuel bound is proved total below,
 so public joint and conditional ID cannot return `unfinished`; every public
 joint failure also yields a hedge witness through its structural trace.  The
-remaining load-bearing obligations are the structural success compiler and
-the general hedge countermodel.  The success compiler must now target the
-current-kernel replacement: `Examples.FrontDoorIdentification` in
+remaining load-bearing obligations concern the replacement program's
+failure-to-original-query hedge transport, the general positive hedge
+countermodel, and conditional completeness.  `KernelSuccessCompilation` now
+proves full structural success compilation for the current-kernel replacement:
+`Examples.FrontDoorIdentification` in
 `IdentificationRegression` proves that one legacy identified formula is
 incorrect even in a positive compatible model, and consequently that the
 legacy formula-aligned `PublishedJointTraceCompiler` cannot be inhabited.
 `IdentificationKernel` supplies the replacement recursion and
-`KernelIdentification` proves its quadratic progress bound, but compilation
-and original-query hedge extraction for that changed program are separate
-obligations.  Old control-flow traces are not new semantic certificates.
+`KernelIdentification` proves its quadratic progress bound.  The new success
+compiler carries the actual current input and its support invariants through
+every branch; original-query hedge extraction for that changed program remains
+separate.  Old control-flow traces are not new semantic certificates.
 
 For arbitrary nested engine runs, use the exact trace relations in
 `IdentificationInduction`.  The branch-specific lemmas retained below are
@@ -66,10 +69,12 @@ which exposes exact success, failure, and unfinished traces for structural
 induction.  The legacy engine's unrestricted formula-aligned success compiler
 has since been refuted by the positive front-door regression; the local
 certificates below remain proved, but cannot be assembled into that global
-compiler.  Continuing general success compilation targets `identifyJointKernel`
-and its actual current expression.  `KernelCompilation` now supplies the
-supported whole-host prefix-quotient chain step, while graph-dependent
-c-component extraction remains separate.  The historical obligations were:
+compiler.  `KernelSuccessCompilation` now targets `identifyJointKernel`
+and its actual current expression by one complete fuel induction.
+`KernelCompilation`, `ComponentCompilation`, `KernelRecursionCompilation`,
+and `KernelProductCompilation` supply its supported branch constructors.
+The remaining failure/countermodel work must likewise target the replacement
+program.  The historical obligations were:
 
 * success of `identifyJoint` on a nonempty action implies a
   `DoCalculusDerivation` to the identified formula, hence a
@@ -432,8 +437,11 @@ c-component extraction remains separate.  The historical obligations were:
   `mask` so that `hedgeRecode_eval` identifies the empty-mask evaluation
   of the recoded assignment with the masked evaluation of the original
   (`hedgeUnrecode_eval` is the dual well-founded identity);
-* once the general countermodel and structural success compiler are closed,
-  identifiability in the positive class implies ID success, yielding
+* `KernelSuccessCompilation` now closes the structural success direction for
+  the corrected current-kernel program.  Once replacement failure transport
+  and the general positive original-query countermodel are closed,
+  identifiability in the positive class can imply joint ID success.  General
+  conditional reduction is also required before assembling
   `PublishedCompleteness (GraphModelClass.positive G)`.
 
 No axiom of choice or excluded middle is used in the engine; the hedge

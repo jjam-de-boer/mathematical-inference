@@ -8,6 +8,7 @@ import Thesis.Examples.ComponentCompilation
 import Thesis.Examples.KernelRecursionCompilation
 import Thesis.Examples.ProductCompilation
 import Thesis.Examples.KernelProductCompilation
+import Thesis.Examples.KernelSuccessCompilation
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -31,4 +32,9 @@ their algebra does not impose observational positivity.
 The complete component-product regression additionally checks the actual
 replacement-engine output for a nonempty-action, two-component query and
 its denotation throughout the positive compatible model class.
+Structural success-compilation regressions now construct those certificates
+automatically from the actual engine success equations, including front-door,
+nonempty augmentation, a recursive gapped host with external actions, empty
+outcomes, and the zero-node signature.  No hand-supplied child certificate is
+needed by the structural compiler.
 -/
