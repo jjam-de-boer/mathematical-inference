@@ -574,6 +574,56 @@ theorem product_probVal (left : FiniteProbRecord Ω)
   simp [QProb.Equiv, product, probVal, QProb.mul,
     eventMass_weightedCartesian, Nat.mul_assoc]
 
+/-- A common independent left factor preserves equality of every right
+slice of a possibly nonrectangular event.  This is stronger than the
+rectangular product law: the right event may depend on the sampled left
+value, as happens when independent noise transforms an observed assignment.
+No coupling or family of selected support witnesses is assumed. -/
+theorem product_probVal_equiv_of_slices
+    (common : FiniteProbRecord Ω) (left : FiniteProbRecord X) (right : FiniteProbRecord Y)
+    (leftEvent : Event (Ω × X)) (rightEvent : Event (Ω × Y))
+    (slices : forall value, QProb.Equiv
+      (left.probVal (fun sample => leftEvent (value, sample)))
+      (right.probVal (fun sample => rightEvent (value, sample)))) :
+    QProb.Equiv ((common.product left).probVal leftEvent)
+      ((common.product right).probVal rightEvent) := by
+  have scaled (atoms : List (Ω × Nat)) :
+      (atoms.map (fun atom => atom.2 * eventMass left.atoms
+        (fun sample => leftEvent (atom.1, sample)))).sum * right.den =
+      (atoms.map (fun atom => atom.2 * eventMass right.atoms
+        (fun sample => rightEvent (atom.1, sample)))).sum * left.den := by
+    induction atoms with
+    | nil => simp only [List.map_nil, List.sum_nil, Nat.zero_mul]
+    | cons atom rest inductionHypothesis =>
+        have slice := slices atom.1
+        change eventMass left.atoms (fun sample => leftEvent (atom.1, sample)) * right.den =
+          eventMass right.atoms (fun sample => rightEvent (atom.1, sample)) * left.den at slice
+        simp only [List.map_cons, List.sum_cons, Nat.add_mul]
+        rw [Nat.mul_assoc atom.2, slice, ← Nat.mul_assoc atom.2, inductionHypothesis]
+  change eventMass (weightedCartesian common.atoms left.atoms) leftEvent *
+      (common.den * right.den) =
+    eventMass (weightedCartesian common.atoms right.atoms) rightEvent *
+      (common.den * left.den)
+  rw [eventMass_weightedCartesian_bind, eventMass_weightedCartesian_bind]
+  calc
+    _ = common.den *
+        ((common.atoms.map (fun atom => atom.2 * eventMass left.atoms
+          (fun sample => leftEvent (atom.1, sample)))).sum * right.den) := by ac_rfl
+    _ = common.den *
+        ((common.atoms.map (fun atom => atom.2 * eventMass right.atoms
+          (fun sample => rightEvent (atom.1, sample)))).sum * left.den) := by rw [scaled]
+    _ = _ := by ac_rfl
+
+/-- Push a right-factor relabelling through an independent product event.
+The result is a checked finite pushforward equality, even when the event
+mixes the common left coordinate with the relabelled right coordinate. -/
+theorem product_map_right_probVal (left : FiniteProbRecord Ω) (right : FiniteProbRecord X)
+    (encode : X -> Y) (event : Event (Ω × Y)) :
+    QProb.Equiv ((left.product (right.map encode)).probVal event)
+      ((left.product right).probVal (fun pair => event (pair.1, encode pair.2))) := by
+  simp only [product, map, probVal, QProb.Equiv, eventMass_weightedCartesian_bind,
+    eventMass_map_labels]
+
 /-- Bayesian conditioning with a proof-carrying finite support witness. -/
 def conditionOn (R : FiniteProbRecord Ω) (evidence : Event Ω)
     (hEvidence : R.EventPositive evidence) : FiniteProbRecord Ω where

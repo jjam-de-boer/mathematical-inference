@@ -21,6 +21,8 @@ import Thesis.CausalTransport.KernelFailureExtraction
 import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.HedgeNoise
+import Thesis.CausalTransport.HedgeReadout
+import Thesis.CausalTransport.HedgeReadoutSequence
 import Thesis.CausalTransport.CompletenessAssembly
 import Thesis.CausalTransport.ConditionalCompilation
 import Thesis.CausalTransport.ConditionalFailureExtraction
@@ -162,8 +164,17 @@ countermodel: biased XOR channels retain separation after any finite number of
 private flips, and full-alphabet carriers realize every background label.
 It applies those results to the existing positive root-parity signal without
 claiming that a signal distribution is itself a graph-compatible routed SCM.
-The observational-equivalence and root-to-original-outcome mechanisms remain
-the semantic obligations.
+`HedgeReadout` realizes such a channel as an actual SCM update with a fresh
+private source.  At a sink of the kept forest map its common observable
+readout preserves the full positive carrier pair's observational law, and
+its new interventional bit has exactly the independent channel's probability.
+`HedgeReadoutSequence` executes arbitrary finite increasing readout plans.
+Graph compatibility, full observational equality, and strict positivity are
+preserved through the real sequence of product priors; later non-influence
+is inherited from the original models rather than requested separately at
+every intermediate update.  The remaining routing obligation is to connect
+the final outcome signal to all common roots, including routes that re-enter
+an internal vertex of the large forest.
 `ConditionalCompilation` constructs supported, literal-output certificates
 for every successful run of recursive IDC over the corrected joint engine.
 Each successful single-conditioner rule-2 test is retained, arbitrary exchange

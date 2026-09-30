@@ -79,6 +79,42 @@ theorem xorChannel_true_mass (signalRecord : FiniteProbRecord Ω) (signal : Even
     (fun pair => Bool.xor (signal pair.1) pair.2) id).trans
       (eventMass_weightedCartesian_xor _ _ _)
 
+/-- The appended-source SCM prior samples noise before the old latent unit.
+Expanding that order gives the same two XOR rectangles as the signal-first
+channel, with the factors reversed.  No general record-permutation axiom or
+assumed independence of marginals is used. -/
+theorem eventMass_weightedCartesian_xor_noise_first (noise : List (Bool × Nat))
+    (atoms : List (Ω × Nat)) (signal : Event Ω) :
+    eventMass (weightedCartesian noise atoms) (fun pair => Bool.xor (signal pair.2) pair.1) =
+      eventMass noise (fun bit => !bit) * eventMass atoms signal +
+        eventMass noise id * eventMass atoms (fun value => !(signal value)) := by
+  induction noise with
+  | nil => simp only [weightedCartesian, List.flatMap_nil, eventMass, Nat.zero_mul, Nat.zero_add]
+  | cons atom rest inductionHypothesis =>
+      rcases atom with ⟨bit, weight⟩
+      change eventMass
+        (atoms.map (fun atom => ((bit, atom.1), weight * atom.2)) ++ weightedCartesian rest atoms)
+        (fun pair => Bool.xor (signal pair.2) pair.1) = _
+      rw [eventMass_append, eventMass_map_weight atoms (fun value => (bit, value)) weight,
+        inductionHypothesis]
+      cases bit <;>
+        simp only [eventMass, id_eq, Bool.not_false, Bool.not_true, Bool.false_eq_true,
+          ↓reduceIte, Bool.xor_false, Bool.xor_true, Nat.add_mul] <;> ac_rfl
+
+/-- Realizing the same independent XOR channel in noise-first order agrees
+with `xorChannel` at the observed signal event.  Unequal denominators and
+zero or deterministic masses are allowed. -/
+theorem xorChannel_noise_first_probVal (signalRecord : FiniteProbRecord Ω) (signal : Event Ω)
+    (noise : FiniteProbRecord Bool) :
+    QProb.Equiv
+      ((noise.product signalRecord).probVal (fun pair => Bool.xor (signal pair.2) pair.1))
+      ((signalRecord.xorChannel signal noise).probVal id) := by
+  change eventMass (weightedCartesian noise.atoms signalRecord.atoms)
+      (fun pair => Bool.xor (signal pair.2) pair.1) * (signalRecord.den * noise.den) =
+    eventMass (signalRecord.xorChannel signal noise).atoms id * (noise.den * signalRecord.den)
+  rw [eventMass_weightedCartesian_xor_noise_first, xorChannel_true_mass]
+  ac_rfl
+
 /-- Complementing the output bit is the same as complementing the input
 signal before XOR with the same independent noise. -/
 theorem xorChannel_false_mass (signalRecord : FiniteProbRecord Ω) (signal : Event Ω)

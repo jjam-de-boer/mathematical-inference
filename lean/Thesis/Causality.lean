@@ -3,6 +3,7 @@ import Thesis.Causality.Derivation
 import Thesis.Causality.Model
 import Thesis.Causality.HardIntervention
 import Thesis.Causality.Identification
+import Thesis.Causality.PrivateNoise
 import Thesis.Causality.IdentificationSearch
 import Thesis.Causality.IdentificationKernel
 import Thesis.Causality.ConditionalIdentificationKernel
@@ -50,4 +51,9 @@ node selections, kernels, and complete expressions, without deciding
 denotational equivalence or using classical function equality.
 The facade excludes the external completeness
 interfaces; those begin in `Thesis.CausalTransport`.
+`PrivateNoise` appends a genuinely private Boolean latent coordinate with a
+checked independent product prior.  Its common observable readout theorems
+preserve full observed-law equality and strict positivity under explicit
+non-influence, and earlier replacements preserve the later-coordinate
+invariant needed by a finite topologically ordered readout construction.
 -/
