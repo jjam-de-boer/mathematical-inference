@@ -19,9 +19,11 @@ and the original joint query.
 The constructor's routing conditions are explicit and geometric: initial
 kept sinks, freedom from the action, outcome-local coordinates, and a pure
 finite substitution identity.  It does not ask for observational equality
-or interventional separation of the newly built models.  It also does not
-pretend that an arbitrary hedge supplies such a plan: constructing a general
-all-root plan, especially with internal-forest re-entry, is still separate.
+or interventional separation of the newly built models.  `HedgeReadoutPlan`
+now constructs the canonical all-root plan and proves its substitution
+identity.  It does not prove the initial non-influence condition for an
+arbitrary hedge: internal-forest re-entry still needs a different
+observational argument.
 -/
 
 variable {S : ObservedSignature.{0}}

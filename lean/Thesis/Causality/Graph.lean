@@ -244,6 +244,31 @@ theorem mem_enumerated (S : ObservedSignature) (i : Fin S.count) :
     i ∈ enumerated S :=
   (List.mem_ofFn).mpr ⟨i, rfl⟩
 
+/-- The explicit finite enumeration is strictly increasing in the chosen
+topological order.  This proof follows the zero/successor enumeration and
+uses no sorting oracle or classical order decision. -/
+private theorem pairwise_ofFn_val_lt (count : Nat) :
+    (List.ofFn (fun node : Fin count => node)).Pairwise (fun first second => first.val < second.val) := by
+  induction count with
+  | zero => exact List.Pairwise.nil
+  | succ count inductionHypothesis =>
+      rw [List.ofFn_succ]
+      refine List.Pairwise.cons ?_ ?_
+      · intro node listed
+        rcases List.mem_ofFn.mp listed with ⟨earlier, same⟩
+        rw [← same]
+        exact Nat.zero_lt_succ _
+      · simpa only [List.map_ofFn] using
+          List.Pairwise.map Fin.succ
+            (fun first second earlier => by change first.val + 1 < second.val + 1; omega) inductionHypothesis
+
+/-- Filtering the ordered enumeration retains strict topological order.
+Readout and recursive graph constructions can therefore consume `members`
+directly, without choosing an additional ordering of the selected nodes. -/
+theorem members_pairwise_val_lt (X : NodeSet S) :
+    (members X).Pairwise (fun first second => first.val < second.val) :=
+  List.Pairwise.filter _ (pairwise_ofFn_val_lt S.count)
+
 theorem length_enumerated (S : ObservedSignature) :
     (enumerated S).length = S.count :=
   List.length_ofFn

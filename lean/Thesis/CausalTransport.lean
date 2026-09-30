@@ -25,6 +25,7 @@ import Thesis.CausalTransport.HedgeReadout
 import Thesis.CausalTransport.HedgeReadoutSequence
 import Thesis.CausalTransport.HedgeReadoutPullback
 import Thesis.CausalTransport.HedgeRoutedCounterexample
+import Thesis.CausalTransport.HedgeReadoutPlan
 import Thesis.CausalTransport.CompletenessAssembly
 import Thesis.CausalTransport.ConditionalCompilation
 import Thesis.CausalTransport.ConditionalFailureExtraction
@@ -187,9 +188,17 @@ combines that theorem with the observational and positivity invariants to
 construct a positive counterexample for the original joint query whenever
 an explicit increasing sink-pivot plan pulls its outcome event back to common
 root parity.  It assumes only those routing conditions, not the new models'
-semantic separation or observed-law equality.  Constructing such plans for
-arbitrary hedges, in particular internal-forest re-entry, is still required
-before the general completeness field is inhabited.
+semantic separation or observed-law equality.
+`HedgeReadoutPlan` now constructs the plan automatically from a well-formed
+routing forest and proves its sink-event pullback by finite flow conservation.
+Its hedge specialization uses the canonical all-root routes, so no caller
+supplies a plan, ordering, or parity identity.  The positive original-query
+constructor requires only that these route vertices be sinks of the original
+kept c-forest map; a more general entry point allows different supported
+biased noise records at every vertex.  Arbitrarily many sources, merging,
+multiple outcome sinks, and the full observed alphabet are covered.
+Internal-forest re-entry still need not satisfy that non-influence condition;
+its observational construction remains the general hedge-countermodel gap.
 `ConditionalCompilation` constructs supported, literal-output certificates
 for every successful run of recursive IDC over the corrected joint engine.
 Each successful single-conditioner rule-2 test is retained, arbitrary exchange

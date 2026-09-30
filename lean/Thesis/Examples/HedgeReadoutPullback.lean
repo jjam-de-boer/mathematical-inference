@@ -1,4 +1,4 @@
-import Thesis.CausalTransport.HedgeRoutedCounterexample
+import Thesis.CausalTransport.HedgeReadoutPlan
 import Thesis.Examples.KernelFailureExtraction
 
 namespace Thesis
@@ -214,6 +214,45 @@ noncomputable def originalCounterexample : CounterexampleIn (GraphModelClass.pos
 
 theorem original_query_not_identifiable : Not ((GraphModelClass.positive graph).identifiable query) :=
   originalCounterexample.not_identifiable
+
+/-! ## The canonical all-root plan no longer needs hand-written instructions -/
+
+/-- Every canonical route vertex is either a common root or outside the
+extracted large forest.  The only other large vertex is the action `X`,
+which the general route-avoidance theorem excludes.  Thus this fixture
+discharges the automatic constructor's sole geometric sink premise. -/
+theorem canonical_route_kept_sinks (node : Fin signature.count)
+    (routed : extraction.witness.rootReadoutNodes node = true) :
+    extraction.witness.child node = none := by
+  cases selected : forestHost node with
+  | false => exact outside_child_none node selected
+  | true =>
+      have free := extraction.witness.rootReadoutNodes_avoids_action node routed
+      have rootOfFreeForestNode : forall node : Fin signature.count,
+          forestHost node = true -> query.action node = false -> rootMask node = true := by decide +kernel
+      exact root_child_none node (rootOfFreeForestNode node selected free)
+
+/-- The automatic plan updates both roots before the merge and outcome.
+Its ordering and all routing coordinates are computed from the extracted
+hedge; the explicit two-step plan above is not passed to this constructor. -/
+theorem canonical_plan_pivots :
+    (extraction.witness.rootReadoutPlan (fun _ => hedgeReadoutNoise)).map
+      (fun step => step.pivot) = [firstRoot, secondRoot, mergeNode, outcomeNode] := by
+  simp only [HedgeWitness.rootReadoutPlan, HedgeRoutingReadoutPlan.steps,
+    List.map_map, Function.comp_def, HedgeRoutingReadoutPlan.step]
+  unfold NodeSet.members NodeSet.enumerated HedgeWitness.rootReadoutNodes HedgeWitness.rootReadoutRoutes
+  rw [extracted_roots]
+  unfold HedgeWitness.rootReadoutRoute HedgeWitness.rootReadoutOutcome
+  simp only [extracted_roots]
+  decide +kernel
+
+/-- The same original query now receives a positive countermodel from the
+canonical routing forest, with no supplied plan or parity pullback proof. -/
+noncomputable def canonicalCounterexample : CounterexampleIn (GraphModelClass.positive graph) query :=
+  extraction.witness.positiveCounterexampleOfRootReadoutSinks rich canonical_route_kept_sinks
+
+theorem canonical_query_not_identifiable : Not ((GraphModelClass.positive graph).identifiable query) :=
+  canonicalCounterexample.not_identifiable
 
 /-! ## Duplicate coordinates cancel the same noise and source -/
 

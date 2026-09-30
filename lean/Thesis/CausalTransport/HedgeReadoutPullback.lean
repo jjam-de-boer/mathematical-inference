@@ -23,9 +23,11 @@ literal product prior and common assignment transformation, not an assumed
 equality of interventional tables.
 
 This is the interventional companion to `HedgeReadoutSequence`.  A routing
-construction must still establish that the fully substituted outcome event
-is the hedge's root parity and that its pivots have the initial non-influence
-property.  In particular, internal-forest re-entry is not silently included.
+construction must establish that the fully substituted outcome event is the
+hedge's root parity and that its pivots have the initial non-influence
+property.  `HedgeReadoutPlan` now derives the former from the canonical
+routing forest; internal-forest re-entry need not satisfy the latter and
+is not silently included.
 -/
 
 variable {S : ObservedSignature.{0}}
@@ -259,6 +261,36 @@ theorem interventionalValue_equiv_iff (step : HedgeLinearReadoutStep S)
 
 end HedgeLinearReadoutStep
 
+/-! ## Deterministic assignment maps used only to prove routing identities -/
+
+namespace HedgeLinearReadoutStep
+
+/-- The zero-bit observable map is a combinatorial proof device.  It is
+not the countermodel's noise record: the actual SCMs retain supported biased
+noise.  It lets a plan's pure substitution identity be proved by ordinary
+finite flow conservation. -/
+def zeroNoiseAssignment (step : HedgeLinearReadoutStep S) (rich : ObservedSignature.ValueRich S)
+    (sample : S.Assignment) : S.Assignment :=
+  S.privateReadoutAssignment step.pivot
+    (hedgeNoisyReadout rich step.pivot step.injectOld (step.parentSignal rich)) sample false
+
+theorem zeroNoiseAssignment_off (step : HedgeLinearReadoutStep S)
+    (rich : ObservedSignature.ValueRich S) (sample : S.Assignment)
+    (node : Fin S.count) (different : node ≠ step.pivot) :
+    step.zeroNoiseAssignment rich sample node = sample node :=
+  S.replace_ne sample step.pivot node _ different
+
+theorem zeroNoiseAssignment_bit (step : HedgeLinearReadoutStep S)
+    (rich : ObservedSignature.ValueRich S) (sample : S.Assignment) :
+    hedgeIsSecond rich step.pivot (step.zeroNoiseAssignment rich sample step.pivot) =
+      Bool.xor (if step.injectOld then hedgeIsSecond rich step.pivot (sample step.pivot) else false)
+        (hedgeParityList rich step.parents sample) := by
+  simp only [zeroNoiseAssignment, ObservedSignature.privateReadoutAssignment, ObservedSignature.replace_at,
+    hedgeNoisyReadout, hedgeIsSecond_parityCarrierValue, Bool.xor_false]
+  rw [step.parentSignal_assignment rich sample]
+
+end HedgeLinearReadoutStep
+
 /-! ## Arbitrary finite substitution, not a fixed catalogue of path lengths -/
 
 namespace HedgeLinearReadoutPlan
@@ -275,6 +307,110 @@ coordinate even when that coordinate occurs in several requested outputs. -/
 def pullbackNodes : List (HedgeLinearReadoutStep S) -> List (Fin S.count) -> List (Fin S.count)
   | [], nodes => nodes
   | step :: rest, nodes => step.pullbackNodes (pullbackNodes rest nodes)
+
+/-- Execute the zero-bit maps on observable assignments.  Only the finite
+coordinate substitution proof uses this fold; the probabilistic models are
+still constructed by `withHedgeReadouts` with their full noise priors. -/
+def zeroNoiseAssignment (rich : ObservedSignature.ValueRich S) :
+    List (HedgeLinearReadoutStep S) -> S.Assignment -> S.Assignment
+  | [], sample => sample
+  | step :: rest, sample => zeroNoiseAssignment rich rest (step.zeroNoiseAssignment rich sample)
+
+/-- Coordinates absent from a plan's pivots retain their original values.
+No ordering hypothesis is needed for this elementary coordinate invariant. -/
+theorem zeroNoiseAssignment_off (rich : ObservedSignature.ValueRich S)
+    (steps : List (HedgeLinearReadoutStep S)) (sample : S.Assignment) (node : Fin S.count)
+    (different : forall step, step ∈ steps -> node ≠ step.pivot) :
+    zeroNoiseAssignment rich steps sample node = sample node := by
+  induction steps generalizing sample with
+  | nil => rfl
+  | cons step rest inductionHypothesis =>
+      change zeroNoiseAssignment rich rest (step.zeroNoiseAssignment rich sample) node = _
+      rw [inductionHypothesis _ (fun next listed => different next (List.mem_cons_of_mem _ listed))]
+      exact step.zeroNoiseAssignment_off rich sample node (different step List.mem_cons_self)
+
+/-- The full backward substitution is exactly the final event evaluated on
+the zero-bit assignment sweep.  This equation is pointwise on arbitrary
+complete assignments, so a geometric flow identity can discharge the
+countermodel constructor's pullback obligation without another probability
+calculation or a selected latent-support witness. -/
+theorem pullback_zeroNoiseAssignment (rich : ObservedSignature.ValueRich S)
+    (steps : List (HedgeLinearReadoutStep S)) (nodes : List (Fin S.count)) (sample : S.Assignment) :
+    hedgeParityList rich nodes (zeroNoiseAssignment rich steps sample) =
+      hedgeParityList rich (pullbackNodes steps nodes) sample := by
+  induction steps generalizing sample with
+  | nil => rfl
+  | cons step rest inductionHypothesis =>
+      change hedgeParityList rich nodes (zeroNoiseAssignment rich rest (step.zeroNoiseAssignment rich sample)) = _
+      rw [inductionHypothesis]
+      simpa only [Bool.and_false, Bool.xor_false] using
+        step.pullback_assignment rich (pullbackNodes rest nodes) sample false
+
+/-- A strictly increasing sweep satisfies every installed local readout
+equation in its final assignment.  The optional injected old bit is the
+*original* assignment's bit: earlier pivots cannot overwrite a later pivot.
+Every declared parent is earlier than its child, so subsequent updates
+cannot change a local equation's parent values either.
+
+This argument handles merging parent lists and duplicate entries uniformly;
+it establishes the flow equations needed by the routing-forest conservation
+theorem without assuming that a routed vertex is an outcome. -/
+theorem zeroNoiseAssignment_local (rich : ObservedSignature.ValueRich S)
+    (steps : List (HedgeLinearReadoutStep S)) (sample : S.Assignment)
+    (ordered : steps.Pairwise (fun first second => first.pivot.val < second.pivot.val)) :
+    forall step, step ∈ steps ->
+      hedgeIsSecond rich step.pivot (zeroNoiseAssignment rich steps sample step.pivot) =
+        Bool.xor (if step.injectOld then hedgeIsSecond rich step.pivot (sample step.pivot) else false)
+          (hedgeParityList rich step.parents (zeroNoiseAssignment rich steps sample)) := by
+  induction steps generalizing sample with
+  | nil => intro step listed; cases listed
+  | cons head rest inductionHypothesis =>
+      intro step listed
+      rcases List.mem_cons.mp listed with same | inRest
+      · subst step
+        have retained : zeroNoiseAssignment rich rest (head.zeroNoiseAssignment rich sample) head.pivot =
+            head.zeroNoiseAssignment rich sample head.pivot := by
+          apply zeroNoiseAssignment_off
+          intro next listed
+          have earlier := (List.pairwise_cons.mp ordered).1 next listed
+          intro same
+          rw [same] at earlier
+          exact (Nat.lt_irrefl _ earlier).elim
+        have parentsRetained : hedgeParityList rich head.parents (zeroNoiseAssignment rich (head :: rest) sample) =
+            hedgeParityList rich head.parents sample := by
+          unfold hedgeParityList
+          apply foldl_congr_of_mem
+          intro total parent listed
+          have parentEarlier := S.directed_earlier (head.parent_edges parent listed)
+          have retainedParent : zeroNoiseAssignment rich (head :: rest) sample parent = sample parent := by
+            apply zeroNoiseAssignment_off
+            intro next inPlan
+            rcases List.mem_cons.mp inPlan with same | inTail
+            · subst next
+              intro same
+              rw [same] at parentEarlier
+              exact (Nat.lt_irrefl _ parentEarlier).elim
+            · have later := (List.pairwise_cons.mp ordered).1 next inTail
+              intro same
+              rw [← same] at later
+              exact Nat.lt_asymm parentEarlier later
+          rw [retainedParent]
+        calc
+          _ = hedgeIsSecond rich head.pivot (head.zeroNoiseAssignment rich sample head.pivot) :=
+            congrArg (hedgeIsSecond rich head.pivot) retained
+          _ = Bool.xor (if head.injectOld then hedgeIsSecond rich head.pivot (sample head.pivot) else false)
+              (hedgeParityList rich head.parents sample) := head.zeroNoiseAssignment_bit rich sample
+          _ = _ := congrArg (Bool.xor
+            (if head.injectOld then hedgeIsSecond rich head.pivot (sample head.pivot) else false)) parentsRetained.symm
+      · have previous := inductionHypothesis (head.zeroNoiseAssignment rich sample)
+          (List.pairwise_cons.mp ordered).2 step inRest
+        have different : step.pivot ≠ head.pivot := by
+          have earlier := (List.pairwise_cons.mp ordered).1 step inRest
+          intro same
+          rw [same] at earlier
+          exact (Nat.lt_irrefl _ earlier).elim
+        rw [head.zeroNoiseAssignment_off rich sample step.pivot different] at previous
+        exact previous
 
 /-- Equality of the final outcome parity in the two actual updated SCMs is
 equivalent to equality of its fully substituted old-coordinate parity.

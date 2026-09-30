@@ -66,6 +66,11 @@ The arbitrary finite-plan constructor supplies its positive countermodel;
 the computed event pullback, not an intermediate semantic premise, restores
 both roots.  Duplicate outcome checks also verify cancellation of the same
 private noise and of the repeated source parity.
+The same merging fixture now also uses the generated canonical all-root
+plan.  Its pivot enumeration checks both roots, the merge, and the outcome
+in order.  The original-query counterexample needs only the proved route
+kept-sink condition; no hand-written instructions or pullback identity are
+passed to this automatic constructor.
 Conditional regressions distinguish recursive IDC from Bayes alone: one query
 has a failed joint numerator but succeeds after a rule-2 promotion, and a
 longer query exchanges two conditioners while retaining the remaining given
