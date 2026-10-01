@@ -25,7 +25,11 @@ Full support has a separate constructive proof: an explicit bit restoring the
 old pivot value restores the whole evaluated assignment by topological
 induction.  Thus a restoring readout preserves positivity even when other
 mechanisms read the pivot.  The non-influence assumption is retained only by
-the stronger common-observable-law arguments, not by this support theorem.
+the stronger complete-assignment and off-pivot preservation arguments, not
+by this support theorem.
+The exact pivot equation and earlier-coordinate agreement likewise follow
+from acyclicity alone; their prefix-local observed map does not identify the
+outputs of later descendants.
 
 Coordinate data use the project's constructive `FiniteProduct.extend`.
 The standard `Fin.lastCases_castSucc` reduction theorem carries a choice
@@ -442,14 +446,63 @@ theorem FiniteLatentSCM.withPrivateBooleanNoise_interventionalValue_equiv_of_off
     (QProb.equiv_trans pushed (QProb.equiv_trans unchanged
       (QProb.equiv_trans marginal (QProb.equiv_symm (base.interventionalValue_eq intervention event)))))
 
+/-- Replacing a mechanism cannot change an earlier coordinate in the
+signature's topological order.  No non-influence hypothesis is needed:
+the selected mechanism may genuinely affect later children, but it cannot
+be one of the declared parents of an earlier vertex.
+
+Both models retain the same intervention and explicitly encoded old latent
+unit.  At a free earlier child its unchanged equation sees matching earlier
+parents by recursive induction; at an intervened child equality is immediate.
+This one-sided locality is deliberately weaker than agreement at every
+non-pivot coordinate.  In particular, it remains valid inside a kept forest
+where the pivot has a child whose output can change. -/
+theorem FiniteLatentSCM.withPrivateBooleanNoise_evalNodeUnder_eq_of_before
+    {S : ObservedSignature.{0}} (base : ExactModel S) (pivot : Fin S.count)
+    (noise : FiniteProbRecord Bool)
+    (replacement : S.ParentValues pivot -> base.latent.Inputs pivot -> Bool -> S.Value pivot)
+    (intervention : (node : Fin S.count) -> Option (S.Value node))
+    (old : base.latent.Assignment) (bit : Bool)
+    (child : Fin S.count) (earlier : child.val < pivot.val) :
+    (base.withPrivateBooleanNoise pivot noise replacement).evalNodeUnder intervention
+        (PrivateBooleanNoise.assignment base.latent bit old) child =
+      base.evalNodeUnder intervention old child := by
+  rw [FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder
+  cases intervention child with
+  | some value => rfl
+  | none =>
+      have different : child ≠ pivot := by
+        intro same
+        subst child
+        exact Nat.lt_irrefl _ earlier
+      rw [base.withPrivateBooleanNoise_mechanism_of_ne pivot noise replacement child different]
+      unfold PrivateBooleanNoise.oldInputs
+      simp only [PrivateBooleanNoise.assignment_castSucc]
+      have parentsEqual :
+          (fun parent (_edge : S.directed parent child = true) =>
+            (base.withPrivateBooleanNoise pivot noise replacement).evalNodeUnder intervention
+              (PrivateBooleanNoise.assignment base.latent bit old) parent) =
+          (fun parent (_edge : S.directed parent child = true) => base.evalNodeUnder intervention old parent) := by
+        funext parent edge
+        exact base.withPrivateBooleanNoise_evalNodeUnder_eq_of_before pivot noise replacement
+          intervention old bit parent (Nat.lt_trans (S.directed_earlier edge) earlier)
+      rw [parentsEqual]
+termination_by child.val
+decreasing_by exact S.directed_earlier edge
+
 /-- At a free pivot the replacement sees the base model's unchanged parent
-values, its old latent inputs, and the independent bit.  Acyclicity prevents
-the pivot from being its own parent. -/
+values, its old latent inputs, and the independent bit.  Every declared parent
+is earlier than the pivot, so the preceding locality theorem supplies these
+equalities without assuming that any child ignores the pivot.
+
+This exact local equation is available at internal forest vertices.  It does
+not assert equality of the later coordinates or of the complete observed
+law, which would require an additional argument. -/
 theorem FiniteLatentSCM.withPrivateBooleanNoise_evalNodeUnder_pivot
     {S : ObservedSignature.{0}} (base : ExactModel S) (pivot : Fin S.count)
     (noise : FiniteProbRecord Bool)
     (replacement : S.ParentValues pivot -> base.latent.Inputs pivot -> Bool -> S.Value pivot)
-    (ignored : base.OtherMechanismsIgnore pivot)
     (intervention : (node : Fin S.count) -> Option (S.Value node))
     (free : intervention pivot = none) (old : base.latent.Assignment) (bit : Bool) :
     (base.withPrivateBooleanNoise pivot noise replacement).evalNodeUnder intervention
@@ -469,11 +522,8 @@ theorem FiniteLatentSCM.withPrivateBooleanNoise_evalNodeUnder_pivot
           (PrivateBooleanNoise.assignment base.latent bit old) parent) =
         (fun parent (_edge : S.directed parent pivot = true) => base.evalNodeUnder intervention old parent) := by
     funext parent edge
-    apply base.withPrivateBooleanNoise_evalNodeUnder_eq_of_ne pivot noise replacement ignored
-    intro same
-    have earlier := S.directed_earlier edge
-    subst parent
-    exact (Nat.lt_irrefl _ earlier).elim
+    exact base.withPrivateBooleanNoise_evalNodeUnder_eq_of_before pivot noise replacement
+      intervention old bit parent (S.directed_earlier edge)
   rw [parentsEqual]
 
 /-! ## Readout mechanisms and topological restoring assignments -/
@@ -487,6 +537,30 @@ def FiniteLatentSCM.withPrivateReadout
     (readout : S.ParentValues pivot -> S.Value pivot -> Bool -> S.Value pivot) : ExactModel S :=
   base.withPrivateBooleanNoise pivot noise
     (fun parents inputs bit => readout parents (base.mechanism pivot parents inputs) bit)
+
+/-- A free readout pivot has the stated old-value response even when it
+influences other mechanisms.  The old value is evaluated under the same
+arbitrary intervention; the fresh bit is the actual appended private source.
+Only the pivot equation is identified here, not the entire updated assignment. -/
+theorem FiniteLatentSCM.withPrivateReadout_evalNodeUnder_pivot
+    {S : ObservedSignature.{0}} (base : ExactModel S) (pivot : Fin S.count)
+    (noise : FiniteProbRecord Bool)
+    (readout : S.ParentValues pivot -> S.Value pivot -> Bool -> S.Value pivot)
+    (intervention : (node : Fin S.count) -> Option (S.Value node))
+    (free : intervention pivot = none) (old : base.latent.Assignment) (bit : Bool) :
+    (base.withPrivateReadout pivot noise readout).evalNodeUnder intervention
+        (PrivateBooleanNoise.assignment base.latent bit old) pivot =
+      readout (fun parent _edge => base.evalNodeUnder intervention old parent)
+        (base.evalNodeUnder intervention old pivot) bit := by
+  unfold FiniteLatentSCM.withPrivateReadout
+  rw [base.withPrivateBooleanNoise_evalNodeUnder_pivot pivot noise _ intervention free old bit]
+  have oldEquation : base.evalNodeUnder intervention old pivot =
+      base.mechanism pivot (fun parent _edge => base.evalNodeUnder intervention old parent)
+        (fun root _selected => old root) := by
+    rw [FiniteLatentSCM.evalNodeUnder]
+    unfold FiniteLatentSCM.equationUnder
+    rw [free]
+  rw [oldEquation]
 
 /-- If a readout restores its old pivot value on one evaluated assignment,
 it restores every coordinate of that assignment.  The other mechanisms need
@@ -561,7 +635,7 @@ theorem FiniteLatentSCM.withPrivateReadout_evalUnder_eq_of_restores
   exact base.withPrivateReadout_evalNodeUnder_eq_of_restores pivot noise readout
     intervention old bit restores child
 
-/-! ## Common observable readouts preserve full observational equality -/
+/-! ## Observable readout maps: prefix locality and complete-law equality -/
 
 /-- The observable assignment transformation realized by one readout.
 Coordinates other than the pivot are retained, including all old parents. -/
@@ -570,6 +644,36 @@ def ObservedSignature.privateReadoutAssignment
     (readout : S.ParentValues pivot -> S.Value pivot -> Bool -> S.Value pivot)
     (sample : S.Assignment) (bit : Bool) : S.Assignment :=
   S.replace sample pivot (readout (fun parent _edge => sample parent) (sample pivot) bit)
+
+/-- Up to and including a free pivot, the actual recursive readout agrees
+with its explicit observable assignment map.  Earlier coordinates are
+unchanged by acyclicity, and the pivot uses the exact local response equation.
+No later-coordinate equality is asserted: those mechanisms may read the
+pivot and respond to its new value.
+
+This prefix-local theorem retains arbitrary interventions and all observed
+value types.  It supplies a common readout map for events whose coordinates
+are no later than the pivot, even when the pivot is not a kept-forest sink. -/
+theorem FiniteLatentSCM.withPrivateReadout_evalNodeUnder_eq_assignment_of_le
+    {S : ObservedSignature.{0}} (base : ExactModel S) (pivot : Fin S.count)
+    (noise : FiniteProbRecord Bool)
+    (readout : S.ParentValues pivot -> S.Value pivot -> Bool -> S.Value pivot)
+    (intervention : (node : Fin S.count) -> Option (S.Value node))
+    (free : intervention pivot = none) (old : base.latent.Assignment) (bit : Bool)
+    (child : Fin S.count) (before : child.val ≤ pivot.val) :
+    (base.withPrivateReadout pivot noise readout).evalUnder intervention
+        (PrivateBooleanNoise.assignment base.latent bit old) child =
+      S.privateReadoutAssignment pivot readout (base.evalUnder intervention old) bit child := by
+  by_cases same : child = pivot
+  · subst child
+    rw [ObservedSignature.privateReadoutAssignment, ObservedSignature.replace_at]
+    exact base.withPrivateReadout_evalNodeUnder_pivot pivot noise readout
+      intervention free old bit
+  · rw [ObservedSignature.privateReadoutAssignment, S.replace_ne _ pivot child _ same]
+    apply base.withPrivateBooleanNoise_evalNodeUnder_eq_of_before pivot noise
+      (fun parents inputs bit => readout parents (base.mechanism pivot parents inputs) bit)
+      intervention old bit child
+    exact Nat.lt_of_le_of_ne before (fun equal => same (Fin.ext equal))
 
 /-- Under a free-pivot intervention, the new SCM realizes the common
 assignment transformation exactly at each explicitly encoded latent pair.
@@ -589,17 +693,8 @@ theorem FiniteLatentSCM.withPrivateReadout_evalUnder
   by_cases same : child = pivot
   · subst child
     simp only [ObservedSignature.privateReadoutAssignment, ObservedSignature.replace_at]
-    change (base.withPrivateBooleanNoise pivot noise
-      (fun parents inputs bit => readout parents (base.mechanism pivot parents inputs) bit)).evalNodeUnder
-      intervention (PrivateBooleanNoise.assignment base.latent bit old) pivot = _
-    rw [base.withPrivateBooleanNoise_evalNodeUnder_pivot pivot noise _ ignored intervention free old bit]
-    congr 1
-    change base.mechanism pivot (fun parent _edge => base.evalNodeUnder intervention old parent)
-      (fun root _selected => old root) = base.evalNodeUnder intervention old pivot
-    symm
-    rw [FiniteLatentSCM.evalNodeUnder]
-    unfold FiniteLatentSCM.equationUnder
-    rw [free]
+    exact base.withPrivateReadout_evalNodeUnder_pivot pivot noise readout
+      intervention free old bit
   · rw [ObservedSignature.privateReadoutAssignment, S.replace_ne _ pivot child _ same]
     exact base.withPrivateBooleanNoise_evalNodeUnder_eq_of_ne pivot noise _ ignored
       intervention old bit child same

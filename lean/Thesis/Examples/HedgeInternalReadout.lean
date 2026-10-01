@@ -23,10 +23,21 @@ theorem proves full observational positivity of both actual folded SCMs.
 Every restoring bit fixes the entire old target assignment, including the
 kept child of `X`; no intermediate non-influence proof is supplied.
 
-This tests positivity only.  Replacing an internal vertex can change another
+The unordered plan tests positivity only.  A separate local regression below
+checks the exact signal channel at its genuine internal pivot, and parity
+substitution with odd and even repeated pivot occurrences.  Those local
+theorems need no non-influence proof either: acyclicity keeps every parent
+unchanged.  Replacing an internal vertex can nevertheless change a later
 mechanism's output, so the same plan is deliberately not asserted to preserve
 observational equality or the original interventional gap.  Those remain the
 separate load-bearing obligations of the unrestricted routed countermodel.
+
+The final negative regression checks that this distinction is essential:
+overwriting the internal action vertex by the same supported private noise
+on both sides destroys their old observational equality.  The two new models
+remain compatible and positive.  This refutes a blanket extension to all
+internal updates; it does not refute a more carefully constructed routing
+argument whose pivots are free under the original query.
 -/
 
 set_option maxRecDepth 100000
@@ -117,6 +128,146 @@ theorem left_positive : ObservationallyPositive left :=
 theorem right_positive : ObservationallyPositive right :=
   FiniteLatentSCM.withHedgeReadouts_positive _
     (extraction.witness.smallCarrierDefectParityModel_positive rich) rich plan plan_noise_positive
+
+/-! ## Exact local channels do not require an internal pivot to be ignored -/
+
+/-- Unlike the support-only plan's overwrite, this step retains the old
+action bit before applying biased private noise.  Its pivot is the actual
+internal vertex whose kept child was checked above, not a substituted sink. -/
+def internalSignalStep : HedgeLinearReadoutStep signature where
+  pivot := actionNode
+  noise := hedgeReadoutNoise
+  injectOld := true
+  parents := []
+  parent_edges := by intro _ listed; cases listed
+
+/-- The one-pivot channel theorem applies with no sink or non-influence
+argument.  Intervening at a later coordinate is allowed, but the internal
+pivot must remain free; fixing it would erase the readout response. -/
+theorem internal_signal_channel
+    (intervention : (node : Fin signature.count) -> Option (signature.Value node))
+    (free : intervention actionNode = none) :
+    QProb.Equiv
+      (((internalSignalStep.toReadoutStep rich).apply rich
+        (extraction.witness.largeCarrierDefectParityModel rich)).interventionalValue
+        intervention (fun sample => hedgeIsSecond rich actionNode (sample actionNode)))
+      (((extraction.witness.largeCarrierDefectParityModel rich).noisyInterventionalSignal
+        intervention (hedgeReadoutSignal rich actionNode true (internalSignalStep.parentSignal rich))
+        hedgeReadoutNoise).probVal id) :=
+  FiniteLatentSCM.withHedgeReadout_signal_equiv _ rich actionNode hedgeReadoutNoise true
+    (internalSignalStep.parentSignal rich) intervention free
+
+/-- Three occurrences retain the same private bit once, while two cancel
+it.  The event substitution keeps duplicates rather than silently replacing
+them by a node set. -/
+theorem odd_pivot_retains_noise :
+    internalSignalStep.noiseActive [actionNode, actionNode, actionNode] = true := by decide +kernel
+
+theorem even_pivot_cancels_noise :
+    internalSignalStep.noiseActive [actionNode, actionNode] = false := by decide +kernel
+
+/-- Biased-channel reflection for an odd repeated event at a real internal
+vertex.  Both actual carrier models enter the general prefix-local theorem;
+neither supplies an `OtherMechanismsIgnore` proof.  This tests the exact local
+event identity, not separation of the original query, whose action fixes `X`. -/
+theorem internal_parity_equiv_iff
+    (intervention : (node : Fin signature.count) -> Option (signature.Value node))
+    (free : intervention actionNode = none) :
+    QProb.Equiv
+      (((internalSignalStep.toReadoutStep rich).apply rich
+        (extraction.witness.largeCarrierDefectParityModel rich)).interventionalValue
+        intervention (hedgeParityList rich [actionNode, actionNode, actionNode]))
+      (((internalSignalStep.toReadoutStep rich).apply rich
+        (extraction.witness.smallCarrierDefectParityModel rich)).interventionalValue
+        intervention (hedgeParityList rich [actionNode, actionNode, actionNode])) ↔
+    QProb.Equiv
+      ((extraction.witness.largeCarrierDefectParityModel rich).interventionalValue intervention
+        (hedgeParityList rich (internalSignalStep.pullbackNodes [actionNode, actionNode, actionNode])))
+      ((extraction.witness.smallCarrierDefectParityModel rich).interventionalValue intervention
+        (hedgeParityList rich (internalSignalStep.pullbackNodes [actionNode, actionNode, actionNode]))) :=
+  internalSignalStep.interventionalValue_equiv_iff_of_prefix _ _ rich
+    [actionNode, actionNode, actionNode] (by decide +kernel) intervention free 1 (by decide)
+    hedgeReadoutNoise_bias
+
+/-! ## Internal replacements need not preserve the whole observational law -/
+
+/-- The fixture's complete kept map, used only to expose the finite table
+for the kernel-checked negative regression.  It is proved equal to the
+extracted map below; no forest is silently replaced in the construction. -/
+private def fixtureChild : ForestChild signature :=
+  fun node => if node = actionNode then some rootNode else none
+
+private theorem extracted_child : extraction.witness.child = fixtureChild := by
+  funext node
+  have casesNode : forall node : Fin signature.count,
+      node = actionNode ∨ node = rootNode ∨ node = outcomeNode := by decide +kernel
+  rcases casesNode node with same | same | same
+  · subst node
+    rw [action_kept_child]
+    rfl
+  · subst node
+    have root : extraction.witness.roots rootNode = true := by rw [extracted_roots]; decide +kernel
+    have none := ((extraction.witness.large_forest.roots_exact rootNode).mp root).2
+    rw [none]
+    rfl
+  · subst node
+    rw [outcome_kept_child_none]
+    rfl
+
+private theorem extracted_actionRoot : extraction.witness.actionRoot = rootNode := by
+  have root := extraction.witness.actionRoot_in_roots
+  rw [extracted_roots] at root
+  exact of_decide_eq_true root
+
+noncomputable def actionOverwriteLeft :=
+  (extraction.witness.largeCarrierDefectParityModel rich).withHedgeReadout rich actionNode
+    hedgeReadoutNoise false (fun _ => false)
+
+noncomputable def actionOverwriteRight :=
+  (extraction.witness.smallCarrierDefectParityModel rich).withHedgeReadout rich actionNode
+    hedgeReadoutNoise false (fun _ => false)
+
+/-- The failure of observational equality below is not caused by leaving
+the original positive graph model class.  Private incidence retains graph
+compatibility, and the general restoring bit supplies full support. -/
+theorem actionOverwriteLeft_mem : (GraphModelClass.positive graph).Mem actionOverwriteLeft :=
+  ⟨FiniteLatentSCM.withHedgeReadout_compatible _
+      (extraction.witness.largeCarrierDefectParityModel_compatible rich) rich actionNode
+      hedgeReadoutNoise false (fun _ => false),
+    FiniteLatentSCM.withHedgeReadout_positive _
+      (extraction.witness.largeCarrierDefectParityModel_positive rich) rich actionNode
+      hedgeReadoutNoise hedgeReadoutNoise_positive false (fun _ => false)⟩
+
+theorem actionOverwriteRight_mem : (GraphModelClass.positive graph).Mem actionOverwriteRight :=
+  ⟨FiniteLatentSCM.withHedgeReadout_compatible _
+      (extraction.witness.smallCarrierDefectParityModel_compatible rich) rich actionNode
+      hedgeReadoutNoise false (fun _ => false),
+    FiniteLatentSCM.withHedgeReadout_positive _
+      (extraction.witness.smallCarrierDefectParityModel_positive rich) rich actionNode
+      hedgeReadoutNoise hedgeReadoutNoise_positive false (fun _ => false)⟩
+
+/-- A root-coordinate event distinguishes the new observational laws.
+Only the large mechanism reads the overwritten action at the kept child;
+the small mechanism omits that parent, so the common update need not be a
+common transformation of the entire old observed assignment.
+
+The original carrier pair is observationally equivalent by the general
+hedge theorem.  Here all forest data are first identified with their actual
+computed fixture coordinates, then the finite probability comparison is
+checked by the Lean kernel, not `native_decide`.  The pivot is an action
+vertex: this example rules out an unrestricted internal-update preservation
+lemma, not every possible free-pivot routing construction. -/
+theorem actionOverwrite_not_observationally_equivalent :
+    Not (ObservationallyEquivalent actionOverwriteLeft actionOverwriteRight) := by
+  have separated : Not (QProb.Equiv
+      (actionOverwriteLeft.observationalValue (fun sample => hedgeIsSecond rich rootNode (sample rootNode)))
+      (actionOverwriteRight.observationalValue (fun sample => hedgeIsSecond rich rootNode (sample rootNode)))) := by
+    unfold actionOverwriteLeft actionOverwriteRight HedgeWitness.largeCarrierDefectParityModel
+      HedgeWitness.smallCarrierDefectParityModel HedgeWitness.largeParityModel HedgeWitness.smallParityModel
+    rw [extracted_actionRoot, extracted_child, extraction.large_eq, extraction.small_eq]
+    decide +kernel
+  intro observational
+  exact separated (observational (fun sample => hedgeIsSecond rich rootNode (sample rootNode)))
 
 end HedgeInternalReadout
 end Examples

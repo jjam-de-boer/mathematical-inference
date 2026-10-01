@@ -165,8 +165,6 @@ theorem original_outcome_signal_separated : Not (QProb.Equiv
     (right.interventionalValue (hedgeDoSecond rich query.action)
       (fun sample => hedgeIsSecond rich outcomeNode (sample outcomeNode)))) := by
   apply FiniteLatentSCM.withHedgeReadout_signal_not_equiv _ _ rich outcomeNode noise false parentSignal
-    (extraction.witness.largeCarrierDefectParityModel_otherMechanismsIgnore rich outcomeNode outcome_kept_child_none)
-    (extraction.witness.smallCarrierDefectParityModel_otherMechanismsIgnore rich outcomeNode outcome_kept_child_none)
     (hedgeDoSecond rich query.action) (by decide +kernel) 1 (by decide) noise_bias
   rw [readout_signal_is_root_parity]
   exact extraction.witness.carrierDefectParityModels_rootParity_not_equiv_doSecond rich

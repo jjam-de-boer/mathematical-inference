@@ -27,7 +27,11 @@ construction must establish that the fully substituted outcome event is the
 hedge's root parity and that its pivots have the initial non-influence
 property.  `HedgeReadoutPlan` now derives the former from the canonical
 routing forest; internal-forest re-entry need not satisfy the latter and
-is not silently included.
+is not silently included.  A separate prefix-local substitution theorem
+below needs no non-influence: it covers events whose coordinates are all
+no later than the modified pivot, including any number of earlier signal
+coordinates and repeated pivot occurrences.  It does not equate an event
+on later responding descendants with the same observable assignment map.
 -/
 
 variable {S : ObservedSignature.{0}}
@@ -230,6 +234,60 @@ theorem interventionalValue_equiv (step : HedgeLinearReadoutStep S)
       (QProb.equiv_trans (QProb.equiv_symm effective)
         (base.prior.xorChannel_noise_first_probVal signal (step.effectiveNoise nodes)))))
 
+/-- Exact parity substitution at an arbitrary internal pivot for a
+prefix-local event.  Earlier observed coordinates cannot respond to a later
+mechanism replacement, so no non-influence hypothesis is needed.  The pivot
+itself uses the exact local readout equation; its multiplicity retains or
+cancels the private bit just as in the unrestricted sink theorem above.
+
+The finite list may contain repeated coordinates, may mix the pivot with
+any of its earlier ancestors, and need not be sorted.  Only its upper bound
+is required.  Later descendants are intentionally excluded: their outputs
+can change through the original mechanisms and require a propagation argument,
+not ordinary one-coordinate substitution. -/
+theorem interventionalValue_equiv_of_prefix (step : HedgeLinearReadoutStep S)
+    (base : ExactModel S) (rich : ObservedSignature.ValueRich S)
+    (nodes : List (Fin S.count))
+    (before : forall node, node ∈ nodes -> node.val ≤ step.pivot.val)
+    (intervention : (node : Fin S.count) -> Option (S.Value node))
+    (free : intervention step.pivot = none) :
+    QProb.Equiv
+      (((step.toReadoutStep rich).apply rich base).interventionalValue intervention (hedgeParityList rich nodes))
+      ((base.noisyInterventionalSignal intervention
+        (hedgeParityList rich (step.pullbackNodes nodes)) (step.effectiveNoise nodes)).probVal id) := by
+  let model := (step.toReadoutStep rich).apply rich base
+  let signal := fun latent => hedgeParityList rich (step.pullbackNodes nodes) (base.evalUnder intervention latent)
+  have evaluation (pair : Bool × base.latent.Assignment) :
+      hedgeParityList rich nodes
+          (model.evalUnder intervention (PrivateBooleanNoise.assignment base.latent pair.1 pair.2)) =
+        Bool.xor (signal pair.2) (step.noiseActive nodes && pair.1) := by
+    have eventEqual :
+        hedgeParityList rich nodes (model.evalUnder intervention
+          (PrivateBooleanNoise.assignment base.latent pair.1 pair.2)) =
+          hedgeParityList rich nodes (S.privateReadoutAssignment step.pivot
+            (hedgeNoisyReadout rich step.pivot step.injectOld (step.parentSignal rich))
+            (base.evalUnder intervention pair.2) pair.1) := by
+      unfold hedgeParityList
+      apply foldl_congr_of_mem
+      intro total node listed
+      congr 1
+      exact congrArg (hedgeIsSecond rich node)
+        (base.withPrivateReadout_evalNodeUnder_eq_assignment_of_le step.pivot step.noise
+          (hedgeNoisyReadout rich step.pivot step.injectOld (step.parentSignal rich))
+          intervention free pair.2 pair.1 node (before node listed))
+    rw [eventEqual]
+    exact step.pullback_assignment rich nodes (base.evalUnder intervention pair.2) pair.1
+  have pushed := (step.noise.product base.prior).map_probVal
+    (fun pair => PrivateBooleanNoise.assignment base.latent pair.1 pair.2)
+    (fun latent => hedgeParityList rich nodes (model.evalUnder intervention latent))
+  have substituted := (step.noise.product base.prior).probVal_congr _ _ evaluation
+  have effective := step.noise.product_map_left_probVal base.prior
+    (fun bit => step.noiseActive nodes && bit) (fun pair => Bool.xor (signal pair.2) pair.1)
+  exact QProb.equiv_trans (model.interventionalValue_eq intervention (hedgeParityList rich nodes))
+    (QProb.equiv_trans pushed (QProb.equiv_trans substituted
+      (QProb.equiv_trans (QProb.equiv_symm effective)
+        (base.prior.xorChannel_noise_first_probVal signal (step.effectiveNoise nodes)))))
+
 /-- A one-step equality of the new event is equivalent to equality of its
 explicit old-coordinate substitution.  Positivity and observational
 equivalence are separate invariants; they are not needed to cancel the
@@ -250,6 +308,35 @@ theorem interventionalValue_equiv_iff (step : HedgeLinearReadoutStep S)
       (right.interventionalValue intervention (hedgeParityList rich (step.pullbackNodes nodes))) := by
   have leftEq := step.interventionalValue_equiv left rich nodes leftIgnored intervention free
   have rightEq := step.interventionalValue_equiv right rich nodes rightIgnored intervention free
+  have channel := FiniteLatentSCM.noisyInterventionalSignal_equiv_iff_of_bias left right intervention
+    (hedgeParityList rich (step.pullbackNodes nodes)) (step.effectiveNoise nodes)
+    (step.effectiveGap nodes gap) (step.effectiveGap_positive nodes gap gapPositive) (step.effectiveNoise_bias nodes gap bias)
+  constructor
+  · intro equivalent
+    exact channel.mp (QProb.equiv_trans (QProb.equiv_symm leftEq) (QProb.equiv_trans equivalent rightEq))
+  · intro equivalent
+    exact QProb.equiv_trans leftEq (QProb.equiv_trans (channel.mpr equivalent) (QProb.equiv_symm rightEq))
+
+/-- A prefix-local event retains and reflects its substituted probability
+gap under a strictly biased private channel, without sink readiness on
+either model.  The event may inspect earlier ancestors as well as the pivot,
+so their correlations are retained by the actual joint product-prior proof.
+Support and full observational equivalence remain independent obligations. -/
+theorem interventionalValue_equiv_iff_of_prefix (step : HedgeLinearReadoutStep S)
+    (left right : ExactModel S) (rich : ObservedSignature.ValueRich S)
+    (nodes : List (Fin S.count))
+    (before : forall node, node ∈ nodes -> node.val ≤ step.pivot.val)
+    (intervention : (node : Fin S.count) -> Option (S.Value node))
+    (free : intervention step.pivot = none) (gap : Nat) (gapPositive : 0 < gap)
+    (bias : FiniteProbRecord.eventMass step.noise.atoms (fun bit => !bit) =
+      FiniteProbRecord.eventMass step.noise.atoms id + gap) :
+    QProb.Equiv
+      (((step.toReadoutStep rich).apply rich left).interventionalValue intervention (hedgeParityList rich nodes))
+      (((step.toReadoutStep rich).apply rich right).interventionalValue intervention (hedgeParityList rich nodes)) ↔
+    QProb.Equiv (left.interventionalValue intervention (hedgeParityList rich (step.pullbackNodes nodes)))
+      (right.interventionalValue intervention (hedgeParityList rich (step.pullbackNodes nodes))) := by
+  have leftEq := step.interventionalValue_equiv_of_prefix left rich nodes before intervention free
+  have rightEq := step.interventionalValue_equiv_of_prefix right rich nodes before intervention free
   have channel := FiniteLatentSCM.noisyInterventionalSignal_equiv_iff_of_bias left right intervention
     (hedgeParityList rich (step.pullbackNodes nodes)) (step.effectiveNoise nodes)
     (step.effectiveGap nodes gap) (step.effectiveGap_positive nodes gap gapPositive) (step.effectiveNoise_bias nodes gap bias)

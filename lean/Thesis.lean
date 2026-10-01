@@ -79,6 +79,15 @@ The general restoring-assignment theorem proves positivity of both complete
 folded SCMs without a sink, non-influence, or ordering proof.  Compatibility
 is also retained.  The test deliberately makes no claim of observational
 equality or query separation for that unordered internal plan.
+The same internal pivot now checks its exact one-coordinate private channel
+and prefix-local parity reflection without a non-influence premise.  Odd and
+even repeated occurrences respectively retain and cancel the same fresh bit;
+later descendants are not silently included in this local event argument.
+An internal-action overwrite also checks the opposite boundary: both models
+remain positive and graph-compatible, but a root event distinguishes their
+new observed laws.  Thus local support and signal facts cannot justify an
+unrestricted full-law preservation theorem; free-pivot routing still needs
+its separate constructive argument.
 Conditional regressions distinguish recursive IDC from Bayes alone: one query
 has a failed joint numerator but succeeds after a rule-2 promotion, and a
 longer query exchanges two conditioners while retaining the remaining given

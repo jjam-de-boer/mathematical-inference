@@ -24,11 +24,13 @@ assignment by topological induction.  Both bit values must have support;
 bias is needed for separation, not for full observational positivity.
 
 The interventional theorem equates the new pivot's signal with the exact
-independent XOR channel of the old model's readout signal.  This is a genuine
-SCM-to-channel connection, rather than a claim that a stand-alone signal
-record is already a countermodel for the original query.  Iterated routing
-must still retain non-influence at later pivots and connect its sink signal
-to the hedge's root parity; unrestricted re-entry remains separate.
+independent XOR channel of the old model's readout signal.  Like positivity,
+this local equation needs no non-influence assumption: acyclicity leaves all
+parents of the pivot unchanged.  This is a genuine SCM-to-channel connection,
+rather than a claim that a stand-alone signal record is already a countermodel
+for the original query.  Iterated routing must still account for the effect
+on later coordinates and connect its sink signal to the hedge's root parity;
+unrestricted observational equivalence remains separate.
 -/
 
 variable {S : ObservedSignature.{0}}
@@ -168,12 +170,14 @@ theorem HedgeWitness.carrierDefectParityModels_withHedgeReadout_observationally_
 /-- The new observed pivot bit has exactly the probability of the old
 readout signal passed through the supplied independent XOR channel.
 Interventions elsewhere are arbitrary, and the full old latent record is
-retained; only freedom of the pivot and non-influence are needed. -/
+retained.  Only freedom of the pivot is needed: all its parents are earlier,
+so replacing it cannot change those inputs.  Its later children may change,
+including children inside the kept forest; this one-coordinate event never
+assumes that the complete updated assignment is a common observed map. -/
 theorem FiniteLatentSCM.withHedgeReadout_signal_equiv
     (base : ExactModel S) (rich : ObservedSignature.ValueRich S)
     (pivot : Fin S.count) (noise : FiniteProbRecord Bool)
     (injectOld : Bool) (parentSignal : S.ParentValues pivot -> Bool)
-    (ignored : base.OtherMechanismsIgnore pivot)
     (intervention : (node : Fin S.count) -> Option (S.Value node))
     (free : intervention pivot = none) :
     QProb.Equiv
@@ -188,13 +192,15 @@ theorem FiniteLatentSCM.withHedgeReadout_signal_equiv
   have evaluation (pair : Bool × base.latent.Assignment) :
       event (model.evalUnder intervention (PrivateBooleanNoise.assignment base.latent pair.1 pair.2)) =
         Bool.xor (signal pair.2) pair.1 := by
-    change event ((base.withPrivateReadout pivot noise
+    change hedgeIsSecond rich pivot ((base.withPrivateReadout pivot noise
       (hedgeNoisyReadout rich pivot injectOld parentSignal)).evalUnder intervention
-      (PrivateBooleanNoise.assignment base.latent pair.1 pair.2)) = _
-    rw [base.withPrivateReadout_evalUnder pivot noise
-      (hedgeNoisyReadout rich pivot injectOld parentSignal) ignored intervention free pair.2 pair.1]
-    simp only [event, ObservedSignature.privateReadoutAssignment, ObservedSignature.replace_at,
-      hedgeNoisyReadout, hedgeIsSecond_parityCarrierValue]
+      (PrivateBooleanNoise.assignment base.latent pair.1 pair.2) pivot) = _
+    change hedgeIsSecond rich pivot ((base.withPrivateReadout pivot noise
+      (hedgeNoisyReadout rich pivot injectOld parentSignal)).evalNodeUnder intervention
+      (PrivateBooleanNoise.assignment base.latent pair.1 pair.2) pivot) = _
+    rw [base.withPrivateReadout_evalNodeUnder_pivot pivot noise
+      (hedgeNoisyReadout rich pivot injectOld parentSignal) intervention free pair.2 pair.1]
+    simp only [hedgeNoisyReadout, hedgeIsSecond_parityCarrierValue]
     rfl
   have pushed := (noise.product base.prior).map_probVal
     (fun pair => PrivateBooleanNoise.assignment base.latent pair.1 pair.2)
@@ -205,16 +211,15 @@ theorem FiniteLatentSCM.withHedgeReadout_signal_equiv
       (base.prior.xorChannel_noise_first_probVal signal noise)))
 
 /-- A biased private readout retains any old interventional signal gap in
-the actual new SCMs.  Observational equality and positive support are proved
-separately above; this theorem supplies the remaining separation component.
+the actual new SCMs, even at an internal vertex read by other mechanisms.
 The excess stay mass is explicit and strictly positive, so fair noise cannot
-be used as a separator. -/
+be used as a separator.  Positive support is independent; observational
+equality of the new pair still requires its own proof and is not supplied
+by this local interventional-separation theorem. -/
 theorem FiniteLatentSCM.withHedgeReadout_signal_not_equiv
     (left right : ExactModel S) (rich : ObservedSignature.ValueRich S)
     (pivot : Fin S.count) (noise : FiniteProbRecord Bool)
     (injectOld : Bool) (parentSignal : S.ParentValues pivot -> Bool)
-    (leftIgnored : left.OtherMechanismsIgnore pivot)
-    (rightIgnored : right.OtherMechanismsIgnore pivot)
     (intervention : (node : Fin S.count) -> Option (S.Value node))
     (free : intervention pivot = none) (gap : Nat) (gapPositive : 0 < gap)
     (bias : FiniteProbRecord.eventMass noise.atoms (fun bit => !bit) =
@@ -230,10 +235,10 @@ theorem FiniteLatentSCM.withHedgeReadout_signal_not_equiv
   intro equivalent
   have channel := QProb.equiv_trans
     (QProb.equiv_symm (left.withHedgeReadout_signal_equiv rich pivot noise injectOld parentSignal
-      leftIgnored intervention free))
+      intervention free))
     (QProb.equiv_trans equivalent
       (right.withHedgeReadout_signal_equiv rich pivot noise injectOld parentSignal
-        rightIgnored intervention free))
+        intervention free))
   exact separated ((FiniteLatentSCM.noisyInterventionalSignal_equiv_iff_of_bias
     left right intervention (hedgeReadoutSignal rich pivot injectOld parentSignal)
     noise gap gapPositive bias).mp channel)
