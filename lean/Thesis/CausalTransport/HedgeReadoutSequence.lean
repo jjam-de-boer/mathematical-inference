@@ -43,6 +43,10 @@ denominator outside its original large forest and the modified route nodes.
 `HedgeConditionalReadout` combines this with the canonical routed numerator
 countermodel; a merely failed numerator is never treated as conditional
 non-identifiability without proving the required denominator agreement.
+The companion `HedgeReadoutPreservation` replaces this global non-influence
+premise by closure of just the inspected mechanisms.  Its protected-marginal
+theorem allows responding unprotected descendants, arbitrary instruction
+order, and repeated pivots with distinct actual fresh factors.
 
 Positivity no longer uses the increasing-plan invariant.  The stronger
 restoring theorem in `PrivateNoise` fixes each old target assignment even

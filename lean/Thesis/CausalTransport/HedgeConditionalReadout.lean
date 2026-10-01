@@ -25,8 +25,10 @@ transports their parity to the numerator's queried sinks.  Any number of
 roots, merging paths, multiple sinks, and full observed alphabets are allowed.
 This is an integration boundary, not a dependency from the joint completeness
 development back to soundness.  The remaining geometric premises are stated
-explicitly; arbitrary internal-forest re-entry and conditioners on the
-modified routes still require the general terminal countermodel argument.
+explicitly.  The later `HedgeConditionalCompensatedReadout` constructor covers
+small-forest re-entry with responding children and protected outer-only
+conditioners by local mechanism closure.  Conditioners on installed rows and
+outer-only route updates still require the general terminal argument.
 -/
 
 variable {S : ObservedSignature.{0}}

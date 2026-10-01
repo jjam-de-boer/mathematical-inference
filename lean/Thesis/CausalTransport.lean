@@ -49,8 +49,10 @@ import Thesis.CausalTransport.HedgeCarrierReplayPlan
 import Thesis.CausalTransport.HedgeReadoutEvaluation
 import Thesis.CausalTransport.HedgeReadoutNoise
 import Thesis.CausalTransport.HedgeCompensatedReadout
+import Thesis.CausalTransport.HedgeReadoutPreservation
 import Thesis.CausalTransport.HedgeCompensatedConservation
 import Thesis.CausalTransport.HedgeCompensatedCounterexample
+import Thesis.CausalTransport.HedgeConditionalCompensatedReadout
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -365,8 +367,23 @@ be outside both the original large forest and the modified route nodes;
 graphical descendants are permitted.  Arbitrary supported biased noise may
 be specified independently by routing vertex.  The chain-rule conversion
 uses the same routed pair, not an equality proved only for the base models.
-Internal-forest re-entry and conditioners on those modified coordinates
-still belong to the general terminal countermodel obligation.
+The companion `HedgeConditionalCompensatedReadout` removes both the kept-sink
+and outside-large conditioner requirements on its permitted routes.
+`HedgeReadoutPreservation` transports local mechanism closure through arbitrary
+finite plans, including descending order and repeated pivots with separate
+actual private factors.  Protected coordinates outside the installed mask
+keep their full values under every intervention; unprotected descendants may
+respond.  The original root-omitted marginal theorem matches the base
+denominator, and each actual fold preserves it separately.  Thus protected
+outer-only conditioners are allowed even when internal small-forest readouts
+have kept children.  Its terminal constructor transports the same models back
+through any extracted IDC exchange depth without new nested-fail stacks.
+A three-value regression checks an irreducible engine failure with a late
+outer-only conditioner and an outside-to-internal re-entry route.  Balanced
+and unsupported repeated noise factors additionally check that denominator
+preservation itself needs neither support nor bias; those factors are not
+used by the positive countermodel.  Conditioners on installed rows and
+outer-only route updates remain general terminal obligations.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations

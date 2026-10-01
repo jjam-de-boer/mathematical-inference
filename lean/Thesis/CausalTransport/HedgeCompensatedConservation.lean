@@ -1,4 +1,4 @@
-import Thesis.CausalTransport.HedgeCompensatedReadout
+import Thesis.CausalTransport.HedgeReadoutPreservation
 
 namespace Thesis
 namespace Causality
@@ -101,23 +101,10 @@ private theorem same_incoming_outer (w : HedgeWitness G q)
       simp only [HedgeWitness.largeOutcomeFlowSuccessor, forestChildPrioritize, routed, if_true]
       exact ⟨fun found => False.elim (noNew found), fun found => False.elim (noOld found)⟩
 
-private theorem plan_off_outer (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
-    (noise : (node : Fin S.count) -> FiniteProbRecord Bool)
-    (allowed : forall node, w.rootReadoutNodes node = true -> w.small node = true ∨ w.large node = false)
-    (child : Fin S.count) (inside : w.large child = true) (outside : w.small child = false) :
-    forall step, step ∈ w.carrierFlowReadoutPlan rich noise -> child ≠ step.pivot := by
-  intro step listed same
-  rcases List.mem_map.mp listed with ⟨node, selected, equality⟩
-  subst step
-  have sameNode : child = node := same
-  subst node
-  have selectedChild := (NodeSet.mem_members_iff w.smallOutcomeFlowNodes child).mp selected
-  rw [outer_not_installed w allowed child inside outside] at selectedChild
-  cases selectedChild
-
 /-- Full values at protected vertices remain unchanged, not just their
-parity bits.  Recursive agreement is needed only at actual kept parents,
-which the small-forest closure proves are protected as well. -/
+parity bits.  The general mechanism-closure theorem now supplies this
+specialization; the finite fold protects every row outside its installed
+mask, so this argument need not duplicate the topological recursion. -/
 private theorem outer_evalNode_eq (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
     (noise : (node : Fin S.count) -> FiniteProbRecord Bool)
     (allowed : forall node, w.rootReadoutNodes node = true -> w.small node = true ∨ w.large node = false)
@@ -128,42 +115,9 @@ private theorem outer_evalNode_eq (w : HedgeWitness G q) (rich : ObservedSignatu
         intervention ((w.largeCarrierDefectParityModel rich).hedgeReadoutAssignment rich bits
           (w.carrierFlowReadoutPlan rich noise) unit) child =
       (w.largeCarrierDefectParityModel rich).evalNodeUnder intervention unit child := by
-  cases fixed : intervention child with
-  | some value =>
-      rw [FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.evalNodeUnder]
-      unfold FiniteLatentSCM.equationUnder
-      rw [fixed]
-  | none =>
-      rw [FiniteLatentSCM.evalNodeUnder]
-      unfold FiniteLatentSCM.equationUnder
-      rw [fixed]
-      have updatedMechanism := (w.largeCarrierDefectParityModel rich).withHedgeReadouts_mechanism_of_off rich
-        (w.carrierFlowReadoutPlan rich noise) bits unit child
-        (fun parent _edge => ((w.largeCarrierDefectParityModel rich).withHedgeReadouts rich
-          (w.carrierFlowReadoutPlan rich noise)).evalNodeUnder intervention
-            ((w.largeCarrierDefectParityModel rich).hedgeReadoutAssignment rich bits
-              (w.carrierFlowReadoutPlan rich noise) unit) parent)
-        (plan_off_outer w rich noise allowed child inside outside)
-      have oldEquation : (w.largeCarrierDefectParityModel rich).evalNodeUnder intervention unit child =
-          (w.largeCarrierDefectParityModel rich).mechanism child
-            (fun parent _edge => (w.largeCarrierDefectParityModel rich).evalNodeUnder intervention unit parent)
-            (fun root _incident => unit root) := by
-        rw [FiniteLatentSCM.evalNodeUnder]
-        unfold FiniteLatentSCM.equationUnder
-        rw [fixed]
-      refine updatedMechanism.trans (Eq.trans ?_ oldEquation.symm)
-      rw [w.largeCarrierDefectParityModel_mechanism_parent_response rich unit child,
-        w.largeCarrierDefectParityModel_mechanism_parent_response rich unit child]
-      simp only [if_pos inside]
-      congr 1
-      congr 1
-      apply hedgeForestParentBitsFrom_congr_of_kept
-      intro parent edge keptAt
-      have parentOuter := kept_parent_outer w parent child outside keptAt
-      exact congrArg (hedgeIsSecond rich parent)
-        (outer_evalNode_eq w rich noise allowed bits unit intervention parent parentOuter.1 parentOuter.2)
-termination_by child.val
-decreasing_by exact S.directed_earlier edge
+  apply w.largeCarrierDefectParityModel_carrierFlowReadoutPlan_evalUnder_eq_of_protected rich noise allowed
+    intervention bits unit child
+  simp only [HedgeWitness.carrierFlowProtectedNodes, outer_not_installed w allowed child inside outside, Bool.not_false]
 
 /-! ## Comparing effective sources, including cut structural equations -/
 

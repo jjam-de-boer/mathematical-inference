@@ -24,8 +24,9 @@ of the ID extractor's chosen child map.  The regression exercises both the
 automatically generated all-root plan and an unordered repeated manual plan.
 All five observed alphabets have three values.  The complete updated SCMs
 retain compatibility, strict positivity, and full observational equality.
-No original-query separation claim is made: the general interventional
-pullback through responding descendants remains a separate proof obligation.
+This module makes no original-query separation claim.  The later compensated
+conservation and finite-prior integration theorems provide that separation;
+their regression reuses this fixture and the very same positive model pair.
 -/
 
 set_option maxRecDepth 100000

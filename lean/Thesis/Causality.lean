@@ -4,6 +4,7 @@ import Thesis.Causality.Model
 import Thesis.Causality.HardIntervention
 import Thesis.Causality.Identification
 import Thesis.Causality.PrivateNoise
+import Thesis.Causality.PrivateNoiseClosure
 import Thesis.Causality.IdentificationSearch
 import Thesis.Causality.IdentificationKernel
 import Thesis.Causality.ConditionalIdentificationKernel
@@ -52,8 +53,16 @@ denotational equivalence or using classical function equality.
 The facade excludes the external completeness
 interfaces; those begin in `Thesis.CausalTransport`.
 `PrivateNoise` appends a genuinely private Boolean latent coordinate with a
-checked independent product prior.  Its common observable readout theorems
-preserve full observed-law equality and strict positivity under explicit
-non-influence, and earlier replacements preserve the later-coordinate
-invariant needed by a finite topologically ordered readout construction.
+checked independent product prior.  Its common observable readout theorem
+preserves full observed-law equality under explicit non-influence, and earlier
+replacements preserve the later-coordinate invariant needed by a finite
+topologically ordered readout construction.  The separate restoring argument
+preserves strict positivity without non-influence: a supported fresh bit can
+restore the old pivot value even when other mechanisms respond to that pivot.
+`PrivateNoiseClosure` supplies the more local protected-mechanism invariant:
+selected rows read only selected parent values, while unprotected descendants
+may respond to a replaced row.  Off-set replacements preserve full protected
+values and interventional event probabilities without ordering, noise-support,
+or bias conditions.  Finite readout folds use that invariant to retain the
+actual conditioning denominator of a routed countermodel.
 -/

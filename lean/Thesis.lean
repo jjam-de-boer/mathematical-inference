@@ -24,6 +24,7 @@ import Thesis.Examples.HedgeCarrierReplayPlan
 import Thesis.Examples.HedgeCompensatedReadout
 import Thesis.Examples.HedgeCompensatedConservation
 import Thesis.Examples.HedgeCompensatedCounterexample
+import Thesis.Examples.HedgeConditionalCompensatedReadout
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 
