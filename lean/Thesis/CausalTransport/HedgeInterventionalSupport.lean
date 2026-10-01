@@ -28,8 +28,11 @@ flipping that defect and preserves the complete evaluated assignment under
 the same intervention.  This is stronger than unrestricted interventional
 support, but it is not an equality of weighted stratum probabilities: the
 finite translations must still be connected to the prior weights before
-proving a common conditional denominator.  Nor does this alone route root
-parity to an arbitrary outcome.
+proving a common conditional denominator.  The companion
+`HedgeInterventionalProbability` now supplies that weighted connection for
+the large model's defect strata; equality with a small-model conditioning
+denominator remains separate.  Nor does this alone route root parity to an
+arbitrary outcome.
 The module retains the original SCMs and imports no soundness implementation.
 -/
 
@@ -336,7 +339,8 @@ that the defect toggles, so the two changes cancel.  Intervened vertices skip
 their equations; outside the forest the unchanged backgrounds are returned.
 Topological recursion matches all earlier parents before comparing a child.
 Both directions use the same pair shift, which is an explicit involution.
-Connecting this to weighted priors is a separate probability step. -/
+The companion `HedgeInterventionalProbability` supplies the separate
+weighted-prior counting and normalization step. -/
 theorem HedgeWitness.largeCarrierDefectParityModel_evalNodeUnder_compensate_defect
     {G : ObservedGraph S} {q : JointKernelQuery S} (w : HedgeWitness G q)
     (rich : ObservedSignature.ValueRich S)

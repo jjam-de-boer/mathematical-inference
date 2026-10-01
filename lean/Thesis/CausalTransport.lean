@@ -39,6 +39,7 @@ import Thesis.CausalTransport.ModalRealization
 import Thesis.CausalTransport.ConservativeLearningTransport
 import Thesis.CausalTransport.ModalCounterfactual
 import Thesis.CausalTransport.HedgeInterventionalSupport
+import Thesis.CausalTransport.HedgeInterventionalProbability
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -219,9 +220,15 @@ consistent full-alphabet target has positive mass with either specified
 defect bit under arbitrary interventions fixing such a vertex.  The original
 hedge action supplies its own balancing seed.  A fixed pair-root compensation
 also preserves the complete interventional evaluation when the defect flips,
-pointwise in all pair and private-background coordinates.  Connecting these
-finite couplings to prior weights, and constructing the unrestricted routed
-pair, remain semantic obligations rather than assumptions of this module.
+pointwise in all pair and private-background coordinates.
+`HedgeInterventionalProbability` now connects that coupling to the original
+biased prior.  Its two-to-one singleton weights give a two-to-one event-slice
+mass ratio, not equality of the raw masses.  Conditioning on either defect
+normalizes that ratio and gives the original probability for every observed
+event under an intervention fixing a large-forest vertex.  The original hedge
+action supplies such a vertex internally.  Comparing the large and small
+conditioning denominators and constructing the unrestricted routed pair
+remain semantic obligations rather than assumptions of these modules.
 `ConditionalCompilation` constructs supported, literal-output certificates
 for every successful run of recursive IDC over the corrected joint engine.
 Each successful single-conditioner rule-2 test is retained, arbitrary exchange

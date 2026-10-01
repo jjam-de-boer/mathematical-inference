@@ -16,6 +16,7 @@ import Thesis.Examples.HedgeReadoutPullback
 import Thesis.Examples.HedgeConditionalReadout
 import Thesis.Examples.HedgeInternalReadout
 import Thesis.Examples.HedgeInterventionalSupport
+import Thesis.Examples.HedgeInterventionalProbability
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 
@@ -97,6 +98,13 @@ one complete target has positive mass in both private-defect strata, and an
 explicit pair-root compensation preserves full evaluation when the defect is
 flipped at arbitrary latent coordinates.  These are support and coupling
 checks, not an assumed equality of weighted conditional denominators.
+Weighted interventional regressions now compare arbitrary observed events in
+the merging hedge after conditioning on either defect.  A separate extracted
+three-value hedge uses a composite action with intervention values outside
+the two parity labels.  Its complete nonbinary target has positive mass in
+both strata, strictly different raw slice masses in the original two-to-one
+ratio, and equal normalized probabilities.  These checks retain the original
+prior and do not assert a large/small conditional denominator comparison.
 Conditional regressions distinguish recursive IDC from Bayes alone: one query
 has a failed joint numerator but succeeds after a rule-2 promotion, and a
 longer query exchanges two conditioners while retaining the remaining given
