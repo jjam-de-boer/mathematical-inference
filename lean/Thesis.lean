@@ -17,6 +17,7 @@ import Thesis.Examples.HedgeConditionalReadout
 import Thesis.Examples.HedgeInternalReadout
 import Thesis.Examples.HedgeInterventionalSupport
 import Thesis.Examples.HedgeInterventionalProbability
+import Thesis.Examples.HedgePartialIncidenceProbability
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 
@@ -105,6 +106,15 @@ the two parity labels.  Its complete nonbinary target has positive mass in
 both strata, strictly different raw slice masses in the original two-to-one
 ratio, and equal normalized probabilities.  These checks retain the original
 prior and do not assert a large/small conditional denominator comparison.
+Cross-map partial-incidence regressions retain both an outer row and an inner
+row of the merging hedge while omitting its other inner root.  Different
+ordinary/nested targets have equal fibre counts, and defect-dependent targets
+with arbitrary shared private predicates have equal probabilities under the
+original biased prior.  A complete-row negative check shows why an inner row
+must be omitted: the nested map realizes a target forbidden by the ordinary
+map's full parity constraint.  A coupled private predicate in the three-value
+fixture also checks that the exact product count retains all three permitted
+background vectors, rather than replacing them by a Boolean encoding.
 Conditional regressions distinguish recursive IDC from Bayes alone: one query
 has a failed joint numerator but succeeds after a rule-2 promotion, and a
 longer query exchanges two conditioners while retaining the remaining given

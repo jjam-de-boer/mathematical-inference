@@ -40,6 +40,7 @@ import Thesis.CausalTransport.ConservativeLearningTransport
 import Thesis.CausalTransport.ModalCounterfactual
 import Thesis.CausalTransport.HedgeInterventionalSupport
 import Thesis.CausalTransport.HedgeInterventionalProbability
+import Thesis.CausalTransport.HedgePartialIncidenceProbability
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -213,7 +214,16 @@ An untested component vertex absorbs ordinary incidence parity; an untested
 inner vertex absorbs the nested constraint while retaining arbitrary outer
 equations.  Explicit finite sections and XOR involutions prove equal sizes
 of all partial target fibres for each map.  This is not yet a comparison
-of the weighted probabilities of two different maps.
+of two different maps by itself.  `HedgePartialIncidenceComparison` now
+constructs injections between the two partial zero fibres when an inner row
+is omitted, then uses the within-map translations to compare arbitrary
+ordinary/nested targets on the same tested rows.  The omitted inner row also
+supplies the outer parity correction.  `HedgePartialIncidenceProbability`
+lifts that count to the actual biased prior, retaining arbitrary common
+private-background predicates and defect-dependent targets.  Exact weighted
+incidence-event masses and their probabilities agree.  A query denominator
+must still be shown to pull back to those tests through the real SCM; an
+incidence-law comparison alone is not a semantic denominator theorem.
 `HedgeInterventionalSupport` connects that section to the actual large
 carrier SCM.  An intervened forest vertex absorbs the correction, so any
 consistent full-alphabet target has positive mass with either specified

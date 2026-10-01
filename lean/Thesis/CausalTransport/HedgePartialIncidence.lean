@@ -30,7 +30,11 @@ These are incidence and counting theorems, not countermodels by themselves:
 SCM evaluation, weighted private backgrounds, and query-local events must
 still be connected to the appropriate partial equations.  In particular,
 equal fibres of each map do not by themselves assert equality between two
-different maps' probabilities.
+different maps' probabilities.  The companion
+`HedgePartialIncidenceComparison` now supplies the cross-map fibre comparison
+when an inner row is omitted, and `HedgePartialIncidenceProbability` connects
+it to the original biased prior and private-coordinate multiplicities.
+Actual SCM event pullbacks remain a separate semantic obligation.
 -/
 
 /-! ## Ordinary component incidence on a tested subset -/
