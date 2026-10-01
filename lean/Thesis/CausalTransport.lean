@@ -41,8 +41,10 @@ import Thesis.CausalTransport.ModalCounterfactual
 import Thesis.CausalTransport.HedgeInterventionalSupport
 import Thesis.CausalTransport.HedgeInterventionalProbability
 import Thesis.CausalTransport.HedgePartialIncidenceProbability
+import Thesis.CausalTransport.HedgeCarrierObservationalState
 import Thesis.CausalTransport.HedgeInterventionalMarginal
 import Thesis.CausalTransport.HedgeConditionalMarginal
+import Thesis.CausalTransport.HedgeCarrierReplay
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -177,6 +179,22 @@ claiming that a signal distribution is itself a graph-compatible routed SCM.
 private source.  At a sink of the kept forest map its common observable
 readout preserves the full positive carrier pair's observational law, and
 its new interventional bit has exactly the independent channel's probability.
+`HedgeCarrierObservationalState` now proves a stronger base law: the observed
+assignment, every original private background, and the actual weighted defect
+have the same joint observational distribution in both carriers.  Background
+predicates may couple arbitrary coordinates with a full observed target; no
+independence from the observations is assumed.  These retained backgrounds
+are essential when a changed parent flips a descendant away from `second`.
+`HedgeInterventionalMarginal` exposes each mechanism's corresponding
+retained-state parent-response equation.  `HedgeCarrierReplay` uses those
+equations to replay the entire actual response to a single private readout
+at any small-forest vertex.  Small-forest closure leaves outer-only vertices
+unchanged; excluded parent contributions cancel in the old/new parity
+difference, so both carriers use the same full replay.  The stronger joint
+law and the actual independent noise product then prove observational
+equality without a kept-sink or other-mechanisms-ignore premise.  Responding
+descendants and nonbinary labels are included.  This closes that one-step
+internal-small case, not arbitrary outer-only updates or finite-plan routing.
 `HedgeReadoutSequence` executes arbitrary finite increasing readout plans.
 Graph compatibility, full observational equality, and strict positivity are
 preserved through the real sequence of product priors; later non-influence

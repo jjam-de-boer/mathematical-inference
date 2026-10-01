@@ -31,6 +31,12 @@ rather than a claim that a stand-alone signal record is already a countermodel
 for the original query.  Iterated routing must still account for the effect
 on later coordinates and connect its sink signal to the hedge's root parity;
 unrestricted observational equivalence remains separate.
+
+The companion `HedgeCarrierReplay` proves a stronger one-step equality at any
+small-forest pivot, including internal vertices with kept children.  It uses
+the joint observed/background state law and replays the responding descendants,
+not the sink-based common observable map proved in this module.  Outer-only
+updates and arbitrary finite plans still require their separate arguments.
 -/
 
 variable {S : ObservedSignature.{0}}

@@ -145,6 +145,88 @@ private theorem carrierModel_eval_free {G : ObservedGraph S} {q : JointKernelQue
   rw [free]
   exact carrierModel_mechanism w rich nested child _ unit
 
+/-! ## Retained-state equations for a changed parent input -/
+
+private theorem carrierModel_mechanism_parent_response
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) (nested : Bool)
+    (unit : (root : Fin (hedgeDefectLatentCount G)) -> hedgeDefectLatentValue G root)
+    (child : Fin S.count) (parents : S.ParentValues child) :
+    (carrierModel w rich nested).mechanism child parents (fun root _incident => unit root) =
+      if w.large child then hedgeParityCarrierValue rich child
+        (Bool.xor
+          (Bool.xor (hedgeIsSecond rich child ((carrierModel w rich nested).eval unit child))
+            (hedgeForestParentBitsFrom rich (carrierKept w nested child) child
+              (fun parent _edge => (carrierModel w rich nested).eval unit parent)))
+          (hedgeForestParentBitsFrom rich (carrierKept w nested child) child parents))
+        (carrierBackground G unit child)
+      else (carrierModel w rich nested).eval unit child := by
+  have original := carrierModel_eval_free w rich nested (FiniteLatentSCM.noIntervention S) unit child rfl
+  rw [carrierModel_mechanism]
+  cases inside : w.large child with
+  | false =>
+      simp only [inside, Bool.false_eq_true, if_false] at original ⊢
+      exact original.symm
+  | true =>
+      have bit := congrArg (hedgeIsSecond rich child) original
+      rw [hedgeIsSecond_parityCarrierValue] at bit
+      simp only [FiniteLatentSCM.evalUnder_noIntervention] at bit
+      simp only [inside, if_true] at bit ⊢
+      congr 1
+      rw [bit]
+      generalize carrierIncidence w nested child _ = incidence
+      generalize hedgeForestParentBitsFrom rich (carrierKept w nested child) child
+        (fun parent _edge => (carrierModel w rich nested).eval unit parent) = oldParents
+      generalize hedgeForestParentBitsFrom rich (carrierKept w nested child) child parents = newParents
+      generalize (if child = w.actionRoot then hedgeDefectBitOf G unit else false) = defect
+      cases incidence <;> cases oldParents <;> cases newParents <;> cases defect <;> rfl
+
+/-- Reconstruct the large carrier's response to arbitrary new parent values
+from its factual observed assignment and retained private backgrounds.
+
+The original pair incidence and defect cancel from the bit difference.  They
+are not reselected or read by the replay.  Background coordinates must be
+retained: an old `second` output alone cannot determine the full label emitted
+after its bit changes.  Outside the forest the mechanism ignores all parents. -/
+theorem HedgeWitness.largeCarrierDefectParityModel_mechanism_parent_response
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (unit : (w.largeCarrierDefectParityModel rich).latent.Assignment)
+    (child : Fin S.count) (parents : S.ParentValues child) :
+    (w.largeCarrierDefectParityModel rich).mechanism child parents (fun root _incident => unit root) =
+      if w.large child then hedgeParityCarrierValue rich child
+        (Bool.xor
+          (Bool.xor (hedgeIsSecond rich child ((w.largeCarrierDefectParityModel rich).eval unit child))
+            (hedgeForestParentBitsFrom rich w.child child
+              (fun parent _edge => (w.largeCarrierDefectParityModel rich).eval unit parent)))
+          (hedgeForestParentBitsFrom rich w.child child parents))
+        (hedgePrivateDecode S child (hedgePrivateCoordinatesOf G (hedgeDefectOldAssignment G unit) child))
+      else (w.largeCarrierDefectParityModel rich).eval unit child :=
+  carrierModel_mechanism_parent_response w rich false unit child parents
+
+/-- The nested carrier has the same retained-state response equation, with
+its selected kept map.  Only rows in the small forest use the restricted map;
+outer-only rows retain the original large-forest parent inputs.  Proving a
+common replay must therefore account for changes at those outer-only parents,
+not silently replace the nested map by the large map everywhere. -/
+theorem HedgeWitness.smallCarrierDefectParityModel_mechanism_parent_response
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (unit : (w.smallCarrierDefectParityModel rich).latent.Assignment)
+    (child : Fin S.count) (parents : S.ParentValues child) :
+    let kept := if w.small child then restrictChild w.small w.child else w.child
+    (w.smallCarrierDefectParityModel rich).mechanism child parents (fun root _incident => unit root) =
+      if w.large child then hedgeParityCarrierValue rich child
+        (Bool.xor
+          (Bool.xor (hedgeIsSecond rich child ((w.smallCarrierDefectParityModel rich).eval unit child))
+            (hedgeForestParentBitsFrom rich kept child
+              (fun parent _edge => (w.smallCarrierDefectParityModel rich).eval unit parent)))
+          (hedgeForestParentBitsFrom rich kept child parents))
+        (hedgePrivateDecode S child (hedgePrivateCoordinatesOf G (hedgeDefectOldAssignment G unit) child))
+      else (w.smallCarrierDefectParityModel rich).eval unit child := by
+  simpa only [carrierKept, Bool.true_and] using
+    carrierModel_mechanism_parent_response w rich true unit child parents
+
 /-! ## The exact partial target event -/
 
 /-- Every observed coordinate except one supplied common root.  The root

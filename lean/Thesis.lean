@@ -19,6 +19,7 @@ import Thesis.Examples.HedgeInterventionalSupport
 import Thesis.Examples.HedgeInterventionalProbability
 import Thesis.Examples.HedgePartialIncidenceProbability
 import Thesis.Examples.HedgeConditionalMarginal
+import Thesis.Examples.HedgeCarrierReplay
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 
@@ -92,6 +93,17 @@ remain positive and graph-compatible, but a root event distinguishes their
 new observed laws.  Thus local support and signal facts cannot justify an
 unrestricted full-law preservation theorem; free-pivot routing still needs
 its separate constructive argument.
+A further three-value regression checks a genuine internal small-forest
+readout with a kept child.  Its full observational equality follows from
+retained-state replay, without a non-influence or sink premise; compatibility
+and strict positivity are also retained.  Two explicit old latent units have
+the same complete observed assignment but different concealed backgrounds.
+After the update their responding child emits `first` in one unit and the
+third label in the other.  This verifies actual descendant evaluation and
+why the stronger joint state law is necessary, rather than replacing the
+response by a map of the old observed assignment alone.  The existing
+negative outer-only action overwrite remains outside the small-pivot theorem.
+No arbitrary finite-plan or original-query routing claim is made by this check.
 Partial-incidence regressions retain the extracted two-root merging hedge.
 They realize odd patterns after omitting an action equation or an inner-root
 equation, and check equal fibre sizes without a full-pattern evenness premise.
