@@ -25,7 +25,10 @@ identity.  It does not prove the initial non-influence condition for an
 arbitrary hedge.  `HedgeCarrierReplayPlan` separately proves full observational
 equality for finite routes re-entering the small forest, but that replay
 does not justify this constructor's sink-based interventional substitution.
-General descendant response and outer-only re-entry remain distinct gaps.
+The later `HedgeCompensatedCounterexample` constructor includes responding
+small-forest descendants by compensation and direct prior integration,
+without reusing this sink-only substitution theorem.  Outer-only route
+updates remain an open general case.
 -/
 
 variable {S : ObservedSignature.{0}}

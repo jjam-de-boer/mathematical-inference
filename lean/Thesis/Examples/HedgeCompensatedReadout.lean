@@ -26,10 +26,12 @@ outcome carries the weighted defect plus that same noise parity, by the new
 general conservation theorem.  No prior enumeration, guessed observational
 table, binary-alphabet reduction, or zero-noise-only check is used.
 
-These pointwise identities are not themselves a probability counterexample:
-the arbitrary finite-plan prior comparison must still integrate the fresh
-factors, and the general large-flow conservation argument remains to be
-extended beyond this sanity-check fixture.
+These pointwise identities are not themselves a probability counterexample.
+`HedgeCompensatedConservation` proves the corresponding general large-flow
+identity; its companion regression also exercises a composite action and
+nonbinary intervention labels.  `HedgeCompensatedCounterexample` then
+integrates the actual fresh factors and proves separation of the original
+query using the very same positive compensated model pair.
 -/
 
 set_option maxRecDepth 100000

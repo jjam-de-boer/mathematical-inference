@@ -34,10 +34,13 @@ their local interventional equations with the compensated flows.
 
 These are actual local flow equations, together with a global nested-sink
 identity carrying the original weighted defect and all fresh private bits.
-The general large-model root-parity comparison, integration of the fresh
-biased factors, and the remaining conditional denominator cases must still
-be proved before these plans yield general positive countermodels.  Routes
-entering the outer-only forest remain outside this construction.
+`HedgeCompensatedConservation` supplies the general large-model root-parity
+comparison, including cut action equations.  `HedgeReadoutNoise` integrates
+the actual fresh biased factors, and `HedgeCompensatedCounterexample` combines
+these identities with observational replay to construct positive original-
+query countermodels on the permitted routes.  The remaining conditional
+denominator cases and routes entering the outer-only forest are still outside
+this construction.
 -/
 
 /-- The exogenous residual of an original carrier row, recovered from its
@@ -221,6 +224,17 @@ private theorem small_response_bit (w : HedgeWitness G q) (rich : ObservedSignat
         w.smallOutcomeFlowSuccessor parents (w.outcomeFlowSuccessors_same_incoming_outside_large child outsideLarge)]
 
 end HedgeCompensatedReadout
+
+/-! ## Structural data needed by finite-prior integration -/
+
+/-- Each installed row receives a separate fresh coordinate.  Distinct
+pivots make the node-indexed bit representation exhaustive for the genuine
+independent inputs; no repeated instruction is silently identified with it. -/
+theorem HedgeWitness.carrierFlowReadoutPlan_pivots_distinct
+    {G : ObservedGraph S} {q : JointKernelQuery S} (w : HedgeWitness G q)
+    (rich : ObservedSignature.ValueRich S) (noise : (node : Fin S.count) -> FiniteProbRecord Bool) :
+    (w.carrierFlowReadoutPlan rich noise).Pairwise (fun first second => first.pivot ≠ second.pivot) :=
+  HedgeCompensatedReadout.pivots_distinct w rich noise
 
 /-! ## The actual folded model pair remains positive and observationally equal -/
 

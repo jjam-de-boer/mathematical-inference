@@ -47,7 +47,10 @@ import Thesis.CausalTransport.HedgeConditionalMarginal
 import Thesis.CausalTransport.HedgeCarrierReplay
 import Thesis.CausalTransport.HedgeCarrierReplayPlan
 import Thesis.CausalTransport.HedgeReadoutEvaluation
+import Thesis.CausalTransport.HedgeReadoutNoise
 import Thesis.CausalTransport.HedgeCompensatedReadout
+import Thesis.CausalTransport.HedgeCompensatedConservation
+import Thesis.CausalTransport.HedgeCompensatedCounterexample
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -228,9 +231,25 @@ every small-forest row, including old children outside the explicit route,
 so obsolete incoming contributions are also removed.  The common plan stays
 positive, graph-compatible, and observationally equal on small-or-outside
 routes.  The nested model's final sink parity is proved to equal the original
-weighted defect XOR all fresh inputs.  General large-model conservation and
-integration of the actual fresh-factor priors remain necessary before this
-construction supplies unrestricted positive original-query countermodels.
+weighted defect XOR all fresh inputs.  `HedgeCompensatedConservation` now
+proves the corresponding general large-model identity by comparing effective
+sources, including action-cut rows.  Protected outer-only vertices retain
+their full values and incoming kept edges under arbitrary interventions;
+installed rows need only remain free.  Composite actions, intervened non-sink
+vertices, and arbitrary full intervention labels are included.
+`HedgeReadoutNoise` integrates the actual private product factors of any
+pivot-distinct finite plan.  Pointwise old-signal-plus-fresh-parity identities
+then preserve and reflect signal-probability equality under separately biased
+weighted noise records; different base latent spaces and denominators are
+retained.  It explicitly proves exhaustive encoding of each augmented unit,
+rather than inferring independent inputs from a node-indexed representation.
+`HedgeCompensatedCounterexample` combines this integration with both flow
+identities, full observational replay, support, and compatibility.  It now
+constructs positive countermodels for the original joint query on all
+small-or-outside canonical routes, including responding internal kept
+children and composite actions.  Routes modifying the outer-only forest and
+the remaining conditional terminal families still prevent an unrestricted
+published completeness theorem.
 `HedgeReadoutPullback` supplies the interventional finite-plan induction:
 linear parent readouts substitute the final outcome parity backward through
 the entire actual SCM sequence.  Retained private bits give biased channels;
@@ -250,8 +269,9 @@ constructor requires only that these route vertices be sinks of the original
 kept c-forest map; a more general entry point allows different supported
 biased noise records at every vertex.  Arbitrarily many sources, merging,
 multiple outcome sinks, and the full observed alphabet are covered.
-Internal-forest re-entry still need not satisfy that non-influence condition;
-its observational construction remains the general hedge-countermodel gap.
+Internal-forest re-entry need not satisfy that non-influence condition.
+The compensated constructor covers small-forest re-entry without it;
+outer-only route updates remain an open general hedge-countermodel case.
 `HedgePartialIncidence` develops the counting needed for intervention and
 marginal events rather than incorrectly requiring complete even targets.
 An untested component vertex absorbs ordinary incidence parity; an untested
