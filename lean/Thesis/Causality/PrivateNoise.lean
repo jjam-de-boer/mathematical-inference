@@ -21,6 +21,12 @@ law.  Old value types, factors, and incidence are transported explicitly.
 Only the selected observed mechanism is replaced; every other mechanism
 receives its old latent inputs unchanged.
 
+Full support has a separate constructive proof: an explicit bit restoring the
+old pivot value restores the whole evaluated assignment by topological
+induction.  Thus a restoring readout preserves positivity even when other
+mechanisms read the pivot.  The non-influence assumption is retained only by
+the stronger common-observable-law arguments, not by this support theorem.
+
 Coordinate data use the project's constructive `FiniteProduct.extend`.
 The standard `Fin.lastCases_castSucc` reduction theorem carries a choice
 dependency, so it must not be used to reduce these enumerations or factors.
@@ -470,7 +476,7 @@ theorem FiniteLatentSCM.withPrivateBooleanNoise_evalNodeUnder_pivot
     exact (Nat.lt_irrefl _ earlier).elim
   rw [parentsEqual]
 
-/-! ## Common observable readouts preserve full observational equality -/
+/-! ## Readout mechanisms and topological restoring assignments -/
 
 /-- A readout acts on the old coordinate value and declared parent values,
 not on hidden information unavailable in the old observed assignment.  Its
@@ -481,6 +487,81 @@ def FiniteLatentSCM.withPrivateReadout
     (readout : S.ParentValues pivot -> S.Value pivot -> Bool -> S.Value pivot) : ExactModel S :=
   base.withPrivateBooleanNoise pivot noise
     (fun parents inputs bit => readout parents (base.mechanism pivot parents inputs) bit)
+
+/-- If a readout restores its old pivot value on one evaluated assignment,
+it restores every coordinate of that assignment.  The other mechanisms need
+not ignore the pivot: they may genuinely read its output, including at kept
+children inside a hedge forest.  Matching all earlier parents in topological
+order makes their unchanged equations return the original values again.
+
+The intervention is arbitrary.  An intervened coordinate is already fixed
+in both models; at a free pivot the displayed restoring equation is used.
+The old latent unit and fresh bit are explicit data, so this statement does
+not select a latent realization from an existence proposition. -/
+theorem FiniteLatentSCM.withPrivateReadout_evalNodeUnder_eq_of_restores
+    {S : ObservedSignature.{0}} (base : ExactModel S) (pivot : Fin S.count)
+    (noise : FiniteProbRecord Bool)
+    (readout : S.ParentValues pivot -> S.Value pivot -> Bool -> S.Value pivot)
+    (intervention : (node : Fin S.count) -> Option (S.Value node))
+    (old : base.latent.Assignment) (bit : Bool)
+    (restores : readout (fun parent _edge => base.evalNodeUnder intervention old parent)
+      (base.evalNodeUnder intervention old pivot) bit = base.evalNodeUnder intervention old pivot)
+    (child : Fin S.count) :
+    (base.withPrivateReadout pivot noise readout).evalNodeUnder intervention
+        (PrivateBooleanNoise.assignment base.latent bit old) child =
+      base.evalNodeUnder intervention old child := by
+  rw [FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.evalNodeUnder]
+  unfold FiniteLatentSCM.equationUnder
+  cases fixed : intervention child with
+  | some value => rfl
+  | none =>
+      have parentsEqual :
+          (fun parent (_edge : S.directed parent child = true) =>
+            (base.withPrivateReadout pivot noise readout).evalNodeUnder intervention
+              (PrivateBooleanNoise.assignment base.latent bit old) parent) =
+          (fun parent (_edge : S.directed parent child = true) => base.evalNodeUnder intervention old parent) := by
+        funext parent edge
+        exact base.withPrivateReadout_evalNodeUnder_eq_of_restores pivot noise readout
+          intervention old bit restores parent
+      rw [parentsEqual]
+      by_cases same : child = pivot
+      · subst child
+        simp only [FiniteLatentSCM.withPrivateReadout, base.withPrivateBooleanNoise_mechanism_pivot]
+        unfold PrivateBooleanNoise.oldInputs PrivateBooleanNoise.bit
+        simp only [PrivateBooleanNoise.assignment_castSucc, PrivateBooleanNoise.assignment_last]
+        have oldEquation : base.evalNodeUnder intervention old pivot =
+            base.mechanism pivot (fun parent _edge => base.evalNodeUnder intervention old parent)
+              (fun root _selected => old root) := by
+          rw [FiniteLatentSCM.evalNodeUnder]
+          unfold FiniteLatentSCM.equationUnder
+          rw [fixed]
+        rw [← oldEquation]
+        exact restores
+      · simp only [FiniteLatentSCM.withPrivateReadout,
+          base.withPrivateBooleanNoise_mechanism_of_ne pivot noise _ child same]
+        unfold PrivateBooleanNoise.oldInputs
+        simp only [PrivateBooleanNoise.assignment_castSucc]
+termination_by child.val
+decreasing_by exact S.directed_earlier edge
+
+/-- Assignment-level form of the restoring theorem.  This is a local
+fixed-point statement for one old unit and bit, not a claim that arbitrary
+readouts preserve the old observed law. -/
+theorem FiniteLatentSCM.withPrivateReadout_evalUnder_eq_of_restores
+    {S : ObservedSignature.{0}} (base : ExactModel S) (pivot : Fin S.count)
+    (noise : FiniteProbRecord Bool)
+    (readout : S.ParentValues pivot -> S.Value pivot -> Bool -> S.Value pivot)
+    (intervention : (node : Fin S.count) -> Option (S.Value node))
+    (old : base.latent.Assignment) (bit : Bool)
+    (restores : readout (fun parent _edge => base.evalUnder intervention old parent)
+      (base.evalUnder intervention old pivot) bit = base.evalUnder intervention old pivot) :
+    (base.withPrivateReadout pivot noise readout).evalUnder intervention
+        (PrivateBooleanNoise.assignment base.latent bit old) = base.evalUnder intervention old := by
+  funext child
+  exact base.withPrivateReadout_evalNodeUnder_eq_of_restores pivot noise readout
+    intervention old bit restores child
+
+/-! ## Common observable readouts preserve full observational equality -/
 
 /-- The observable assignment transformation realized by one readout.
 Coordinates other than the pivot are retained, including all old parents. -/
@@ -582,54 +663,63 @@ theorem FiniteLatentSCM.withPrivateReadout_observationally_equivalent
       (QProb.equiv_symm
         (right.withPrivateReadout_observationalValue_equiv pivot noise readout rightIgnored event)))
 
+/-! ## Full support without a non-influence premise -/
+
 /-- A private readout preserves strict positivity when each target
 assignment has an explicit noise bit restoring its pivot value.  The bit is
-given as data, not selected from a proposition.  A positive rectangle of
-`noise × old observed law` lies in the new assignment's preimage, and the
-checked observational pushforward transports its positive mass to the SCM.
+given as data, not selected from a proposition.  A positive rectangle in the
+actual `noise × old prior` consists of this bit and all old units realizing
+the target.  Topological restoration puts the whole rectangle in the new
+assignment's preimage, even when other mechanisms read the modified pivot.
 
 The full observed alphabet is retained: `target` is an arbitrary dependent
-assignment, not a Boolean encoding or a two-value subset of it. -/
+assignment, not a Boolean encoding or a two-value subset of it.  No
+non-influence, sink, or readout-order premise is needed for positivity;
+observational equivalence remains a separate, stronger obligation. -/
 theorem FiniteLatentSCM.withPrivateReadout_positive
     {S : ObservedSignature.{0}} (base : ExactModel S) (positive : ObservationallyPositive base)
     (pivot : Fin S.count) (noise : FiniteProbRecord Bool)
     (noisePositive : forall bit, noise.EventPositive (FiniteProbRecord.singletonEvent bit))
     (readout : S.ParentValues pivot -> S.Value pivot -> Bool -> S.Value pivot)
-    (ignored : base.OtherMechanismsIgnore pivot) (restoreBit : S.Assignment -> Bool)
+    (restoreBit : S.Assignment -> Bool)
     (restore : forall target, readout (fun parent _edge => target parent)
       (target pivot) (restoreBit target) = target pivot) :
     ObservationallyPositive (base.withPrivateReadout pivot noise readout) := by
   intro target
-  let rectangle := fun pair : Bool × S.Assignment =>
+  let model := base.withPrivateReadout pivot noise readout
+  let oldEvent := fun old : base.latent.Assignment => FiniteProbRecord.singletonEvent target (base.eval old)
+  let rectangle := fun pair : Bool × base.latent.Assignment =>
     FiniteProbRecord.singletonEvent (restoreBit target) pair.1 &&
-      FiniteProbRecord.singletonEvent target pair.2
-  let event := fun pair : Bool × S.Assignment =>
-    FiniteProbRecord.singletonEvent target
-      (S.privateReadoutAssignment pivot readout pair.2 pair.1)
+      oldEvent pair.2
+  let event := fun pair : Bool × base.latent.Assignment =>
+    FiniteProbRecord.singletonEvent target (model.eval (PrivateBooleanNoise.assignment base.latent pair.1 pair.2))
+  have oldPositive : 0 < FiniteProbRecord.eventMass base.prior.atoms oldEvent := by
+    simpa only [FiniteLatentSCM.observationalDist, FiniteProbRecord.map,
+      FiniteProbRecord.probVal, FiniteProbRecord.eventMass_map_labels, oldEvent] using positive target
   have rectanglePositive :
-      0 < FiniteProbRecord.eventMass (noise.product base.observationalDist).atoms rectangle := by
+      0 < FiniteProbRecord.eventMass (noise.product base.prior).atoms rectangle := by
     rw [FiniteProbRecord.product, FiniteProbRecord.eventMass_weightedCartesian]
-    exact Nat.mul_pos (noisePositive (restoreBit target)) (positive target)
-  have restored : S.privateReadoutAssignment pivot readout target (restoreBit target) = target := by
-    funext child
-    by_cases same : child = pivot
-    · subst child
-      simp only [ObservedSignature.privateReadoutAssignment, ObservedSignature.replace_at, restore]
-    · exact S.replace_ne target pivot _ _ same
+    exact Nat.mul_pos (noisePositive (restoreBit target)) oldPositive
   have included : forall pair, rectangle pair = true -> event pair = true := by
     intro pair selected
     have parts := Bool.and_eq_true_iff.mp selected
     have sameBit : pair.1 = restoreBit target := of_decide_eq_true parts.1
-    have sameSample : pair.2 = target := of_decide_eq_true parts.2
-    change decide (S.privateReadoutAssignment pivot readout pair.2 pair.1 = target) = true
-    rw [sameBit, sameSample, restored]
-    exact decide_eq_true rfl
-  have bound := FiniteProbRecord.eventMass_mono (noise.product base.observationalDist).atoms
-    rectangle event included
+    have oldTarget : base.eval pair.2 = target := of_decide_eq_true parts.2
+    have restores : readout (fun parent _edge => base.eval pair.2 parent)
+        (base.eval pair.2 pivot) pair.1 = base.eval pair.2 pivot := by
+      rw [oldTarget, sameBit]
+      exact restore target
+    have restored := base.withPrivateReadout_evalUnder_eq_of_restores pivot noise readout
+      (FiniteLatentSCM.noIntervention S) pair.2 pair.1 restores
+    change decide (model.eval (PrivateBooleanNoise.assignment base.latent pair.1 pair.2) = target) = true
+    exact decide_eq_true (restored.trans oldTarget)
+  have bound := FiniteProbRecord.eventMass_mono (noise.product base.prior).atoms rectangle event included
   have pushedPositive := Nat.lt_of_lt_of_le rectanglePositive bound
-  exact (QProb.equiv_num_pos_iff
-    (base.withPrivateReadout_observationalValue_equiv pivot noise readout ignored
-      (FiniteProbRecord.singletonEvent target))).mpr pushedPositive
+  have pushed := (noise.product base.prior).map_probVal
+    (fun pair => PrivateBooleanNoise.assignment base.latent pair.1 pair.2)
+    (fun latent => FiniteProbRecord.singletonEvent target (model.eval latent))
+  exact (QProb.equiv_num_pos_iff (QProb.equiv_trans
+    (model.observationalValue_eq (FiniteProbRecord.singletonEvent target)) pushed)).mpr pushedPositive
 
 end Causality
 end Thesis

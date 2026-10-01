@@ -17,9 +17,11 @@ checked independent product, and its projection remains the original graph.
 For the positive carrier pair, every vertex whose kept forest child is
 `none` is ignored by all other mechanisms.  This includes common roots and
 vertices outside the large forest.  A common readout at any such pivot
-therefore preserves equality of the entire observational laws.  Biased noise
-with both bit values supported preserves strict positivity at every complete
-observed assignment, not merely at the signal event.
+therefore preserves equality of the entire observational laws.  Strict
+positivity has a stronger independent proof: at any pivot, even an internal
+forest vertex, the explicit restoring bit recovers the whole old target
+assignment by topological induction.  Both bit values must have support;
+bias is needed for separation, not for full observational positivity.
 
 The interventional theorem equates the new pivot's signal with the exact
 independent XOR channel of the old model's readout signal.  This is a genuine
@@ -128,17 +130,19 @@ theorem FiniteLatentSCM.withHedgeReadout_compatible {G : ObservedGraph S}
     Compatible (base.withHedgeReadout rich pivot noise injectOld parentSignal) G :=
   base.withPrivateBooleanNoise_compatible compatible pivot noise _
 
-/-- Genuine strict observational positivity of the new SCM, conditional on
-the proved non-influence invariant and positive support of both noise bits. -/
+/-- Genuine strict observational positivity at any pivot, including an
+internal kept-forest vertex.  The explicit restoring bit fixes the whole
+old target assignment by topological induction, so positivity needs neither
+non-influence nor a common-observable pushforward argument.  Both noise bits
+have positive mass; bias is only needed by the separation theorem. -/
 theorem FiniteLatentSCM.withHedgeReadout_positive
     (base : ExactModel S) (positive : ObservationallyPositive base) (rich : ObservedSignature.ValueRich S)
     (pivot : Fin S.count) (noise : FiniteProbRecord Bool)
     (noisePositive : forall bit, noise.EventPositive (FiniteProbRecord.singletonEvent bit))
-    (injectOld : Bool) (parentSignal : S.ParentValues pivot -> Bool)
-    (ignored : base.OtherMechanismsIgnore pivot) :
+    (injectOld : Bool) (parentSignal : S.ParentValues pivot -> Bool) :
     ObservationallyPositive (base.withHedgeReadout rich pivot noise injectOld parentSignal) :=
   base.withPrivateReadout_positive positive pivot noise noisePositive
-    (hedgeNoisyReadout rich pivot injectOld parentSignal) ignored
+    (hedgeNoisyReadout rich pivot injectOld parentSignal)
     (hedgeReadoutRestoreBit rich pivot injectOld parentSignal)
     (hedgeNoisyReadout_restore rich pivot injectOld parentSignal)
 

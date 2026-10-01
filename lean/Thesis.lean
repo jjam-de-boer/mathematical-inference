@@ -14,6 +14,7 @@ import Thesis.Examples.HedgeNoise
 import Thesis.Examples.HedgeReadout
 import Thesis.Examples.HedgeReadoutPullback
 import Thesis.Examples.HedgeConditionalReadout
+import Thesis.Examples.HedgeInternalReadout
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 
@@ -72,6 +73,12 @@ plan.  Its pivot enumeration checks both roots, the merge, and the outcome
 in order.  The original-query counterexample needs only the proved route
 kept-sink condition; no hand-written instructions or pullback identity are
 passed to this automatic constructor.
+A separate support regression uses a genuine internal kept pivot from the
+same three-node hedge, then updates vertices in descending order with repeats.
+The general restoring-assignment theorem proves positivity of both complete
+folded SCMs without a sink, non-influence, or ordering proof.  Compatibility
+is also retained.  The test deliberately makes no claim of observational
+equality or query separation for that unordered internal plan.
 Conditional regressions distinguish recursive IDC from Bayes alone: one query
 has a failed joint numerator but succeeds after a rule-2 promotion, and a
 longer query exchanges two conditioners while retaining the remaining given

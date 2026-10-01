@@ -148,14 +148,12 @@ theorem right_compatible : Compatible right graph :=
 theorem left_positive : ObservationallyPositive left :=
   FiniteLatentSCM.withHedgeReadout_positive _
     (extraction.witness.largeCarrierDefectParityModel_positive rich) rich outcomeNode noise noise_positive
-    false parentSignal (extraction.witness.largeCarrierDefectParityModel_otherMechanismsIgnore
-      rich outcomeNode outcome_kept_child_none)
+    false parentSignal
 
 theorem right_positive : ObservationallyPositive right :=
   FiniteLatentSCM.withHedgeReadout_positive _
     (extraction.witness.smallCarrierDefectParityModel_positive rich) rich outcomeNode noise noise_positive
-    false parentSignal (extraction.witness.smallCarrierDefectParityModel_otherMechanismsIgnore
-      rich outcomeNode outcome_kept_child_none)
+    false parentSignal
 
 theorem observationally_equal : ObservationallyEquivalent left right :=
   extraction.witness.carrierDefectParityModels_withHedgeReadout_observationally_equivalent

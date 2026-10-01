@@ -176,7 +176,12 @@ its new interventional bit has exactly the independent channel's probability.
 Graph compatibility, full observational equality, and strict positivity are
 preserved through the real sequence of product priors; later non-influence
 is inherited from the original models rather than requested separately at
-every intermediate update.  The remaining routing obligation is to connect
+every intermediate update.  Positivity now has the stronger restoring proof:
+`PrivateNoise` recovers the entire old target assignment whenever the fresh
+bit restores its pivot.  It requires no non-influence or sink premise, so
+support survives arbitrary finite plans, even descending or repeated updates
+at an internal kept vertex.  This does not extend the observational-equality
+or separation theorems to those plans.  The remaining routing obligation is to connect
 the final outcome signal to all common roots, including routes that re-enter
 an internal vertex of the large forest.
 `HedgeReadoutPullback` supplies the interventional finite-plan induction:

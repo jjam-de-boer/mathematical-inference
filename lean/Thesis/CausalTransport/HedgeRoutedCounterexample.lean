@@ -143,11 +143,9 @@ noncomputable def HedgeWitness.positiveCounterexampleOfReadoutPlan
     right := right
     left_mem := ⟨leftBase.withHedgeReadouts_compatible (w.largeCarrierDefectParityModel_compatible rich) rich instructions,
       leftBase.withHedgeReadouts_positive (w.largeCarrierDefectParityModel_positive rich) rich instructions
-        orderedInstructions (HedgeLinearReadoutPlan.readouts_ignored leftBase rich steps leftIgnored)
         (HedgeLinearReadoutPlan.readouts_noise_positive rich steps noisePositive)⟩
     right_mem := ⟨rightBase.withHedgeReadouts_compatible (w.smallCarrierDefectParityModel_compatible rich) rich instructions,
       rightBase.withHedgeReadouts_positive (w.smallCarrierDefectParityModel_positive rich) rich instructions
-        orderedInstructions (HedgeLinearReadoutPlan.readouts_ignored rightBase rich steps rightIgnored)
         (HedgeLinearReadoutPlan.readouts_noise_positive rich steps noisePositive)⟩
     observationally_equal := FiniteLatentSCM.withHedgeReadouts_observationally_equivalent leftBase rightBase
       (w.carrierDefectParityModels_observationally_equivalent rich) rich instructions orderedInstructions

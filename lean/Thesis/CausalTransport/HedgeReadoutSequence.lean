@@ -25,7 +25,7 @@ For the positive carrier pair the initial non-influence proofs follow from
 the kept-child map: the permitted pivots are forest roots and vertices
 outside the forest.  Earlier updates cannot read a later pivot because the
 signature is topologically ordered.  This closes the observational and
-support invariants of finite routing; it does not yet identify a routed
+non-influence invariants of finite routing; it does not yet identify a routed
 outcome signal with root parity or cover re-entry into an internal forest
 vertex.  Those are distinct interventional obligations.
 `HedgeReadoutPullback` is the companion that now carries linear parity events
@@ -40,6 +40,13 @@ denominator outside its original large forest and the modified route nodes.
 `HedgeConditionalReadout` combines this with the canonical routed numerator
 countermodel; a merely failed numerator is never treated as conditional
 non-identifiability without proving the required denominator agreement.
+
+Positivity no longer uses the increasing-plan invariant.  The stronger
+restoring theorem in `PrivateNoise` fixes each old target assignment even
+when other mechanisms read the pivot.  Consequently every finite supported
+readout plan preserves full support, including internal forest pivots,
+descending order, and repeated updates.  These support facts do not remove
+the observational or interventional premises from the countermodel theorem.
 -/
 
 variable {S : ObservedSignature.{0}}
@@ -180,15 +187,18 @@ theorem JointKernelQuery.withHedgeReadouts_valueEquivalent_of_off
     (ProbabilityResult.trans (.value cylinderEqual)
       (ProbabilityResult.symm (Kernel.unconditionalDenote base query.outcome query.action reference)))⟩
 
-/-- Full observational positivity survives any finite increasing readout
-plan.  The restoring bit is the explicit carrier restoring function at
-each step; it is never selected from a proposition.  Both noise bits must
-have positive mass, but their denominators and biases may vary by step. -/
+/-- Full observational positivity survives every finite readout plan,
+regardless of order or repeated pivots.  The explicit restoring bit at each
+step recovers the whole old target assignment, even if an internal pivot is
+read by other mechanisms.  Neither the initial non-influence invariant nor
+its ordered transport is needed for this support theorem.
+
+Both noise bits must have positive mass, but their denominators and biases
+may vary by step.  This does not prove observational equality of two models:
+that separate theorem below still needs the increasing non-influence plan. -/
 theorem FiniteLatentSCM.withHedgeReadouts_positive
     (base : ExactModel S) (positive : ObservationallyPositive base) (rich : ObservedSignature.ValueRich S)
     (steps : List (HedgeReadoutStep S))
-    (ordered : steps.Pairwise (fun first second => first.pivot.val < second.pivot.val))
-    (ignored : forall step, step ∈ steps -> base.OtherMechanismsIgnore step.pivot)
     (noisePositive : forall step, step ∈ steps ->
       forall bit, step.noise.EventPositive (FiniteProbRecord.singletonEvent bit)) :
     ObservationallyPositive (base.withHedgeReadouts rich steps) := by
@@ -198,9 +208,6 @@ theorem FiniteLatentSCM.withHedgeReadouts_positive
       apply inductionHypothesis (step.apply rich base)
       · exact base.withHedgeReadout_positive positive rich step.pivot step.noise
           (noisePositive step List.mem_cons_self) step.injectOld step.parentSignal
-          (ignored step List.mem_cons_self)
-      · exact (List.pairwise_cons.mp ordered).2
-      · exact tail_ignored base rich step rest ordered ignored
       · intro next listed
         exact noisePositive next (List.mem_cons_of_mem _ listed)
 
