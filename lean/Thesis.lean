@@ -13,6 +13,7 @@ import Thesis.Examples.KernelFailureExtraction
 import Thesis.Examples.HedgeNoise
 import Thesis.Examples.HedgeReadout
 import Thesis.Examples.HedgeReadoutPullback
+import Thesis.Examples.HedgeConditionalReadout
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 
@@ -90,4 +91,12 @@ hedge produces positive models that separate the actual conditional query:
 their denominator equality follows from the pair's private-background
 mechanisms outside the forest, not from an assumed denominator-identifiability
 theorem.  This checks a genuine irreducible terminal case as well as transport.
+The routed conditional regression additionally retains two common roots
+outside the queried outcome, an unconfounded merging readout, and a nonempty
+conditioner connected by an outcome-to-conditioner edge.  The actual IDC
+search cannot exchange that conditioner.  The canonical plan stops at the
+outcome, and general off-pivot kernel preservation matches the denominator
+in the same positive routed pair.  This checks conditional separation beyond
+the earlier queried-root family without asserting the unrestricted terminal
+countermodel theorem.
 -/

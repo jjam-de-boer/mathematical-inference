@@ -29,6 +29,7 @@ import Thesis.CausalTransport.HedgeReadoutPlan
 import Thesis.CausalTransport.CompletenessAssembly
 import Thesis.CausalTransport.ConditionalCompilation
 import Thesis.CausalTransport.ConditionalFailureExtraction
+import Thesis.CausalTransport.HedgeConditionalReadout
 import Thesis.CausalTransport.Counterfactual
 import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.CausalTransport.HiddenDAG
@@ -236,6 +237,17 @@ outcome-to-conditioner edge makes the terminal genuinely irreducible.  The
 conditioner may therefore be a graphical descendant, not only an isolated
 coordinate.  The general routing and remaining conditional terminals are
 not silently included in these proved geometric cases.
+`HedgeConditionalReadout` extends that conditional construction to common
+roots which are not queried outcomes.  Its canonical all-root plan produces
+the routed numerator countermodel, while the off-pivot event and kernel
+preservation theorems in `PrivateNoise` and `HedgeReadoutSequence` retain the
+conditioning denominator on each actual updated model.  Conditioners must
+be outside both the original large forest and the modified route nodes;
+graphical descendants are permitted.  Arbitrary supported biased noise may
+be specified independently by routing vertex.  The chain-rule conversion
+uses the same routed pair, not an equality proved only for the base models.
+Internal-forest re-entry and conditioners on those modified coordinates
+still belong to the general terminal countermodel obligation.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations

@@ -31,6 +31,15 @@ vertex.  Those are distinct interventional obligations.
 `HedgeReadoutPullback` is the companion that now carries linear parity events
 back through arbitrary such plans, and `HedgeRoutedCounterexample` combines
 the two invariants once the pure routing identity has been established.
+
+An additional preservation theorem covers arbitrary events and joint kernels
+whose inspected coordinates are outside every readout pivot.  The intervention
+need not leave the pivots free.  Each independent fresh factor integrates out
+of such an event, so the same routed carrier pair retains any conditioning
+denominator outside its original large forest and the modified route nodes.
+`HedgeConditionalReadout` combines this with the canonical routed numerator
+countermodel; a merely failed numerator is never treated as conditional
+non-identifiability without proving the required denominator agreement.
 -/
 
 variable {S : ObservedSignature.{0}}
@@ -97,6 +106,79 @@ private theorem tail_ignored (base : ExactModel S) (rich : ObservedSignature.Val
   intro next listed
   exact base.withPrivateBooleanNoise_otherMechanismsIgnore_of_earlier step.pivot next.pivot step.noise
     _ (ignored next (List.mem_cons_of_mem _ listed)) ((List.pairwise_cons.mp ordered).1 next listed)
+
+/-- Events on nodes outside an increasing readout plan keep their original
+interventional probabilities.  Each update may inspect the declared parents
+and inject its old value, but all other mechanisms ignore that step's pivot.
+Topological order transports this invariant to every intermediate SCM.
+
+The intervention is arbitrary, including an empty action or an action that
+fixes a readout pivot.  Neither positivity nor noise bias is needed for this
+preservation statement.  Conditional countermodels use it to retain their
+conditioning denominator in the very same routed model pair, rather than
+borrowing equality from the unmodified pair or assuming identifiability. -/
+theorem FiniteLatentSCM.withHedgeReadouts_interventionalValue_equiv_of_off
+    (base : ExactModel S) (rich : ObservedSignature.ValueRich S)
+    (steps : List (HedgeReadoutStep S))
+    (ordered : steps.Pairwise (fun first second => first.pivot.val < second.pivot.val))
+    (ignored : forall step, step ∈ steps -> base.OtherMechanismsIgnore step.pivot)
+    (intervention : (node : Fin S.count) -> Option (S.Value node))
+    (nodes : NodeSet S) (off : forall step, step ∈ steps -> nodes step.pivot = false)
+    (event : S.Assignment -> Bool) (eventLocal : EventDependsOnlyOn nodes event) :
+    QProb.Equiv ((base.withHedgeReadouts rich steps).interventionalValue intervention event)
+      (base.interventionalValue intervention event) := by
+  induction steps generalizing base with
+  | nil => exact QProb.equiv_refl _
+  | cons step rest inductionHypothesis =>
+      have tail := inductionHypothesis (step.apply rich base)
+        (List.pairwise_cons.mp ordered).2 (tail_ignored base rich step rest ordered ignored)
+        (fun next listed => off next (List.mem_cons_of_mem _ listed))
+      have head : QProb.Equiv ((step.apply rich base).interventionalValue intervention event)
+          (base.interventionalValue intervention event) :=
+        base.withPrivateBooleanNoise_interventionalValue_equiv_of_off step.pivot step.noise _
+          (ignored step List.mem_cons_self) intervention nodes (off step List.mem_cons_self) event eventLocal
+      exact QProb.equiv_trans tail head
+
+/-- Every joint kernel whose outcome is off the readout pivots is unchanged
+by the whole plan.  The action is unrestricted.  Agreement cylinders depend
+only on the queried outcome, so the event theorem applies at every reference
+assignment.  Both branches of kernel semantics are covered explicitly: a
+nonempty action uses its intervention, and an empty action uses the ordinary
+observational law, equivalently evaluation under no intervention.
+
+This lifts event preservation to supported probability-term results.  It is
+therefore suitable for a conditional denominator even when that denominator
+is not identifiable across the selected graph model class. -/
+theorem JointKernelQuery.withHedgeReadouts_valueEquivalent_of_off
+    (query : JointKernelQuery S) (base : ExactModel S) (rich : ObservedSignature.ValueRich S)
+    (steps : List (HedgeReadoutStep S))
+    (ordered : steps.Pairwise (fun first second => first.pivot.val < second.pivot.val))
+    (ignored : forall step, step ∈ steps -> base.OtherMechanismsIgnore step.pivot)
+    (off : forall step, step ∈ steps -> query.outcome step.pivot = false) :
+    query.ValueEquivalent (base.withHedgeReadouts rich steps) base := by
+  intro reference
+  let updated := base.withHedgeReadouts rich steps
+  let kernel := query.operationKernel
+  let event := Kernel.agreesOn query.outcome reference
+  have eventLocal : EventDependsOnlyOn query.outcome event := by
+    intro first second agree
+    exact Kernel.agreesOn_sample_congr query.outcome reference first second agree
+  have preserved (intervention : (node : Fin S.count) -> Option (S.Value node)) :
+      QProb.Equiv (updated.interventionalValue intervention event)
+        (base.interventionalValue intervention event) :=
+    base.withHedgeReadouts_interventionalValue_equiv_of_off rich steps ordered ignored
+      intervention query.outcome off event eventLocal
+  have cylinderEqual : QProb.Equiv
+      ((kernel.distribution updated reference).probVal event)
+      ((kernel.distribution base reference).probVal event) := by
+    unfold Kernel.distribution
+    split
+    · exact preserved (kernel.intervention reference)
+    · exact preserved (FiniteLatentSCM.noIntervention S)
+  exact ⟨ProbabilityResult.trans
+    (Kernel.unconditionalDenote updated query.outcome query.action reference)
+    (ProbabilityResult.trans (.value cylinderEqual)
+      (ProbabilityResult.symm (Kernel.unconditionalDenote base query.outcome query.action reference)))⟩
 
 /-- Full observational positivity survives any finite increasing readout
 plan.  The restoring bit is the explicit carrier restoring function at
@@ -165,6 +247,40 @@ theorem HedgeWitness.carrierDefectParityModels_withHedgeReadouts_observationally
     (w.carrierDefectParityModels_observationally_equivalent rich) rich steps ordered
     (fun step listed => w.largeCarrierDefectParityModel_otherMechanismsIgnore rich step.pivot (sinks step listed))
     (fun step listed => w.smallCarrierDefectParityModel_otherMechanismsIgnore rich step.pivot (sinks step listed))
+
+/-- The routed positive carrier pair still agrees on every kernel whose
+outcome is outside both the original large forest and all modified pivots.
+
+Outside the large forest, the unmodified pair has pointwise equal outputs
+under arbitrary interventions.  Each side of the readout plan separately
+preserves those outcome cylinders, by the off-pivot kernel theorem above.
+Composition therefore proves equality for the actual updated pair, although
+its two augmented latent spaces need not be identified.  This is the matched
+denominator needed by a routed conditional counterexample; graphical
+descendants are allowed, and denominator identifiability is not assumed. -/
+theorem HedgeWitness.carrierDefectParityModels_withHedgeReadouts_valueEquivalent_of_outsideLarge_of_off
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (query : JointKernelQuery S) (steps : List (HedgeReadoutStep S))
+    (ordered : steps.Pairwise (fun first second => first.pivot.val < second.pivot.val))
+    (sinks : forall step, step ∈ steps -> w.child step.pivot = none)
+    (outside : NodeSet.Disjoint query.outcome w.large)
+    (off : forall step, step ∈ steps -> query.outcome step.pivot = false) :
+    query.ValueEquivalent
+      ((w.largeCarrierDefectParityModel rich).withHedgeReadouts rich steps)
+      ((w.smallCarrierDefectParityModel rich).withHedgeReadouts rich steps) := by
+  intro reference
+  rcases (query.withHedgeReadouts_valueEquivalent_of_off (w.largeCarrierDefectParityModel rich)
+    rich steps ordered
+    (fun step listed => w.largeCarrierDefectParityModel_otherMechanismsIgnore rich step.pivot (sinks step listed))
+    off) reference with ⟨leftPreserved⟩
+  rcases (w.carrierDefectParityModels_valueEquivalent_outsideLarge rich query outside) reference with ⟨originalEqual⟩
+  rcases (query.withHedgeReadouts_valueEquivalent_of_off (w.smallCarrierDefectParityModel rich)
+    rich steps ordered
+    (fun step listed => w.smallCarrierDefectParityModel_otherMechanismsIgnore rich step.pivot (sinks step listed))
+    off) reference with ⟨rightPreserved⟩
+  exact ⟨ProbabilityResult.trans leftPreserved
+    (ProbabilityResult.trans originalEqual (ProbabilityResult.symm rightPreserved))⟩
 
 end Causality
 end Thesis

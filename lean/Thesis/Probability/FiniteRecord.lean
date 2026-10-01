@@ -657,6 +657,22 @@ theorem normalization (R : FiniteProbRecord Ω) :
     QProb.Equiv (R.probVal topEvent) QProb.one := by
   simp [QProb.Equiv, probVal, QProb.one, eventMass_top, R.total_mass]
 
+/-- An independent factor that the event does not inspect integrates out.
+The right marginal is unchanged even when either record has repeated labels
+or non-unit weights.  This is the rectangular product law with the certain
+left event, followed by normalization; no support witness is selected from
+the left factor.  Private-source SCM updates use this when a query ignores
+the coordinate modified by the new source. -/
+theorem product_probVal_right (left : FiniteProbRecord Ω)
+    (right : FiniteProbRecord X) (event : Event X) :
+    QProb.Equiv ((left.product right).probVal (fun pair => event pair.2))
+      (right.probVal event) := by
+  have rectangular := left.product_probVal right topEvent event
+  simp only [topEvent, Bool.true_and] at rectangular
+  exact QProb.equiv_trans rectangular
+    (QProb.equiv_trans (QProb.mul_congr left.normalization (QProb.equiv_refl _))
+      (QProb.one_mul _))
+
 theorem conditionOn_normalization (R : FiniteProbRecord Ω)
     (evidence : Event Ω) (hEvidence : R.EventPositive evidence) :
     QProb.Equiv

@@ -392,6 +392,50 @@ theorem FiniteLatentSCM.withPrivateBooleanNoise_evalNodeUnder_eq_of_ne
 termination_by child.val
 decreasing_by exact S.directed_earlier edge
 
+/-- A private replacement preserves every interventional event supported
+on coordinates other than its pivot, provided the other mechanisms ignore
+that pivot.  This is stronger than a statement about the observational law:
+the intervention is arbitrary and may itself fix the replaced coordinate.
+
+The augmented prior is the actual independent product of the fresh bit and
+the old prior.  For each such pair, the preceding coordinate theorem matches
+every node inspected by the event.  The event therefore ignores the fresh
+bit, which integrates out by the finite product marginal law.  In particular,
+no common latent assignment or unproved denominator equality is required
+when applying this result to the two sides of a countermodel separately. -/
+theorem FiniteLatentSCM.withPrivateBooleanNoise_interventionalValue_equiv_of_off
+    {S : ObservedSignature.{0}} (base : ExactModel S) (pivot : Fin S.count)
+    (noise : FiniteProbRecord Bool)
+    (replacement : S.ParentValues pivot -> base.latent.Inputs pivot -> Bool -> S.Value pivot)
+    (ignored : base.OtherMechanismsIgnore pivot)
+    (intervention : (node : Fin S.count) -> Option (S.Value node))
+    (nodes : NodeSet S) (off : nodes pivot = false)
+    (event : S.Assignment -> Bool) (eventLocal : EventDependsOnlyOn nodes event) :
+    QProb.Equiv
+      ((base.withPrivateBooleanNoise pivot noise replacement).interventionalValue intervention event)
+      (base.interventionalValue intervention event) := by
+  let model := base.withPrivateBooleanNoise pivot noise replacement
+  have eventEqual (pair : Bool × base.latent.Assignment) :
+      event (model.evalUnder intervention (PrivateBooleanNoise.assignment base.latent pair.1 pair.2)) =
+        event (base.evalUnder intervention pair.2) := by
+    apply eventLocal
+    intro child selected
+    apply base.withPrivateBooleanNoise_evalNodeUnder_eq_of_ne pivot noise replacement
+      ignored intervention pair.2 pair.1 child
+    intro same
+    subst child
+    rw [off] at selected
+    cases selected
+  have pushed := (noise.product base.prior).map_probVal
+    (fun pair => PrivateBooleanNoise.assignment base.latent pair.1 pair.2)
+    (fun latent => event (model.evalUnder intervention latent))
+  have unchanged := (noise.product base.prior).probVal_congr _ _ eventEqual
+  have marginal := noise.product_probVal_right base.prior
+    (fun latent => event (base.evalUnder intervention latent))
+  exact QProb.equiv_trans (model.interventionalValue_eq intervention event)
+    (QProb.equiv_trans pushed (QProb.equiv_trans unchanged
+      (QProb.equiv_trans marginal (QProb.equiv_symm (base.interventionalValue_eq intervention event)))))
+
 /-- At a free pivot the replacement sees the base model's unchanged parent
 values, its old latent inputs, and the independent bit.  Acyclicity prevents
 the pivot from being its own parent. -/
