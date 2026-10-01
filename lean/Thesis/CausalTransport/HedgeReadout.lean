@@ -35,8 +35,10 @@ unrestricted observational equivalence remains separate.
 The companion `HedgeCarrierReplay` proves a stronger one-step equality at any
 small-forest pivot, including internal vertices with kept children.  It uses
 the joint observed/background state law and replays the responding descendants,
-not the sink-based common observable map proved in this module.  Outer-only
-updates and arbitrary finite plans still require their separate arguments.
+not the sink-based common observable map proved in this module.  Its companion
+`HedgeCarrierReplayPlan` now covers arbitrary finite small-or-outside plans by
+transporting a mechanism-level invariant, without order or distinct pivots.
+Outer-only updates and unrestricted interventional routing remain separate.
 -/
 
 variable {S : ObservedSignature.{0}}

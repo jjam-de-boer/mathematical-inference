@@ -45,6 +45,7 @@ import Thesis.CausalTransport.HedgeCarrierObservationalState
 import Thesis.CausalTransport.HedgeInterventionalMarginal
 import Thesis.CausalTransport.HedgeConditionalMarginal
 import Thesis.CausalTransport.HedgeCarrierReplay
+import Thesis.CausalTransport.HedgeCarrierReplayPlan
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -195,18 +196,27 @@ law and the actual independent noise product then prove observational
 equality without a kept-sink or other-mechanisms-ignore premise.  Responding
 descendants and nonbinary labels are included.  This closes that one-step
 internal-small case, not arbitrary outer-only updates or finite-plan routing.
+`HedgeCarrierReplayPlan` now transports a mechanism-level common response and
+retained-state law through an arbitrary finite readout plan.  Pivots may mix
+internal small-forest and outside-large-forest vertices; no increasing order,
+distinct-pivot, kept-sink, or non-influence condition is needed.  Original
+outer-only equations remain factual, while installed readouts compose at
+their actual mechanisms and every fresh factor remains in the real prior.
+This also proves observational equality of canonical all-root plans which
+re-enter the small forest, including responding kept children.  Outer-only
+updates and the interventional routing identity remain distinct obligations.
 `HedgeReadoutSequence` executes arbitrary finite increasing readout plans.
-Graph compatibility, full observational equality, and strict positivity are
-preserved through the real sequence of product priors; later non-influence
-is inherited from the original models rather than requested separately at
-every intermediate update.  Positivity now has the stronger restoring proof:
+Its sink-based observational theorem inherits later non-influence from the
+original models rather than requesting it separately at every intermediate
+update.  Compatibility is unrestricted.  Positivity has the stronger restoring proof:
 `PrivateNoise` recovers the entire old target assignment whenever the fresh
 bit restores its pivot.  It requires no non-influence or sink premise, so
 support survives arbitrary finite plans, even descending or repeated updates
-at an internal kept vertex.  This does not extend the observational-equality
-or separation theorems to those plans.  The remaining routing obligation is to connect
-the final outcome signal to all common roots, including routes that re-enter
-an internal vertex of the large forest.
+at an internal kept vertex.  The replay companion supplies the broader
+small-or-outside observational theorem; support alone does not supply it or
+interventional separation.  The remaining routing obligation is to connect
+the final outcome signal to all common roots, including responding internal
+vertices, and to handle routes that enter the outer-only forest.
 `HedgeReadoutPullback` supplies the interventional finite-plan induction:
 linear parent readouts substitute the final outcome parity backward through
 the entire actual SCM sequence.  Retained private bits give biased channels;

@@ -22,8 +22,10 @@ finite substitution identity.  It does not ask for observational equality
 or interventional separation of the newly built models.  `HedgeReadoutPlan`
 now constructs the canonical all-root plan and proves its substitution
 identity.  It does not prove the initial non-influence condition for an
-arbitrary hedge: internal-forest re-entry still needs a different
-observational argument.
+arbitrary hedge.  `HedgeCarrierReplayPlan` separately proves full observational
+equality for finite routes re-entering the small forest, but that replay
+does not justify this constructor's sink-based interventional substitution.
+General descendant response and outer-only re-entry remain distinct gaps.
 -/
 
 variable {S : ObservedSignature.{0}}

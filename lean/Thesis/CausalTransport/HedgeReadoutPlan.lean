@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.HedgeRoutedCounterexample
+import Thesis.CausalTransport.HedgeCarrierReplayPlan
 
 namespace Thesis
 namespace Causality
@@ -23,9 +24,12 @@ construction retains positive biased private noise at every updated vertex.
 
 The hedge specialization uses its already constructed canonical all-root
 routing forest.  Its remaining semantic hypothesis is stated explicitly:
-every route vertex must be a sink of the original kept c-forest map.  That
-covers root and outside-forest routes, but not arbitrary internal-forest
-re-entry.  The latter is not a theorem hidden in the generated plan.
+the countermodel constructor still requires every route vertex to be a sink
+of the original kept c-forest map.  Its interventional pullback uses that
+condition.  A separate observational theorem below now permits routes to
+re-enter the small forest at internal vertices: the retained-state replay
+includes responding descendants.  Outer-only route updates and a general
+interventional routing identity are not hidden in the generated plan.
 -/
 
 variable {S : ObservedSignature.{0}}
@@ -145,6 +149,30 @@ def HedgeWitness.rootReadoutPlan
   HedgeRoutingReadoutPlan.steps w.rootReadoutNodes w.roots w.rootReadoutSuccessor
     w.rootReadoutSuccessor_wellFormed noise
 
+/-- The generated all-root plan preserves full observational equality even
+when it re-enters an internal small-forest vertex.  The caller checks only
+that route pivots avoid the outer-only forest; no sink or non-influence
+certificate is requested.  This is the observational part of routing, not
+an assertion of interventional separation for the same plan. -/
+theorem HedgeWitness.carrierDefectParityModels_rootReadoutPlan_observationally_equivalent_of_small_or_outside
+    {G : ObservedGraph S} {q : JointKernelQuery S} (w : HedgeWitness G q)
+    (rich : ObservedSignature.ValueRich S)
+    (noise : (node : Fin S.count) -> FiniteProbRecord Bool)
+    (allowed : forall node, w.rootReadoutNodes node = true ->
+      w.small node = true ∨ w.large node = false) :
+    ObservationallyEquivalent
+      ((w.largeCarrierDefectParityModel rich).withHedgeReadouts rich
+        (HedgeLinearReadoutPlan.readouts rich (w.rootReadoutPlan noise)))
+      ((w.smallCarrierDefectParityModel rich).withHedgeReadouts rich
+        (HedgeLinearReadoutPlan.readouts rich (w.rootReadoutPlan noise))) := by
+  apply w.carrierDefectParityModels_withHedgeReadouts_observationally_equivalent_of_small_or_outside rich
+  intro instruction listed
+  rcases List.mem_map.mp listed with ⟨linear, inPlan, same⟩
+  subst instruction
+  rcases List.mem_map.mp inPlan with ⟨node, member, same⟩
+  subst linear
+  exact allowed node ((NodeSet.mem_members_iff w.rootReadoutNodes node).mp member)
+
 /-- Produce an original-query positive countermodel without asking for a
 hand-written plan or a pullback identity.  The routing hypothesis is exactly
 the initial non-influence condition of the carrier construction: every
@@ -152,9 +180,10 @@ vertex on the canonical root routes has no kept outgoing c-forest edge.
 
 This allows arbitrarily many roots, merging routes, and multiple original
 outcomes.  Positive supported biased noise may be different at every vertex.
-The theorem does not remove the sink hypothesis: re-entering an internal
-forest vertex can change another carrier mechanism and needs a different
-observational construction. -/
+The theorem does not remove the sink hypothesis: its interventional event
+substitution is still sink-based.  The observational theorem above already
+accounts for internal small-forest response, but does not prove that the
+final queried parity retains the needed root signal in those cases. -/
 noncomputable def HedgeWitness.positiveCounterexampleOfRootReadoutSinksWithNoise
     {G : ObservedGraph S} {q : JointKernelQuery S} (w : HedgeWitness G q)
     (rich : ObservedSignature.ValueRich S)

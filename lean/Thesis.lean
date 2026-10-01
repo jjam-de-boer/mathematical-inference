@@ -20,6 +20,7 @@ import Thesis.Examples.HedgeInterventionalProbability
 import Thesis.Examples.HedgePartialIncidenceProbability
 import Thesis.Examples.HedgeConditionalMarginal
 import Thesis.Examples.HedgeCarrierReplay
+import Thesis.Examples.HedgeCarrierReplayPlan
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 
@@ -104,6 +105,14 @@ why the stronger joint state law is necessary, rather than replacing the
 response by a map of the old observed assignment alone.  The existing
 negative outer-only action overwrite remains outside the small-pivot theorem.
 No arbitrary finite-plan or original-query routing claim is made by this check.
+A separate five-node three-value fixture now checks the finite-plan replay.
+Its root-to-outcome route leaves the forest at an outside vertex and re-enters
+at an internal small-forest vertex with a genuine kept child.  The generated
+all-root plan has full observational equality, positivity, and compatibility.
+A manual plan on the same graph repeats that internal pivot in descending
+order, with unequal noise records, and retains the same three properties.
+These are actual folded SCMs with successive independent priors.  The tests
+do not infer original-query separation from observational replay alone.
 Partial-incidence regressions retain the extracted two-root merging hedge.
 They realize odd patterns after omitting an action equation or an inner-root
 equation, and check equal fibre sizes without a full-pattern evenness premise.

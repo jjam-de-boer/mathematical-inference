@@ -27,8 +27,10 @@ then proves equality of the full updated observational laws.
 
 No non-influence or kept-sink premise is imposed on the small-forest pivot.
 The background block is essential for full nonbinary labels.  This is a
-single actual private readout, not yet an assertion about arbitrary plans or
-updates in the outer-only forest, where the common-response argument fails.
+single actual private readout.  `HedgeCarrierReplayPlan` transports a stable
+mechanism presentation through arbitrary finite plans at small-or-outside
+pivots; neither module asserts equality for outer-only updates, where the
+common-response argument fails.
 -/
 
 /-! ## Parent changes, not absolute parent parities -/
@@ -54,14 +56,16 @@ private theorem parentBits_eq_fold (rich : ObservedSignature.ValueRich S)
     · simp only [parentContribution, dif_pos edge, if_neg selected, Bool.xor_false]
   · simp only [parentContribution, dif_neg edge, Bool.xor_false]
 
-/-- If every excluded parent keeps its old value, restricting the kept map
-does not change its parity *difference*.  Absolute parent parities can differ:
-the outside contributions cancel only between the old and new assignments. -/
-theorem hedgeForestParentBitsFrom_delta_restrict_eq
+/-- The excluded-parent cancellation only needs equality on parents
+actually read by the kept map.  An outside-forest coordinate may change
+arbitrarily without contributing to either parity.  Finite readout plans
+use this sharper form when they mix outside vertices with internal pivots. -/
+theorem hedgeForestParentBitsFrom_delta_restrict_eq_of_kept
     (rich : ObservedSignature.ValueRich S) (nodes : NodeSet S)
     (kept : ForestChild S) (child : Fin S.count)
     (old new : S.ParentValues child)
-    (unchanged : forall parent edge, nodes parent = false -> old parent edge = new parent edge) :
+    (unchanged : forall parent edge, kept parent = some child ->
+      nodes parent = false -> old parent edge = new parent edge) :
     Bool.xor (hedgeForestParentBitsFrom rich kept child old)
         (hedgeForestParentBitsFrom rich kept child new) =
       Bool.xor (hedgeForestParentBitsFrom rich (restrictChild nodes kept) child old)
@@ -76,11 +80,27 @@ theorem hedgeForestParentBitsFrom_delta_restrict_eq
       by_cases edge : S.directed parent child = true
       · simp only [parentContribution, dif_pos edge, restrictChild, selected,
           Bool.false_eq_true, if_false, reduceCtorEq]
-        rw [unchanged parent edge selected]
         by_cases keptAt : kept parent = some child
-        · simp only [if_pos keptAt, Bool.xor_self, Bool.xor_false]
+        · rw [unchanged parent edge keptAt selected]
+          simp only [if_pos keptAt, Bool.xor_self, Bool.xor_false]
         · simp only [if_neg keptAt, Bool.xor_self, Bool.xor_false]
       · simp only [parentContribution, dif_neg edge, Bool.xor_self]
+
+/-- If every excluded parent keeps its old value, restricting the kept map
+does not change its parity *difference*.  Absolute parent parities can differ:
+the outside contributions cancel only between the old and new assignments.
+This convenient stronger premise specializes the kept-parent theorem above. -/
+theorem hedgeForestParentBitsFrom_delta_restrict_eq
+    (rich : ObservedSignature.ValueRich S) (nodes : NodeSet S)
+    (kept : ForestChild S) (child : Fin S.count)
+    (old new : S.ParentValues child)
+    (unchanged : forall parent edge, nodes parent = false -> old parent edge = new parent edge) :
+    Bool.xor (hedgeForestParentBitsFrom rich kept child old)
+        (hedgeForestParentBitsFrom rich kept child new) =
+      Bool.xor (hedgeForestParentBitsFrom rich (restrictChild nodes kept) child old)
+        (hedgeForestParentBitsFrom rich (restrictChild nodes kept) child new) :=
+  hedgeForestParentBitsFrom_delta_restrict_eq_of_kept rich nodes kept child old new
+    (fun parent edge _kept outside => unchanged parent edge outside)
 
 /-! ## A complete structural response from retained state -/
 

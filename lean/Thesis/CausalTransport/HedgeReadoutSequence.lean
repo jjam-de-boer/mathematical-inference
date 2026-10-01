@@ -8,11 +8,14 @@ open Probability
 /-!
 # Finite topologically ordered private hedge readouts
 
-A one-vertex readout is not enough for a routed hedge countermodel.  Each
-later update must still have the non-influence property used to identify
-its complete observational law with a common observable pushforward.
-This module proves that invariant for an arbitrary finite increasing list
-of readouts, rather than supplying it separately at each intermediate SCM.
+A one-vertex readout is not enough for a routed hedge countermodel.  In the
+sink-based construction treated here, each later update retains the
+non-influence property used to identify its complete observational law with
+a common observable pushforward.  This module proves that invariant for an
+arbitrary finite increasing list, rather than supplying it separately at
+each intermediate SCM.  `HedgeCarrierReplayPlan` now gives a different
+mechanism-level invariant for small-or-outside pivots: its full-law theorem
+includes responding children, arbitrary order, and repeated updates.
 
 The list is explicit data.  Each step retains its own noise record, optional
 old-bit injection, and declared-parent signal.  Its fold constructs actual
@@ -47,6 +50,8 @@ when other mechanisms read the pivot.  Consequently every finite supported
 readout plan preserves full support, including internal forest pivots,
 descending order, and repeated updates.  These support facts do not remove
 the observational or interventional premises from the countermodel theorem.
+The replay companion removes the observational sink/order premises on its
+permitted pivots; the interventional event pullback remains separate.
 -/
 
 variable {S : ObservedSignature.{0}}
