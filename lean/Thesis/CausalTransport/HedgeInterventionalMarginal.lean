@@ -145,6 +145,64 @@ private theorem carrierModel_eval_free {G : ObservedGraph S} {q : JointKernelQue
   rw [free]
   exact carrierModel_mechanism w rich nested child _ unit
 
+/-! ## Full local equations exposed for later readout fibre comparisons -/
+
+/-- The actual large carrier's full mechanism is an ordinary incidence bit,
+its kept-parent contribution, and the existing defect, encoded using the
+original private background.  This equation is uniform in current parent
+values and all old latent units, not just factual evaluations.
+
+Keeping the background explicit is important when a later readout injects
+this old value.  A full-label preimage can then separate its incidence
+equation from its background predicate without assuming that parity alone
+determines the emitted label. -/
+theorem HedgeWitness.largeCarrierDefectParityModel_mechanism_incidence
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (child : Fin S.count) (parents : S.ParentValues child)
+    (unit : (w.largeCarrierDefectParityModel rich).latent.Assignment) :
+    (w.largeCarrierDefectParityModel rich).mechanism child parents (fun root _incident => unit root) =
+      hedgeParityCarrierValue rich child
+        (Bool.xor
+          (if w.large child then Bool.xor
+            (hedgeXorPairBitsWithinFrom G w.large child
+              (hedgePairBitsOf G (hedgeDefectOldAssignment G unit)))
+            (hedgeForestParentBitsFrom rich w.child child parents)
+          else hedgeIsSecond rich child
+            (hedgePrivateDecode S child (hedgePrivateCoordinatesOf G (hedgeDefectOldAssignment G unit) child)))
+          (if child = w.actionRoot then hedgeDefectBitOf G unit else false))
+        (hedgePrivateDecode S child (hedgePrivateCoordinatesOf G (hedgeDefectOldAssignment G unit) child)) := by
+  simpa only [carrierIncidence, carrierKept, Bool.false_eq_true, if_false, Bool.false_and, carrierBackground] using
+    carrierModel_mechanism w rich false child parents unit
+
+/-- The nested carrier uses internal incidence and the restricted kept map
+only at small rows.  Outer-only rows retain the ordinary incidence and the
+original kept map.  The private background and defect are the same typed
+coordinates as in the large carrier equation.
+
+The explicit distinction is needed before comparing fixed-noise readout
+fibres: changing the incidence target is allowed by the partial counting
+theorem, but changing its common full-value background test is not. -/
+theorem HedgeWitness.smallCarrierDefectParityModel_mechanism_incidence
+    {G : ObservedGraph S} {q : JointKernelQuery S}
+    (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (child : Fin S.count) (parents : S.ParentValues child)
+    (unit : (w.smallCarrierDefectParityModel rich).latent.Assignment) :
+    (w.smallCarrierDefectParityModel rich).mechanism child parents (fun root _incident => unit root) =
+      hedgeParityCarrierValue rich child
+        (Bool.xor
+          (if w.large child then Bool.xor
+            (hedgeNestedXorPairBitsWithinFrom G w.large w.small child
+              (hedgePairBitsOf G (hedgeDefectOldAssignment G unit)))
+            (hedgeForestParentBitsFrom rich
+              (if w.small child then restrictChild w.small w.child else w.child) child parents)
+          else hedgeIsSecond rich child
+            (hedgePrivateDecode S child (hedgePrivateCoordinatesOf G (hedgeDefectOldAssignment G unit) child)))
+          (if child = w.actionRoot then hedgeDefectBitOf G unit else false))
+        (hedgePrivateDecode S child (hedgePrivateCoordinatesOf G (hedgeDefectOldAssignment G unit) child)) := by
+  simpa only [carrierIncidence, carrierKept, Bool.true_and, if_true, carrierBackground] using
+    carrierModel_mechanism w rich true child parents unit
+
 /-! ## Retained-state equations for a changed parent input -/
 
 private theorem carrierModel_mechanism_parent_response

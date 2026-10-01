@@ -29,6 +29,13 @@ non-influence are irrelevant at this prior-integration boundary.
 Every instruction may have its own finite weighted noise record and positive
 bias gap.  Full support is a separate condition needed by countermodels;
 neither support nor a binary observed alphabet is assumed by this theorem.
+
+The slice-comparison theorem below has a different purpose: it integrates
+equality proved separately at each fixed fresh-input family.  Its events need
+not be parity signals, and it requires neither bias nor support.  This is the
+probability boundary for full-alphabet denominator comparisons obtained from
+partial-incidence counting; a Boolean signal identity alone would not justify
+those comparisons.
 -/
 
 /-- Parity of all represented private inputs in an explicit readout plan.
@@ -159,6 +166,83 @@ private theorem headSignal_probVal (base : ExactModel S) (rich : ObservedSignatu
     (FiniteProbRecord.xorChannel_noise_first_probVal base.prior source step.noise))
 
 end HedgeReadoutNoise
+
+/-! ## Integrating full-event comparisons at fixed fresh inputs -/
+
+/-- Equality on every encoded fresh-input slice gives equality under the
+actual augmented priors.  Events may inspect complete observed labels, and
+the old latent spaces, weights, and denominators may differ.
+
+Each induction step uses the literal pushforward of `noise × old prior`.
+Fixing that factor overwrites just the head's entry in the represented bit
+family; distinct pivots prove that no independent tail entry was changed.
+Thus no probability law or independence assumption is inferred merely from
+a node-indexed encoding.  Ordering, graph conditions, support, and bias are
+not needed.  Repeated pivots are deliberately excluded from this particular
+encoding theorem: they need an instruction-indexed slice representation. -/
+theorem FiniteLatentSCM.withHedgeReadouts_prior_equiv_of_encodedSlices
+    (left right : ExactModel S) (rich : ObservedSignature.ValueRich S)
+    (steps : List (HedgeReadoutStep S))
+    (distinct : steps.Pairwise (fun first second => first.pivot ≠ second.pivot))
+    (leftEvent : Event (left.withHedgeReadouts rich steps).latent.Assignment)
+    (rightEvent : Event (right.withHedgeReadouts rich steps).latent.Assignment)
+    (slices : forall bits : Fin S.count -> Bool,
+      QProb.Equiv
+        (left.prior.probVal (fun unit => leftEvent (left.hedgeReadoutAssignment rich bits steps unit)))
+        (right.prior.probVal (fun unit => rightEvent (right.hedgeReadoutAssignment rich bits steps unit)))) :
+    QProb.Equiv ((left.withHedgeReadouts rich steps).prior.probVal leftEvent)
+      ((right.withHedgeReadouts rich steps).prior.probVal rightEvent) := by
+  induction steps generalizing left right with
+  | nil => exact slices (fun _node => false)
+  | cons step rest inductionHypothesis =>
+      have different := (List.pairwise_cons.mp distinct).1
+      apply inductionHypothesis (step.apply rich left) (step.apply rich right)
+        (List.pairwise_cons.mp distinct).2 leftEvent rightEvent
+      intro bits
+      let leftSlice : Event (step.apply rich left).latent.Assignment :=
+        fun unit => leftEvent ((step.apply rich left).hedgeReadoutAssignment rich bits rest unit)
+      let rightSlice : Event (step.apply rich right).latent.Assignment :=
+        fun unit => rightEvent ((step.apply rich right).hedgeReadoutAssignment rich bits rest unit)
+      let leftProduct : Event (Bool × left.latent.Assignment) :=
+        fun pair => leftSlice (PrivateBooleanNoise.assignment left.latent pair.1 pair.2)
+      let rightProduct : Event (Bool × right.latent.Assignment) :=
+        fun pair => rightSlice (PrivateBooleanNoise.assignment right.latent pair.1 pair.2)
+      have productEqual := step.noise.product_probVal_equiv_of_slices
+        left.prior right.prior leftProduct rightProduct (by
+          intro bit
+          let amended := HedgeReadoutNoise.overwrite step.pivot bit bits
+          have headBit : amended step.pivot = bit := by
+            simp only [amended, HedgeReadoutNoise.overwrite, ite_true]
+          have tailBits : forall next, next ∈ rest -> bits next.pivot = amended next.pivot := by
+            intro next listed
+            exact (if_neg (Ne.symm (different next listed))).symm
+          have leftEncoded (unit : left.latent.Assignment) : leftProduct (bit, unit) =
+              leftEvent (left.hedgeReadoutAssignment rich amended (step :: rest) unit) := by
+            change leftEvent ((step.apply rich left).hedgeReadoutAssignment rich bits rest
+              (PrivateBooleanNoise.assignment left.latent bit unit)) =
+              leftEvent ((step.apply rich left).hedgeReadoutAssignment rich amended rest
+                (PrivateBooleanNoise.assignment left.latent (amended step.pivot) unit))
+            rw [headBit]
+            exact congrArg leftEvent
+              (HedgeReadoutNoise.assignment_congr (step.apply rich left) rich rest bits amended _ tailBits)
+          have rightEncoded (unit : right.latent.Assignment) : rightProduct (bit, unit) =
+              rightEvent (right.hedgeReadoutAssignment rich amended (step :: rest) unit) := by
+            change rightEvent ((step.apply rich right).hedgeReadoutAssignment rich bits rest
+              (PrivateBooleanNoise.assignment right.latent bit unit)) =
+              rightEvent ((step.apply rich right).hedgeReadoutAssignment rich amended rest
+                (PrivateBooleanNoise.assignment right.latent (amended step.pivot) unit))
+            rw [headBit]
+            exact congrArg rightEvent
+              (HedgeReadoutNoise.assignment_congr (step.apply rich right) rich rest bits amended _ tailBits)
+          exact QProb.equiv_trans (left.prior.probVal_congr _ _ leftEncoded)
+            (QProb.equiv_trans (slices amended)
+              (QProb.equiv_symm (right.prior.probVal_congr _ _ rightEncoded))))
+      have leftPushed := (step.noise.product left.prior).map_probVal
+        (fun pair => PrivateBooleanNoise.assignment left.latent pair.1 pair.2) leftSlice
+      have rightPushed := (step.noise.product right.prior).map_probVal
+        (fun pair => PrivateBooleanNoise.assignment right.latent pair.1 pair.2) rightSlice
+      exact QProb.equiv_trans leftPushed
+        (QProb.equiv_trans productEqual (QProb.equiv_symm rightPushed))
 
 /-! ## Finite-plan preservation and reflection of signal separation -/
 

@@ -127,6 +127,79 @@ theorem hedgeNoisyReadout_restore (rich : ObservedSignature.ValueRich S) (pivot 
   rw [cancels]
   exact hedgeParityCarrierValue_reconstruct rich pivot (sample pivot)
 
+/-! ## Exact full-value preimages of an injected carrier -/
+
+/-- The old carrier bit forced by a requested new value, at fixed current
+parent values and a fixed fresh input.  This inverse is used only when the
+readout injects the old bit; a source-free readout has no such inverse. -/
+def hedgeReadoutRequiredCarrierBit (rich : ObservedSignature.ValueRich S) (pivot : Fin S.count)
+    (parentSignal : S.ParentValues pivot -> Bool) (parents : S.ParentValues pivot)
+    (fresh : Bool) (target : S.Value pivot) : Bool :=
+  Bool.xor (Bool.xor (hedgeIsSecond rich pivot target) (parentSignal parents)) fresh
+
+/-- The remaining full-label constraint after inverting the injected bit.
+The readout uses its old *value* as background, not the original private
+background directly.  In particular, an old `second` value has already
+erased a third background label: flipping it to bit zero emits `first`,
+not that third label.  This common finite predicate retains that distinction
+for the two incidence maps in a denominator comparison. -/
+def hedgeReadoutCarrierBackgroundFits (rich : ObservedSignature.ValueRich S) (pivot : Fin S.count)
+    (parentSignal : S.ParentValues pivot -> Bool) (parents : S.ParentValues pivot)
+    (fresh : Bool) (target background : S.Value pivot) : Bool :=
+  decide (hedgeParityCarrierValue rich pivot (hedgeIsSecond rich pivot target)
+    (hedgeParityCarrierValue rich pivot
+      (hedgeReadoutRequiredCarrierBit rich pivot parentSignal parents fresh target) background) = target)
+
+/-- A full readout preimage consists of one recovered source-bit equation
+and the separate common background test.  This is an exact equivalence for
+every label, including impossible third-label targets; it assumes neither
+positivity nor that the observed alphabet is Boolean. -/
+theorem hedgeNoisyReadout_carrier_eq_iff
+    (rich : ObservedSignature.ValueRich S) (pivot : Fin S.count)
+    (parentSignal : S.ParentValues pivot -> Bool) (parents : S.ParentValues pivot)
+    (source fresh : Bool) (background target : S.Value pivot) :
+    hedgeNoisyReadout rich pivot true parentSignal parents
+        (hedgeParityCarrierValue rich pivot source background) fresh = target ↔
+      source = hedgeReadoutRequiredCarrierBit rich pivot parentSignal parents fresh target ∧
+        hedgeReadoutCarrierBackgroundFits rich pivot parentSignal parents fresh target background = true := by
+  have inverse (source signal fresh : Bool) :
+      Bool.xor (Bool.xor (Bool.xor (Bool.xor source signal) fresh) signal) fresh = source := by
+    cases source <;> cases signal <;> cases fresh <;> rfl
+  constructor
+  · intro equal
+    have bitEqual := congrArg (hedgeIsSecond rich pivot) equal
+    simp only [hedgeNoisyReadout, if_true, hedgeIsSecond_parityCarrierValue] at bitEqual
+    have recovered : source = hedgeReadoutRequiredCarrierBit rich pivot parentSignal parents fresh target := by
+      unfold hedgeReadoutRequiredCarrierBit
+      rw [← bitEqual, inverse]
+    refine ⟨recovered, ?_⟩
+    apply decide_eq_true
+    simp only [hedgeNoisyReadout, if_true, hedgeIsSecond_parityCarrierValue] at equal
+    rw [bitEqual, recovered] at equal
+    exact equal
+  · intro parts
+    have bitEqual : Bool.xor (Bool.xor source (parentSignal parents)) fresh = hedgeIsSecond rich pivot target := by
+      rw [parts.1]
+      exact inverse (hedgeIsSecond rich pivot target) (parentSignal parents) fresh
+    simp only [hedgeNoisyReadout, if_true, hedgeIsSecond_parityCarrierValue]
+    rw [bitEqual, parts.1]
+    exact of_decide_eq_true parts.2
+
+/-- Boolean form of the same exact preimage, suitable for weighted finite
+fibres.  Replacing this by the source-bit test alone would accept incorrect
+full-label targets after a carrier background has been erased. -/
+theorem hedgeNoisyReadout_carrier_preimage
+    (rich : ObservedSignature.ValueRich S) (pivot : Fin S.count)
+    (parentSignal : S.ParentValues pivot -> Bool) (parents : S.ParentValues pivot)
+    (source fresh : Bool) (background target : S.Value pivot) :
+    decide (hedgeNoisyReadout rich pivot true parentSignal parents
+        (hedgeParityCarrierValue rich pivot source background) fresh = target) =
+      (decide (source = hedgeReadoutRequiredCarrierBit rich pivot parentSignal parents fresh target) &&
+        hedgeReadoutCarrierBackgroundFits rich pivot parentSignal parents fresh target background) := by
+  apply Bool.eq_iff_iff.mpr
+  simpa only [decide_eq_true_eq, Bool.and_eq_true_iff] using
+    hedgeNoisyReadout_carrier_eq_iff rich pivot parentSignal parents source fresh background target
+
 /-- Install one readout with a private independent Boolean factor. -/
 def FiniteLatentSCM.withHedgeReadout (base : ExactModel S) (rich : ObservedSignature.ValueRich S)
     (pivot : Fin S.count) (noise : FiniteProbRecord Bool)

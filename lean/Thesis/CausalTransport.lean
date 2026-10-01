@@ -49,6 +49,7 @@ import Thesis.CausalTransport.HedgeCarrierReplayPlan
 import Thesis.CausalTransport.HedgeReadoutEvaluation
 import Thesis.CausalTransport.HedgeReadoutNoise
 import Thesis.CausalTransport.HedgeCompensatedReadout
+import Thesis.CausalTransport.HedgeCompensatedPreimage
 import Thesis.CausalTransport.HedgeReadoutPreservation
 import Thesis.CausalTransport.HedgeCompensatedConservation
 import Thesis.CausalTransport.HedgeCompensatedCounterexample
@@ -245,6 +246,15 @@ then preserve and reflect signal-probability equality under separately biased
 weighted noise records; different base latent spaces and denominators are
 retained.  It explicitly proves exhaustive encoding of each augmented unit,
 rather than inferring independent inputs from a node-indexed representation.
+Its full-event slice theorem also integrates comparisons proved separately
+at every fixed fresh-input family, without bias or support assumptions.
+`HedgeCompensatedPreimage` exposes the exact installed-row full-value
+preimages in both actual carriers: ordinary/nested incidence equations have
+a common private-background test.  That test retains the loss of a nonbinary
+background when an old `second` value is flipped, so a parity-only pullback
+is insufficient.  These are local ingredients for installed-conditioner
+marginals; their global event pullback and weighted comparison are not yet
+claimed by this module.
 `HedgeCompensatedCounterexample` combines this integration with both flow
 identities, full observational replay, support, and compatibility.  It now
 constructs positive countermodels for the original joint query on all

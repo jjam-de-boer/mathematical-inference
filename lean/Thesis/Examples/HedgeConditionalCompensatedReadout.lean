@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.HedgeConditionalCompensatedReadout
+import Thesis.CausalTransport.HedgeCompensatedPreimage
 import Thesis.Examples.KernelFailureExtraction
 
 namespace Thesis
@@ -215,6 +216,99 @@ theorem repeated_descending_denominator_right_preserved : query.jointDenominator
     (witness.smallCarrierDefectParityModel rich) rich witness.carrierFlowProtectedNodes
     (witness.smallCarrierDefectParityModel_mechanismsClosedOn_carrierFlowProtectedNodes rich allowed)
     descendingRepeatedPlan repeated_off_protected condition_protected
+
+/-! ## Full-label preimages and integration over every actual fresh factor -/
+
+private def internalParents : signature.ParentValues internalNode := fun parent _edge => rich.first parent
+
+/-- An original third-label background is genuinely lost when its old
+carrier emits `second` and the readout flips that value to bit zero.  The
+new value is `first`, not the original third label. -/
+theorem readout_erases_hidden_third_label :
+    hedgeNoisyReadout rich internalNode true (fun _parents => false) internalParents
+      (hedgeParityCarrierValue rich internalNode true ⟨2, by decide⟩) true = rich.first internalNode := by
+  decide +kernel
+
+/-- The bit equation alone accepts this proposed third-label target, but
+the full-value preimage correctly rejects it.  This regression prevents a
+Boolean-only fibre test from being mistaken for a full-alphabet cylinder. -/
+theorem lost_label_preimage_rejected :
+    hedgeReadoutRequiredCarrierBit rich internalNode (fun _parents => false) internalParents true ⟨2, by decide⟩ = true ∧
+      hedgeReadoutCarrierBackgroundFits rich internalNode (fun _parents => false) internalParents true
+        ⟨2, by decide⟩ ⟨2, by decide⟩ = false := by
+  decide +kernel
+
+/-- The generic exact preimage includes every pair of three-value labels
+and both source/fresh bits; the parent signal is arbitrary as well. -/
+theorem full_label_preimage (source signal fresh : Bool) (background target : Fin 3) :
+    decide (hedgeNoisyReadout rich internalNode true (fun _parents => signal) internalParents
+        (hedgeParityCarrierValue rich internalNode source background) fresh = target) =
+      (decide (source = hedgeReadoutRequiredCarrierBit rich internalNode (fun _parents => signal)
+          internalParents fresh target) &&
+        hedgeReadoutCarrierBackgroundFits rich internalNode (fun _parents => signal) internalParents fresh target background) :=
+  hedgeNoisyReadout_carrier_preimage rich internalNode (fun _parents => signal) internalParents source fresh background target
+
+/-- Exercise full-event slice integration on the actual carrier priors.
+The local protected-value theorem supplies each fixed-input comparison;
+the new integrator then eliminates every real factor of the distinct-pivot
+plan.  Noise records and interventions are arbitrary, so this argument does
+not inherit support or bias assumptions from the counterexample constructor.
+
+This fixture's conditioner remains protected.  The test validates the
+integration boundary, not an unproved global pullback for installed
+conditioners; that later proof must supply its own exact slice comparisons. -/
+theorem fixed_slice_denominator_matches
+    (noise : (node : Fin signature.count) -> FiniteProbRecord Bool)
+    (intervention : (node : Fin signature.count) -> Option (signature.Value node))
+    (reference : signature.Assignment) :
+    QProb.Equiv
+      (((witness.largeCarrierDefectParityModel rich).withHedgeReadouts rich (witness.carrierFlowReadoutPlan rich noise)).prior.probVal
+        (fun unit => Kernel.agreesOn query.condition reference
+          (((witness.largeCarrierDefectParityModel rich).withHedgeReadouts rich
+            (witness.carrierFlowReadoutPlan rich noise)).evalUnder intervention unit)))
+      (((witness.smallCarrierDefectParityModel rich).withHedgeReadouts rich (witness.carrierFlowReadoutPlan rich noise)).prior.probVal
+        (fun unit => Kernel.agreesOn query.condition reference
+          (((witness.smallCarrierDefectParityModel rich).withHedgeReadouts rich
+            (witness.carrierFlowReadoutPlan rich noise)).evalUnder intervention unit))) := by
+  let left := witness.largeCarrierDefectParityModel rich
+  let right := witness.smallCarrierDefectParityModel rich
+  let steps := witness.carrierFlowReadoutPlan rich noise
+  let event := Kernel.agreesOn query.condition reference
+  have localEvent : EventDependsOnlyOn (hedgeRootOmittedNodes witness.actionRoot) event := by
+    intro first second agree
+    apply Kernel.agreesOn_sample_congr
+    intro child selected
+    have different : child ≠ witness.actionRoot := by
+      intro same
+      subst child
+      have omitted : query.condition witness.actionRoot = false := by decide +kernel
+      rw [omitted] at selected
+      cases selected
+    exact agree child (decide_eq_true different)
+  have baseEqual := witness.carrierDefectParityModels_interventional_probVal_equiv_of_rootOmitted
+    rich witness.actionRoot witness.actionRoot_in_roots intervention event localEvent
+  apply FiniteLatentSCM.withHedgeReadouts_prior_equiv_of_encodedSlices left right rich steps
+    (witness.carrierFlowReadoutPlan_pivots_distinct rich noise)
+  intro bits
+  have leftEqual := left.prior.probVal_congr
+    (fun unit => event ((left.withHedgeReadouts rich steps).evalUnder intervention
+      (left.hedgeReadoutAssignment rich bits steps unit)))
+    (fun unit => event (left.evalUnder intervention unit)) (by
+      intro unit
+      apply Kernel.agreesOn_sample_congr
+      intro child selected
+      exact witness.largeCarrierDefectParityModel_carrierFlowReadoutPlan_evalUnder_eq_of_protected rich noise allowed
+        intervention bits unit child (condition_protected child selected))
+  have rightEqual := right.prior.probVal_congr
+    (fun unit => event ((right.withHedgeReadouts rich steps).evalUnder intervention
+      (right.hedgeReadoutAssignment rich bits steps unit)))
+    (fun unit => event (right.evalUnder intervention unit)) (by
+      intro unit
+      apply Kernel.agreesOn_sample_congr
+      intro child selected
+      exact witness.smallCarrierDefectParityModel_carrierFlowReadoutPlan_evalUnder_eq_of_protected rich noise allowed
+        intervention bits unit child (condition_protected child selected))
+  exact QProb.equiv_trans leftEqual (QProb.equiv_trans baseEqual (QProb.equiv_symm rightEqual))
 
 /-! ## The conditional engine really reaches an irreducible failure -/
 
