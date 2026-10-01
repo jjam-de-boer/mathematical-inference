@@ -38,6 +38,7 @@ import Thesis.CausalTransport.Modal
 import Thesis.CausalTransport.ModalRealization
 import Thesis.CausalTransport.ConservativeLearningTransport
 import Thesis.CausalTransport.ModalCounterfactual
+import Thesis.CausalTransport.HedgeInterventionalSupport
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -205,6 +206,22 @@ biased noise records at every vertex.  Arbitrarily many sources, merging,
 multiple outcome sinks, and the full observed alphabet are covered.
 Internal-forest re-entry still need not satisfy that non-influence condition;
 its observational construction remains the general hedge-countermodel gap.
+`HedgePartialIncidence` develops the counting needed for intervention and
+marginal events rather than incorrectly requiring complete even targets.
+An untested component vertex absorbs ordinary incidence parity; an untested
+inner vertex absorbs the nested constraint while retaining arbitrary outer
+equations.  Explicit finite sections and XOR involutions prove equal sizes
+of all partial target fibres for each map.  This is not yet a comparison
+of the weighted probabilities of two different maps.
+`HedgeInterventionalSupport` connects that section to the actual large
+carrier SCM.  An intervened forest vertex absorbs the correction, so any
+consistent full-alphabet target has positive mass with either specified
+defect bit under arbitrary interventions fixing such a vertex.  The original
+hedge action supplies its own balancing seed.  A fixed pair-root compensation
+also preserves the complete interventional evaluation when the defect flips,
+pointwise in all pair and private-background coordinates.  Connecting these
+finite couplings to prior weights, and constructing the unrestricted routed
+pair, remain semantic obligations rather than assumptions of this module.
 `ConditionalCompilation` constructs supported, literal-output certificates
 for every successful run of recursive IDC over the corrected joint engine.
 Each successful single-conditioner rule-2 test is retained, arbitrary exchange

@@ -15,6 +15,7 @@ import Thesis.Examples.HedgeReadout
 import Thesis.Examples.HedgeReadoutPullback
 import Thesis.Examples.HedgeConditionalReadout
 import Thesis.Examples.HedgeInternalReadout
+import Thesis.Examples.HedgeInterventionalSupport
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 
@@ -88,6 +89,14 @@ remain positive and graph-compatible, but a root event distinguishes their
 new observed laws.  Thus local support and signal facts cannot justify an
 unrestricted full-law preservation theorem; free-pivot routing still needs
 its separate constructive argument.
+Partial-incidence regressions retain the extracted two-root merging hedge.
+They realize odd patterns after omitting an action equation or an inner-root
+equation, and check equal fibre sizes without a full-pattern evenness premise.
+The nested test also inspects an outer coordinate.  Under the original action,
+one complete target has positive mass in both private-defect strata, and an
+explicit pair-root compensation preserves full evaluation when the defect is
+flipped at arbitrary latent coordinates.  These are support and coupling
+checks, not an assumed equality of weighted conditional denominators.
 Conditional regressions distinguish recursive IDC from Bayes alone: one query
 has a failed joint numerator but succeeds after a rule-2 promotion, and a
 longer query exchanges two conditioners while retaining the remaining given
