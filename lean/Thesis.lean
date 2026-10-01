@@ -21,6 +21,7 @@ import Thesis.Examples.HedgePartialIncidenceProbability
 import Thesis.Examples.HedgeConditionalMarginal
 import Thesis.Examples.HedgeCarrierReplay
 import Thesis.Examples.HedgeCarrierReplayPlan
+import Thesis.Examples.HedgeCompensatedReadout
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 
@@ -113,6 +114,15 @@ A manual plan on the same graph repeats that internal pivot in descending
 order, with unequal noise records, and retains the same three properties.
 These are actual folded SCMs with successive independent priors.  The tests
 do not infer original-query separation from observational replay alone.
+The compensated-plan regression revisits that re-entry fixture with actual
+mechanism responses.  Its internal non-root retains the old forest residual;
+the outcome does not add a second copy of the kept parent's contribution.
+For every original latent unit and fresh-bit family, the large outcome equals
+the old common-root signal XOR all new noise bits, and the nested outcome
+equals the weighted defect XOR that same fresh parity.  Observational equality,
+positivity, and compatibility are checked for these actual folded SCMs.
+The probability comparison and general large-flow argument are not inferred
+from the fixture's pointwise identities.
 Partial-incidence regressions retain the extracted two-root merging hedge.
 They realize odd patterns after omitting an action equation or an inner-root
 equation, and check equal fibre sizes without a full-pattern evenness premise.

@@ -46,6 +46,8 @@ import Thesis.CausalTransport.HedgeInterventionalMarginal
 import Thesis.CausalTransport.HedgeConditionalMarginal
 import Thesis.CausalTransport.HedgeCarrierReplay
 import Thesis.CausalTransport.HedgeCarrierReplayPlan
+import Thesis.CausalTransport.HedgeReadoutEvaluation
+import Thesis.CausalTransport.HedgeCompensatedReadout
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -217,6 +219,18 @@ small-or-outside observational theorem; support alone does not supply it or
 interventional separation.  The remaining routing obligation is to connect
 the final outcome signal to all common roots, including responding internal
 vertices, and to handle routes that enter the outer-only forest.
+`HedgeReadoutEvaluation` exposes the actual folded mechanism equations at
+arbitrary current parent inputs, with explicit encodings of every fresh bit.
+It does not replace responding descendants by independent coordinate maps.
+`HedgeCompensatedReadout` uses those equations to remove the old kept-parent
+parity before adding the new composed forest/outcome-flow parity.  It installs
+every small-forest row, including old children outside the explicit route,
+so obsolete incoming contributions are also removed.  The common plan stays
+positive, graph-compatible, and observationally equal on small-or-outside
+routes.  The nested model's final sink parity is proved to equal the original
+weighted defect XOR all fresh inputs.  General large-model conservation and
+integration of the actual fresh-factor priors remain necessary before this
+construction supplies unrestricted positive original-query countermodels.
 `HedgeReadoutPullback` supplies the interventional finite-plan induction:
 linear parent readouts substitute the final outcome parity backward through
 the entire actual SCM sequence.  Retained private bits give biased channels;

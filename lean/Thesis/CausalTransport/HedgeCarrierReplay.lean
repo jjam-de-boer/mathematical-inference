@@ -102,6 +102,43 @@ theorem hedgeForestParentBitsFrom_delta_restrict_eq
   hedgeForestParentBitsFrom_delta_restrict_eq_of_kept rich nodes kept child old new
     (fun parent edge _kept outside => unchanged parent edge outside)
 
+/-- Remove the old kept-parent parity and insert a prioritized successor
+parity in the same typed mechanism.  The nested forest gets exactly the
+corresponding restricted/prioritized response.  A priority vertex outside
+the restricted set must have no old kept child; this excludes outer-only
+forest rerouting while admitting arbitrary outside-forest route vertices. -/
+theorem hedgeForestParentBitsFrom_compensate_prioritize_restrict
+    (rich : ObservedSignature.ValueRich S) (nodes priority : NodeSet S)
+    (kept preferred : ForestChild S) (child : Fin S.count) (parents : S.ParentValues child)
+    (outsideReady : forall parent, nodes parent = false -> priority parent = true -> kept parent = none) :
+    Bool.xor (hedgeForestParentBitsFrom rich (restrictChild nodes kept) child parents)
+        (Bool.xor (hedgeForestParentBitsFrom rich kept child parents)
+          (hedgeForestParentBitsFrom rich (forestChildPrioritize priority preferred kept) child parents)) =
+      hedgeForestParentBitsFrom rich
+        (forestChildPrioritize priority preferred (restrictChild nodes kept)) child parents := by
+  have cancel (left right : Bool) : Bool.xor left (Bool.xor left right) = right := by
+    cases left <;> cases right <;> rfl
+  simp only [parentBits_eq_fold]
+  rw [← foldl_xor_pointwise, ← foldl_xor_pointwise]
+  apply foldl_congr
+  intro total parent
+  by_cases edge : S.directed parent child = true
+  · simp only [parentContribution, dif_pos edge]
+    cases selected : nodes parent with
+    | true =>
+        cases routed : priority parent with
+        | false => simp only [forestChildPrioritize, routed, restrictChild, selected,
+            Bool.false_eq_true, if_false, if_true, Bool.xor_self, Bool.xor_false]
+        | true => simp only [forestChildPrioritize, routed, restrictChild, selected, if_true, cancel]
+    | false =>
+        simp only [restrictChild, selected, Bool.false_eq_true, if_false, reduceCtorEq]
+        cases routed : priority parent with
+        | false => simp only [forestChildPrioritize, routed, restrictChild, selected,
+            Bool.false_eq_true, reduceCtorEq, ↓reduceIte, Bool.xor_self]
+        | true => simp only [forestChildPrioritize, routed,
+            outsideReady parent selected routed, reduceCtorEq, ↓reduceIte, Bool.false_xor]
+  · simp only [parentContribution, dif_neg edge, Bool.xor_self]
+
 /-! ## A complete structural response from retained state -/
 
 /-- Set one pivot to a supplied full value and replay every later carrier
