@@ -18,6 +18,7 @@ import Thesis.Examples.HedgeInternalReadout
 import Thesis.Examples.HedgeInterventionalSupport
 import Thesis.Examples.HedgeInterventionalProbability
 import Thesis.Examples.HedgePartialIncidenceProbability
+import Thesis.Examples.HedgeConditionalMarginal
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 
@@ -115,6 +116,24 @@ must be omitted: the nested map realizes a target forbidden by the ordinary
 map's full parity constraint.  A coupled private predicate in the three-value
 fixture also checks that the exact product count retains all three permitted
 background vectors, rather than replacing them by a Boolean encoding.
+An actual-SCM marginal regression now retains the confounded three-node chain
+with three-value alphabets and the irreducible query `P(Y | do(A), B)`.
+Its conditioner belongs to both extracted forests, so the old outside-forest
+constructor cannot apply.  The root-omitted marginal theorem matches the
+denominator in the original positive carrier pair and the strengthened
+queried-root constructor separates the conditional itself.  Exact IDC failure,
+exhausted exchange search, failure-aligned forests with a checked kept chain,
+and unchanged models are checked; the general extractor's child map is not
+silently identified with that explicitly checked chain.
+A direct cylinder comparison fixes the action to the third observed label
+and tests that label at the internal conditioner under the actual intervention.
+The common mass is strictly positive; an intervention-inconsistent target
+has zero mass on both sides.  A second irreducible conditional reuses the
+merging fixture's extracted two-root forests and queries one root while
+conditioning on the other.  Its numerator covers both roots, but its outcome
+does not.  The finite meeting-test constructor supplies the countermodel
+without forcing all roots into the outcome or changing the retained forests.
+These checks do not assert the unrestricted routed conditional theorem.
 Conditional regressions distinguish recursive IDC from Bayes alone: one query
 has a failed joint numerator but succeeds after a rule-2 promotion, and a
 longer query exchanges two conditioners while retaining the remaining given

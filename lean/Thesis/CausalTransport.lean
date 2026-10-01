@@ -41,6 +41,8 @@ import Thesis.CausalTransport.ModalCounterfactual
 import Thesis.CausalTransport.HedgeInterventionalSupport
 import Thesis.CausalTransport.HedgeInterventionalProbability
 import Thesis.CausalTransport.HedgePartialIncidenceProbability
+import Thesis.CausalTransport.HedgeInterventionalMarginal
+import Thesis.CausalTransport.HedgeConditionalMarginal
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -221,9 +223,15 @@ ordinary/nested targets on the same tested rows.  The omitted inner row also
 supplies the outer parity correction.  `HedgePartialIncidenceProbability`
 lifts that count to the actual biased prior, retaining arbitrary common
 private-background predicates and defect-dependent targets.  Exact weighted
-incidence-event masses and their probabilities agree.  A query denominator
-must still be shown to pull back to those tests through the real SCM; an
-incidence-law comparison alone is not a semantic denominator theorem.
+incidence-event masses and their probabilities agree.  The companion
+`HedgeInterventionalMarginal` now proves the semantic pullback for the actual
+carrier pair: agreement off a common root is exactly intervention consistency,
+partial incidence, and a common full-alphabet background test.  Topological
+recursion proves its reverse direction using only the kept parent equations.
+Thus all root-omitted cylinder masses, and every event local to that marginal,
+agree under arbitrary interventions.  The result includes nonbinary labels,
+zero events, and intervention-inconsistent targets.  It does not assert full
+law equality on the separating common root.
 `HedgeInterventionalSupport` connects that section to the actual large
 carrier SCM.  An intervened forest vertex absorbs the correction, so any
 consistent full-alphabet target has positive mass with either specified
@@ -236,9 +244,10 @@ biased prior.  Its two-to-one singleton weights give a two-to-one event-slice
 mass ratio, not equality of the raw masses.  Conditioning on either defect
 normalizes that ratio and gives the original probability for every observed
 event under an intervention fixing a large-forest vertex.  The original hedge
-action supplies such a vertex internally.  Comparing the large and small
-conditioning denominators and constructing the unrestricted routed pair
-remain semantic obligations rather than assumptions of these modules.
+action supplies such a vertex internally.  The root-omitted companion compares
+large/small conditioning marginals in the original pair.  Denominators of
+unrestricted routed pairs still need their own semantic argument; they are
+not silently identified with these unmodified carriers.
 `ConditionalCompilation` constructs supported, literal-output certificates
 for every successful run of recursive IDC over the corrected joint engine.
 Each successful single-conditioner rule-2 test is retained, arbitrary exchange
@@ -274,8 +283,17 @@ common roots are queried outcomes.  A nonempty-condition regression verifies
 an actual failed numerator and exhausted exchange search, while a directed
 outcome-to-conditioner edge makes the terminal genuinely irreducible.  The
 conditioner may therefore be a graphical descendant, not only an isolated
-coordinate.  The general routing and remaining conditional terminals are
-not silently included in these proved geometric cases.
+coordinate.  `HedgeConditionalMarginal` strengthens the numerator-root case:
+it removes the outside-forest condition entirely and permits some common
+roots to be conditioners.  All roots must appear in the numerator, with only
+one required to be a queried outcome.  Outcome/condition disjointness supplies
+an omitted root, and the actual interventional marginal theorem matches the
+denominator in the same numerator-separating pair.  A finite meeting test
+recovers the queried root without choice.  An irreducible three-value
+regression places its conditioner inside both forests; a two-root regression
+queries one root while conditioning on the other, explicitly refuting the
+older all-roots-in-outcome premise.  The general routing and remaining
+conditional terminals are not silently included in these proved cases.
 `HedgeConditionalReadout` extends that conditional construction to common
 roots which are not queried outcomes.  Its canonical all-root plan produces
 the routed numerator countermodel, while the off-pivot event and kernel

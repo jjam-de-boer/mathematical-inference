@@ -30,7 +30,9 @@ if that numerator's countermodel pair agrees on the denominator, it already
 separates the conditional.  A denominator-identifiable class supplies that
 agreement, but is not necessary: the positive carrier pair supplies it
 directly when the conditioner is outside the large forest and all common
-roots are queried outcomes.  General irreducible terminals without such a
+roots are queried outcomes.  The one-way companion `HedgeConditionalMarginal`
+removes the outside-forest restriction for that queried-root case by proving
+the actual root-omitted marginal equality.  General irreducible terminals without such a
 matched-denominator construction still require the remaining conditional
 countermodel argument.
 -/
@@ -317,7 +319,10 @@ they are outside this forest.  Nor does the construction need a successful
 exchange test; it can close an irreducible nonempty-condition terminal.
 
 These explicit geometric hypotheses do not hold for every hedge, so the
-general irreducible conditional countermodel leaf remains separate. -/
+general irreducible conditional countermodel leaf remains separate.  The
+companion `HedgeConditionalMarginal` supplies a stronger constructor retaining
+only the roots-in-outcome hypothesis; this local pointwise adapter is kept
+without creating an import cycle back to its marginal proof. -/
 noncomputable def HedgeWitness.positiveConditionalCounterexampleOfRootsSubsetOutcomeOfConditionOutsideLarge
     {S : ObservedSignature.{0}} {graph : ObservedGraph S} {query : ConditionalKernelQuery S}
     (w : HedgeWitness graph query.jointNumerator) (rich : ObservedSignature.ValueRich S)
