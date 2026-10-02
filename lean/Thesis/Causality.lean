@@ -8,6 +8,7 @@ import Thesis.Causality.LocalEventComparison
 import Thesis.Causality.PrivateNoise
 import Thesis.Causality.PrivateNoiseClosure
 import Thesis.Causality.IdentificationSearch
+import Thesis.Causality.HedgeSelectionSearch
 import Thesis.Causality.ConditionalUniqueness
 import Thesis.Causality.IdentificationKernel
 import Thesis.Causality.ConditionalIdentificationKernel
@@ -37,7 +38,11 @@ Stable facade for the finite causal, modal, and counterfactual development.
 Suggested reading order for a reader familiar with the thesis but new to the
 source is `Graph`, `Derivation`, `Model`, `HardIntervention`, `Reductions`,
 `CompactHiddenDAG`, `PairRoot`, `Semantics`, `Identification`, and
-`IdentificationSearch`; `IdentificationInduction` supplies exact structural
+`IdentificationSearch`; `HedgeSelectionSearch` exhaustively scans alternative
+forest selections with an additional Boolean requirement tested before
+accepting a leaf.  Its candidate-completeness theorem is independent of
+countermodel semantics and does not assert universal geometric coverage.
+`IdentificationInduction` supplies exact structural
 traces for failed, successful, and unfinished arbitrary nested ID runs; then
 `IdentificationKernel` provides the replacement current-kernel recursion,
 separating ordinary ancestral pruning from action augmentation and retaining

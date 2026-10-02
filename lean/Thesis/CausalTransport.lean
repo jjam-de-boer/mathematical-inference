@@ -58,6 +58,7 @@ import Thesis.CausalTransport.HedgeCompensatedCounterexample
 import Thesis.CausalTransport.HedgeConditionalCompensatedReadout
 import Thesis.CausalTransport.HedgeSmallAbsorption
 import Thesis.CausalTransport.HedgeOutcomeNormalization
+import Thesis.CausalTransport.HedgeCountermodelSearch
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -451,6 +452,19 @@ an absorbed responding conditioner whose off-route kept child is added by
 closure and supplies a denominator balancing equation.  General failures
 of this normalization and the remaining conditional denominator geometries
 still require the unrestricted countermodel arguments.
+`HedgeOutcomeNormalization` also changes the kept map and common roots,
+using all action-free large outcome ancestors as the new small side.
+Canonical routes then satisfy the compensated geometry automatically;
+connectivity is a genuine remaining finite test, not a universal theorem.
+`HedgeCountermodelSearch` searches alternative large sets, small sets, and
+kept maps with the carrier-routing test inside the candidate scan.  Any
+contained ready selection guarantees search success, and the returned
+typed witness constructs the actual positive original-query countermodel.
+Its universal coverage boundary is purely structural: proving a suitable
+selection for every hedge would supply the general semantic hedge leaf
+without choice.  That coverage theorem and the general conditional terminal
+argument remain open; a failed normalization is not mistaken for failure
+of every alternative forest.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations

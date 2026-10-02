@@ -29,6 +29,7 @@ import Thesis.Examples.HedgeConditionalInstalledReadout
 import Thesis.Examples.HedgeConditionalClosedReadout
 import Thesis.Examples.HedgeOuterRouteAbsorption
 import Thesis.Examples.HedgeOutcomeNormalization
+import Thesis.Examples.HedgeCountermodelSearch
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 import Thesis.Examples.ConditionalCounterexampleNormalization
@@ -229,4 +230,12 @@ roots, removes that obstruction, and supplies positive joint and irreducible
 conditional countermodels for the unchanged queries.  A second bidirected
 graph on the same signature proves that the new constructor's remaining
 connectivity condition is not automatic for every valid hedge.
+The alternative-hedge regression repairs that disconnected case using
+finite search over both forest sets and kept edges.  Its first ordinary
+selection fails the routing test, while a supplied alternative guarantees
+that the filtered search succeeds.  Even the smaller alternative large
+forest has a disconnected full outcome-ancestral small set, so the scan
+must allow proper small subsets.  The actual search-returned witness
+supplies the original-query positive countermodel; neither its exact forest
+coordinates nor universal structural coverage are assumed.
 -/
