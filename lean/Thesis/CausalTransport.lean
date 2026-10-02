@@ -29,6 +29,7 @@ import Thesis.CausalTransport.HedgeReadoutPlan
 import Thesis.CausalTransport.CompletenessAssembly
 import Thesis.CausalTransport.ConditionalCompilation
 import Thesis.CausalTransport.ConditionalFailureExtraction
+import Thesis.CausalTransport.ConditionalCounterexampleNormalization
 import Thesis.CausalTransport.HedgeConditionalReadout
 import Thesis.CausalTransport.Counterfactual
 import Thesis.CausalTransport.HiddenDAGModel
@@ -271,6 +272,13 @@ small-or-outside canonical routes, including responding internal kept
 children and composite actions.  Routes modifying the outer-only forest and
 the remaining conditional terminal families still prevent an unrestricted
 published completeness theorem.
+`ConditionalCounterexampleNormalization` supplies an alternative to matched
+denominators: an existing positive joint countermodel with a common reverse
+conditional separates the requested conditional in those same models.
+Identifiability of the reverse query can supply that equality, but is not
+assumed for every query.  The terminal adapter composes with the complete
+exchange trace at arbitrary depth.  No general hedge countermodel or
+irreducible-terminal countermodel family is asserted by importing it.
 `HedgeReadoutPullback` supplies the interventional finite-plan induction:
 linear parent readouts substitute the final outcome parity backward through
 the entire actual SCM sequence.  Retained private bits give biased channels;

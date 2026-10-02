@@ -30,6 +30,7 @@ import Thesis.Examples.HedgeConditionalClosedReadout
 import Thesis.Examples.HedgeOuterRouteAbsorption
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
+import Thesis.Examples.ConditionalCounterexampleNormalization
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -213,4 +214,11 @@ both route vertices and required off-route kept children, without changing
 the common roots or canonical routes.  Joint separation and conditional
 separation with a matching full-value denominator are proved in the new
 pair; both public engines actually fail and the conditional is irreducible.
+A reverse-normalization regression retains the positive private-readout pair
+on `A → R → Y`, `A ↔ R`, but queries `P(R | do(A), Y)`.  Its conditioning
+marginals are provably different, ruling out the matched-denominator adapter.
+The reverse conditional is identified by the actual replacement program;
+its compiled success certificate and two-way normalization yield separation
+of the requested irreducible conditional in the unchanged models.  This
+checks a new normalization case without asserting general completeness.
 -/

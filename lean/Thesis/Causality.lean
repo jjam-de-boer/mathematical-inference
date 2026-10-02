@@ -1,12 +1,14 @@
 import Thesis.Causality.Graph
 import Thesis.Causality.Derivation
 import Thesis.Causality.Model
+import Thesis.Causality.SelectedAssignment
 import Thesis.Causality.HardIntervention
 import Thesis.Causality.Identification
 import Thesis.Causality.LocalEventComparison
 import Thesis.Causality.PrivateNoise
 import Thesis.Causality.PrivateNoiseClosure
 import Thesis.Causality.IdentificationSearch
+import Thesis.Causality.ConditionalUniqueness
 import Thesis.Causality.IdentificationKernel
 import Thesis.Causality.ConditionalIdentificationKernel
 import Thesis.Causality.IdentificationInduction
@@ -53,6 +55,13 @@ node selections, kernels, and complete expressions, without deciding
 denotational equivalence or using classical function equality.
 The facade excludes the external completeness
 interfaces; those begin in `Thesis.CausalTransport`.
+`SelectedAssignment` constructs duplicate-free finite presentations of values
+on a selected coordinate set, using canonical projection rather than chosen
+representatives.  `ConditionalUniqueness` applies the two-way normalization
+theorem to actual positive causal kernels at a fixed intervention.  Agreement
+on both conditional directions forces joint-numerator agreement even when
+the conditioning marginals differ; graph compatibility and soundness are
+not needed for this intrinsic semantic argument.
 `LocalEventComparison` turns equality of selected-coordinate cylinders into
 equality of every local event, using the signature's default values and finite
 assignment enumeration.  The compared records need not share atoms, weights,
