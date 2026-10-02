@@ -55,6 +55,7 @@ import Thesis.CausalTransport.HedgeReadoutPreservation
 import Thesis.CausalTransport.HedgeCompensatedConservation
 import Thesis.CausalTransport.HedgeCompensatedCounterexample
 import Thesis.CausalTransport.HedgeConditionalCompensatedReadout
+import Thesis.CausalTransport.HedgeSmallAbsorption
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -419,6 +420,20 @@ second query balances at a non-root with an original kept child.  Both are
 actual irreducible engine failures.  Conditioners without protection or a
 suitable omitted-small closed set, and outer-only route updates, remain
 open general cases; no universal terminal countermodel is asserted.
+`HedgeSmallAbsorption` handles further outer-route cases by changing the
+small forest before constructing the positive pair.  Its kept-descendant
+closure absorbs every large route vertex and all original successors they
+require, while preserving the query, large side, roots, and kept map.
+Connectivity and action avoidance are checked explicitly; arbitrary larger
+connected child-closed enlargements may supply additional connectors.
+Minimality proves that a failing action-avoidance test cannot be fixed by
+same-map enlargement alone.  The joint and conditional constructors concern
+the newly indexed carrier pair, not an unsupported outer update of the old
+models.  A three-value regression has formerly forbidden outer routes and
+an absorbed responding conditioner whose off-route kept child is added by
+closure and supplies a denominator balancing equation.  General failures
+of this normalization and the remaining conditional denominator geometries
+still require the unrestricted countermodel arguments.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations

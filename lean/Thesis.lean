@@ -27,6 +27,7 @@ import Thesis.Examples.HedgeCompensatedCounterexample
 import Thesis.Examples.HedgeConditionalCompensatedReadout
 import Thesis.Examples.HedgeConditionalInstalledReadout
 import Thesis.Examples.HedgeConditionalClosedReadout
+import Thesis.Examples.HedgeOuterRouteAbsorption
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 
@@ -205,4 +206,11 @@ kernels.  A second query uses a non-root balancing vertex with an original
 kept child.  Both three-value queries have checked irreducible public-engine
 failures and positive countermodels, rather than postulated denominator
 equalities or exact extractor child-map assumptions.
+The outer-route absorption regression changes the small forest first, then
+constructs a new positive pair for the unchanged original query.  Its old
+route permission test is proved false.  The checked enlargement absorbs
+both route vertices and required off-route kept children, without changing
+the common roots or canonical routes.  Joint separation and conditional
+separation with a matching full-value denominator are proved in the new
+pair; both public engines actually fail and the conditional is irreducible.
 -/
