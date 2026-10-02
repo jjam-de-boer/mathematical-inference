@@ -3,6 +3,7 @@ import Thesis.Causality.Derivation
 import Thesis.Causality.Model
 import Thesis.Causality.HardIntervention
 import Thesis.Causality.Identification
+import Thesis.Causality.LocalEventComparison
 import Thesis.Causality.PrivateNoise
 import Thesis.Causality.PrivateNoiseClosure
 import Thesis.Causality.IdentificationSearch
@@ -52,6 +53,10 @@ node selections, kernels, and complete expressions, without deciding
 denotational equivalence or using classical function equality.
 The facade excludes the external completeness
 interfaces; those begin in `Thesis.CausalTransport`.
+`LocalEventComparison` turns equality of selected-coordinate cylinders into
+equality of every local event, using the signature's default values and finite
+assignment enumeration.  The compared records need not share atoms, weights,
+or rational denominators; no representative or proof family is chosen.
 `PrivateNoise` appends a genuinely private Boolean latent coordinate with a
 checked independent product prior.  Its common observable readout theorem
 preserves full observed-law equality under explicit non-influence, and earlier

@@ -27,8 +27,10 @@ This is an integration boundary, not a dependency from the joint completeness
 development back to soundness.  The remaining geometric premises are stated
 explicitly.  The later `HedgeConditionalCompensatedReadout` constructor covers
 small-forest re-entry with responding children and protected outer-only
-conditioners by local mechanism closure.  Conditioners on installed rows and
-outer-only route updates still require the general terminal argument.
+conditioners by local mechanism closure.  Its marginal companion also covers
+installed conditioners when a common root meets the queried outcome, without
+requiring every root in the numerator.  Terminals outside those two families
+and outer-only route updates still require the general terminal argument.
 -/
 
 variable {S : ObservedSignature.{0}}

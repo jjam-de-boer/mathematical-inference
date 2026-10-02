@@ -50,6 +50,7 @@ import Thesis.CausalTransport.HedgeReadoutEvaluation
 import Thesis.CausalTransport.HedgeReadoutNoise
 import Thesis.CausalTransport.HedgeCompensatedReadout
 import Thesis.CausalTransport.HedgeCompensatedPreimage
+import Thesis.CausalTransport.HedgeCompensatedMarginal
 import Thesis.CausalTransport.HedgeReadoutPreservation
 import Thesis.CausalTransport.HedgeCompensatedConservation
 import Thesis.CausalTransport.HedgeCompensatedCounterexample
@@ -252,9 +253,13 @@ at every fixed fresh-input family, without bias or support assumptions.
 preimages in both actual carriers: ordinary/nested incidence equations have
 a common private-background test.  That test retains the loss of a nonbinary
 background when an old `second` value is flipped, so a parity-only pullback
-is insufficient.  These are local ingredients for installed-conditioner
-marginals; their global event pullback and weighted comparison are not yet
-claimed by this module.
+is insufficient.  `HedgeCompensatedMarginal` assembles these local tests into
+the exact full interventional cylinder pullback, compares its weighted
+partial-incidence fibres, and integrates every real fresh factor.  Omitting
+a common root unused by the composed flow gives equality of arbitrary
+full-value marginals, including kernels inspecting installed internal rows.
+The marginal comparison itself needs no noise support, bias, or route
+permission; those are separate obligations of a positive separated pair.
 `HedgeCompensatedCounterexample` combines this integration with both flow
 identities, full observational replay, support, and compatibility.  It now
 constructs positive countermodels for the original joint query on all
@@ -392,8 +397,17 @@ A three-value regression checks an irreducible engine failure with a late
 outer-only conditioner and an outside-to-internal re-entry route.  Balanced
 and unsupported repeated noise factors additionally check that denominator
 preservation itself needs neither support nor bias; those factors are not
-used by the positive countermodel.  Conditioners on installed rows and
-outer-only route updates remain general terminal obligations.
+used by the positive countermodel.
+The full compensated marginal comparison supplies a second conditional
+constructor when one common root meets the queried outcome.  Canonical
+routing stops at that root, and disjointness omits it from the denominator;
+all other conditioners may be installed, responding, or other common roots.
+No coverage of every root by the numerator is required.  A second three-value
+regression refutes `P(Y | do(A), B)` with an installed internal conditioner
+and another root still requiring outside-to-small routing; neither older
+conditional constructor applies to it.  Its empty-action marginal is checked
+as well.  General terminals outside both the protected-conditioner and
+queried-root-contact families, and outer-only route updates, remain open.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations

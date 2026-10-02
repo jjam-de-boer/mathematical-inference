@@ -32,7 +32,10 @@ These local equivalences do not yet establish a marginal comparison.  The
 global pullback must also check intervention consistency, all other free
 rows, and whether a proposed omitted balancing coordinate is read by any
 remaining equation.  `HedgeReadoutNoise` supplies the fixed-slice integration
-boundary once those full events have been compared.
+boundary once those full events have been compared.  The companion
+`HedgeCompensatedMarginal` now proves this global comparison for cylinders
+omitting a common root unused by the composed flow; no such global marginal
+equality is assumed by the local equivalences here.
 -/
 
 namespace HedgeCompensatedPreimage
