@@ -49,6 +49,8 @@ import Thesis.CausalTransport.HedgeCarrierReplay
 import Thesis.CausalTransport.HedgeCarrierReplayPlan
 import Thesis.CausalTransport.HedgeReadoutEvaluation
 import Thesis.CausalTransport.HedgeReadoutNoise
+import Thesis.CausalTransport.HedgeReadoutInputs
+import Thesis.CausalTransport.HedgeCarrierTwoSidedReplay
 import Thesis.CausalTransport.HedgeCompensatedReadout
 import Thesis.CausalTransport.HedgeCompensatedPreimage
 import Thesis.CausalTransport.HedgeCompensatedMarginal
@@ -253,6 +255,24 @@ retained.  It explicitly proves exhaustive encoding of each augmented unit,
 rather than inferring independent inputs from a node-indexed representation.
 Its full-event slice theorem also integrates comparisons proved separately
 at every fixed fresh-input family, without bias or support assumptions.
+`HedgeReadoutInputs` supplies the more general occurrence-indexed encoding:
+every repeated instruction has its own actual independent input, even when
+it modifies the same pivot.  Its complete product-record identity represents
+the real final prior for arbitrary plans, not only fixed-input sufficient
+comparisons.  Installation order is retained in the mechanism response.
+`HedgeCarrierTwoSidedReplay` uses that representation to keep the large and
+nested parent maps separate.  Each exact replay permits outer-only updates
+and arbitrary interventions.  The full actual event law is its pushforward
+of one common retained-state record and the independent instruction inputs;
+equality of the fully averaged records is necessary and sufficient for
+observational equality.  An explicit probability-preserving recoding may
+mix inputs with state and need match only positive-weight atoms.  Neither
+that symmetry nor equality of the two different replays is assumed for an
+arbitrary route.  The companion outer-re-entry regression exhibits unequal
+pointwise responses on a realized positive-probability state, while testing
+the exact whole-prior identity and genuinely independent repeated inputs.
+This removes an unnecessarily strong fixed-slice comparison boundary, but
+does not itself construct an unrestricted positive hedge countermodel.
 `HedgeCompensatedPreimage` exposes the exact installed-row full-value
 preimages in both actual carriers: ordinary/nested incidence equations have
 a common private-background test.  That test retains the loss of a nonbinary

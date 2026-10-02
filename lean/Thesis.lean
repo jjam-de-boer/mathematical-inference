@@ -31,6 +31,7 @@ import Thesis.Examples.HedgeOuterRouteAbsorption
 import Thesis.Examples.HedgeOutcomeNormalization
 import Thesis.Examples.HedgeCountermodelSearch
 import Thesis.Examples.HedgeCarrierRouteObstruction
+import Thesis.Examples.HedgeCarrierTwoSidedReplay
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 import Thesis.Examples.ConditionalCounterexampleNormalization
@@ -116,6 +117,17 @@ why the stronger joint state law is necessary, rather than replacing the
 response by a map of the old observed assignment alone.  The existing
 negative outer-only action overwrite remains outside the small-pivot theorem.
 No arbitrary finite-plan or original-query routing claim is made by this check.
+A seven-node outer-only re-entry regression separately checks the exact
+two-sided replay without the small-pivot hypothesis.  A free outer update
+produces different root responses from the same realized positive-probability
+retained state.  Both installed models remain positive and graph-compatible;
+unequal pointwise responses alone are not asserted to separate their laws.
+An occurrence-indexed repeated plan supplies different bits at the same
+pivot and distinguishes that encoding from the older shared node bit.  The
+actual whole-prior event identity and the necessary-and-sufficient averaged
+replay comparison require no pivot distinctness, geometric permission, or
+assumed observational equality.  Constructing a symmetry or another proof of
+that comparison for every hedge remains part of general completeness.
 A separate five-node three-value fixture now checks the finite-plan replay.
 Its root-to-outcome route leaves the forest at an outside vertex and re-enters
 at an internal small-forest vertex with a genuine kept child.  The generated
