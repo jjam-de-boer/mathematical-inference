@@ -462,9 +462,16 @@ contained ready selection guarantees search success, and the returned
 typed witness constructs the actual positive original-query countermodel.
 Its universal coverage boundary is purely structural: proving a suitable
 selection for every hedge would supply the general semantic hedge leaf
-without choice.  That coverage theorem and the general conditional terminal
-argument remain open; a failed normalization is not mistaken for failure
-of every alternative forest.
+without choice on graphs with that property.  The seven-node regression in
+`Thesis.Examples.HedgeCarrierRouteObstruction` proves that the property is
+not true in general: both the canonical-route scan and the more permissive
+arbitrary-route scan fail despite a valid hedge and an actual ID failure.
+Every alternative hedge lacks an all-root family of paths avoiding its
+outer-only vertices.  Consequently changing route tie-breaking or adding
+more forest-search wrappers cannot complete the general positive hedge
+leaf; that construction must be broadened or replaced.  The covered
+countermodels remain valid, and the general hedge and conditional terminal
+countermodel arguments remain open.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations

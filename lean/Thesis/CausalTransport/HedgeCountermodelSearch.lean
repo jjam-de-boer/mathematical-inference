@@ -23,9 +23,11 @@ laws and different original-query kernels, not merely promising forest data.
 
 The final coverage boundary is deliberately structural.  If every input
 hedge admits some route-ready selection, the finite scan turns that
-propositional existence into countermodel data without choice.  Proving
-this universal coverage remains necessary; neither search completeness nor
-a collection of successful examples supplies it.  The search considers all
+propositional existence into countermodel data without choice.  However,
+`Thesis.Examples.HedgeCarrierRouteObstruction` proves that this coverage is
+not true for every graph: a valid hedge can have no route-ready alternative.
+The compensated family therefore needs a further construction, rather than
+an assumed universal success theorem for this search.  The search considers all
 forest selections in its host, but still uses the existing canonical route
 policy and compensated carrier family, not every conceivable countermodel.
 -/
@@ -91,6 +93,49 @@ theorem hedgeCarrierRoutesReady_iff
         selection.small node = true ∨ selection.large node = false := by
   simpa [hedgeCarrierRoutesReady, valid] using
     (hedgeWitness_of_sets G q selection valid).carrierRoutesReady_iff
+
+/-! ## Distinguishing a route-policy failure from a geometric obstruction -/
+
+/-- A more permissive check than inspecting the canonical readout: each
+common root may use *any* directed path to *any* queried outcome, provided
+that it never enters `large \ small` or the original action.  Extra incoming
+cuts implement that avoidance in the finite reachability search.  For valid
+hedge data, the common roots are already small and unintervened, so no
+avoided starting vertex is admitted by a reflexive path.  The check does not
+itself construct the current compensated readout plan, whose route
+policy remains fixed; it is useful for detecting genuine geometric failures. -/
+def hedgeCarrierRoutesPossible (q : JointKernelQuery S) (selection : HedgeSelection S) : Bool :=
+  (NodeSet.members (keptSinks selection.large selection.child)).all (fun root =>
+    (NodeSet.members q.outcome).any (fun outcome =>
+      FiniteReachability.within finBeq (NodeSet.enumerated S)
+        (mutilatedDirected S (NodeSet.union q.action (NodeSet.diff selection.large selection.small)))
+        S.count root outcome))
+
+/-- Reflect the permissive check to arbitrary inductive paths in the
+incoming-cut graph with outer-only vertices also cut.  The existential stays
+in `Prop`; its reverse implication reflects each supplied path to finite
+reachability and never chooses a route into `Type`. -/
+theorem hedgeCarrierRoutesPossible_iff (q : JointKernelQuery S) (selection : HedgeSelection S) :
+    hedgeCarrierRoutesPossible q selection = true ↔
+      forall root, keptSinks selection.large selection.child root = true ->
+        Exists fun outcome => q.outcome outcome = true ∧
+          DirectedReachableBy S
+            (fun parent child => mutilatedDirected S
+              (NodeSet.union q.action (NodeSet.diff selection.large selection.small)) parent child = true)
+            root outcome := by
+  constructor
+  · intro possible root selected
+    have reaches := (List.all_eq_true.mp possible) root
+      ((NodeSet.mem_members_iff _ root).mpr selected)
+    rcases List.any_eq_true.mp reaches with ⟨outcome, member, path⟩
+    exact ⟨outcome, (NodeSet.mem_members_iff q.outcome outcome).mp member,
+      directedReachableBy_of_within _ path⟩
+  · intro paths
+    apply List.all_eq_true.mpr
+    intro root member
+    rcases paths root ((NodeSet.mem_members_iff _ root).mp member) with ⟨outcome, selected, path⟩
+    exact List.any_eq_true.mpr ⟨outcome, (NodeSet.mem_members_iff q.outcome outcome).mpr selected,
+      finiteWithin_of_directedReachableBy path⟩
 
 /-- A checked hedge together with the exact compensated routing guarantee.
 Its forest may differ completely from a witness that motivated the search;
@@ -199,13 +244,28 @@ noncomputable def CarrierRouteHedgeWitness.positiveCounterexample
   selected.witness.positiveCounterexampleOfSmallOrOutsideCarrierFlow rich selected.routes_allowed
 
 /-- Sufficient finite structural coverage for the general positive hedge
-leaf.  This property is *not* declared as an axiom or inhabited by this module.
-It still requires a route-ready alternative for every original-query hedge;
-success on one normalization or on selected examples is not enough. -/
+leaf on a particular graph.  It is not an axiom and is not true for every
+graph: the checked obstruction regression refutes it on a seven-node graph.
+Success on one normalization or on selected examples is not enough. -/
 def CarrierRouteHedgeCoverage (G : ObservedGraph S) : Prop :=
   forall query, HedgeWitness G query ->
     Exists fun selection : HedgeSelection S => hedgeTestsHold G query selection = true ∧
       hedgeCarrierRoutesReady G query selection = true
+
+/-- A valid original-query hedge whose full-graph scan fails refutes this
+particular coverage strategy.  The candidate-completeness theorem rules out
+every alternative forest selection, not only the extracted witness.  This
+does not assert that the query has no countermodel in another family. -/
+theorem not_carrierRouteHedgeCoverage_of_search_none
+    (G : ObservedGraph S) (query : JointKernelQuery S) (hedge : HedgeWitness G query)
+    (absent : findCarrierRouteHedgeSelection G query NodeSet.full = none) :
+    Not (CarrierRouteHedgeCoverage G) := by
+  intro coverage
+  rcases coverage query hedge with ⟨selection, valid, ready⟩
+  rcases findCarrierRouteHedgeSelection_eq_some_of_selection G query NodeSet.full selection
+    (fun _node _selected => rfl) valid ready with ⟨found, result⟩
+  rw [absent] at result
+  cases result
 
 /-- Reduce the universal semantic hedge leaf to the explicit graph-only
 coverage theorem.  Search is over the full observed graph, so the alternative

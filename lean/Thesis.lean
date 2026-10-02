@@ -30,6 +30,7 @@ import Thesis.Examples.HedgeConditionalClosedReadout
 import Thesis.Examples.HedgeOuterRouteAbsorption
 import Thesis.Examples.HedgeOutcomeNormalization
 import Thesis.Examples.HedgeCountermodelSearch
+import Thesis.Examples.HedgeCarrierRouteObstruction
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 import Thesis.Examples.ConditionalCounterexampleNormalization
@@ -238,4 +239,13 @@ forest has a disconnected full outcome-ancestral small set, so the scan
 must allow proper small subsets.  The actual search-returned witness
 supplies the original-query positive countermodel; neither its exact forest
 coordinates nor universal structural coverage are assumed.
+The seven-node carrier-route obstruction regression then disproves that
+universal coverage.  A valid original-query hedge and a checked corrected-ID
+failure coexist with empty full-graph scans for both canonical routing and
+arbitrary outer-avoiding routing.  Candidate-completeness turns those
+finite computations into a refutation for every forest selection, not
+just one normalization.  This distinguishes a genuine countermodel-family
+limitation from a route-policy or greedy-search failure, and keeps the
+remaining general positive hedge leaf explicit rather than assuming an
+impossible universal coverage theorem.
 -/
