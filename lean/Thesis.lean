@@ -26,6 +26,7 @@ import Thesis.Examples.HedgeCompensatedConservation
 import Thesis.Examples.HedgeCompensatedCounterexample
 import Thesis.Examples.HedgeConditionalCompensatedReadout
 import Thesis.Examples.HedgeConditionalInstalledReadout
+import Thesis.Examples.HedgeConditionalClosedReadout
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 
@@ -196,4 +197,12 @@ outcome, and general off-pivot kernel preservation matches the denominator
 in the same positive routed pair.  This checks conditional separation beyond
 the earlier queried-root family without asserting the unrestricted terminal
 countermodel theorem.
+The closed-coordinate regression now permits an installed responding
+conditioner with no common root in the queried outcome.  An omitted small
+vertex may have a genuine outgoing flow to a later uninspected outcome;
+its parent-closed prefix still gives equality of the actual conditioning
+kernels.  A second query uses a non-root balancing vertex with an original
+kept child.  Both three-value queries have checked irreducible public-engine
+failures and positive countermodels, rather than postulated denominator
+equalities or exact extractor child-map assumptions.
 -/

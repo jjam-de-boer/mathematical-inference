@@ -32,19 +32,19 @@ checked chain argument then refutes the original conditional in the actual
 compensated models.  An arbitrary-depth IDC failure can transport this
 terminal counterexample back along its already extracted exchange trace.
 
-`HedgeCompensatedMarginal` supplies a second denominator argument: omitting
-one common root which remains unused by the composed flow gives equality of
-every full-value marginal.  When a common root lies in the queried outcome,
-canonical routing stops there and outcome/condition disjointness omits it
-from the denominator.  The conditioner may then inspect installed internal
-rows, other roots, and any additional protected or outside coordinates.
+`HedgeCompensatedMarginal` supplies a second denominator argument: any
+carrier-flow parent-closed set omitting one small-forest vertex has equal
+full-value marginals in the actual compensated pair.  Such a set may inspect
+installed responding rows.  Its omitted vertex may itself have a genuine
+outgoing route, provided its influence remains outside the inspected set.
+A topological prefix is automatically closed.  The earlier special case of
+an unused common root in the queried outcome remains available below.
 
-Neither constructor covers every irreducible conditional terminal.  The
-protected-conditioner case needs no queried-root contact; the new marginal
-case needs that contact but no protection of the conditioner.  Terminals
-outside both cases and outer-only route updates remain open general cases.
-The geometric premises are retained rather than asserted to inhabit the
-universal conditional field of published completeness.
+These constructors do not cover every irreducible conditional terminal.
+Conditioners without a suitable omitted-small closed set or protection, and
+outer-only route updates, remain open general cases.  The geometric premises
+are retained rather than asserted to inhabit the universal conditional field
+of published completeness.
 -/
 
 /-- Construct the original conditional counterexample in the compensated
@@ -102,6 +102,90 @@ noncomputable def ConditionalKernelFailure.counterexampleOfProtectedCarrierFlowT
     ConditionalCounterexampleIn (GraphModelClass.positive G) query :=
   failure.counterexampleOfTerminal (C := GraphModelClass.positive G) (fun member => member.2)
     (failure.hedge.witness.positiveConditionalCounterexampleOfCarrierFlowOfConditionProtected rich allowed conditionProtected)
+
+/-! ## Responding conditioners inside a closed coordinate set -/
+
+/-- Construct the actual original conditional countermodel when its
+conditioner lies in a carrier-flow parent-closed set omitting a small-forest
+vertex.  The balancing vertex need not be a common root, a kept sink, or a
+queried outcome, and it may have outgoing routes outside the selected set.
+
+The denominator theorem compares full labels under arbitrary interventions
+in the same two models that separate the numerator.  Noise support and bias
+are used only to construct those positive separated models; the marginal
+comparison itself does not assume either. -/
+noncomputable def HedgeWitness.positiveConditionalCounterexampleOfCarrierFlowOfParentClosedWithNoise
+    {G : ObservedGraph S} {query : ConditionalKernelQuery S}
+    (w : HedgeWitness G query.jointNumerator) (rich : ObservedSignature.ValueRich S)
+    (allowed : forall node, w.rootReadoutNodes node = true -> w.small node = true ∨ w.large node = false)
+    (nodes : NodeSet S) (closed : w.CarrierFlowParentClosed nodes)
+    (balance : Fin S.count) (inside : w.small balance = true) (omitted : nodes balance = false)
+    (conditionWithin : NodeSet.Subset query.condition nodes)
+    (noise : (node : Fin S.count) -> FiniteProbRecord Bool)
+    (noisePositive : forall node, w.smallOutcomeFlowNodes node = true ->
+      forall bit, (noise node).EventPositive (FiniteProbRecord.singletonEvent bit))
+    (gap : Fin S.count -> Nat) (gapPositive : forall node, w.smallOutcomeFlowNodes node = true -> 0 < gap node)
+    (bias : forall node, w.smallOutcomeFlowNodes node = true ->
+      FiniteProbRecord.eventMass (noise node).atoms (fun bit => !bit) =
+        FiniteProbRecord.eventMass (noise node).atoms id + gap node) :
+    ConditionalCounterexampleIn (GraphModelClass.positive G) query := by
+  let joint := w.positiveCounterexampleOfCarrierFlowReadoutPlan rich noise allowed noisePositive gap gapPositive bias
+  have denominator : query.jointDenominator.ValueEquivalent joint.left joint.right :=
+    w.carrierDefectParityModels_carrierFlowReadoutPlan_valueEquivalent_of_parentClosed rich noise nodes closed
+      balance inside omitted query.jointDenominator conditionWithin
+  exact ConditionalCounterexampleIn.ofJointNumeratorOfDenominatorEquivalent
+    (C := GraphModelClass.positive G) (fun member => member.2) query joint denominator
+
+/-- The canonical supported stay-biased coin removes all noise data from
+the closed-set constructor.  Only explicit finite geometric data remains;
+no model existence, denominator identifiability, or marginal equality is
+supplied by the caller. -/
+noncomputable def HedgeWitness.positiveConditionalCounterexampleOfCarrierFlowOfParentClosed
+    {G : ObservedGraph S} {query : ConditionalKernelQuery S}
+    (w : HedgeWitness G query.jointNumerator) (rich : ObservedSignature.ValueRich S)
+    (allowed : forall node, w.rootReadoutNodes node = true -> w.small node = true ∨ w.large node = false)
+    (nodes : NodeSet S) (closed : w.CarrierFlowParentClosed nodes)
+    (balance : Fin S.count) (inside : w.small balance = true) (omitted : nodes balance = false)
+    (conditionWithin : NodeSet.Subset query.condition nodes) :
+    ConditionalCounterexampleIn (GraphModelClass.positive G) query := by
+  let joint := w.positiveCounterexampleOfSmallOrOutsideCarrierFlow rich allowed
+  have denominator : query.jointDenominator.ValueEquivalent joint.left joint.right :=
+    w.carrierDefectParityModels_carrierFlowReadoutPlan_valueEquivalent_of_parentClosed rich
+      (fun _node => FiniteProbRecord.biasedFlip 1 1 (by decide)) nodes closed balance inside omitted
+      query.jointDenominator conditionWithin
+  exact ConditionalCounterexampleIn.ofJointNumeratorOfDenominatorEquivalent
+    (C := GraphModelClass.positive G) (fun member => member.2) query joint denominator
+
+/-- A small-forest vertex later than every conditioner supplies a closed
+topological prefix.  This convenient specialization is not a restriction
+of the general constructor: arbitrary closed sets can be used above. -/
+noncomputable def HedgeWitness.positiveConditionalCounterexampleOfCarrierFlowOfConditionBeforeSmall
+    {G : ObservedGraph S} {query : ConditionalKernelQuery S}
+    (w : HedgeWitness G query.jointNumerator) (rich : ObservedSignature.ValueRich S)
+    (allowed : forall node, w.rootReadoutNodes node = true -> w.small node = true ∨ w.large node = false)
+    (balance : Fin S.count) (inside : w.small balance = true)
+    (conditionBefore : forall node, query.condition node = true -> node.val < balance.val) :
+    ConditionalCounterexampleIn (GraphModelClass.positive G) query :=
+  w.positiveConditionalCounterexampleOfCarrierFlowOfParentClosed rich allowed
+    (hedgeCarrierPrefixNodes balance) (w.carrierFlowParentClosed_prefix balance) balance inside
+    (by simp only [hedgeCarrierPrefixNodes, Nat.lt_irrefl, decide_false])
+    (fun node selected => decide_eq_true (conditionBefore node selected))
+
+/-- Close an arbitrary-depth IDC failure whose exact terminal denominator
+has the closed-set geometry.  The certified exchange trace restores the
+original conditional after constructing the terminal's genuine pair. -/
+noncomputable def ConditionalKernelFailure.counterexampleOfParentClosedCarrierFlowTerminal
+    {G : ObservedGraph S} {query : ConditionalKernelQuery S} {fail : IdentificationFail S}
+    (failure : ConditionalKernelFailure G query fail) (rich : ObservedSignature.ValueRich S)
+    (allowed : forall node, failure.hedge.witness.rootReadoutNodes node = true ->
+      failure.hedge.witness.small node = true ∨ failure.hedge.witness.large node = false)
+    (nodes : NodeSet S) (closed : failure.hedge.witness.CarrierFlowParentClosed nodes)
+    (balance : Fin S.count) (inside : failure.hedge.witness.small balance = true) (omitted : nodes balance = false)
+    (conditionWithin : NodeSet.Subset failure.terminal.condition nodes) :
+    ConditionalCounterexampleIn (GraphModelClass.positive G) query :=
+  failure.counterexampleOfTerminal (C := GraphModelClass.positive G) (fun member => member.2)
+    (failure.hedge.witness.positiveConditionalCounterexampleOfCarrierFlowOfParentClosed rich allowed
+      nodes closed balance inside omitted conditionWithin)
 
 /-! ## Installed conditioners through an omitted queried common root -/
 

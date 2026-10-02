@@ -255,9 +255,12 @@ a common private-background test.  That test retains the loss of a nonbinary
 background when an old `second` value is flipped, so a parity-only pullback
 is insufficient.  `HedgeCompensatedMarginal` assembles these local tests into
 the exact full interventional cylinder pullback, compares its weighted
-partial-incidence fibres, and integrates every real fresh factor.  Omitting
-a common root unused by the composed flow gives equality of arbitrary
-full-value marginals, including kernels inspecting installed internal rows.
+partial-incidence fibres, and integrates every real fresh factor.  Any
+coordinate set closed under the original kept and composed flow parents,
+and omitting a small-forest vertex, has equal full-value marginals.  That
+vertex may have outgoing routes outside the set and need not be a root.
+The unused-common-root theorem remains a corollary, and topological prefixes
+provide automatic closed sets for installed responding conditioners.
 The marginal comparison itself needs no noise support, bias, or route
 permission; those are separate obligations of a positive separated pair.
 `HedgeCompensatedCounterexample` combines this integration with both flow
@@ -406,8 +409,16 @@ No coverage of every root by the numerator is required.  A second three-value
 regression refutes `P(Y | do(A), B)` with an installed internal conditioner
 and another root still requiring outside-to-small routing; neither older
 conditional constructor applies to it.  Its empty-action marginal is checked
-as well.  General terminals outside both the protected-conditioner and
-queried-root-contact families, and outer-only route updates, remain open.
+as well.  The general parent-closed constructor removes the queried-root
+requirement: an omitted small-forest equation suffices when a closed set
+contains the conditioner.  An arbitrary-depth IDC terminal adapter uses
+the same construction before restoring the original query.  A further
+three-value regression has no queried common root, an installed non-sink
+conditioner, and an omitted root still routing to an outside outcome; a
+second query balances at a non-root with an original kept child.  Both are
+actual irreducible engine failures.  Conditioners without protection or a
+suitable omitted-small closed set, and outer-only route updates, remain
+open general cases; no universal terminal countermodel is asserted.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations
