@@ -57,6 +57,7 @@ import Thesis.CausalTransport.HedgeCompensatedConservation
 import Thesis.CausalTransport.HedgeCompensatedCounterexample
 import Thesis.CausalTransport.HedgeConditionalCompensatedReadout
 import Thesis.CausalTransport.HedgeSmallAbsorption
+import Thesis.CausalTransport.HedgeOutcomeNormalization
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -279,6 +280,14 @@ Identifiability of the reverse query can supply that equality, but is not
 assumed for every query.  The terminal adapter composes with the complete
 exchange trace at arbitrary depth.  No general hedge countermodel or
 irreducible-terminal countermodel family is asserted by importing it.
+`HedgeOutcomeNormalization` reconstructs the kept forest on the unchanged
+large vertex set, with all action-free large-side outcome ancestors in the
+small set.  All old small vertices are retained, but the common roots may
+change.  Action avoidance and small-or-outside routing are then proved
+without the old-map absorption tests.  Only connectivity of the computed
+small set is supplied; conditional parent closure refers to the new forest.
+The companion regression proves both that rerooting repairs a forced-action
+absorption obstruction and that the remaining connectivity test can fail.
 `HedgeReadoutPullback` supplies the interventional finite-plan induction:
 linear parent readouts substitute the final outcome parity backward through
 the entire actual SCM sequence.  Retained private bits give biased channels;

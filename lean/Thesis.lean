@@ -28,6 +28,7 @@ import Thesis.Examples.HedgeConditionalCompensatedReadout
 import Thesis.Examples.HedgeConditionalInstalledReadout
 import Thesis.Examples.HedgeConditionalClosedReadout
 import Thesis.Examples.HedgeOuterRouteAbsorption
+import Thesis.Examples.HedgeOutcomeNormalization
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 import Thesis.Examples.ConditionalCounterexampleNormalization
@@ -221,4 +222,11 @@ The reverse conditional is identified by the actual replacement program;
 its compiled success certificate and two-way normalization yield separation
 of the requested irreducible conditional in the unchanged models.  This
 checks a new normalization case without asserting general completeness.
+The outcome-ancestral rerooting regression uses a three-value composite
+action for which same-map absorption provably forces an intervened vertex
+into the small side.  Reconstructing the kept edges changes the common
+roots, removes that obstruction, and supplies positive joint and irreducible
+conditional countermodels for the unchanged queries.  A second bidirected
+graph on the same signature proves that the new constructor's remaining
+connectivity condition is not automatic for every valid hedge.
 -/
