@@ -269,8 +269,13 @@ observational equality.  An explicit probability-preserving recoding may
 mix inputs with state and need match only positive-weight atoms.  Neither
 that symmetry nor equality of the two different replays is assumed for an
 arbitrary route.  The companion outer-re-entry regression exhibits unequal
-pointwise responses on a realized positive-probability state, while testing
-the exact whole-prior identity and genuinely independent repeated inputs.
+pointwise responses on a realized positive-probability state and then proves
+unequal averaged root-event probabilities.  Every fresh-noise record with
+a positive flip also fails for this toggle and these base defect priors;
+no probability-preserving joint recoding can match this stated update.
+The obstruction does not refute a different plan or broader countermodel
+family.  Exact whole-prior integration and independent repeated inputs are
+checked separately, without inferring equality from either representation.
 This removes an unnecessarily strong fixed-slice comparison boundary, but
 does not itself construct an unrestricted positive hedge countermodel.
 `HedgeCompensatedPreimage` exposes the exact installed-row full-value

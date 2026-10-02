@@ -121,13 +121,18 @@ A seven-node outer-only re-entry regression separately checks the exact
 two-sided replay without the small-pivot hypothesis.  A free outer update
 produces different root responses from the same realized positive-probability
 retained state.  Both installed models remain positive and graph-compatible;
-unequal pointwise responses alone are not asserted to separate their laws.
+their full observational laws are then separated by an exact root-event
+comparison: `4/9` versus `1/3`.  An arbitrary-noise formula further proves
+that changing only the fresh weights cannot repair this update while a flip
+has positive mass.  No probability-preserving joint input/state recoding can
+match this particular pair, even by mixing noise with retained state.
 An occurrence-indexed repeated plan supplies different bits at the same
 pivot and distinguishes that encoding from the older shared node bit.  The
 actual whole-prior event identity and the necessary-and-sufficient averaged
 replay comparison require no pivot distinctness, geometric permission, or
-assumed observational equality.  Constructing a symmetry or another proof of
-that comparison for every hedge remains part of general completeness.
+assumed observational equality.  These negative results concern the stated
+toggle and base priors, not every possible routing plan or countermodel.
+Constructing an unrestricted family remains part of general completeness.
 A separate five-node three-value fixture now checks the finite-plan replay.
 Its root-to-outcome route leaves the forest at an outside vertex and re-enters
 at an internal small-forest vertex with a genuine kept child.  The generated
