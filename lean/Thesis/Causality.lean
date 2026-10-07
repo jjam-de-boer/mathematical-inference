@@ -4,6 +4,7 @@ import Thesis.Causality.Model
 import Thesis.Causality.SelectedAssignment
 import Thesis.Causality.HardIntervention
 import Thesis.Causality.Identification
+import Thesis.Causality.CoordinateAssignment
 import Thesis.Causality.LocalEventComparison
 import Thesis.Causality.PrivateNoise
 import Thesis.Causality.PrivateNoiseClosure
@@ -72,6 +73,12 @@ theorem to actual positive causal kernels at a fixed intervention.  Agreement
 on both conditional directions forces joint-numerator agreement even when
 the conditioning marginals differ; graph compatibility and soundness are
 not needed for this intrinsic semantic argument.
+`CoordinateAssignment` gives the complementary compact dependent-product
+presentation, with exactly one coordinate per selected observed node.  Its
+restriction, background-preserving extension, and omitted-coordinate cylinders
+connect full-coordinate conditional comparison to the actual interventional
+SCM law.  Support is derived only on action-free selected coordinates, not
+falsely asserted for every complete intervened assignment.
 `LocalEventComparison` turns equality of selected-coordinate cylinders into
 equality of every local event, using the signature's default values and finite
 assignment enumeration.  The compared records need not share atoms, weights,

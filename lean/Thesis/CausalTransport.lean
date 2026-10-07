@@ -22,6 +22,7 @@ import Thesis.CausalTransport.KernelHedgeTransport
 import Thesis.CausalTransport.KernelFailureExtraction
 import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
+import Thesis.CausalTransport.HedgeConditionalRoot
 import Thesis.CausalTransport.HedgeNoise
 import Thesis.CausalTransport.HedgeReadout
 import Thesis.CausalTransport.ConditionalCollider
@@ -104,6 +105,12 @@ common hedge root is the conditioner and a queried incoming parent is outside
 the large forest, it constructs a positive counterexample for the original
 conditional kernel.  General active-path composition, multiple-root geometries,
 and the unrestricted conditional terminal family remain separate obligations.
+`HedgeConditionalRoot` supplies the multi-root source-signal step independently
+of that geometry.  From an arbitrary hedge's positive carrier pair it selects
+a genuinely separated root conditional given all other roots, with supported
+contexts in the real interventional records and latent priors.  Its explicit
+readout labels retain the original action values.  It does not assert that
+the selected root is an admissible collider pivot for every original query.
 
 `Soundness` develops the graph-independent probability algebra and the finite
 latent factorization needed by the three do-calculus rules.  The factorized

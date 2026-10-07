@@ -36,6 +36,7 @@ import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 import Thesis.Examples.ConditionalFailurePaths
 import Thesis.Examples.ConditionalCollider
+import Thesis.Examples.HedgeConditionalRoot
 import Thesis.Examples.ConditionalCounterexampleNormalization
 import Thesis.Examples.ValueRefinement
 import Thesis.Examples.HedgeObstructionLikelihood
@@ -55,6 +56,12 @@ Its probability checks additionally retain unequal context denominators,
 repeated source atoms, both posterior bits, and the balanced-noise erasure
 boundary.  Neither the fixture nor its constructor claims universal
 conditional completeness.
+`HedgeConditionalRoot` checks the general root-conditional selector on an
+actual extracted two-root hedge.  Its probability boundaries also exercise
+different coordinate alphabets, unequal record denominators, equal individual
+marginals with different joint dependence, and the zero-coordinate space.
+The selected source gap and action-preserving labels are supplied by the
+general theorem, not by a manually chosen root or assumed conditional gap.
 
 For a smaller dependency footprint, client developments should normally import
 one stable facade directly: `Thesis.Probability`, `Thesis.Causality`, or
