@@ -32,12 +32,13 @@ hidden source.  They are not numerical approximations or native reduction
 proofs.  Complete observational equality, positive normalized observed
 weights, and both truncated-table intervention values are kernel checked.
 
-IMPORTANT: this module does not yet construct a `FiniteLatentSCM`, relate
-these table products to its evaluation, or return `CounterexampleIn`.
-That functional realization and semantic bridge are the next stage.  Nor
-does this one graph replace the universal hedge countermodel obligation.
-Keeping the boundary explicit prevents a successful table calculation from
-being mistaken for finished published completeness.
+This small algebraic module does not itself construct a `FiniteLatentSCM`
+or assert that its products are SCM probabilities.  The companion
+`HedgeObstructionModel` realizes the tables and proves its full observed
+law and positivity; `HedgeObstructionCounterexample` proves the intervention
+bridge and returns `CounterexampleIn` for the original three-valued query.
+The present module remains independent of those larger causal developments.
+This one graph does not replace the universal hedge-countermodel obligation.
 -/
 
 set_option maxRecDepth 100000
@@ -62,6 +63,7 @@ structure Hidden where
   l : Bool
   j : Fin 6
   k : Fin 3
+  deriving DecidableEq
 
 private def booleans : List Bool := [false, true]
 
@@ -101,6 +103,10 @@ theorem hiddenAssignments_complete (unit : Hidden) : unit ∈ hiddenAssignments 
     List.mem_map.mpr ⟨k, List.mem_finRange k, rfl⟩⟩⟩⟩
 
 theorem hiddenAssignments_length : hiddenAssignments.length = 72 := by decide +kernel
+
+/-- Each shared-source tuple occurs once.  The functional realization uses
+this same list to integrate its actual independent shared prior. -/
+theorem hiddenAssignments_nodup : hiddenAssignments.Nodup := by decide +kernel
 
 /-- A Bernoulli row's natural weight at its actual output.  The other
 weight is the complement within the same declared denominator. -/
@@ -344,8 +350,9 @@ theorem interventionProbability_gap :
       (QProb.add (⟨31103, 62208, by decide⟩ : QProb) ⟨1, 62208, by decide⟩) ⟨1, 2, by decide⟩)
       (QProb.equiv_symm interventionProbability_unperturbed))
 
-/-- Exact nonzero separation of the stated truncated table products.  A
-later SCM realization must prove that its query values are these values. -/
+/-- Exact nonzero separation of the stated truncated table products.  The
+companion counterexample module separately proves that these are its actual
+SCM query values before using this algebraic separation. -/
 theorem interventionProbability_separated :
     Not (QProb.Equiv (interventionProbability false) (interventionProbability true)) := by
   intro equal

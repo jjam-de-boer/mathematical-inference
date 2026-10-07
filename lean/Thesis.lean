@@ -37,6 +37,8 @@ import Thesis.Examples.ConditionalFailureExtraction
 import Thesis.Examples.ConditionalCounterexampleNormalization
 import Thesis.Examples.ValueRefinement
 import Thesis.Examples.HedgeObstructionLikelihood
+import Thesis.Examples.HedgeObstructionModel
+import Thesis.Examples.HedgeObstructionCounterexample
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -54,9 +56,13 @@ graph.  The ordinary Boolean-model adapter is also instantiated directly;
 this is a general alphabet transport, not an unrestricted hedge construction.
 The separate seven-node obstruction likelihood regression checks a different
 strictly positive rational-table pair, with complete observed equality and
-an exact truncated-table gap of `1/62208`.  It deliberately does not claim
-an SCM counterexample before the functional realization and query-value
-bridge have been supplied.
+an exact truncated-table gap of `1/62208`.  Its structural realization uses
+four independent pair sources and genuinely private finite response tables;
+the semantic bridge proves full observed equality, positivity, and that
+same causal gap for the actual SCMs.  Private label refinement then returns
+a positive counterexample for the original three-valued `P(Y | do(A,B))`
+query on the original graph.  This closes that outer-reentry regression,
+not the universal hedge-countermodel obligation.
 The current-input compilation regressions additionally exercise supported
 certificates on a gapped host, a nonempty external action, and an empty
 observed signature.  Component-extraction regressions additionally exercise
