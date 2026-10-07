@@ -7,6 +7,8 @@ import Thesis.Causality.Identification
 import Thesis.Causality.LocalEventComparison
 import Thesis.Causality.PrivateNoise
 import Thesis.Causality.PrivateNoiseClosure
+import Thesis.Causality.ValueRefinement
+import Thesis.Causality.BinaryEncoding
 import Thesis.Causality.IdentificationSearch
 import Thesis.Causality.HedgeSelectionSearch
 import Thesis.Causality.ConditionalUniqueness
@@ -84,4 +86,13 @@ may respond to a replaced row.  Off-set replacements preserve full protected
 values and interventional event probabilities without ordering, noise-support,
 or bias conditions.  Finite readout folds use that invariant to retain the
 actual conditioning denominator of a routed countermodel.
+`ValueRefinement` adds an independent private label sweep for mechanisms
+depending only on declared parent bits.  Positive decoded atoms become a
+strictly positive full-alphabet law, while whole observed-law equality and
+every bit-dependent interventional probability are retained.  It does not
+construct the missing unrestricted binary hedge countermodel.
+`BinaryEncoding` accepts ordinary Boolean-valued SCMs on the same graph and
+proves those parent-bit and decoded-support hypotheses automatically.  The
+deterministic encoding and private support sweep remain separate, so an
+encoded binary model is not incorrectly claimed to have full label support.
 -/

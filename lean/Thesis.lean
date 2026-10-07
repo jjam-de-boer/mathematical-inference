@@ -35,6 +35,7 @@ import Thesis.Examples.HedgeCarrierTwoSidedReplay
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 import Thesis.Examples.ConditionalCounterexampleNormalization
+import Thesis.Examples.ValueRefinement
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -44,6 +45,12 @@ one stable facade directly: `Thesis.Probability`, `Thesis.Causality`, or
 `Thesis.CausalTransport`.  This module additionally imports the executable
 tenure-track example and checked identification regressions, so it is the
 appropriate root for the complete thesis build and the axiom audit.
+A separate label-refinement regression starts with a binary bow pair whose
+third labels have zero probability.  An actual private sweep makes the entire
+three-valued alphabet positive while retaining the exact causal probabilities
+`1/2` and `1/3`, the full observed-law equality, and the original projected
+graph.  The ordinary Boolean-model adapter is also instantiated directly;
+this is a general alphabet transport, not an unrestricted hedge construction.
 The current-input compilation regressions additionally exercise supported
 certificates on a gapped host, a nonempty external action, and an empty
 observed signature.  Component-extraction regressions additionally exercise

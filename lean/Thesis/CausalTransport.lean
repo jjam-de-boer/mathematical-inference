@@ -27,6 +27,7 @@ import Thesis.CausalTransport.HedgeReadoutPullback
 import Thesis.CausalTransport.HedgeRoutedCounterexample
 import Thesis.CausalTransport.HedgeReadoutPlan
 import Thesis.CausalTransport.CompletenessAssembly
+import Thesis.CausalTransport.ValueRefinementCounterexample
 import Thesis.CausalTransport.ConditionalCompilation
 import Thesis.CausalTransport.ConditionalFailureExtraction
 import Thesis.CausalTransport.ConditionalCounterexampleNormalization
@@ -186,6 +187,13 @@ termination, literal-output compilation, and structural failure extraction are
 proved internally.  This conditional assembly is not a completed
 `PublishedCompleteness` package: the positive hedge leaf and general conditional
 failure-side non-identifiability still remain open.
+`ValueRefinementCounterexample` separates the fixed-alphabet support issue
+from that general semantic leaf.  Ordinary positive Boolean-valued models
+on the same graph are deterministically encoded at the supplied rich labels;
+then genuinely private, bit-preserving label refinements fill every supplied
+value.  Full observational equality and the original bit-dependent causal
+gap are retained.  This does not assume that an unrestricted binary hedge
+pair has already been constructed, and it never enlarges an observed domain.
 `HedgeNoise` supplies the independent finite-noise step of the remaining routed
 countermodel: biased XOR channels retain separation after any finite number of
 private flips, and full-alphabet carriers realize every background label.
