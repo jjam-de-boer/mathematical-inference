@@ -6,6 +6,7 @@ import Thesis.Probability.FiniteCellProduct
 import Thesis.Probability.Urn
 import Thesis.Probability.QualitativeUrn
 import Thesis.Probability.FiniteRecord
+import Thesis.Probability.FiniteRecordSlicing
 import Thesis.Probability.ConditionalUniqueness
 import Thesis.Probability.BooleanNoise
 import Thesis.Probability.Construction
@@ -32,7 +33,9 @@ Reading order:
 7. `QualitativeUrn` derives the finite qualitative ratio representation from
    an event-level plausibility interface;
 8. `FiniteRecord` gives weighted, common-denominator finite distributions and
-   conditioning; `ConditionalUniqueness` proves that positive joint laws
+   conditioning; `FiniteRecordSlicing` sums arbitrary events over a finite
+   projection's disjoint fibres without enumerating or selecting the source
+   values; `ConditionalUniqueness` proves that positive joint laws
    agreeing in both conditional directions agree on every joint event,
    without assuming equal conditioning marginals;
 9. `BooleanNoise` proves finite biased XOR-channel injectivity, exact parity

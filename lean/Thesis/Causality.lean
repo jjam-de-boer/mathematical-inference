@@ -16,6 +16,7 @@ import Thesis.Causality.IdentificationKernel
 import Thesis.Causality.ConditionalIdentificationKernel
 import Thesis.Causality.IdentificationInduction
 import Thesis.Causality.Reductions
+import Thesis.Causality.LatentRationalCPT
 import Thesis.Causality.CompactHiddenDAG
 import Thesis.Causality.PairRoot
 import Thesis.Causality.Semantics
@@ -95,4 +96,11 @@ construct the missing unrestricted binary hedge countermodel.
 proves those parent-bit and decoded-support hypotheses automatically.  The
 deterministic encoding and private support sweep remain separate, so an
 encoded binary model is not incorrectly claimed to have full label support.
+`LatentRationalCPT` realizes finite rational local tables with supplied shared
+sources as actual SCMs.  Private response functions retain the exact projected
+graph.  Their full interventional likelihood theorem integrates the genuine
+product prior, without enumerating those potentially large private function
+spaces; a supported shared assignment and positive local rows supply full
+observed positivity.  Particular table pairs still need their observational
+equality and original-query gap before they give a counterexample.
 -/
