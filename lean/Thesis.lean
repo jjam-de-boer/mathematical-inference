@@ -34,6 +34,7 @@ import Thesis.Examples.HedgeCarrierRouteObstruction
 import Thesis.Examples.HedgeCarrierTwoSidedReplay
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
+import Thesis.Examples.ConditionalFailurePaths
 import Thesis.Examples.ConditionalCounterexampleNormalization
 import Thesis.Examples.ValueRefinement
 import Thesis.Examples.HedgeObstructionLikelihood
@@ -49,6 +50,11 @@ one stable facade directly: `Thesis.Probability`, `Thesis.Causality`, or
 `Thesis.CausalTransport`.  This module additionally imports the executable
 tenure-track example and checked identification regressions, so it is the
 appropriate root for the complete thesis build and the axiom audit.
+Constructive back-door regressions additionally check an actual conditional
+failure with a retained conditioner, nonempty action avoidance, a latent-pair
+first edge, descendant-activated colliders, blocked paths, and empty or equal
+endpoints.  The path data is selected by verified finite search; these graph
+certificates do not claim that the universal conditional countermodel exists.
 A separate label-refinement regression starts with a binary bow pair whose
 third labels have zero probability.  An actual private sweep makes the entire
 three-valued alphabet positive while retaining the exact causal probabilities

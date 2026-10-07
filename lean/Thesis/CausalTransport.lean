@@ -1,5 +1,7 @@
 import Thesis.CausalTransport.DSeparation
 import Thesis.CausalTransport.DSeparationCorrectness
+import Thesis.CausalTransport.DSeparationWitness
+import Thesis.CausalTransport.ActivePathTransport
 import Thesis.CausalTransport.Certificates
 import Thesis.CausalTransport.Correspondence
 import Thesis.CausalTransport.FiniteSource
@@ -30,6 +32,7 @@ import Thesis.CausalTransport.CompletenessAssembly
 import Thesis.CausalTransport.ValueRefinementCounterexample
 import Thesis.CausalTransport.ConditionalCompilation
 import Thesis.CausalTransport.ConditionalFailureExtraction
+import Thesis.CausalTransport.ConditionalFailurePaths
 import Thesis.CausalTransport.ConditionalCounterexampleNormalization
 import Thesis.CausalTransport.HedgeConditionalReadout
 import Thesis.CausalTransport.Counterfactual
@@ -76,6 +79,15 @@ assume completeness as an axiom.
 proves preservation into the intrinsic semantics, and exposes source-level
 adapters.  `DSeparationCorrectness` connects the finite ancestry and moral
 reachability searches to active-path separation.
+`DSeparationWitness` additionally returns certified active-path data for every
+negative separation answer, using a bounded finite search instead of choice.
+`ActivePathTransport` restores cut edges along the same path by exploiting
+the expanded DAG's strict rank, and excludes conditioned incoming-cut vertices
+from that path.  `ConditionalFailurePaths` applies these facts to every
+conditioner left by an exhausted IDC exchange search: it returns an active
+back-door path in the action-cut graph, with an explicit first incoming edge
+and no action vertices.  These are ingredients for the general conditional
+countermodel argument, not an assumption or proof of that remaining argument.
 
 `Soundness` develops the graph-independent probability algebra and the finite
 latent factorization needed by the three do-calculus rules.  The factorized
