@@ -1,4 +1,4 @@
-import Thesis.Probability.FiniteRecord
+import Thesis.Probability.FiniteRecordSlicing
 
 namespace Thesis
 namespace Probability
@@ -53,29 +53,6 @@ private theorem cell_singleton (row : α) (column : β) :
   exact ⟨fun parts => Prod.ext parts.1 parts.2,
     fun same => ⟨congrArg Prod.fst same, congrArg Prod.snd same⟩⟩
 
-/-- Finite normalization at raw natural-mass level.  This is obtained
-from the existing singleton-sum law on the record's actual denominator;
-the denominator is cancelled only using its stored positivity proof. -/
-private theorem sum_singletonMass_eq_den (record : FiniteProbRecord α)
-    (values : List α) (nodup : values.Nodup) (complete : forall value, value ∈ values) :
-    (values.map (fun value => FiniteProbRecord.eventMass record.atoms
-      (FiniteProbRecord.singletonEvent value))).sum = record.den := by
-  have membership : FiniteProbRecord.membershipEvent values = topEvent := by
-    funext value
-    exact decide_eq_true (complete value)
-  have sum := record.probVal_membership_equiv_listSum values nodup
-  rw [membership] at sum
-  have presentation := QProb.listSum_mk_same_den record.den record.den_pos
-    (values.map (fun value => FiniteProbRecord.eventMass record.atoms (FiniteProbRecord.singletonEvent value)))
-  have combined : QProb.Equiv (record.probVal topEvent)
-      ⟨(values.map (fun value => FiniteProbRecord.eventMass record.atoms
-        (FiniteProbRecord.singletonEvent value))).sum, record.den, record.den_pos⟩ :=
-    QProb.equiv_trans sum (by simpa only [List.map_map, Function.comp_def, FiniteProbRecord.probVal] using presentation)
-  change FiniteProbRecord.eventMass record.atoms topEvent * record.den =
-    (values.map (fun value => FiniteProbRecord.eventMass record.atoms (FiniteProbRecord.singletonEvent value))).sum * record.den at combined
-  exact (Nat.eq_of_mul_eq_mul_right record.den_pos combined).symm.trans
-    ((FiniteProbRecord.eventMass_top record.atoms).trans record.total_mass)
-
 private def rowMass (record : FiniteProbRecord (α × β)) (row : α) : Nat :=
   FiniteProbRecord.eventMass record.atoms (rowEvent row)
 
@@ -90,7 +67,7 @@ private theorem sum_rowMass_eq_den (record : FiniteProbRecord (α × β))
     (values : List α) (nodup : values.Nodup) (complete : forall value, value ∈ values) :
     (values.map (rowMass record)).sum = record.den := by
   simpa only [rowMass, rowEvent, FiniteProbRecord.map, FiniteProbRecord.eventMass_map_labels,
-    FiniteProbRecord.singletonEvent] using sum_singletonMass_eq_den (record.map Prod.fst) values nodup complete
+    FiniteProbRecord.singletonEvent] using (record.map Prod.fst).sum_singletonMass_eq_den values nodup complete
 
 /-- The decisive cross-multiplication step.  The reference column need
 not have equal mass in the two records.  A positive *right cell* is the

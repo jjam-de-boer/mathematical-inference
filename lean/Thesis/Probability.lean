@@ -11,6 +11,7 @@ import Thesis.Probability.FiniteRecordSlicing
 import Thesis.Probability.FiniteRecordPerturbation
 import Thesis.Probability.FiniteLinearResponse
 import Thesis.Probability.ConditionalUniqueness
+import Thesis.Probability.FiniteProductConditionals
 import Thesis.Probability.BooleanNoise
 import Thesis.Probability.ColliderChannel
 import Thesis.Probability.Construction
@@ -48,7 +49,10 @@ Reading order:
    against a fixed finite rational environment without subtraction or division
    by its coefficients; `ConditionalUniqueness` proves that positive joint laws
    agreeing in both conditional directions agree on every joint event,
-   without assuming equal conditioning marginals;
+   without assuming equal conditioning marginals; `FiniteProductConditionals`
+   proves the full-coordinate counterpart on arbitrary finite dependent
+   products and returns a separated coordinate conditional by finite search
+   whenever a joint event differs;
 9. `BooleanNoise` proves finite biased XOR-channel injectivity, exact parity
    bias through independent flips, and support restoration without real-valued
    limiting arguments; `ColliderChannel` constructs an independent fair parent
