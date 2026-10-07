@@ -24,6 +24,9 @@ import Thesis.CausalTransport.HedgeOutcomeFlow
 import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.HedgeNoise
 import Thesis.CausalTransport.HedgeReadout
+import Thesis.CausalTransport.ConditionalCollider
+import Thesis.CausalTransport.ConditionalColliderProbability
+import Thesis.CausalTransport.ConditionalColliderCounterexample
 import Thesis.CausalTransport.HedgeReadoutSequence
 import Thesis.CausalTransport.HedgeReadoutPullback
 import Thesis.CausalTransport.HedgeRoutedCounterexample
@@ -88,6 +91,19 @@ conditioner left by an exhausted IDC exchange search: it returns an active
 back-door path in the action-cut graph, with an explicit first incoming edge
 and no action vertices.  These are ingredients for the general conditional
 countermodel argument, not an assumption or proof of that remaining argument.
+
+`ConditionalCollider` realizes an incoming-parent collider with two fresh
+private inputs in the original SCM graph.  It preserves positivity and,
+under explicit pivot non-influence conditions, the full observational law.
+`ConditionalColliderProbability` transports its actual evaluated posterior
+to the finite collider channel, proving its numerator and denominator before
+division and retaining arbitrary supported contexts away from the pivots.
+`ConditionalColliderCounterexample` connects the true readout to a single
+observed conditioning value on any `ValueRich` alphabet.  When the sole
+common hedge root is the conditioner and a queried incoming parent is outside
+the large forest, it constructs a positive counterexample for the original
+conditional kernel.  General active-path composition, multiple-root geometries,
+and the unrestricted conditional terminal family remain separate obligations.
 
 `Soundness` develops the graph-independent probability algebra and the finite
 latent factorization needed by the three do-calculus rules.  The factorized

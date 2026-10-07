@@ -6,11 +6,13 @@ import Thesis.Probability.FiniteCellProduct
 import Thesis.Probability.Urn
 import Thesis.Probability.QualitativeUrn
 import Thesis.Probability.FiniteRecord
+import Thesis.Probability.FiniteProductReindex
 import Thesis.Probability.FiniteRecordSlicing
 import Thesis.Probability.FiniteRecordPerturbation
 import Thesis.Probability.FiniteLinearResponse
 import Thesis.Probability.ConditionalUniqueness
 import Thesis.Probability.BooleanNoise
+import Thesis.Probability.ColliderChannel
 import Thesis.Probability.Construction
 import Thesis.Probability.FiniteProductResponse
 import Thesis.Probability.Distros
@@ -36,7 +38,9 @@ Reading order:
 7. `QualitativeUrn` derives the finite qualitative ratio representation from
    an event-level plausibility interface;
 8. `FiniteRecord` gives weighted, common-denominator finite distributions and
-   conditioning; `FiniteRecordSlicing` sums arbitrary events over a finite
+   conditioning; `FiniteProductReindex` swaps and reassociates independent
+   weighted records for arbitrary mixed events, not only rectangles;
+   `FiniteRecordSlicing` sums arbitrary events over a finite
    projection's disjoint fibres without enumerating or selecting the source
    values; `FiniteRecordPerturbation` builds strictly positive normalized
    record pairs from raw balanced natural weights, including repeated labels;
@@ -47,7 +51,10 @@ Reading order:
    without assuming equal conditioning marginals;
 9. `BooleanNoise` proves finite biased XOR-channel injectivity, exact parity
    bias through independent flips, and support restoration without real-valued
-   limiting arguments;
+   limiting arguments; `ColliderChannel` constructs an independent fair parent
+   and noisy collider, proving exact posterior laws, full supported-noise
+   readout support, and bias-dependent gap preservation even when the two
+   source contexts have unequal conditioning probabilities;
 10. `Construction` builds finite dependent products and the rational
    constructions used by causal models; `FiniteProductResponse` isolates one
    factor while retaining all other factors, including zeros; and

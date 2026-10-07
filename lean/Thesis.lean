@@ -35,6 +35,7 @@ import Thesis.Examples.HedgeCarrierTwoSidedReplay
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 import Thesis.Examples.ConditionalFailurePaths
+import Thesis.Examples.ConditionalCollider
 import Thesis.Examples.ConditionalCounterexampleNormalization
 import Thesis.Examples.ValueRefinement
 import Thesis.Examples.HedgeObstructionLikelihood
@@ -44,6 +45,16 @@ import Thesis.Examples.FiniteTablePerturbation
 
 /-!
 Top-level convenience import for the thesis formalisation.
+
+`ConditionalCollider` checks a real irreducible `P(U | do(A), R)` failure
+on `U -> R <- A`, `A <-> R`, with three-valued observed alphabets.  The
+installed incoming-parent collider supplies both positive SCMs, complete
+observational equality, and separation of that original conditional kernel;
+the root belongs to the conditioner rather than the queried outcome.
+Its probability checks additionally retain unequal context denominators,
+repeated source atoms, both posterior bits, and the balanced-noise erasure
+boundary.  Neither the fixture nor its constructor claims universal
+conditional completeness.
 
 For a smaller dependency footprint, client developments should normally import
 one stable facade directly: `Thesis.Probability`, `Thesis.Causality`, or

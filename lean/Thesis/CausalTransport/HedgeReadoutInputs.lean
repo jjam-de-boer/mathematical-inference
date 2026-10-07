@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.HedgeReadoutEvaluation
+import Thesis.Probability.FiniteProductReindex
 
 namespace Thesis
 namespace Causality
@@ -26,6 +27,8 @@ slice is sufficient, but is not silently made a necessary requirement.
 The tuple stores the tail first and the head bit second.  This follows the
 actual folded prior, where later fresh factors are outside earlier factors.
 It is only an encoding convention: evaluation still installs the head first.
+Reassociation of these actual products uses the shared all-event theorem in
+`Probability.FiniteProductReindex`, also used by conditional collider priors.
 -/
 
 namespace HedgeReadoutInputs
@@ -65,30 +68,6 @@ theorem response_ofNodeBits (rich : ObservedSignature.ValueRich S)
   induction steps generalizing old with
   | nil => rfl
   | cons step rest inductionHypothesis => exact inductionHypothesis _
-
-/-! ## Reassociate the explicit finite products, without selecting a coupling -/
-
-private theorem weightedCartesian_assoc (left : List (Ω × Nat))
-    (middle : List (X × Nat)) (right : List (Y × Nat)) :
-    FiniteProbRecord.weightedCartesian (FiniteProbRecord.weightedCartesian left middle) right =
-      (FiniteProbRecord.weightedCartesian left (FiniteProbRecord.weightedCartesian middle right)).map
-        (fun atom => (((atom.1.1, atom.1.2.1), atom.1.2.2), atom.2)) := by
-  simp only [FiniteProbRecord.weightedCartesian, List.flatMap_map, List.map_flatMap,
-    List.flatMap_assoc, List.map_map, Function.comp_def, Nat.mul_assoc]
-
-private theorem product_assoc_probVal (left : FiniteProbRecord Ω)
-    (middle : FiniteProbRecord X) (right : FiniteProbRecord Y)
-    (event : Event ((Ω × X) × Y)) :
-    QProb.Equiv (((left.product middle).product right).probVal event)
-      ((left.product (middle.product right)).probVal
-        (fun triple => event ((triple.1, triple.2.1), triple.2.2))) := by
-  simp only [FiniteProbRecord.product, FiniteProbRecord.probVal, QProb.Equiv,
-    weightedCartesian_assoc, Nat.mul_assoc]
-  exact congrArg (fun mass => mass * (left.den * (middle.den * right.den)))
-    (FiniteProbRecord.eventMass_map_labels
-      (FiniteProbRecord.weightedCartesian left.atoms
-        (FiniteProbRecord.weightedCartesian middle.atoms right.atoms))
-      (fun triple => ((triple.1, triple.2.1), triple.2.2)) event)
 
 end HedgeReadoutInputs
 
@@ -164,7 +143,7 @@ theorem FiniteLatentSCM.withHedgeReadouts_prior_probVal_equiv_inputs
       have encoded := (HedgeReadoutInputs.distribution rest).product_map_right_probVal
         (step.noise.product base.prior)
         (fun pair => PrivateBooleanNoise.assignment base.latent pair.1 pair.2) encodedEvent
-      have associated := HedgeReadoutInputs.product_assoc_probVal
+      have associated := FiniteProbRecord.product_assoc_probVal
         (HedgeReadoutInputs.distribution rest) step.noise base.prior
         (fun pair => event (base.hedgeReadoutAssignmentWithInputs rich (step :: rest) pair.1 pair.2))
       exact QProb.equiv_trans tail
