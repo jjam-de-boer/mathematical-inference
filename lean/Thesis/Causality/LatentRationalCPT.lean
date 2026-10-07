@@ -552,6 +552,50 @@ def sliceFactors (C : FiniteLatentRationalCPT S)
       (FiniteProbRecord.singletonEvent (shared (C.sharedIndex root selected)))
   else C.rowValueUnder target shared sample (C.privateIndex root selected)
 
+/-- Every augmented coordinate belongs to the unchanged shared prefix or
+to one explicitly indexed private response source.  This is a propositional
+case split for proofs, not a choice of a latent representative into data. -/
+theorem extension_root_cases (C : FiniteLatentRationalCPT S) (root : Fin C.extension.count) :
+    (Exists fun original => C.sharedRoot original = root) ∨
+      (Exists fun child => C.privateRoot child = root) := by
+  by_cases selected : root.val < C.shared.count
+  · exact Or.inl ⟨C.sharedIndex root selected, Fin.ext rfl⟩
+  · apply Or.inr
+    refine ⟨C.privateIndex root selected, ?_⟩
+    apply Fin.ext
+    change C.shared.count + (root.val - C.shared.count) = root.val
+    omega
+
+/-- The shared slice factor is its actual original singleton mass.  Exposing
+this typed-coordinate equation keeps later table-response proofs independent
+of the prefix/suffix implementation's private index decoders. -/
+theorem sliceFactors_sharedRoot (C : FiniteLatentRationalCPT S)
+    (target : (node : Fin S.count) → Option (S.Value node))
+    (shared : C.shared.Assignment) (sample : S.Assignment) (root : Fin C.shared.count) :
+    C.sliceFactors target shared sample (C.sharedRoot root) =
+      (C.sharedFactor root).probVal (FiniteProbRecord.singletonEvent (shared root)) := by
+  unfold sliceFactors
+  rw [dif_pos (show (C.sharedRoot root).val < C.shared.count from root.isLt)]
+  rfl
+
+/-- The private slice factor is the selected local row, or its forced-node
+consistency value.  It is not the probability of a whole response seed. -/
+theorem sliceFactors_privateRoot (C : FiniteLatentRationalCPT S)
+    (target : (node : Fin S.count) → Option (S.Value node))
+    (shared : C.shared.Assignment) (sample : S.Assignment) (child : Fin S.count) :
+    C.sliceFactors target shared sample (C.privateRoot child) =
+      C.rowValueUnder target shared sample child := by
+  have excluded : ¬ (C.privateRoot child).val < C.shared.count := by
+    change ¬ C.shared.count + child.val < C.shared.count
+    omega
+  unfold sliceFactors
+  rw [dif_neg excluded]
+  have same : C.privateIndex (C.privateRoot child) excluded = child := by
+    apply Fin.ext
+    change C.shared.count + child.val - C.shared.count = child.val
+    omega
+  rw [same]
+
 private theorem factor_sliceEvents (C : FiniteLatentRationalCPT S)
     (target : (node : Fin S.count) -> Option (S.Value node))
     (shared : C.shared.Assignment) (sample : S.Assignment) (root : Fin C.extension.count) :

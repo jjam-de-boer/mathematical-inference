@@ -7,9 +7,12 @@ import Thesis.Probability.Urn
 import Thesis.Probability.QualitativeUrn
 import Thesis.Probability.FiniteRecord
 import Thesis.Probability.FiniteRecordSlicing
+import Thesis.Probability.FiniteRecordPerturbation
+import Thesis.Probability.FiniteLinearResponse
 import Thesis.Probability.ConditionalUniqueness
 import Thesis.Probability.BooleanNoise
 import Thesis.Probability.Construction
+import Thesis.Probability.FiniteProductResponse
 import Thesis.Probability.Distros
 
 /-!
@@ -35,14 +38,19 @@ Reading order:
 8. `FiniteRecord` gives weighted, common-denominator finite distributions and
    conditioning; `FiniteRecordSlicing` sums arbitrary events over a finite
    projection's disjoint fibres without enumerating or selecting the source
-   values; `ConditionalUniqueness` proves that positive joint laws
+   values; `FiniteRecordPerturbation` builds strictly positive normalized
+   record pairs from raw balanced natural weights, including repeated labels;
+   `FiniteLinearResponse` proves exact cancellation and separation criteria
+   against a fixed finite rational environment without subtraction or division
+   by its coefficients; `ConditionalUniqueness` proves that positive joint laws
    agreeing in both conditional directions agree on every joint event,
    without assuming equal conditioning marginals;
 9. `BooleanNoise` proves finite biased XOR-channel injectivity, exact parity
    bias through independent flips, and support restoration without real-valued
    limiting arguments;
 10. `Construction` builds finite dependent products and the rational
-   constructions used by causal models; and
+   constructions used by causal models; `FiniteProductResponse` isolates one
+   factor while retaining all other factors, including zeros; and
 11. `Distros` packages named finite distros (Bernoulli, binomial, lattice
     Gaussian, and the finite counterparts of the classical limiting
     families).

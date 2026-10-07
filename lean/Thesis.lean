@@ -39,6 +39,7 @@ import Thesis.Examples.ValueRefinement
 import Thesis.Examples.HedgeObstructionLikelihood
 import Thesis.Examples.HedgeObstructionModel
 import Thesis.Examples.HedgeObstructionCounterexample
+import Thesis.Examples.FiniteTablePerturbation
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -63,6 +64,11 @@ same causal gap for the actual SCMs.  Private label refinement then returns
 a positive counterexample for the original three-valued `P(Y | do(A,B))`
 query on the original graph.  This closes that outer-reentry regression,
 not the universal hedge-countermodel obligation.
+The finite table-perturbation boundary checks additionally cover three values,
+repeated atom labels, zero direction weights, and zero environment coefficients.
+The generated profiles are normalized and fully positive; their factual
+response equality and changed-environment gap follow from the general
+balanced-response criterion, not subtraction or division by a coefficient.
 The current-input compilation regressions additionally exercise supported
 certificates on a gapped host, a nonempty external action, and an empty
 observed signature.  Component-extraction regressions additionally exercise

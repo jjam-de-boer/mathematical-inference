@@ -17,6 +17,8 @@ import Thesis.Causality.ConditionalIdentificationKernel
 import Thesis.Causality.IdentificationInduction
 import Thesis.Causality.Reductions
 import Thesis.Causality.LatentRationalCPT
+import Thesis.Causality.LatentTableResponse
+import Thesis.Causality.LatentTableCounterexample
 import Thesis.Causality.CompactHiddenDAG
 import Thesis.Causality.PairRoot
 import Thesis.Causality.Semantics
@@ -103,4 +105,15 @@ product prior, without enumerating those potentially large private function
 spaces; a supported shared assignment and positive local rows supply full
 observed positivity.  Particular table pairs still need their observational
 equality and original-query gap before they give a counterexample.
+`LatentTableResponse` isolates a selected non-action row from the full
+likelihood, retaining all shared masses and responding descendant factors.
+Balanced nonnegative perturbation parts cancel exactly when the two profile
+responses agree, even with zero environment factors. `LatentTableCounterexample`
+constructs positive normalized profiles from raw balanced weights and turns
+factual response cancellation and an original-query response gap into actual
+positive countermodels. Conditional separation retains the same models'
+two conditioning denominators and proves common support intrinsically.
+These constructions impose no routing or binary-alphabet hypothesis; they
+do not prove the remaining existence of suitable directions for every hedge
+or irreducible conditional failure.
 -/
