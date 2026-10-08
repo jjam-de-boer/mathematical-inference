@@ -86,6 +86,8 @@ import Thesis.CausalTransport.HedgeConditionalCompensatedReadout
 import Thesis.CausalTransport.HedgeSmallAbsorption
 import Thesis.CausalTransport.HedgeOutcomeNormalization
 import Thesis.CausalTransport.HedgeCountermodelSearch
+import Thesis.CausalTransport.HedgeChannelCharacters
+import Thesis.CausalTransport.HedgeChannelOrthogonality
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -410,6 +412,17 @@ family.  Exact whole-prior integration and independent repeated inputs are
 checked separately, without inferring equality from either representation.
 This removes an unnecessarily strong fixed-slice comparison boundary, but
 does not itself construct an unrestricted positive hedge countermodel.
+`HedgeChannelCharacters` begins a different, finite independent-channel
+construction.  For every hedge, it transfers outer expansion bits through
+actual kept parents and factors each large local character into an arbitrary
+typed small-parent character and the selected outer-background characters.
+No route-avoidance or protected-outer hypothesis is imposed on this identity.
+`HedgeChannelOrthogonality` proves that partially reading a connected channel
+gives exactly fair parity under a normalized pair-bit record, by an explicit
+finite XOR translation.  A complete channel has even incidence.  Together
+with the positive rows of `Probability.BooleanChannelTable`, these supply
+general ingredients for weighted hidden-channel integration; that integration,
+the observational comparison and original-query gap are still open.
 `HedgeCompensatedPreimage` exposes the exact installed-row full-value
 preimages in both actual carriers: ordinary/nested incidence equations have
 a common private-background test.  That test retains the loss of a nonbinary

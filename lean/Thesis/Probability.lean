@@ -13,6 +13,7 @@ import Thesis.Probability.FiniteLinearResponse
 import Thesis.Probability.ConditionalUniqueness
 import Thesis.Probability.FiniteProductConditionals
 import Thesis.Probability.BooleanNoise
+import Thesis.Probability.BooleanChannelTable
 import Thesis.Probability.ConditionalNoise
 import Thesis.Probability.ColliderChannel
 import Thesis.Probability.ColliderRealization
@@ -59,7 +60,10 @@ Reading order:
 9. `BooleanNoise` proves normalized complement equality for independently
    presented records, finite biased XOR-channel injectivity, exact parity
    bias through independent flips, and support restoration without real-valued
-   limiting arguments; `ConditionalNoise` retains the full mixed-event law
+   limiting arguments; `BooleanChannelTable` constructs positive normalized
+   rows from finitely many natural-weight channel signals, with a fixed
+   signal-independent capacity and exact two-sided deviation from a fair row;
+   `ConditionalNoise` retains the full mixed-event law
    after independent noise is conditioned on source-only evidence.  Its XOR
    transport uses each source's actual evidence mass rather than a common
    denominator; `ColliderChannel` constructs an independent fair parent
