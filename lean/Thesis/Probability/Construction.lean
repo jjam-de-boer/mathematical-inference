@@ -258,6 +258,27 @@ theorem enumeration_complete (n : Nat) (Value : Fin n -> Type u)
           exact extend_castSucc last initial earlier
       exact hAssignment ▸ hFlat
 
+/-- Every coordinate of a listed complete assignment comes from that
+coordinate's supplied choice list.  This needs neither exhaustive local
+lists nor distinct labels, and extracts no value from a Prop existential. -/
+theorem enumeration_coordinate_mem (n : Nat) (Value : Fin n -> Type u)
+    (values : (index : Fin n) -> List (Value index)) (assignment : Assignment n Value)
+    (member : assignment ∈ enumeration n Value values) (index : Fin n) :
+    assignment index ∈ values index := by
+  induction n with
+  | zero => exact Fin.elim0 index
+  | succ n inductionHypothesis =>
+      rw [enumeration] at member
+      rcases List.mem_flatMap.mp member with ⟨last, lastMember, mapped⟩
+      rcases List.mem_map.mp mapped with ⟨initial, initialMember, equal⟩
+      subst assignment
+      refine Fin.lastCases ?_ (fun earlier => ?_) index
+      · rw [extend_last]
+        exact lastMember
+      · rw [extend_castSucc]
+        exact inductionHypothesis (fun earlier => Value earlier.castSucc)
+          (fun earlier => values earlier.castSucc) initial initialMember earlier
+
 /-- A finite dependent assignment type has an explicit finite presentation. -/
 def finiteWitness (n : Nat) (Value : Fin n -> Type u)
     (values : (i : Fin n) -> List (Value i))

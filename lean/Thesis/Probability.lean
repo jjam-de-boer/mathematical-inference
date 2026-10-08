@@ -60,6 +60,8 @@ Reading order:
    integrands over the same nonnegative weighted atoms, and
    `FiniteSignedProduct` expands complete finite products and integrates
    rectangular integrands against the actual independent product record.
+   It also separates scalar coefficients from Boolean characters and relates
+   their complete product to an explicitly indexed finite XOR fold.
    These auxiliary integer integrands do not introduce signed probability
    records or replace natural-weight probability semantics;
    `FiniteUniformProduct` identifies the literal unit-weight atoms and
@@ -82,6 +84,8 @@ Reading order:
    `BooleanChannelExpansion` relates their complete character expansion to
    actual row-product numerators, retaining interactions and respecting hard
    interventions with their actual forced-value indicators;
+   its hidden-independent local coefficients retain forced zero terms before
+   the causal channel construction groups complete monomials;
    `ConditionalNoise` retains the full mixed-event law
    after independent noise is conditioned on source-only evidence.  Its XOR
    transport uses each source's actual evidence mass rather than a common

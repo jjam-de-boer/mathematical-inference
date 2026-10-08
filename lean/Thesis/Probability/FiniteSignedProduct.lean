@@ -39,6 +39,33 @@ theorem iProduct_congr (n : Nat) (left right : Fin n -> Int)
         inductionHypothesis (fun index => left index.castSucc) (fun index => right index.castSucc)
           (fun index => same index.castSucc)]
 
+/-- Separate local scalar coefficients from their character signs.  This
+keeps every factor, including zero and negative intermediate coefficients;
+it is not cancellation of a probability cell. -/
+theorem iProduct_mul (n : Nat) (left right : Fin n -> Int) :
+    iProduct n (fun index => left index * right index) = iProduct n left * iProduct n right := by
+  induction n with
+  | zero => rfl
+  | succ n inductionHypothesis =>
+      simp only [iProduct, inductionHypothesis (fun index => left index.castSucc) (fun index => right index.castSucc)]
+      ac_rfl
+
+/-- A product of Boolean signs is the sign of their complete finite XOR.
+The terminal-coordinate product and ascending-index XOR fold have opposite
+written orders, but integer multiplication commutes.  No Boolean vector is
+enumerated to prove this symbolic identity. -/
+theorem iProduct_characterSign (n : Nat) (bits : Fin n -> Bool) :
+    iProduct n (fun index => FiniteProbRecord.characterSign (bits index)) =
+      FiniteProbRecord.characterSign
+        ((List.finRange n).foldl (fun total index => Bool.xor total (bits index)) false) := by
+  induction n with
+  | zero => rfl
+  | succ n inductionHypothesis =>
+      rw [iProduct, inductionHypothesis (fun index => bits index.castSucc), List.finRange_succ_last]
+      simp only [List.foldl_append, List.foldl_map, List.foldl_cons, List.foldl_nil,
+        FiniteProbRecord.characterSign_xor]
+      exact Int.mul_comm _ _
+
 /-- The integer product is exactly the embedding of the natural product
 when the factors are nonnegative natural weights. -/
 theorem iProduct_nat (n : Nat) (values : Fin n -> Nat) :

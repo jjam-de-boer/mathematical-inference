@@ -92,6 +92,7 @@ import Thesis.CausalTransport.HedgeChannelIntegration
 import Thesis.CausalTransport.HedgeChannelPairRoot
 import Thesis.CausalTransport.HedgeChannelTable
 import Thesis.CausalTransport.HedgeChannelLikelihood
+import Thesis.CausalTransport.HedgeChannelMonomial
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -449,6 +450,13 @@ zero cells and empty blocks are retained without cancelling probability cells.
 Its arbitrary-event likelihood and gap criterion retain projection onto the
 original queried outcomes: a full-assignment gap alone is not substituted for
 an outcome-event gap.
+`HedgeChannelMonomial` regroups each actual complete row choice by hidden
+channel before using independence.  It derives selected support and forced
+row exclusion from the real local choice lists.  A selected connected channel
+in a nonzero term must be fully selected; channels sharing a pivot cannot
+survive together, and cutting any support vertex kills its selected terms.
+The complete likelihood numerator retains the sum of all these actual
+monomial integrals, including repeated local labels and zero coefficients.
 No common hidden source incident to the entire hedge is introduced by either
 construction.  Graph-specific matching coefficients, observational equality,
 original-query separation and universal conditional countermodels are still

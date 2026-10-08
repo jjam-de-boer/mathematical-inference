@@ -23,30 +23,34 @@ leave and re-enter either forest.  Every correction in `channelParentSignal`
 still reads only actual typed directed parents; a global parity identity is
 not used to give a mechanism access to an unavailable observed coordinate.
 
-This is the local-character part of a proposed independent-channel
-construction, not a counterexample theorem.  The finite expansion, independent
-hidden channel integration, positive normalized rows, and original-query gap
-must still be proved.  In particular, a common mixing latent is not supplied,
-and observational equivalence is not assumed as a replacement for integration.
+This is the local-character part of the independent-channel construction,
+not a counterexample theorem.  Complete finite expansion, independent hidden
+integration and positive normalized actual tables are developed in the
+subsequent channel modules.  Their graph-specific coefficient matching and
+original-query gap remain open.  A common mixing latent is not supplied, and
+observational equivalence is not assumed as a replacement for integration.
 No channel enumeration or private response-function space is evaluated here.
 
-The intended remaining integration is specific.  Give each outer expansion
+The intended countermodel family is specific.  Give each outer expansion
 mask its own independent pair-bit block on the large component, and give
 the small component a separate block.  Each local row is a sum of its common
 background and channel characters.  Partial selections of any one connected
-block cancel by `HedgeChannelOrthogonality`; distinct blocks must be integrated
-as an actual independent product, not assigned a common switch.  The surviving
-large-channel terms should then sum to the small character times the complete
+block cancel by `HedgeChannelOrthogonality`; `HedgeChannelMonomial` regroups
+actual row terms and performs independent integration on the actual
+pair-root prior, not a common switch.  The surviving large-channel terms
+must still be summed to the small character times the complete
 product of outer background factors.  Common-capacity amplitudes must be
 constructed so the surviving large and small coefficients agree literally.
 
 The original intervention meets the large component and avoids the small
-one.  Its omission of a large row should therefore kill every large channel
-while retaining the complete small term.  That term still needs a checked
+one.  `HedgeChannelMonomial` proves that omission of any support row kills
+every term selecting that connected channel.  The complete small term must
+be shown to remain, and still needs a checked
 nonzero original-outcome marginal through an action-avoiding directed flow.
-Neither this integration nor that separation follows just by importing the
-character identity.  Conditional queries additionally need their actual two
-conditioning denominators compared, not merely a numerator difference.
+The integrated coefficient and separation obligations do not follow just
+by importing the character identity.  Conditional queries additionally need
+their actual two conditioning denominators compared, not merely a numerator
+difference.
 -/
 
 variable {S : ObservedSignature} {G : ObservedGraph S} {q : JointKernelQuery S}

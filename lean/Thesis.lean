@@ -46,9 +46,19 @@ import Thesis.Examples.HedgeObstructionLikelihood
 import Thesis.Examples.HedgeObstructionModel
 import Thesis.Examples.HedgeObstructionCounterexample
 import Thesis.Examples.FiniteTablePerturbation
+import Thesis.Examples.HedgeChannelTable
+import Thesis.Examples.HedgeChannelMonomial
 
 /-!
 Top-level convenience import for the thesis formalisation.
+
+The independent-channel table regressions check actual typed-input models,
+full observed support, complete integrated likelihoods and projected-event
+gap criteria without reducing private response-function priors.
+`HedgeChannelMonomial` checks row-to-channel regrouping, cancellation of
+mixed partial selections, actual action-cut terms, and complete expansions
+with repeated local labels or zero channels.  These are checks of general
+construction ingredients, not an inhabitant of `PublishedCompleteness`.
 
 `ConditionalCollider` checks a real irreducible `P(U | do(A), R)` failure
 on `U -> R <- A`, `A <-> R`, with three-valued observed alphabets.  The

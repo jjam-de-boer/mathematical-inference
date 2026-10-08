@@ -131,6 +131,17 @@ private theorem signedAtomMass_mul_right (atoms : List (Ω × Nat)) (integrand :
       rw [inductionHypothesis]
       simp only [Int.add_mul, Int.mul_assoc]
 
+/-- A fixed integer coefficient can be pulled outside the actual weighted
+integral.  The coefficient need not be nonzero, and no weight is divided out. -/
+theorem signedAtomMass_mul_left (atoms : List (Ω × Nat)) (factor : Int) (integrand : Ω -> Int) :
+    signedAtomMass atoms (fun value => factor * integrand value) = factor * signedAtomMass atoms integrand := by
+  exact (signedAtomMass_congr atoms _ _ (fun value => Int.mul_comm factor (integrand value))).trans
+    ((signedAtomMass_mul_right atoms integrand factor).trans (Int.mul_comm _ _))
+
+theorem signedMass_mul_left (record : FiniteProbRecord Ω) (factor : Int) (integrand : Ω -> Int) :
+    record.signedMass (fun value => factor * integrand value) = factor * record.signedMass integrand :=
+  signedAtomMass_mul_left record.atoms factor integrand
+
 /-- Exact rectangular signed integration on a weighted Cartesian product.
 This is the independence calculation at the real natural atom weights. -/
 theorem signedAtomMass_weightedCartesian (left : List (Ω × Nat)) (right : List (X × Nat))

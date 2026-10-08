@@ -123,6 +123,27 @@ def expansionTermUnder (table : BooleanChannelTable Channel) (signals : Channel 
       | none => if fixed = value then 1 else 0
       | some _ => 0
 
+/-- Hidden-input-independent coefficient of one row-choice term.  A
+forced row retains its consistency indicator only at the background choice;
+every forced channel coefficient is zero even outside the actual list. -/
+def expansionCoefficientUnder (table : BooleanChannelTable Channel)
+    (target : Option Bool) (value : Bool) (choice : Option Channel) : Int :=
+  match target with
+  | none => match choice with | none => table.capacity | some channel => table.amplitude channel
+  | some fixed => match choice with | none => if fixed = value then 1 else 0 | some _ => 0
+
+/-- Factor a complete local term into its scalar coefficient and one
+character, retaining zero coefficients at invalid forced channel choices.
+This total identity precedes any grouping or connected-channel cancellation. -/
+theorem expansionTermUnder_eq_coefficient_mul (table : BooleanChannelTable Channel)
+    (signals : Channel -> Bool) (target : Option Bool) (value : Bool) (choice : Option Channel) :
+    table.expansionTermUnder signals target value choice =
+      table.expansionCoefficientUnder target value choice *
+        (match choice with | none => 1 | some channel => FiniteProbRecord.characterSign (Bool.xor value (signals channel))) := by
+  cases target with
+  | none => cases choice <;> simp only [expansionTermUnder, expansionTerm, expansionCoefficientUnder, Int.mul_one]
+  | some fixed => cases choice <;> simp only [expansionTermUnder, expansionCoefficientUnder, Int.mul_one, Int.zero_mul]
+
 /-- Each complete local sum is exactly the actual cell's natural numerator,
 including both a matching and a conflicting forced assignment. -/
 theorem expansionChoicesUnder_sum (table : BooleanChannelTable Channel) (signals : Channel -> Bool)
