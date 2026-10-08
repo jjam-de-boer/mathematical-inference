@@ -39,6 +39,7 @@ import Thesis.Examples.ConditionalCollider
 import Thesis.Examples.HedgeConditionalRoot
 import Thesis.Examples.HedgeConditionalCollider
 import Thesis.Examples.HedgeConditionalColliderSelection
+import Thesis.Examples.HedgeConditionalLatentCollider
 import Thesis.Examples.ConditionalCounterexampleNormalization
 import Thesis.Examples.ValueRefinement
 import Thesis.Examples.HedgeObstructionLikelihood
@@ -74,6 +75,13 @@ the other root's full label is retained rather than marginalized away.
 with distinct queried incoming parents and no eligible shared parent.  The
 root-specific finite search supplies the parent's actual data after the
 separated root is selected, while retaining the original conditional query.
+`HedgeConditionalLatentCollider` checks the complementary latent-pair family
+on the original three-valued `P(U,V,E | do(A), R₁,R₂)` query.  There are no
+queried observed arrows into the roots and no eligible shared readout for
+both roots.  The root-specific meeting searches return different neighbours.
+The actual query fails IDC; the general constructor supplies the positive
+compatible pair, the complete observed-law equality, third-label support,
+and separation of the entire three-outcome, two-conditioner kernel.
 
 For a smaller dependency footprint, client developments should normally import
 one stable facade directly: `Thesis.Probability`, `Thesis.Causality`, or

@@ -31,6 +31,10 @@ import Thesis.CausalTransport.ConditionalColliderCounterexample
 import Thesis.CausalTransport.ConditionalMarginalization
 import Thesis.CausalTransport.ConditionalColliderContextCounterexample
 import Thesis.CausalTransport.HedgeConditionalCollider
+import Thesis.CausalTransport.ConditionalLatentCollider
+import Thesis.CausalTransport.ConditionalLatentColliderProbability
+import Thesis.CausalTransport.ConditionalLatentColliderCounterexample
+import Thesis.CausalTransport.HedgeConditionalLatentCollider
 import Thesis.CausalTransport.HedgeReadoutSequence
 import Thesis.CausalTransport.HedgeReadoutPullback
 import Thesis.CausalTransport.HedgeRoutedCounterexample
@@ -124,7 +128,21 @@ incoming parent outside the large forest.  An automatic wrapper accepts a
 parent with incoming edges to every common root; the root-specific wrapper
 instead finds a possibly different queried incoming parent for each selected
 root from its finite Boolean availability test.  The original action values
-are preserved when the readout labels are chosen.  General active-path
+are preserved when the readout labels are chosen.
+`ConditionalLatentCollider` supplies the complementary shared-latent first
+edge without requiring an observed arrow between the readout and root.  It
+installs a mask on an existing bidirected pair, then combines the old child
+value, shared mask, and private noise before one full-value emission.  This
+avoids losing nonbinary background labels through sequential bit carriers.
+`ConditionalLatentColliderProbability` constructs the actual channel
+realization from the SCM's prior, evaluation equations, and unchanged context;
+`ConditionalLatentColliderCounterexample` connects its supported posterior to
+the original conditional kernel and restores all queried outcomes.
+`HedgeConditionalLatentCollider` supplies the source gap internally from the
+arbitrary hedge root selector and selects a possibly different queried outside
+bidirected neighbour at each root by finite meeting search.  Both collider
+families still require the common roots to be the original conditioner and
+the selected readout to lie outside the large forest.  General active-path
 composition, unrestricted outcome/conditioner placement, and the universal
 conditional terminal family remain separate obligations.
 

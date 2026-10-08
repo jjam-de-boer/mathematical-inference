@@ -6,11 +6,14 @@ namespace Causality
 open Probability
 
 /-!
-External completeness and soundness interfaces with checked certificate transport.
+Generic completeness and soundness interfaces with checked certificate transport.
 
-The published identification theorem is deliberately represented by explicit
-parameters.  Internal query semantics and identifiability live in
-`Thesis.Causality.Identification`.
+The published identification theorems are represented by explicit records at
+this dependency boundary.  Internal query semantics and identifiability live
+in `Thesis.Causality.Identification`.  `Soundness` constructs its record from
+the finite model semantics; completeness assembly still exposes its genuinely
+open universal countermodel arguments.  Defining either interface is not an
+axiom declaring that it is inhabited.
 
 Completeness and certificates are indexed by a `GraphModelClass`, so positivity
 and other regularity hypotheses are specialisations rather than constraints on
@@ -20,12 +23,13 @@ under local support.
 This file is the generic, graph-indexed boundary. It does not depend on the
 finite source-table encoding: `FiniteSource` specializes these interfaces only
 after independently defining source evaluation and its preservation map. A
-reader looking for what Lean assumes should begin with `PublishedCompleteness`
-and `PublishedSoundness`; a reader looking for what Lean proves should follow
-the certificate compilation and transport theorems below.
+reader checking a transport theorem's parameters should begin with
+`PublishedCompleteness` and `PublishedSoundness`; a reader checking which
+records are actually inhabited should follow `ObservedGraph.publishedSoundness`
+in `Soundness` and the remaining-leaf boundary in `ConditionalFailureExtraction`.
 -/
 
-/-! ## Explicit external theorem interface and checked transport -/
+/-! ## Explicit theorem interfaces and checked transport -/
 
 /-!
 The generic records in `Certificates` factor the shared certificate shape.
@@ -188,8 +192,10 @@ def PathPrimitiveSoundness.compile
   chain := semantics.chain
 
 /--
-External semantic soundness interface.  The path criterion and its executable
+Semantic soundness interface.  The path criterion and its executable
 equivalence are separate fields; Lean compiles them into concrete rule soundness.
+`ObservedGraph.publishedSoundness` constructs this entire record in `Soundness`
+without an external semantic theorem supplied by the caller.
 -/
 structure PublishedSoundness (S : ObservedSignature)
     (G : ObservedGraph S) where
