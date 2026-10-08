@@ -89,6 +89,8 @@ import Thesis.CausalTransport.HedgeCountermodelSearch
 import Thesis.CausalTransport.HedgeChannelCharacters
 import Thesis.CausalTransport.HedgeChannelOrthogonality
 import Thesis.CausalTransport.HedgeChannelIntegration
+import Thesis.CausalTransport.HedgeChannelPairRoot
+import Thesis.CausalTransport.HedgeChannelTable
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -425,10 +427,22 @@ finite XOR translation.  A complete channel has even incidence.
 cancellation against the actual independent product of channel records, even
 when other channels have arbitrary selections.  The complete row-numerator
 expansion is supplied by `Probability.BooleanChannelExpansion`.  The channel
-product is only a prior presentation: realizing its transpose at actual
-pair-root sources, constructing matching coefficients, proving observational
-equality and separating the original query are still open.  In particular
-no common hidden source incident to the entire hedge is introduced here.
+product is only a prior presentation.  `HedgeChannelPairRoot` proves that its
+explicit transpose preserves every mixed event and signed integrand of the
+actual root-major prior from `Causality.PairRootChannels`, including equal
+literal denominators.  Proper-subset cancellation therefore holds for the
+original pair-root source grouping.  Its typed local incidence bridge reads
+only sources actually incident to each receiving mechanism.
+`HedgeChannelTable` realizes positive binary channel rows as actual rational
+table SCMs, with compact channel-signal configuration indices, exact row
+lookup and hard-intervention factors.  The real model is canonically
+semi-Markovian, projects to exactly the supplied graph, and has full observed
+Boolean support.  Its complete integrated private-row numerator expansion
+retains all cross-row interactions without evaluating private response spaces.
+No common hidden source incident to the entire hedge is introduced by either
+construction.  Graph-specific matching coefficients, observational equality,
+original-query separation and universal conditional countermodels are still
+open; these general constructions do not inhabit `PublishedCompleteness`.
 `HedgeCompensatedPreimage` exposes the exact installed-row full-value
 preimages in both actual carriers: ordinary/nested incidence equations have
 a common private-background test.  That test retains the loss of a nonbinary

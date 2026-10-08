@@ -24,9 +24,10 @@ exponential list is evaluated while checking these general declarations.
 This is the orthogonality leaf for the multi-channel table construction.
 In a product expansion, a partially selected connected channel cancels,
 whereas a wholly selected channel retains its local observed character.
-The actual independent-channel product expansion and SCM table integration
-remain to be assembled; a one-channel marginal law is not mistaken for
-independence of an arbitrary family or for an observational countermodel.
+`HedgeChannelIntegration` assembles the actual independent block integration;
+`HedgeChannelPairRoot` transports it to the original pair-root source grouping.
+This one-channel marginal law alone is not mistaken for independence of an
+arbitrary family or for an observational countermodel.
 -/
 
 variable {S : ObservedSignature}

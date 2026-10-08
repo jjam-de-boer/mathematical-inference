@@ -30,6 +30,7 @@ import Thesis.Causality.LatentTableBlockResponse
 import Thesis.Causality.LatentTableCounterexample
 import Thesis.Causality.CompactHiddenDAG
 import Thesis.Causality.PairRoot
+import Thesis.Causality.PairRootChannels
 import Thesis.Causality.Semantics
 import Thesis.Causality.ProbabilityTermEquality
 import Thesis.Causality.ModalDerivation
@@ -51,8 +52,8 @@ Stable facade for the finite causal, modal, and counterfactual development.
 
 Suggested reading order for a reader familiar with the thesis but new to the
 source is `Graph`, `Derivation`, `Model`, `HardIntervention`, `Reductions`,
-`CompactHiddenDAG`, `PairRoot`, `Semantics`, `Identification`, and
-`IdentificationSearch`; `HedgeSelectionSearch` exhaustively scans alternative
+`CompactHiddenDAG`, `PairRoot`, `PairRootChannels`, `Semantics`, `Identification`,
+and `IdentificationSearch`; `HedgeSelectionSearch` exhaustively scans alternative
 forest selections with an additional Boolean requirement tested before
 accepting a leaf.  Its candidate-completeness theorem is independent of
 countermodel semantics and does not assert universal geometric coverage.
@@ -69,6 +70,14 @@ corrected engine; then
 `ModalRealization` and `ModalCounterfactual` connect the executable edit paths
 back to query semantics. `ModeTheory` names the existing one-shots as
 morphisms and the edit paths as a 1-category of named states.
+`PairRootChannels` equips the same original pair roots with independent
+finite channel vectors and an actual independent product prior.  It preserves
+both canonical incidence and the exact projected graph for every declared-input
+mechanism; no single channel source incident to an entire component is added.
+Its complete unit-weight source presentation and explicit matrix transpose
+support the separate channel integration and positive-table construction in
+`CausalTransport`.  Empty channel and root families retain their one empty
+assignment rather than introducing a dummy graph edge.
 `ProbabilityTermEquality` supplies explicit finite syntax comparison for
 node selections, kernels, and complete expressions, without deciding
 denotational equivalence or using classical function equality.

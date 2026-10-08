@@ -12,6 +12,7 @@ import Thesis.Probability.FiniteRecordPerturbation
 import Thesis.Probability.FiniteLinearResponse
 import Thesis.Probability.FiniteSignedMass
 import Thesis.Probability.FiniteSignedProduct
+import Thesis.Probability.FiniteUniformProduct
 import Thesis.Probability.ConditionalUniqueness
 import Thesis.Probability.FiniteProductConditionals
 import Thesis.Probability.BooleanNoise
@@ -60,6 +61,9 @@ Reading order:
    rectangular integrands against the actual independent product record.
    These auxiliary integer integrands do not introduce signed probability
    records or replace natural-weight probability semantics;
+   `FiniteUniformProduct` identifies the literal unit-weight atoms and
+   denominators of independent products, and transports all mixed event
+   masses and signed integrands through explicit support permutations;
    `ConditionalUniqueness` proves that positive joint laws
    agreeing in both conditional directions agree on every joint event,
    without assuming equal conditioning marginals; `FiniteProductConditionals`

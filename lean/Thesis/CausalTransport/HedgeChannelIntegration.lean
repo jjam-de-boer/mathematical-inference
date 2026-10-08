@@ -16,9 +16,10 @@ alone.  This module builds that actual product record and proves exact signed
 integration and cancellation for arbitrary finite channel families.
 
 The channel-major record below is a probability presentation of pair bits,
-not a new shared SCM source incident to every vertex.  Realizing its transpose
-as independent pair-root sources with the original graph incidence remains
-a separate construction.  In particular this presentation cannot be used
+not a new shared SCM source incident to every vertex.  `HedgeChannelPairRoot`
+separately proves that its explicit transpose has the same whole prior as
+independent pair-root sources with the original graph incidence.
+In particular this presentation cannot be used
 to add an inadmissible common mixing variable to a hedge countermodel.
 
 A nonempty proper selected subset in any one connected channel makes the
