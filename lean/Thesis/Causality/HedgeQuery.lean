@@ -44,5 +44,19 @@ def HedgeWitness.withOutcomeContainingRoots
   outcomeSeed := rootSeed
   outcomeSeed_in_outcome := containsRoots rootSeed rootSeedSelected
 
+/-- Every common root belongs to the large forest, so an outside coordinate
+cannot be a root.  When a caller's conditioner equals the common roots, this
+also supplies conditioner avoidance without an extra semantic premise. -/
+theorem HedgeWitness.roots_false_of_large_false
+    {S : ObservedSignature} {graph : ObservedGraph S} {query : JointKernelQuery S}
+    (w : HedgeWitness graph query)
+    (node : Fin S.count) (outside : w.large node = false) : w.roots node = false := by
+  cases selected : w.roots node with
+  | false => rfl
+  | true =>
+      have inside := ((w.large_forest.roots_exact node).mp selected).1
+      rw [outside] at inside
+      cases inside
+
 end Causality
 end Thesis

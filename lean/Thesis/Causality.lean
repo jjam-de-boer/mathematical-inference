@@ -76,6 +76,8 @@ interfaces; those begin in `Thesis.CausalTransport`.
 `HedgeQuery` retains a hedge's actual forests and action seed while reindexing
 it at an outcome containing every common root.  An explicit root supplies the
 new outcome seed; this graph-only adapter does not assume a countermodel.
+Its outside-coordinate lemma also exposes the common roots' containment in
+the large forest, used to derive conditioner avoidance in routed constructions.
 `KernelConditioning` identifies an actual conditional kernel with the
 genuinely conditioned latent prior under its own reference-compatible action.
 Its support proof uses intrinsic observational positivity and finite SCM

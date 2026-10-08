@@ -47,14 +47,8 @@ namespace HedgeConditionalRoot.Witness
 uses the actual large forest, not an extra semantic non-influence premise. -/
 private theorem parent_ungiven {w : HedgeWitness graph query.jointNumerator}
     (roots : w.roots = query.condition) (parent : Fin S.count)
-    (outside : w.large parent = false) : query.condition parent = false := by
-  cases given : query.condition parent with
-  | false => rfl
-  | true =>
-      have root : w.roots parent = true := (congrFun roots parent).trans given
-      have inside := ((w.large_forest.roots_exact parent).mp root).1
-      rw [outside] at inside
-      cases inside
+    (outside : w.large parent = false) : query.condition parent = false :=
+  (congrFun roots parent).symm.trans (w.roots_false_of_large_false parent outside)
 
 /-- Carry an actual separated-root hedge witness to the whole original
 query through an auxiliary collider parent and an arbitrary directed route.
@@ -154,6 +148,18 @@ namespace HedgeConditionalRoot
 
 /-! ## Finite graph selection of an auxiliary parent and its route -/
 
+/-- The directed tail from an auxiliary source to an original outcome.
+This certificate is independent of whether the collider's first entry is
+an observed arrow or a shared latent pair.  Only replaced destinations must
+avoid the cut; callers check the source's eligibility separately. -/
+structure OutsideRoute (w : HedgeWitness graph query.jointNumerator) (parent : Fin S.count) where
+  endpoint : Fin S.count
+  route : ConditionalReadout.Route S parent endpoint
+  endpoint_selected : query.outcome endpoint = true
+  destinations_unacted : forall node, node ∈ route.destinations -> query.action node = false
+  destinations_ungiven : forall node, node ∈ route.destinations -> query.condition node = false
+  destinations_sinks : forall node, node ∈ route.destinations -> w.child node = none
+
 /-- Graph certificate for one root's incoming parent and its directed
 readout route.  The source need not be queried; the final vertex is queried.
 The displayed destination conditions are checked before any SCM is built. -/
@@ -176,6 +182,30 @@ def incomingRouteEndpointMask (w : HedgeWitness graph query.jointNumerator)
     (parent : Fin S.count) : NodeSet S :=
   fun endpoint => FiniteReachability.within finBeq (NodeSet.enumerated S)
     (mutilatedDirected S (NodeSet.union query.action w.large)) S.count parent endpoint
+
+/-- Find an original outcome and construct its complete directed tail from
+the Boolean meeting test.  Incoming-cut avoidance supplies action avoidance
+and outside-forest membership at every replaced destination; the common-root
+identity and forest certificate supply the remaining readiness conditions.
+This graph-data construction is shared by both collider-entry families. -/
+def outsideRoute (w : HedgeWitness graph query.jointNumerator)
+    (roots : w.roots = query.condition) (parent : Fin S.count)
+    (available : NodeSet.meetsBool query.outcome (incomingRouteEndpointMask w parent) = true) :
+    OutsideRoute w parent := by
+  let endpoint := NodeSet.getMeeting query.outcome (incomingRouteEndpointMask w parent) available
+  let certificate := ConditionalReadout.CutRoute.ofReachability
+    (NodeSet.union query.action w.large) endpoint S.count parent (NodeSet.getMeeting_right available)
+  have free (node : Fin S.count) (listed : node ∈ certificate.route.destinations) :
+      query.action node = false ∧ w.large node = false :=
+    Bool.or_eq_false_iff.mp (certificate.destinations_free node listed)
+  exact {
+    endpoint := endpoint
+    route := certificate.route
+    endpoint_selected := NodeSet.getMeeting_left available
+    destinations_unacted := fun node listed => (free node listed).1
+    destinations_ungiven := fun node listed => Witness.parent_ungiven roots node (free node listed).2
+    destinations_sinks := fun node listed => w.large_forest.child_off_set node (free node listed).2
+  }
 
 /-- Root-local auxiliary-parent eligibility.  Parents are searched over the
 whole signature, rather than only the original queried outcome.  The final
@@ -211,23 +241,18 @@ def incomingRoute (w : HedgeWitness graph query.jointNumerator)
         have impossible := parentParts.2
         rw [acted] at impossible
         cases impossible
-  let endpoint := NodeSet.getMeeting query.outcome (incomingRouteEndpointMask w parent) routeParts.2
-  let certificate := ConditionalReadout.CutRoute.ofReachability
-    (NodeSet.union query.action w.large) endpoint S.count parent (NodeSet.getMeeting_right routeParts.2)
-  have free (node : Fin S.count) (listed : node ∈ certificate.route.destinations) :
-      query.action node = false ∧ w.large node = false :=
-    Bool.or_eq_false_iff.mp (certificate.destinations_free node listed)
+  let tail := outsideRoute w roots parent routeParts.2
   exact {
     parent := parent
-    endpoint := endpoint
+    endpoint := tail.endpoint
     outside := outside
     parent_unacted := parentUnacted
     edge := routeParts.1
-    route := certificate.route
-    endpoint_selected := NodeSet.getMeeting_left routeParts.2
-    destinations_unacted := fun node listed => (free node listed).1
-    destinations_ungiven := fun node listed => Witness.parent_ungiven roots node (free node listed).2
-    destinations_sinks := fun node listed => w.large_forest.child_off_set node (free node listed).2
+    route := tail.route
+    endpoint_selected := tail.endpoint_selected
+    destinations_unacted := tail.destinations_unacted
+    destinations_ungiven := tail.destinations_ungiven
+    destinations_sinks := tail.destinations_sinks
   }
 
 end HedgeConditionalRoot

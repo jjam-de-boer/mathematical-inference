@@ -38,9 +38,12 @@ import Thesis.CausalTransport.ConditionalColliderContextCounterexample
 import Thesis.CausalTransport.HedgeConditionalCollider
 import Thesis.CausalTransport.HedgeConditionalColliderRoute
 import Thesis.CausalTransport.ConditionalLatentCollider
+import Thesis.CausalTransport.ConditionalLatentColliderNonInfluence
 import Thesis.CausalTransport.ConditionalLatentColliderProbability
 import Thesis.CausalTransport.ConditionalLatentColliderCounterexample
 import Thesis.CausalTransport.HedgeConditionalLatentCollider
+import Thesis.CausalTransport.HedgeConditionalLatentColliderRoute
+import Thesis.CausalTransport.HedgeConditionalColliderEntry
 import Thesis.CausalTransport.HedgeReadoutSequence
 import Thesis.CausalTransport.HedgeReadoutPullback
 import Thesis.CausalTransport.HedgeRoutedCounterexample
@@ -145,6 +148,10 @@ edge without requiring an observed arrow between the readout and root.  It
 installs a mask on an existing bidirected pair, then combines the old child
 value, shared mask, and private noise before one full-value emission.  This
 avoids losing nonbinary background labels through sequential bit carriers.
+`ConditionalLatentColliderNonInfluence` proves that these actual updates
+preserve every initially ignored observed coordinate.  The shared mask is
+latent rather than a newly read observed parent, so there is no displayed-
+parent exception and no ambient destination/collider order requirement.
 `ConditionalLatentColliderProbability` constructs the actual channel
 realization from the SCM's prior, evaluation equations, and unchanged context;
 `ConditionalLatentColliderCounterexample` connects its supported posterior to
@@ -176,6 +183,15 @@ and derives the initial route readiness internally.  The auxiliary parent
 need not be queried, all common roots remain the conditioner, and additional
 original outcomes are retained.  No seed pair, separated source cell, or
 intermediate SCM non-influence invariant is supplied by the graph caller.
+`HedgeConditionalLatentColliderRoute` supplies the complementary shared-latent
+entry followed by an arbitrary directed tail, also finding unqueried auxiliary
+sources and constructing their semantic readiness internally.  Both entry
+families use `OutsideRoute` for the same incoming-cut destination proof.
+`HedgeConditionalColliderEntry` permits either finite entry test independently
+at each common root.  It first retains the genuinely separated semantic root,
+then constructs that root's admissible observed or shared-latent entry; it
+does not require all roots to admit one uniform kind or choose a root merely
+because its graph geometry is convenient.
 General mixed active-path composition, unrestricted outcome/conditioner
 placement, and the universal
 conditional terminal family remain separate obligations.
