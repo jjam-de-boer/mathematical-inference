@@ -4,6 +4,8 @@ import Thesis.Causality.Model
 import Thesis.Causality.SelectedAssignment
 import Thesis.Causality.HardIntervention
 import Thesis.Causality.Identification
+import Thesis.Causality.KernelConditioning
+import Thesis.Causality.ConditionalCounterexampleWitness
 import Thesis.Causality.CoordinateAssignment
 import Thesis.Causality.LocalEventComparison
 import Thesis.Causality.PrivateNoise
@@ -69,6 +71,14 @@ node selections, kernels, and complete expressions, without deciding
 denotational equivalence or using classical function equality.
 The facade excludes the external completeness
 interfaces; those begin in `Thesis.CausalTransport`.
+`KernelConditioning` identifies an actual conditional kernel with the
+genuinely conditioned latent prior under its own reference-compatible action.
+Its support proof uses intrinsic observational positivity and finite SCM
+consistency, not do-calculus soundness or a selected latent realization.
+`ConditionalCounterexampleWitness` finds an actual separated supported kernel
+cell in any positive countermodel by finite assignment search.  It returns
+the reference and both rational values as data without converting a
+propositional existence claim into a chosen assignment.
 `SelectedAssignment` constructs duplicate-free finite presentations of values
 on a selected coordinate set, using canonical projection rather than chosen
 representatives.  `ConditionalUniqueness` applies the two-way normalization
