@@ -28,12 +28,15 @@ import Thesis.CausalTransport.HedgeReadout
 import Thesis.CausalTransport.HedgeReadoutConditioning
 import Thesis.CausalTransport.ConditionalReadoutCounterexample
 import Thesis.CausalTransport.ConditionalReadoutRoute
+import Thesis.CausalTransport.ConditionalReadoutReachability
 import Thesis.CausalTransport.ConditionalCollider
+import Thesis.CausalTransport.ConditionalColliderNonInfluence
 import Thesis.CausalTransport.ConditionalColliderProbability
 import Thesis.CausalTransport.ConditionalColliderCounterexample
 import Thesis.CausalTransport.ConditionalMarginalization
 import Thesis.CausalTransport.ConditionalColliderContextCounterexample
 import Thesis.CausalTransport.HedgeConditionalCollider
+import Thesis.CausalTransport.HedgeConditionalColliderRoute
 import Thesis.CausalTransport.ConditionalLatentCollider
 import Thesis.CausalTransport.ConditionalLatentColliderProbability
 import Thesis.CausalTransport.ConditionalLatentColliderCounterexample
@@ -45,6 +48,7 @@ import Thesis.CausalTransport.HedgeReadoutPlan
 import Thesis.CausalTransport.CompletenessAssembly
 import Thesis.CausalTransport.ValueRefinementCounterexample
 import Thesis.CausalTransport.ConditionalCompilation
+import Thesis.CausalTransport.ConditionalCounterexampleFailure
 import Thesis.CausalTransport.ConditionalFailureExtraction
 import Thesis.CausalTransport.ConditionalFailurePaths
 import Thesis.CausalTransport.ConditionalCounterexampleNormalization
@@ -106,6 +110,10 @@ countermodel argument, not an assumption or proof of that remaining argument.
 `ConditionalCollider` realizes an incoming-parent collider with two fresh
 private inputs in the original SCM graph.  It preserves positivity and,
 under explicit pivot non-influence conditions, the full observational law.
+`ConditionalColliderNonInfluence` derives readiness for later readouts from
+the collider's actual mechanisms, retaining the full background labels.
+The collider need not precede every destination in the ambient order; an
+unused allowed edge is not mistaken for actual mechanism dependence.
 `ConditionalColliderProbability` transports its actual evaluated posterior
 to the finite collider channel, proving its numerator and denominator before
 division and retaining arbitrary supported contexts away from the pivots.
@@ -159,9 +167,23 @@ finite directed route, with independently supplied supported biased noise at
 each destination.  Only the initial pair must ignore the route destinations:
 the signature's arrow order transports that invariant through every update.
 The empty route keeps the seed pair and restores any extra queried outcomes.
+`ConditionalReadoutReachability` constructs genuine route data from the finite
+incoming-cut reachability test, including avoidance of the cut at every
+destination.  `HedgeConditionalColliderRoute` uses it to find a root-specific
+outside parent and a route to an original outcome.  It reindexes the original
+hedge at the auxiliary source query, constructs the collider countermodels,
+and derives the initial route readiness internally.  The auxiliary parent
+need not be queried, all common roots remain the conditioner, and additional
+original outcomes are retained.  No seed pair, separated source cell, or
+intermediate SCM non-influence invariant is supplied by the graph caller.
 General mixed active-path composition, unrestricted outcome/conditioner
 placement, and the universal
 conditional terminal family remain separate obligations.
+`ConditionalCounterexampleFailure` proves the converse easy direction:
+an independently constructed positive conditional countermodel forces the
+actual IDC program to fail, by success soundness and termination.  It returns
+the program's own record by a finite case split, not by choice, and does not
+construct a countermodel from an arbitrary failed run.
 
 `Soundness` develops the graph-independent probability algebra and the finite
 latent factorization needed by the three do-calculus rules.  The factorized
