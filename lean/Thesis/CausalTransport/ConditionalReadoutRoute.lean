@@ -104,10 +104,11 @@ theorem Route.source_lt_destination {parent endpoint : Fin S.count}
         exact S.directed_earlier edge
       · exact Nat.lt_trans (S.directed_earlier edge) (inductionHypothesis rest)
 
-/-- The singleton query at an intermediate vertex keeps the original full
-action and conditioner.  Its exclusions are supplied by route readiness,
-not inferred from the existence of a directed arrow. -/
-private def singletonQuery (context : ConditionalKernelQuery S) (node : Fin S.count)
+/-- The singleton query at a source or intermediate vertex keeps the original
+full action and conditioner.  Its exclusions are supplied by route readiness,
+not inferred from an arrow.  A hedge bridge may use a source outside the final
+queried outcome, so this is not restricted-outcome marginalization. -/
+def singletonQuery (context : ConditionalKernelQuery S) (node : Fin S.count)
     (unacted : context.action node = false) (ungiven : context.condition node = false) :
     ConditionalKernelQuery S where
   outcome := NodeSet.singleton node

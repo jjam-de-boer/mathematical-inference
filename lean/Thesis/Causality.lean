@@ -4,11 +4,13 @@ import Thesis.Causality.Model
 import Thesis.Causality.SelectedAssignment
 import Thesis.Causality.HardIntervention
 import Thesis.Causality.Identification
+import Thesis.Causality.HedgeQuery
 import Thesis.Causality.KernelConditioning
 import Thesis.Causality.ConditionalCounterexampleWitness
 import Thesis.Causality.CoordinateAssignment
 import Thesis.Causality.LocalEventComparison
 import Thesis.Causality.PrivateNoise
+import Thesis.Causality.PrivateNoiseNonInfluence
 import Thesis.Causality.PrivateNoiseResponse
 import Thesis.Causality.SharedNoise
 import Thesis.Causality.SharedNoiseSemantics
@@ -71,6 +73,9 @@ node selections, kernels, and complete expressions, without deciding
 denotational equivalence or using classical function equality.
 The facade excludes the external completeness
 interfaces; those begin in `Thesis.CausalTransport`.
+`HedgeQuery` retains a hedge's actual forests and action seed while reindexing
+it at an outcome containing every common root.  An explicit root supplies the
+new outcome seed; this graph-only adapter does not assume a countermodel.
 `KernelConditioning` identifies an actual conditional kernel with the
 genuinely conditioned latent prior under its own reference-compatible action.
 Its support proof uses intrinsic observational positivity and finite SCM
@@ -103,6 +108,10 @@ replacements preserve the later-coordinate invariant needed by a finite
 topologically ordered readout construction.  The separate restoring argument
 preserves strict positivity without non-influence: a supported fresh bit can
 restore the old pivot value even when other mechanisms respond to that pivot.
+`PrivateNoiseNonInfluence` supplies the complementary mechanism-level check:
+a replacement respecting parent agreement away from an ignored coordinate
+preserves that coordinate's non-influence, even when the ambient signature
+allows an incoming edge which the actual replacement does not read.
 `PrivateNoiseResponse` extends that restoring argument to typed replacements
 depending on incident latent inputs.  Its separate observable-response bridge
 preserves whole-law equality only when the actual replacement response is
