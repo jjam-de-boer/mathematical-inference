@@ -14,6 +14,7 @@ import Thesis.Probability.ConditionalUniqueness
 import Thesis.Probability.FiniteProductConditionals
 import Thesis.Probability.BooleanNoise
 import Thesis.Probability.ColliderChannel
+import Thesis.Probability.ColliderRealization
 import Thesis.Probability.Construction
 import Thesis.Probability.FiniteProductResponse
 import Thesis.Probability.Distros
@@ -60,6 +61,10 @@ Reading order:
    and noisy collider, proving exact posterior laws, full supported-noise
    readout support, and bias-dependent gap preservation even when the two
    source contexts have unequal conditioning probabilities;
+   `ColliderRealization` transports that calculation to an actual finite
+   record only after its all-event prior encoding and pointwise evidence and
+   readout equations have been proved.  It retains each record's own evidence
+   denominator and reflects source gaps through supported biased posteriors;
 10. `Construction` builds finite dependent products and the rational
    constructions used by causal models; `FiniteProductResponse` isolates one
    factor while retaining all other factors, including zeros; and

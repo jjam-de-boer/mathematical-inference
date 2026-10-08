@@ -7,6 +7,9 @@ import Thesis.Causality.Identification
 import Thesis.Causality.CoordinateAssignment
 import Thesis.Causality.LocalEventComparison
 import Thesis.Causality.PrivateNoise
+import Thesis.Causality.PrivateNoiseResponse
+import Thesis.Causality.SharedNoise
+import Thesis.Causality.SharedNoiseSemantics
 import Thesis.Causality.PrivateNoiseClosure
 import Thesis.Causality.ValueRefinement
 import Thesis.Causality.BinaryEncoding
@@ -90,6 +93,18 @@ replacements preserve the later-coordinate invariant needed by a finite
 topologically ordered readout construction.  The separate restoring argument
 preserves strict positivity without non-influence: a supported fresh bit can
 restore the old pivot value even when other mechanisms respond to that pivot.
+`PrivateNoiseResponse` extends that restoring argument to typed replacements
+depending on incident latent inputs.  Its separate observable-response bridge
+preserves whole-law equality only when the actual replacement response is
+proved to be a common function of the old observed assignment and noise.
+`SharedNoise` reuses the independent typed product encoding while feeding the
+fresh bit to a displayed pair.  Canonical semi-Markovian structure and every
+projected edge are preserved when that pair is already bidirected-connected;
+coincident pivots recover the private boundary without a reflexive edge.
+`SharedNoiseSemantics` proves exact evaluation under arbitrary interventions
+and full observed-law preservation when both base pivots are ignored.  Shared
+readout positivity requires an explicit bit restoring both full values; graph
+conservation alone is not mistaken for that support property.
 `PrivateNoiseClosure` supplies the more local protected-mechanism invariant:
 selected rows read only selected parent values, while unprotected descendants
 may respond to a replaced row.  Off-set replacements preserve full protected
