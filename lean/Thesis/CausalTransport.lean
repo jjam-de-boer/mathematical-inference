@@ -91,6 +91,7 @@ import Thesis.CausalTransport.HedgeChannelOrthogonality
 import Thesis.CausalTransport.HedgeChannelIntegration
 import Thesis.CausalTransport.HedgeChannelPairRoot
 import Thesis.CausalTransport.HedgeChannelTable
+import Thesis.CausalTransport.HedgeChannelLikelihood
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -439,6 +440,15 @@ lookup and hard-intervention factors.  The real model is canonically
 semi-Markovian, projects to exactly the supplied graph, and has full observed
 Boolean support.  Its complete integrated private-row numerator expansion
 retains all cross-row interactions without evaluating private response spaces.
+`HedgeChannelLikelihood` connects that complete expansion to the actual
+whole-model singleton probabilities, on a common positive denominator.
+It integrates each monomial against the genuine root-major prior and proves
+that matching all factual expansions with equal row capacities gives equality
+of every observed event, not merely coordinate marginals.  Conflicting forced
+zero cells and empty blocks are retained without cancelling probability cells.
+Its arbitrary-event likelihood and gap criterion retain projection onto the
+original queried outcomes: a full-assignment gap alone is not substituted for
+an outcome-event gap.
 No common hidden source incident to the entire hedge is introduced by either
 construction.  Graph-specific matching coefficients, observational equality,
 original-query separation and universal conditional countermodels are still

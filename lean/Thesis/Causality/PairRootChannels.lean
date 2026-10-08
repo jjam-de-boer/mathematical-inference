@@ -85,6 +85,20 @@ theorem factor_den (channels : Nat) : (factor channels).den = (bitEnumeration ch
   FiniteProduct.record_den_eq_length channels (fun _ => Bool) (fun _ => fairBit)
     (fun _ => [false, true]) (fun _ => rfl)
 
+/-- Each real root-vector cell has literal numerator one.  This stronger
+statement, not just positivity, permits the shared factors to disappear
+from the likelihood numerator while their normalization remains explicit. -/
+theorem factor_singleton_num (channels : Nat) (bits : BitVector channels) :
+    letI : DecidableEq (BitVector channels) :=
+      FiniteProduct.assignmentDecidableEq channels (fun _ => Bool) (fun _ => inferInstance)
+    ((factor channels).probVal (FiniteProbRecord.singletonEvent bits)).num = 1 := by
+  letI : DecidableEq (BitVector channels) :=
+    FiniteProduct.assignmentDecidableEq channels (fun _ => Bool) (fun _ => inferInstance)
+  change FiniteProbRecord.eventMass (factor channels).atoms (FiniteProbRecord.singletonEvent bits) = 1
+  rw [factor_atoms]
+  exact FiniteProbRecord.eventMass_unit_singleton _ (bitEnumeration_nodup channels) bits
+    (bitEnumeration_complete channels bits)
+
 private theorem unit_mass_positive {Ω : Type u} (values : List Ω) (value : Ω)
     (member : value ∈ values) (event : Event Ω) (selected : event value = true) :
     0 < FiniteProbRecord.eventMass (values.map (fun sample => (sample, 1))) event := by

@@ -106,6 +106,21 @@ end FiniteProduct
 
 namespace FiniteProbRecord
 
+/-- A complete repetition-free unit support assigns literal numerator one
+to each of its listed values.  This is the source density needed by the CPT
+likelihood; positivity alone would not determine that numerator. -/
+theorem eventMass_unit_singleton [DecidableEq Ω] (values : List Ω) (nodup : values.Nodup)
+    (value : Ω) (member : value ∈ values) :
+    eventMass (values.map (fun sample => (sample, 1))) (singletonEvent value) = 1 := by
+  rw [eventMass_unit]
+  have predicate : singletonEvent value = (fun candidate => candidate == value) := by
+    funext candidate
+    apply Bool.eq_iff_iff.mpr
+    simp only [singletonEvent, decide_eq_true_eq, beq_iff_eq]
+  rw [predicate]
+  change List.count value values = 1
+  rw [nodup.count, if_pos member]
+
 /-- An explicit permutation of unit supports preserves every event mass
 under the displayed relabelling, including mixed events between coordinates. -/
 theorem eventMass_unit_reindex (left : List Ω) (right : List X) (forward : Ω -> X)

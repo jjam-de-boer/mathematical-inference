@@ -92,6 +92,19 @@ def cellUnder (table : BooleanChannelTable Channel) (signals : Channel -> Bool)
   | none => (table.record signals).probVal (FiniteProbRecord.singletonEvent value)
   | some fixed => if fixed = value then QProb.one else QProb.zero
 
+/-- Free rows keep their full record denominator; forced rows use the
+literal denominator one, also at a conflicting zero cell.  Consequently
+the whole likelihood denominator does not depend on hidden signals. -/
+theorem cellUnder_den (table : BooleanChannelTable Channel) (signals : Channel -> Bool)
+    (target : Option Bool) (value : Bool) :
+    (table.cellUnder signals target value).den =
+      match target with
+      | none => 2 * table.capacity
+      | some _ => 1 := by
+  cases target with
+  | none => exact table.record_den signals
+  | some fixed => cases fixed <;> cases value <;> rfl
+
 /-- A forced row has only its indicator choice; no channel can be selected
 at an intervened vertex in the complete product expansion. -/
 def expansionChoicesUnder (table : BooleanChannelTable Channel) (target : Option Bool) : List (Option Channel) :=

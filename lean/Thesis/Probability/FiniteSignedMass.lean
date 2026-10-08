@@ -80,6 +80,35 @@ theorem signedMass_const (record : FiniteProbRecord Ω) (value : Int) :
     record.signedMass (fun _ => value) = (record.den : Int) * value := by
   rw [signedMass, signedAtomMass_const, record.total_mass]
 
+/-- Integration distributes over an addition of integrands on the same
+actual atom list.  Repeated labels and zero weights are retained exactly. -/
+theorem signedAtomMass_add (atoms : List (Ω × Nat)) (left right : Ω -> Int) :
+    signedAtomMass atoms (fun value => left value + right value) =
+      signedAtomMass atoms left + signedAtomMass atoms right := by
+  induction atoms with
+  | nil => rfl
+  | cons atom rest inductionHypothesis =>
+      simp only [signedAtomMass, List.map_cons, List.sum_cons] at inductionHypothesis ⊢
+      rw [inductionHypothesis, Int.mul_add]
+      ac_rfl
+
+/-- A complete finite sum can be integrated term by term against one
+record.  This is a finite interchange of sums, not an infinite convergence
+result; no cancellation or positivity of the integrands is required. -/
+theorem signedAtomMass_listSum (atoms : List (Ω × Nat)) (values : List X) (term : X -> Ω -> Int) :
+    signedAtomMass atoms (fun value => (values.map fun index => term index value).sum) =
+      (values.map fun index => signedAtomMass atoms (term index)).sum := by
+  induction values with
+  | nil => simp only [List.map_nil, List.sum_nil, signedAtomMass_const, Int.mul_zero]
+  | cons index rest inductionHypothesis =>
+      simp only [List.map_cons, List.sum_cons]
+      exact (signedAtomMass_add atoms (term index) _).trans (congrArg (_ + ·) inductionHypothesis)
+
+theorem signedMass_listSum (record : FiniteProbRecord Ω) (values : List X) (term : X -> Ω -> Int) :
+    record.signedMass (fun value => (values.map fun index => term index value).sum) =
+      (values.map fun index => record.signedMass (term index)).sum :=
+  signedAtomMass_listSum record.atoms values term
+
 private theorem signedAtomMass_map_left (atoms : List (Ω × Nat))
     (map : Ω -> X) (factor : Nat) (integrand : X -> Int) :
     signedAtomMass (atoms.map fun atom => (map atom.1, factor * atom.2)) integrand =
