@@ -28,6 +28,9 @@ import Thesis.CausalTransport.HedgeReadout
 import Thesis.CausalTransport.ConditionalCollider
 import Thesis.CausalTransport.ConditionalColliderProbability
 import Thesis.CausalTransport.ConditionalColliderCounterexample
+import Thesis.CausalTransport.ConditionalMarginalization
+import Thesis.CausalTransport.ConditionalColliderContextCounterexample
+import Thesis.CausalTransport.HedgeConditionalCollider
 import Thesis.CausalTransport.HedgeReadoutSequence
 import Thesis.CausalTransport.HedgeReadoutPullback
 import Thesis.CausalTransport.HedgeRoutedCounterexample
@@ -103,14 +106,25 @@ division and retaining arbitrary supported contexts away from the pivots.
 observed conditioning value on any `ValueRich` alphabet.  When the sole
 common hedge root is the conditioner and a queried incoming parent is outside
 the large forest, it constructs a positive counterexample for the original
-conditional kernel.  General active-path composition, multiple-root geometries,
-and the unrestricted conditional terminal family remain separate obligations.
+conditional kernel.  `ConditionalMarginalization` restores arbitrary additional
+outcomes without changing the action, conditioner, or countermodel pair.
+`ConditionalColliderContextCounterexample` retains the full labels of every
+other conditioner and compares each posterior at its own supported context,
+without assuming equality of denominator marginals.
 `HedgeConditionalRoot` supplies the multi-root source-signal step independently
 of that geometry.  From an arbitrary hedge's positive carrier pair it selects
 a genuinely separated root conditional given all other roots, with supported
 contexts in the real interventional records and latent priors.  Its explicit
 readout labels retain the original action values.  It does not assert that
 the selected root is an admissible collider pivot for every original query.
+`HedgeConditionalCollider` connects that source selector to the actual
+context-aware countermodel construction.  It handles any number of conditioned
+roots and additional queried outcomes when the selected root has a queried
+incoming parent outside the large forest.  An automatic wrapper accepts a
+parent with incoming edges to every common root.  The original action values
+are preserved when the readout labels are chosen.  General active-path
+composition, unrestricted outcome/conditioner placement, and the universal
+conditional terminal family remain separate obligations.
 
 `Soundness` develops the graph-independent probability algebra and the finite
 latent factorization needed by the three do-calculus rules.  The factorized

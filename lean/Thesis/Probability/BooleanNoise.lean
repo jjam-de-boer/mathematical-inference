@@ -42,6 +42,32 @@ theorem eventMass_add_complement (atoms : List (Ω × Nat)) (event : Event Ω) :
         simp only [eventMass, totalMass, selected, Bool.not_false, Bool.not_true,
           Bool.false_eq_true, ↓reduceIte] <;> omega
 
+/-- Complementing the compared events preserves and reflects equality of
+their actual normalized probabilities.  The source spaces and denominators
+may differ.  Each Boolean partition sums to its own complete record mass,
+so no equality of evidence probabilities or chosen coupling is needed. -/
+theorem probVal_complement_equiv_iff (left : FiniteProbRecord Ω) (leftEvent : Event Ω)
+    (right : FiniteProbRecord X) (rightEvent : Event X) :
+    QProb.Equiv (left.probVal (fun value => !leftEvent value)) (right.probVal (fun value => !rightEvent value)) ↔
+      QProb.Equiv (left.probVal leftEvent) (right.probVal rightEvent) := by
+  have leftTotal := congrArg (fun mass => mass * right.den)
+    ((eventMass_add_complement left.atoms leftEvent).trans left.total_mass)
+  have rightTotal := congrArg (fun mass => mass * left.den)
+    ((eventMass_add_complement right.atoms rightEvent).trans right.total_mass)
+  simp only [Nat.add_mul] at leftTotal rightTotal
+  have common : left.den * right.den = right.den * left.den := Nat.mul_comm _ _
+  constructor
+  · intro equal
+    change eventMass left.atoms (fun value => !leftEvent value) * right.den =
+      eventMass right.atoms (fun value => !rightEvent value) * left.den at equal
+    change eventMass left.atoms leftEvent * right.den = eventMass right.atoms rightEvent * left.den
+    omega
+  · intro equal
+    change eventMass left.atoms leftEvent * right.den = eventMass right.atoms rightEvent * left.den at equal
+    change eventMass left.atoms (fun value => !leftEvent value) * right.den =
+      eventMass right.atoms (fun value => !rightEvent value) * left.den
+    omega
+
 /-- The two ways to obtain odd XOR parity are disjoint rectangular events.
 The formula is exact for arbitrary records and needs no equality decision on
 the signal's sample type. -/

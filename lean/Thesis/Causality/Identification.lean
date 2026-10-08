@@ -23,6 +23,18 @@ def EventDependsOnlyOn (nodes : NodeSet S)
     (event : S.Assignment -> Bool) : Prop :=
   forall x y, AssignmentsAgreeOn nodes x y -> event x = event y
 
+/-- An observed agreement cylinder depends only on its selected sample
+coordinates.  Its reference may carry unrelated action values elsewhere. -/
+theorem Kernel.agreesOn_dependsOnlyOn (nodes : NodeSet S) (reference : S.Assignment) :
+    EventDependsOnlyOn nodes (Kernel.agreesOn nodes reference) := by
+  intro first second agreed
+  unfold Kernel.agreesOn
+  apply finAll_congr
+  intro node
+  cases selected : nodes node with
+  | false => simp only [Bool.false_eq_true, if_false]
+  | true => simp only [if_true, agreed node selected]
+
 /-- Ordinary finite joint interventional query. -/
 structure InterventionalQuery (S : ObservedSignature) where
   intervention : HardIntervention S

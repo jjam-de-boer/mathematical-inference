@@ -51,29 +51,10 @@ def singletonPosterior (base : ExactModel S) (rich : ObservedSignature.ValueRich
     (free_at action reference parent parentFree) (free_at action reference child childFree)
     NodeSet.empty topEvent (fun _ _ _ => rfl) rfl rfl (top_positive base.prior) true
 
-private theorem kernel_distribution_probVal (base : ExactModel S) (kernel : Kernel S)
-    (reference : S.Assignment) (event : Event S.Assignment) :
-    QProb.Equiv ((kernel.distribution base reference).probVal event)
-      (base.prior.probVal (fun unit => event (base.evalUnder (kernel.intervention reference) unit))) := by
-  cases active : kernel.hasAction with
-  | true =>
-      simpa only [Kernel.distribution, active, if_true, FiniteLatentSCM.interventionalDist] using
-        base.prior.map_probVal (base.evalUnder (kernel.intervention reference)) event
-  | false =>
-      have empty : kernel.intervention reference = FiniteLatentSCM.noIntervention S := by
-        funext node
-        have inactive := (finAny_eq_false_iff kernel.action).mp active node
-        simp only [Kernel.intervention, inactive, Bool.false_eq_true, if_false, FiniteLatentSCM.noIntervention]
-      simpa only [Kernel.distribution, active, Bool.false_eq_true, if_false, empty,
-        FiniteLatentSCM.observationalDist, FiniteLatentSCM.eval] using
-        base.prior.map_probVal (base.evalUnder (FiniteLatentSCM.noIntervention S)) event
-
 private theorem singleton_readout (rich : ObservedSignature.ValueRich S) (node : Fin S.count)
     (reference sample : S.Assignment) (second : reference node = rich.second node) :
     Kernel.agreesOn (NodeSet.singleton node) reference sample = hedgeIsSecond rich node (sample node) := by
-  rw [agreesOn_of_unique_node (NodeSet.singleton node) reference sample
-    (by simp only [NodeSet.singleton, decide_true])
-    (fun i selected => (NodeSet.singleton_eq_true_iff node i).mp selected), second]
+  rw [Kernel.agreesOn_singleton, second]
   rfl
 
 /-- One actual kernel cell is the evaluated collider posterior.  The proof
@@ -100,13 +81,13 @@ noncomputable def singletonKernel_denote (base : ExactModel S) (rich : ObservedS
     evidence_positive base rich parent child edge noise parentIgnored childIgnored intervention
       (free_at action reference parent parentFree) (free_at action reference child childFree)
       NodeSet.empty topEvent (fun _ _ _ => rfl) rfl rfl (top_positive base.prior) true
-  have denominator := QProb.equiv_trans (kernel_distribution_probVal actual kernel reference (kernel.conditionEvent reference))
+  have denominator := QProb.equiv_trans (Kernel.distribution_probVal actual kernel reference (kernel.conditionEvent reference))
     (actual.prior.probVal_congr _ selectedEvidence (fun unit => by
       dsimp only [kernel, Kernel.conditionEvent]
       rw [singleton_readout rich child reference _ childSecond]
       change _ = (true && decide (hedgeIsSecond rich child (actual.evalUnder intervention unit child) = true))
       cases hedgeIsSecond rich child (actual.evalUnder intervention unit child) <;> rfl))
-  have numerator := QProb.equiv_trans (kernel_distribution_probVal actual kernel reference (kernel.numeratorEvent reference))
+  have numerator := QProb.equiv_trans (Kernel.distribution_probVal actual kernel reference (kernel.numeratorEvent reference))
     (actual.prior.probVal_congr _ (fun unit => selectedEvidence unit && parentEvent unit) (fun unit => by
       dsimp only [kernel, Kernel.numeratorEvent]
       rw [singleton_readout rich parent reference _ parentSecond, singleton_readout rich child reference _ childSecond]
@@ -138,30 +119,6 @@ private theorem conditionOn_top_probVal (source : FiniteProbRecord Ω) (event : 
     (fun _ => Bool.true_and _)
   rw [same]
 
-private theorem probVal_complement_equiv_iff (left : FiniteProbRecord Ω) (leftEvent : Event Ω)
-    (right : FiniteProbRecord X) (rightEvent : Event X) :
-    QProb.Equiv (left.probVal (fun value => !leftEvent value)) (right.probVal (fun value => !rightEvent value)) ↔
-      QProb.Equiv (left.probVal leftEvent) (right.probVal rightEvent) := by
-  have leftTotal := congrArg (fun mass => mass * right.den)
-    ((FiniteProbRecord.eventMass_add_complement left.atoms leftEvent).trans left.total_mass)
-  have rightTotal := congrArg (fun mass => mass * left.den)
-    ((FiniteProbRecord.eventMass_add_complement right.atoms rightEvent).trans right.total_mass)
-  simp only [Nat.add_mul] at leftTotal rightTotal
-  have common : left.den * right.den = right.den * left.den := Nat.mul_comm _ _
-  constructor
-  · intro equal
-    change FiniteProbRecord.eventMass left.atoms (fun value => !leftEvent value) * right.den =
-      FiniteProbRecord.eventMass right.atoms (fun value => !rightEvent value) * left.den at equal
-    change FiniteProbRecord.eventMass left.atoms leftEvent * right.den =
-      FiniteProbRecord.eventMass right.atoms rightEvent * left.den
-    omega
-  · intro equal
-    change FiniteProbRecord.eventMass left.atoms leftEvent * right.den =
-      FiniteProbRecord.eventMass right.atoms rightEvent * left.den at equal
-    change FiniteProbRecord.eventMass left.atoms (fun value => !leftEvent value) * right.den =
-      FiniteProbRecord.eventMass right.atoms (fun value => !rightEvent value) * left.den
-    omega
-
 /-- A kernel-ready posterior gap is exactly the old child's interventional
 bit gap when the private noise is biased.  Conditioning on the true collider
 complements the source bit; finite normalization proves that complementation
@@ -191,7 +148,7 @@ theorem singletonPosterior_probVal_equiv_iff_of_bias (left right : ExactModel S)
     true gap positive bias
   have leftLaw := conditionOn_top_probVal left.prior (fun old => !(signal left rich child intervention old))
   have rightLaw := conditionOn_top_probVal right.prior (fun old => !(signal right rich child intervention old))
-  have complement := probVal_complement_equiv_iff left.prior (signal left rich child intervention)
+  have complement := FiniteProbRecord.probVal_complement_equiv_iff left.prior (signal left rich child intervention)
     right.prior (signal right rich child intervention)
   simp only [Bool.xor_true] at channel
   constructor

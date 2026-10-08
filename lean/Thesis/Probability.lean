@@ -53,7 +53,8 @@ Reading order:
    proves the full-coordinate counterpart on arbitrary finite dependent
    products and returns a separated coordinate conditional by finite search
    whenever a joint event differs;
-9. `BooleanNoise` proves finite biased XOR-channel injectivity, exact parity
+9. `BooleanNoise` proves normalized complement equality for independently
+   presented records, finite biased XOR-channel injectivity, exact parity
    bias through independent flips, and support restoration without real-valued
    limiting arguments; `ColliderChannel` constructs an independent fair parent
    and noisy collider, proving exact posterior laws, full supported-noise

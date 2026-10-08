@@ -37,6 +37,7 @@ import Thesis.Examples.ConditionalFailureExtraction
 import Thesis.Examples.ConditionalFailurePaths
 import Thesis.Examples.ConditionalCollider
 import Thesis.Examples.HedgeConditionalRoot
+import Thesis.Examples.HedgeConditionalCollider
 import Thesis.Examples.ConditionalCounterexampleNormalization
 import Thesis.Examples.ValueRefinement
 import Thesis.Examples.HedgeObstructionLikelihood
@@ -62,6 +63,12 @@ different coordinate alphabets, unequal record denominators, equal individual
 marginals with different joint dependence, and the zero-coordinate space.
 The selected source gap and action-preserving labels are supplied by the
 general theorem, not by a manually chosen root or assumed conditional gap.
+`HedgeConditionalCollider` checks its semantic integration on the original
+three-valued `P(U,E | do(A), R₁,R₂)` query.  The query has two conditioned
+hedge roots, a genuine additional outcome, no legal IDC exchange, and an
+actual ID failure.  The arbitrary-root constructor supplies positive SCMs,
+the full observed-law equality, and separation of that complete kernel;
+the other root's full label is retained rather than marginalized away.
 
 For a smaller dependency footprint, client developments should normally import
 one stable facade directly: `Thesis.Probability`, `Thesis.Causality`, or

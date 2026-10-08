@@ -640,6 +640,21 @@ theorem agreesOn_reference_congr (nodes : NodeSet S)
       simp only [↓reduceIte]
       rw [agree i selected]
 
+/-- A singleton agreement cylinder reads one full observed label.  The
+statement retains the signature's actual value type, not a Boolean encoding. -/
+theorem agreesOn_singleton {S : ObservedSignature} (node : Fin S.count) (reference sample : S.Assignment) :
+    agreesOn (NodeSet.singleton node) reference sample = decide (sample node = reference node) := by
+  apply Bool.eq_iff_iff.mpr
+  simp only [agreesOn, NodeSet.singleton, finAll_eq_true_iff]
+  constructor
+  · intro agreed
+    simpa only [decide_true, if_true] using agreed node
+  · intro agreed index
+    by_cases same : index = node
+    · subst index
+      simpa only [decide_true, if_true] using agreed
+    · simp only [same, decide_false, Bool.false_eq_true, if_false]
+
 /-- Changing a sample outside the selected nodes does not change agreement. -/
 theorem agreesOn_sample_congr (nodes : NodeSet S)
     (reference left right : S.Assignment)
@@ -721,6 +736,27 @@ def distribution (model : FiniteLatentSCM S) (kernel : Kernel S)
   if kernel.hasAction then
     model.interventionalDist (kernel.intervention reference)
   else model.observationalDist
+
+/-- Every kernel-distribution event is the pullback through the model's
+actual intervened evaluation.  When the action is empty its intervention is
+literally `noIntervention`, so the observational branch needs no independent
+semantic or positivity assumption. -/
+theorem distribution_probVal (model : FiniteLatentSCM S) (kernel : Kernel S)
+    (reference : S.Assignment) (event : Probability.Event S.Assignment) :
+    Probability.QProb.Equiv ((kernel.distribution model reference).probVal event)
+      (model.prior.probVal (fun unit => event (model.evalUnder (kernel.intervention reference) unit))) := by
+  cases active : kernel.hasAction with
+  | true =>
+      simpa only [distribution, active, if_true, FiniteLatentSCM.interventionalDist] using
+        model.prior.map_probVal (model.evalUnder (kernel.intervention reference)) event
+  | false =>
+      have empty : kernel.intervention reference = FiniteLatentSCM.noIntervention S := by
+        funext node
+        have inactive := (finAny_eq_false_iff kernel.action).mp active node
+        simp only [intervention, inactive, Bool.false_eq_true, if_false, FiniteLatentSCM.noIntervention]
+      simpa only [distribution, active, Bool.false_eq_true, if_false, empty,
+        FiniteLatentSCM.observationalDist, FiniteLatentSCM.eval] using
+        model.prior.map_probVal (model.evalUnder (FiniteLatentSCM.noIntervention S)) event
 
 /-- Kernel distributions depend on the action field, not outcome or condition. -/
 theorem distribution_eq_of_action (model : FiniteLatentSCM S)
