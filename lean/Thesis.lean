@@ -50,6 +50,7 @@ import Thesis.Examples.HedgeChannelTable
 import Thesis.Examples.HedgeChannelMonomial
 import Thesis.Examples.HedgeChannelCoefficients
 import Thesis.Examples.HedgeChannelInstallation
+import Thesis.Examples.HedgeChannelSurvivors
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -73,6 +74,11 @@ hedge installer, rather than a hand-written channel family.  Its bow uses
 each outer mask once, retains an inactive background slot, and proves full
 observational equality and a gap at the original intervened outcome.  This
 fixture does not assert the still-open universal assembly and flow theorem.
+`HedgeChannelSurvivors` checks the exact reduction of twelve actual left
+row choices to four repetition-free survivors, retaining both background
+masks and full-channel contributions.  Its literal signed integrals and
+full-sample equality criterion are checked on that same installed pair;
+the arbitrary-hedge full-channel sum and outcome-flow proofs remain open.
 
 `ConditionalCollider` checks a real irreducible `P(U | do(A), R)` failure
 on `U -> R <- A`, `A <-> R`, with three-valued observed alphabets.  The

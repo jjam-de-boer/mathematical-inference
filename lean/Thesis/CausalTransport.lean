@@ -95,6 +95,7 @@ import Thesis.CausalTransport.HedgeChannelLikelihood
 import Thesis.CausalTransport.HedgeChannelMonomial
 import Thesis.CausalTransport.HedgeChannelCoefficients
 import Thesis.CausalTransport.HedgeChannelInstallation
+import Thesis.CausalTransport.HedgeChannelSurvivors
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -473,6 +474,13 @@ installed Boolean signals satisfy the checked character identity.  Distinct
 large channels cannot survive together, and forcing the stored original
 action vertex cancels every term selecting a large channel, with arbitrary
 extra interventions and background terms retained.
+`HedgeChannelSurvivors` classifies every nonzero actual factual monomial as
+background-only or one full main channel with backgrounds outside its
+forest.  Its canonical lists are legal and repetition-free, and their exact
+signed sums equal the original nonnegative likelihood numerators.  The full
+common background block matches on the actual pair-root prior.  Equality of
+the complete observed expansions is therefore exactly equality of the two
+remaining full-channel sums, not an assumption that partial terms vanished.
 No common hidden source incident to the entire hedge is introduced by either
 construction.  Complete observational assembly of the installed family,
 original-query separation and universal conditional countermodels are still

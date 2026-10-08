@@ -15,6 +15,8 @@ import Thesis.Probability.FiniteSignedProduct
 import Thesis.Probability.FiniteProductBlocks
 import Thesis.Probability.FinitePowerProduct
 import Thesis.Probability.FiniteUniformProduct
+import Thesis.Probability.FiniteProductSupport
+import Thesis.Probability.FiniteSupportedSum
 import Thesis.Probability.ConditionalUniqueness
 import Thesis.Probability.FiniteProductConditionals
 import Thesis.Probability.BooleanNoise
@@ -68,6 +70,10 @@ Reading order:
    `FiniteUniformProduct` identifies the literal unit-weight atoms and
    denominators of independent products, and transports all mixed event
    masses and signed integrands through explicit support permutations;
+   `FiniteProductSupport` characterizes membership in restricted dependent
+   choice products by their actual coordinate lists; `FiniteSupportedSum`
+   deletes only proved-zero integer terms after checking inclusion and
+   duplicate-freeness of the complete and canonical lists;
    `FiniteProductBlocks` splits literal numerator and denominator products
    across an actual shared prefix and private suffix, retaining zero cells;
    `FinitePowerProduct` identifies exact anchored and binary-mask natural

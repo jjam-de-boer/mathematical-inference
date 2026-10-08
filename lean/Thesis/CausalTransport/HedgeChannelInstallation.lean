@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.HedgeChannelCharacters
 import Thesis.CausalTransport.HedgeChannelCoefficients
+import Thesis.Probability.FiniteProductSupport
 
 namespace Thesis
 namespace Causality
@@ -37,7 +38,7 @@ signals use the previously proved character correction on the actual kept
 arrows, so routes leaving and re-entering the forest are not prohibited.
 
 This is an actual model-family installation, not a completeness theorem.
-Summing all surviving terms to prove observational equivalence, selecting
+Evaluating the full-channel sums to prove observational equivalence, selecting
 an action-avoiding outcome flow, and proving its original-query marginal gap
 remain separate obligations.  In particular, positivity and compatibility
 are not used as substitutes for observational equality or separation.
@@ -56,36 +57,6 @@ def maskChoices (outer : NodeSet S) (node : Fin S.count) : List Bool :=
 def masks (outer : NodeSet S) : List (NodeSet S) :=
   FiniteProduct.enumeration S.count (fun _ => Bool) (maskChoices outer)
 
-private theorem enumeration_mem_of_coordinate_mem (n : Nat) (Value : Fin n -> Type)
-    (values : (index : Fin n) -> List (Value index))
-    (assignment : FiniteProduct.Assignment n Value)
-    (listed : forall index, assignment index ∈ values index) :
-    assignment ∈ FiniteProduct.enumeration n Value values := by
-  induction n with
-  | zero =>
-      have equal : assignment = (fun index => Fin.elim0 index) :=
-        funext (fun index => Fin.elim0 index)
-      rw [equal]
-      exact List.mem_cons_self
-  | succ n inductionHypothesis =>
-      let last := assignment (Fin.last n)
-      let initial := fun index : Fin n => assignment index.castSucc
-      have initialMember := inductionHypothesis (fun index => Value index.castSucc)
-        (fun index => values index.castSucc) initial (fun index => listed index.castSucc)
-      have member : FiniteProduct.extend last initial ∈
-          (values (Fin.last n)).flatMap (fun final =>
-            (FiniteProduct.enumeration n (fun index => Value index.castSucc)
-              (fun index => values index.castSucc)).map (fun initialAssignment =>
-                FiniteProduct.extend final initialAssignment)) :=
-        List.mem_flatMap_of_mem (listed (Fin.last n))
-        (List.mem_map_of_mem (f := fun initialAssignment => FiniteProduct.extend last initialAssignment) initialMember)
-      have equal : FiniteProduct.extend last initial = assignment := by
-        funext index
-        refine Fin.lastCases ?_ (fun earlier => ?_) index
-        · exact FiniteProduct.extend_last last initial
-        · exact FiniteProduct.extend_castSucc last initial earlier
-      exact equal ▸ member
-
 /-- A mask occurs exactly when it is an outer subset.  Completeness is
 relative to the permitted coordinate lists, not to all Boolean vectors. -/
 theorem masks_member_iff (outer mask : NodeSet S) :
@@ -101,7 +72,7 @@ theorem masks_member_iff (outer mask : NodeSet S) :
           List.mem_singleton] at localMember
         exact False.elim (Bool.false_ne_true (localMember.symm.trans selected))
   · intro subset
-    apply enumeration_mem_of_coordinate_mem
+    apply FiniteProduct.enumeration_mem_of_coordinate_mem
     intro node
     cases inside : outer node with
     | true => cases mask node <;> simp only [maskChoices, inside, if_true, List.mem_cons, List.not_mem_nil] <;> simp
@@ -213,6 +184,34 @@ theorem role_backgroundChannel (w : HedgeWitness G q) (node : Fin S.count) :
   congr 1
   apply Fin.ext
   simp only [Nat.add_sub_cancel_left]
+
+/-- Reassemble the three consecutive blocks without choosing an inverse
+of the decoder.  The two round trips below keep slot identity explicit for
+the complete row-choice survivor calculation. -/
+def channelOfRole (w : HedgeWitness G q) : Role w -> Fin (channelCount w)
+  | .large index => largeChannel w index
+  | .small => smallChannel w
+  | .background node => backgroundChannel w node
+
+theorem channelOfRole_role (w : HedgeWitness G q) (channel : Fin (channelCount w)) :
+    channelOfRole w (role w channel) = channel := by
+  unfold role
+  split
+  · apply Fin.ext
+    rfl
+  · split
+    · next same => exact Fin.ext same.symm
+    · next outside different =>
+        apply Fin.ext
+        change (masks (outer w)).length + 1 + (channel.val - ((masks (outer w)).length + 1)) = channel.val
+        omega
+
+theorem role_channelOfRole (w : HedgeWitness G q) (tag : Role w) :
+    role w (channelOfRole w tag) = tag := by
+  cases tag with
+  | large index => exact role_largeChannel w index
+  | small => exact role_smallChannel w
+  | background node => exact role_backgroundChannel w node
 
 /-! ## Supports and anchored exponents -/
 
@@ -495,7 +494,7 @@ theorem left_nonzero_large_unique (w : HedgeWitness G q) (rich : ObservedSignatu
 /-- The installed mask exponent meets the coefficient theorem's complete
 outer bound, without a graph-specific readiness premise.  Identifying these
 abstract coefficients with the surviving actual row products is still a
-separate enumeration and product calculation. -/
+separate row-product calculation and full-channel sum identity. -/
 theorem mask_fullCoefficient_match (w : HedgeWitness G q) (smallOthers : Nat)
     (index : Fin (masks (outer w)).length) :
     HedgeChannelCoefficients.fullCoefficient (channelCount w) S.count

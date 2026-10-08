@@ -30,8 +30,8 @@ outer expansion coefficient, provided `e <= k <= n`.
 
 The positive tables are genuine inputs to the actual channel SCM builder.
 `HedgeChannelInstallation` instantiates their masks and signals for an
-arbitrary hedge.  Summing its surviving terms and proving the original-query
-gap are still separate tasks.
+arbitrary hedge.  Evaluating and matching its surviving full-channel terms
+and proving the original-query gap are still separate tasks.
 This module does not assume observational equivalence or inhabit completeness.
 -/
 
