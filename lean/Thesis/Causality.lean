@@ -26,6 +26,7 @@ import Thesis.Causality.IdentificationInduction
 import Thesis.Causality.Reductions
 import Thesis.Causality.LatentRationalCPT
 import Thesis.Causality.LatentTableResponse
+import Thesis.Causality.LatentTableBlockResponse
 import Thesis.Causality.LatentTableCounterexample
 import Thesis.Causality.CompactHiddenDAG
 import Thesis.Causality.PairRoot
@@ -156,6 +157,12 @@ constructs positive normalized profiles from raw balanced weights and turns
 factual response cancellation and an original-query response gap into actual
 positive countermodels. Conditional separation retains the same models'
 two conditioning denominators and proves common support intrinsically.
+`LatentTableBlockResponse` handles simultaneous replacements at arbitrary
+finite sets of nodes.  Its mixed-row telescope retains all interactions and
+gives an exact cancellation criterion for the actual SCM event probabilities,
+including forced action rows.  The same graph and supported-row positivity
+are preserved; suitable graph-specific replacement families must still be
+constructed rather than assumed to exist.
 These constructions impose no routing or binary-alphabet hypothesis; they
 do not prove the remaining existence of suitable directions for every hedge
 or irreducible conditional failure.

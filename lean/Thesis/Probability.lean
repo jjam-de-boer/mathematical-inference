@@ -18,6 +18,7 @@ import Thesis.Probability.ColliderChannel
 import Thesis.Probability.ColliderRealization
 import Thesis.Probability.Construction
 import Thesis.Probability.FiniteProductResponse
+import Thesis.Probability.FiniteProductBalance
 import Thesis.Probability.Distros
 
 /-!
@@ -71,7 +72,10 @@ Reading order:
    denominator and reflects source gaps through supported biased posteriors;
 10. `Construction` builds finite dependent products and the rational
    constructions used by causal models; `FiniteProductResponse` isolates one
-   factor while retaining all other factors, including zeros; and
+   factor while retaining all other factors, including zeros;
+   `FiniteProductBalance` telescopes coordinated changes of several factors
+   in mixed old/new environments, retaining their interaction terms and
+   characterizing exact cancellation without dividing by old cells; and
 11. `Distros` packages named finite distros (Bernoulli, binomial, lattice
     Gaussian, and the finite counterparts of the classical limiting
     families).
