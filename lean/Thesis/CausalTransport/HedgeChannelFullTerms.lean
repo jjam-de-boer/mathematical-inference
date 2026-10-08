@@ -19,6 +19,9 @@ canonical full choice is pointwise independent of the shared bits after its
 row signs are multiplied.  Integration retains the entire literal prior mass,
 including every inactive channel slot, times its actual row coefficient and
 its observed/parent character.  No probability denominator is cancelled.
+The identity holds under arbitrary hard interventions as well: forced-row
+indicators and unsupported forced-channel zeros remain in that coefficient.
+The original factual theorem is preserved as its `none`-target specialization.
 
 The installed large parent correction then gives the small character times
 the selected outer background character.  Backgrounds outside the large
@@ -189,24 +192,25 @@ private theorem fullChoice_rowParity (w : HedgeWitness G q) (nodes : Fin (channe
 
 /-! ## Actual shared-prior normalization of one full term -/
 
-private theorem monomial_rowFactors (w : HedgeWitness G q)
+private theorem monomial_rowFactors_under (w : HedgeWitness G q)
     (tables : Fin S.count -> BooleanChannelTable (Fin (channelCount w)))
-    (signals : HedgeChannelTable.Signals G (channelCount w)) (sample : S.binary.Assignment)
+    (signals : HedgeChannelTable.Signals G (channelCount w))
+    (target : Fin S.count -> Option Bool) (sample : S.binary.Assignment)
     (choice : Fin S.count -> Option (Fin (channelCount w)))
     (shared : (PairRootChannels.extension G.binary (channelCount w)).Assignment) :
-    HedgeChannelTable.choiceMonomial G (channelCount w) tables signals (fun _ => none) sample choice shared =
-      HedgeChannelTable.choiceCoefficient tables (fun _ => none) sample choice *
+    HedgeChannelTable.choiceMonomial G (channelCount w) tables signals target sample choice shared =
+      HedgeChannelTable.choiceCoefficient tables target sample choice *
         FiniteProbRecord.characterSign (hedgeNodeXor (NodeSet.full : NodeSet S) (rowBits w signals sample choice shared)) := by
-  have expanded : HedgeChannelTable.choiceMonomial G (channelCount w) tables signals (fun _ => none) sample choice shared =
-      HedgeChannelTable.choiceCoefficient tables (fun _ => none) sample choice *
+  have expanded : HedgeChannelTable.choiceMonomial G (channelCount w) tables signals target sample choice shared =
+      HedgeChannelTable.choiceCoefficient tables target sample choice *
         FiniteProduct.iProduct S.count (fun child => FiniteProbRecord.characterSign (rowBits w signals sample choice shared child)) := by
     refine Eq.trans (b := FiniteProduct.iProduct S.count (fun child =>
-      (tables child).expansionCoefficientUnder none (sample child) (choice child) *
+      (tables child).expansionCoefficientUnder (target child) (sample child) (choice child) *
         FiniteProbRecord.characterSign (rowBits w signals sample choice shared child))) ?_ ?_
     · apply FiniteProduct.iProduct_congr
       intro child
       have localTerm := (tables child).expansionTermUnder_eq_coefficient_mul
-        (signals child (fun parent _edge => sample parent) (fun root _incident => shared root)) none (sample child) (choice child)
+        (signals child (fun parent _edge => sample parent) (fun root _incident => shared root)) (target child) (sample child) (choice child)
       cases picked : choice child with
       | none => simpa only [picked, rowBits, FiniteProbRecord.characterSign, Bool.false_eq_true, if_false, Int.mul_one] using localTerm
       | some channel => simpa only [picked, rowBits] using localTerm
@@ -215,11 +219,43 @@ private theorem monomial_rowFactors (w : HedgeWitness G q)
       FiniteProbRecord.characterSign (hedgeNodeXor (NodeSet.full : NodeSet S) (rowBits w signals sample choice shared)) := by
     simpa only [hedgeNodeXor, NodeSet.members_full, NodeSet.enumerated, List.finRange] using
       FiniteProduct.iProduct_characterSign S.count (rowBits w signals sample choice shared)
-  exact expanded.trans (congrArg (HedgeChannelTable.choiceCoefficient tables (fun _ => none) sample choice * ·) parity)
+  exact expanded.trans (congrArg (HedgeChannelTable.choiceCoefficient tables target sample choice * ·) parity)
 
 /-- Full forest and background row signs remove shared-input dependence
-pointwise.  Integration retains the actual prior's entire literal mass,
-including inactive slots; its factors are not independently renormalized. -/
+pointwise under any hard intervention.  Forced indicators, including zero
+coefficients at unsupported forced-channel choices, remain in the actual
+coefficient.  Integration retains the prior's entire literal mass, including
+inactive slots; its factors are not independently renormalized. -/
+theorem fullChoice_signedMass_under (w : HedgeWitness G q)
+    (tables : Fin S.count -> BooleanChannelTable (Fin (channelCount w)))
+    (nodes : Fin (channelCount w) -> NodeSet S)
+    (parentSignal : (child : Fin S.count) -> S.binary.ParentValues child -> Fin (channelCount w) -> Bool)
+    (backgroundSignal : ParentSignal S)
+    (backgroundSupport : forall child, nodes (backgroundChannel w child) = backgroundNodes w child)
+    (backgroundParents : forall child parents, parentSignal child parents (backgroundChannel w child) = backgroundSignal child parents)
+    (forest : NodeSet S) (channel : Fin (channelCount w)) (support : nodes channel = forest)
+    (mask : NodeSet S) (subset : NodeSet.Subset mask (outside forest))
+    (target : Fin S.count -> Option Bool) (sample : S.binary.Assignment) :
+    (PairRootChannels.prior G.binary (channelCount w)).signedMass
+      (HedgeChannelTable.choiceMonomial G (channelCount w) tables
+        (HedgeChannelTable.incidenceSignals G (channelCount w) nodes parentSignal)
+        target sample (fullChoice w forest channel mask)) =
+      ((PairRootChannels.prior G.binary (channelCount w)).den : Int) *
+        HedgeChannelTable.choiceCoefficient tables target sample (fullChoice w forest channel mask) *
+        FiniteProbRecord.characterSign
+          (Bool.xor (signalPhase forest (fun child parents => parentSignal child parents channel) sample)
+            (signalPhase mask backgroundSignal sample)) := by
+  have constant := FiniteProbRecord.signedAtomMass_congr (PairRootChannels.prior G.binary (channelCount w)).atoms _ _
+    (fun shared => (monomial_rowFactors_under w tables _ target sample (fullChoice w forest channel mask) shared).trans
+      (congrArg (HedgeChannelTable.choiceCoefficient tables target sample (fullChoice w forest channel mask) * ·)
+        (congrArg FiniteProbRecord.characterSign
+          (fullChoice_rowParity w nodes parentSignal backgroundSignal backgroundSupport backgroundParents forest channel support
+            mask subset sample shared))))
+  exact constant.trans (((PairRootChannels.prior G.binary (channelCount w)).signedMass_const _).trans
+    (Int.mul_assoc _ _ _).symm)
+
+/-- Factual specialization of the intervention-aware full-term identity.
+The original API and its literal normalization are retained unchanged. -/
 theorem fullChoice_signedMass (w : HedgeWitness G q)
     (tables : Fin S.count -> BooleanChannelTable (Fin (channelCount w)))
     (nodes : Fin (channelCount w) -> NodeSet S)
@@ -237,15 +273,9 @@ theorem fullChoice_signedMass (w : HedgeWitness G q)
         HedgeChannelTable.choiceCoefficient tables (fun _ => none) sample (fullChoice w forest channel mask) *
         FiniteProbRecord.characterSign
           (Bool.xor (signalPhase forest (fun child parents => parentSignal child parents channel) sample)
-            (signalPhase mask backgroundSignal sample)) := by
-  have constant := FiniteProbRecord.signedAtomMass_congr (PairRootChannels.prior G.binary (channelCount w)).atoms _ _
-    (fun shared => (monomial_rowFactors w tables _ sample (fullChoice w forest channel mask) shared).trans
-      (congrArg (HedgeChannelTable.choiceCoefficient tables (fun _ => none) sample (fullChoice w forest channel mask) * ·)
-        (congrArg FiniteProbRecord.characterSign
-          (fullChoice_rowParity w nodes parentSignal backgroundSignal backgroundSupport backgroundParents forest channel support
-            mask subset sample shared))))
-  exact constant.trans (((PairRootChannels.prior G.binary (channelCount w)).signedMass_const _).trans
-    (Int.mul_assoc _ _ _).symm)
+            (signalPhase mask backgroundSignal sample)) :=
+  fullChoice_signedMass_under w tables nodes parentSignal backgroundSignal backgroundSupport backgroundParents
+    forest channel support mask subset (fun _ => none) sample
 
 /-- The actual large full term has the small character, its selected outer
 background character, and its independent outside-large background mask.

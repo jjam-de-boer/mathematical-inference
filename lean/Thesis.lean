@@ -54,6 +54,8 @@ import Thesis.Examples.HedgeChannelSurvivors
 import Thesis.Examples.HedgeChannelFullTerms
 import Thesis.Examples.HedgeChannelObservational
 import Thesis.Examples.HedgeChannelInterventional
+import Thesis.Examples.FiniteBooleanCharacter
+import Thesis.Examples.HedgeChannelRouting
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -99,6 +101,12 @@ term cancellation, both signs of the full-small difference, and conflicting
 forced cells.  The unchanged original outcome event retains the exact bow
 gap.  Forcing a small-forest row instead removes the small block and restores
 equality; this fixture does not supply the general projected-gap theorem.
+`FiniteBooleanCharacter` checks retained and cancelled full cylinder sums,
+empty and fully fixed products, and the excluded constant-odd phase boundary.
+`HedgeChannelRouting` queries an outcome beyond the small forest.  Its bare
+small character cancels at the unqueried intermediate row, while the routed
+background term retains the original-event gap.  The complete likelihood
+difference follows symbolically, with only its two surviving terms computed.
 
 `ConditionalCollider` checks a real irreducible `P(U | do(A), R)` failure
 on `U -> R <- A`, `A <-> R`, with three-valued observed alphabets.  The

@@ -100,6 +100,7 @@ import Thesis.CausalTransport.HedgeChannelFullTerms
 import Thesis.CausalTransport.HedgeChannelFullCoefficients
 import Thesis.CausalTransport.HedgeChannelObservational
 import Thesis.CausalTransport.HedgeChannelInterventional
+import Thesis.CausalTransport.HedgeChannelRouting
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -504,6 +505,13 @@ action seed removes all left large-channel terms.  The entire right-minus-
 left likelihood, including its projection to any original observed event,
 is exactly the permitted full-small sum on the real shared prior.  The
 nonzero contribution after original-outcome projection is still to be proved.
+`HedgeChannelRouting` supplies homogeneous typed incoming-flow signals from
+the hedge's existing composed small/outcome successor.  Its distinguished
+outside-small mask completes that flow, and conservation makes its phase
+even on the original all-false outcome event.  All other full-small phases
+have nonnegative character sums on the action/outcome false cylinder, by
+`FiniteBooleanCharacter`.  Combining these with the actual positive forced-
+row coefficients remains the general projected-gap obligation.
 No common hidden source incident to the entire hedge is introduced by either
 construction.  Original-query separation, the general-value lift of a
 separating pair, and universal conditional countermodels remain open;

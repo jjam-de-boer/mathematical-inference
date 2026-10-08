@@ -17,6 +17,7 @@ import Thesis.Probability.FinitePowerProduct
 import Thesis.Probability.FiniteUniformProduct
 import Thesis.Probability.FiniteProductSupport
 import Thesis.Probability.FiniteSupportedSum
+import Thesis.Probability.FiniteBooleanCharacter
 import Thesis.Probability.ConditionalUniqueness
 import Thesis.Probability.FiniteProductConditionals
 import Thesis.Probability.BooleanNoise
@@ -74,6 +75,10 @@ Reading order:
    choice products by their actual coordinate lists; `FiniteSupportedSum`
    deletes only proved-zero integer terms after checking inclusion and
    duplicate-freeness of the complete and canonical lists;
+   `FiniteBooleanCharacter` proves nonnegative projection of homogeneous
+   XOR-linear characters onto false-valued coordinate cylinders, using
+   symbolic coordinate induction.  Its constructive support permutation
+   relates the restricted product to filtering the complete enumeration;
    `FiniteProductBlocks` splits literal numerator and denominator products
    across an actual shared prefix and private suffix, retaining zero cells;
    `FinitePowerProduct` identifies exact anchored and binary-mask natural

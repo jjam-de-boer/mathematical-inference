@@ -1,4 +1,4 @@
-import Thesis.CausalTransport.HedgeChannelSurvivors
+import Thesis.CausalTransport.HedgeChannelFullTerms
 
 namespace Thesis
 namespace Causality
@@ -21,6 +21,12 @@ left likelihood therefore contains only the permitted common backgrounds.
 The right likelihood contains the same backgrounds and every permitted
 full small-channel term.  The exact difference below is a sum of those
 actual integrated terms on the original pair-root prior.
+
+Each full-small term is also evaluated under the actual intervention: its
+shared incidence cancels, leaving the entire literal prior mass, the actual
+forced-indicator coefficient, and its observed/parent character.  A conflicting
+forced sample therefore keeps coefficient zero instead of being assigned a
+positive character contribution.
 
 This is the intervention-side expansion needed for original-query
 separation.  It does not assert that the difference is positive at every
@@ -61,6 +67,25 @@ def rightTermIntegralUnder (w : HedgeWitness G q) (smallSignal backgroundSignal 
   (PairRootChannels.prior G.binary (channelCount w)).signedMass
     (HedgeChannelTable.choiceMonomial G (channelCount w) (rightTables w)
       (rightSignals w smallSignal backgroundSignal) target sample choice)
+
+/-- Exact full-small integral under any target, retaining every forced
+consistency indicator in its scalar coefficient.  Even an unsupported
+forced-channel choice remains zero; it is not rescued by the even shared
+incidence of a full forest. -/
+theorem right_fullTermIntegral_under (w : HedgeWitness G q)
+    (smallSignal backgroundSignal : ParentSignal S) (target : Fin S.count -> Option Bool)
+    (sample : S.binary.Assignment) (mask : NodeSet S) (subset : NodeSet.Subset mask (outside w.small)) :
+    rightTermIntegralUnder w smallSignal backgroundSignal target sample (fullChoice w w.small (smallChannel w) mask) =
+      ((PairRootChannels.prior G.binary (channelCount w)).den : Int) *
+        HedgeChannelTable.choiceCoefficient (rightTables w) target sample (fullChoice w w.small (smallChannel w) mask) *
+        FiniteProbRecord.characterSign (Bool.xor (signalPhase w.small smallSignal sample)
+          (signalPhase mask backgroundSignal sample)) := by
+  have evaluated := fullChoice_signedMass_under w (rightTables w) (rightNodes w)
+    (rightParentSignal w smallSignal backgroundSignal) backgroundSignal
+    (by intro child; rw [rightNodes, role_backgroundChannel])
+    (by intro child parents; rw [rightParentSignal, role_backgroundChannel])
+    w.small (smallChannel w) (rightNodes_smallChannel w) mask subset target sample
+  simpa only [signalPhase, rightParentSignal, role_smallChannel] using evaluated
 
 private instance choiceDecidableEq (w : HedgeWitness G q) :
     DecidableEq (Fin S.count -> Option (Fin (channelCount w))) :=
