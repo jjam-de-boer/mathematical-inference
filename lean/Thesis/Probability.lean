@@ -10,10 +10,13 @@ import Thesis.Probability.FiniteProductReindex
 import Thesis.Probability.FiniteRecordSlicing
 import Thesis.Probability.FiniteRecordPerturbation
 import Thesis.Probability.FiniteLinearResponse
+import Thesis.Probability.FiniteSignedMass
+import Thesis.Probability.FiniteSignedProduct
 import Thesis.Probability.ConditionalUniqueness
 import Thesis.Probability.FiniteProductConditionals
 import Thesis.Probability.BooleanNoise
 import Thesis.Probability.BooleanChannelTable
+import Thesis.Probability.BooleanChannelExpansion
 import Thesis.Probability.ConditionalNoise
 import Thesis.Probability.ColliderChannel
 import Thesis.Probability.ColliderRealization
@@ -51,7 +54,13 @@ Reading order:
    record pairs from raw balanced natural weights, including repeated labels;
    `FiniteLinearResponse` proves exact cancellation and separation criteria
    against a fixed finite rational environment without subtraction or division
-   by its coefficients; `ConditionalUniqueness` proves that positive joint laws
+   by its coefficients; `FiniteSignedMass` provides exact integer-valued
+   integrands over the same nonnegative weighted atoms, and
+   `FiniteSignedProduct` expands complete finite products and integrates
+   rectangular integrands against the actual independent product record.
+   These auxiliary integer integrands do not introduce signed probability
+   records or replace natural-weight probability semantics;
+   `ConditionalUniqueness` proves that positive joint laws
    agreeing in both conditional directions agree on every joint event,
    without assuming equal conditioning marginals; `FiniteProductConditionals`
    proves the full-coordinate counterpart on arbitrary finite dependent
@@ -63,6 +72,9 @@ Reading order:
    limiting arguments; `BooleanChannelTable` constructs positive normalized
    rows from finitely many natural-weight channel signals, with a fixed
    signal-independent capacity and exact two-sided deviation from a fair row;
+   `BooleanChannelExpansion` relates their complete character expansion to
+   actual row-product numerators, retaining interactions and respecting hard
+   interventions with their actual forced-value indicators;
    `ConditionalNoise` retains the full mixed-event law
    after independent noise is conditioned on source-only evidence.  Its XOR
    transport uses each source's actual evidence mass rather than a common

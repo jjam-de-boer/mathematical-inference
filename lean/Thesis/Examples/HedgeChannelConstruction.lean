@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.HedgeChannelCharacters
 import Thesis.CausalTransport.HedgeChannelOrthogonality
+import Thesis.CausalTransport.HedgeChannelIntegration
 import Thesis.Probability.BooleanChannelTable
 
 namespace Thesis
@@ -18,6 +19,10 @@ reads that outer parent, rather than using the original restricted forest
 signal.  The general factorization theorem must retain this arbitrary local
 signal.  A proper one-node incidence character is also checked as fair under
 the actual normalized pair-bit record.
+
+The product regression uses that proper selection in one independent channel
+and an arbitrary selection in another.  Cancellation is proved by the
+general integration theorem, not by evaluating the product enumeration.
 
 The table checks use three channels, including a zero amplitude and two
 coincident centres.  Moving the centre bits changes the row probabilities
@@ -98,6 +103,21 @@ theorem proper_character_fair (phase : Bool) :
       (hedgeChannelIncidenceParity graph NodeSet.full (NodeSet.singleton actionNode) bits))) ⟨1, 2, by decide⟩ :=
   witness.large_forest.component.channelParity_probVal_half graph _ _ (by intro node _selected; rfl)
     outcomeNode (by decide +kernel) (by decide +kernel) actionNode (by decide +kernel) phase
+
+/-- Reading a proper nonempty part of the first connected channel cancels
+the whole joint monomial.  The second selection is completely unrestricted;
+its fairness is neither needed nor inferred from the first channel. -/
+theorem independent_channels_cancel (secondSelection : NodeSet signature) (phases : Fin 2 -> Bool) :
+    (hedgeChannelBlocksRecord graph 2).signedMass (fun blocks => FiniteProduct.iProduct 2
+      (fun channel => FiniteProbRecord.characterSign (Bool.xor (phases channel)
+        (hedgeChannelIncidenceParity graph NodeSet.full
+          (if channel.val = 0 then NodeSet.singleton actionNode else secondSelection) (blocks channel))))) = 0 :=
+  hedgeChannelBlocks_signedMass_zero graph 2 (fun _ => NodeSet.full)
+    (fun channel => if channel.val = 0 then NodeSet.singleton actionNode else secondSelection) phases 0
+    witness.large_forest.component (by intro node _selected; rfl)
+    outcomeNode (by decide +kernel)
+    (by change NodeSet.singleton actionNode outcomeNode = false; decide +kernel)
+    actionNode (by change NodeSet.singleton actionNode actionNode = true; decide +kernel)
 
 private def amplitudes (channel : Fin 3) : Nat := channel.val
 

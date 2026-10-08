@@ -88,6 +88,7 @@ import Thesis.CausalTransport.HedgeOutcomeNormalization
 import Thesis.CausalTransport.HedgeCountermodelSearch
 import Thesis.CausalTransport.HedgeChannelCharacters
 import Thesis.CausalTransport.HedgeChannelOrthogonality
+import Thesis.CausalTransport.HedgeChannelIntegration
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -419,10 +420,15 @@ typed small-parent character and the selected outer-background characters.
 No route-avoidance or protected-outer hypothesis is imposed on this identity.
 `HedgeChannelOrthogonality` proves that partially reading a connected channel
 gives exactly fair parity under a normalized pair-bit record, by an explicit
-finite XOR translation.  A complete channel has even incidence.  Together
-with the positive rows of `Probability.BooleanChannelTable`, these supply
-general ingredients for weighted hidden-channel integration; that integration,
-the observational comparison and original-query gap are still open.
+finite XOR translation.  A complete channel has even incidence.
+`HedgeChannelIntegration` proves exact signed integration and proper-subset
+cancellation against the actual independent product of channel records, even
+when other channels have arbitrary selections.  The complete row-numerator
+expansion is supplied by `Probability.BooleanChannelExpansion`.  The channel
+product is only a prior presentation: realizing its transpose at actual
+pair-root sources, constructing matching coefficients, proving observational
+equality and separating the original query are still open.  In particular
+no common hidden source incident to the entire hedge is introduced here.
 `HedgeCompensatedPreimage` exposes the exact installed-row full-value
 preimages in both actual carriers: ordinary/nested incidence equations have
 a common private-background test.  That test retains the loss of a nonbinary
