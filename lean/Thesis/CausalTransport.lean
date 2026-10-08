@@ -25,6 +25,9 @@ import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.HedgeConditionalRoot
 import Thesis.CausalTransport.HedgeNoise
 import Thesis.CausalTransport.HedgeReadout
+import Thesis.CausalTransport.HedgeReadoutConditioning
+import Thesis.CausalTransport.ConditionalReadoutCounterexample
+import Thesis.CausalTransport.ConditionalReadoutRoute
 import Thesis.CausalTransport.ConditionalCollider
 import Thesis.CausalTransport.ConditionalColliderProbability
 import Thesis.CausalTransport.ConditionalColliderCounterexample
@@ -142,8 +145,22 @@ the original conditional kernel and restores all queried outcomes.
 arbitrary hedge root selector and selects a possibly different queried outside
 bidirected neighbour at each root by finite meeting search.  Both collider
 families still require the common roots to be the original conditioner and
-the selected readout to lie outside the large forest.  General active-path
-composition, unrestricted outcome/conditioner placement, and the universal
+the selected readout to lie outside the large forest.
+`HedgeReadoutConditioning` supplies an actual SCM posterior identity for a
+private readout under unchanged full-label context.  Nonzero noise bias
+reflects the old conditional signal gap even when evidence masses differ.
+`ConditionalReadoutCounterexample` then carries any existing positive
+singleton-outcome countermodel along a declared observed arrow, deriving its
+reference and source gap internally by finite cell search.  The whole action
+and conditioner are retained, and extra target outcomes are restored by
+marginalization.  The target pivot must still be ignored in the source pair.
+`ConditionalReadoutRoute` composes this actual adapter over an arbitrary
+finite directed route, with independently supplied supported biased noise at
+each destination.  Only the initial pair must ignore the route destinations:
+the signature's arrow order transports that invariant through every update.
+The empty route keeps the seed pair and restores any extra queried outcomes.
+General mixed active-path composition, unrestricted outcome/conditioner
+placement, and the universal
 conditional terminal family remain separate obligations.
 
 `Soundness` develops the graph-independent probability algebra and the finite
