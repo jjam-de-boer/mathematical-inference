@@ -13,6 +13,7 @@ import Thesis.Probability.FiniteLinearResponse
 import Thesis.Probability.FiniteSignedMass
 import Thesis.Probability.FiniteSignedProduct
 import Thesis.Probability.FiniteProductBlocks
+import Thesis.Probability.FinitePowerProduct
 import Thesis.Probability.FiniteUniformProduct
 import Thesis.Probability.ConditionalUniqueness
 import Thesis.Probability.FiniteProductConditionals
@@ -69,6 +70,9 @@ Reading order:
    masses and signed integrands through explicit support permutations;
    `FiniteProductBlocks` splits literal numerator and denominator products
    across an actual shared prefix and private suffix, retaining zero cells;
+   `FinitePowerProduct` identifies exact anchored and binary-mask natural
+   products with their finite powers, without choosing an anchor or assuming
+   a mask cardinal instead of counting its actual finite indices;
    `ConditionalUniqueness` proves that positive joint laws
    agreeing in both conditional directions agree on every joint event,
    without assuming equal conditioning marginals; `FiniteProductConditionals`

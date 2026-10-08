@@ -48,6 +48,7 @@ import Thesis.Examples.HedgeObstructionCounterexample
 import Thesis.Examples.FiniteTablePerturbation
 import Thesis.Examples.HedgeChannelTable
 import Thesis.Examples.HedgeChannelMonomial
+import Thesis.Examples.HedgeChannelCoefficients
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -59,6 +60,12 @@ gap criteria without reducing private response-function priors.
 mixed partial selections, actual action-cut terms, and complete expansions
 with repeated local labels or zero channels.  These are checks of general
 construction ingredients, not an inhabitant of `PublishedCompleteness`.
+
+`HedgeChannelCoefficients` installs the explicit power coefficients in a
+positive actual bow-model pair with full observational equality and a
+projected intervention gap.  Its independent two-outer-vertex mask check
+retains the double interaction.  These finite tests do not replace the
+remaining arbitrary-hedge installation and original-outcome flow proof.
 
 `ConditionalCollider` checks a real irreducible `P(U | do(A), R)` failure
 on `U -> R <- A`, `A <-> R`, with three-valued observed alphabets.  The

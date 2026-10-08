@@ -93,6 +93,7 @@ import Thesis.CausalTransport.HedgeChannelPairRoot
 import Thesis.CausalTransport.HedgeChannelTable
 import Thesis.CausalTransport.HedgeChannelLikelihood
 import Thesis.CausalTransport.HedgeChannelMonomial
+import Thesis.CausalTransport.HedgeChannelCoefficients
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -457,10 +458,17 @@ in a nonzero term must be fully selected; channels sharing a pivot cannot
 survive together, and cutting any support vertex kills its selected terms.
 The complete likelihood numerator retains the sum of all these actual
 monomial integrals, including repeated local labels and zero coefficients.
+`HedgeChannelCoefficients` constructs explicit natural-power amplitudes at
+one common capacity and proves the strict amplitude-sum bound for every row.
+Its actual models are graph-compatible and fully positive.  Anchored large
+and small coefficients agree literally at each outer mask, and their complete
+finite signed mask sum equals the small coefficient times the entire outer
+background product.  Installing and summing these families in an arbitrary
+hedge's actual likelihood remains part of the general countermodel argument.
 No common hidden source incident to the entire hedge is introduced by either
-construction.  Graph-specific matching coefficients, observational equality,
+construction.  General hedge installation and observational assembly,
 original-query separation and universal conditional countermodels are still
-open; these general constructions do not inhabit `PublishedCompleteness`.
+open; these constructions do not inhabit `PublishedCompleteness`.
 `HedgeCompensatedPreimage` exposes the exact installed-row full-value
 preimages in both actual carriers: ordinary/nested incidence equations have
 a common private-background test.  That test retains the loss of a nonbinary
