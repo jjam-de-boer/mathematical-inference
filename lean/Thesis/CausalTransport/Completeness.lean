@@ -20,10 +20,14 @@ runs, and positive countermodels for realizable hedge shapes.  The published
 record is not yet inhabited.  The executable fuel bound is proved total below,
 so public joint and conditional ID cannot return `unfinished`; every public
 joint failure also yields a hedge witness through its structural trace.  The
-remaining load-bearing obligations concern the replacement program's
-failure-to-original-query hedge transport, the general positive hedge
-countermodel, and conditional completeness.  `KernelSuccessCompilation` now
-proves full structural success compilation for the current-kernel replacement:
+remaining load-bearing obligations are the general positive original-query
+hedge countermodel and the irreducible conditional terminal countermodel.
+`KernelFailureExtraction` now supplies original-query hedge transport for
+the replacement program by structural induction, while
+`ConditionalFailureExtraction` retains the full conditional exchange trace
+and isolates those two semantic leaves in its final assembly boundary.
+`KernelSuccessCompilation` proves full structural success compilation for
+the current-kernel replacement:
 `Examples.FrontDoorIdentification` in
 `IdentificationRegression` proves that one legacy identified formula is
 incorrect even in a positive compatible model, and consequently that the
@@ -31,8 +35,9 @@ legacy formula-aligned `PublishedJointTraceCompiler` cannot be inhabited.
 `IdentificationKernel` supplies the replacement recursion and
 `KernelIdentification` proves its quadratic progress bound.  The new success
 compiler carries the actual current input and its support invariants through
-every branch; original-query hedge extraction for that changed program remains
-separate.  Old control-flow traces are not new semantic certificates.
+every branch; the separate failure extractor targets that same corrected
+program.  Old control-flow traces are not new semantic certificates, and
+special-case countermodels do not inhabit the two universal semantic leaves.
 
 For arbitrary nested engine runs, use the exact trace relations in
 `IdentificationInduction`.  The branch-specific lemmas retained below are

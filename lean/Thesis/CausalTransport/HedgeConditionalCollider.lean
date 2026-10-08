@@ -26,9 +26,11 @@ For the selected-root constructor, the queried parent must lie outside the
 large forest and have a declared edge into that root.  The automatic wrapper
 accepts a queried outside parent with incoming edges to every common root,
 which guarantees that whichever separated root the finite search finds is
-admissible.  These are genuine geometric restrictions, not consequences of
-an arbitrary exhausted IDC exchange search.  General active-path composition
-and unrestricted conditional completeness remain separate obligations.
+admissible.  A further finite-search wrapper allows a different queried
+incoming parent at each root.  These are genuine geometric restrictions,
+not consequences of an arbitrary exhausted IDC exchange search.  General
+active-path composition and unrestricted conditional completeness remain
+separate obligations.
 -/
 
 variable {S : ObservedSignature.{0}} {graph : ObservedGraph S} {query : ConditionalKernelQuery S}
@@ -131,6 +133,52 @@ noncomputable def positiveConditionalCounterexampleWithNoise
 
 end HedgeConditionalRoot.Witness
 
+namespace HedgeConditionalRoot
+
+/-! ## Finite incoming-parent selection after the source root is known -/
+
+/-- The concrete parent data needed by the collider constructor at one root.
+The parent is a queried outcome outside the large forest, and the declared
+incoming edge belongs to the original observed signature. -/
+structure IncomingParent (w : HedgeWitness graph query.jointNumerator) (root : Fin S.count) where
+  node : Fin S.count
+  selected : query.outcome node = true
+  outside : w.large node = false
+  edge : S.directed node root = true
+
+/-- An entirely finite geometry test.  In particular, different roots may
+pass this test at different queried parents; no shared parent is required. -/
+def incomingParentTest (w : HedgeWitness graph query.jointNumerator)
+    (root parent : Fin S.count) : Bool :=
+  query.outcome parent && !w.large parent && S.directed parent root
+
+/-- Return the first eligible queried parent in the established topological
+order.  The data comes from the computed `find?` result.  The existence
+characterization of `finAny` is used only to refute the impossible exhausted
+branch, never to extract an observed node from a proposition. -/
+def incomingParent (w : HedgeWitness graph query.jointNumerator) (root : Fin S.count)
+    (available : finAny S.count (incomingParentTest w root) = true) : IncomingParent w root :=
+  match found : (List.finRange S.count).find? (incomingParentTest w root) with
+  | some parent =>
+      let checked : incomingParentTest w root parent = true := List.find?_some found
+      let passed := Bool.and_eq_true_iff.mp checked
+      let first := Bool.and_eq_true_iff.mp passed.1
+      { node := parent
+        selected := first.1
+        outside := by
+          cases included : w.large parent with
+          | false => rfl
+          | true =>
+              have impossible := first.2
+              rw [included] at impossible
+              cases impossible
+        edge := passed.2 }
+  | none => False.elim (by
+      rcases (finAny_eq_true_iff (incomingParentTest w root)).mp available with ⟨parent, passed⟩
+      exact ((List.find?_eq_none.mp found) parent (List.mem_finRange parent)) passed)
+
+end HedgeConditionalRoot
+
 /-- Automatically select a separated root when a queried outside parent has
 a declared edge into every common root.  No root count, binary-alphabet,
 singleton-outcome, chosen reference, or hand-supplied source-gap restriction
@@ -160,6 +208,42 @@ noncomputable def HedgeWitness.positiveConditionalCounterexampleOfRootCollider
     (parentEdges : forall root, w.roots root = true -> S.directed parent root = true) :
     ConditionalCounterexampleIn (GraphModelClass.positive graph) query :=
   w.positiveConditionalCounterexampleOfRootColliderWithNoise rich parent parentSelected roots outside parentEdges
+    (FiniteProbRecord.biasedFlip 1 1 (by decide)) (by intro bit; cases bit <;> decide +kernel)
+    1 (by decide) (by decide +kernel)
+
+/-- Select the separated root first, then search its own queried incoming
+parent.  Every common root is required to have an eligible parent, but that
+parent need not be the same node across roots.  The Boolean availability
+premise is a graph test, not a source-law gap or a conditional countermodel
+assumption.  The actual root, reference, context support, and semantic gap
+continue to come from the arbitrary-hedge conditional selector. -/
+noncomputable def HedgeWitness.positiveConditionalCounterexampleOfRootSpecificParentsWithNoise
+    (w : HedgeWitness graph query.jointNumerator) (rich : ObservedSignature.ValueRich S)
+    (roots : w.roots = query.condition)
+    (parentsAvailable : forall root, w.roots root = true ->
+      finAny S.count (HedgeConditionalRoot.incomingParentTest w root) = true)
+    (noise : FiniteProbRecord Bool)
+    (noisePositive : forall bit, noise.EventPositive (FiniteProbRecord.singletonEvent bit))
+    (gap : Nat) (positiveGap : 0 < gap)
+    (bias : FiniteProbRecord.eventMass noise.atoms (fun bit => !bit) =
+      FiniteProbRecord.eventMass noise.atoms id + gap) :
+    ConditionalCounterexampleIn (GraphModelClass.positive graph) query :=
+  let selected := w.conditionedRoot rich
+  let parent := HedgeConditionalRoot.incomingParent w selected.root
+    (parentsAvailable selected.root selected.root_selected)
+  selected.positiveConditionalCounterexampleWithNoise parent.node parent.selected roots parent.outside parent.edge
+    noise noisePositive gap positiveGap bias
+
+/-- The root-specific incoming-parent constructor with explicit supported
+`2:1` stay/flip noise.  Neither the parent data nor the noise model is chosen
+by a choice principle. -/
+noncomputable def HedgeWitness.positiveConditionalCounterexampleOfRootSpecificParents
+    (w : HedgeWitness graph query.jointNumerator) (rich : ObservedSignature.ValueRich S)
+    (roots : w.roots = query.condition)
+    (parentsAvailable : forall root, w.roots root = true ->
+      finAny S.count (HedgeConditionalRoot.incomingParentTest w root) = true) :
+    ConditionalCounterexampleIn (GraphModelClass.positive graph) query :=
+  w.positiveConditionalCounterexampleOfRootSpecificParentsWithNoise rich roots parentsAvailable
     (FiniteProbRecord.biasedFlip 1 1 (by decide)) (by intro bit; cases bit <;> decide +kernel)
     1 (by decide) (by decide +kernel)
 

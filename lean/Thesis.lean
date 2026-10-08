@@ -38,6 +38,7 @@ import Thesis.Examples.ConditionalFailurePaths
 import Thesis.Examples.ConditionalCollider
 import Thesis.Examples.HedgeConditionalRoot
 import Thesis.Examples.HedgeConditionalCollider
+import Thesis.Examples.HedgeConditionalColliderSelection
 import Thesis.Examples.ConditionalCounterexampleNormalization
 import Thesis.Examples.ValueRefinement
 import Thesis.Examples.HedgeObstructionLikelihood
@@ -69,6 +70,10 @@ hedge roots, a genuine additional outcome, no legal IDC exchange, and an
 actual ID failure.  The arbitrary-root constructor supplies positive SCMs,
 the full observed-law equality, and separation of that complete kernel;
 the other root's full label is retained rather than marginalized away.
+`HedgeConditionalColliderSelection` additionally checks a two-root geometry
+with distinct queried incoming parents and no eligible shared parent.  The
+root-specific finite search supplies the parent's actual data after the
+separated root is selected, while retaining the original conditional query.
 
 For a smaller dependency footprint, client developments should normally import
 one stable facade directly: `Thesis.Probability`, `Thesis.Causality`, or

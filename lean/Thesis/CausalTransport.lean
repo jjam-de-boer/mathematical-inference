@@ -121,7 +121,9 @@ the selected root is an admissible collider pivot for every original query.
 context-aware countermodel construction.  It handles any number of conditioned
 roots and additional queried outcomes when the selected root has a queried
 incoming parent outside the large forest.  An automatic wrapper accepts a
-parent with incoming edges to every common root.  The original action values
+parent with incoming edges to every common root; the root-specific wrapper
+instead finds a possibly different queried incoming parent for each selected
+root from its finite Boolean availability test.  The original action values
 are preserved when the readout labels are chosen.  General active-path
 composition, unrestricted outcome/conditioner placement, and the universal
 conditional terminal family remain separate obligations.
