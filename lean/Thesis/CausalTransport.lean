@@ -99,6 +99,7 @@ import Thesis.CausalTransport.HedgeChannelSurvivors
 import Thesis.CausalTransport.HedgeChannelFullTerms
 import Thesis.CausalTransport.HedgeChannelFullCoefficients
 import Thesis.CausalTransport.HedgeChannelObservational
+import Thesis.CausalTransport.HedgeChannelInterventional
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -497,6 +498,12 @@ permutation with the right enumeration.  Summing the actual matched terms
 gives equality of all factual likelihood numerators.  The common literal
 row capacities then give equality of every observed event in the installed
 models for every hedge and every typed small/background signal.
+`HedgeChannelInterventional` restricts the actual canonical choices at every
+forced row while retaining its consistency indicator.  Forcing the stored
+action seed removes all left large-channel terms.  The entire right-minus-
+left likelihood, including its projection to any original observed event,
+is exactly the permitted full-small sum on the real shared prior.  The
+nonzero contribution after original-outcome projection is still to be proved.
 No common hidden source incident to the entire hedge is introduced by either
 construction.  Original-query separation, the general-value lift of a
 separating pair, and universal conditional countermodels remain open;

@@ -53,6 +53,7 @@ import Thesis.Examples.HedgeChannelInstallation
 import Thesis.Examples.HedgeChannelSurvivors
 import Thesis.Examples.HedgeChannelFullTerms
 import Thesis.Examples.HedgeChannelObservational
+import Thesis.Examples.HedgeChannelInterventional
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -93,6 +94,11 @@ large background and parent-reading local signals.  Its four joined masks
 retain both independent parts, and every observed event agrees by the
 general installed-model theorem.  Literal signed terms additionally check
 the retained prior mass and the outside-background phase.
+`HedgeChannelInterventional` checks the actual original action cut, proper-
+term cancellation, both signs of the full-small difference, and conflicting
+forced cells.  The unchanged original outcome event retains the exact bow
+gap.  Forcing a small-forest row instead removes the small block and restores
+equality; this fixture does not supply the general projected-gap theorem.
 
 `ConditionalCollider` checks a real irreducible `P(U | do(A), R)` failure
 on `U -> R <- A`, `A <-> R`, with three-valued observed alphabets.  The

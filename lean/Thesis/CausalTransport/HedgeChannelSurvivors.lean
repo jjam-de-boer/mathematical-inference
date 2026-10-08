@@ -26,8 +26,9 @@ a model: all existential eliminations in the classification remain in Prop.
 Masks are restricted to the unconsumed rows.  Coordinates already occupied
 by a full main channel are fixed false, avoiding duplicate descriptions of
 the same surviving choice.  The classification is on the original actual
-pair-root prior and the installed local row lists.  It does not assume an
-observational equality or an original-outcome gap.
+pair-root prior and the installed local row lists.  Its general form also
+retains arbitrary hard interventions and their forced-value indicators.
+It does not assume an observational equality or an original-outcome gap.
 -/
 
 variable {S : ObservedSignature.{0}} {G : ObservedGraph S} {q : JointKernelQuery S}
@@ -196,35 +197,38 @@ private theorem right_backgroundMask_subset (w : HedgeWitness G q)
 /-! ## Classifying nonzero actual monomial integrals -/
 
 /-- A left nonzero term is either entirely background choices, or one
-fully selected large channel with backgrounds only outside the large forest.
+fully selected large channel with backgrounds only outside the large forest,
+even under arbitrary hard interventions.  Membership in the actual forced
+row lists and every consistency indicator are retained.
 The conclusion retains all legal background interactions and provides an
 explicit computed mask for each description. -/
-theorem left_nonzero_choice (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
-    (smallSignal backgroundSignal : ParentSignal S) (sample : S.binary.Assignment)
+theorem left_nonzero_choice_under (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (smallSignal backgroundSignal : ParentSignal S) (target : Fin S.count -> Option Bool) (sample : S.binary.Assignment)
     (choice : Fin S.count -> Option (Fin (channelCount w)))
     (member : choice ∈ FiniteProduct.enumeration S.count (fun _ => Option (Fin (channelCount w)))
-      (fun child => (leftTables w child).expansionChoicesUnder none))
+      (fun child => (leftTables w child).expansionChoicesUnder (target child)))
     (nonzero : (PairRootChannels.prior G.binary (channelCount w)).signedMass
       (HedgeChannelTable.choiceMonomial G (channelCount w) (leftTables w)
-        (leftSignals w rich smallSignal backgroundSignal) (fun _ => none) sample choice) ≠ 0) :
+        (leftSignals w rich smallSignal backgroundSignal) target sample choice) ≠ 0) :
     (choice = backgroundChoice w (backgroundMask w choice) ∧
       NodeSet.Subset (backgroundMask w choice) (outside w.small)) ∨
     (Exists fun index : Fin (masks (outer w)).length =>
       choice = fullChoice w w.large (largeChannel w index) (remainingBackgroundMask w w.large choice) ∧
         NodeSet.Subset (remainingBackgroundMask w w.large choice) (outside w.large)) := by
+  have factual := HedgeChannelTable.choiceUnder_member_factual (leftTables w) target choice member
   have full : forall index row, choice row = some (largeChannel w index) ->
       HedgeChannelTable.selectedNodes choice (largeChannel w index) = w.large := by
     intro index row picked
     have result := HedgeChannelTable.choiceMonomial_nonzero_full G (channelCount w) (leftTables w)
       (leftNodes w) (leftParentSignal w rich smallSignal backgroundSignal)
       (HedgeChannelCoefficients.tables_channel_allowed _ _ _ _ _)
-      (fun _ => none) sample choice member nonzero (largeChannel w index)
+      target sample choice member nonzero (largeChannel w index)
       (by rw [leftNodes_largeChannel]; exact large_component w) row picked
     exact result.trans (leftNodes_largeChannel w index)
-  rcases left_row_cases w choice member w.actionRoot with noneAtRoot | mainAtRoot | backgroundAtRoot
-  · refine Or.inl ⟨?_, left_backgroundMask_subset w choice member⟩
+  rcases left_row_cases w choice factual w.actionRoot with noneAtRoot | mainAtRoot | backgroundAtRoot
+  · refine Or.inl ⟨?_, left_backgroundMask_subset w choice factual⟩
     funext child
-    rcases left_row_cases w choice member child with absent | ⟨index, _inside, picked⟩ | ⟨_outside, picked⟩
+    rcases left_row_cases w choice factual child with absent | ⟨index, _inside, picked⟩ | ⟨_outside, picked⟩
     · exact absent.trans (backgroundChoice_of_none w choice child absent).symm
     · have rootSelected : HedgeChannelTable.selectedNodes choice (largeChannel w index) w.actionRoot = true := by
         rw [full index child picked]
@@ -247,7 +251,7 @@ theorem left_nonzero_choice (w : HedgeWitness G q) (rich : ObservedSignature.Val
         have unchanged : remainingBackgroundMask w w.large choice child = backgroundMask w choice child := by
           simp only [remainingBackgroundMask, NodeSet.diff, inside, Bool.not_false, Bool.and_true]
         simp only [fullChoice, inside, Bool.false_eq_true, if_false, backgroundChoice, unchanged]
-        rcases left_row_cases w choice member child with absent | ⟨other, selectedHere, _otherPick⟩ | ⟨_outside, chosen⟩
+        rcases left_row_cases w choice factual child with absent | ⟨other, selectedHere, _otherPick⟩ | ⟨_outside, chosen⟩
         · simp only [backgroundMask, absent, reduceCtorEq, decide_false, Bool.false_eq_true, if_false]
         · rw [inside] at selectedHere
           cases selectedHere
@@ -256,32 +260,35 @@ theorem left_nonzero_choice (w : HedgeWitness G q) (rich : ObservedSignature.Val
     cases backgroundAtRoot.1
 
 /-- On the right, the same complete classification leaves either only
-backgrounds or the full small channel.  The masks in both cases avoid the
-small forest, and the proof uses the actual small connected component. -/
-theorem right_nonzero_choice (w : HedgeWitness G q) (smallSignal backgroundSignal : ParentSignal S)
-    (sample : S.binary.Assignment) (choice : Fin S.count -> Option (Fin (channelCount w)))
+backgrounds or the full small channel under arbitrary hard interventions.
+The masks in both cases avoid the small forest, and the proof uses the
+actual small connected component and real intervened row-choice lists. -/
+theorem right_nonzero_choice_under (w : HedgeWitness G q) (smallSignal backgroundSignal : ParentSignal S)
+    (target : Fin S.count -> Option Bool) (sample : S.binary.Assignment)
+    (choice : Fin S.count -> Option (Fin (channelCount w)))
     (member : choice ∈ FiniteProduct.enumeration S.count (fun _ => Option (Fin (channelCount w)))
-      (fun child => (rightTables w child).expansionChoicesUnder none))
+      (fun child => (rightTables w child).expansionChoicesUnder (target child)))
     (nonzero : (PairRootChannels.prior G.binary (channelCount w)).signedMass
       (HedgeChannelTable.choiceMonomial G (channelCount w) (rightTables w)
-        (rightSignals w smallSignal backgroundSignal) (fun _ => none) sample choice) ≠ 0) :
+        (rightSignals w smallSignal backgroundSignal) target sample choice) ≠ 0) :
     (choice = backgroundChoice w (backgroundMask w choice) ∧
       NodeSet.Subset (backgroundMask w choice) (outside w.small)) ∨
     (choice = fullChoice w w.small (smallChannel w) (remainingBackgroundMask w w.small choice) ∧
       NodeSet.Subset (remainingBackgroundMask w w.small choice) (outside w.small)) := by
+  have factual := HedgeChannelTable.choiceUnder_member_factual (rightTables w) target choice member
   have full : forall row, choice row = some (smallChannel w) ->
       HedgeChannelTable.selectedNodes choice (smallChannel w) = w.small := by
     intro row picked
     have result := HedgeChannelTable.choiceMonomial_nonzero_full G (channelCount w) (rightTables w)
       (rightNodes w) (rightParentSignal w smallSignal backgroundSignal)
       (HedgeChannelCoefficients.tables_channel_allowed _ _ _ _ _)
-      (fun _ => none) sample choice member nonzero (smallChannel w)
+      target sample choice member nonzero (smallChannel w)
       (by rw [rightNodes_smallChannel]; exact small_component w) row picked
     exact result.trans (rightNodes_smallChannel w)
-  rcases right_row_cases w choice member w.actionRoot with noneAtRoot | mainAtRoot | backgroundAtRoot
-  · refine Or.inl ⟨?_, right_backgroundMask_subset w choice member⟩
+  rcases right_row_cases w choice factual w.actionRoot with noneAtRoot | mainAtRoot | backgroundAtRoot
+  · refine Or.inl ⟨?_, right_backgroundMask_subset w choice factual⟩
     funext child
-    rcases right_row_cases w choice member child with absent | ⟨_inside, picked⟩ | ⟨_outside, picked⟩
+    rcases right_row_cases w choice factual child with absent | ⟨_inside, picked⟩ | ⟨_outside, picked⟩
     · exact absent.trans (backgroundChoice_of_none w choice child absent).symm
     · have rootSelected : HedgeChannelTable.selectedNodes choice (smallChannel w) w.actionRoot = true := by
         rw [full child picked]
@@ -303,13 +310,45 @@ theorem right_nonzero_choice (w : HedgeWitness G q) (smallSignal backgroundSigna
         have unchanged : remainingBackgroundMask w w.small choice child = backgroundMask w choice child := by
           simp only [remainingBackgroundMask, NodeSet.diff, inside, Bool.not_false, Bool.and_true]
         simp only [fullChoice, inside, Bool.false_eq_true, if_false, backgroundChoice, unchanged]
-        rcases right_row_cases w choice member child with absent | ⟨selectedHere, _otherPick⟩ | ⟨_outside, chosen⟩
+        rcases right_row_cases w choice factual child with absent | ⟨selectedHere, _otherPick⟩ | ⟨_outside, chosen⟩
         · simp only [backgroundMask, absent, reduceCtorEq, decide_false, Bool.false_eq_true, if_false]
         · rw [inside] at selectedHere
           cases selectedHere
         · simp only [backgroundMask, chosen, decide_true, if_true]
   · rw [w.actionRoot_in_small] at backgroundAtRoot
     cases backgroundAtRoot.1
+
+/-- Factual specialization of the intervention-aware left classification.
+The original API and its computed canonical masks are unchanged. -/
+theorem left_nonzero_choice (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (smallSignal backgroundSignal : ParentSignal S) (sample : S.binary.Assignment)
+    (choice : Fin S.count -> Option (Fin (channelCount w)))
+    (member : choice ∈ FiniteProduct.enumeration S.count (fun _ => Option (Fin (channelCount w)))
+      (fun child => (leftTables w child).expansionChoicesUnder none))
+    (nonzero : (PairRootChannels.prior G.binary (channelCount w)).signedMass
+      (HedgeChannelTable.choiceMonomial G (channelCount w) (leftTables w)
+        (leftSignals w rich smallSignal backgroundSignal) (fun _ => none) sample choice) ≠ 0) :
+    (choice = backgroundChoice w (backgroundMask w choice) ∧
+      NodeSet.Subset (backgroundMask w choice) (outside w.small)) ∨
+    (Exists fun index : Fin (masks (outer w)).length =>
+      choice = fullChoice w w.large (largeChannel w index) (remainingBackgroundMask w w.large choice) ∧
+        NodeSet.Subset (remainingBackgroundMask w w.large choice) (outside w.large)) :=
+  left_nonzero_choice_under w rich smallSignal backgroundSignal (fun _ => none) sample choice member nonzero
+
+/-- Factual specialization on the right, preserving the existing complete
+background/full-small alternatives and their explicit computed masks. -/
+theorem right_nonzero_choice (w : HedgeWitness G q) (smallSignal backgroundSignal : ParentSignal S)
+    (sample : S.binary.Assignment) (choice : Fin S.count -> Option (Fin (channelCount w)))
+    (member : choice ∈ FiniteProduct.enumeration S.count (fun _ => Option (Fin (channelCount w)))
+      (fun child => (rightTables w child).expansionChoicesUnder none))
+    (nonzero : (PairRootChannels.prior G.binary (channelCount w)).signedMass
+      (HedgeChannelTable.choiceMonomial G (channelCount w) (rightTables w)
+        (rightSignals w smallSignal backgroundSignal) (fun _ => none) sample choice) ≠ 0) :
+    (choice = backgroundChoice w (backgroundMask w choice) ∧
+      NodeSet.Subset (backgroundMask w choice) (outside w.small)) ∨
+    (choice = fullChoice w w.small (smallChannel w) (remainingBackgroundMask w w.small choice) ∧
+      NodeSet.Subset (remainingBackgroundMask w w.small choice) (outside w.small)) :=
+  right_nonzero_choice_under w smallSignal backgroundSignal (fun _ => none) sample choice member nonzero
 
 /-! ## Complete repetition-free canonical survivor lists -/
 
@@ -539,15 +578,8 @@ theorem rightSurvivors_member (w : HedgeWitness G q) (choice : Fin S.count -> Op
 
 private theorem coefficientChoices_nodup (channels bound : Nat) (nodes : Fin channels -> NodeSet S)
     (anchors : Fin channels -> Option (Fin S.count)) (deficits : Fin channels -> Nat) (child : Fin S.count) :
-    ((HedgeChannelCoefficients.tables channels bound nodes anchors deficits child).expansionChoicesUnder none).Nodup := by
-  apply List.nodup_cons.mpr
-  constructor
-  · intro member
-    rcases List.mem_map.mp member with ⟨channel, _channelMember, same⟩
-    cases same
-  · exact ConstructivePermutation.nodup_map_of_injective_on some _
-      (fun _ _ _ _ same => Option.some.inj same)
-      (List.Pairwise.filter _ (nodup_finRange channels))
+    ((HedgeChannelCoefficients.tables channels bound nodes anchors deficits child).expansionChoicesUnder none).Nodup :=
+  HedgeChannelCoefficients.tables_expansionChoicesUnder_nodup channels bound nodes anchors deficits child none
 
 /-- The integral of one complete row choice against the actual root-major
 prior.  These are the original monomial integrals, not replacement terms
@@ -654,36 +686,55 @@ theorem right_integratedNumerator_survivors (w : HedgeWitness G q)
 
 /-! ## Matching the actual common background contribution -/
 
-private theorem backgroundMonomials_equal (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
-    (smallSignal backgroundSignal : ParentSignal S) (sample : S.binary.Assignment) (mask : NodeSet S)
+private theorem backgroundMonomials_equal_under (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (smallSignal backgroundSignal : ParentSignal S) (target : Fin S.count -> Option Bool)
+    (sample : S.binary.Assignment) (mask : NodeSet S)
     (shared : (PairRootChannels.extension G.binary (channelCount w)).Assignment) :
     HedgeChannelTable.choiceMonomial G (channelCount w) (leftTables w)
-      (leftSignals w rich smallSignal backgroundSignal) (fun _ => none) sample (backgroundChoice w mask) shared =
+      (leftSignals w rich smallSignal backgroundSignal) target sample (backgroundChoice w mask) shared =
     HedgeChannelTable.choiceMonomial G (channelCount w) (rightTables w)
-      (rightSignals w smallSignal backgroundSignal) (fun _ => none) sample (backgroundChoice w mask) shared := by
+      (rightSignals w smallSignal backgroundSignal) target sample (backgroundChoice w mask) shared := by
   apply FiniteProduct.iProduct_congr
   intro child
-  cases chosen : mask child with
-  | false =>
-      simp only [backgroundChoice, chosen, Bool.false_eq_true, if_false,
-        BooleanChannelTable.expansionTermUnder, BooleanChannelTable.expansionTerm]
-      exact congrArg (fun capacity : Nat => (capacity : Int)) (capacities_equal w child)
-  | true =>
-      have amplitudes : (leftTables w child).amplitude (backgroundChannel w child) =
-          (rightTables w child).amplitude (backgroundChannel w child) := by
-        change HedgeChannelCoefficients.scale (channelCount w) ^
-            HedgeChannelCoefficients.rowExponent S.count (leftAnchors w) (leftDeficits w) child (backgroundChannel w child) =
-          HedgeChannelCoefficients.scale (channelCount w) ^
-            HedgeChannelCoefficients.rowExponent S.count (rightAnchors w) (rightDeficits w) child (backgroundChannel w child)
-        simp only [HedgeChannelCoefficients.rowExponent, leftAnchors, rightAnchors, role_backgroundChannel]
-      have signals : leftSignals w rich smallSignal backgroundSignal child
-          (fun parent _edge => sample parent) (fun root _incident => shared root) (backgroundChannel w child) =
-          rightSignals w smallSignal backgroundSignal child
-            (fun parent _edge => sample parent) (fun root _incident => shared root) (backgroundChannel w child) := by
-        simp only [leftSignals, rightSignals, HedgeChannelTable.incidenceSignals,
-          leftParentSignal, rightParentSignal, role_backgroundChannel, backgroundNodes_equal]
-      simp only [backgroundChoice, chosen, if_true, BooleanChannelTable.expansionTermUnder,
-        BooleanChannelTable.expansionTerm, amplitudes, signals]
+  cases forced : target child with
+  | some fixed => cases chosen : mask child <;> rfl
+  | none =>
+      cases chosen : mask child with
+      | false =>
+          simp only [backgroundChoice, chosen, Bool.false_eq_true, if_false,
+            BooleanChannelTable.expansionTermUnder, BooleanChannelTable.expansionTerm]
+          exact congrArg (fun capacity : Nat => (capacity : Int)) (capacities_equal w child)
+      | true =>
+          have amplitudes : (leftTables w child).amplitude (backgroundChannel w child) =
+              (rightTables w child).amplitude (backgroundChannel w child) := by
+            change HedgeChannelCoefficients.scale (channelCount w) ^
+                HedgeChannelCoefficients.rowExponent S.count (leftAnchors w) (leftDeficits w) child (backgroundChannel w child) =
+              HedgeChannelCoefficients.scale (channelCount w) ^
+                HedgeChannelCoefficients.rowExponent S.count (rightAnchors w) (rightDeficits w) child (backgroundChannel w child)
+            simp only [HedgeChannelCoefficients.rowExponent, leftAnchors, rightAnchors, role_backgroundChannel]
+          have signals : leftSignals w rich smallSignal backgroundSignal child
+              (fun parent _edge => sample parent) (fun root _incident => shared root) (backgroundChannel w child) =
+              rightSignals w smallSignal backgroundSignal child
+                (fun parent _edge => sample parent) (fun root _incident => shared root) (backgroundChannel w child) := by
+            simp only [leftSignals, rightSignals, HedgeChannelTable.incidenceSignals,
+              leftParentSignal, rightParentSignal, role_backgroundChannel, backgroundNodes_equal]
+          simp only [backgroundChoice, chosen, if_true, BooleanChannelTable.expansionTermUnder,
+            BooleanChannelTable.expansionTerm, amplitudes, signals]
+
+/-- The background-only integrals also match under arbitrary interventions.
+Forced rows retain the same consistency indicator, including its conflicting
+zero cell; free rows retain actual capacities, amplitudes and local signals. -/
+theorem backgroundTermIntegrals_equal_under (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (smallSignal backgroundSignal : ParentSignal S) (target : Fin S.count -> Option Bool)
+    (sample : S.binary.Assignment) (mask : NodeSet S) :
+    (PairRootChannels.prior G.binary (channelCount w)).signedMass
+      (HedgeChannelTable.choiceMonomial G (channelCount w) (leftTables w)
+        (leftSignals w rich smallSignal backgroundSignal) target sample (backgroundChoice w mask)) =
+    (PairRootChannels.prior G.binary (channelCount w)).signedMass
+      (HedgeChannelTable.choiceMonomial G (channelCount w) (rightTables w)
+        (rightSignals w smallSignal backgroundSignal) target sample (backgroundChoice w mask)) :=
+  FiniteProbRecord.signedAtomMass_congr (PairRootChannels.prior G.binary (channelCount w)).atoms _ _
+    (backgroundMonomials_equal_under w rich smallSignal backgroundSignal target sample mask)
 
 /-- Every background-only integral matches on the same real prior, with
 the same actual row capacities, amplitudes, typed parent signals and local
@@ -692,8 +743,7 @@ theorem backgroundTermIntegrals_equal (w : HedgeWitness G q) (rich : ObservedSig
     (smallSignal backgroundSignal : ParentSignal S) (sample : S.binary.Assignment) (mask : NodeSet S) :
     leftTermIntegral w rich smallSignal backgroundSignal sample (backgroundChoice w mask) =
       rightTermIntegral w smallSignal backgroundSignal sample (backgroundChoice w mask) :=
-  FiniteProbRecord.signedAtomMass_congr (PairRootChannels.prior G.binary (channelCount w)).atoms _ _
-    (backgroundMonomials_equal w rich smallSignal backgroundSignal sample mask)
+  backgroundTermIntegrals_equal_under w rich smallSignal backgroundSignal (fun _ => none) sample mask
 
 /-- Consequently the entire common block of survivor terms agrees.
 Every permitted background interaction is summed, not just its marginals. -/

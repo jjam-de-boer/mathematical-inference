@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.HedgeChannelLikelihood
+import Thesis.Probability.FiniteProductSupport
 
 namespace Thesis
 namespace Causality
@@ -25,12 +26,83 @@ source grouping or deleting any interaction term.
 The resulting signed-mass identity uses the real pair-root prior.  In
 particular a proper nonempty selection of a connected channel cancels the
 entire actual monomial, even when the other channel selections are arbitrary.
-Forced rows and zero coefficients are retained.  Graph-specific amplitudes,
-matching surviving full-channel terms, and an original-query gap remain
+Forced rows and zero coefficients are retained.  The intervention row-choice
+support is proved to be exactly the factual support restricted by a finite
+no-channel-at-forced-rows test; the sample consistency indicator is separate.
+Graph-specific amplitudes, matching surviving full-channel terms, and an
+original-query gap remain
 subsequent countermodel obligations, not hypotheses silently discharged here.
 -/
 
 variable {S : ObservedSignature.{0}}
+
+/-! ## Actual row-choice support under hard interventions -/
+
+/-- An actual forced row can choose only its consistency-indicator term.
+This finite test records that restriction, independently of the sample's
+agreement with the forced value.  Agreement belongs to the coefficient,
+not to the choice list, and conflicting forced cells must remain zero. -/
+def choiceAllowedUnder (target : Fin S.count -> Option Bool)
+    (choice : Fin S.count -> Option (Fin channels)) : Bool :=
+  (List.finRange S.count).all (fun child =>
+    match target child with | none => true | some _ => decide (choice child = none))
+
+/-- The intervention enumeration is exactly the factual enumeration
+restricted to choices with no channel at any forced row.  Only finite
+index equality is decided; no semantic support proposition is tested. -/
+theorem choiceUnder_member_iff (tables : Fin S.count -> BooleanChannelTable (Fin channels))
+    (target : Fin S.count -> Option Bool) (choice : Fin S.count -> Option (Fin channels)) :
+    choice ∈ FiniteProduct.enumeration S.count (fun _ => Option (Fin channels))
+      (fun child => (tables child).expansionChoicesUnder (target child)) ↔
+    choice ∈ FiniteProduct.enumeration S.count (fun _ => Option (Fin channels))
+      (fun child => (tables child).expansionChoicesUnder none) ∧ choiceAllowedUnder target choice = true := by
+  constructor
+  · intro member
+    have localMember := FiniteProduct.enumeration_coordinate_mem S.count
+      (fun _ => Option (Fin channels)) (fun child => (tables child).expansionChoicesUnder (target child)) choice member
+    constructor
+    · apply FiniteProduct.enumeration_mem_of_coordinate_mem
+      intro child
+      have atChild := localMember child
+      change choice child ∈ (tables child).expansionChoicesUnder (target child) at atChild
+      cases forced : target child with
+      | none => simpa only [forced] using atChild
+      | some fixed =>
+          rw [forced] at atChild
+          have picked := List.mem_singleton.mp atChild
+          rw [picked]
+          exact List.mem_cons_self
+    · apply List.all_eq_true.mpr
+      intro child _listed
+      have atChild := localMember child
+      change choice child ∈ (tables child).expansionChoicesUnder (target child) at atChild
+      cases forced : target child with
+      | none => rfl
+      | some fixed =>
+          rw [forced] at atChild
+          exact decide_eq_true (List.mem_singleton.mp atChild)
+  · intro admitted
+    apply FiniteProduct.enumeration_mem_of_coordinate_mem
+    intro child
+    have atChild := FiniteProduct.enumeration_coordinate_mem S.count
+      (fun _ => Option (Fin channels)) (fun child => (tables child).expansionChoicesUnder none) choice admitted.1 child
+    have allowed := (List.all_eq_true.mp admitted.2) child (List.mem_finRange child)
+    cases forced : target child with
+    | none => simpa only [forced] using atChild
+    | some fixed =>
+        have picked : choice child = none := of_decide_eq_true (by simpa only [forced] using allowed)
+        rw [picked]
+        exact List.mem_singleton_self _
+
+/-- Forgetting a hard intervention cannot invalidate an actual row choice.
+It may admit additional channel terms, but does not change existing labels. -/
+theorem choiceUnder_member_factual (tables : Fin S.count -> BooleanChannelTable (Fin channels))
+    (target : Fin S.count -> Option Bool) (choice : Fin S.count -> Option (Fin channels))
+    (member : choice ∈ FiniteProduct.enumeration S.count (fun _ => Option (Fin channels))
+      (fun child => (tables child).expansionChoicesUnder (target child))) :
+    choice ∈ FiniteProduct.enumeration S.count (fun _ => Option (Fin channels))
+      (fun child => (tables child).expansionChoicesUnder none) :=
+  ((choiceUnder_member_iff tables target choice).mp member).1
 
 /-- The observed rows at which one complete expansion choice selects a
 given channel.  Equality is the explicit decidable equality of finite indices. -/

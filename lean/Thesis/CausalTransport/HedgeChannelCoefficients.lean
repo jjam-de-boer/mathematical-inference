@@ -148,6 +148,27 @@ theorem tables_channel_allowed (channels bound : Nat) (nodes : Fin channels -> N
     (member : channel ∈ (tables channels bound nodes anchors deficits child).channels) : nodes channel child = true :=
   (List.mem_filter.mp member).2
 
+/-- Every actual local choice list is repetition-free, including the
+single consistency-indicator choice at a forced row.  The channel list is
+a filtered finite index enumeration, so no label equality is chosen. -/
+theorem tables_expansionChoicesUnder_nodup (channels bound : Nat) (nodes : Fin channels -> NodeSet S)
+    (anchors : Fin channels -> Option (Fin S.count)) (deficits : Fin channels -> Nat)
+    (child : Fin S.count) (target : Option Bool) :
+    ((tables channels bound nodes anchors deficits child).expansionChoicesUnder target).Nodup := by
+  cases target with
+  | some fixed =>
+      exact List.Pairwise.cons
+        (fun _ impossible => False.elim (List.not_mem_nil impossible)) List.Pairwise.nil
+  | none =>
+      apply List.nodup_cons.mpr
+      constructor
+      · intro member
+        rcases List.mem_map.mp member with ⟨channel, _channelMember, same⟩
+        cases same
+      · exact ConstructivePermutation.nodup_map_of_injective_on some _
+          (fun _ _ _ _ same => Option.some.inj same)
+          (List.Pairwise.filter _ (nodup_finRange channels))
+
 /-- At every configuration both Boolean values have actual positive mass.
 This is inherited from the proved positive baseline, not assumed for an
 approximate polynomial or for only one queried evidence event. -/
