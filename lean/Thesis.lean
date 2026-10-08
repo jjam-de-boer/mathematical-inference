@@ -51,6 +51,7 @@ import Thesis.Examples.HedgeChannelMonomial
 import Thesis.Examples.HedgeChannelCoefficients
 import Thesis.Examples.HedgeChannelInstallation
 import Thesis.Examples.HedgeChannelSurvivors
+import Thesis.Examples.HedgeChannelFullTerms
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -79,6 +80,11 @@ row choices to four repetition-free survivors, retaining both background
 masks and full-channel contributions.  Its literal signed integrals and
 full-sample equality criterion are checked on that same installed pair;
 the arbitrary-hedge full-channel sum and outcome-flow proofs remain open.
+`HedgeChannelFullTerms` checks the new actual term correspondence separately
+from the earlier bow observational-equality test.  Literal anchored row
+coefficients, complete prior normalization and the action-sensitive outer
+background phase agree on the paired terms.  A zero ordinary-amplitude
+boundary also checks that the reusable anchored product uses no division.
 
 `ConditionalCollider` checks a real irreducible `P(U | do(A), R)` failure
 on `U -> R <- A`, `A <-> R`, with three-valued observed alphabets.  The

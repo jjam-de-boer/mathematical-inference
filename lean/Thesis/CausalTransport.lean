@@ -96,6 +96,8 @@ import Thesis.CausalTransport.HedgeChannelMonomial
 import Thesis.CausalTransport.HedgeChannelCoefficients
 import Thesis.CausalTransport.HedgeChannelInstallation
 import Thesis.CausalTransport.HedgeChannelSurvivors
+import Thesis.CausalTransport.HedgeChannelFullTerms
+import Thesis.CausalTransport.HedgeChannelFullCoefficients
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -481,10 +483,18 @@ signed sums equal the original nonnegative likelihood numerators.  The full
 common background block matches on the actual pair-root prior.  Equality of
 the complete observed expansions is therefore exactly equality of the two
 remaining full-channel sums, not an assumption that partial terms vanished.
+`HedgeChannelFullTerms` evaluates a canonical full choice on that same actual
+prior: full forest incidence cancels pointwise, singleton backgrounds have
+no internal shared source, and every inactive source slot retains its mass.
+`HedgeChannelFullCoefficients` evaluates the literal anchored row products.
+Combining a left slot's selected outer mask with its outside-large mask
+produces one legal outside-small mask; the corresponding actual right term
+has exactly the same coefficient, phase and integrated signed mass.
 No common hidden source incident to the entire hedge is introduced by either
-construction.  Complete observational assembly of the installed family,
-original-query separation and universal conditional countermodels are still
-open; these constructions do not inhabit `PublishedCompleteness`.
+construction.  Repetition-free reindexing of the full surviving sums is still
+needed to finish universal observational equality of the installed family.
+Original-query separation and universal conditional countermodels also
+remain open; these constructions do not inhabit `PublishedCompleteness`.
 `HedgeCompensatedPreimage` exposes the exact installed-row full-value
 preimages in both actual carriers: ordinary/nested incidence equations have
 a common private-background test.  That test retains the loss of a nonbinary

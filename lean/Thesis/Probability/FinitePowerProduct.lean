@@ -16,6 +16,8 @@ times the complete outer-background expansion, not merely approximate it.
 These symbolic identities retain the existing terminal-coordinate product
 order.  They concern natural weights only and impose no cancellation or
 nonzero-cell hypothesis.  No concrete channel support is evaluated.
+The masked-anchor identity counts the supplied selected anchor exactly once,
+so ordinary factors may even be zero without dividing by one of them.
 -/
 
 /-- A constant natural factor occurs once at every coordinate. -/
@@ -79,6 +81,65 @@ theorem natProduct_binary_mask (n : Nat) (selected background : Nat) (mask : Fin
           simp only [if_true, Nat.add_sub_add_right]
           rw [Nat.pow_succ]
           ac_rfl
+
+/-- A selected anchor replaces exactly one ordinary factor in a complete
+binary mask product.  The actual selected count is positive because the
+anchor is supplied together with its membership bit.  No division by the
+ordinary factor, and no nonzero hypothesis on any weight, is needed. -/
+theorem natProduct_binary_mask_anchor (n : Nat) (ordinary background special : Nat)
+    (mask : Fin n -> Bool) (anchor : Fin n) (selected : mask anchor = true) :
+    natProduct n (fun index => if index = anchor then special else if mask index then ordinary else background) =
+      special * ordinary ^ ((List.finRange n).countP mask - 1) * background ^ (n - (List.finRange n).countP mask) := by
+  induction n with
+  | zero => exact Fin.elim0 anchor
+  | succ n inductionHypothesis =>
+      refine Fin.lastCases (motive := fun chosen => mask chosen = true ->
+        natProduct (n + 1) (fun index => if index = chosen then special else if mask index then ordinary else background) =
+          special * ordinary ^ ((List.finRange (n + 1)).countP mask - 1) *
+            background ^ (n + 1 - (List.finRange (n + 1)).countP mask)) ?_ (fun earlier => ?_) anchor selected
+      · intro atLast
+        rw [natProduct, if_pos rfl]
+        have prefixProduct := natProduct_congr n
+          (fun index => if index.castSucc = Fin.last n then special else if mask index.castSucc then ordinary else background)
+          (fun index => if mask index.castSucc then ordinary else background)
+          (fun index => by
+            change (if index.castSucc = Fin.last n then special else if mask index.castSucc then ordinary else background) = _
+            rw [if_neg (castSucc_ne_last index)])
+        rw [prefixProduct, natProduct_binary_mask, List.finRange_succ_last]
+        simp only [List.countP_append, List.countP_map, List.countP_cons, List.countP_nil,
+          Function.comp_def, atLast, if_true, Nat.add_sub_cancel_right, Nat.add_sub_add_right]
+        exact (Nat.mul_assoc _ _ _).symm
+      · intro atEarlier
+        have prefixProduct := natProduct_congr n
+          (fun index => if index.castSucc = earlier.castSucc then special else if mask index.castSucc then ordinary else background)
+          (fun index => if index = earlier then special else if mask index.castSucc then ordinary else background)
+          (fun index => by simp only [Fin.castSucc_inj])
+        have countBound : (List.finRange n).countP (fun index => mask index.castSucc) <= n := by
+          simpa only [List.length_finRange] using List.countP_le_length
+            (p := fun index => mask index.castSucc) (l := List.finRange n)
+        have countPositive : 0 < (List.finRange n).countP (fun index => mask index.castSucc) :=
+          List.countP_pos_iff.mpr ⟨earlier, List.mem_finRange earlier, atEarlier⟩
+        change (if Fin.last n = earlier.castSucc then special else if mask (Fin.last n) then ordinary else background) *
+          natProduct n (fun index => if index.castSucc = earlier.castSucc then special
+            else if mask index.castSucc then ordinary else background) = _
+        rw [if_neg (last_ne_castSucc earlier), prefixProduct,
+          inductionHypothesis (fun index => mask index.castSucc) earlier atEarlier, List.finRange_succ_last]
+        simp only [List.countP_append, List.countP_map, List.countP_cons, List.countP_nil, Function.comp_def]
+        cases final : mask (Fin.last n) with
+        | false =>
+            simp only [Bool.false_eq_true, if_false, Nat.add_zero]
+            rw [show n + 1 - (List.finRange n).countP (fun index => mask index.castSucc) =
+              n - (List.finRange n).countP (fun index => mask index.castSucc) + 1 by omega, Nat.pow_succ]
+            ac_rfl
+        | true =>
+            simp only [if_true, Nat.add_sub_add_right, Nat.add_sub_cancel_right]
+            have exponent : (List.finRange n).countP (fun index => mask index.castSucc) =
+                ((List.finRange n).countP (fun index => mask index.castSucc) - 1) + 1 := by omega
+            have ordinaryPower : ordinary ^ (List.finRange n).countP (fun index => mask index.castSucc) =
+                ordinary ^ ((List.finRange n).countP (fun index => mask index.castSucc) - 1) * ordinary :=
+              (congrArg (ordinary ^ ·) exponent).trans (Nat.pow_succ _ _)
+            rw [ordinaryPower]
+            ac_rfl
 
 end FiniteProduct
 end Probability

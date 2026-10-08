@@ -1,4 +1,5 @@
 import Thesis.Causality.Graph
+import Thesis.Causality.NodeSetCardinality
 import Thesis.Causality.Derivation
 import Thesis.Causality.Model
 import Thesis.Causality.SelectedAssignment
@@ -49,6 +50,11 @@ import Thesis.Causality.ModeTheory
 
 /-!
 Stable facade for the finite causal, modal, and counterfactual development.
+
+`NodeSetCardinality` retains the fixed topological member enumeration when
+counting Boolean selections.  Supplied members prove positivity directly,
+and disjoint unions or contained-set partitions have exact additive lengths.
+It provides finite counting facts, not a new representation of node sets.
 
 Suggested reading order for a reader familiar with the thesis but new to the
 source is `Graph`, `Derivation`, `Model`, `HardIntervention`, `Reductions`,
