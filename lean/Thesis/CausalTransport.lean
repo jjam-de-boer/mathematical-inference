@@ -94,6 +94,7 @@ import Thesis.CausalTransport.HedgeChannelTable
 import Thesis.CausalTransport.HedgeChannelLikelihood
 import Thesis.CausalTransport.HedgeChannelMonomial
 import Thesis.CausalTransport.HedgeChannelCoefficients
+import Thesis.CausalTransport.HedgeChannelInstallation
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -463,10 +464,17 @@ one common capacity and proves the strict amplitude-sum bound for every row.
 Its actual models are graph-compatible and fully positive.  Anchored large
 and small coefficients agree literally at each outer mask, and their complete
 finite signed mask sum equals the small coefficient times the entire outer
-background product.  Installing and summing these families in an arbitrary
-hedge's actual likelihood remains part of the general countermodel argument.
+background product.
+`HedgeChannelInstallation` installs the concrete nonredundant outer-mask
+slots, forest supports, constructive anchors and typed parent signals for
+every supplied hedge.  Its actual models retain one source alphabet, are
+compatible and fully positive, and have identical row capacities.  The
+installed Boolean signals satisfy the checked character identity.  Distinct
+large channels cannot survive together, and forcing the stored original
+action vertex cancels every term selecting a large channel, with arbitrary
+extra interventions and background terms retained.
 No common hidden source incident to the entire hedge is introduced by either
-construction.  General hedge installation and observational assembly,
+construction.  Complete observational assembly of the installed family,
 original-query separation and universal conditional countermodels are still
 open; these constructions do not inhabit `PublishedCompleteness`.
 `HedgeCompensatedPreimage` exposes the exact installed-row full-value

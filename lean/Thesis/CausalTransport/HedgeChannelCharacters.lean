@@ -27,9 +27,10 @@ This is the local-character part of the independent-channel construction,
 not a counterexample theorem.  Complete finite expansion, independent hidden
 integration and positive normalized actual tables are developed in the
 subsequent channel modules.  `HedgeChannelCoefficients` supplies positive
-natural-power tables and their complete mask-coefficient identity.  Installing
-and assembling those families for an arbitrary hedge and proving its original
-query gap remain open.  A common mixing latent is not supplied, and
+natural-power tables and their complete mask-coefficient identity.
+`HedgeChannelInstallation` installs their explicit channel slots and typed
+signals for an arbitrary hedge.  Its complete observational assembly and
+original-query gap remain open.  A common mixing latent is not supplied, and
 observational equivalence is not assumed as a replacement for integration.
 No channel enumeration or private response-function space is evaluated here.
 
@@ -43,8 +44,9 @@ pair-root prior, not a common switch.  The surviving large-channel terms
 must be assembled into the actual likelihood's small-character times outer-
 background product.  `HedgeChannelCoefficients` constructs common-capacity
 amplitudes, proves their positive baselines, and matches every finite mask
-coefficient literally.  The general graph-indexed installation is separate
-from that exact finite coefficient identity.
+coefficient literally.  The separate general graph-indexed installation is
+supplied by `HedgeChannelInstallation`; its complete likelihood still needs
+to be assembled from the surviving terms.
 
 The original intervention meets the large component and avoids the small
 one.  `HedgeChannelMonomial` proves that omission of any support row kills

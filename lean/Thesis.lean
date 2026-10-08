@@ -49,6 +49,7 @@ import Thesis.Examples.FiniteTablePerturbation
 import Thesis.Examples.HedgeChannelTable
 import Thesis.Examples.HedgeChannelMonomial
 import Thesis.Examples.HedgeChannelCoefficients
+import Thesis.Examples.HedgeChannelInstallation
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -65,7 +66,13 @@ construction ingredients, not an inhabitant of `PublishedCompleteness`.
 positive actual bow-model pair with full observational equality and a
 projected intervention gap.  Its independent two-outer-vertex mask check
 retains the double interaction.  These finite tests do not replace the
-remaining arbitrary-hedge installation and original-outcome flow proof.
+remaining arbitrary-hedge observational assembly and original-outcome flow
+proof.
+`HedgeChannelInstallation` checks actual models returned by the general
+hedge installer, rather than a hand-written channel family.  Its bow uses
+each outer mask once, retains an inactive background slot, and proves full
+observational equality and a gap at the original intervened outcome.  This
+fixture does not assert the still-open universal assembly and flow theorem.
 
 `ConditionalCollider` checks a real irreducible `P(U | do(A), R)` failure
 on `U -> R <- A`, `A <-> R`, with three-valued observed alphabets.  The

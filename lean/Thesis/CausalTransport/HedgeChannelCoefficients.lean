@@ -29,8 +29,9 @@ matches its full large contribution with the small contribution times that
 outer expansion coefficient, provided `e <= k <= n`.
 
 The positive tables are genuine inputs to the actual channel SCM builder.
-Instantiating their masks and signals for an arbitrary hedge, summing the
-surviving terms, and proving the original-query gap are still separate tasks.
+`HedgeChannelInstallation` instantiates their masks and signals for an
+arbitrary hedge.  Summing its surviving terms and proving the original-query
+gap are still separate tasks.
 This module does not assume observational equivalence or inhabit completeness.
 -/
 
