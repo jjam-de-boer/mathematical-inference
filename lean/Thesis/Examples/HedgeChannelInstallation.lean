@@ -26,8 +26,10 @@ root vectors and two already integrated private rows are evaluated; the
 private response-function support is not enumerated.
 
 This regression checks the installed indexing, masks, amplitudes and typed
-parent corrections together.  The general observational assembly and outcome
-flow proof are still open; one bow is not a universal completeness theorem.
+parent corrections together.  The later `HedgeChannelObservational` theorem
+proves the general observed-law equality independently of this literal bow
+check.  Original-outcome separation remains open; one bow is not a universal
+completeness theorem.
 -/
 
 private def signature := HedgeChannelConstruction.signature

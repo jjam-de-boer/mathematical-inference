@@ -25,8 +25,9 @@ by a probability or amplitude is used.
 Joining the selected outer mask to the outside-large background mask gives
 one outside-small mask.  The last theorem matches the actual integrated
 left term to that actual right term, including their common literal prior.
-Reindexing the complete surviving sums, a gap at the original outcome, and
-universal conditional countermodels remain separate obligations.
+`HedgeChannelObservational` separately proves the complete surviving-sum
+reindexing and actual observed-law equality.  A gap at the original outcome
+and universal conditional countermodels remain distinct obligations.
 -/
 
 variable {S : ObservedSignature.{0}} {G : ObservedGraph S} {q : JointKernelQuery S}

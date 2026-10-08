@@ -12,13 +12,18 @@ shorter list of canonical terms gives the same literal sum only after its
 membership, uniqueness and zero-outside facts are proved.  In particular,
 dropping duplicates is not valid when the complete expansion counts them.
 
-The theorem below retains those obligations explicitly.  Equality decisions
-are supplied for the finite labels; no proposition about semantic nonzeroness
-is decided classically.  Integers are auxiliary integrands, not signed
-probability weights or a change in the underlying finite-record semantics.
+The reduction theorem retains those obligations explicitly.  An exact
+permutation-sum lemma also compares complete enumerations before reduction.
+Equality decisions are supplied for the finite labels; no proposition about
+semantic nonzeroness is decided classically.  Integers are auxiliary
+integrands, not signed probability weights or a change in the underlying
+finite-record semantics.
 -/
 
-private theorem sum_perm {left right : List Int} (permutation : left.Perm right) : left.sum = right.sum := by
+/-- Reordering a complete finite list of integer terms preserves its exact
+sum.  Negative character contributions remain ordinary auxiliary integers;
+the identity introduces no signed probability or cancellation hypothesis. -/
+theorem sum_eq_of_perm {left right : List Int} (permutation : left.Perm right) : left.sum = right.sum := by
   induction permutation with
   | nil => rfl
   | cons value _ inductionHypothesis => simp only [List.sum_cons, inductionHypothesis]
@@ -58,7 +63,7 @@ theorem sum_eq_of_zero_outside {α : Type u} [DecidableEq α] (complete canonica
       exact List.mem_filter.mpr ⟨included value member, decide_eq_true member⟩
   have permutation := ConstructivePermutation.perm_of_nodup_mem_iff
     (complete.filter keep) canonical filteredNodup canonicalNodup same
-  refine (sum_filter complete keep term ?_).trans (sum_perm (permutation.map term))
+  refine (sum_filter complete keep term ?_).trans (sum_eq_of_perm (permutation.map term))
   intro value member absent
   exact zero value member (of_decide_eq_false absent)
 

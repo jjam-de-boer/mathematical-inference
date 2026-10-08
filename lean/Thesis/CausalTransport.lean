@@ -98,6 +98,7 @@ import Thesis.CausalTransport.HedgeChannelInstallation
 import Thesis.CausalTransport.HedgeChannelSurvivors
 import Thesis.CausalTransport.HedgeChannelFullTerms
 import Thesis.CausalTransport.HedgeChannelFullCoefficients
+import Thesis.CausalTransport.HedgeChannelObservational
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -490,11 +491,16 @@ no internal shared source, and every inactive source slot retains its mass.
 Combining a left slot's selected outer mask with its outside-large mask
 produces one legal outside-small mask; the corresponding actual right term
 has exactly the same coefficient, phase and integrated signed mass.
+`HedgeChannelObservational` computes the inverse mask parts, proves the
+complete joined-mask list legal and repetition-free, and reconstructs its
+permutation with the right enumeration.  Summing the actual matched terms
+gives equality of all factual likelihood numerators.  The common literal
+row capacities then give equality of every observed event in the installed
+models for every hedge and every typed small/background signal.
 No common hidden source incident to the entire hedge is introduced by either
-construction.  Repetition-free reindexing of the full surviving sums is still
-needed to finish universal observational equality of the installed family.
-Original-query separation and universal conditional countermodels also
-remain open; these constructions do not inhabit `PublishedCompleteness`.
+construction.  Original-query separation, the general-value lift of a
+separating pair, and universal conditional countermodels remain open;
+observational equality alone does not inhabit `PublishedCompleteness`.
 `HedgeCompensatedPreimage` exposes the exact installed-row full-value
 preimages in both actual carriers: ordinary/nested incidence equations have
 a common private-background test.  That test retains the loss of a nonbinary

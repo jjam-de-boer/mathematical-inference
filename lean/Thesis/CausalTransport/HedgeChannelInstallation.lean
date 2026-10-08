@@ -38,10 +38,11 @@ signals use the previously proved character correction on the actual kept
 arrows, so routes leaving and re-entering the forest are not prohibited.
 
 This is an actual model-family installation, not a completeness theorem.
-Evaluating the full-channel sums to prove observational equivalence, selecting
-an action-avoiding outcome flow, and proving its original-query marginal gap
-remain separate obligations.  In particular, positivity and compatibility
-are not used as substitutes for observational equality or separation.
+`HedgeChannelObservational` separately evaluates and reindexes its complete
+factual expansion, proving equality of every observed event.  Selecting an
+action-avoiding outcome flow and proving its original-query marginal gap
+remain separate obligations.  Positivity and compatibility are not used as
+substitutes for either observed-law equality or interventional separation.
 -/
 
 variable {S : ObservedSignature.{0}} {G : ObservedGraph S} {q : JointKernelQuery S}

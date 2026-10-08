@@ -25,7 +25,8 @@ the selected background phase as well as the anchored coefficient.
 Only this two-node fixture and its thirty-two shared root assignments are
 evaluated.  The symbolic theorem below is uniform in its sample, outer slot,
 and outside-large mask.  Neither this fixture nor term-by-term equality
-replaces the remaining repetition-free reindexing of general survivor sums.
+replaces the repetition-free general survivor-sum reindexing, supplied
+separately by the later `HedgeChannelObservational` module.
 -/
 
 private def signature := HedgeChannelConstruction.signature

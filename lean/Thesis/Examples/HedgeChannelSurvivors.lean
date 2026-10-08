@@ -26,8 +26,9 @@ the earlier complete actual integration check.
 
 Only finite row choices and the thirty-two actual shared root vectors are
 evaluated.  No private response-function prior or full general graph scan is
-reduced.  These checks do not replace the remaining arbitrary-hedge full-
-channel coefficient assembly or original-outcome flow argument.
+reduced.  These checks do not replace the separate arbitrary-hedge coefficient
+and sum assembly in `HedgeChannelObservational`, or the still-open original-
+outcome flow argument.
 -/
 
 private def signature := HedgeChannelConstruction.signature

@@ -52,6 +52,7 @@ import Thesis.Examples.HedgeChannelCoefficients
 import Thesis.Examples.HedgeChannelInstallation
 import Thesis.Examples.HedgeChannelSurvivors
 import Thesis.Examples.HedgeChannelFullTerms
+import Thesis.Examples.HedgeChannelObservational
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -68,23 +69,30 @@ construction ingredients, not an inhabitant of `PublishedCompleteness`.
 positive actual bow-model pair with full observational equality and a
 projected intervention gap.  Its independent two-outer-vertex mask check
 retains the double interaction.  These finite tests do not replace the
-remaining arbitrary-hedge observational assembly and original-outcome flow
-proof.
+separate arbitrary-hedge observational assembly or the still-open original-
+outcome flow proof.
 `HedgeChannelInstallation` checks actual models returned by the general
 hedge installer, rather than a hand-written channel family.  Its bow uses
 each outer mask once, retains an inactive background slot, and proves full
 observational equality and a gap at the original intervened outcome.  This
-fixture does not assert the still-open universal assembly and flow theorem.
+fixture does not replace the general observed-law theorem or establish
+universal original-outcome separation.
 `HedgeChannelSurvivors` checks the exact reduction of twelve actual left
 row choices to four repetition-free survivors, retaining both background
 masks and full-channel contributions.  Its literal signed integrals and
 full-sample equality criterion are checked on that same installed pair;
-the arbitrary-hedge full-channel sum and outcome-flow proofs remain open.
+the general full sum is proved separately in `HedgeChannelObservational`,
+while the original-outcome flow proof remains open.
 `HedgeChannelFullTerms` checks the new actual term correspondence separately
 from the earlier bow observational-equality test.  Literal anchored row
 coefficients, complete prior normalization and the action-sensitive outer
 background phase agree on the paired terms.  A zero ordinary-amplitude
 boundary also checks that the reusable anchored product uses no division.
+`HedgeChannelObservational` checks a three-node hedge with a genuine outside-
+large background and parent-reading local signals.  Its four joined masks
+retain both independent parts, and every observed event agrees by the
+general installed-model theorem.  Literal signed terms additionally check
+the retained prior mass and the outside-background phase.
 
 `ConditionalCollider` checks a real irreducible `P(U | do(A), R)` failure
 on `U -> R <- A`, `A <-> R`, with three-valued observed alphabets.  The

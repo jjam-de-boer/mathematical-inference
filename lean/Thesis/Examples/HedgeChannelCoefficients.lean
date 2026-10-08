@@ -27,8 +27,9 @@ the potentially much larger private response-function space is never reduced.
 
 A separate two-outer-vertex mask check exercises the nontrivial power identity
 beyond the bow.  These regressions validate the general coefficient family,
-but do not supply its remaining arbitrary-hedge installation and flow argument
-or the universal conditional countermodel theorem.
+but do not replace the general installation and observed-law proof in the
+later channel modules.  The original-outcome flow argument and universal
+conditional countermodel theorem remain separate completeness obligations.
 -/
 
 private def signature := HedgeChannelConstruction.signature
