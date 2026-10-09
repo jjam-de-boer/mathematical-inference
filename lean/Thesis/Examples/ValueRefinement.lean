@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.ValueRefinementCounterexample
+import Thesis.Causality.ValueRefinementMarginal
 
 namespace Thesis
 namespace Causality
@@ -150,6 +151,67 @@ theorem core_observationally_equivalent : ObservationallyEquivalent (core false)
   change FiniteProbRecord.eventMass (core false).observationalDist.atoms event * 6 =
     FiniteProbRecord.eventMass (core true).observationalDist.atoms event * 6
   rw [same]
+
+/-- The two actual cores have the same `X` marginal under any supplied
+original-label intervention, even though their interventional joint laws
+need not agree.  Event locality removes the responding `Y` coordinate;
+the actual latent prior is the same on both sides. -/
+theorem core_firstMarginal_equivalent
+    (target : (node : Fin signature.count) -> Option (signature.Value node))
+    (event : Event signature.Assignment) (localEvent : EventDependsOnlyOn (NodeSet.singleton x) event) :
+    QProb.Equiv ((core false).interventionalValue target event)
+      ((core true).interventionalValue target event) := by
+  have same (unit : (core false).latent.Assignment) :
+      event ((core false).evalUnder target unit) = event ((core true).evalUnder target unit) := by
+    apply localEvent
+    intro node selected
+    rw [(NodeSet.singleton_eq_true_iff x node).mp selected]
+    change (core false).evalNodeUnder target unit x = (core true).evalNodeUnder target unit x
+    rw [FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.evalNodeUnder]
+    cases forced : target x with
+    | some label => simp only [FiniteLatentSCM.equationUnder, forced]
+    | none => simp only [FiniteLatentSCM.equationUnder, core, mechanism, x, dite_true]
+  exact QProb.equiv_trans ((core false).interventionalValue_eq target event)
+    (QProb.equiv_trans ((core false).prior.probVal_congr _ _ same)
+      (QProb.equiv_symm ((core true).interventionalValue_eq target event)))
+
+/-- The full label sweep retains this matched marginal while refining
+`X` itself, twice.  The theorem applies to every full-label event on `X`,
+not merely events factoring through the old binary signal. -/
+theorem refined_firstMarginal_equivalent
+    (target : (node : Fin signature.count) -> Option (signature.Value node))
+    (event : Event signature.Assignment) (localEvent : EventDependsOnlyOn (NodeSet.singleton x) event) :
+    QProb.Equiv ((refine rich (core false)).interventionalValue target event)
+      ((refine rich (core true)).interventionalValue target event) :=
+  refine_interventionalMarginals_equivalent rich (core false) (core true)
+    (core_respects false) (core_respects true) target (NodeSet.singleton x)
+    (core_firstMarginal_equivalent target) event localEvent
+
+/-- A new third-label event is included in the matched refined marginal.
+Before refinement that label is impossible; after the existing support
+sweep it is part of the genuinely positive original alphabet. -/
+theorem refined_thirdLabel_marginal_equivalent
+    (target : (node : Fin signature.count) -> Option (signature.Value node)) :
+    QProb.Equiv
+      ((refine rich (core false)).interventionalValue target
+        (fun sample => decide (sample x = (⟨2, by decide⟩ : Fin 3))))
+      ((refine rich (core true)).interventionalValue target
+        (fun sample => decide (sample x = (⟨2, by decide⟩ : Fin 3)))) := by
+  apply refined_firstMarginal_equivalent
+  intro first second agree
+  exact congrArg (fun value : Fin 3 => decide (value = (⟨2, by decide⟩ : Fin 3)))
+    (agree x ((NodeSet.singleton_eq_true_iff x x).mpr rfl))
+
+/-- The stronger encoding theorem does not replace an intervened third
+label by a distinguished binary label.  This symbolic regression covers
+every supplied binary model and latent unit without enumerating its prior. -/
+theorem encoded_thirdLabel_retained (base : ExactModel signature.binary) (unit : base.latent.Assignment) :
+    (BinaryEncoding.model rich base).evalUnder
+      (fun node => if node = y then some (⟨2, by decide⟩ : Fin 3) else none) unit y =
+        (⟨2, by decide⟩ : Fin 3) := by
+  have evaluated := congrFun (BinaryEncoding.evalUnder_eq_assignmentUnder rich base
+    (fun node => if node = y then some (⟨2, by decide⟩ : Fin 3) else none) unit) y
+  simpa only [BinaryEncoding.assignmentUnder, if_true] using evaluated
 
 private theorem two_bits_positive (large first second : Bool) :
     (core large).observationalDist.EventPositive

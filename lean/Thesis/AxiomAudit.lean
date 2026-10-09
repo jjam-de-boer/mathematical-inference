@@ -1,4 +1,6 @@
 import Thesis
+import Thesis.Examples.ConditionalReadoutFailure
+import Thesis.Examples.ConditionalReadoutPaths
 import Lean.Elab.Command
 import Lean.Util.CollectAxioms
 
@@ -14,6 +16,12 @@ additional assumed axiom, makes this module fail to elaborate.
 The audit is a separate build target so the ordinary library remains usable
 without running a project-policy check.  Continuous integration builds this
 module explicitly.
+
+The optional exact readout-failure/path regressions are imported here rather
+than by the ordinary smoke facade.  Their expanded-graph decision proofs can
+need more kernel memory than a capped local module check.  The full CI policy
+gate therefore checks their compilation and transitive axioms as well, without
+making lightweight semantic clients import those expensive computations.
 -/
 
 open Lean Elab Command

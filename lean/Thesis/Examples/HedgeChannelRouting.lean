@@ -1,5 +1,7 @@
 import Thesis.CausalTransport.HedgeChannelRouting
 import Thesis.CausalTransport.HedgeChannelInterventional
+import Thesis.CausalTransport.HedgeChannelCounterexample
+import Thesis.CausalTransport.HedgeChannelConditionalCounterexample
 
 namespace Thesis
 namespace Causality
@@ -167,6 +169,80 @@ theorem actual_original_event_difference :
   change _ = _ + (projectedTerm NodeSet.empty + projectedTerm mask) at difference
   rw [actual_projected_term_values.1, actual_projected_term_values.2, Int.zero_add] at difference
   exact difference
+
+/-- The general construction separates the original `Y` query in the full
+positive model class, despite the hedge's small forest containing only `R`.
+No concrete full-model enumeration is needed: this regression instantiates
+the unrestricted theorem and its existing original-query kernel adapter. -/
+noncomputable def original_positive_counterexample :
+    CounterexampleIn (GraphModelClass.positive graph) query :=
+  Causality.HedgeChannelInstallation.counterexample witness rich
+
+/-- The same original outcome kernel, not the intermediate root kernel,
+is non-identifiable among observationally positive compatible models. -/
+theorem original_query_not_identifiable :
+    ¬ (GraphModelClass.positive graph).identifiable query :=
+  original_positive_counterexample.not_identifiable
+
+/-! ## A declared child conditioner with an omitted small-flow sink -/
+
+private def conditionalQuery : ConditionalKernelQuery signature where
+  outcome := NodeSet.singleton root
+  action := NodeSet.singleton action
+  condition := NodeSet.singleton outcome
+  action_outcome_disjoint := NodeSet.disjoint_singletons_of_ne (by decide)
+  action_condition_disjoint := NodeSet.disjoint_singletons_of_ne (by decide)
+  outcome_condition_disjoint := NodeSet.disjoint_singletons_of_ne (by decide)
+
+private def conditionalWitness : HedgeWitness graph conditionalQuery.jointNumerator :=
+  hedgeWitness_of_sets graph conditionalQuery.jointNumerator selection (by decide +kernel)
+
+/-- The original `R | do(A), Y` query retains the declared `R -> Y` arrow.
+Its numerator flow stops at the queried `R`, and the conditioner omits that
+small-flow sink.  These are finite graph facts, not probabilities computed
+by enumerating the new refined model's latent prior. -/
+theorem conditional_balance_site :
+    signature.directed root outcome = true ∧
+    conditionalWitness.small root = true ∧
+    conditionalWitness.smallOutcomeFlowSuccessor root = none ∧
+    conditionalQuery.condition root = false := by decide +kernel
+
+/-- The actual unrestricted channel construction proves the conditioning
+marginal equality and separates the original conditional kernel.  A declared
+child of the balancing sink is allowed, and no old route-permission premise
+or assumed semantic denominator agreement is supplied. -/
+noncomputable def conditional_positive_counterexample :
+    ConditionalCounterexampleIn (GraphModelClass.positive graph) conditionalQuery :=
+  Causality.HedgeChannelInstallation.conditionalCounterexampleOfSmallFlowSink
+    conditionalQuery conditionalWitness rich root conditional_balance_site.2.1
+    conditional_balance_site.2.2.1 conditional_balance_site.2.2.2
+
+/-- The same full original conditional kernel is non-identifiable in the
+positive graph-indexed class, by the two models actually constructed above. -/
+theorem conditional_query_not_identifiable :
+    ¬ (GraphModelClass.positive graph).conditionalIdentifiable conditionalQuery :=
+  conditional_positive_counterexample.not_identifiable
+
+/-- The corrected conditional engine really fails on this original query.
+An identified result would contradict its general soundness theorem and the
+actual positive counterexample; exhaustion excludes an unfinished result.
+We therefore inspect only the abstract result constructors rather than
+evaluating the complete exchange search or the installed models.  This
+regression asserts failure, not an exact failure forest or a no-exchange
+policy for the original query. -/
+theorem conditional_engine_failed :
+    (match identifyConditionalKernel graph conditionalQuery with
+      | .failed _ => true
+      | _ => false) = true := by
+  cases result : identifyConditionalKernel graph conditionalQuery with
+  | failed fail => rfl
+  | identified term =>
+      exact False.elim (conditional_query_not_identifiable
+        (identifyConditionalKernel_identified_identifiable
+          (C := GraphModelClass.positive graph) graph.dSeparationCorrectness
+          (fun member => member.2) conditionalQuery result))
+  | unfinished =>
+      exact False.elim (identifyConditionalKernel_ne_unfinished graph conditionalQuery result)
 
 end HedgeChannelRouting
 end Examples

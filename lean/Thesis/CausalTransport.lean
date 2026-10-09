@@ -50,10 +50,12 @@ import Thesis.CausalTransport.HedgeRoutedCounterexample
 import Thesis.CausalTransport.HedgeReadoutPlan
 import Thesis.CausalTransport.CompletenessAssembly
 import Thesis.CausalTransport.ValueRefinementCounterexample
+import Thesis.CausalTransport.ValueRefinementConditionalCounterexample
 import Thesis.CausalTransport.ConditionalCompilation
 import Thesis.CausalTransport.ConditionalCounterexampleFailure
 import Thesis.CausalTransport.ConditionalFailureExtraction
 import Thesis.CausalTransport.ConditionalFailurePaths
+import Thesis.CausalTransport.ConditionalFailureActivation
 import Thesis.CausalTransport.ConditionalCounterexampleNormalization
 import Thesis.CausalTransport.HedgeConditionalReadout
 import Thesis.CausalTransport.Counterfactual
@@ -92,6 +94,8 @@ import Thesis.CausalTransport.HedgeChannelIntegration
 import Thesis.CausalTransport.HedgeChannelPairRoot
 import Thesis.CausalTransport.HedgeChannelTable
 import Thesis.CausalTransport.HedgeChannelLikelihood
+import Thesis.CausalTransport.HedgeChannelConditionalCell
+import Thesis.CausalTransport.HedgeChannelEnvironment
 import Thesis.CausalTransport.HedgeChannelMonomial
 import Thesis.CausalTransport.HedgeChannelCoefficients
 import Thesis.CausalTransport.HedgeChannelInstallation
@@ -99,8 +103,28 @@ import Thesis.CausalTransport.HedgeChannelSurvivors
 import Thesis.CausalTransport.HedgeChannelFullTerms
 import Thesis.CausalTransport.HedgeChannelFullCoefficients
 import Thesis.CausalTransport.HedgeChannelObservational
+import Thesis.CausalTransport.HedgeChannelEnvironmentInstallation
+import Thesis.CausalTransport.HedgeChannelEnvironmentCounterexample
 import Thesis.CausalTransport.HedgeChannelInterventional
 import Thesis.CausalTransport.HedgeChannelRouting
+import Thesis.CausalTransport.ConditionalFailurePivot
+import Thesis.CausalTransport.HedgeChannelUnderCoefficients
+import Thesis.CausalTransport.HedgeChannelBackgroundFactorization
+import Thesis.CausalTransport.HedgeChannelEnvironmentFactorization
+import Thesis.CausalTransport.HedgeChannelEnvironmentCube
+import Thesis.CausalTransport.HedgeChannelEnvironmentLinear
+import Thesis.CausalTransport.HedgeChannelEnvironmentCoefficients
+import Thesis.CausalTransport.HedgeChannelEnvironmentMoments
+import Thesis.CausalTransport.HedgeChannelEnvironmentCovariance
+import Thesis.CausalTransport.HedgeChannelProjection
+import Thesis.CausalTransport.HedgeChannelMarginal
+import Thesis.CausalTransport.HedgeChannelFlowDirection
+import Thesis.CausalTransport.ConditionalFailureActivationForest
+import Thesis.CausalTransport.HedgeChannelConditionalGap
+import Thesis.CausalTransport.HedgeChannelCounterexample
+import Thesis.CausalTransport.HedgeChannelJointCompleteness
+import Thesis.CausalTransport.HedgeChannelConditionalCounterexample
+import Thesis.CausalTransport.ConditionalFailureFlow
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -122,8 +146,32 @@ the expanded DAG's strict rank, and excludes conditioned incoming-cut vertices
 from that path.  `ConditionalFailurePaths` applies these facts to every
 conditioner left by an exhausted IDC exchange search: it returns an active
 back-door path in the action-cut graph, with an explicit first incoming edge
-and no action vertices.  These are ingredients for the general conditional
-countermodel argument, not an assumption or proof of that remaining argument.
+and no action vertices.  `ConditionalFailureActivation` also extracts simple
+directed activation branches for the path's actual collider windows, stopping
+at the first other conditioner and retaining the exact exchange-test given-set.
+Their finite observed-only search does not traverse the larger latent alphabet.
+The omitted pivot can occur inside a branch; intersections with that pivot,
+the path, or the small forest are not silently assumed away.  These are
+ingredients for the general conditional countermodel argument, not an
+assumption or proof of that remaining argument.
+`ConditionalFailurePivot` derives a latest reachable conditioner from the
+actual hedge source when its composed flow has a fully conditioned boundary.
+Maximality then rules out omitted-pivot intersections in activation branches
+and proves full-condition freedom of their preceding vertices.  This is a
+derived normalization, not a readiness assumption for an arbitrary pivot;
+the other path/branch/small-forest intersections remain to be handled.
+`ConditionalFailureFlow` removes the fully conditioned boundary prerequisite
+from that normalization branch.  A finite test of the entire actual source
+flow returns either a genuine original-query countermodel or a latest reachable
+conditioner; endpoint omission alone is not treated as whole-path freedom.
+The latter branch retains the remaining general parity obligation.
+`ConditionalFailureActivationForest` gives all such collider activations one
+common directed successor policy.  Every selected nonconditioner has a real
+selected child, and conditioners are precisely its sinks.  The latest pivot
+is outside the whole domain; complete activation paths which meet have the
+same endpoint, without assuming unique incoming parents or disjoint branches.
+The auxiliary domain is not itself an interaction-row selection, and its
+intersections with the active path or the small forest remain to be handled.
 
 `ConditionalCollider` realizes an incoming-parent collider with two fresh
 private inputs in the original SCM graph.  It preserves positivity and,
@@ -323,9 +371,9 @@ It also proves correctness and identifiability of every successful replacement
 joint result.  Its joint-completeness constructor now needs only the explicit
 general original-query hedge countermodel leaf in the same model class;
 termination, literal-output compilation, and structural failure extraction are
-proved internally.  This conditional assembly is not a completed
-`PublishedCompleteness` package: the positive hedge leaf and general conditional
-failure-side non-identifiability still remain open.
+proved internally.  `HedgeChannelJointCompleteness` below now discharges that
+general hedge leaf.  The full `PublishedCompleteness` package remains open
+because general conditional failure-side non-identifiability is still needed.
 `ValueRefinementCounterexample` separates the fixed-alphabet support issue
 from that general semantic leaf.  Ordinary positive Boolean-valued models
 on the same graph are deterministically encoded at the supplied rich labels;
@@ -458,6 +506,67 @@ zero cells and empty blocks are retained without cancelling probability cells.
 Its arbitrary-event likelihood and gap criterion retain projection onto the
 original queried outcomes: a full-assignment gap alone is not substituted for
 an outcome-event gap.
+`HedgeChannelConditionalCell` presents every actual supported kernel cell
+as the ratio of its two literal event numerators.  It includes empty actions
+and arbitrary channel counts, so both the original and widened families use
+one semantic comparison proof.  Its exact cross-product criterion needs no
+matched evidence masses or equal capacities between the two models.
+`HedgeChannelEnvironment` widens local centre inputs to include independent
+terminal bits at the original incident pair roots.  It reuses the positive
+CPT builder with unchanged reserved-slot rows, proves exact whole-numerator
+and arbitrary-event decomposition over the actual environment support, and
+retains the complete product denominator.  Pointwise frozen-environment
+numerator matching is sufficient for whole observational-law equality.
+`HedgeChannelEnvironmentInstallation` applies that semantic bridge to every
+hedge with arbitrary legal shared-input small and background signals.  The
+kept-edge correction is unchanged and is evaluated only at its current row.
+Both actual models are compatible, fully positive and observationally equal.
+`HedgeChannelEnvironmentCounterexample` identifies both complete frozen-event
+sums with the actual enlarged event numerators.  A cross-product inequality
+after integrating the entire environment separates the actual conditional
+cell and lifts that same reference to the full original alphabet.  It does
+not infer normalized agreement from agreement at each frozen environment.
+`HedgeChannelEnvironmentFactorization` connects those same actual event
+masses to complete background-weighted interaction sums.  It proves the
+necessary and sufficient normalized cross-product test after all independent
+environments have been integrated, retaining both conditioning-mass changes,
+and lifts a supplied nonbalanced interaction to a full original-label pair.
+`HedgeChannelEnvironmentCube` identifies those complete environment/event
+integrals with a single Boolean cube, using an explicit inverse and the
+actual observed enumeration.  Conflicting action samples are removed only
+after their real background factor is proved zero.  The installed small-row
+capacity and amplitude products are positive literal constants under the
+full original action; all outside factors and character signs remain in
+the complete cube sum.  This support-and-coefficient bridge does not assume
+that arbitrary typed signals are homogeneous or already supply a path gap.
+`HedgeChannelEnvironmentLinear` supplies a legal homogeneous signal family
+from finite parent and incident-root masks.  Actual guards exclude unavailable
+inputs, and homogeneity is proved for each installed row and the entire small
+forest; it is not a readiness assumption.  Guarded-fold identities support
+symbolic checks of concrete masks without reducing likelihood supports.
+`HedgeChannelEnvironmentCoefficients` identifies the actual phases' coordinate
+tests with their local graph coefficients: each observed row's own bit and
+selected declared parents, and each original root's genuine incident reads.
+Complete forest and selected-background parities retain every relevant row.
+These equations are graph conservation obligations, not an assumed path family.
+`HedgeChannelEnvironmentMoments` identifies the actual background factors
+and event sums with these homogeneous moments.  The full normalized response
+is exactly the original-outcome covariance multiplied by the two installed
+positive small-row scalars, with both changing evidence masses retained.
+`HedgeChannelEnvironmentCovariance` constructs positive original-alphabet
+conditional countermodels from explicit finite parity data: an odd direction,
+an outcome-subset character and positive even background rows matching on
+the whole conditioning cylinder.  The complete outcome expansion proves the
+unchanged query's strict gap, rather than replacing it with an endpoint query
+or accepting a positive-integral premise.  Its conservation adapter turns
+local observed/root balance equations into these parity data: the explicit block
+embeddings cover every free basis direction, and homogeneous coordinate
+induction establishes matching on the entire original cylinder.  Small-phase
+oddness follows from that matching and the even selected background rows.
+Constructing the requisite masks, direction and conservation proofs from
+every required irreducible active path remains open, especially for merging
+collider-activation branches and small-forest intersections; none of these bridges
+assumes that universal graph obligation.
 `HedgeChannelMonomial` regroups each actual complete row choice by hidden
 channel before using independence.  It derives selected support and forced
 row exclusion from the real local choice lists.  A selected connected channel
@@ -503,19 +612,84 @@ models for every hedge and every typed small/background signal.
 forced row while retaining its consistency indicator.  Forcing the stored
 action seed removes all left large-channel terms.  The entire right-minus-
 left likelihood, including its projection to any original observed event,
-is exactly the permitted full-small sum on the real shared prior.  The
-nonzero contribution after original-outcome projection is still to be proved.
+is exactly the permitted full-small sum on the real shared prior.
+`HedgeChannelBackgroundFactorization` sums every canonical background mask
+symbolically, expressing the complete baseline and full-small difference as
+local background products.  All simultaneous interactions and literal
+forced-value zeros are retained.  The free background factors are strictly
+positive; that does not make the separate character perturbation positive.
+No exponentially large hidden-source enumeration is evaluated to prove these
+identities, and a nonzero normalized active-path interaction is still required.
 `HedgeChannelRouting` supplies homogeneous typed incoming-flow signals from
 the hedge's existing composed small/outcome successor.  Its distinguished
 outside-small mask completes that flow, and conservation makes its phase
 even on the original all-false outcome event.  All other full-small phases
 have nonnegative character sums on the action/outcome false cylinder, by
-`FiniteBooleanCharacter`.  Combining these with the actual positive forced-
-row coefficients remains the general projected-gap obligation.
-No common hidden source incident to the entire hedge is introduced by either
-construction.  Original-query separation, the general-value lift of a
-separating pair, and universal conditional countermodels remain open;
-observational equality alone does not inhabit `PublishedCompleteness`.
+`FiniteBooleanCharacter`.
+`HedgeChannelUnderCoefficients` factors each consistent forced-row coefficient
+into its actual nonnegative scalar, proves conflicting cells contribute zero,
+and proves allowed selected-channel scalars positive.  `HedgeChannelProjection`
+combines those coefficients with the entire prior mass and the routed character
+sums.  Every complete original-event contribution is nonnegative and the
+distinguished outcome-flow contribution is positive.  Their actual finite sum
+therefore gives an original-query interventional probability gap for every hedge.
+`HedgeChannelCounterexample` constructs the original-label local event and
+transports the same pair through the general private label refinement.  It
+inhabits `CounterexampleIn (GraphModelClass.positive G) q` without readiness
+premises, altered node sets, or assumed separation.  The one-way
+`HedgeChannelJointCompleteness` assembly consequently proves the published joint
+certificate theorem and non-identifiability of every failed joint invocation.
+`HedgeChannelConditionalCounterexample` transports a matched Boolean
+conditioning marginal through the same pair's exact binary encoding and
+full-alphabet label sweep, then applies the checked chain-rule separation.
+Its failure adapter restores the original conditional along the complete
+exchange trace.  `HedgeChannelMarginal` now proves that Boolean marginal
+comparison from a supplied finite outcome-flow balance direction, retaining
+all actual forced-row coefficients and complete prior mass.  An omitted
+small-flow sink supplies such a direction automatically, so that conditional
+family needs no old route-permission or semantic denominator premise.
+`HedgeChannelFlowDirection` also handles complete unconditioned successor
+paths from a small-forest source to a sink outside Small.  Its actual path
+indicator has exactly one odd local source and makes every outside-small row
+even, retaining merging incoming parents and possible small-forest re-entry.
+This extends the matched-marginal family without asserting that every hedge
+has an unconditioned source route.
+Conversely, conservation proves that no such direction exists if the
+conditioner inspects every actual flow sink.  The collider regression exhibits
+a genuine irreducible failed query with that obstruction and an existing
+alternative positive counterexample.  Universal conditional construction
+therefore cannot be reduced to assuming a balance direction always exists.
+`HedgeChannelConditionalGap` instead retains both actual projected likelihood
+changes and proves the exact normalized cross-product criterion for arbitrary
+typed small/background signals.  A nonzero normalized cell change constructs
+a positive conditional countermodel on the unchanged full original alphabet
+without matching its evidence masses.  The incoming-parent collider regression
+genuinely retains unequal conditioning marginals in the final full-label pair.
+The general `ValueRefinementConditionalCounterexample` transport also lifts
+any positive Boolean conditional countermodel, not only a channel pair: an
+explicit coordinate recoding and the existing finite separated-cell selector
+retain an actual source gap, each model's own denominator, and full label
+support.  The channel constructor uses its already supplied separated cell,
+without repeating a search over response-function priors.  Its exact converse
+also characterizes whole-kernel agreement when every normalized change is
+zero.  The shared-latent boundary regression uses that converse to prove a
+real family obstruction: directed-parent signals cannot separate its actual
+irreducible query for any reference or admissible signal functions, while an
+existing shared-latent pair does separate it.  General terminal countermodels
+must consequently include actual latent-path readouts or a broader model
+construction; tuning the current parent signals cannot be the universal leaf.
+The wider shared-input installation now supplies a different pair on that
+same latent-entry fixture.  Both endpoints read one independent reserved bit
+at their actual common pair root; the complete environment sum cancels its
+linear evidence change but retains the joint interaction.  Its verified
+original-query counterexample overcomes the restrictive family's obstruction,
+without claiming arbitrary active-path coverage from this one instance.
+That terminal construction remains the load-bearing conditional obligation;
+the general Boolean-to-original-alphabet lift is no longer an extra premise.
+No common hidden source incident to the entire hedge is introduced by these
+channel constructions.  Universal conditional terminal countermodels remain open;
+the completed joint and hedge fields do not yet inhabit the entire
+`PublishedCompleteness` record.
 `HedgeCompensatedPreimage` exposes the exact installed-row full-value
 preimages in both actual carriers: ordinary/nested incidence equations have
 a common private-background test.  That test retains the loss of a nonbinary

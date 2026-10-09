@@ -20,9 +20,10 @@ label law: positive decoded atoms suffice.
 The constructor retains the supplied observed signature and graph.  In
 particular it never appends observed coordinates, enlarges a supplied value
 domain, changes the action/outcome query, or uses a shared latent switch.
-An unrestricted binary original-query hedge construction is still required
-to discharge the general published completeness leaf.  The label sweep is
-a general transport of such a construction, not a proof that it exists.
+The one-way companion `HedgeChannelCounterexample` now supplies the
+unrestricted binary original-query hedge construction and applies this
+adapter.  The label sweep here remains a general transport of a supplied
+pair; it is not by itself a proof that a separating binary pair exists.
 -/
 
 namespace ObservedValueRefinement
@@ -150,7 +151,7 @@ binary SCMs.  Parent-bit irrelevance and decoded support are proved by
 encoding, not supplied by the caller.  The private refinement then proves
 positivity at *every* original label and preserves the original causal gap.
 
-This is the precise reduction used by a future unrestricted binary hedge
+This is the precise reduction used by the unrestricted channel hedge
 argument.  It retains the general finite-alphabet target rather than replacing
 it with a binary-only completeness theorem. -/
 noncomputable def positiveCounterexampleOfBinaryEvent

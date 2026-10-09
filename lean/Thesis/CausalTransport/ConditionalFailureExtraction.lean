@@ -35,6 +35,21 @@ removes the outside-forest restriction for that queried-root case by proving
 the actual root-omitted marginal equality.  General irreducible terminals without such a
 matched-denominator construction still require the remaining conditional
 countermodel argument.
+
+The one-way `HedgeChannelConditionalGap` companion also proves a normalized
+terminal-cell criterion using both actual likelihood changes when the
+conditioning masses differ.  Its incoming-parent collider regression
+demonstrates that normalized separation can hold without a matched marginal.
+The general `ValueRefinementConditionalCounterexample` companion transports
+any positive Boolean conditional pair to the original alphabet, preserving
+each model's own denominator at an explicitly recoded source cell.  The
+channel failure adapter combines that lift with the complete exchange trace.
+Constructing conditional countermodels at arbitrary irreducible terminals
+remains open.  The independent-channel parent-signal family is not itself
+universal: the shared-latent boundary regression proves its complete kernel
+agreement on a genuinely non-identifiable query.  The assembly below still
+requires the general terminal argument, including actual latent-path
+readouts, not only one channel family or a supplied finite arithmetic gap.
 -/
 
 /-! ## Inspectable exchange traces and their semantic equality -/
@@ -428,11 +443,13 @@ noncomputable def publishedConditionalCertificateOfIdentifiableOfTerminalCounter
       exact False.elim (identifyConditionalKernel_ne_unfinished graph query result)
 
 /-- Final mechanical assembly boundary for the full published completeness
-record.  The two explicitly supplied arguments are the genuinely open
-semantic leaves: positive original-query hedge countermodels and irreducible
-conditional terminal countermodels.  This is a reduction of the remaining
-work, not a premise-free completeness theorem.  In particular, importing it
-does not assert that either countermodel family has been constructed. -/
+record.  Its two explicitly supplied arguments are semantic countermodel
+obligations: original-query hedge countermodels and irreducible conditional
+terminal countermodels.  `HedgeChannelCounterexample` now discharges the
+positive value-rich hedge obligation in a separate one-way module; the general
+conditional terminal obligation remains open.  This generic assembly is not
+by itself a premise-free completeness theorem, and importing it does not
+assert that a terminal countermodel family has been constructed. -/
 noncomputable def PublishedCompleteness.ofHedgeAndConditionalTerminalCounterexamples
     {S : ObservedSignature.{0}} {graph : ObservedGraph S} {C : GraphModelClass graph}
     (obsPositive : forall {model}, C.Mem model -> ObservationallyPositive model)

@@ -38,6 +38,34 @@ noncomputable def ConditionalCounterexampleIn.identifyConditionalKernelFail
   | failed fail => exact ⟨fail, rfl⟩
   | unfinished => exact False.elim (identifyConditionalKernel_ne_unfinished graph query result)
 
+/-- The finite failure tag of an identification outcome.  Naming this
+projection lets resource-limited semantic regressions state an actual-output
+check without elaborating a fresh concrete match on the whole IDC program.
+It changes neither the outcome nor the meaning of failure. -/
+def IdentificationOutcome.isFailed {S : ObservedSignature} : IdentificationOutcome S -> Bool
+  | .failed _ => true
+  | _ => false
+
+/-- A previously proved semantic non-identifiability theorem already forces
+the actual IDC entry point to report failure.  This version does not take a
+countermodel structure as an argument: clients may reuse an opaque semantic
+theorem without expanding a large SCM construction during kernel checking.
+
+Only the finite program result is inspected.  There is no decision of the
+semantic proposition, no selection of countermodels, and no completeness
+premise.  As before, this statement does not determine the recorded forests. -/
+theorem identifyConditionalKernel_failed_of_not_identifiable
+    {S : ObservedSignature.{0}} {graph : ObservedGraph S} {C : GraphModelClass graph}
+    (obsPositive : forall {model}, C.Mem model -> ObservationallyPositive model)
+    (query : ConditionalKernelQuery S) (notIdentifiable : Not (C.conditionalIdentifiable query)) :
+    (identifyConditionalKernel graph query).isFailed = true := by
+  cases result : identifyConditionalKernel graph query with
+  | identified term =>
+      exact False.elim (notIdentifiable
+        (identifyConditionalKernel_identified_identifiable graph.dSeparationCorrectness obsPositive query result))
+  | failed fail => rfl
+  | unfinished => exact False.elim (identifyConditionalKernel_ne_unfinished graph query result)
+
 /-- The actual entry point reports failure, independently of how its
 countermodel was constructed.  This avoids a second large decision proof
 while retaining the genuine program and original-query statement. -/

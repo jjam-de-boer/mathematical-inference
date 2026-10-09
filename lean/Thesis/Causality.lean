@@ -18,6 +18,9 @@ import Thesis.Causality.SharedNoiseSemantics
 import Thesis.Causality.PrivateNoiseClosure
 import Thesis.Causality.ValueRefinement
 import Thesis.Causality.BinaryEncoding
+import Thesis.Causality.BinaryRecoding
+import Thesis.Causality.ValueRefinementConditional
+import Thesis.Causality.ValueRefinementMarginal
 import Thesis.Causality.IdentificationSearch
 import Thesis.Causality.HedgeSelectionSearch
 import Thesis.Causality.ConditionalUniqueness
@@ -32,6 +35,7 @@ import Thesis.Causality.LatentTableCounterexample
 import Thesis.Causality.CompactHiddenDAG
 import Thesis.Causality.PairRoot
 import Thesis.Causality.PairRootChannels
+import Thesis.Causality.PairRootChannelsEnvironment
 import Thesis.Causality.Semantics
 import Thesis.Causality.ProbabilityTermEquality
 import Thesis.Causality.ModalDerivation
@@ -84,6 +88,12 @@ Its complete unit-weight source presentation and explicit matrix transpose
 support the separate channel integration and positive-table construction in
 `CausalTransport`.  Empty channel and root families retain their one empty
 assignment rather than introducing a dummy graph edge.
+`PairRootChannelsEnvironment` reserves an independent terminal bit at each
+of those original roots.  Its explicit inverse split/join reconstructs a
+permutation of the entire environment-by-main Cartesian support and retains
+the literal product denominator.  Arbitrary mixed row integrands therefore
+separate at a fixed environment without adding a globally shared source or
+assuming independence from marginal fairness alone.
 `ProbabilityTermEquality` supplies explicit finite syntax comparison for
 node selections, kernels, and complete expressions, without deciding
 denotational equivalence or using classical function equality.
@@ -152,11 +162,27 @@ actual conditioning denominator of a routed countermodel.
 depending only on declared parent bits.  Positive decoded atoms become a
 strictly positive full-alphabet law, while whole observed-law equality and
 every bit-dependent interventional probability are retained.  It does not
-construct the missing unrestricted binary hedge countermodel.
+itself construct a binary hedge countermodel.
 `BinaryEncoding` accepts ordinary Boolean-valued SCMs on the same graph and
 proves those parent-bit and decoded-support hypotheses automatically.  The
 deterministic encoding and private support sweep remain separate, so an
 encoded binary model is not incorrectly claimed to have full label support.
+`BinaryRecoding` explicitly flips supplied Boolean coordinates in actual SCM
+mechanisms and interventions.  Its inverse transports whole observational
+equality and positivity, including responding descendants.  No permutation
+or inverse assignment is selected from a propositional existence statement.
+`ValueRefinementConditional` sends an arbitrary supplied source reference to
+the bit-one singleton fibre before encoding and refining its labels.  Each
+actual full-label numerator and denominator is then transported separately
+back to that model's source cell, retaining the partial ratio's support and
+value even when the two models have unequal evidence probabilities.  The
+original node sets and the entire source action are unchanged.
+`ValueRefinementMarginal` supplies the stronger pairwise interventional
+marginal transport needed for conditioning denominators.  Arbitrary forced
+labels are retained by an exact full-value encoding map, and each actual
+private label step preserves equality of local event probabilities.  The
+complete sweep consequently retains a matched original-label kernel even
+when it refines the inspected conditioning coordinates themselves.
 `LatentRationalCPT` realizes finite rational local tables with supplied shared
 sources as actual SCMs.  Private response functions retain the exact projected
 graph.  Their full interventional likelihood theorem integrates the genuine

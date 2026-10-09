@@ -87,6 +87,36 @@ theorem right_fullTermIntegral_under (w : HedgeWitness G q)
     w.small (smallChannel w) (rightNodes_smallChannel w) mask subset target sample
   simpa only [signalPhase, rightParentSignal, role_smallChannel] using evaluated
 
+/-- Evaluate a common background term without enumerating the shared prior.
+The inactive left small slot realizes the empty forest in the general
+full-choice identity.  Its phase is zero, so only the actual background
+character remains.  Forced conflicts and inactive background rows retain
+their zero coefficients; this formula does not posit a positive scalar on
+such cells. -/
+theorem left_commonTermIntegral_under (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S)
+    (smallSignal backgroundSignal : ParentSignal S) (target : Fin S.count -> Option Bool)
+    (sample : S.binary.Assignment) (mask : NodeSet S) :
+    leftTermIntegralUnder w rich smallSignal backgroundSignal target sample (backgroundChoice w mask) =
+      ((PairRootChannels.prior G.binary (channelCount w)).den : Int) *
+        HedgeChannelTable.choiceCoefficient (leftTables w) target sample (backgroundChoice w mask) *
+        FiniteProbRecord.characterSign (signalPhase mask backgroundSignal sample) := by
+  have evaluated := fullChoice_signedMass_under w (leftTables w) (leftNodes w)
+    (leftParentSignal w rich smallSignal backgroundSignal) backgroundSignal
+    (by intro child; rw [leftNodes, role_backgroundChannel])
+    (by intro child parents; rw [leftParentSignal, role_backgroundChannel])
+    NodeSet.empty (smallChannel w) (leftNodes_smallChannel w) mask (fun _ _ => rfl) target sample
+  have emptyPhase : signalPhase (NodeSet.empty : NodeSet S)
+      (fun child parents => leftParentSignal w rich smallSignal backgroundSignal child parents (smallChannel w))
+      sample = false := by
+    unfold signalPhase
+    rw [← hedgeNodeXor_mask_of_subset NodeSet.empty NodeSet.full (fun _ _ => rfl)]
+    unfold hedgeNodeXor
+    apply foldl_unchanged
+    intro total child
+    simp only [NodeSet.empty, Bool.false_eq_true, if_false, Bool.xor_false]
+  simpa only [fullChoice, NodeSet.empty, Bool.false_eq_true, if_false,
+    emptyPhase, Bool.false_xor] using evaluated
+
 private instance choiceDecidableEq (w : HedgeWitness G q) :
     DecidableEq (Fin S.count -> Option (Fin (channelCount w))) :=
   FiniteProduct.assignmentDecidableEq S.count (fun _ => Option (Fin (channelCount w))) (fun _ => inferInstance)

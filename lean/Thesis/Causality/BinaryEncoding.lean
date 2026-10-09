@@ -52,6 +52,17 @@ def ObservedGraph.binary (graph : ObservedGraph S) : ObservedGraph S.binary wher
   bidirected_symmetric := graph.bidirected_symmetric
   bidirected_irreflexive := graph.bidirected_irreflexive
 
+/-- Interpret a conditional query on the same graph with Boolean labels.
+The original node sets and all three disjointness certificates are retained;
+this operation neither promotes a conditioner nor restricts the outcome. -/
+def ConditionalKernelQuery.binary (query : ConditionalKernelQuery S) : ConditionalKernelQuery S.binary where
+  outcome := query.outcome
+  action := query.action
+  condition := query.condition
+  action_outcome_disjoint := query.action_outcome_disjoint
+  action_condition_disjoint := query.action_condition_disjoint
+  outcome_condition_disjoint := query.outcome_condition_disjoint
+
 namespace BinaryEncoding
 
 open ObservedValueRefinement

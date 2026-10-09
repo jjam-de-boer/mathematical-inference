@@ -35,11 +35,18 @@ import Thesis.Examples.HedgeCarrierTwoSidedReplay
 import Thesis.Examples.ConditionalCompilation
 import Thesis.Examples.ConditionalFailureExtraction
 import Thesis.Examples.ConditionalFailurePaths
+import Thesis.Examples.ConditionalFailureActivation
+import Thesis.Examples.ConditionalFailurePivot
+import Thesis.Examples.ConditionalFailureFlow
+import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ConditionalCollider
 import Thesis.Examples.HedgeConditionalRoot
 import Thesis.Examples.HedgeConditionalCollider
 import Thesis.Examples.HedgeConditionalColliderSelection
 import Thesis.Examples.HedgeConditionalLatentCollider
+import Thesis.Examples.ConditionalNoise
+import Thesis.Examples.ConditionalReadout
+import Thesis.Examples.ConditionalColliderEntry
 import Thesis.Examples.ConditionalCounterexampleNormalization
 import Thesis.Examples.ValueRefinement
 import Thesis.Examples.HedgeObstructionLikelihood
@@ -56,9 +63,23 @@ import Thesis.Examples.HedgeChannelObservational
 import Thesis.Examples.HedgeChannelInterventional
 import Thesis.Examples.FiniteBooleanCharacter
 import Thesis.Examples.HedgeChannelRouting
+import Thesis.Examples.HedgeChannelMarginal
+import Thesis.Examples.HedgeChannelConditionalGap
+import Thesis.Examples.HedgeChannelLatentBoundary
+import Thesis.Examples.HedgeChannelLatentBoundaryCounterexample
+import Thesis.Examples.HedgeChannelEnvironment
+import Thesis.Examples.HedgeChannelEnvironmentCounterexample
+import Thesis.Examples.HedgeChannelEnvironmentParity
 
 /-!
 Top-level convenience import for the thesis formalisation.
+
+General joint completeness is now implemented by `HedgeChannelJointCompleteness`:
+every supplied original-query hedge has a full-alphabet positive counterexample,
+and every identifiable joint query has a published certificate.  Universal
+conditional terminal countermodels remain open.  The older restricted carrier
+families below retain their genuine limitations; they are not the proof of
+unrestricted coverage supplied by the newer channel construction.
 
 The independent-channel table regressions check actual typed-input models,
 full observed support, complete integrated likelihoods and projected-event
@@ -68,12 +89,33 @@ mixed partial selections, actual action-cut terms, and complete expansions
 with repeated local labels or zero channels.  These are checks of general
 construction ingredients, not an inhabitant of `PublishedCompleteness`.
 
+`ConditionalFailureActivation` checks actual collider-activation route data:
+a descendant-activated back-door collider, a zero-edge branch at an already
+conditioned collider, and a legal branch that revisits the omitted pivot while
+avoiding a nonempty intervention.  That last case guards against treating IDC's
+exchange-test given-set as the full conditional query's condition set.
+`ConditionalFailurePivot` checks that latest-reachable selection removes that
+particular overlap constructively: the earlier regression's later conditioner
+is selected, and full-given-set freedom follows from the general maximality
+theorem.  A genuine irreducible three-valued failure also exercises selection
+from its actual fully inspected hedge flow and the resulting back-door path.
+`ConditionalFailureFlow` checks a three-valued two-root hedge whose readouts
+merge before an outside-small outcome sink.  The actual whole-route direction
+supplies a positive original-query countermodel.  Inspecting an intermediate
+vertex invalidates that direction despite endpoint omission, and both branches
+of the general countermodel-or-latest-pivot split are checked separately.
+`ConditionalFailureActivationForest` checks two genuinely activated observed
+colliders whose branches merge before one conditioner.  The common forest
+retains both incoming branches, uses one shared outgoing successor, and stops
+at the conditioner.  The general path theorem proves equal endpoints after
+the merge; a zero-edge branch checks an already-conditioned source.
+
 `HedgeChannelCoefficients` installs the explicit power coefficients in a
 positive actual bow-model pair with full observational equality and a
 projected intervention gap.  Its independent two-outer-vertex mask check
 retains the double interaction.  These finite tests do not replace the
-separate arbitrary-hedge observational assembly or the still-open original-
-outcome flow proof.
+separate arbitrary-hedge observational assembly or general original-outcome
+projection theorem.
 `HedgeChannelInstallation` checks actual models returned by the general
 hedge installer, rather than a hand-written channel family.  Its bow uses
 each outer mask once, retains an inactive background slot, and proves full
@@ -85,7 +127,7 @@ row choices to four repetition-free survivors, retaining both background
 masks and full-channel contributions.  Its literal signed integrals and
 full-sample equality criterion are checked on that same installed pair;
 the general full sum is proved separately in `HedgeChannelObservational`,
-while the original-outcome flow proof remains open.
+while `HedgeChannelProjection` separately proves the general original-event gap.
 `HedgeChannelFullTerms` checks the new actual term correspondence separately
 from the earlier bow observational-equality test.  Literal anchored row
 coefficients, complete prior normalization and the action-sensitive outer
@@ -107,6 +149,51 @@ empty and fully fixed products, and the excluded constant-odd phase boundary.
 small character cancels at the unqueried intermediate row, while the routed
 background term retains the original-event gap.  The complete likelihood
 difference follows symbolically, with only its two surviving terms computed.
+The same fixture now instantiates the unrestricted full-alphabet counterexample
+and proves non-identifiability of the unchanged original outcome kernel.
+Its retained-conditioner query additionally instantiates the new omitted-
+small-flow-sink conditional construction and proves corrected-engine failure
+from the actual counterexample and general engine correctness, without
+evaluating the full exchange search.  `HedgeChannelMarginal` contrasts a
+three-valued irreducible collider whose conditioner contains every flow sink:
+conservation rules out every balance direction, although the separate collider
+construction supplies a positive conditional counterexample.  This records
+the balance family's genuine limit without asserting universal coverage.
+`HedgeChannelConditionalGap` tests an alternative typed incoming-parent
+signal on that collider.  Its actual evidence probabilities differ, while
+the complete normalized cell change still separates the conditional.
+Only the small canonical observed projections are evaluated.  The new
+channel constructor now lifts this gap to the original three-valued positive
+class.  Its final full-label conditioning probabilities are still unequal;
+the lift retains the separated source cell rather than imposing denominator
+equality.  A mixed-reference regression checks the explicit coordinate
+recoding used by the general arbitrary-original-alphabet cell transport.
+General countermodels for arbitrary irreducible terminals remain unproved.
+`HedgeChannelLatentBoundary` supplies a genuine three-valued irreducible query
+with a shared-latent back-door entry.  It proves that every typed parent-signal
+choice in the observed-parent-only independent-channel family gives zero normalized change
+at every reference, hence complete agreement of its Boolean conditional.
+An actual positive shared-latent pair nevertheless separates the original
+query.  The universal leaf must therefore compose real latent-path readouts
+or use a broader model family, not assume that parent-signal tuning suffices.
+`HedgeChannelEnvironment` verifies that such a broader pair separates this
+same query.  Its small and outcome-background signals read one reserved bit
+at their genuine common pair root, independently of the main forest channels.
+All four actual projected masses are computed by the complete environment
+sum with the large main-prior mass kept symbolic.  Its evidence change
+cancels while its joint change survives.  The one-way countermodel companion
+connects the strict cross-product gap to actual Boolean kernel cells and the
+unchanged full three-valued positive class.  No observed arrow is added, and
+the result does not stand in for general irreducible active-path construction.
+`HedgeChannelEnvironmentParity` checks the same unchanged nonbinary query
+through the general parity-to-countermodel constructor instead of evaluating
+its event masses.  The actual incident-root masks, supported odd direction
+and whole-cylinder matching identity supply every finite parity field.  Its
+local observed/root conservation tests do not enumerate the main likelihood
+support.  The general homogeneous basis theorem proves whole-cylinder matching
+and derives small-phase oddness.  A separate negative check shows that the
+fixed root is not globally balanced: only free coordinates are required to
+balance.  The fixture does not claim arbitrary active-path coverage.
 
 `ConditionalCollider` checks a real irreducible `P(U | do(A), R)` failure
 on `U -> R <- A`, `A <-> R`, with three-valued observed alphabets.  The
@@ -140,6 +227,23 @@ both roots.  The root-specific meeting searches return different neighbours.
 The actual query fails IDC; the general constructor supplies the positive
 compatible pair, the complete observed-law equality, third-label support,
 and separation of the entire three-outcome, two-conditioner kernel.
+`ConditionalReadout` checks the longer original-query route
+`R <- U -> M -> Y` for the three-valued `P(Y,E | do(A), R)` failure.
+The original numerator hedge supplies the separated source root.  Finite
+graph searches then select the auxiliary parent and both readout arrows;
+neither an auxiliary countermodel nor intermediate SCM non-influence is
+assumed.  Neither auxiliary coordinate is queried, and the final extra
+outcome is restored without changing the given set.  Full observational
+equality and complete third-label support are retained.  The separate exact
+IDC and path-code companions are not imported by this smoke test.
+`ConditionalNoise` separately checks unequal evidence masses,
+repeated labels, a zero-weight atom, both output bits, the full-event
+conditioning transport, and the fair-noise erasure boundary.
+`ConditionalColliderEntry` checks a two-root three-valued query whose first
+root has only observed entry and whose second has only shared-latent entry.
+Both auxiliary sources are unqueried and have directed tails to the original
+outcome.  The uniform entry premises are proved false, while the combined
+root-specific constructor supplies the full positive countermodel pair.
 
 For a smaller dependency footprint, client developments should normally import
 one stable facade directly: `Thesis.Probability`, `Thesis.Causality`, or
@@ -155,8 +259,11 @@ A separate label-refinement regression starts with a binary bow pair whose
 third labels have zero probability.  An actual private sweep makes the entire
 three-valued alphabet positive while retaining the exact causal probabilities
 `1/2` and `1/3`, the full observed-law equality, and the original projected
-graph.  The ordinary Boolean-model adapter is also instantiated directly;
-this is a general alphabet transport, not an unrestricted hedge construction.
+graph.  The ordinary Boolean-model adapter is also instantiated directly.
+The marginal regressions additionally refine the inspected coordinate twice,
+retain equality of a third-label event under arbitrary interventions, and
+retain an actual forced third label in the full-value encoding theorem.
+These are general alphabet transports, not by themselves hedge constructions.
 The separate seven-node obstruction likelihood regression checks a different
 strictly positive rational-table pair, with complete observed equality and
 an exact truncated-table gap of `1/62208`.  Its structural realization uses
@@ -259,7 +366,8 @@ actual whole-prior event identity and the necessary-and-sufficient averaged
 replay comparison require no pivot distinctness, geometric permission, or
 assumed observational equality.  These negative results concern the stated
 toggle and base priors, not every possible routing plan or countermodel.
-Constructing an unrestricted family remains part of general completeness.
+These checks do not establish an unrestricted toggle-family countermodel;
+the separate channel construction supplies general joint countermodels instead.
 A separate five-node three-value fixture now checks the finite-plan replay.
 Its root-to-outcome route leaves the forest at an outside vertex and re-enters
 at an internal small-forest vertex with a genuine kept child.  The generated
@@ -388,8 +496,8 @@ universal coverage.  A valid original-query hedge and a checked corrected-ID
 failure coexist with empty full-graph scans for both canonical routing and
 arbitrary outer-avoiding routing.  Candidate-completeness turns those
 finite computations into a refutation for every forest selection, not
-just one normalization.  This distinguishes a genuine countermodel-family
-limitation from a route-policy or greedy-search failure, and keeps the
-remaining general positive hedge leaf explicit rather than assuming an
-impossible universal coverage theorem.
+just one normalization.  This distinguishes a genuine limitation of the old
+carrier family from a route-policy or greedy-search failure.  The separate
+unrestricted channel construction closes the general positive joint hedge leaf
+without assuming this disproved carrier-coverage theorem.
 -/
