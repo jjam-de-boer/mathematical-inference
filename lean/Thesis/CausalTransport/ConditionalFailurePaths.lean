@@ -84,6 +84,85 @@ private theorem exchangeEdge_from_conditioner_false (graph : ObservedGraph S)
         selected, Bool.not_true, Bool.and_false, Bool.false_and]
   | latentPair first second => rfl
 
+/-- Inspect a certified outgoing-cut path to expose its first incoming edge.
+The returned pair is selected by inspecting the actual vertex list.  This
+shared decoder applies equally to a first-success or a normalized witness. -/
+private def firstIncomingOfCutPath (graph : ObservedGraph S)
+    (query : ConditionalKernelQuery S) (node outcome : Fin S.count)
+    (selected : query.condition node = true) (outcomeSelected : query.outcome outcome = true)
+    (cutPath : ActivePath graph
+      (GraphMutilation.barUnderline query.action (NodeSet.singleton node))
+      (NodeSet.union query.action (NodeSet.diff query.condition (NodeSet.singleton node)))
+      (.observed node) (.observed outcome)) :
+    { data : SeparationNode S × List (SeparationNode S) //
+      cutPath.nodes = .observed node :: data.1 :: data.2 ∧
+      graph.expandedMutilatedEdge (GraphMutilation.bar query.action) data.1 (.observed node) = true } := by
+  cases nodes : cutPath.nodes with
+  | nil =>
+      have starts := cutPath.starts
+      rw [nodes] at starts
+      cases starts
+  | cons first tail =>
+      have first_eq : first = .observed node := by
+        simpa only [nodes, List.head?_cons, Option.some.injEq] using cutPath.starts
+      subst first
+      cases tail with
+      | nil =>
+          have same : node = outcome := by
+            simpa only [nodes, List.getLast?_singleton, Option.some.injEq,
+              SeparationNode.observed.injEq] using cutPath.finishes
+          have conditionFalse := query.outcome_condition_disjoint node (same ▸ outcomeSelected)
+          exact False.elim (Bool.false_ne_true (conditionFalse.symm.trans selected))
+      | cons next rest =>
+          have adjacent : Adjacent graph
+              (GraphMutilation.barUnderline query.action (NodeSet.singleton node))
+              (.observed node) next := by
+            have consecutive := cutPath.adjacent
+            rw [nodes] at consecutive
+            exact consecutive.1
+          have incoming : graph.expandedMutilatedEdge
+              (GraphMutilation.barUnderline query.action (NodeSet.singleton node))
+              next (.observed node) = true := by
+            rcases adjacent with outgoing | incoming
+            · rw [exchangeEdge_from_conditioner_false graph query node next] at outgoing
+              cases outgoing
+            · exact incoming
+          exact ⟨(next, rest), rfl, exchangeEdge_in_actionGraph graph query node _ _ incoming⟩
+
+/-- Restore a supplied certified outgoing-cut path as a conditional back-door
+path.  Its exact list is retained definitionally.  The outgoing cut derives
+the first incoming edge; outcome/condition disjointness excludes a singleton.
+This adapter does not require that the supplied path was the first search result. -/
+def ConditionalBackdoorPath.ofCutPath (graph : ObservedGraph S)
+    (query : ConditionalKernelQuery S) (node outcome : Fin S.count)
+    (selected : query.condition node = true) (outcomeSelected : query.outcome outcome = true)
+    (cutPath : ActivePath graph
+      (GraphMutilation.barUnderline query.action (NodeSet.singleton node))
+      (NodeSet.union query.action (NodeSet.diff query.condition (NodeSet.singleton node)))
+      (.observed node) (.observed outcome)) : ConditionalBackdoorPath graph query node :=
+  let data := firstIncomingOfCutPath graph query node outcome selected outcomeSelected cutPath
+  {
+    outcome := outcome
+    outcome_selected := outcomeSelected
+    path := cutPath.ofEdgeInclusion (exchangeEdge_in_actionGraph graph query node)
+    first := data.val.1
+    rest := data.val.2
+    nodes_eq := data.property.1
+    first_incoming := data.property.2
+  }
+
+/-- The adapter restores edges without changing the actual normalized list.
+This equality is definitional, not another search or a path-existence theorem. -/
+theorem ConditionalBackdoorPath.ofCutPath_nodes (graph : ObservedGraph S)
+    (query : ConditionalKernelQuery S) (node outcome : Fin S.count)
+    (selected : query.condition node = true) (outcomeSelected : query.outcome outcome = true)
+    (cutPath : ActivePath graph
+      (GraphMutilation.barUnderline query.action (NodeSet.singleton node))
+      (NodeSet.union query.action (NodeSet.diff query.condition (NodeSet.singleton node)))
+      (.observed node) (.observed outcome)) :
+    (ConditionalBackdoorPath.ofCutPath graph query node outcome selected outcomeSelected cutPath).path.nodes =
+      cutPath.nodes := rfl
+
 /-- A failed singleton exchange yields an actual back-door path for the
 original conditional query.  All selection and path data are returned by
 finite searches or by inspecting their lists; there is no choice elimination. -/
@@ -103,49 +182,7 @@ def ConditionalBackdoorPath.ofExchangeTestFalse (graph : ObservedGraph S)
       (NodeSet.union query.action (NodeSet.diff query.condition (NodeSet.singleton node)))
       (.observed node) (.observed connection.source) := by
     simpa only [target_eq] using connection.path.reverse
-  let restored := cutPath.ofEdgeInclusion (exchangeEdge_in_actionGraph graph query node)
-  cases nodes : cutPath.nodes with
-  | nil =>
-      have starts := cutPath.starts
-      rw [nodes] at starts
-      cases starts
-  | cons first tail =>
-      have first_eq : first = .observed node := by
-        simpa only [nodes, List.head?_cons, Option.some.injEq] using cutPath.starts
-      subst first
-      cases tail with
-      | nil =>
-          have same : node = connection.source := by
-            simpa only [nodes, List.getLast?_singleton, Option.some.injEq,
-              SeparationNode.observed.injEq] using cutPath.finishes
-          have outcomeSelected : query.outcome node = true := by
-            rw [same]
-            exact connection.source_selected
-          have conditionFalse := query.outcome_condition_disjoint node outcomeSelected
-          exact False.elim (Bool.false_ne_true (conditionFalse.symm.trans selected))
-      | cons next rest =>
-          have adjacent : Adjacent graph
-              (GraphMutilation.barUnderline query.action (NodeSet.singleton node))
-              (.observed node) next := by
-            have consecutive := cutPath.adjacent
-            rw [nodes] at consecutive
-            exact consecutive.1
-          have incoming : graph.expandedMutilatedEdge
-              (GraphMutilation.barUnderline query.action (NodeSet.singleton node))
-              next (.observed node) = true := by
-            rcases adjacent with outgoing | incoming
-            · rw [exchangeEdge_from_conditioner_false graph query node next] at outgoing
-              cases outgoing
-            · exact incoming
-          exact {
-            outcome := connection.source
-            outcome_selected := connection.source_selected
-            path := restored
-            first := next
-            rest := rest
-            nodes_eq := nodes
-            first_incoming := exchangeEdge_in_actionGraph graph query node _ _ incoming
-          }
+  exact .ofCutPath graph query node connection.source selected connection.source_selected cutPath
 
 /-- Uniformly construct a back-door path for every remaining conditioner
 when IDC can perform no further singleton exchange. -/

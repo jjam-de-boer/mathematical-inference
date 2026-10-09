@@ -39,6 +39,8 @@ import Thesis.Examples.ConditionalFailureActivation
 import Thesis.Examples.ConditionalFailurePivot
 import Thesis.Examples.ConditionalFailureFlow
 import Thesis.Examples.ConditionalFailureActivationForest
+import Thesis.Examples.ActivePathNormalization
+import Thesis.Examples.ConditionalFailurePathNormalization
 import Thesis.Examples.ConditionalCollider
 import Thesis.Examples.HedgeConditionalRoot
 import Thesis.Examples.HedgeConditionalCollider
@@ -109,6 +111,13 @@ colliders whose branches merge before one conditioner.  The common forest
 retains both incoming branches, uses one shared outgoing successor, and stops
 at the conditioner.  The general path theorem proves equal endpoints after
 the merge; a zero-edge branch checks an already-conditioned source.
+`ActivePathNormalization` checks both normalization priorities on actual
+search results: equal-count paths select the later observed collider, while
+a collider-free genuine latent-pair path defeats both collider paths.
+`ConditionalFailurePathNormalization` checks a restored three-valued pair
+path, its unchanged list, first incoming edge, and general count-minimality
+certificate.  Its action-free query deliberately remains observationally
+identifiable: normalized exchange data are not mistaken for a countermodel.
 
 `HedgeChannelCoefficients` installs the explicit power coefficients in a
 positive actual bow-model pair with full observational equality and a

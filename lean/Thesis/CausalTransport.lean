@@ -1,6 +1,7 @@
 import Thesis.CausalTransport.DSeparation
 import Thesis.CausalTransport.DSeparationCorrectness
 import Thesis.CausalTransport.DSeparationWitness
+import Thesis.CausalTransport.ActivePathNormalization
 import Thesis.CausalTransport.ActivePathTransport
 import Thesis.CausalTransport.Certificates
 import Thesis.CausalTransport.Correspondence
@@ -120,6 +121,7 @@ import Thesis.CausalTransport.HedgeChannelProjection
 import Thesis.CausalTransport.HedgeChannelMarginal
 import Thesis.CausalTransport.HedgeChannelFlowDirection
 import Thesis.CausalTransport.ConditionalFailureActivationForest
+import Thesis.CausalTransport.ConditionalFailurePathNormalization
 import Thesis.CausalTransport.HedgeChannelConditionalGap
 import Thesis.CausalTransport.HedgeChannelCounterexample
 import Thesis.CausalTransport.HedgeChannelJointCompleteness
@@ -141,6 +143,12 @@ adapters.  `DSeparationCorrectness` connects the finite ancestry and moral
 reachability searches to active-path separation.
 `DSeparationWitness` additionally returns certified active-path data for every
 negative separation answer, using a bounded finite search instead of choice.
+Its separate least-score search compares all checked branches, stopping a
+completed branch because a simple path cannot repeat its target.
+`ActivePathNormalization` proves that the collider score prioritizes fewest
+colliders, then greatest observed collider-rank sum; the finite search supplies
+both objectives as theorems of actual returned data.  This exhaustive normal
+form is not substituted for ordinary separation or first-success searches.
 `ActivePathTransport` restores cut edges along the same path by exploiting
 the expanded DAG's strict rank, and excludes conditioned incoming-cut vertices
 from that path.  `ConditionalFailurePaths` applies these facts to every
@@ -172,6 +180,14 @@ is outside the whole domain; complete activation paths which meet have the
 same endpoint, without assuming unique incoming parents or disjoint branches.
 The auxiliary domain is not itself an interaction-row selection, and its
 intersections with the active path or the small forest remain to be handled.
+`ConditionalFailurePathNormalization` supplies the collider-normal path for
+every retained conditioner, including at an extracted arbitrary-depth failure.
+It compares the exact outgoing-cut paths with the same selected outcome;
+restoration retains that list and proves the first incoming edge.  The
+normal-form certificates are derived, not additional failure-readiness flags.
+Rerouting must still prove that an activation/path intersection improves the
+selected objectives; this selection stage does not assert intersection
+avoidance or solve the combined small-forest parity obligation.
 
 `ConditionalCollider` realizes an incoming-parent collider with two fresh
 private inputs in the original SCM graph.  It preserves positivity and,
