@@ -31,10 +31,13 @@ outcome choices or over paths with a different first-edge constraint.  In
 particular its comparison graph is the outgoing-cut graph, not an unrelated
 stronger separation semantics.
 
-This establishes actual normalized graph data.  Rerouting intersections must
-still be proved to improve these objectives, and small-forest intersections
-and the combined parity-conservation argument remain separate obligations.
-The first-success API stays unchanged for callers which do not need optimality.
+This establishes actual normalized graph data.  The separate
+`ConditionalFailureActivationAvoidance` module applies directed-detour surgery
+at a first activation/path return and proves that such intersections occur
+only at their own collider.  Keeping that application separate avoids an
+import cycle with the generic normalization layer.  Small-forest interactions
+and combined parity conservation remain separate obligations.  The
+first-success API stays unchanged for callers which do not need optimality.
 -/
 
 /-- A certified normal form in the exact singleton exchange graph.  The two

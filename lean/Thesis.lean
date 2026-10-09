@@ -42,6 +42,8 @@ import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
 import Thesis.Examples.ConditionalFailurePathNormalization
+import Thesis.Examples.ConditionalFailureActivationAvoidance
+import Thesis.Examples.ConditionalFailureActivationAvoidanceZero
 import Thesis.Examples.ConditionalCollider
 import Thesis.Examples.HedgeConditionalRoot
 import Thesis.Examples.HedgeConditionalCollider
@@ -124,6 +126,14 @@ with an empty suffix, and reversal retains the same proved score improvement.
 path, its unchanged list, first incoming edge, and general count-minimality
 certificate.  Its action-free query deliberately remains observationally
 identifiable: normalized exchange data are not mistaken for a countermodel.
+`ConditionalFailureActivationAvoidance` checks an actual nonzero common-policy
+collider trace against the selected normal form.  The general theorem excludes
+its conditioned endpoint from the path, while the auxiliary domain deliberately
+still overlaps a path noncollider.  Its independent smaller companion
+`ConditionalFailureActivationAvoidanceZero` checks an already-conditioned
+collider: the singleton trace retains the allowed source intersection.  Both
+regressions use original three-valued alphabets and the general theorem, not
+fixture-specific avoidance assumptions.
 
 `HedgeChannelCoefficients` installs the explicit power coefficients in a
 positive actual bow-model pair with full observational equality and a

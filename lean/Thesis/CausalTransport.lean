@@ -123,6 +123,7 @@ import Thesis.CausalTransport.HedgeChannelMarginal
 import Thesis.CausalTransport.HedgeChannelFlowDirection
 import Thesis.CausalTransport.ConditionalFailureActivationForest
 import Thesis.CausalTransport.ConditionalFailurePathNormalization
+import Thesis.CausalTransport.ConditionalFailureActivationAvoidance
 import Thesis.CausalTransport.HedgeChannelConditionalGap
 import Thesis.CausalTransport.HedgeChannelCounterexample
 import Thesis.CausalTransport.HedgeChannelJointCompleteness
@@ -155,9 +156,9 @@ directed detour, constructs the resulting simple active path, and proves its
 score strictly improves.  A conditioned return retains its incoming next edge
 and activity; an outcome endpoint has no invented internal return window.
 Reversal preserves both collider objectives, so proved optimality excludes
-these detours on either side of the original collider.  Conditional application
-still needs to extract their local certificates at the first activation/path
-intersection; the generic surgery theorem does not assume that avoidance.
+these detours on either side of the original collider.  The generic surgery
+theorem does not assume activation/path avoidance: the separate conditional
+application below derives its local certificates at the first intersection.
 `ActivePathTransport` restores cut edges along the same path by exploiting
 the expanded DAG's strict rank, and excludes conditioned incoming-cut vertices
 from that path.  `ConditionalFailurePaths` applies these facts to every
@@ -175,8 +176,9 @@ assumption or proof of that remaining argument.
 actual hedge source when its composed flow has a fully conditioned boundary.
 Maximality then rules out omitted-pivot intersections in activation branches
 and proves full-condition freedom of their preceding vertices.  This is a
-derived normalization, not a readiness assumption for an arbitrary pivot;
-the other path/branch/small-forest intersections remain to be handled.
+derived normalization, not a readiness assumption for an arbitrary pivot.
+Path avoidance additionally uses the collider-normal choice below; small-forest
+intersections remain part of the countermodel construction.
 `ConditionalFailureFlow` removes the fully conditioned boundary prerequisite
 from that normalization branch.  A finite test of the entire actual source
 flow returns either a genuine original-query countermodel or a latest reachable
@@ -187,17 +189,27 @@ common directed successor policy.  Every selected nonconditioner has a real
 selected child, and conditioners are precisely its sinks.  The latest pivot
 is outside the whole domain; complete activation paths which meet have the
 same endpoint, without assuming unique incoming parents or disjoint branches.
-The auxiliary domain is not itself an interaction-row selection, and its
-intersections with the active path or the small forest remain to be handled.
+The auxiliary domain is not itself an interaction-row selection and can
+overlap the active path.  Avoidance is proved below for actual collider traces,
+not for all domain vertices; small-forest interactions remain to be handled.
 `ConditionalFailurePathNormalization` supplies the collider-normal path for
 every retained conditioner, including at an extracted arbitrary-depth failure.
 It compares the exact outgoing-cut paths with the same selected outcome;
 restoration retains that list and proves the first incoming edge.  The
 normal-form certificates are derived, not additional failure-readiness flags.
 Their count/rank objectives also imply global score optimality, connecting
-these data to the generic detour-exclusion theorem.  The first-intersection
-application to the actual activation forest is still needed; no intersection
-avoidance or combined small-forest parity solution is asserted at this stage.
+these data to the generic detour-exclusion theorem.
+`ConditionalFailureActivationAvoidance` derives the first-return certificates
+from any actual activation route, in the exact outgoing-cut graph and given-set.
+The directed suffix activates the return, while the preceding detour vertices
+are open and avoid the whole path.  A later-rank return on either side of its
+source would contradict the proved normal-form optimality.  Consequently every
+activation/path intersection is its own collider.  The common successor policy
+supplies certified routes with exactly its original complete traces, so this
+also applies to the actual forest paths without extra readiness flags.  Zero-edge
+activations are permitted, and different branches may still merge off the path.
+Neither domain-wide disjointness nor a combined small-forest parity solution
+is asserted by this avoidance theorem.
 
 `ConditionalCollider` realizes an incoming-parent collider with two fresh
 private inputs in the original SCM graph.  It preserves positivity and,

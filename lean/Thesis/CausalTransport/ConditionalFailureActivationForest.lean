@@ -28,9 +28,13 @@ In particular two paths which meet cannot choose different outgoing edges.
 
 This domain is an auxiliary routing domain, not a declaration that every one
 of its rows must be selected in a countermodel interaction.  It may contain
-irrelevant ancestors.  Later parity construction must decide which portions
-to use, and must still handle intersections with the active path and the
-mandatory small-forest rows.  No such disjointness is assumed or proved here.
+irrelevant ancestors, including noncolliders on an active path.  The separate
+`ConditionalFailureActivationAvoidance` module proves that actual collider
+traces of a latest-pivot normal form meet that path only at their own source;
+the present policy construction alone makes no such claim for arbitrary
+first-success paths.  Later parity construction must select the portions to
+use and handle their interaction with mandatory small-forest rows.  In
+particular no domain-wide or small-forest disjointness is assumed here.
 -/
 
 variable {S : ObservedSignature.{0}}
