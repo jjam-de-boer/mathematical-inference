@@ -77,6 +77,7 @@ import Thesis.Examples.HedgeChannelLatentBoundaryCounterexample
 import Thesis.Examples.HedgeChannelEnvironment
 import Thesis.Examples.HedgeChannelEnvironmentCounterexample
 import Thesis.Examples.HedgeChannelEnvironmentParity
+import Thesis.Examples.HedgeChannelEnvironmentAbsorption
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -152,6 +153,14 @@ small.  The counterexample uses one legal signal and all three mandatory Small
 rows, proves actual whole-cylinder conservation, and yields a positive pair
 for the unchanged original conditional query.  This genuine overlap case does
 not assert universal conditional completeness or Small/activation disjointness.
+`HedgeChannelEnvironmentAbsorption` checks a conditioned collider on an
+eight-vertex three-valued graph.  Two additional mandatory Small sources merge
+at a genuine background row and feed an already selected Small collider.
+The general installed-flow theorem preserves the complete interaction phase,
+keeps the receiving own-bit once and derives the sole merge background's
+evenness.  A positive full-original-alphabet countermodel uses every mandatory
+Small row for the unchanged query.  The graph and semantic companions separate
+finite certificates from covariance assembly to retain capped local checks.
 
 `HedgeChannelCoefficients` installs the explicit power coefficients in a
 positive actual bow-model pair with full observational equality and a

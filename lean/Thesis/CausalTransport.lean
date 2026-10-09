@@ -122,6 +122,7 @@ import Thesis.CausalTransport.HedgeChannelProjection
 import Thesis.CausalTransport.HedgeChannelMarginal
 import Thesis.CausalTransport.HedgeChannelFlowDirection
 import Thesis.CausalTransport.HedgeChannelEnvironmentRouting
+import Thesis.CausalTransport.HedgeChannelEnvironmentAbsorption
 import Thesis.CausalTransport.ConditionalFailureActivationForest
 import Thesis.CausalTransport.ConditionalFailurePathNormalization
 import Thesis.CausalTransport.ConditionalFailureActivationAvoidance
@@ -628,6 +629,15 @@ signal retains each row's own bit once; disjoint Small/background row selection,
 whole-flow conservation and homogeneous basis tests derive cylinder matching.
 The actual queried sink subset supplies the outcome character, so this result
 does not freeze the old hedge policy or enlarge the original queried outcome.
+`HedgeChannelEnvironmentAbsorption` adds a certified forest feeding missing
+mandatory rows into an interaction.  It combines incoming masks, not complete
+row phases, so an overlapping receiving row retains its own observed bit once.
+The complete union phase is preserved at every cube point, including original
+reserved inputs and merged branches.  Zero outside-interaction forest bits
+retain each original direction phase and prove every added row even.  The
+parity adapter deduplicates the Small/background selection and derives the full
+Small phase's oddness; it does not assume that every normalized active path
+already supplies the requisite interaction or absorbing forest.
 Constructing the requisite masks, direction and conservation proofs from
 every required irreducible active path remains open, especially for merging
 collider-activation branches and small-forest intersections; none of these bridges
