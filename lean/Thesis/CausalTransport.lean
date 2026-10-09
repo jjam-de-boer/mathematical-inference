@@ -124,6 +124,7 @@ import Thesis.CausalTransport.HedgeChannelFlowDirection
 import Thesis.CausalTransport.ConditionalFailureActivationForest
 import Thesis.CausalTransport.ConditionalFailurePathNormalization
 import Thesis.CausalTransport.ConditionalFailureActivationAvoidance
+import Thesis.CausalTransport.ConditionalFailureActivationSelection
 import Thesis.CausalTransport.HedgeChannelConditionalGap
 import Thesis.CausalTransport.HedgeChannelCounterexample
 import Thesis.CausalTransport.HedgeChannelJointCompleteness
@@ -210,6 +211,15 @@ also applies to the actual forest paths without extra readiness flags.  Zero-edg
 activations are permitted, and different branches may still merge off the path.
 Neither domain-wide disjointness nor a combined small-forest parity solution
 is asserted by this avoidance theorem.
+`ConditionalFailureActivationSelection` scans the normal form's actual
+observed collider windows and takes the union of their complete common-policy
+traces.  This prunes irrelevant activation ancestors while retaining every
+source and successor, every shared suffix, and every genuinely conditioned
+sink.  Its intersection with the normalized path is exactly the collider
+source mask.  Difference from a supplied mandatory set gives the outside
+activation rows, with proved action freedom and ordinary-union reconstruction;
+overlapping Small rows are retained once rather than presumed absent.  The
+universal combined parity direction and conservation remain to be constructed.
 
 `ConditionalCollider` realizes an incoming-parent collider with two fresh
 private inputs in the original SCM graph.  It preserves positivity and,

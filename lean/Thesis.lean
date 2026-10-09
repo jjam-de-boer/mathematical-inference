@@ -44,6 +44,7 @@ import Thesis.Examples.ActivePathColliderRerouting
 import Thesis.Examples.ConditionalFailurePathNormalization
 import Thesis.Examples.ConditionalFailureActivationAvoidance
 import Thesis.Examples.ConditionalFailureActivationAvoidanceZero
+import Thesis.Examples.ConditionalFailureActivationSelectionCounterexample
 import Thesis.Examples.ConditionalCollider
 import Thesis.Examples.HedgeConditionalRoot
 import Thesis.Examples.HedgeConditionalCollider
@@ -134,6 +135,15 @@ still overlaps a path noncollider.  Its independent smaller companion
 collider: the singleton trace retains the allowed source intersection.  Both
 regressions use original three-valued alphabets and the general theorem, not
 fixture-specific avoidance assumptions.
+`ConditionalFailureActivationSelection` checks a genuine three-valued hedge
+whose collider activation lies entirely inside Small.  Graph certificates and
+structural normal-form reasoning prove that the pruned trace union contributes
+no outside-Small row, while retaining the queried endpoint outside the union.
+The separate graph-data and counterexample companions keep capped verification
+small.  The counterexample uses one legal signal and all three mandatory Small
+rows, proves actual whole-cylinder conservation, and yields a positive pair
+for the unchanged original conditional query.  This genuine overlap case does
+not assert universal conditional completeness or Small/activation disjointness.
 
 `HedgeChannelCoefficients` installs the explicit power coefficients in a
 positive actual bow-model pair with full observational equality and a
