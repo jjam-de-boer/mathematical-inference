@@ -65,6 +65,33 @@ structure ConditionalBackdoorPathNormalForm (graph : ObservedGraph S)
 
 namespace ConditionalBackdoorPathNormalForm
 
+/-- The two proved normal-form objectives imply global score optimality.
+This bridge allows graph-surgery exclusion to use any normal-form record,
+not only a particular implementation of its finite constructor.  The only
+case split is decidable equality of finite natural collider counts. -/
+theorem score_minimal {graph : ObservedGraph S} {query : ConditionalKernelQuery S} {node : Fin S.count}
+    (normal : ConditionalBackdoorPathNormalForm graph query node)
+    (competitor : ActivePath graph
+      (GraphMutilation.barUnderline query.action (NodeSet.singleton node))
+      (NodeSet.union query.action (NodeSet.diff query.condition (NodeSet.singleton node)))
+      (.observed node) (.observed normal.outcome)) :
+    colliderNormalizationScore graph (GraphMutilation.barUnderline query.action (NodeSet.singleton node))
+      normal.cutPath.nodes ≤
+    colliderNormalizationScore graph (GraphMutilation.barUnderline query.action (NodeSet.singleton node))
+      competitor.nodes := by
+  let m := GraphMutilation.barUnderline query.action (NodeSet.singleton node)
+  have countBound := normal.count_minimal competitor
+  by_cases same : colliderCount graph m competitor.nodes = colliderCount graph m normal.cutPath.nodes
+  · have rankBound := normal.rank_maximal competitor same
+    change colliderNormalizationScore graph m normal.cutPath.nodes ≤ colliderNormalizationScore graph m competitor.nodes
+    unfold colliderNormalizationScore
+    rw [same]
+    exact Nat.add_le_add_left (Nat.sub_le_sub_left rankBound (colliderRankBound graph)) _
+  · have fewer : colliderCount graph m normal.cutPath.nodes < colliderCount graph m competitor.nodes := by
+      change colliderCount graph m normal.cutPath.nodes ≤ colliderCount graph m competitor.nodes at countBound
+      omega
+    exact Nat.le_of_lt (colliderNormalizationScore_lt_of_count_lt graph m _ _ fewer)
+
 /-- A negative exchange test constructs the normal form without assuming
 a chosen path, minimum, maximum, or disjoint activation network.  The initial
 endpoint selection uses the ordinary search; normalization keeps those endpoints. -/

@@ -3,6 +3,7 @@ import Thesis.CausalTransport.DSeparationCorrectness
 import Thesis.CausalTransport.DSeparationWitness
 import Thesis.CausalTransport.ActivePathNormalization
 import Thesis.CausalTransport.ActivePathTransport
+import Thesis.CausalTransport.ActivePathColliderRerouting
 import Thesis.CausalTransport.Certificates
 import Thesis.CausalTransport.Correspondence
 import Thesis.CausalTransport.FiniteSource
@@ -149,6 +150,14 @@ completed branch because a simple path cannot repeat its target.
 colliders, then greatest observed collider-rank sum; the finite search supplies
 both objectives as theorems of actual returned data.  This exhaustive normal
 form is not substituted for ordinary separation or first-success searches.
+`ActivePathColliderRerouting` accounts for every changed collider window of a
+directed detour, constructs the resulting simple active path, and proves its
+score strictly improves.  A conditioned return retains its incoming next edge
+and activity; an outcome endpoint has no invented internal return window.
+Reversal preserves both collider objectives, so proved optimality excludes
+these detours on either side of the original collider.  Conditional application
+still needs to extract their local certificates at the first activation/path
+intersection; the generic surgery theorem does not assume that avoidance.
 `ActivePathTransport` restores cut edges along the same path by exploiting
 the expanded DAG's strict rank, and excludes conditioned incoming-cut vertices
 from that path.  `ConditionalFailurePaths` applies these facts to every
@@ -185,9 +194,10 @@ every retained conditioner, including at an extracted arbitrary-depth failure.
 It compares the exact outgoing-cut paths with the same selected outcome;
 restoration retains that list and proves the first incoming edge.  The
 normal-form certificates are derived, not additional failure-readiness flags.
-Rerouting must still prove that an activation/path intersection improves the
-selected objectives; this selection stage does not assert intersection
-avoidance or solve the combined small-forest parity obligation.
+Their count/rank objectives also imply global score optimality, connecting
+these data to the generic detour-exclusion theorem.  The first-intersection
+application to the actual activation forest is still needed; no intersection
+avoidance or combined small-forest parity solution is asserted at this stage.
 
 `ConditionalCollider` realizes an incoming-parent collider with two fresh
 private inputs in the original SCM graph.  It preserves positivity and,

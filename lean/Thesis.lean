@@ -40,6 +40,7 @@ import Thesis.Examples.ConditionalFailurePivot
 import Thesis.Examples.ConditionalFailureFlow
 import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
+import Thesis.Examples.ActivePathColliderRerouting
 import Thesis.Examples.ConditionalFailurePathNormalization
 import Thesis.Examples.ConditionalCollider
 import Thesis.Examples.HedgeConditionalRoot
@@ -114,6 +115,11 @@ the merge; a zero-edge branch checks an already-conditioned source.
 `ActivePathNormalization` checks both normalization priorities on actual
 search results: equal-count paths select the later observed collider, while
 a collider-free genuine latent-pair path defeats both collider paths.
+`ActivePathColliderRerouting` constructs a three-valued active detour with
+a genuinely conditioned return collider.  One source collider disappears,
+while the return stays active; the count-first score improves even though
+the rank sum decreases.  A second fixture handles an outcome-endpoint return
+with an empty suffix, and reversal retains the same proved score improvement.
 `ConditionalFailurePathNormalization` checks a restored three-valued pair
 path, its unchanged list, first incoming edge, and general count-minimality
 certificate.  Its action-free query deliberately remains observationally
