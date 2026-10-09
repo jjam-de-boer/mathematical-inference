@@ -18,11 +18,19 @@ import Thesis.Probability.FiniteUniformProduct
 import Thesis.Probability.FiniteProductSupport
 import Thesis.Probability.FiniteSupportedSum
 import Thesis.Probability.FiniteBooleanCharacter
+import Thesis.Probability.FiniteBooleanBlocks
+import Thesis.Probability.FiniteBooleanTranslation
+import Thesis.Probability.FiniteBooleanInteraction
+import Thesis.Probability.FiniteBooleanBasis
+import Thesis.Probability.FiniteBooleanCovariance
+import Thesis.Probability.FiniteBooleanCylinderCovariance
+import Thesis.Probability.FiniteRatioPerturbation
 import Thesis.Probability.ConditionalUniqueness
 import Thesis.Probability.FiniteProductConditionals
 import Thesis.Probability.BooleanNoise
 import Thesis.Probability.BooleanChannelTable
 import Thesis.Probability.BooleanChannelExpansion
+import Thesis.Probability.BooleanChannelReserve
 import Thesis.Probability.ConditionalNoise
 import Thesis.Probability.ColliderChannel
 import Thesis.Probability.ColliderRealization
@@ -79,6 +87,40 @@ Reading order:
    XOR-linear characters onto false-valued coordinate cylinders, using
    symbolic coordinate induction.  Its constructive support permutation
    relates the restricted product to filtering the complete enumeration;
+   `FiniteBooleanBlocks` explicitly joins and splits two assignment blocks,
+   and identifies their complete restricted Cartesian support with the same
+   single-cube cylinder.  Arbitrary mixed integrands retain every assignment
+   and every fixed coordinate; XOR and zero are respected by the same inverse;
+   `FiniteBooleanTranslation` pairs assignments by an explicit involutive
+   XOR translation and cancels signed sums on every preserved event cylinder.
+   It uses the supplied complete, duplicate-free enumeration rather than
+   choosing a permutation or expanding every concrete assignment;
+   `FiniteBooleanInteraction` carries explicit homogeneous phase proofs and
+   establishes nonnegative complete character moments under local interaction
+   products.  It retains every factor, proves the exact coefficients of two
+   XOR-related copies and derives strictness from a supplied complete expansion
+   selection, rather than from a single positive sample;
+   `FiniteBooleanBasis` proves that actual homogeneous phases match on a
+   complete false cylinder exactly when they match on each free coordinate
+   direction.  The explicit singleton directions respect both block
+   embeddings, and selected-row parity retains its actual finite fold.
+   This reduces phase conservation to coordinate tests, without selecting
+   a basis by choice or expanding an exponential assignment support;
+   `FiniteBooleanCovariance` proves the full two-copy covariance identity on
+   the unchanged false-cylinder support.  Its verified XOR reindexing gives
+   nonnegative homogeneous-character covariances and a strict criterion from
+   an explicit odd direction and matching interaction selection.  These are
+   finite inequalities, not an assumption that arbitrary active graph paths
+   already supply such local phases, directions or selections;
+   `FiniteBooleanCylinderCovariance` expands the complete original outcome
+   event into every outcome-subset character with an explicit positive scale.
+   It retains all other outcome coordinates and the conditioning-mass change;
+   nonnegative character covariances ensure that one supplied strict subset
+   separates the whole requested event.  An application must still identify
+   its actual model weights and prove its path-facing parity data;
+   `FiniteRatioPerturbation` characterizes cancellation of an actual joint-
+   and evidence-mass change after normalization, retaining both signed
+   changes without assuming equal conditioning masses;
    `FiniteProductBlocks` splits literal numerator and denominator products
    across an actual shared prefix and private suffix, retaining zero cells;
    `FinitePowerProduct` identifies exact anchored and binary-mask natural
@@ -101,6 +143,10 @@ Reading order:
    interventions with their actual forced-value indicators;
    its hidden-independent local coefficients retain forced zero terms before
    the causal channel construction groups complete monomials;
+   `BooleanChannelReserve` includes old row terms once in an enlarged channel
+   alphabet without listing the reserved terminal slot.  Its literal record
+   and hard-intervention cell identities retain all old atoms and capacities;
+   a separate actual-prior proof supplies independence of the new latent input;
    `ConditionalNoise` retains the full mixed-event law
    after independent noise is conditioned on source-only evidence.  Its XOR
    transport uses each source's actual evidence mass rather than a common

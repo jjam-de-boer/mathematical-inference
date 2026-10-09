@@ -65,6 +65,69 @@ theorem falseCylinder_eq_true_iff (n : Nat) (fixed assignment : Fin n -> Bool) :
     | false => simp only [Bool.false_eq_true, if_false]
     | true => simp only [if_true, consistent index atIndex, Bool.not_false]
 
+private theorem failing_all_has_false (values : List α) (test : α -> Bool)
+    (failed : values.all test = false) : ∃ value, value ∈ values ∧ test value = false := by
+  induction values with
+  | nil => cases failed
+  | cons value rest inductionHypothesis =>
+      cases tested : test value with
+      | false => exact ⟨value, List.mem_cons_self, tested⟩
+      | true =>
+          have tailFailed : rest.all test = false := by
+            simpa only [List.all_cons, tested, Bool.true_and] using failed
+          rcases inductionHypothesis tailFailed with ⟨other, member, rejected⟩
+          exact ⟨other, List.mem_cons_of_mem value member, rejected⟩
+
+/-- The cylinder reads only its designated coordinates.  Agreement outside
+the mask is unnecessary, so this locality theorem transports the same event
+through a decoder without strengthening the original outcome query. -/
+theorem falseCylinder_congr (n : Nat) (fixed first second : Fin n -> Bool)
+    (agree : forall index, fixed index = true -> first index = second index) :
+    falseCylinder n fixed first = falseCylinder n fixed second := by
+  unfold falseCylinder
+  apply congrArg (List.all (List.finRange n))
+  funext index
+  cases selected : fixed index with
+  | false => simp only [Bool.false_eq_true, if_false]
+  | true => simp only [if_true, agree index selected]
+
+/-- A rejected false cylinder has an explicit conflicting coordinate in
+the finite index list.  The proof scans Boolean test results directly;
+it does not use a classical negated-universal/existential equivalence. -/
+theorem falseCylinder_conflict_of_false (n : Nat) (fixed assignment : Fin n -> Bool)
+    (failed : falseCylinder n fixed assignment = false) :
+    ∃ index, fixed index = true ∧ assignment index = true := by
+  rcases failing_all_has_false (List.finRange n)
+    (fun index => if fixed index then !(assignment index) else true) failed with
+      ⟨index, _listed, rejected⟩
+  cases selected : fixed index with
+  | false =>
+      simp only [selected, Bool.false_eq_true, if_false] at rejected
+      cases rejected
+  | true =>
+      cases value : assignment index with
+      | false =>
+          simp only [selected, if_true, value, Bool.not_false] at rejected
+          cases rejected
+      | true => exact ⟨index, selected, value⟩
+
+/-- Fixing the union of two masks is the conjunction of their two actual
+cylinder events.  Overlap causes no duplicate assignment or extra condition. -/
+theorem falseCylinder_union (n : Nat) (left right assignment : Fin n -> Bool) :
+    falseCylinder n (fun index => left index || right index) assignment =
+      (falseCylinder n left assignment && falseCylinder n right assignment) := by
+  apply Bool.eq_iff_iff.mpr
+  rw [falseCylinder_eq_true_iff, Bool.and_eq_true_iff,
+    falseCylinder_eq_true_iff, falseCylinder_eq_true_iff]
+  constructor
+  · intro consistent
+    exact ⟨fun index selected => consistent index (by rw [selected]; rfl),
+      fun index selected => consistent index (by rw [selected]; exact Bool.or_true _)⟩
+  · intro consistent index selected
+    rcases Bool.or_eq_true_iff.mp selected with inLeft | inRight
+    · exact consistent.1 index inLeft
+    · exact consistent.2 index inRight
+
 /-- Coordinate consistency is both necessary and sufficient for membership
 in the literal restricted product, including the empty-coordinate boundary. -/
 theorem falseCylinderEnumeration_member_iff (n : Nat) (fixed assignment : Fin n -> Bool) :
