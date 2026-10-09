@@ -38,6 +38,7 @@ import Thesis.Examples.ConditionalFailurePaths
 import Thesis.Examples.ConditionalFailureActivation
 import Thesis.Examples.ConditionalFailurePivot
 import Thesis.Examples.ConditionalFailureFlow
+import Thesis.Examples.ConditionalFailureFlowBoundary
 import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
@@ -110,6 +111,13 @@ merge before an outside-small outcome sink.  The actual whole-route direction
 supplies a positive original-query countermodel.  Inspecting an intermediate
 vertex invalidates that direction despite endpoint omission, and both branches
 of the general countermodel-or-latest-pivot split are checked separately.
+`ConditionalFailureFlowBoundary` checks a three-valued hedge whose old paths
+all meet evidence even though Small contains a queried outcome.  The certified
+first-queried stopping policy gives an unconditioned path from that non-root
+Small source, and the arbitrary-forest constructor supplies a genuine positive
+original-query countermodel.  The existing collider graph checks the other
+branch for every Small source, including the derived Small/outcome disjointness
+and actual latest-pivot construction, without assuming those boundary facts.
 `ConditionalFailureActivationForest` checks two genuinely activated observed
 colliders whose branches merge before one conditioner.  The common forest
 retains both incoming branches, uses one shared outgoing successor, and stops

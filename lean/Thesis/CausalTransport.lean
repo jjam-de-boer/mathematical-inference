@@ -121,6 +121,7 @@ import Thesis.CausalTransport.HedgeChannelEnvironmentCovariance
 import Thesis.CausalTransport.HedgeChannelProjection
 import Thesis.CausalTransport.HedgeChannelMarginal
 import Thesis.CausalTransport.HedgeChannelFlowDirection
+import Thesis.CausalTransport.HedgeChannelEnvironmentRouting
 import Thesis.CausalTransport.ConditionalFailureActivationForest
 import Thesis.CausalTransport.ConditionalFailurePathNormalization
 import Thesis.CausalTransport.ConditionalFailureActivationAvoidance
@@ -130,6 +131,7 @@ import Thesis.CausalTransport.HedgeChannelCounterexample
 import Thesis.CausalTransport.HedgeChannelJointCompleteness
 import Thesis.CausalTransport.HedgeChannelConditionalCounterexample
 import Thesis.CausalTransport.ConditionalFailureFlow
+import Thesis.CausalTransport.ConditionalFailureFlowBoundary
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -185,6 +187,13 @@ from that normalization branch.  A finite test of the entire actual source
 flow returns either a genuine original-query countermodel or a latest reachable
 conditioner; endpoint omission alone is not treated as whole-path freedom.
 The latter branch retains the remaining general parity obligation.
+`ConditionalFailureFlowBoundary` first stops the actual flow at each original
+queried outcome or conditioner, then exhausts every original Small source.
+It returns either an actual positive original-query countermodel or a proved
+boundary at which every complete stopped path meets evidence.  That boundary
+implies Small contains no queried outcome and supplies latest reachable pivots
+from all Small sources.  These are derived graph facts, not new readiness
+premises; the conditioned active-path parity construction is still required.
 `ConditionalFailureActivationForest` gives all such collider activations one
 common directed successor policy.  Every selected nonconditioner has a real
 selected child, and conditioners are precisely its sinks.  The latest pivot
@@ -611,6 +620,14 @@ local observed/root balance equations into these parity data: the explicit block
 embeddings cover every free basis direction, and homogeneous coordinate
 induction establishes matching on the entire original cylinder.  Small-phase
 oddness follows from that matching and the even selected background rows.
+`HedgeChannelEnvironmentRouting` allows any certified action-free successor
+forest containing all Small rows, with sinks in the unchanged outcome/evidence
+union.  A complete unconditioned path from any Small source supplies a finite
+parity witness and a positive original-alphabet countermodel.  One common legal
+signal retains each row's own bit once; disjoint Small/background row selection,
+whole-flow conservation and homogeneous basis tests derive cylinder matching.
+The actual queried sink subset supplies the outcome character, so this result
+does not freeze the old hedge policy or enlarge the original queried outcome.
 Constructing the requisite masks, direction and conservation proofs from
 every required irreducible active path remains open, especially for merging
 collider-activation branches and small-forest intersections; none of these bridges
