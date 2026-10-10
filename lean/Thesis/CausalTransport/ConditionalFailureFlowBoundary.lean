@@ -29,6 +29,10 @@ Small source still supplies an actual reachable conditioner, so latest-pivot
 selection remains constructive and does not need a guessed endpoint or
 all-original-sinks-conditioned premise.  The remaining normalized active-path
 branch still needs the combined signal/conservation construction.
+`ConditionalFailureSmallApproach` now preserves the actual first conditioned
+endpoint of this stopped policy instead.  It proves original proper-prefix
+freedom, closes the fully conditioned Small case and returns an unconditioned
+Small-source approach for the remaining routing/oddness-transfer argument.
 -/
 
 namespace HedgeChannelInstallation.SuccessorPath

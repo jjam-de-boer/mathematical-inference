@@ -150,6 +150,7 @@ import Thesis.CausalTransport.HedgeChannelJointCompleteness
 import Thesis.CausalTransport.HedgeChannelConditionalCounterexample
 import Thesis.CausalTransport.ConditionalFailureFlow
 import Thesis.CausalTransport.ConditionalFailureFlowBoundary
+import Thesis.CausalTransport.ConditionalFailureSmallApproach
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -241,6 +242,18 @@ boundary at which every complete stopped path meets evidence.  That boundary
 implies Small contains no queried outcome and supplies latest reachable pivots
 from all Small sources.  These are derived graph facts, not new readiness
 premises; the conditioned active-path parity construction is still required.
+`ConditionalFailureSmallApproach` instead retains the actual first conditioner
+of each stopped Small-source path.  A visited conditioner is a real sink, so
+it is the computed endpoint; every proper vertex avoids original action,
+outcome and condition.  These arrows also survive that endpoint's exact cut.
+The original no-exchange answer supplies its normal form and common cut policy
+without a latest-pivot requirement.  If every Small row is conditioned, the
+actual Small action root and conditioned completion automatically supply the
+normalized countermodel's membership and coverage obligations.  A further
+finite source scan closes that semantic branch too: the residual data have a
+genuinely unconditioned Small source and a nonempty first-conditioned prefix.
+The full Small routing/oddness transfer at path or activation contacts remains
+open; the approach record does not assume those contacts away.
 `ConditionalFailureActivationForest` gives all such collider activations one
 common directed successor policy.  Every selected nonconditioner has a real
 selected child, and conditioners are precisely its sinks.  The latest pivot
@@ -777,6 +790,10 @@ bridges supplies that remaining graph obligation as a readiness assumption.
 The conditioned completion in `ConditionalFailureSmallInteraction` covers
 additional missing evidence rows without a routing premise.  Unconditioned
 missing Small rows and the outside-Small oddness-transfer case remain open.
+The first-conditioned approach classifier additionally closes the case where
+every Small row is evidence, deriving its required coverage rather than taking
+a supplied Small parity certificate.  Its remaining branch preserves a real
+unconditioned Small source for the missing transfer argument.
 `HedgeChannelMonomial` regroups each actual complete row choice by hidden
 channel before using independence.  It derives selected support and forced
 row exclusion from the real local choice lists.  A selected connected channel

@@ -39,6 +39,7 @@ import Thesis.Examples.ConditionalFailureActivation
 import Thesis.Examples.ConditionalFailurePivot
 import Thesis.Examples.ConditionalFailureFlow
 import Thesis.Examples.ConditionalFailureFlowBoundary
+import Thesis.Examples.ConditionalFailureSmallApproach
 import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
@@ -130,6 +131,15 @@ Small source, and the arbitrary-forest constructor supplies a genuine positive
 original-query countermodel.  The existing collider graph checks the other
 branch for every Small source, including the derived Small/outcome disjointness
 and actual latest-pivot construction, without assuming those boundary facts.
+`ConditionalFailureSmallApproach` checks a genuine three-valued hedge with
+Small `U,P`.  Its actual first-conditioned path is `U -> P`, while the original
+latest route `U -> P -> Z` has conditioned `P` in its proper prefix.  Both
+queries exhaust all singleton exchanges by displayed actual active paths,
+without evaluating moral closure.  The residual classifier returns the real
+`U,P` approach data.  When the second original query also conditions `U`, the
+general fully conditioned Small branch constructs positive countermodels and
+the exhaustive classifier closes it.  The first query is not falsely claimed
+closed by its approach alone; the transfer/routing obligation remains.
 `ConditionalFailureActivationForest` checks two genuinely activated observed
 colliders whose branches merge before one conditioner.  The common forest
 retains both incoming branches, uses one shared outgoing successor, and stops

@@ -320,6 +320,27 @@ theorem endpoint_eq_of_shared {otherSource : Fin S.count}
   exact (complete_paths_eq successor (node :: leftAfter) left.endpoint leftFinishes leftSuffix
     left.stopped (node :: rightAfter) right.endpoint rfl rightFinishes rightSuffix right.stopped).2
 
+/-- A stopped vertex visited by a complete path is its actual endpoint.
+Compare with the certified singleton trace at that vertex.  This avoids
+choosing a suffix as output data or unfolding the finite traversal. -/
+theorem eq_endpoint_of_stopped (path : SuccessorPath domain successor source) (node : Fin S.count)
+    (member : node ∈ path.nodes) (stopped : successor node = none) : node = path.endpoint := by
+  let singleton : SuccessorPath domain successor node := {
+    nodes := [node]
+    endpoint := node
+    starts := rfl
+    finishes := rfl
+    simple := .cons (fun _ impossible => by cases impossible) .nil
+    consecutive := True.intro
+    stopped := stopped
+    inside := by
+      intro child present
+      have same := List.mem_singleton.mp present
+      subst child
+      exact path.inside node member
+  }
+  exact (path.endpoint_eq_of_shared singleton node member (List.mem_singleton.mpr rfl)).symm
+
 end SuccessorPath
 
 /-! ## The original conditional balance direction -/
