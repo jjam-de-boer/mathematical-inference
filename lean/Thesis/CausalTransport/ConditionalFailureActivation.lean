@@ -26,6 +26,10 @@ particular, activation routes may meet each other, the active path, or the
 hedge's small forest.  No disjointness or parity conservation at those
 intersections is assumed here; those remain obligations of the general
 graph-to-parity construction.
+The separate `ConditionalCutActivationRoute` constructor instead searches
+in the actual outgoing-cut graph.  It proves pivot avoidance without latest
+maximality.  Both constructors reuse the finite first-target prefix helper
+below, so their data-level truncation has the same proved stopping contract.
 -/
 
 open PathSpecification
@@ -88,11 +92,13 @@ private theorem observedWithin_of_expandedReachable (graph : ObservedGraph S)
 
 /-! ## Stop at the first selected vertex, without choosing from existence -/
 
+namespace ConditionalActivationRouting
+
 /-- A data-level split at the first selected vertex.  The preceding list is
 allowed to be empty, which is essential when a collider is itself conditioned.
 The suffix is retained only to certify that this is a prefix of the actual
 searched route, not an independently supplied path. -/
-private structure FirstTargetPrefix (targets : NodeSet S) (original : List (Fin S.count)) where
+structure FirstTargetPrefix (targets : NodeSet S) (original : List (Fin S.count)) where
   before : List (Fin S.count)
   target : Fin S.count
   after : List (Fin S.count)
@@ -103,7 +109,7 @@ private structure FirstTargetPrefix (targets : NodeSet S) (original : List (Fin 
 /-- Scan a route ending at a selected vertex and return its first selected
 vertex.  The recursion inspects only the displayed list and Boolean mask;
 the endpoint proof rules out an empty unsuccessful suffix. -/
-private def firstTargetPrefix (targets : NodeSet S) (endpoint : Fin S.count)
+def firstTargetPrefix (targets : NodeSet S) (endpoint : Fin S.count)
     (selected : targets endpoint = true) :
     (nodes : List (Fin S.count)) -> nodes.getLast? = some endpoint ->
       FirstTargetPrefix targets nodes
@@ -126,6 +132,8 @@ private def firstTargetPrefix (targets : NodeSet S) (endpoint : Fin S.count)
                 · subst node
                   exact atHead
                 · exact found.before_free node later
+
+end ConditionalActivationRouting
 
 /-! ## Conditional activation data with the exact exchange-test given-set -/
 
@@ -181,7 +189,7 @@ def ConditionalColliderActivationRoute.ofAncestor (graph : ObservedGraph S)
   have reaches := targetParts.2
   let original := mutilatedDirectedRoute query.action target S.count collider reaches
   have originalSpec := mutilatedDirectedRoute_spec query.action target S.count collider reaches
-  let first := firstTargetPrefix targets target targetParts.1 original originalSpec.2.1
+  let first := ConditionalActivationRouting.firstTargetPrefix targets target targetParts.1 original originalSpec.2.1
   have prefixStarts : (first.before ++ [first.target]).head? = some collider := by
     have starts := originalSpec.1
     change original.head? = some collider at starts

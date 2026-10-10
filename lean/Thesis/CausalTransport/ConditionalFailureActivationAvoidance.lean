@@ -2,6 +2,7 @@ import Thesis.CausalTransport.ConditionalFailurePivot
 import Thesis.CausalTransport.ConditionalFailurePathNormalization
 import Thesis.CausalTransport.ActivePathColliderRerouting
 import Thesis.CausalTransport.ConditionalFailureActivationForest
+import Thesis.CausalTransport.ConditionalCutActivationRoute
 
 namespace Thesis
 namespace Causality
@@ -25,15 +26,18 @@ path by finite first-intersection search.  They precede the route's final
 conditioner, so the original route certificates make them open and action
 free.  The remaining directed suffix activates the return vertex.
 
-A latest reachable pivot occurs nowhere on the route.  Consequently every
-one of its original action-cut arrows also survives the singleton outgoing
-cut used by the normal form.  The detour is therefore a competitor in the
-*same* graph and conditioning set as the selected path.  Its return has later
-observed rank; whether that vertex occurs before or after the old collider
-on the active path, the corresponding proved detour exclusion applies.
+The general theorem uses routes certified in the singleton outgoing cut
+used by the normal form.  `ConditionalCutActivationRoute` constructs these
+from actual cut-graph collider activity at any retained pivot.  A latest
+reachable pivot is not required by this detour argument.  The older API is
+preserved: maximality proves that its larger action-cut route survives the
+singleton cut, and the general theorem then applies.  In both cases the
+detour is a competitor in the *same* graph and conditioning set as the
+selected path.  Its return has later observed rank; whether it occurs before
+or after the old collider, the corresponding detour exclusion applies.
 
-The result concerns every certified activation route, not just one policy's
-selected child trace.  It does not assert disjointness between activation
+The result concerns every certified cut-surviving activation route, not
+just one policy's selected child trace.  It does not assert disjointness between activation
 branches, disjointness from the small hedge forest, or combined parity
 conservation.  Those are different parts of the remaining countermodel proof.
 -/
@@ -140,31 +144,33 @@ private theorem bar_edge_of_cut_edge (graph : ObservedGraph S) (query : Conditio
 
 /-! ## First-intersection certificates and contradiction to proved optimality -/
 
-/-- Every activation/path intersection is the branch's own collider.
-This applies to any certified activation route at the latest pivot and any
-collider-normal path with that pivot.  The displayed collider window ties
-the source to the exact path being normalized; no other-collider coverage,
-chosen-return, or disjointness flag is supplied.
+/-- Every cut-surviving activation/path intersection is its own collider,
+for any retained pivot and its actual collider-normal path.  The route's
+cut arrows, rather than latest-pivot maximality, supply the detour in the
+exact comparison graph.  The cut-route constructor derives this premise
+from actual cut-graph collider activity, without an avoidance flag.
 
-All membership splits below eliminate existential proofs into the final
-equality proposition or contradiction.  The competing detour's list is
-explicit, and no existential path is selected as output data. -/
-theorem ConditionalBackdoorPathNormalForm.activation_path_intersection_eq_collider
-    {graph : ObservedGraph S} {query : ConditionalKernelQuery S} {hedgeSource : Fin S.count}
-    (pivot : LatestConditionalPivot graph query hedgeSource)
-    (normal : ConditionalBackdoorPathNormalForm graph query pivot.node)
+Existential membership splits below stay in the final equality proposition
+or contradiction.  The competing list is explicit; no path is chosen into
+output data from propositional existence. -/
+theorem ConditionalBackdoorPathNormalForm.activation_path_intersection_eq_collider_of_cut_route
+    {graph : ObservedGraph S} {query : ConditionalKernelQuery S} {pivot : Fin S.count}
+    (normal : ConditionalBackdoorPathNormalForm graph query pivot)
     (before after : List (SeparationNode S)) (previous next : SeparationNode S) (collider : Fin S.count)
     (window : normal.cutPath.nodes = before ++ previous :: .observed collider :: next :: after)
-    (isCollider : IsCollider graph (GraphMutilation.barUnderline query.action (NodeSet.singleton pivot.node))
+    (isCollider : IsCollider graph (GraphMutilation.barUnderline query.action (NodeSet.singleton pivot))
       previous (.observed collider) next)
-    (route : ConditionalColliderActivationRoute query pivot.node collider)
+    (route : ConditionalColliderActivationRoute query pivot collider)
+    (cutDirected : Consecutive (fun parent child => graph.expandedMutilatedEdge
+      (GraphMutilation.barUnderline query.action (NodeSet.singleton pivot)) parent child = true)
+      ((route.before ++ [route.endpoint]).map SeparationNode.observed))
     (node : Fin S.count) (onRoute : node ∈ route.before ++ [route.endpoint])
     (onPath : .observed node ∈ normal.cutPath.nodes) : node = collider := by
   by_cases same : node = collider
   · exact same
   · apply False.elim
-    let m := GraphMutilation.barUnderline query.action (NodeSet.singleton pivot.node)
-    let conditioned := NodeSet.union query.action (NodeSet.diff query.condition (NodeSet.singleton pivot.node))
+    let m := GraphMutilation.barUnderline query.action (NodeSet.singleton pivot)
+    let conditioned := NodeSet.union query.action (NodeSet.diff query.condition (NodeSet.singleton pivot))
     rcases List.head?_eq_some_iff.mp route.starts with ⟨tail, routeNodes⟩
     have inTail : node ∈ tail := by
       rw [routeNodes] at onRoute
@@ -188,11 +194,10 @@ theorem ConditionalBackdoorPathNormalForm.activation_path_intersection_eq_collid
             (.observed collider :: via) ++ .observed returned :: routeAfter := by
           rw [routeNodes, List.map_cons, tailSplit]
           rfl
-        -- Latest-pivot avoidance replays these actual arrows in the exact
-        -- outgoing-cut graph used by the normal form's optimality certificate.
-        -- A competitor in merely the restored bar graph would not suffice.
+        -- The route's real arrows are already certified in the exact outgoing
+        -- cut used by the normal form's optimality proof.  A competitor in
+        -- merely the restored bar graph would not suffice.
         have allSimple := nodup_map_observed route.simple
-        have cutDirected := route_cut_directed pivot route
         have allFinishes : ((route.before ++ [route.endpoint]).map SeparationNode.observed).getLast? =
             some (.observed route.endpoint) := by
           simp only [List.getLast?_map, List.getLast?_append, List.getLast?_singleton, Option.some_or, Option.map_some]
@@ -222,8 +227,8 @@ theorem ConditionalBackdoorPathNormalForm.activation_path_intersection_eq_collid
         have openVia : forall vertex, vertex ∈ via -> ObservedGraph.blockedBy conditioned vertex = false :=
           fun vertex member => openPrefix vertex (List.mem_cons.mpr (Or.inr member))
         have endpointSelected : conditioned route.endpoint = true := by
-          have pivotFalse : NodeSet.singleton pivot.node route.endpoint = false := decide_eq_false route.endpoint_ne_pivot
-          change (query.action route.endpoint || (query.condition route.endpoint && !(NodeSet.singleton pivot.node route.endpoint))) = true
+          have pivotFalse : NodeSet.singleton pivot route.endpoint = false := decide_eq_false route.endpoint_ne_pivot
+          change (query.action route.endpoint || (query.condition route.endpoint && !(NodeSet.singleton pivot route.endpoint))) = true
           rw [route.endpoint_condition, pivotFalse]
           simp only [Bool.not_false, Bool.and_self, Bool.or_true]
         have activated := activated_of_suffix graph m conditioned (.observed returned) route.endpoint
@@ -275,6 +280,39 @@ theorem ConditionalBackdoorPathNormalForm.activation_path_intersection_eq_collid
             exact normal.cutPath.noForwardColliderDetour normal.score_minimal left between via rightAfter
               (.observed collider) (.observed returned) forwardSplit forwardJoin bridgeDirected bridgeSimple
               sourceOpen openVia activated (fun vertex member inPath => viaAvoids vertex member inPath) later
+
+/-- The actual cut-route interface gives normalized-path avoidance
+without any latest-pivot argument.  Its arrows and pivot freedom come from
+the cut-graph activity constructor, not a supplied forest-disjointness flag. -/
+theorem ConditionalBackdoorPathNormalForm.cut_activation_path_intersection_eq_collider
+    {graph : ObservedGraph S} {query : ConditionalKernelQuery S} {pivot : Fin S.count}
+    (normal : ConditionalBackdoorPathNormalForm graph query pivot)
+    (before after : List (SeparationNode S)) (previous next : SeparationNode S) (collider : Fin S.count)
+    (window : normal.cutPath.nodes = before ++ previous :: .observed collider :: next :: after)
+    (isCollider : IsCollider graph (GraphMutilation.barUnderline query.action (NodeSet.singleton pivot))
+      previous (.observed collider) next)
+    (route : ConditionalCutColliderActivationRoute graph query pivot collider)
+    (node : Fin S.count) (onRoute : node ∈ route.before ++ [route.endpoint])
+    (onPath : .observed node ∈ normal.cutPath.nodes) : node = collider :=
+  normal.activation_path_intersection_eq_collider_of_cut_route before after previous next collider window isCollider
+    route.toConditionalColliderActivationRoute route.mapped_cut_consecutive node onRoute onPath
+
+/-- Preserve the original latest-pivot API.  Maximality proves that its
+bar-graph route survives the cut, after which the more general avoidance
+theorem applies.  Existing common-forest clients keep the same interface. -/
+theorem ConditionalBackdoorPathNormalForm.activation_path_intersection_eq_collider
+    {graph : ObservedGraph S} {query : ConditionalKernelQuery S} {hedgeSource : Fin S.count}
+    (pivot : LatestConditionalPivot graph query hedgeSource)
+    (normal : ConditionalBackdoorPathNormalForm graph query pivot.node)
+    (before after : List (SeparationNode S)) (previous next : SeparationNode S) (collider : Fin S.count)
+    (window : normal.cutPath.nodes = before ++ previous :: .observed collider :: next :: after)
+    (isCollider : IsCollider graph (GraphMutilation.barUnderline query.action (NodeSet.singleton pivot.node))
+      previous (.observed collider) next)
+    (route : ConditionalColliderActivationRoute query pivot.node collider)
+    (node : Fin S.count) (onRoute : node ∈ route.before ++ [route.endpoint])
+    (onPath : .observed node ∈ normal.cutPath.nodes) : node = collider :=
+  normal.activation_path_intersection_eq_collider_of_cut_route before after previous next collider window isCollider
+    route (route_cut_directed pivot route) node onRoute onPath
 
 /-! ## The common activation policy supplies routes without new readiness flags -/
 

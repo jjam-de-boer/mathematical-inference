@@ -138,6 +138,7 @@ import Thesis.CausalTransport.HedgeChannelEnvironmentFusion
 import Thesis.CausalTransport.ConditionalFailureActivationForest
 import Thesis.CausalTransport.ConditionalFailurePathNormalization
 import Thesis.CausalTransport.ConditionalFailurePathDirection
+import Thesis.CausalTransport.ConditionalCutActivationRoute
 import Thesis.CausalTransport.ConditionalFailureActivationAvoidance
 import Thesis.CausalTransport.ConditionalFailureActivationSelection
 import Thesis.CausalTransport.ConditionalFailureActivationInteraction
@@ -254,8 +255,18 @@ restoration retains that list and proves the first incoming edge.  The
 normal-form certificates are derived, not additional failure-readiness flags.
 Their count/rank objectives also imply global score optimality, connecting
 these data to the generic detour-exclusion theorem.
+`ConditionalCutActivationRoute` searches the actual singleton outgoing-cut
+graph directly from each cut-path collider's activity.  A temporary outgoing-
+masked signature reuses the verified observed route search with the identical
+node/value alphabet; every arrow is proved to be a real original expanded cut
+arrow.  First-target truncation supplies the original other conditioner, and
+the cut proves pivot avoidance and freedom of the entire proper prefix without
+latest-pivot maximality.  The temporary signature is graph-search data only;
+original model signatures, reserved inputs and query labels are not replaced.
 `ConditionalFailureActivationAvoidance` derives the first-return certificates
-from any actual activation route, in the exact outgoing-cut graph and given-set.
+from any actual cut-surviving activation route, in the exact outgoing-cut graph
+and given-set.  Its general cut-route API needs no latest-pivot certificate;
+the older latest-pivot API proves cut survival and delegates to that theorem.
 The directed suffix activates the return, while the preceding detour vertices
 are open and avoid the whole path.  A later-rank return on either side of its
 source would contradict the proved normal-form optimality.  Consequently every
@@ -265,6 +276,10 @@ also applies to the actual forest paths without extra readiness flags.  Zero-edg
 activations are permitted, and different branches may still merge off the path.
 Neither domain-wide disjointness nor a combined small-forest parity solution
 is asserted by this avoidance theorem.
+A common merged cut-policy forest still needs construction.  At a nonlatest
+pivot the old full-bar-route coverage interface can be impossible, because it
+would cover a route beginning at its excluded pivot.  Correct cut-route or
+actual-seed coverage must be proved instead of asserting that old constructor.
 `ConditionalFailureActivationSelection` scans the normal form's actual
 observed collider windows and takes the union of their complete common-policy
 traces.  This prunes irrelevant activation ancestors while retaining every

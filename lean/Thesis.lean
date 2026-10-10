@@ -50,6 +50,7 @@ import Thesis.Examples.HedgeChannelPathDirection
 import Thesis.Examples.ConditionalFailurePathNormalization
 import Thesis.Examples.ConditionalFailureActivationAvoidance
 import Thesis.Examples.ConditionalFailureActivationAvoidanceZero
+import Thesis.Examples.ConditionalCutActivationRoute
 import Thesis.Examples.ConditionalFailureActivationSelectionCounterexample
 import Thesis.Examples.ConditionalFailureActivationInteraction
 import Thesis.Examples.ConditionalFailureSmallInteraction
@@ -191,6 +192,15 @@ still overlaps a path noncollider.  Its independent smaller companion
 collider: the singleton trace retains the allowed source intersection.  Both
 regressions use original three-valued alphabets and the general theorem, not
 fixture-specific avoidance assumptions.
+`ConditionalCutActivationRoute` checks a genuinely nonlatest retained pivot:
+it reaches a later conditioner in the larger graph, but the exact outgoing
+cut removes that route.  Actual normal-form collider activity constructs a
+surviving activation and applies general normalized-path avoidance without a
+latest-pivot premise.  The old full-bar forest is proved impossible at this
+pivot, clarifying the required cut-policy interface rather than forcing an
+invalid adapter.  An independent zero-edge conditioned activation uses the
+same constructor and theorem.  Both queries are identifiable graph regressions,
+not conditional countermodels or numerator-failure certificates.
 `ConditionalFailureActivationSelection` checks a genuine three-valued hedge
 whose collider activation lies entirely inside Small.  Graph certificates and
 structural normal-form reasoning prove that the pruned trace union contributes
