@@ -155,6 +155,7 @@ import Thesis.CausalTransport.ConditionalFailureFlowBoundary
 import Thesis.CausalTransport.ConditionalFailureSmallApproach
 import Thesis.CausalTransport.ConditionalFailureSmallAbsorption
 import Thesis.CausalTransport.ConditionalFailureForkAbsorption
+import Thesis.CausalTransport.ConditionalFailureForkApproach
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -294,6 +295,17 @@ assembler derives complete Small oddness from a supported odd-outcome,
 even-background direction.  Constructing that direction universally at all
 actual head/trace/fork contacts is still required; the assembler alone does
 not inhabit the conditional field of `PublishedCompleteness`.
+`ConditionalFailureForkApproach` proves that every proper combined-contact
+prefix is off the normalized path and actual activation core.  Its original
+parent column is absent; its new actual observed column has only its own and
+successor row incidences.  In particular the original receiving residual on
+the whole prefix direction is proved zero, not supplied as a zero-tail flag.
+The installed correction changes exactly its original Small source and actual
+receiving contact, even if the new policy resumes a fork endpoint.  Support,
+outcome character and all original reserved inputs are preserved.  This is a
+universal local approach transfer, not yet a proof of the globally successful
+contact combination or evenness of every outside-Small row.  Actual outcome-side
+connectivity and a suitable fork-exit orientation still require proof.
 `ConditionalFailureActivationForest` gives all such collider activations one
 common directed successor policy.  Every selected nonconditioner has a real
 selected child, and conditioners are precisely its sinks.  The latest pivot

@@ -44,6 +44,7 @@ import Thesis.Examples.ConditionalFailureSmallAbsorption
 import Thesis.Examples.ConditionalFailureSmallPrefixDirection
 import Thesis.Examples.ConditionalPrefixForkResidual
 import Thesis.Examples.ActivePathForkRouting
+import Thesis.Examples.ConditionalFailureForkApproach
 import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
@@ -173,6 +174,14 @@ trace remains installed.  Full original-input conservation is proved before
 conditioning.  At the unchanged supported direction, the new selected `U`
 row is uniquely odd and `P,C,Z` are even.  This is a graph/signal regression,
 not a hedge countermodel or the universal remaining direction theorem.
+`ConditionalFailureForkApproach` uses the existing genuine outside-Small-pivot
+failure to check the actual `U -> R -> P` combined-contact approach.  It
+transports only its data through a proved target-mask identity, leaving the
+opaque normalization search unevaluated.  The general theorem proves zero
+original receiving residual and the exact `U,P` row correction for all rows,
+with original support, outcome oddness and independent root bits retained.
+This exercises the universal local operation; global contact connectivity and
+the successful even-background direction still need their separate proof.
 `ConditionalFailureActivationForest` checks two genuinely activated observed
 colliders whose branches merge before one conditioner.  The common forest
 retains both incoming branches, uses one shared outgoing successor, and stops

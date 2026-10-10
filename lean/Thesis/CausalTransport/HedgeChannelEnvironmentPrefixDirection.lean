@@ -59,6 +59,31 @@ theorem successorPrefixDirection_rowPhase (path : SuccessorPath domain successor
       Bool.xor (decide (child = source)) (decide (child = path.endpoint)) := by
   rw [ofSuccessor_rowPhase domain successor wellFormed, successorPrefixDirection_sample, path.prefixBits_localSource]
 
+/-- A changed policy has the same two-boundary correction when it agrees
+at every flipped proper vertex.  The receiving endpoint has bit zero, so
+its new continuation is irrelevant.  In particular a path stopped at a
+fork may be continued into an actual head without inventing a stop proof
+for that new map or changing the literal old first-contact list. -/
+theorem successorPrefixDirection_rowPhase_of_agrees_on_prefix
+    (path : SuccessorPath domain successor source) (nextDomain : NodeSet S) (next : ForestChild S)
+    (wellFormed : childWellFormedBool nextDomain next = true)
+    (agrees : forall parent, path.prefixBits parent = true -> next parent = successor parent)
+    (child : Fin S.count) :
+    ((ofSuccessor (G := graph) next).rowPhase child).value (successorPrefixDirection path) =
+      Bool.xor (decide (child = source)) (decide (child = path.endpoint)) := by
+  rw [ofSuccessor_rowPhase nextDomain next wellFormed, successorPrefixDirection_sample]
+  have same : hedgeRoutingIncomingBits next path.prefixBits child =
+      hedgeRoutingIncomingBits successor path.prefixBits child := by
+    unfold hedgeRoutingIncomingBits hedgeRoutingParentEntry
+    apply foldl_congr
+    intro total parent
+    cases flipped : path.prefixBits parent with
+    | false => simp only [ite_self]
+    | true => rw [agrees parent flipped]
+  change Bool.xor (path.prefixBits child) (hedgeRoutingIncomingBits next path.prefixBits child) = _
+  rw [same]
+  exact path.prefixBits_localSource child
+
 private theorem prefixBits_false_of_fixed (path : SuccessorPath domain successor source) (fixed : NodeSet S)
     (free : forall child, child ∈ path.nodes -> child ≠ path.endpoint -> fixed child = false)
     (child : Fin S.count) (selected : fixed child = true) : path.prefixBits child = false := by
