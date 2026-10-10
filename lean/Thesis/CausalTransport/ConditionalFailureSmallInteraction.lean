@@ -26,7 +26,10 @@ Only graph membership/coverage certificates remain premises of this adapter;
 the masks, direction, row parities, outcome character and cylinder matching
 are constructed from the actual normal form.  It does not assert that those
 coverage certificates hold universally.  Unconditioned missing Small rows
-still need real routing, and a pivot outside Small still needs oddness transfer.
+need real routing, and a pivot outside Small still needs oddness transfer.
+`ConditionalFailureSmallAbsorption` now constructs that routing on the proved
+all-Small boundary, preserving the whole-cube phase and full Small/background
+matching identity.  The supported direction's row parities remain open there.
 The entire adapter now uses a retained conditioner and actual cut policy,
 without original-graph latest maximality.  The direction and parity proofs
 are the same general normalized-path construction at that supplied vertex.

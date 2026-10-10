@@ -151,6 +151,7 @@ import Thesis.CausalTransport.HedgeChannelConditionalCounterexample
 import Thesis.CausalTransport.ConditionalFailureFlow
 import Thesis.CausalTransport.ConditionalFailureFlowBoundary
 import Thesis.CausalTransport.ConditionalFailureSmallApproach
+import Thesis.CausalTransport.ConditionalFailureSmallAbsorption
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -252,8 +253,19 @@ actual Small action root and conditioned completion automatically supply the
 normalized countermodel's membership and coverage obligations.  A further
 finite source scan closes that semantic branch too: the residual data have a
 genuinely unconditioned Small source and a nonempty first-conditioned prefix.
-The full Small routing/oddness transfer at path or activation contacts remains
-open; the approach record does not assume those contacts away.
+The approach record does not assume its contacts with normalized path heads,
+activation traces or omitted nonzero forks away.
+`ConditionalFailureSmallAbsorption` now routes every mandatory Small source
+to its first actual completed-interaction contact.  All original conditioners
+are receivers, so the proved all-Small boundary supplies termination.  A union
+of complete prefixes prunes the one stopped policy without losing shared
+suffixes or zero-edge contacts.  Complete Small coverage, original-action
+freedom, legal arrows and receiving sinks are derived.  Absorbing these rows
+into the actual normalized signal preserves its phase at every original cube
+point, its outcome character and the complete Small/background matching
+identity on the full original evidence cylinder.
+No zero-tail premise is used for conservation.  The remaining direction
+parities and Small-to-pivot oddness transfer at those contacts are still open.
 `ConditionalFailureActivationForest` gives all such collider activations one
 common directed successor policy.  Every selected nonconditioner has a real
 selected child, and conditioners are precisely its sinks.  The latest pivot
@@ -740,7 +752,9 @@ support on the original action-plus-condition cylinder, including the pivot.
 The full phase conservation theorem itself needs no first incoming edge.
 The actual activation installation is supplied by
 `ConditionalFailureActivationInteraction`; routing every mandatory Small row
-and any required Small-to-pivot oddness transfer remain for universal coverage.
+is now constructed at the all-Small boundary by `ConditionalFailureSmallAbsorption`.
+Its direction parities and any required Small-to-pivot oddness transfer remain
+for the universal conditional countermodel.
 `HedgeChannelEnvironmentMoments` identifies the actual background factors
 and event sums with these homogeneous moments.  The full normalized response
 is exactly the original-outcome covariance multiplied by the two installed
@@ -788,8 +802,11 @@ Small, and an omitted path fork may have a nonzero direction bit.  A forest
 contact cannot therefore simply be assumed to have zero value.  None of these
 bridges supplies that remaining graph obligation as a readiness assumption.
 The conditioned completion in `ConditionalFailureSmallInteraction` covers
-additional missing evidence rows without a routing premise.  Unconditioned
-missing Small rows and the outside-Small oddness-transfer case remain open.
+additional missing evidence rows without a routing premise.
+`ConditionalFailureSmallAbsorption` additionally retains unconditioned missing
+Small rows through actual stopped prefixes and preserves full-cylinder matching.
+The direction parities of those new rows and outside-Small oddness transfer
+remain open; conservation alone does not prove background evenness.
 The first-conditioned approach classifier additionally closes the case where
 every Small row is evidence, deriving its required coverage rather than taking
 a supplied Small parity certificate.  Its remaining branch preserves a real

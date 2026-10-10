@@ -341,6 +341,28 @@ theorem eq_endpoint_of_stopped (path : SuccessorPath domain successor source) (n
   }
   exact (path.endpoint_eq_of_shared singleton node member (List.mem_singleton.mpr rfl)).symm
 
+/-- A real successor of a visited transmitter remains on the same complete
+trace.  Completeness excludes an outgoing arrow at the final vertex, and
+simplicity makes the list's next-vertex lookup agree with the shared map.
+This is the closure fact needed when pruning a forest to unions of complete
+traces; no uniqueness of incoming arrows or disjointness of branches is used. -/
+theorem successor_mem (path : SuccessorPath domain successor source) (parent child : Fin S.count)
+    (visited : parent ∈ path.nodes) (edge : successor parent = some child) : child ∈ path.nodes := by
+  have notLast : path.nodes.getLast? ≠ some parent := by
+    intro last
+    have same : path.endpoint = parent := Option.some.inj (path.finishes.symm.trans last)
+    have stopped := path.stopped
+    rw [same, edge] at stopped
+    cases stopped
+  have found := routeSuccessor_isSome_of_mem_of_not_last path.nodes parent path.simple visited notLast
+  cases next : routeSuccessor path.nodes parent with
+  | none => rw [next] at found; cases found
+  | some actual =>
+      have actualEdge := routeSuccessor_rel_of_eq_some (fun parent child => successor parent = some child)
+        path.nodes parent actual path.consecutive next
+      have same : actual = child := Option.some.inj (actualEdge.symm.trans edge)
+      exact same ▸ (routeSuccessor_mem path.nodes parent actual next).2
+
 end SuccessorPath
 
 /-! ## The original conditional balance direction -/

@@ -40,6 +40,7 @@ import Thesis.Examples.ConditionalFailurePivot
 import Thesis.Examples.ConditionalFailureFlow
 import Thesis.Examples.ConditionalFailureFlowBoundary
 import Thesis.Examples.ConditionalFailureSmallApproach
+import Thesis.Examples.ConditionalFailureSmallAbsorption
 import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
@@ -139,7 +140,15 @@ without evaluating moral closure.  The residual classifier returns the real
 `U,P` approach data.  When the second original query also conditions `U`, the
 general fully conditioned Small branch constructs positive countermodels and
 the exhaustive classifier closes it.  The first query is not falsely claimed
-closed by its approach alone; the transfer/routing obligation remains.
+closed by its approach alone; the oddness-transfer obligation remains.
+`ConditionalFailureSmallAbsorption` retains every actual `U,P` source trace
+in one pruned policy and verifies the real arrow, singleton conditioned stop,
+shared receiving endpoint and an irrelevant receiver's global stop.  Adding
+unconditioned `U` to the interaction stops at that earlier zero-edge contact
+without changing the original query.  The actual opaque normalized signal
+then inherits complete Small coverage, action freedom, whole-cube conservation
+and the full original-cylinder outcome character from the general constructor.
+No supplied zero-tail or matching flags replace the remaining parity argument.
 `ConditionalFailureActivationForest` checks two genuinely activated observed
 colliders whose branches merge before one conditioner.  The common forest
 retains both incoming branches, uses one shared outgoing successor, and stops
