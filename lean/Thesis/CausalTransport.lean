@@ -167,6 +167,7 @@ import Thesis.CausalTransport.ConditionalFailureIncidenceDirection
 import Thesis.CausalTransport.ConditionalFailureIncidenceEdges
 import Thesis.CausalTransport.ConditionalFailureApproachConnectivity
 import Thesis.CausalTransport.ConditionalFailureTraceConnectivity
+import Thesis.CausalTransport.ConditionalFailureFirstContact
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -389,6 +390,24 @@ branches.  The remaining terminal graph argument must connect the actual
 outcome component to a mandatory approach contact, using an appropriately
 constructed first-conditioned pivot rather than assuming every arbitrary
 retained pivot has such a connection.
+The incidence edge module also identifies concrete steps of the original
+normalized list.  A head's actual outgoing input derives its internal,
+noncollider, specified-receiver edge.  A literal latent window joins its two
+actual observed neighbours through the same original root in either label
+orientation.  Literal fork windows give a genuine preceding/following edge
+when unretained, or the retained-own/following-head edge at a true approach
+contact.  The latter is a real source-side cancellation barrier, not an
+invented crossing edge.  Existing existential column interfaces are retained.
+`ConditionalFailureFirstContact` fixes the pivot to a genuine first-conditioned
+Small approach.  Its actual first combined contact cannot be an unrelated
+conditioner: a conditioner on that complete original list must be its own
+endpoint, which is a path head.  The contact is therefore a real path head,
+pruned trace row or omitted fork and belongs to the actual retained prefix
+union.  If all normalized heads are connected to the outcome incidence,
+the whole trace and approach lemmas close every contact case at the original
+observed-count bound.  Proving that connected-head branch, or an actual
+reachable retained-fork contact when source-side cancellation splits it,
+remains the universal normalized-path obligation before terminal assembly.
 `ConditionalFailureActivationForest` gives all such collider activations one
 common directed successor policy.  Every selected nonconditioner has a real
 selected child, and conditioners are precisely its sinks.  The latest pivot

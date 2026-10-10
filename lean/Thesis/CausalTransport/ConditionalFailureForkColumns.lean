@@ -155,27 +155,26 @@ theorem unretainedFork_selected_coefficient (parent row : Fin S.count)
         exact Bool.false_ne_true (selected.symm.trans (normal.head_selected boundary pivot forest row (ActivePathInput.incomingEdge_head read)))
       simp only [Bool.false_eq_true, if_false, absent]
 
-/-- The complete selected-row basis of an unretained internal fork is
-its two genuine original heads.  Simplicity proves the heads distinct;
-membership, endpoint exclusion and outgoing adjacency derive the window. -/
-theorem unretainedFork_selected_basis_pair (parent : Fin S.count)
+/-- At a specified literal internal window, the complete selected-row
+basis of an unretained fork is exactly its two displayed original heads.
+Simplicity proves distinctness; neither receiver is selected independently. -/
+theorem unretainedFork_selected_basis_pair_of_window (parent previous next : Fin S.count)
+    (before after : List (SeparationNode S))
+    (window : normal.cutPath.nodes = before ++ .observed previous :: .observed parent :: .observed next :: after)
     (fork : normal.cutPath.forkNodes parent = true)
-    (unretained : normal.forkApproachNodes boundary pivot forest parent = false)
-    (notTarget : parent ≠ normal.outcome) :
-    Exists fun previous : Fin S.count => Exists fun next : Fin S.count =>
-      previous ≠ next ∧ normal.pathHeads previous = true ∧ normal.pathHeads next = true ∧
+    (unretained : normal.forkApproachNodes boundary pivot forest parent = false) :
+    previous ≠ next ∧ normal.pathHeads previous = true ∧ normal.pathHeads next = true ∧
       normal.forkAbsorbedInteractionRows boundary pivot forest previous = true ∧
       normal.forkAbsorbedInteractionRows boundary pivot forest next = true ∧
       forall row, (if normal.forkAbsorbedInteractionRows boundary pivot forest row then
         ((normal.forkAbsorbedInteractionSignal boundary pivot forest).rowPhase row).value
           (basisAssignment (pairRootCount graph.binary + S.count) (Fin.natAdd (pairRootCount graph.binary) parent)) else false) =
         Bool.xor (decide (row = previous)) (decide (row = next)) := by
-  rcases normal.internalFork_observed_window pivot parent fork notTarget with ⟨before, after, previous, next, window⟩
   have inputs := normal.cutPath.forkNodes_internal_inputs parent previous next before after window fork
   have different := normal.cutPath.fork_internal_neighbors_distinct parent previous next before after window
   have previousHead := ActivePathInput.incomingEdge_head inputs.1
   have nextHead := ActivePathInput.incomingEdge_head inputs.2
-  refine ⟨previous, next, different, previousHead, nextHead,
+  refine ⟨different, previousHead, nextHead,
     normal.head_selected boundary pivot forest previous previousHead,
     normal.head_selected boundary pivot forest next nextHead, ?_⟩
   intro row
@@ -197,28 +196,48 @@ theorem unretainedFork_selected_basis_pair (parent : Fin S.count)
       · exact atPrevious same
       · exact atNext same
 
+/-- The complete selected-row basis of an unretained internal fork is
+its two genuine original heads.  Membership, endpoint exclusion and
+outgoing adjacency derive the literal window before applying its column. -/
+theorem unretainedFork_selected_basis_pair (parent : Fin S.count)
+    (fork : normal.cutPath.forkNodes parent = true)
+    (unretained : normal.forkApproachNodes boundary pivot forest parent = false)
+    (notTarget : parent ≠ normal.outcome) :
+    Exists fun previous : Fin S.count => Exists fun next : Fin S.count =>
+      previous ≠ next ∧ normal.pathHeads previous = true ∧ normal.pathHeads next = true ∧
+      normal.forkAbsorbedInteractionRows boundary pivot forest previous = true ∧
+      normal.forkAbsorbedInteractionRows boundary pivot forest next = true ∧
+      forall row, (if normal.forkAbsorbedInteractionRows boundary pivot forest row then
+        ((normal.forkAbsorbedInteractionSignal boundary pivot forest).rowPhase row).value
+          (basisAssignment (pairRootCount graph.binary + S.count) (Fin.natAdd (pairRootCount graph.binary) parent)) else false) =
+        Bool.xor (decide (row = previous)) (decide (row = next)) := by
+  rcases normal.internalFork_observed_window pivot parent fork notTarget with ⟨before, after, previous, next, window⟩
+  exact ⟨previous, next, normal.unretainedFork_selected_basis_pair_of_window boundary pivot forest
+    parent previous next before after window fork unretained⟩
+
 /-! ## A retained fork selects its own row and the outcome-side head -/
 
-/-- The retained-fork pair also holds with the actual selected-row guard.
-Both genuine rows survive in the union; all unselected row entries are zero.
-No independent sparse-column or row-coverage premise is introduced. -/
-theorem retainedFork_selected_basis_pair (parent : Fin S.count)
+/-- The retained-fork pair at a specified actual internal window keeps
+its true own row and the following head, not an existentially named receiver.
+Both rows survive the union and every unselected row entry is zero. -/
+theorem retainedFork_selected_basis_pair_of_window (parent previous next : Fin S.count)
+    (before after : List (SeparationNode S))
+    (window : normal.cutPath.nodes = before ++ .observed previous :: .observed parent :: .observed next :: after)
     (fork : normal.cutPath.forkNodes parent = true)
     (retained : normal.forkApproachNodes boundary pivot forest parent = true) :
-    Exists fun next : Fin S.count => parent ≠ next ∧ normal.pathHeads next = true ∧
+    parent ≠ next ∧ normal.pathHeads next = true ∧
       normal.forkAbsorbedInteractionRows boundary pivot forest parent = true ∧
       normal.forkAbsorbedInteractionRows boundary pivot forest next = true ∧
       forall row, (if normal.forkAbsorbedInteractionRows boundary pivot forest row then
         ((normal.forkAbsorbedInteractionSignal boundary pivot forest).rowPhase row).value
           (basisAssignment (pairRootCount graph.binary + S.count) (Fin.natAdd (pairRootCount graph.binary) parent)) else false) =
         Bool.xor (decide (row = parent)) (decide (row = next)) := by
-  rcases normal.retainedFork_internal_window boundary pivot forest parent retained fork with ⟨before, after, previous, next, window⟩
   have input := (normal.cutPath.forkNodes_internal_inputs parent previous next before after window fork).2
   have nextHead := ActivePathInput.incomingEdge_head input
   have parentSelected : normal.forkAbsorbedInteractionRows boundary pivot forest parent = true :=
     NodeSet.subset_union_right _ _ parent retained
   have nextSelected := normal.head_selected boundary pivot forest next nextHead
-  refine ⟨next, ?_, nextHead, parentSelected, nextSelected, ?_⟩
+  refine ⟨?_, nextHead, parentSelected, nextSelected, ?_⟩
   · intro same
     exact Nat.ne_of_lt (S.directed_earlier (LinearSignal.ofActivePath_parent_available normal.cutPath next parent input))
       (congrArg Fin.val same)
@@ -233,6 +252,23 @@ theorem retainedFork_selected_basis_pair (parent : Fin S.count)
         simp only [nextSelected, if_true]
       · rw [decide_eq_false atParent, decide_eq_false atNext]
         exact ite_self false
+
+/-- Every retained fork supplies that guarded own/following-head pair.
+Its internal window is derived from the actual complete-prefix geometry;
+the original public existential interface remains unchanged. -/
+theorem retainedFork_selected_basis_pair (parent : Fin S.count)
+    (fork : normal.cutPath.forkNodes parent = true)
+    (retained : normal.forkApproachNodes boundary pivot forest parent = true) :
+    Exists fun next : Fin S.count => parent ≠ next ∧ normal.pathHeads next = true ∧
+      normal.forkAbsorbedInteractionRows boundary pivot forest parent = true ∧
+      normal.forkAbsorbedInteractionRows boundary pivot forest next = true ∧
+      forall row, (if normal.forkAbsorbedInteractionRows boundary pivot forest row then
+        ((normal.forkAbsorbedInteractionSignal boundary pivot forest).rowPhase row).value
+          (basisAssignment (pairRootCount graph.binary + S.count) (Fin.natAdd (pairRootCount graph.binary) parent)) else false) =
+        Bool.xor (decide (row = parent)) (decide (row = next)) := by
+  rcases normal.retainedFork_internal_window boundary pivot forest parent retained fork with ⟨before, after, previous, next, window⟩
+  exact ⟨next, normal.retainedFork_selected_basis_pair_of_window boundary pivot forest
+    parent previous next before after window fork retained⟩
 
 end ConditionalBackdoorPathNormalForm
 

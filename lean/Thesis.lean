@@ -50,6 +50,7 @@ import Thesis.Examples.ConditionalFailureCoreIncidence
 import Thesis.Examples.ConditionalFailurePathIncidence
 import Thesis.Examples.ConditionalFailureIncidenceDirection
 import Thesis.Examples.ConditionalFailureIncidenceConnectivity
+import Thesis.Examples.ConditionalFailureFirstContact
 import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
@@ -233,6 +234,15 @@ to a genuine collider head and mandatory approach contact on the real trace
 union inside Small.  Both use structural facts about opaque normalization,
 not repeated exhaustive evaluation.  The universal normalized-path argument
 that makes every terminal outcome component meet such a contact remains open.
+`ConditionalFailureFirstContact` reuses the genuine complete stopped approach
+from original Small `U`, whose first conditioner is outside-Small `P`.  Its
+actual fork-aware contact is the same `P` row.  The structural singleton-core
+identity and actual finite outcome receiver theorem prove all normalized
+heads connected in this fixture.  The general first-contact reduction then
+supplies the complete successful Small search and positive unchanged-query
+countermodels, without evaluating the opaque normalization or replacing the
+first conditioner by an arbitrary retained pivot.  The universal connected-
+head/retained-fork-contact dichotomy is still a separate graph theorem.
 `ConditionalFailureActivationForest` checks two genuinely activated observed
 colliders whose branches merge before one conditioner.  The common forest
 retains both incoming branches, uses one shared outgoing successor, and stops
