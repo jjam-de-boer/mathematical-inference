@@ -6,6 +6,7 @@ import Thesis.CausalTransport.ActivePathTransport
 import Thesis.CausalTransport.ActivePathPairRoots
 import Thesis.CausalTransport.ActivePathInputSelection
 import Thesis.CausalTransport.ActivePathBoundary
+import Thesis.CausalTransport.ActivePathRootInputs
 import Thesis.CausalTransport.ActivePathColliderRerouting
 import Thesis.CausalTransport.Certificates
 import Thesis.CausalTransport.Correspondence
@@ -121,6 +122,7 @@ import Thesis.CausalTransport.HedgeChannelEnvironmentLinear
 import Thesis.CausalTransport.HedgeChannelEnvironmentCoefficients
 import Thesis.CausalTransport.HedgeChannelPathInputs
 import Thesis.CausalTransport.HedgeChannelPathBoundary
+import Thesis.CausalTransport.HedgeChannelPathRows
 import Thesis.CausalTransport.HedgeChannelEnvironmentMoments
 import Thesis.CausalTransport.HedgeChannelEnvironmentCovariance
 import Thesis.CausalTransport.HedgeChannelProjection
@@ -188,6 +190,12 @@ window's neighbours; strict DAG rank fixes each adjacent arrow's orientation.
 Chains and forks cancel, while colliders and endpoints contribute once.
 The same executable collider mask supplies normalized activation selection,
 so graph balance and the trace construction do not maintain separate scans.
+`ActivePathRootInputs` identifies each row's original reserved reads with its
+actual incoming neighbours.  `PairRootUniqueness` certifies the literal original
+input enumeration, so reversed labels cannot silently select a second index.
+Simplicity and alias exclusion ensure the two neighbours of an internal row
+never duplicate one original reserved read.  The resulting local mask formula
+is an XOR suitable for real interpreter evaluation, not a row-parity premise.
 `ConditionalFailurePaths` applies these facts to every
 conditioner left by an exhausted IDC exchange search: it returns an active
 back-door path in the action-cut graph, with an explicit first incoming edge
@@ -639,6 +647,11 @@ boundary character at every cube point.  Identifying that boundary with the
 endpoint/collider character is proved by `ActivePathBoundary` above.
 `HedgeChannelPathBoundary` connects this general graph identity to the actual
 installed phase on the complete cube, including every original reserved bit.
+`HedgeChannelPathRows` evaluates an internal installed row at every cube point
+as its one own bit XOR the original coordinates of its actual incoming
+neighbours.  The parent and root-incidence guards are retained through this
+calculation.  An omitted row has no incoming read and is exactly its own bit;
+in particular an unselected observed fork is not assumed to be even.
 The conservation theorem does not require a first incoming endpoint edge;
 that back-door constraint belongs to the remaining odd-direction construction.
 Adding the actual activation traces and routing every mandatory Small row

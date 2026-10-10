@@ -34,6 +34,7 @@ import Thesis.Causality.LatentTableBlockResponse
 import Thesis.Causality.LatentTableCounterexample
 import Thesis.Causality.CompactHiddenDAG
 import Thesis.Causality.PairRoot
+import Thesis.Causality.PairRootUniqueness
 import Thesis.Causality.PairRootChannels
 import Thesis.Causality.PairRootChannelsEnvironment
 import Thesis.Causality.Semantics
@@ -59,6 +60,11 @@ Stable facade for the finite causal, modal, and counterfactual development.
 counting Boolean selections.  Supplied members prove positivity directly,
 and disjoint unions or contained-set partitions have exact additive lengths.
 It provides finite counting facts, not a new representation of node sets.
+
+`PairRootUniqueness` proves that the original ordered-pair enumeration has
+no repetitions, and equality of stored pairs identifies their reserved input
+indices.  This complements `PairRoot` without rebuilding or deduplicating a
+model's inputs; it supports exact local reads of reversed expanded labels.
 
 Suggested reading order for a reader familiar with the thesis but new to the
 source is `Graph`, `Derivation`, `Model`, `HardIntervention`, `Reductions`,

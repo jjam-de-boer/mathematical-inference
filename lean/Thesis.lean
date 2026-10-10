@@ -45,6 +45,7 @@ import Thesis.Examples.ActivePathColliderRerouting
 import Thesis.Examples.ActivePathPairRoots
 import Thesis.Examples.HedgeChannelPathInputs
 import Thesis.Examples.ActivePathBoundary
+import Thesis.Examples.HedgeChannelPathRows
 import Thesis.Examples.ConditionalFailurePathNormalization
 import Thesis.Examples.ConditionalFailureActivationAvoidance
 import Thesis.Examples.ConditionalFailureActivationAvoidanceZero
@@ -157,6 +158,14 @@ pair label.  Its installed head phase retains the collider bit at every cube
 point, and the false conditioning cylinder removes exactly that term.  The
 outgoing observed endpoint is not a head: its own row is odd but unselected,
 while the actual shared-input direction leaves just the source head odd.
+`HedgeChannelPathRows` checks general whole-cube local-row evaluation on the
+observed chain, omitted fork, and mixed observed/latent conditioned collider.
+A new three-valued conditioned path uses two distinct original reserved roots,
+both with reversed labels.  Its collider reads those two coordinates once each
+and ignores a genuine off-path observed parent.  Their equal values cancel
+at a false collider bit, and a literal supported direction leaves only the
+source head odd.  This is not the general supported-direction construction
+or the missing activation/complete-Small terminal countermodel family.
 `ConditionalFailurePathNormalization` checks a restored three-valued pair
 path, its unchanged list, first incoming edge, and general count-minimality
 certificate.  Its action-free query deliberately remains observationally
