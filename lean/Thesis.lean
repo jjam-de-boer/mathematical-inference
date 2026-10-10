@@ -46,6 +46,7 @@ import Thesis.Examples.ConditionalPrefixForkResidual
 import Thesis.Examples.ActivePathForkRouting
 import Thesis.Examples.ActivePathForkOrientation
 import Thesis.Examples.ConditionalFailureForkApproach
+import Thesis.Examples.ConditionalFailureCoreIncidence
 import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
@@ -191,6 +192,16 @@ original receiving residual and the exact `U,P` row correction for all rows,
 with original support, outcome oddness and independent root bits retained.
 This exercises the universal local operation; global contact connectivity and
 the successful even-background direction still need their separate proof.
+`ConditionalFailureCoreIncidence` applies the actual trace/root column theorems
+to two genuine numerator hedges.  The collider fixture keeps traces inside
+Small, uses its real hard-boundary certificate and opaque computed normal form,
+and obtains installed two-row values, original-cylinder support and full row
+retention without evaluating normalization search.  The outside-Small-pivot
+fixture proves that neither of its two original roots is used by the actual
+`P <- Y` path, so every installed row's corresponding root basis value is zero.
+Both roots remain independent, supported original inputs, not removed coordinates.
+These are clients of the universal column proofs, not assertions of the still
+missing global incidence route or universal conditional completeness.
 `ConditionalFailureActivationForest` checks two genuinely activated observed
 colliders whose branches merge before one conditioner.  The common forest
 retains both incoming branches, uses one shared outgoing successor, and stops

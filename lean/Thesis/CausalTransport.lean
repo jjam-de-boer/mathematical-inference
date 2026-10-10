@@ -158,6 +158,7 @@ import Thesis.CausalTransport.ConditionalFailureSmallAbsorption
 import Thesis.CausalTransport.ConditionalFailureForkAbsorption
 import Thesis.CausalTransport.ConditionalFailureForkApproach
 import Thesis.CausalTransport.ConditionalFailureForkIncidence
+import Thesis.CausalTransport.ConditionalFailureCoreIncidence
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -317,6 +318,19 @@ own row and the following, outcome-side head as full-cube basis incidences.
 Neither a window nor a fork-orientation readiness flag is supplied by a terminal
 caller.  Connecting those actual incidences to an original Small source and
 constructing the globally supported, even-background direction remain open.
+`ConditionalFailureCoreIncidence` derives two further actual column families.
+A retained trace vertex cannot supply an outgoing path read: any on-path
+trace vertex is a collider.  Its complete installed observed column is its
+own row XOR the one common trace successor, including actual merged branches.
+Both rows are retained, and genuine transmitting coordinates are free on the
+whole original action-plus-condition cylinder.  Every original reserved-root
+column is precisely its path occurrence test times its genuine two-child
+incidence.  Used root children are real core heads; unused roots are read
+nowhere, and all original root bases remain independent supported directions.
+Both absorption layers are accounted for without trace/Small disjointness or
+new global switching inputs.  Ordinary noncollider path-head columns and the
+global outcome-to-Small connection still need integration before the universal
+supported-direction and conditional terminal countermodel argument is complete.
 `ConditionalFailureActivationForest` gives all such collider activations one
 common directed successor policy.  Every selected nonconditioner has a real
 selected child, and conditioners are precisely its sinks.  The latest pivot
