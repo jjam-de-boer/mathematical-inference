@@ -52,6 +52,7 @@ import Thesis.Examples.ConditionalFailureActivationAvoidance
 import Thesis.Examples.ConditionalFailureActivationAvoidanceZero
 import Thesis.Examples.ConditionalFailureActivationSelectionCounterexample
 import Thesis.Examples.ConditionalFailureActivationInteraction
+import Thesis.Examples.ConditionalFailureSmallInteraction
 import Thesis.Examples.ConditionalCollider
 import Thesis.Examples.HedgeConditionalRoot
 import Thesis.Examples.HedgeConditionalCollider
@@ -205,6 +206,15 @@ cylinder matching and the installed selected-row parities without evaluating
 its exhaustive search.  A separate already-conditioned collider checks the
 actual zero-edge trace, whole-cube sink term and once-only overlap own bit.
 It is an identifiable graph/signal fixture, not a conditional countermodel.
+`ConditionalFailureSmallInteraction` proves complete mandatory-Small coverage
+for the genuine five-vertex hedge's actual opaque normal form.  The queried
+endpoint's unique outgoing neighbour forces the unconditioned Small row to
+be a head; the original conditioners retain the other mandatory rows.  The
+general adapter derives full Small-phase oddness and whole-cylinder matching,
+then constructs positive original-alphabet countermodels without a hand-written
+signal, direction or conservation premise.  Graph certificates and semantic
+assembly remain separate capped modules.  This closes a genuine complete-Small
+instance, not universal routing or the case of a pivot outside Small.
 `HedgeChannelEnvironmentAbsorption` checks a conditioned collider on an
 eight-vertex three-valued graph.  Two additional mandatory Small sources merge
 at a genuine background row and feed an already selected Small collider.

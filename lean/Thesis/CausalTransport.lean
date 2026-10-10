@@ -6,6 +6,7 @@ import Thesis.CausalTransport.ActivePathTransport
 import Thesis.CausalTransport.ActivePathPairRoots
 import Thesis.CausalTransport.ActivePathInputSelection
 import Thesis.CausalTransport.ActivePathBoundary
+import Thesis.CausalTransport.ActivePathEndpointHeads
 import Thesis.CausalTransport.ActivePathRootInputs
 import Thesis.CausalTransport.ActivePathDirection
 import Thesis.CausalTransport.ActivePathColliderRerouting
@@ -140,6 +141,7 @@ import Thesis.CausalTransport.ConditionalFailurePathDirection
 import Thesis.CausalTransport.ConditionalFailureActivationAvoidance
 import Thesis.CausalTransport.ConditionalFailureActivationSelection
 import Thesis.CausalTransport.ConditionalFailureActivationInteraction
+import Thesis.CausalTransport.ConditionalFailureSmallInteraction
 import Thesis.CausalTransport.HedgeChannelConditionalGap
 import Thesis.CausalTransport.HedgeChannelCounterexample
 import Thesis.CausalTransport.HedgeChannelJointCompleteness
@@ -279,6 +281,15 @@ this is the selected outcome character.  Every trace coordinate is zero in
 the supported path direction, so the actual union retains just the pivot's odd
 row, and its complete phase is odd.  This closes the merged path/activation
 interaction, not coverage or oddness of a different mandatory Small forest.
+`ConditionalFailureSmallInteraction` retains every original conditioner with
+that union.  Outside the actual union the signal is its own bit, so these
+added evidence rows are present and even throughout the original conditioning
+cylinder.  Conservation is preserved.  When graph certificates place the
+pivot in Small and cover every Small row, the exact outside-Small difference
+is even and the full Small phase is proved odd.  The actual covariance theorem
+then constructs a positive original-alphabet conditional countermodel; no parity
+or matching certificate is assumed.  Universal coverage and outside-Small pivots
+remain separate obligations.
 
 `ConditionalCollider` realizes an incoming-parent collider with two fresh
 private inputs in the original SCM graph.  It preserves positivity and,
@@ -665,6 +676,11 @@ boundary character at every cube point.  Identifying that boundary with the
 endpoint/collider character is proved by `ActivePathBoundary` above.
 `HedgeChannelPathBoundary` connects this general graph identity to the actual
 installed phase on the complete cube, including every original reserved bit.
+`ActivePathEndpointHeads` proves that an outgoing-only observed endpoint of a
+nonsingleton path has an actual outgoing neighbour selected by the executable
+head scan.  A graph's unique-neighbour certificate can therefore prove mandatory
+row coverage structurally, without evaluating the normal-form search or
+assuming that all observed path vertices are heads.
 `HedgeChannelPathRows` evaluates internal and endpoint installed rows at every
 cube point as their one own bit XOR the original coordinates of their actual
 incoming neighbours.  Reversal installs the same signal.  The parent and
@@ -729,6 +745,9 @@ Universal mandatory-Small integration remains open: the pivot can lie outside
 Small, and an omitted path fork may have a nonzero direction bit.  A forest
 contact cannot therefore simply be assumed to have zero value.  None of these
 bridges supplies that remaining graph obligation as a readiness assumption.
+The conditioned completion in `ConditionalFailureSmallInteraction` covers
+additional missing evidence rows without a routing premise.  Unconditioned
+missing Small rows and the outside-Small oddness-transfer case remain open.
 `HedgeChannelMonomial` regroups each actual complete row choice by hidden
 channel before using independence.  It derives selected support and forced
 row exclusion from the real local choice lists.  A selected connected channel

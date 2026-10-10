@@ -150,6 +150,19 @@ theorem absorbSuccessor_rowPhase_new_of_domain_zero (data : LinearSignal G)
   rw [data.absorbSuccessor_rowPhase_outside interaction successor child outside,
     ofSuccessor_rowPhase_of_domain_zero domain successor wellFormed point zero, zero child inside]
 
+/-- A row outside the actual fused union has only its own observed bit.
+The well-formed forest has no incoming arrow into an unselected child,
+and fusion retains no original core reads at an outside row.  This permits
+retaining additional conditioned rows without inventing routes or latent reads. -/
+theorem absorbSuccessor_rowPhase_outside_union (data : LinearSignal G)
+    (interaction domain : NodeSet S) (successor : ForestChild S)
+    (wellFormed : childWellFormedBool domain successor = true) (child : Fin S.count)
+    (outside : NodeSet.union interaction domain child = false) (point : Cube G) :
+    ((data.absorbSuccessor interaction successor).rowPhase child).value point = cubeSample G point child := by
+  have entries : interaction child = false ∧ domain child = false := Bool.or_eq_false_iff.mp outside
+  rw [data.absorbSuccessor_rowPhase_outside interaction successor child entries.1,
+    ofSuccessor_rowPhase_outside_domain domain successor wellFormed child entries.2]
+
 end LinearSignal
 end HedgeChannelEnvironmentInstallation
 end Causality
