@@ -108,12 +108,12 @@ theorem forkApproachNodes_outcome_free (parent : Fin S.count)
     (normal.receives_condition pivot forest) source inside parent visited
   exact (FirstConditionedSmallApproach.ofBoundary boundary source inside).outcome_free parent original
 
-/-- Every actually retained fork has a genuine internal observed window.
-No internal-window field is assumed: source and outcome exclusion, actual
-membership, activity, and the impossible observed-to-latent edge derive it. -/
-theorem retainedFork_internal_window (parent : Fin S.count)
-    (retained : normal.forkApproachNodes boundary pivot forest parent = true)
-    (fork : normal.cutPath.forkNodes parent = true) :
+/-- Every non-outcome omitted path vertex has a genuine internal observed
+window.  The source is already a head; actual outgoing adjacency excludes
+latent neighbours.  This also covers an unretained internal fork, whose
+original column is still needed by the selected-row incidence graph. -/
+theorem internalFork_observed_window (parent : Fin S.count)
+    (fork : normal.cutPath.forkNodes parent = true) (notTarget : parent ≠ normal.outcome) :
     Exists fun before : List (SeparationNode S) => Exists fun after : List (SeparationNode S) =>
       Exists fun previous : Fin S.count => Exists fun next : Fin S.count =>
         normal.cutPath.nodes = before ++ .observed previous :: .observed parent :: .observed next :: after := by
@@ -123,11 +123,6 @@ theorem retainedFork_internal_window (parent : Fin S.count)
     have head := (normal.pathDirection_source_odd pivot.selected).1
     rw [same] at parts
     exact Bool.false_ne_true (parts.2.symm.trans head)
-  have notTarget : parent ≠ normal.outcome := by
-    intro same
-    have free := normal.forkApproachNodes_outcome_free boundary pivot forest parent retained
-    rw [same, normal.outcome_selected] at free
-    cases free
   rcases exists_internal_neighbors_of_mem normal.cutPath.starts normal.cutPath.finishes parts.1
     (fun same => notSource (SeparationNode.observed.inj same))
     (fun same => notTarget (SeparationNode.observed.inj same)) with ⟨before, previous, next, after, window⟩
@@ -145,6 +140,21 @@ theorem retainedFork_internal_window (parent : Fin S.count)
       cases next with
       | latentPair _ _ => cases nextEdge
       | observed next => exact ⟨before, after, previous, next, window⟩
+
+/-- Every actually retained fork is covered by the internal-window
+theorem.  Whole original-outcome avoidance of its actual boundary prefix
+derives endpoint exclusion; a terminal caller supplies no window flag. -/
+theorem retainedFork_internal_window (parent : Fin S.count)
+    (retained : normal.forkApproachNodes boundary pivot forest parent = true)
+    (fork : normal.cutPath.forkNodes parent = true) :
+    Exists fun before : List (SeparationNode S) => Exists fun after : List (SeparationNode S) =>
+      Exists fun previous : Fin S.count => Exists fun next : Fin S.count =>
+        normal.cutPath.nodes = before ++ .observed previous :: .observed parent :: .observed next :: after := by
+  apply normal.internalFork_observed_window pivot parent fork
+  intro same
+  have free := normal.forkApproachNodes_outcome_free boundary pivot forest parent retained
+  rw [same, normal.outcome_selected] at free
+  cases free
 
 /-! ## The computed policy cancels only the source-side receiver -/
 

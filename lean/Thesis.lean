@@ -48,6 +48,7 @@ import Thesis.Examples.ActivePathForkOrientation
 import Thesis.Examples.ConditionalFailureForkApproach
 import Thesis.Examples.ConditionalFailureCoreIncidence
 import Thesis.Examples.ConditionalFailurePathIncidence
+import Thesis.Examples.ConditionalFailureIncidenceDirection
 import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
@@ -210,6 +211,16 @@ in the all-Small installation.  The general endpoint theorem nevertheless
 gives its supported basis exactly the selected pivot-row incidence, identified
 from the proved singleton core rather than by evaluating normalization search.
 This supplies an actual starting column, not the remaining universal route.
+`ConditionalFailureIncidenceDirection` exercises the entire finite connection
+adapter on that same genuine outside-Small failure.  The actual original `R`
+coordinate proves a supported outcome-even pair column at selected rows `R,P`.
+The finite outcome scan returns `P`, and the actual pair graph reaches Small
+in one step without evaluating the opaque normalization.  The general scan
+and transport constructor supplies supported outcome oddness, every actual
+outside-Small background row even, and positive original-three-valued
+conditional countermodels for the unchanged query.  This closes the
+connection-to-countermodel operation, not the still-required universal
+outcome-component-to-Small connectivity theorem.
 `ConditionalFailureActivationForest` checks two genuinely activated observed
 colliders whose branches merge before one conditioner.  The common forest
 retains both incoming branches, uses one shared outgoing successor, and stops

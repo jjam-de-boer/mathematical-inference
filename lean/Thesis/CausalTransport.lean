@@ -123,6 +123,7 @@ import Thesis.CausalTransport.HedgeChannelEnvironmentFactorization
 import Thesis.CausalTransport.HedgeChannelEnvironmentCube
 import Thesis.CausalTransport.HedgeChannelEnvironmentLinear
 import Thesis.CausalTransport.HedgeChannelEnvironmentCoefficients
+import Thesis.CausalTransport.HedgeChannelEnvironmentIncidence
 import Thesis.CausalTransport.HedgeChannelPathInputs
 import Thesis.CausalTransport.HedgeChannelPathBoundary
 import Thesis.CausalTransport.HedgeChannelPathRows
@@ -161,6 +162,8 @@ import Thesis.CausalTransport.ConditionalFailureForkApproach
 import Thesis.CausalTransport.ConditionalFailureForkIncidence
 import Thesis.CausalTransport.ConditionalFailureCoreIncidence
 import Thesis.CausalTransport.ConditionalFailurePathIncidence
+import Thesis.CausalTransport.ConditionalFailureForkColumns
+import Thesis.CausalTransport.ConditionalFailureIncidenceDirection
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -346,9 +349,24 @@ supported observed basis has exactly one selected-row incidence at a real
 retained head: the outcome's own row if incoming, or its unique receiving
 head if outgoing.  No endpoint orientation or receiver is a new terminal field.
 These are actual starting and connecting columns, not yet global incidence
-connectivity to Small or the successful even-background direction.  Those
-load-bearing arguments and universal conditional terminal countermodels remain
-necessary before assembling the full published completeness theorem.
+connectivity to Small.  `ConditionalFailureForkColumns` supplies the guarded
+internal-fork alternatives: a retained fork keeps its own/outcome-side-head
+pair, while an unretained fork keeps just its two original receiving heads.
+Its raw own bit is not a third incidence because that row is unselected.
+Both cases retain support on the full original fixed-selection cylinder.
+`HedgeChannelEnvironmentIncidence` tests actual original-cube coordinates
+against every selected row and constructs an outcome-even two-endpoint
+transport from a successful bounded finite reachability test.  Successors
+and realizing coordinates are computed by finite scans; repeated walk
+vertices and coordinates cancel by XOR without choosing a simple path.
+`ConditionalFailureIncidenceDirection` computes the actual outcome receiver
+and searches every original Small row.  Whenever that precise test succeeds,
+the outcome basis plus the computed transport leaves only the reached Small
+row odd.  Actual complete outside-Small background evenness, the parity witness
+and positive original-alphabet conditional countermodels are then derived.
+The universal graph theorem that this actual search succeeds remains open;
+neither these conditional adapters nor a successful regression supplies all
+terminal countermodels or inhabits full published conditional completeness.
 `ConditionalFailureActivationForest` gives all such collider activations one
 common directed successor policy.  Every selected nonconditioner has a real
 selected child, and conditioners are precisely its sinks.  The latest pivot
