@@ -3,6 +3,7 @@ import Thesis.CausalTransport.DSeparationCorrectness
 import Thesis.CausalTransport.DSeparationWitness
 import Thesis.CausalTransport.ActivePathNormalization
 import Thesis.CausalTransport.ActivePathTransport
+import Thesis.CausalTransport.ActivePathPairRoots
 import Thesis.CausalTransport.ActivePathColliderRerouting
 import Thesis.CausalTransport.Certificates
 import Thesis.CausalTransport.Correspondence
@@ -165,7 +166,14 @@ theorem does not assume activation/path avoidance: the separate conditional
 application below derives its local certificates at the first intersection.
 `ActivePathTransport` restores cut edges along the same path by exploiting
 the expanded DAG's strict rank, and excludes conditioned incoming-cut vertices
-from that path.  `ConditionalFailurePaths` applies these facts to every
+from that path.  `ActivePathPairRoots` handles the two expanded labels for one
+original bidirected pair: a simple observed-endpoint path cannot use both
+aliases.  Canonical labels remain simple, and an executable lookup selects the
+actual original reserved input, proves its incidence at both children, and is
+injective on latent occurrences along the path.  This prevents an interaction
+construction from silently inventing independent inputs for reversed labels;
+it does not yet construct the general conditioned-path interaction.
+`ConditionalFailurePaths` applies these facts to every
 conditioner left by an exhausted IDC exchange search: it returns an active
 back-door path in the action-cut graph, with an explicit first incoming edge
 and no action vertices.  `ConditionalFailureActivation` also extracts simple

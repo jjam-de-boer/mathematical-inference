@@ -42,6 +42,7 @@ import Thesis.Examples.ConditionalFailureFlowBoundary
 import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
+import Thesis.Examples.ActivePathPairRoots
 import Thesis.Examples.ConditionalFailurePathNormalization
 import Thesis.Examples.ConditionalFailureActivationAvoidance
 import Thesis.Examples.ConditionalFailureActivationAvoidanceZero
@@ -132,6 +133,13 @@ a genuinely conditioned return collider.  One source collider disappears,
 while the return stays active; the count-first score improves even though
 the rank sum decreases.  A second fixture handles an outcome-endpoint return
 with an empty suffix, and reversal retains the same proved score improvement.
+`ActivePathPairRoots` checks a genuine reversed latent-pair label followed by
+an observed directed edge.  The two expanded aliases select the same original
+reserved input, which is available only at its two actual children.  The
+installed rows use that very input: their full phase conserves the endpoint
+character, and a shared-input direction leaves only the source row odd.  This
+is a graph-to-input and cancellation regression, not universal conditional
+completeness or a new independent switching coordinate.
 `ConditionalFailurePathNormalization` checks a restored three-valued pair
 path, its unchanged list, first incoming edge, and general count-minimality
 certificate.  Its action-free query deliberately remains observationally
