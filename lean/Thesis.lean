@@ -43,6 +43,7 @@ import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
 import Thesis.Examples.ActivePathPairRoots
+import Thesis.Examples.HedgeChannelPathInputs
 import Thesis.Examples.ConditionalFailurePathNormalization
 import Thesis.Examples.ConditionalFailureActivationAvoidance
 import Thesis.Examples.ConditionalFailureActivationAvoidanceZero
@@ -140,6 +141,14 @@ installed rows use that very input: their full phase conserves the endpoint
 character, and a shared-input direction leaves only the source row odd.  This
 is a graph-to-input and cancellation regression, not universal conditional
 completeness or a new independent switching coordinate.
+`HedgeChannelPathInputs` checks the constructed, rather than manually supplied,
+masks on that reversed-pair path and derives whole-point endpoint conservation
+from the general installed-phase theorem.  A separate observed-fork path omits
+the fork's own row, rejects a genuine off-path parent arrow and an unused
+original reserved input, and retains one odd source row among the selected
+heads.  The omitted fork's row is odd, guarding against selecting every path
+vertex.  Raw selection also rejects an incoming-cut endpoint without claiming
+that the old list remains a certified path after its edge is removed.
 `ConditionalFailurePathNormalization` checks a restored three-valued pair
 path, its unchanged list, first incoming edge, and general count-minimality
 certificate.  Its action-free query deliberately remains observationally

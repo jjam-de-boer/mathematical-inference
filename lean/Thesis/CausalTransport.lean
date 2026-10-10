@@ -4,6 +4,7 @@ import Thesis.CausalTransport.DSeparationWitness
 import Thesis.CausalTransport.ActivePathNormalization
 import Thesis.CausalTransport.ActivePathTransport
 import Thesis.CausalTransport.ActivePathPairRoots
+import Thesis.CausalTransport.ActivePathInputSelection
 import Thesis.CausalTransport.ActivePathColliderRerouting
 import Thesis.CausalTransport.Certificates
 import Thesis.CausalTransport.Correspondence
@@ -117,6 +118,7 @@ import Thesis.CausalTransport.HedgeChannelEnvironmentFactorization
 import Thesis.CausalTransport.HedgeChannelEnvironmentCube
 import Thesis.CausalTransport.HedgeChannelEnvironmentLinear
 import Thesis.CausalTransport.HedgeChannelEnvironmentCoefficients
+import Thesis.CausalTransport.HedgeChannelPathInputs
 import Thesis.CausalTransport.HedgeChannelEnvironmentMoments
 import Thesis.CausalTransport.HedgeChannelEnvironmentCovariance
 import Thesis.CausalTransport.HedgeChannelProjection
@@ -173,6 +175,11 @@ actual original reserved input, proves its incidence at both children, and is
 injective on latent occurrences along the path.  This prevents an interaction
 construction from silently inventing independent inputs for reversed labels;
 it does not yet construct the general conditioned-path interaction.
+`ActivePathInputSelection` scans the actual consecutive path pairs, selects
+only incoming observed heads, and names used original roots.  Its graph-only
+proofs show both children of every used root are selected heads and incoming-cut
+vertices are excluded.  An observed fork is not selected merely for being on
+the path; exact arrow orientation and the stored list control that selection.
 `ConditionalFailurePaths` applies these facts to every
 conditioner left by an exhausted IDC exchange search: it returns an active
 back-door path in the action-cut graph, with an explicit first incoming edge
@@ -615,6 +622,14 @@ tests with their local graph coefficients: each observed row's own bit and
 selected declared parents, and each original root's genuine incident reads.
 Complete forest and selected-background parities retain every relevant row.
 These equations are graph conservation obligations, not an assumed path family.
+`HedgeChannelPathInputs` constructs the actual incoming-parent and original-root
+masks from any supplied observed-endpoint active path.  All reserved-input
+coefficients cancel at their two real child rows.  Observed coefficients are
+the selected own-row indicator XOR actual outgoing path-parent reads, and
+homogeneity proves the entire installed head phase equals this derived observed
+boundary character at every cube point.  Identifying that boundary with the
+endpoint/collider character, adding the real activation traces, and routing
+every mandatory Small row are still required for universal conditional coverage.
 `HedgeChannelEnvironmentMoments` identifies the actual background factors
 and event sums with these homogeneous moments.  The full normalized response
 is exactly the original-outcome covariance multiplied by the two installed
