@@ -46,6 +46,7 @@ import Thesis.Examples.ActivePathPairRoots
 import Thesis.Examples.HedgeChannelPathInputs
 import Thesis.Examples.ActivePathBoundary
 import Thesis.Examples.HedgeChannelPathRows
+import Thesis.Examples.HedgeChannelPathDirection
 import Thesis.Examples.ConditionalFailurePathNormalization
 import Thesis.Examples.ConditionalFailureActivationAvoidance
 import Thesis.Examples.ConditionalFailureActivationAvoidanceZero
@@ -164,8 +165,17 @@ A new three-valued conditioned path uses two distinct original reserved roots,
 both with reversed labels.  Its collider reads those two coordinates once each
 and ignores a genuine off-path observed parent.  Their equal values cancel
 at a false collider bit, and a literal supported direction leaves only the
-source head odd.  This is not the general supported-direction construction
-or the missing activation/complete-Small terminal countermodel family.
+source head odd.  It does not supply the missing activation/complete-Small
+terminal countermodel family.
+`HedgeChannelPathDirection` uses the general supported-direction and
+individual selected-row parity theorems on all four actual path fixtures.
+An unused reserved bit can be true but unread; an omitted fork and outgoing
+endpoint really have odd own rows.  The two-root collider's general direction
+agrees at every original coordinate with the earlier literal control.  The
+actual normalized exchange constructor also proves original-query support,
+source oddness, other-head evenness and full path-head oddness without an
+independent first-edge certificate.  That fixture has no joint hedge and
+remains observationally identifiable, not a conditional countermodel.
 `ConditionalFailurePathNormalization` checks a restored three-valued pair
 path, its unchanged list, first incoming edge, and general count-minimality
 certificate.  Its action-free query deliberately remains observationally

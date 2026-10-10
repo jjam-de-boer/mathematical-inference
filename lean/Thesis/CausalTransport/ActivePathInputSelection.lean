@@ -24,7 +24,8 @@ metadata; no new latent coordinates or representatives are chosen here.
 `HedgeChannelPathInputs` separately installs these selections in legal local
 signals and proves conservation of their actual homogeneous phases.  The
 observed boundary computed below is not assumed to be an outcome character:
-path-window conservation and collider activations remain later graph work.
+`ActivePathBoundary` proves its endpoint/collider form from actual windows,
+while installing the real collider activations remains separate graph work.
 -/
 
 variable {S : ObservedSignature.{u}}

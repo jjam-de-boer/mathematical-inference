@@ -29,8 +29,10 @@ selected child rows.  Its coefficient in the entire installed path phase
 is zero.  This is a general conservation theorem about the actual guarded
 signal, not a fixture-specific cancellation test or a supplied balance flag.
 The whole installed phase is the character of the computed observed boundary.
-Identifying that boundary with endpoint/collider terms, adding activation
-rows, and integrating the complete Small forest remain graph obligations.
+`HedgeChannelPathBoundary` identifies that boundary with endpoint/collider
+terms.  `HedgeChannelPathDirection` proves a supported direction with one odd
+source head and every other head even.  Adding actual activation rows and
+integrating the complete Small forest remain separate graph obligations.
 -/
 
 variable {S : ObservedSignature.{0}}
@@ -338,8 +340,8 @@ theorem ofActivePath_forestObservedCoefficient
 The character contains only the derived observed boundary; every original
 reserved-root contribution cancels.  This holds on the complete cube, not
 just a chosen direction or a conditioning cylinder.  To obtain the desired
-conditional character, the remaining graph proof must still identify this
-boundary and attach the real collider activation rows. -/
+conditional character, `HedgeChannelPathBoundary` identifies this boundary,
+while attaching the real collider activation rows remains separate work. -/
 theorem ofActivePath_forestPhase
     (path : ActivePath graph m given (.observed source) (.observed target)) (point : Cube graph) :
     ((ofActivePath path).forestPhase (ActivePathInput.headRows graph m path.nodes)).value point =

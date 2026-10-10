@@ -11,7 +11,7 @@ open PathSpecification Probability FiniteBooleanInteraction
 
 Global phase conservation does not establish evenness of each background
 row.  This module expands the actual installed parent and reserved-root
-folds at an internal observed window.  They read exactly the two displayed
+folds at internal and endpoint windows.  They read exactly the displayed
 neighbours whose arrows enter that row, each at its original cube coordinate.
 Ambient off-path parents and unused roots contribute nothing.
 
@@ -20,11 +20,11 @@ parity nor replace the guarded local interpreter with global cube access.
 `expandedInput` is a proof-level way to describe those legal reads; the
 installed mechanism remains `LinearSignal.ofActivePath`.
 
-The internal-window identity is a step toward the constructive supported
-odd direction, not its replacement.  Endpoint evaluation, support on the
-actual conditioning cylinder, and parity of every selected row still need
-to be derived for that direction.  Activation installation and integration
-of all mandatory Small rows remain separate conditional-completeness work.
+These full-cube identities do not themselves choose a direction.  The separate
+`HedgeChannelPathDirection` constructor proves actual conditioning support,
+source oddness and evenness of every other selected row from these identities
+and path activity.  Activation installation and integration of all mandatory
+Small rows remain separate conditional-completeness work.
 -/
 
 variable {S : ObservedSignature.{0}}
@@ -171,6 +171,75 @@ private theorem ofActivePath_actual_row
     rw [ofActivePath_rootMask]
     cases ActivePathInput.pairUsed graph path.nodes root <;>
       cases pairRootIncident graph.binary root child <;> cases cubeEnvironment graph point root <;> rfl
+
+/-- Reversing traversal installs the same local signal.  The kept-arrow
+directions, original root indices and private-input guards do not change. -/
+theorem ofActivePath_reverse
+    (path : ActivePath graph m given (.observed source) (.observed target)) :
+    ofActivePath path.reverse = ofActivePath path := by
+  unfold ofActivePath
+  congr 1
+  · funext child parent
+    change ActivePathInput.incomingEdge graph m path.nodes.reverse (.observed parent) child = _
+    simp only [ActivePathInput.incomingEdge, ActivePathInput.stepOnPath_reverse]
+  · funext child root
+    change (ActivePathInput.pairUsed graph path.nodes.reverse root && pairRootIncident graph.binary root child &&
+      !(m.removeIncoming child)) = _
+    rw [ActivePathInput.pairUsed_reverse]
+
+/-- Evaluate the actual first endpoint using its sole neighbour's original
+coordinate.  An outgoing first edge contributes nothing; an incoming first
+edge contributes its real observed or reserved input once.  The identity
+holds at every cube point and supplies no assumed endpoint parity. -/
+theorem ofActivePath_rowPhase_first_pair
+    (path : ActivePath graph m given (.observed source) (.observed target))
+    (next : SeparationNode S) (rest : List (SeparationNode S))
+    (shape : path.nodes = .observed source :: next :: rest) (point : Cube graph) :
+    ((ofActivePath path).rowPhase source).value point =
+      Bool.xor (cubeSample graph point source) (incomingValue graph m point next source) := by
+  rw [ofActivePath_actual_row]
+  change Bool.xor (cubeSample graph point source)
+    (Bool.xor
+      ((List.finRange S.count).foldl (fun total parent => Bool.xor total
+        (ActivePathInput.incomingEdge graph m path.nodes (.observed parent) source && cubeSample graph point parent)) false)
+      ((List.finRange (pairRootCount graph)).foldl (fun total root => Bool.xor total
+        (ActivePathInput.pairUsed graph path.nodes root && pairRootIncident graph root source &&
+          cubeEnvironment graph point root)) false)) = _
+  have observedReads : forall parent,
+      (ActivePathInput.incomingEdge graph m path.nodes (.observed parent) source && cubeSample graph point parent) =
+        observedNeighborRead graph m point source next parent := by
+    intro parent
+    rw [shape, ActivePathInput.incomingEdge_first_pair graph m source next (.observed parent) rest (shape ▸ path.simple)]
+    rfl
+  have reservedReads : forall root,
+      (ActivePathInput.pairUsed graph path.nodes root && pairRootIncident graph root source &&
+        cubeEnvironment graph point root) = reservedNeighborRead graph m point source next root := by
+    intro root
+    rw [ActivePathInput.pairUsed_incident_first_pair path next rest shape root]
+    rfl
+  have observedFold := foldl_congr _ _ false (List.finRange S.count)
+    (fun total parent => congrArg (Bool.xor total) (observedReads parent))
+  have reservedFold := foldl_congr _ _ false (List.finRange (pairRootCount graph))
+    (fun total root => congrArg (Bool.xor total) (reservedReads root))
+  rw [observedFold, reservedFold]
+  exact congrArg (Bool.xor (cubeSample graph point source))
+    (neighbor_folds path point source next (shape ▸ List.mem_cons_of_mem _ List.mem_cons_self))
+
+/-- The last endpoint has the same one-neighbour formula, obtained from
+the certified reversed path and the equality of its installed signal. -/
+theorem ofActivePath_rowPhase_last_pair
+    (path : ActivePath graph m given (.observed source) (.observed target))
+    (before : List (SeparationNode S)) (previous : SeparationNode S)
+    (shape : path.nodes = before ++ [previous, .observed target]) (point : Cube graph) :
+    ((ofActivePath path).rowPhase target).value point =
+      Bool.xor (cubeSample graph point target) (incomingValue graph m point previous target) := by
+  have reversed := ofActivePath_rowPhase_first_pair path.reverse previous before.reverse (by
+    change path.nodes.reverse = _
+    rw [shape]
+    simp only [List.reverse_append, List.reverse_cons, List.reverse_nil,
+      List.cons_append, List.nil_append]) point
+  rw [ofActivePath_reverse] at reversed
+  exact reversed
 
 /-- Evaluate one actual internal row at every cube point.  Its own observed
 bit occurs once, followed by exactly the original coordinates of the two

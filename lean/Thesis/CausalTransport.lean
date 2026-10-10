@@ -7,6 +7,7 @@ import Thesis.CausalTransport.ActivePathPairRoots
 import Thesis.CausalTransport.ActivePathInputSelection
 import Thesis.CausalTransport.ActivePathBoundary
 import Thesis.CausalTransport.ActivePathRootInputs
+import Thesis.CausalTransport.ActivePathDirection
 import Thesis.CausalTransport.ActivePathColliderRerouting
 import Thesis.CausalTransport.Certificates
 import Thesis.CausalTransport.Correspondence
@@ -123,6 +124,7 @@ import Thesis.CausalTransport.HedgeChannelEnvironmentCoefficients
 import Thesis.CausalTransport.HedgeChannelPathInputs
 import Thesis.CausalTransport.HedgeChannelPathBoundary
 import Thesis.CausalTransport.HedgeChannelPathRows
+import Thesis.CausalTransport.HedgeChannelPathDirection
 import Thesis.CausalTransport.HedgeChannelEnvironmentMoments
 import Thesis.CausalTransport.HedgeChannelEnvironmentCovariance
 import Thesis.CausalTransport.HedgeChannelProjection
@@ -132,6 +134,7 @@ import Thesis.CausalTransport.HedgeChannelEnvironmentRouting
 import Thesis.CausalTransport.HedgeChannelEnvironmentAbsorption
 import Thesis.CausalTransport.ConditionalFailureActivationForest
 import Thesis.CausalTransport.ConditionalFailurePathNormalization
+import Thesis.CausalTransport.ConditionalFailurePathDirection
 import Thesis.CausalTransport.ConditionalFailureActivationAvoidance
 import Thesis.CausalTransport.ConditionalFailureActivationSelection
 import Thesis.CausalTransport.HedgeChannelConditionalGap
@@ -196,6 +199,11 @@ input enumeration, so reversed labels cannot silently select a second index.
 Simplicity and alias exclusion ensure the two neighbours of an internal row
 never duplicate one original reserved read.  The resulting local mask formula
 is an XOR suitable for real interpreter evaluation, not a row-parity premise.
+`ActivePathDirection` constructs the literal observed direction bits: false
+at the source and actual colliders, true at other path vertices, false off
+the path.  Activity proves these bits vanish on the actual conditioning set.
+Actual incoming observed inputs are noncolliders and, for a first incoming
+edge, are not the source; they are therefore true in the same direction.
 `ConditionalFailurePaths` applies these facts to every
 conditioner left by an exhausted IDC exchange search: it returns an active
 back-door path in the action-cut graph, with an explicit first incoming edge
@@ -647,13 +655,21 @@ boundary character at every cube point.  Identifying that boundary with the
 endpoint/collider character is proved by `ActivePathBoundary` above.
 `HedgeChannelPathBoundary` connects this general graph identity to the actual
 installed phase on the complete cube, including every original reserved bit.
-`HedgeChannelPathRows` evaluates an internal installed row at every cube point
-as its one own bit XOR the original coordinates of its actual incoming
-neighbours.  The parent and root-incidence guards are retained through this
-calculation.  An omitted row has no incoming read and is exactly its own bit;
-in particular an unselected observed fork is not assumed to be even.
-The conservation theorem does not require a first incoming endpoint edge;
-that back-door constraint belongs to the remaining odd-direction construction.
+`HedgeChannelPathRows` evaluates internal and endpoint installed rows at every
+cube point as their one own bit XOR the original coordinates of their actual
+incoming neighbours.  Reversal installs the same signal.  The parent and
+root-incidence guards are retained through this calculation.  An omitted row
+has no incoming read and is exactly its own bit; an unselected observed fork
+is not assumed to be even.
+`HedgeChannelPathDirection` constructs the conditioning-supported direction
+at all original coordinates.  A first incoming arrow proves the source is
+the sole odd selected row, every other actual head is even, and the entire
+path-head interaction is odd.  Endpoint distinction follows from simplicity
+and the actual first-pair shape, rather than another readiness premise.
+`ConditionalFailurePathDirection` applies these theorems to the exact
+normalized outgoing-cut path, derives its first incoming edge, and proves
+support on the original action-plus-condition cylinder, including the pivot.
+The full phase conservation theorem itself needs no first incoming edge.
 Adding the actual activation traces and routing every mandatory Small row
 are still required for universal conditional coverage.
 `HedgeChannelEnvironmentMoments` identifies the actual background factors

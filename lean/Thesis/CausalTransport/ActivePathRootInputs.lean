@@ -208,6 +208,48 @@ theorem pairUsed_incident_iff_incoming {graph : ObservedGraph S} {m : GraphMutil
 
 /-! ## Account for every reserved read in an internal observed window -/
 
+/-- The first observed endpoint reads only its one displayed neighbour.
+No internal window or artificial second input is introduced at an endpoint. -/
+theorem incomingEdge_first_pair (graph : ObservedGraph S) (m : GraphMutilation S)
+    (child : Fin S.count) (next parent : SeparationNode S) (rest : List (SeparationNode S))
+    (simple : (.observed child :: next :: rest).Nodup) :
+    incomingEdge graph m (.observed child :: next :: rest) parent child =
+      (SeparationNode.beq parent next && graph.expandedMutilatedEdge m parent (.observed child)) := by
+  have scan : stepOnPath parent (.observed child) (.observed child :: next :: rest) = SeparationNode.beq parent next := by
+    apply Bool.eq_iff_iff.mpr
+    rw [stepOnPath_first_pair (.observed child) next parent rest simple, SeparationNode.beq_eq_true_iff]
+  unfold incomingEdge
+  rw [scan]
+
+/-- The reserved mask at the first endpoint has exactly its one actual
+incoming-neighbour entry, including the original index of a reversed label. -/
+theorem pairUsed_incident_first_pair {graph : ObservedGraph S} {m : GraphMutilation S}
+    {given : NodeSet S} {source target : Fin S.count}
+    (path : ActivePath graph m given (.observed source) (.observed target))
+    (next : SeparationNode S) (rest : List (SeparationNode S))
+    (shape : path.nodes = .observed source :: next :: rest) (root : Fin (pairRootCount graph)) :
+    (pairUsed graph path.nodes root && pairRootIncident graph root source) =
+      (rootAt graph root next && graph.expandedMutilatedEdge m next (.observed source)) := by
+  apply Bool.eq_iff_iff.mpr
+  rw [pairUsed_incident_iff_incoming path, Bool.and_eq_true_iff]
+  constructor
+  · rintro ⟨neighbor, input, incoming⟩
+    have entries := Bool.and_eq_true_iff.mp incoming
+    rw [shape] at entries
+    have same := (stepOnPath_first_pair (.observed source) next neighbor rest (shape ▸ path.simple)).mp entries.1
+    exact ⟨same ▸ input, same ▸ entries.2⟩
+  · intro entries
+    refine ⟨next, entries.1, Bool.and_eq_true_iff.mpr ⟨?_, entries.2⟩⟩
+    rw [shape]
+    exact (stepOnPath_first_pair (.observed source) next next rest (shape ▸ path.simple)).mpr rfl
+
+/-- Traversal reversal preserves the literal original-root occurrence
+mask.  The root enumeration and every installed graph arrow are unchanged. -/
+theorem pairUsed_reverse (graph : ObservedGraph S) (nodes : List (SeparationNode S))
+    (root : Fin (pairRootCount graph)) : pairUsed graph nodes.reverse root = pairUsed graph nodes root := by
+  apply Bool.eq_iff_iff.mpr
+  rw [pairUsed_eq_true_iff, pairUsed_eq_true_iff, List.mem_reverse, List.mem_reverse]
+
 /-- An internal observed row reads only its two actual incoming
 neighbours.  The scan's disjunction is an XOR because the simple window
 has distinct neighbours; this form is suited to finite local input folds. -/

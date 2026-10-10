@@ -302,7 +302,10 @@ theorem observedBoundary_internal_window {graph : ObservedGraph S} {m : GraphMut
 
 /-! ## Distinct observed endpoints each contribute one boundary bit -/
 
-private theorem stepOnPath_first_pair (first next other : SeparationNode S) (rest : List (SeparationNode S))
+/-- At the first occurrence of a simple non-singleton list, the only
+consecutive neighbour is the displayed second vertex.  This endpoint fact
+also supports actual local-input evaluation; it assumes no edge direction. -/
+theorem stepOnPath_first_pair (first next other : SeparationNode S) (rest : List (SeparationNode S))
     (simple : (first :: next :: rest).Nodup) :
     stepOnPath other first (first :: next :: rest) = true ↔ other = next := by
   constructor
@@ -320,7 +323,9 @@ private theorem stepOnPath_first_pair (first next other : SeparationNode S) (res
     subst other
     exact (stepOnPath_eq_true_iff next first _).mpr ⟨[], rest, Or.inr rfl⟩
 
-private theorem headRows_first_pair (graph : ObservedGraph S) (m : GraphMutilation S) (coordinate : Fin S.count)
+/-- A first observed endpoint is selected exactly when its one actual
+neighbour has a kept incoming arrow.  An outgoing endpoint is not a head. -/
+theorem headRows_first_pair (graph : ObservedGraph S) (m : GraphMutilation S) (coordinate : Fin S.count)
     (next : SeparationNode S) (rest : List (SeparationNode S)) (simple : (.observed coordinate :: next :: rest).Nodup) :
     headRows graph m (.observed coordinate :: next :: rest) coordinate =
       graph.expandedMutilatedEdge m next (.observed coordinate) := by
