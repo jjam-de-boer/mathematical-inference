@@ -119,7 +119,15 @@ private theorem within_of_reachable (action : NodeSet S) (source endpoint : Fin 
   exact (FiniteReachability.within_eq_true_iff_boundedWalk finBeq (NodeSet.enumerated S)
     (mutilatedDirected S action) finBeq_eq_true_iff (NodeSet.mem_enumerated S) _ _ _).mpr bounded
 
-/-! ## Select the latest reachable conditioner constructively -/
+/-! ## Retained membership and constructive latest-conditioner selection -/
+
+/-- A retained original conditioner, without any reachability or maximality
+claim.  Exact-cut activation and its parity construction need only this
+membership certificate.  Keeping that interface separate prevents those
+arguments from silently requiring a latest original-graph pivot. -/
+structure RetainedConditionalPivot (query : ConditionalKernelQuery S) where
+  node : Fin S.count
+  selected : query.condition node = true
 
 /-- A conditioner reachable from the supplied source, latest among *all*
 such conditioners.  Maximality refers to the original condition set and full
@@ -137,6 +145,13 @@ structure LatestConditionalPivot (graph : ObservedGraph S)
 namespace LatestConditionalPivot
 
 variable {graph : ObservedGraph S} {query : ConditionalKernelQuery S} {source : Fin S.count}
+
+/-- Forget the proved reachability and maximality while retaining the exact
+same original conditioning vertex.  Callers use this adapter explicitly;
+it never selects a new pivot or weakens the query's conditioning labels. -/
+abbrev toRetained (pivot : LatestConditionalPivot graph query source) : RetainedConditionalPivot query where
+  node := pivot.node
+  selected := pivot.selected
 
 /-- The ordered finite member list supplies its greatest reachable conditioner.
 The initial conditioner proves this list nonempty but does not determine the

@@ -1,4 +1,4 @@
-import Thesis.CausalTransport.ConditionalFailureActivationAvoidance
+import Thesis.CausalTransport.ConditionalCutActivationForest
 import Thesis.CausalTransport.ActivePathBoundary
 
 namespace Thesis
@@ -21,8 +21,8 @@ internal colliders of the normal form.  Phase balance and activation selection
 therefore use the same executable collider mask.  A second finite scan takes
 the union of their complete common-policy traces.  This union is
 successor-closed, so restricting the policy to it preserves every selected
-trace and its genuinely conditioned
-endpoint.  Branches may merge: a Boolean union retains a shared vertex once,
+trace and its genuinely conditioned endpoint.  Branches may merge: a Boolean
+union retains a shared vertex once,
 and the common successor retains one outgoing map there.
 
 The selected union may also meet the mandatory small hedge forest.  Its
@@ -31,7 +31,10 @@ whole activation union.  The partition below retains the inside-small part
 explicitly.  It does not assert small-forest disjointness or prove parity here.
 `ConditionalFailureActivationInteraction` separately installs these actual
 traces with the path heads and proves their conserved phase and supported
-direction.  Integration with the whole mandatory Small forest remains open.
+direction.  These arguments need only a retained conditioner and the shared
+exact-cut policy; no original-graph latest-pivot certificate is used.  Older
+bar-policy clients pass the explicit data-preserving `toCutForest` adapter.
+Integration with the whole mandatory Small forest remains open.
 -/
 
 /-! ## The finite scan has exactly the displayed collider windows -/
@@ -59,17 +62,17 @@ theorem colliderSeeds_eq_true_iff {graph : ObservedGraph S} {query : Conditional
               previous (.observed collider) next :=
   ActivePathInput.colliderRows_eq_true_iff graph _ collider normal.cutPath.nodes
 
-variable {graph : ObservedGraph S} {query : ConditionalKernelQuery S} {source : Fin S.count}
-    (pivot : LatestConditionalPivot graph query source)
+variable {graph : ObservedGraph S} {query : ConditionalKernelQuery S}
+    (pivot : RetainedConditionalPivot query)
     (normal : ConditionalBackdoorPathNormalForm graph query pivot.node)
-    (forest : ConditionalColliderActivationForest query pivot.node)
+    (forest : ConditionalCutColliderActivationForest query pivot.node)
 
 /-- Activity and coverage derive domain membership for every scanned
 collider.  No second selected-collider flag is needed by the trace union. -/
 theorem colliderSeeds_in_forest (collider : Fin S.count) (selected : normal.colliderSeeds collider = true) :
     forest.nodes collider = true := by
   rcases (normal.colliderSeeds_eq_true_iff collider).mp selected with ⟨before, after, previous, next, window, actual⟩
-  let path := normal.activationForestPath pivot forest before after previous next collider window actual
+  let path := normal.cutActivationForestPath forest pivot.selected before after previous next collider window actual
   exact path.inside collider (List.mem_of_head? path.starts)
 
 /-- Union of the complete traces from the actual collider sources.
@@ -107,7 +110,7 @@ theorem activationTraceNodes_action_free (node : Fin S.count)
     (selected : normal.activationTraceNodes pivot forest node = true) : query.action node = false :=
   forest.action_free node (normal.activationTraceNodes_subset_forest pivot forest node selected)
 
-/-- The omitted latest pivot remains absent from the pruned union. -/
+/-- The omitted retained pivot remains absent from the pruned union. -/
 theorem activationTraceNodes_pivot_free : normal.activationTraceNodes pivot forest pivot.node = false := by
   cases selected : normal.activationTraceNodes pivot forest pivot.node with
   | false => rfl
@@ -244,7 +247,7 @@ theorem activationTraceNodes_intersection_iff_collider (node : Fin S.count)
   · intro selected
     rcases (normal.activationTraceNodes_eq_true_iff pivot forest node).mp selected with ⟨collider, seed, visited⟩
     rcases (normal.colliderSeeds_eq_true_iff collider).mp seed with ⟨before, after, previous, next, window, actual⟩
-    have same := normal.activation_forest_path_intersection_eq_collider pivot forest before after previous next collider
+    have same := normal.cut_activation_forest_path_intersection_eq_collider forest pivot.selected before after previous next collider
       window actual node visited onPath
     exact same ▸ seed
   · exact normal.colliderSeeds_subset_activationTraceNodes pivot forest node

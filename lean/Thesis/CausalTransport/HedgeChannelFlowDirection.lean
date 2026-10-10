@@ -239,10 +239,11 @@ theorem bits_false_of_free (path : SuccessorPath domain successor source) (nodes
 
 /-! ## Complete paths cannot diverge after meeting -/
 
-/-- Two finite paths starting at the same vertex and stopping at actual
-`none` successors have the same endpoint.  The induction compares actual
-map values, not a chosen graph edge or a claimed uniqueness of graph parents. -/
-private theorem complete_endpoints_eq (successor : ForestChild S)
+/-- Two complete finite paths of one successor map agree in their entire
+lists and endpoints when their starts agree.  The induction compares actual
+map values, not a chosen graph edge or uniqueness of incoming graph parents.
+The complete-list result also certifies data-preserving policy adapters. -/
+private theorem complete_paths_eq (successor : ForestChild S)
     (left : List (Fin S.count)) (leftEnd : Fin S.count)
     (leftFinishes : left.getLast? = some leftEnd)
     (leftConsecutive : Consecutive (fun parent child => successor parent = some child) left)
@@ -250,7 +251,7 @@ private theorem complete_endpoints_eq (successor : ForestChild S)
     forall (right : List (Fin S.count)) (rightEnd : Fin S.count),
       left.head? = right.head? -> right.getLast? = some rightEnd ->
       Consecutive (fun parent child => successor parent = some child) right ->
-      successor rightEnd = none -> leftEnd = rightEnd := by
+      successor rightEnd = none -> left = right ∧ leftEnd = rightEnd := by
   induction left with
   | nil => cases leftFinishes
   | cons head tail inductionHypothesis =>
@@ -265,7 +266,7 @@ private theorem complete_endpoints_eq (successor : ForestChild S)
               have endpointEq : head = leftEnd := Option.some.inj leftFinishes
               subst leftEnd
               cases rest with
-              | nil => exact Option.some.inj rightFinishes
+              | nil => exact ⟨rfl, Option.some.inj rightFinishes⟩
               | cons next later =>
                   have nextEdge := rightConsecutive.1
                   change successor head = some next at nextEdge
@@ -284,8 +285,16 @@ private theorem complete_endpoints_eq (successor : ForestChild S)
                   have nextEq : next = otherNext :=
                     Option.some.inj (leftConsecutive.1.symm.trans rightConsecutive.1)
                   subst otherNext
-                  exact inductionHypothesis leftFinishes leftConsecutive.2
+                  have tails := inductionHypothesis leftFinishes leftConsecutive.2
                     (next :: remaining) rightEnd rfl rightFinishes rightConsecutive.2 rightStopped
+                  exact ⟨congrArg (List.cons head) tails.1, tails.2⟩
+
+/-- Complete paths beginning at the same source retain exactly the same
+observed list.  This compares actual shared-map traces without assuming a
+particular forest domain, selected search route or unique incoming parent. -/
+theorem nodes_eq_of_same_source (left right : SuccessorPath domain successor source) : left.nodes = right.nodes :=
+  (complete_paths_eq successor left.nodes left.endpoint left.finishes left.consecutive left.stopped
+    right.nodes right.endpoint (left.starts.trans right.starts.symm) right.finishes right.consecutive right.stopped).1
 
 /-- Actual complete successor paths which share a vertex end at the same
 sink.  Shared-vertex suffixes are used only in this propositional proof;
@@ -308,8 +317,8 @@ theorem endpoint_eq_of_shared {otherSource : Fin S.count}
   have rightSuffix := right.consecutive.drop rightBefore.length
   rw [leftSplit, List.drop_append_length] at leftSuffix
   rw [rightSplit, List.drop_append_length] at rightSuffix
-  exact complete_endpoints_eq successor (node :: leftAfter) left.endpoint leftFinishes leftSuffix
-    left.stopped (node :: rightAfter) right.endpoint rfl rightFinishes rightSuffix right.stopped
+  exact (complete_paths_eq successor (node :: leftAfter) left.endpoint leftFinishes leftSuffix
+    left.stopped (node :: rightAfter) right.endpoint rfl rightFinishes rightSuffix right.stopped).2
 
 end SuccessorPath
 

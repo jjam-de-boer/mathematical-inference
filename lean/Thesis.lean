@@ -52,6 +52,7 @@ import Thesis.Examples.ConditionalFailureActivationAvoidance
 import Thesis.Examples.ConditionalFailureActivationAvoidanceZero
 import Thesis.Examples.ConditionalCutActivationRoute
 import Thesis.Examples.ConditionalCutActivationForest
+import Thesis.Examples.ConditionalCutActivationInteraction
 import Thesis.Examples.ConditionalFailureActivationSelectionCounterexample
 import Thesis.Examples.ConditionalFailureActivationInteraction
 import Thesis.Examples.ConditionalFailureSmallInteraction
@@ -209,6 +210,14 @@ ancestor trace merges into its shared suffix and keeps the same conditioned
 endpoint.  That ancestor is an irrelevant path fork, explicitly showing why
 the whole auxiliary domain must not be selected as an interaction.  The
 independent conditioned fixture retains a singleton, stopped common trace.
+`ConditionalCutActivationInteraction` applies the same general trace and
+parity construction at that genuinely nonlatest pivot.  The irrelevant
+fork is pruned, while full original-cylinder conservation retains the outcome
+character.  Its omitted fork has a true direction bit and an odd own row,
+guarding against a zero-tail assumption in later missing-Small routing.
+The independent zero-edge fixture retains its conditioned sink on the full
+cube before actual evidence removes it.  No universal countermodel claim
+is inferred from these identifiable graph regressions.
 `ConditionalFailureActivationSelection` checks a genuine three-valued hedge
 whose collider activation lies entirely inside Small.  Graph certificates and
 structural normal-form reasoning prove that the pruned trace union contributes

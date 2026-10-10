@@ -30,10 +30,13 @@ parities are consequently preserved and activation-only rows are even.
 This constructs the combined conserved interaction, not a mandatory Small
 forest or a universal conditional countermodel.  All-Small routing and any
 Small-to-pivot oddness transfer remain separate obligations.
+The construction applies at any retained conditioner through the actual
+cut-policy trace union.  Original-graph latest maximality is not a premise;
+older latest/bar clients use explicit membership/policy adapters and the
+same proofs, rather than a second installation or parity argument.
 -/
 
 variable {S : ObservedSignature.{0}} {graph : ObservedGraph S} {query : ConditionalKernelQuery S}
-  {source : Fin S.count}
 
 namespace ConditionalBackdoorPathNormalForm
 
@@ -42,9 +45,9 @@ Observed forks and outgoing endpoints are not added just for being on it. -/
 def pathHeads {node : Fin S.count} (normal : ConditionalBackdoorPathNormalForm graph query node) : NodeSet S :=
   ActivePathInput.headRows graph (GraphMutilation.barUnderline query.action (NodeSet.singleton node)) normal.cutPath.nodes
 
-variable (pivot : LatestConditionalPivot graph query source)
+variable (pivot : RetainedConditionalPivot query)
     (normal : ConditionalBackdoorPathNormalForm graph query pivot.node)
-    (forest : ConditionalColliderActivationForest query pivot.node)
+    (forest : ConditionalCutColliderActivationForest query pivot.node)
 
 /-- The real union of path heads and complete retained activation traces.
 A shared collider or merged trace vertex has one Boolean membership entry. -/

@@ -27,16 +27,18 @@ the masks, direction, row parities, outcome character and cylinder matching
 are constructed from the actual normal form.  It does not assert that those
 coverage certificates hold universally.  Unconditioned missing Small rows
 still need real routing, and a pivot outside Small still needs oddness transfer.
+The entire adapter now uses a retained conditioner and actual cut policy,
+without original-graph latest maximality.  The direction and parity proofs
+are the same general normalized-path construction at that supplied vertex.
 -/
 
 variable {S : ObservedSignature.{0}} {graph : ObservedGraph S} {query : ConditionalKernelQuery S}
-  {source : Fin S.count}
 
 namespace ConditionalBackdoorPathNormalForm
 
-variable (pivot : LatestConditionalPivot graph query source)
+variable (pivot : RetainedConditionalPivot query)
     (normal : ConditionalBackdoorPathNormalForm graph query pivot.node)
-    (forest : ConditionalColliderActivationForest query pivot.node)
+    (forest : ConditionalCutColliderActivationForest query pivot.node)
 
 /-- Complete the actual interaction with every original conditioner.
 Boolean union retains overlaps once, including conditioned collider sinks. -/
@@ -123,9 +125,9 @@ in Small.  No parity, character, conservation or probability-gap premise
 is supplied.  Every Small row is retained; the background is exactly the
 completed interaction's difference from Small, not a guessed disjoint copy. -/
 def HedgeChannelEnvironmentInstallation.ConditionalParityWitness.ofNormalizedActivation
-    (w : HedgeWitness graph query.jointNumerator) (pivot : LatestConditionalPivot graph query source)
+    (w : HedgeWitness graph query.jointNumerator) (pivot : RetainedConditionalPivot query)
     (normal : ConditionalBackdoorPathNormalForm graph query pivot.node)
-    (forest : ConditionalColliderActivationForest query pivot.node)
+    (forest : ConditionalCutColliderActivationForest query pivot.node)
     (pivotInSmall : w.small pivot.node = true)
     (containsSmall : NodeSet.Subset w.small (normal.smallInteractionRows pivot forest)) :
     ConditionalParityWitness w (normal.activationInteractionSignal pivot forest) (normal.activationInteractionSignal pivot forest) := by
@@ -189,9 +191,9 @@ Both changing evidence masses and every original queried outcome are
 retained by the proved full-covariance and original-label construction. -/
 noncomputable def conditionalCounterexampleOfNormalizedActivation
     (w : HedgeWitness graph query.jointNumerator) (rich : ObservedSignature.ValueRich S)
-    (pivot : LatestConditionalPivot graph query source)
+    (pivot : RetainedConditionalPivot query)
     (normal : ConditionalBackdoorPathNormalForm graph query pivot.node)
-    (forest : ConditionalColliderActivationForest query pivot.node)
+    (forest : ConditionalCutColliderActivationForest query pivot.node)
     (pivotInSmall : w.small pivot.node = true)
     (containsSmall : NodeSet.Subset w.small (normal.smallInteractionRows pivot forest)) :
     ConditionalCounterexampleIn (GraphModelClass.positive graph) query :=

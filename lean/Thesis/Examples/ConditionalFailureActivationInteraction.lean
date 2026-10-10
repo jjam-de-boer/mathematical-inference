@@ -9,7 +9,8 @@ namespace CurrentConditionalFailureActivationInteraction
 
 open Probability PathSpecification FiniteBooleanInteraction HedgeChannelEnvironmentInstallation
 
-/-!+# Actual normalized path/activation installations on original query support
+/-!
+# Actual normalized path/activation installations on original query support
 
 The genuine five-vertex numerator hedge supplies the opaque result of the
 general normal-form constructor.  The tests below apply the new interaction
@@ -29,6 +30,9 @@ These tests do not construct a universal terminal countermodel.  The first
 fixture has a genuine joint hedge; the action-free second one is identifiable
 and checks the graph/signal bridge only.  Mandatory-Small coverage and any
 Small-to-pivot oddness transfer are not inferred from these interaction tests.
+The older latest/bar fixtures use the explicit `toRetained` and `toCutForest`
+adapters.  Domain, map and complete traces are preserved; these are clients
+of the same generalized retained-pivot proof, not a duplicate construction.
 -/
 
 namespace SmallOverlap
@@ -36,9 +40,9 @@ namespace SmallOverlap
 open CurrentConditionalFailureActivationSelection
 
 /-- Actual union from the opaque certified normal form, not the displayed path. -/
-def rows : NodeSet signature := normal.activationInteractionRows pivot forest
+def rows : NodeSet signature := normal.activationInteractionRows pivot.toRetained forest.toCutForest
 /-- The one fused signal installed on every selected union row. -/
-def installed : LinearSignal graph := normal.activationInteractionSignal pivot forest
+def installed : LinearSignal graph := normal.activationInteractionSignal pivot.toRetained forest.toCutForest
 
 /-- The actual constructed normal form, with all original input coordinates,
 has the original singleton outcome character on the complete query support. -/
@@ -46,7 +50,7 @@ theorem original_conditional_character (point : Cube graph)
     (listed : point ∈ FiniteProduct.falseCylinderEnumeration (pairRootCount graph.binary + signature.count)
       (cubeMask graph (NodeSet.union query.action query.condition))) :
     (installed.forestPhase rows).value point = (maskPhase _ (cubeMask graph query.outcome)).value point := by
-  rw [installed, rows, normal.activationInteraction_conditionalPhase pivot forest point listed]
+  rw [installed, rows, normal.activationInteraction_conditionalPhase pivot.toRetained forest.toCutForest point listed]
   have same := (NodeSet.singleton_eq_true_iff outcome normal.outcome).mp normal.outcome_selected
   rw [same]
   rfl
@@ -57,14 +61,14 @@ theorem actual_selected_parities : rows pivot.node = true ∧
     (installed.rowPhase pivot.node).value normal.pathDirection = true ∧
     (forall child, rows child = true -> child ≠ pivot.node ->
       (installed.rowPhase child).value normal.pathDirection = false) :=
-  ⟨(normal.activationInteraction_source_odd pivot forest).1,
-    (normal.activationInteraction_source_odd pivot forest).2,
-    normal.activationInteraction_selected_even pivot forest⟩
+  ⟨(normal.activationInteraction_source_odd pivot.toRetained forest.toCutForest).1,
+    (normal.activationInteraction_source_odd pivot.toRetained forest.toCutForest).2,
+    normal.activationInteraction_selected_even pivot.toRetained forest.toCutForest⟩
 
 /-- Complete supported union oddness follows from the general conserved
 phase, not enumeration of this graph's likelihood or private environment. -/
 theorem actual_union_odd : (installed.forestPhase rows).value normal.pathDirection = true :=
-  normal.activationInteraction_forest_odd pivot forest
+  normal.activationInteraction_forest_odd pivot.toRetained forest.toCutForest
 
 /-- The real trace overlap remains mandatory Small.  Fusion installs it
 once in the union, rather than assuming Small and activation are disjoint. -/
@@ -78,13 +82,13 @@ namespace AlreadyConditioned
 open CurrentConditionalFailureActivationAvoidanceZero
 
 /-- Complete actual traces, retaining even an already-conditioned source. -/
-def traces : NodeSet signature := normal.activationTraceNodes pivot forest
+def traces : NodeSet signature := normal.activationTraceNodes pivot.toRetained forest.toCutForest
 /-- The same common policy restricted to the actual selected trace union. -/
-def successor : ForestChild signature := normal.activationTraceSuccessor pivot forest
+def successor : ForestChild signature := normal.activationTraceSuccessor pivot.toRetained forest.toCutForest
 /-- Actual deduplicated path heads and zero-edge activation rows. -/
-def rows : NodeSet signature := normal.activationInteractionRows pivot forest
+def rows : NodeSet signature := normal.activationInteractionRows pivot.toRetained forest.toCutForest
 /-- The general fused signal, not a manually proposed row-phase table. -/
-def installed : LinearSignal graph := normal.activationInteractionSignal pivot forest
+def installed : LinearSignal graph := normal.activationInteractionSignal pivot.toRetained forest.toCutForest
 
 /-- The actual finite selection keeps exactly the already-conditioned
 source; its restricted successor has no invented activation edge. -/
@@ -99,17 +103,17 @@ theorem actual_zero_edge_trace : traces = NodeSet.singleton collider ∧ success
     apply Bool.eq_iff_iff.mpr
     constructor
     · intro selected
-      have inForest := normal.activationTraceNodes_subset_forest pivot forest node selected
+      have inForest := normal.activationTraceNodes_subset_forest pivot.toRetained forest.toCutForest node selected
       have onPath : .observed node ∈ normal.cutPath.nodes := by
         rw [normal_window]
         exact (by decide +kernel : forall child, forest.nodes child = true ->
           (SeparationNode.observed child : SeparationNode signature) ∈
             [.observed pivotNode, .observed parent, .observed collider, .observed outcome]) node inForest
-      have seed := (normal.activationTraceNodes_intersection_iff_collider pivot forest node onPath).mp selected
+      have seed := (normal.activationTraceNodes_intersection_iff_collider pivot.toRetained forest.toCutForest node onPath).mp selected
       rw [seedMask] at seed
       exact seed
     · intro selected
-      apply normal.colliderSeeds_subset_activationTraceNodes pivot forest node
+      apply normal.colliderSeeds_subset_activationTraceNodes pivot.toRetained forest.toCutForest node
       rw [seedMask]
       exact selected
   refine ⟨selectedMask, ?_⟩
@@ -136,7 +140,7 @@ This guards against cancelling an already-conditioned activation too early. -/
 theorem full_cube_sink_retained (point : Cube graph) :
     (installed.forestPhase rows).value point = Bool.xor (cubeSample graph point pivot.node)
       (Bool.xor (cubeSample graph point normal.outcome) (cubeSample graph point collider)) := by
-  rw [installed, rows, normal.activationInteraction_forestPhase pivot forest]
+  rw [installed, rows, normal.activationInteraction_forestPhase pivot.toRetained forest.toCutForest]
   have sinks : keptSinks traces successor = NodeSet.singleton collider := by
     rw [actual_zero_edge_trace.1, actual_zero_edge_trace.2]
     funext node
@@ -150,7 +154,7 @@ theorem original_conditional_character (point : Cube graph)
     (listed : point ∈ FiniteProduct.falseCylinderEnumeration (pairRootCount graph.binary + signature.count)
       (cubeMask graph (NodeSet.union query.action query.condition))) :
     (installed.forestPhase rows).value point = (maskPhase _ (cubeMask graph query.outcome)).value point := by
-  rw [installed, rows, normal.activationInteraction_conditionalPhase pivot forest point listed]
+  rw [installed, rows, normal.activationInteraction_conditionalPhase pivot.toRetained forest.toCutForest point listed]
   have same := (NodeSet.singleton_eq_true_iff outcome normal.outcome).mp normal.outcome_selected
   rw [same]
   rfl
@@ -177,7 +181,7 @@ theorem collider_own_bit_retained :
 /-- The installed zero-edge case uses the general supported direction
 and whole-union oddness theorem, just like a nonzero activation trace. -/
 theorem actual_union_odd : (installed.forestPhase rows).value normal.pathDirection = true :=
-  normal.activationInteraction_forest_odd pivot forest
+  normal.activationInteraction_forest_odd pivot.toRetained forest.toCutForest
 
 end AlreadyConditioned
 

@@ -34,8 +34,8 @@ and pruning facts independently of that heavier semantic assembly.  Together
 they cover a real nontrivial Small-overlap case, not universal path coverage.
 -/
 
-def traces : NodeSet signature := normal.activationTraceNodes pivot forest
-def outsideRows : NodeSet signature := normal.activationTraceOutside pivot forest witness.small
+def traces : NodeSet signature := normal.activationTraceNodes pivot.toRetained forest.toCutForest
+def outsideRows : NodeSet signature := normal.activationTraceOutside pivot.toRetained forest.toCutForest witness.small
 
 def activation : ConditionalColliderActivationRoute query pivot.node collider where
   before := [collider]
@@ -98,9 +98,8 @@ theorem irrelevant_ancestor_pruned : forest.nodes outcome = true ∧ traces outc
   cases selected : traces outcome with
   | false => rfl
   | true =>
-      have source := (normal.activationTraceNodes_intersection_iff_collider pivot forest outcome outcome_on_normal_path).mp selected
-      rw [outcome_not_collider_seed] at source
-      cases source
+      have source := (normal.activationTraceNodes_intersection_iff_collider pivot.toRetained forest.toCutForest outcome outcome_on_normal_path).mp selected
+      exact False.elim (Bool.false_ne_true (outcome_not_collider_seed.symm.trans source))
 
 /-- Every trace row of the computed normal form is mandatory Small.
 This uses graph/action/endpoint certificates, not evaluation of the
@@ -109,7 +108,7 @@ theorem normal_trace_union_inside_small : NodeSet.Subset traces witness.small :=
   intro node selected
   by_cases isAction : node = actionNode
   · subst node
-    have free := normal.activationTraceNodes_action_free pivot forest actionNode selected
+    have free := normal.activationTraceNodes_action_free pivot.toRetained forest.toCutForest actionNode selected
     have acted : query.action actionNode = true := by decide +kernel
     rw [acted] at free
     cases free
@@ -129,7 +128,7 @@ theorem outside_rows_empty : outsideRows = NodeSet.empty := by
   | false => rfl
   | true =>
       have onTrace : traces node = true := (Bool.and_eq_true_iff.mp selected).1
-      have outside := normal.activationTraceOutside_not_mandatory pivot forest witness.small node selected
+      have outside := normal.activationTraceOutside_not_mandatory pivot.toRetained forest.toCutForest witness.small node selected
       have inside := normal_trace_union_inside_small node onTrace
       rw [outside] at inside
       cases inside

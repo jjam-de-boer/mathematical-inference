@@ -26,8 +26,10 @@ well-formedness and every real cut arrow are proved in the original graph;
 the temporary signature is never used for model installation or root inputs.
 Conditioned vertices remain sinks, including zero-edge activations.  Complete
 common-policy paths inherit normalized-path avoidance without a latest-pivot
-premise.  Selecting their union, installing its parity interaction and routing
-missing Small rows remain separate tasks, not conclusions of this module.
+premise.  `ConditionalFailureActivationSelection` and its interaction module
+separately select and install those actual traces at any retained pivot.
+Routing missing Small rows and transferring Small oddness are still distinct
+obligations, not conclusions of the policy interface here.
 -/
 
 variable {S : ObservedSignature.{0}}
@@ -247,6 +249,90 @@ theorem path_endpoints_eq_of_shared (forest : ConditionalCutColliderActivationFo
   (forest.path left leftSelected).endpoint_eq_of_shared (forest.path right rightSelected) shared leftMember rightMember
 
 end ConditionalCutColliderActivationForest
+
+namespace ConditionalColliderActivationForest
+
+/-- Reinterpret an existing stronger bar-policy forest as a cut-policy
+forest, without changing its domain or successor map.  Its proved pivot-free
+domain makes every selected parent different from the pivot, so all its
+arrows survive the singleton outgoing cut.  Cut-route coverage follows from
+its stronger bar-route coverage.  This explicit adapter lets older clients
+reuse the same general trace/parity proofs as arbitrary retained pivots. -/
+def toCutForest {query : ConditionalKernelQuery S} {pivot : Fin S.count}
+    (forest : ConditionalColliderActivationForest query pivot) : ConditionalCutColliderActivationForest query pivot := by
+  refine { policy := {
+    nodes := forest.nodes
+    successor := forest.successor
+    wellFormed := ?_
+    action_free := forest.action_free
+    pivot_free := forest.pivot_free
+    sink_iff_condition := forest.sink_iff_condition
+    contains_activation := ?_
+  } }
+  · apply List.all_eq_true.mpr
+    intro parent _member
+    cases selected : forest.nodes parent with
+    | false =>
+        have stopped := childWellFormed_off forest.nodes forest.successor forest.wellFormed selected
+        rw [stopped]
+    | true =>
+        cases next : forest.successor parent with
+        | none => rfl
+        | some child =>
+            have actual := childWellFormed_edge forest.nodes forest.successor forest.wellFormed next
+            have different : parent ≠ pivot := by
+              intro same
+              rw [same, forest.pivot_free] at selected
+              cases selected
+            have absent : NodeSet.singleton pivot parent = false := by
+              apply Bool.eq_false_iff.mpr
+              intro present
+              exact different ((NodeSet.singleton_eq_true_iff pivot parent).mp present)
+            change (forest.nodes child && (S.directed parent child && !(NodeSet.singleton pivot parent))) = true
+            rw [actual.2.1, actual.2.2, absent]
+            rfl
+  · intro collider route
+    apply forest.contains_activation collider
+    refine {
+      before := route.before
+      endpoint := route.endpoint
+      endpoint_condition := route.endpoint_condition
+      endpoint_ne_pivot := route.endpoint_ne_pivot
+      starts := route.starts
+      simple := route.simple
+      consecutive := ?_
+      action_free := route.action_free
+      before_given_free := route.before_given_free
+    }
+    exact Consecutive.mono (ConditionalCutActivationRouting.observedEdge_implies_action_edge query pivot) _ route.consecutive
+
+/-- The compatibility adapter does not alter the selected original rows. -/
+theorem toCutForest_nodes {query : ConditionalKernelQuery S} {pivot : Fin S.count}
+    (forest : ConditionalColliderActivationForest query pivot) : forest.toCutForest.nodes = forest.nodes := rfl
+
+/-- The compatibility adapter preserves the shared successor exactly,
+including actual conditioned stops and all branch merges. -/
+theorem toCutForest_successor {query : ConditionalKernelQuery S} {pivot : Fin S.count}
+    (forest : ConditionalColliderActivationForest query pivot) : forest.toCutForest.successor = forest.successor := rfl
+
+/-- Domain/map compatibility preserves every complete computed trace,
+not merely its reachability proposition or a selected endpoint. -/
+theorem toCutForest_path_nodes {query : ConditionalKernelQuery S} {pivot : Fin S.count}
+    (forest : ConditionalColliderActivationForest query pivot) (collider : Fin S.count)
+    (selected : forest.nodes collider = true) :
+    (forest.toCutForest.path collider selected).nodes = (forest.path collider selected).nodes :=
+  (forest.toCutForest.path collider selected).nodes_eq_of_same_source (forest.path collider selected)
+
+/-- The conditioned endpoint itself is unchanged by the explicit adapter. -/
+theorem toCutForest_path_endpoint {query : ConditionalKernelQuery S} {pivot : Fin S.count}
+    (forest : ConditionalColliderActivationForest query pivot) (collider : Fin S.count)
+    (selected : forest.nodes collider = true) :
+    (forest.toCutForest.path collider selected).endpoint = (forest.path collider selected).endpoint :=
+  (forest.toCutForest.path collider selected).endpoint_eq_of_shared (forest.path collider selected) collider
+    (List.mem_of_head? (forest.toCutForest.path collider selected).starts)
+    (List.mem_of_head? (forest.path collider selected).starts)
+
+end ConditionalColliderActivationForest
 
 namespace ConditionalBackdoorPathNormalForm
 

@@ -69,7 +69,7 @@ theorem pivot_in_small : witness.small pivot.node = true := by decide +kernel
 /-- Every mandatory Small row is present in the actual completed union.
 `C` is forced by the endpoint theorem; `P,Z` are retained original evidence
 rows.  Nothing is dropped, duplicated, or transported to another query. -/
-theorem actual_small_coverage : NodeSet.Subset witness.small (normal.smallInteractionRows pivot forest) := by
+theorem actual_small_coverage : NodeSet.Subset witness.small (normal.smallInteractionRows pivot.toRetained forest.toCutForest) := by
   intro child inside
   have classification : forall child : Fin signature.count, witness.small child = true ->
       child = collider ∨ query.condition child = true := by decide +kernel

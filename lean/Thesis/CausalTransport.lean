@@ -256,6 +256,9 @@ restoration retains that list and proves the first incoming edge.  The
 normal-form certificates are derived, not additional failure-readiness flags.
 Their count/rank objectives also imply global score optimality, connecting
 these data to the generic detour-exclusion theorem.
+`RetainedConditionalPivot` records only original condition membership, and
+`LatestConditionalPivot.toRetained` explicitly forgets stronger original-
+graph reachability/maximality certificates without changing the vertex.
 `ConditionalCutActivationRoute` searches the actual singleton outgoing-cut
 graph directly from each cut-path collider's activity.  A temporary outgoing-
 masked signature reuses the verified observed route search with the identical
@@ -285,11 +288,13 @@ formedness, action/pivot freedom, exact cut arrows, conditioned sinks and
 complete-path avoidance without original-graph maximality.  At a nonlatest
 pivot the old full-bar-route coverage interface can be impossible, because
 it would cover a route beginning at its excluded pivot.  The narrower cut
-interface is constructed instead; pruning its actual collider traces and
-integrating their parity with missing Small rows remain separate obligations.
+interface is constructed instead.  The explicit `toCutForest` adapter keeps
+older bar-policy clients' domain, successor map, complete paths and endpoints
+unchanged.  No implicit coercion or replacement forest search is introduced.
 `ConditionalFailureActivationSelection` scans the normal form's actual
 observed collider windows and takes the union of their complete common-policy
-traces.  This prunes irrelevant activation ancestors while retaining every
+traces at any retained conditioner, without a latest-pivot premise.  This
+prunes irrelevant activation ancestors while retaining every
 source and successor, every shared suffix, and every genuinely conditioned
 sink.  Its intersection with the normalized path is exactly the collider
 source mask.  Difference from a supplied mandatory set gives the outside
@@ -302,7 +307,9 @@ at every original cube point.  On the original action-plus-condition cylinder
 this is the selected outcome character.  Every trace coordinate is zero in
 the supported path direction, so the actual union retains just the pivot's odd
 row, and its complete phase is odd.  This closes the merged path/activation
-interaction, not coverage or oddness of a different mandatory Small forest.
+interaction for any retained pivot, not coverage or oddness of a different
+mandatory Small forest.  In particular a first encountered conditioner need
+not be replaced by a later original-graph maximal vertex for these proofs.
 `ConditionalFailureSmallInteraction` retains every original conditioner with
 that union.  Outside the actual union the signal is its own bit, so these
 added evidence rows are present and even throughout the original conditioning

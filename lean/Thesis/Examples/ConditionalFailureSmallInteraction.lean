@@ -29,12 +29,12 @@ have unconditioned missing Small rows or a latest pivot outside Small.
 -/
 
 /-- The actual fused signal, including its original reserved inputs. -/
-def installed : LinearSignal graph := normal.activationInteractionSignal pivot forest
+def installed : LinearSignal graph := normal.activationInteractionSignal pivot.toRetained forest.toCutForest
 
 /-- All actual graph membership/coverage certificates are supplied by
 the companion.  Every parity and matching field is a constructed theorem. -/
 def parityWitness : ConditionalParityWitness witness installed installed :=
-  .ofNormalizedActivation witness pivot normal forest pivot_in_small actual_small_coverage
+  .ofNormalizedActivation witness pivot.toRetained normal forest.toCutForest pivot_in_small actual_small_coverage
 
 /-- This is oddness of every mandatory Small row's installed phase, not
 just of the path-head union or its pivot.  It is derived by conservation. -/
@@ -44,7 +44,7 @@ theorem complete_small_phase_odd : (installed.forestPhase witness.small).value n
 /-- The exact outside-Small background retains the completed interaction's
 remaining rows once.  No Small/activation disjointness is imposed. -/
 theorem actual_selected_background : parityWitness.selected =
-    NodeSet.diff (normal.smallInteractionRows pivot forest) witness.small := rfl
+    NodeSet.diff (normal.smallInteractionRows pivot.toRetained forest.toCutForest) witness.small := rfl
 
 /-- The actual covariance identity holds throughout the original evidence
 cylinder, including every free original reserved coordinate and outcome. -/
@@ -59,7 +59,7 @@ theorem full_original_cylinder_matching (point : Cube graph)
 and a strict gap for the unchanged conditional query follow from the actual
 normalized construction.  No finite probability-table enumeration is used. -/
 noncomputable def counterexample : ConditionalCounterexampleIn (GraphModelClass.positive graph) query :=
-  conditionalCounterexampleOfNormalizedActivation witness rich pivot normal forest pivot_in_small actual_small_coverage
+  conditionalCounterexampleOfNormalizedActivation witness rich pivot.toRetained normal forest.toCutForest pivot_in_small actual_small_coverage
 
 /-- The constructed pair refutes identifiability of the unchanged query
 in the fully positive class, not just identifiability of its numerator. -/
