@@ -28,8 +28,10 @@ cut arrow and is not the endpoint.  Its entire proper prefix is therefore
 unconditioned in the original query.  These are proved route properties,
 not additional avoidance flags.  General normalized-path avoidance can now
 use these routes without selecting a latest reachable conditioning vertex.
-Constructing and installing one common merged cut-policy forest remains a
-separate step; independent routes must not be installed as duplicate rows.
+`ConditionalCutActivationForest` separately constructs one common merged
+cut policy using the same search signature.  Independent routes must not
+be installed as duplicate rows; trace selection and parity installation
+are different tasks from the individual route constructor here.
 -/
 
 variable {S : ObservedSignature.{0}}
@@ -39,7 +41,7 @@ namespace ConditionalCutActivationRouting
 /-- The same observed alphabet and order, with only the singleton pivot's
 outgoing arrows removed.  This temporary signature computes graph routes;
 it is not a replacement for the original model's signature or root inputs. -/
-private def cutSignature (pivot : Fin S.count) : ObservedSignature where
+def searchSignature (pivot : Fin S.count) : ObservedSignature where
   count := S.count
   Value := S.Value
   valueEnumeration := S.valueEnumeration
@@ -55,7 +57,7 @@ private def cutSignature (pivot : Fin S.count) : ObservedSignature where
 /-- The finite observed search edge in the exact exchange cut.  Incoming
 action cuts and the pivot outgoing cut are both retained. -/
 def observedEdge (query : ConditionalKernelQuery S) (pivot : Fin S.count) : Fin S.count -> Fin S.count -> Bool :=
-  mutilatedDirected (cutSignature pivot) query.action
+  mutilatedDirected (searchSignature pivot) query.action
 
 /-- The search's arrow is the actual original expanded cut arrow between
 these observed endpoints, not an unrelated masked graph relation. -/
@@ -148,8 +150,8 @@ def ofAncestor (graph : ObservedGraph S) (query : ConditionalKernelQuery S) (piv
     exact List.any_eq_true.mpr ⟨endpoint, NodeSet.mem_enumerated S endpoint, Bool.and_eq_true_iff.mpr ⟨selected, observed⟩⟩
   let target := listFirstAny candidates accepts found
   have targetParts := Bool.and_eq_true_iff.mp (listFirstAny_pred candidates accepts found)
-  let original := mutilatedDirectedRoute (S := cutSignature pivot) query.action target S.count collider targetParts.2
-  have originalSpec := mutilatedDirectedRoute_spec (S := cutSignature pivot) query.action target S.count collider targetParts.2
+  let original := mutilatedDirectedRoute (S := searchSignature pivot) query.action target S.count collider targetParts.2
+  have originalSpec := mutilatedDirectedRoute_spec (S := searchSignature pivot) query.action target S.count collider targetParts.2
   let first := ConditionalActivationRouting.firstTargetPrefix targets target targetParts.1 original originalSpec.2.1
   have prefixStarts : (first.before ++ [first.target]).head? = some collider := by
     have starts := originalSpec.1

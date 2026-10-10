@@ -51,6 +51,7 @@ import Thesis.Examples.ConditionalFailurePathNormalization
 import Thesis.Examples.ConditionalFailureActivationAvoidance
 import Thesis.Examples.ConditionalFailureActivationAvoidanceZero
 import Thesis.Examples.ConditionalCutActivationRoute
+import Thesis.Examples.ConditionalCutActivationForest
 import Thesis.Examples.ConditionalFailureActivationSelectionCounterexample
 import Thesis.Examples.ConditionalFailureActivationInteraction
 import Thesis.Examples.ConditionalFailureSmallInteraction
@@ -201,6 +202,13 @@ pivot, clarifying the required cut-policy interface rather than forcing an
 invalid adapter.  An independent zero-edge conditioned activation uses the
 same constructor and theorem.  Both queries are identifiable graph regressions,
 not conditional countermodels or numerator-failure certificates.
+`ConditionalCutActivationForest` constructs the narrower common policy at
+that same nonlatest pivot, even though the older bar forest is impossible.
+Its actual collider trace inherits normalized-path avoidance; an auxiliary
+ancestor trace merges into its shared suffix and keeps the same conditioned
+endpoint.  That ancestor is an irrelevant path fork, explicitly showing why
+the whole auxiliary domain must not be selected as an interaction.  The
+independent conditioned fixture retains a singleton, stopped common trace.
 `ConditionalFailureActivationSelection` checks a genuine three-valued hedge
 whose collider activation lies entirely inside Small.  Graph certificates and
 structural normal-form reasoning prove that the pruned trace union contributes

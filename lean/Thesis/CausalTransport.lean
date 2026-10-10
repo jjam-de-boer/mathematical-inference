@@ -140,6 +140,7 @@ import Thesis.CausalTransport.ConditionalFailurePathNormalization
 import Thesis.CausalTransport.ConditionalFailurePathDirection
 import Thesis.CausalTransport.ConditionalCutActivationRoute
 import Thesis.CausalTransport.ConditionalFailureActivationAvoidance
+import Thesis.CausalTransport.ConditionalCutActivationForest
 import Thesis.CausalTransport.ConditionalFailureActivationSelection
 import Thesis.CausalTransport.ConditionalFailureActivationInteraction
 import Thesis.CausalTransport.ConditionalFailureSmallInteraction
@@ -276,10 +277,16 @@ also applies to the actual forest paths without extra readiness flags.  Zero-edg
 activations are permitted, and different branches may still merge off the path.
 Neither domain-wide disjointness nor a combined small-forest parity solution
 is asserted by this avoidance theorem.
-A common merged cut-policy forest still needs construction.  At a nonlatest
-pivot the old full-bar-route coverage interface can be impossible, because it
-would cover a route beginning at its excluded pivot.  Correct cut-route or
-actual-seed coverage must be proved instead of asserting that old constructor.
+`ConditionalCutActivationForest` constructs a common merged cut policy at
+any retained conditioner.  It reuses the verified finite forest search on
+the auxiliary outgoing-cut signature, where the pivot cannot reach another
+vertex.  It proves coverage for actual cut routes, original-signature well-
+formedness, action/pivot freedom, exact cut arrows, conditioned sinks and
+complete-path avoidance without original-graph maximality.  At a nonlatest
+pivot the old full-bar-route coverage interface can be impossible, because
+it would cover a route beginning at its excluded pivot.  The narrower cut
+interface is constructed instead; pruning its actual collider traces and
+integrating their parity with missing Small rows remain separate obligations.
 `ConditionalFailureActivationSelection` scans the normal form's actual
 observed collider windows and takes the union of their complete common-policy
 traces.  This prunes irrelevant activation ancestors while retaining every
