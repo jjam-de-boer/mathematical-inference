@@ -237,6 +237,59 @@ theorem bits_false_of_free (path : SuccessorPath domain successor source) (nodes
   intro member
   exact Bool.false_ne_true ((free child member).symm.trans selected)
 
+/-! ## A proper-prefix flip has two exact boundary sources -/
+
+/-- Flip only the actual proper path vertices.  The computed endpoint is
+excluded even when the source is already that endpoint, so a zero-edge
+path contributes the zero direction.  This is the transfer mask used when
+a receiving row's own bit must remain fixed by original evidence. -/
+def prefixBits (path : SuccessorPath domain successor source) : Fin S.count -> Bool :=
+  fun child => path.bits child && !(decide (child = path.endpoint))
+
+/-- A true prefix coordinate is an actual visited nonendpoint, not an
+arbitrary predecessor or a vertex selected from propositional existence. -/
+theorem prefixBits_eq_true_iff (path : SuccessorPath domain successor source) (child : Fin S.count) :
+    path.prefixBits child = true ↔ child ∈ path.nodes ∧ child ≠ path.endpoint := by
+  constructor
+  · intro selected
+    have parts := Bool.and_eq_true_iff.mp selected
+    refine ⟨of_decide_eq_true parts.1, ?_⟩
+    intro same
+    have absent : decide (child = path.endpoint) = false := by
+      simpa only [Bool.not_eq_true'] using parts.2
+    simp only [same, decide_true] at absent
+    cases absent
+  · rintro ⟨visited, different⟩
+    exact Bool.and_eq_true_iff.mpr ⟨decide_eq_true visited,
+      by simp only [different, decide_false, Bool.not_false]⟩
+
+private theorem prefixBits_eq_xor_endpoint (path : SuccessorPath domain successor source) :
+    path.prefixBits = fun child => Bool.xor (path.bits child) (decide (child = path.endpoint)) := by
+  funext child
+  by_cases same : child = path.endpoint
+  · subst child
+    have included : path.bits path.endpoint = true := decide_eq_true (List.mem_of_getLast? path.finishes)
+    simp only [prefixBits, included, decide_true, Bool.not_true, Bool.and_false, Bool.xor_self]
+  · simp only [prefixBits, same, decide_false, Bool.not_false, Bool.and_true, Bool.xor_false]
+
+/-- The proper-prefix flip is odd exactly at its source and its receiving
+endpoint.  Every intermediate and off-path row is even, including at branch
+merges.  If source equals endpoint the two indicators cancel, correctly
+handling the zero-edge case.  This statement concerns the actual shared
+successor map and makes no zero-tail assumption about another direction. -/
+theorem prefixBits_localSource (path : SuccessorPath domain successor source) (child : Fin S.count) :
+    hedgeRoutingLocalSource successor path.prefixBits child =
+      Bool.xor (decide (child = source)) (decide (child = path.endpoint)) := by
+  rw [prefixBits_eq_xor_endpoint]
+  unfold hedgeRoutingLocalSource
+  rw [incoming_xor, incoming_singleton, path.stopped]
+  simp only [reduceCtorEq, decide_false, Bool.xor_false]
+  have original := path.bits_localSource child
+  unfold hedgeRoutingLocalSource at original
+  rw [← original]
+  cases path.bits child <;> cases hedgeRoutingIncomingBits successor path.bits child <;>
+    cases decide (child = path.endpoint) <;> rfl
+
 /-! ## Complete paths cannot diverge after meeting -/
 
 /-- Two complete finite paths of one successor map agree in their entire

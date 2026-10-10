@@ -133,6 +133,7 @@ import Thesis.CausalTransport.HedgeChannelMarginal
 import Thesis.CausalTransport.HedgeChannelFlowDirection
 import Thesis.CausalTransport.HedgeChannelEnvironmentRouting
 import Thesis.CausalTransport.HedgeChannelEnvironmentAbsorption
+import Thesis.CausalTransport.HedgeChannelEnvironmentPrefixDirection
 import Thesis.CausalTransport.HedgeChannelEnvironmentMaskPhase
 import Thesis.CausalTransport.HedgeChannelEnvironmentFusion
 import Thesis.CausalTransport.ConditionalFailureActivationForest
@@ -266,6 +267,14 @@ point, its outcome character and the complete Small/background matching
 identity on the full original evidence cylinder.
 No zero-tail premise is used for conservation.  The remaining direction
 parities and Small-to-pivot oddness transfer at those contacts are still open.
+`HedgeChannelEnvironmentPrefixDirection` constructs the actual proper-prefix
+flip without changing its receiving endpoint or any original reserved input.
+Its exact local-source parity is the source XOR the receiver, canceling for
+zero-edge paths.  At original interaction rows it retains the original
+signal's real prefix reads alongside that boundary correction.  Support and
+outcome-character preservation are proved for actual prefix freedom.  Those
+identities permit real transfer but do not assert that a prefix fork has no
+receiving residual; the universal parity argument must still account for it.
 `ConditionalFailureActivationForest` gives all such collider activations one
 common directed successor policy.  Every selected nonconditioner has a real
 selected child, and conditioners are precisely its sinks.  The latest pivot

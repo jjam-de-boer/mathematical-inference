@@ -41,6 +41,8 @@ import Thesis.Examples.ConditionalFailureFlow
 import Thesis.Examples.ConditionalFailureFlowBoundary
 import Thesis.Examples.ConditionalFailureSmallApproach
 import Thesis.Examples.ConditionalFailureSmallAbsorption
+import Thesis.Examples.ConditionalFailureSmallPrefixDirection
+import Thesis.Examples.ConditionalPrefixForkResidual
 import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
@@ -149,6 +151,19 @@ without changing the original query.  The actual opaque normalized signal
 then inherits complete Small coverage, action freedom, whole-cube conservation
 and the full original-cylinder outcome character from the general constructor.
 No supplied zero-tail or matching flags replace the remaining parity argument.
+`ConditionalFailureSmallPrefixDirection` closes a genuine three-valued hedge
+with Small `U,R` and a first conditioner `P` outside Small.  The actual normal
+path `P <- Y` is proved from its unique endpoint neighbour without evaluating
+normal-form search.  The original absorbed direction leaves background `P`
+odd; flipping the real `U,R` proper prefix preserves original support and
+reserved bits and makes that row even.  Full matching then derives complete
+Small oddness and constructs positive original-query countermodels.  This
+case does not erase the original-prefix-read residual in more general graphs.
+`ConditionalPrefixForkResidual` checks that warning on the existing actual
+fork path: original pivot `P` reads the flipped prefix fork `U`, and this true
+residual cancels the true receiving correction.  The resulting pivot parity
+is false, not the endpoint indicator alone.  This identifiable-query graph
+is a local signal regression, not a counterexample to conditional completeness.
 `ConditionalFailureActivationForest` checks two genuinely activated observed
 colliders whose branches merge before one conditioner.  The common forest
 retains both incoming branches, uses one shared outgoing successor, and stops
