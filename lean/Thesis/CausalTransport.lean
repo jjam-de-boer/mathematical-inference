@@ -134,6 +134,7 @@ import Thesis.CausalTransport.HedgeChannelFlowDirection
 import Thesis.CausalTransport.HedgeChannelEnvironmentRouting
 import Thesis.CausalTransport.HedgeChannelEnvironmentAbsorption
 import Thesis.CausalTransport.HedgeChannelEnvironmentPrefixDirection
+import Thesis.CausalTransport.ActivePathForkRouting
 import Thesis.CausalTransport.HedgeChannelEnvironmentMaskPhase
 import Thesis.CausalTransport.HedgeChannelEnvironmentFusion
 import Thesis.CausalTransport.ConditionalFailureActivationForest
@@ -153,6 +154,7 @@ import Thesis.CausalTransport.ConditionalFailureFlow
 import Thesis.CausalTransport.ConditionalFailureFlowBoundary
 import Thesis.CausalTransport.ConditionalFailureSmallApproach
 import Thesis.CausalTransport.ConditionalFailureSmallAbsorption
+import Thesis.CausalTransport.ConditionalFailureForkAbsorption
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -275,6 +277,23 @@ signal's real prefix reads alongside that boundary correction.  Support and
 outcome-character preservation are proved for actual prefix freedom.  Those
 identities permit real transfer but do not assert that a prefix fork has no
 receiving residual; the universal parity argument must still account for it.
+`ActivePathForkRouting` supplies an actual outgoing path-head exit for every
+selected omitted observed path vertex.  A successful finite scan computes
+that exit without choice; its declared arrow, receiving head and sink coverage
+are proved.  Absorption cancels the original read at that chosen receiver,
+rather than assuming a genuine nonzero fork coordinate vanishes.
+`ConditionalFailureForkAbsorption` stops all mandatory-source approaches at
+their first completed core or omitted path contact.  At such a retained fork
+it takes that actual head exit instead of an unrelated boundary continuation.
+The complete pruned union retains all Small rows, is action-free and has only
+core sinks.  Conservation and matching hold on the whole original cube and
+evidence cylinder.  Actual trace/path intersection proves that activation
+fusion preserves the fork input; routing cancels precisely its chosen read
+and retains the other original parent and reserved inputs.  The semantic
+assembler derives complete Small oddness from a supported odd-outcome,
+even-background direction.  Constructing that direction universally at all
+actual head/trace/fork contacts is still required; the assembler alone does
+not inhabit the conditional field of `PublishedCompleteness`.
 `ConditionalFailureActivationForest` gives all such collider activations one
 common directed successor policy.  Every selected nonconditioner has a real
 selected child, and conditioners are precisely its sinks.  The latest pivot

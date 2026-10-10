@@ -43,6 +43,7 @@ import Thesis.Examples.ConditionalFailureSmallApproach
 import Thesis.Examples.ConditionalFailureSmallAbsorption
 import Thesis.Examples.ConditionalFailureSmallPrefixDirection
 import Thesis.Examples.ConditionalPrefixForkResidual
+import Thesis.Examples.ActivePathForkRouting
 import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
@@ -164,6 +165,14 @@ fork path: original pivot `P` reads the flipped prefix fork `U`, and this true
 residual cancels the true receiving correction.  The resulting pivot parity
 is false, not the endpoint indicator alone.  This identifiable-query graph
 is a local signal regression, not a counterexample to conditional completeness.
+`ActivePathForkRouting` checks the corresponding parity-aware repair on that
+same normalized collider graph.  Its finite actual fork scan chooses `U -> P`;
+the original fused signal genuinely reads `U` there.  Absorption cancels that
+one read while `C` retains its own original fork input and the complete `C,Z`
+trace remains installed.  Full original-input conservation is proved before
+conditioning.  At the unchanged supported direction, the new selected `U`
+row is uniquely odd and `P,C,Z` are even.  This is a graph/signal regression,
+not a hedge countermodel or the universal remaining direction theorem.
 `ConditionalFailureActivationForest` checks two genuinely activated observed
 colliders whose branches merge before one conditioner.  The common forest
 retains both incoming branches, uses one shared outgoing successor, and stops
