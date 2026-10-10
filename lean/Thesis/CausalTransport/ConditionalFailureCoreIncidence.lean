@@ -34,9 +34,10 @@ Every original root basis is supported, including roots incident to fixed
 observed coordinates: conditioning an observation does not fix its root.
 
 These are actual column and support theorems, not a supplied balance matrix
-or a universal conditional countermodel.  The global incidence connectivity
-to an original Small source and its successful supported direction remain to
-be constructed, together with the ordinary noncollider path-head columns.
+or a universal conditional countermodel.  `ConditionalFailurePathIncidence`
+separately derives the ordinary noncollider head columns and the outcome's
+single selected-row incidence.  The global incidence connectivity to an
+original Small source and its successful supported direction remain open.
 -/
 
 namespace ConditionalBackdoorPathNormalForm

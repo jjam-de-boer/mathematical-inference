@@ -47,12 +47,14 @@ import Thesis.Examples.ActivePathForkRouting
 import Thesis.Examples.ActivePathForkOrientation
 import Thesis.Examples.ConditionalFailureForkApproach
 import Thesis.Examples.ConditionalFailureCoreIncidence
+import Thesis.Examples.ConditionalFailurePathIncidence
 import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
 import Thesis.Examples.ActivePathPairRoots
 import Thesis.Examples.HedgeChannelPathInputs
 import Thesis.Examples.ActivePathBoundary
+import Thesis.Examples.ActivePathHeadInputs
 import Thesis.Examples.HedgeChannelPathRows
 import Thesis.Examples.HedgeChannelPathDirection
 import Thesis.Examples.ConditionalFailurePathNormalization
@@ -202,6 +204,12 @@ fixture proves that neither of its two original roots is used by the actual
 Both roots remain independent, supported original inputs, not removed coordinates.
 These are clients of the universal column proofs, not assertions of the still
 missing global incidence route or universal conditional completeness.
+`ConditionalFailurePathIncidence` uses the genuine outside-Small-pivot failure's
+opaque normal form and actual hard boundary.  Its outgoing outcome has no row
+in the all-Small installation.  The general endpoint theorem nevertheless
+gives its supported basis exactly the selected pivot-row incidence, identified
+from the proved singleton core rather than by evaluating normalization search.
+This supplies an actual starting column, not the remaining universal route.
 `ConditionalFailureActivationForest` checks two genuinely activated observed
 colliders whose branches merge before one conditioner.  The common forest
 retains both incoming branches, uses one shared outgoing successor, and stops
@@ -230,6 +238,11 @@ original reserved input, and retains one odd source row among the selected
 heads.  The omitted fork's row is odd, guarding against selecting every path
 vertex.  Raw selection also rejects an incoming-cut endpoint without claiming
 that the old list remains a certified path after its edge is removed.
+`ActivePathHeadInputs` checks both orientations of the actual chain head on
+`A <- F -> B -> Y`.  Reversing the list moves its receiving `Y` from after `B`
+to before it, but the proved unique outgoing-input column stays the same.
+The incoming endpoint has no outgoing parent read.  Ambient extra arrows and
+an unused reserved pair cannot silently add another actual path incidence.
 `ActivePathBoundary` applies the general endpoint/collider graph identity and
 installed-phase bridge to the reversed-pair and observed-fork paths.  A new
 three-valued path has a genuine conditioned collider and a reversed original

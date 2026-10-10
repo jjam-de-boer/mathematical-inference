@@ -6,6 +6,7 @@ import Thesis.CausalTransport.ActivePathTransport
 import Thesis.CausalTransport.ActivePathPairRoots
 import Thesis.CausalTransport.ActivePathInputSelection
 import Thesis.CausalTransport.ActivePathBoundary
+import Thesis.CausalTransport.ActivePathHeadInputs
 import Thesis.CausalTransport.ActivePathEndpointHeads
 import Thesis.CausalTransport.ActivePathRootInputs
 import Thesis.CausalTransport.ActivePathDirection
@@ -159,6 +160,7 @@ import Thesis.CausalTransport.ConditionalFailureForkAbsorption
 import Thesis.CausalTransport.ConditionalFailureForkApproach
 import Thesis.CausalTransport.ConditionalFailureForkIncidence
 import Thesis.CausalTransport.ConditionalFailureCoreIncidence
+import Thesis.CausalTransport.ConditionalFailurePathIncidence
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -209,6 +211,12 @@ window's neighbours; strict DAG rank fixes each adjacent arrow's orientation.
 Chains and forks cancel, while colliders and endpoints contribute once.
 The same executable collider mask supplies normalized activation selection,
 so graph balance and the trace construction do not maintain separate scans.
+`ActivePathHeadInputs` identifies actual local columns: an internal selected
+noncollider has exactly one outgoing observed receiver, in either chain
+orientation.  Its complete input function is that receiver's indicator.
+Selected endpoints have no outgoing path read; omitted nonsingleton endpoints
+have one observed receiver and no selected own row.  Actual windows, adjacency
+and strict DAG rank derive these cases without supplying neighbour data.
 `ActivePathRootInputs` identifies each row's original reserved reads with its
 actual incoming neighbours.  `PairRootUniqueness` certifies the literal original
 input enumeration, so reversed labels cannot silently select a second index.
@@ -328,9 +336,19 @@ column is precisely its path occurrence test times its genuine two-child
 incidence.  Used root children are real core heads; unused roots are read
 nowhere, and all original root bases remain independent supported directions.
 Both absorption layers are accounted for without trace/Small disjointness or
-new global switching inputs.  Ordinary noncollider path-head columns and the
-global outcome-to-Small connection still need integration before the universal
-supported-direction and conditional terminal countermodel argument is complete.
+new global switching inputs.
+`ConditionalFailurePathIncidence` proves that both absorptions preserve a
+noncollider head's whole original column.  Every internal such head has its
+actual own-row/receiver basis pair, with both rows retained and original-query
+support derived from the real path direction.  The chosen outcome is avoided
+by every actual Small prefix.  In either endpoint orientation its original
+supported observed basis has exactly one selected-row incidence at a real
+retained head: the outcome's own row if incoming, or its unique receiving
+head if outgoing.  No endpoint orientation or receiver is a new terminal field.
+These are actual starting and connecting columns, not yet global incidence
+connectivity to Small or the successful even-background direction.  Those
+load-bearing arguments and universal conditional terminal countermodels remain
+necessary before assembling the full published completeness theorem.
 `ConditionalFailureActivationForest` gives all such collider activations one
 common directed successor policy.  Every selected nonconditioner has a real
 selected child, and conditioners are precisely its sinks.  The latest pivot
