@@ -28,8 +28,10 @@ and the common successor retains one outgoing map there.
 The selected union may also meet the mandatory small hedge forest.  Its
 outside-small portion is therefore a difference, not another copy of the
 whole activation union.  The partition below retains the inside-small part
-explicitly.  It does not assert small-forest disjointness, choose an odd
-direction, or prove the remaining combined path/forest parity conservation.
+explicitly.  It does not assert small-forest disjointness or prove parity here.
+`ConditionalFailureActivationInteraction` separately installs these actual
+traces with the path heads and proves their conserved phase and supported
+direction.  Integration with the whole mandatory Small forest remains open.
 -/
 
 /-! ## The finite scan has exactly the displayed collider windows -/

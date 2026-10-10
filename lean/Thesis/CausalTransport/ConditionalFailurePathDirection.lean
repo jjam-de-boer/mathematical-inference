@@ -24,9 +24,10 @@ the complete path-head interaction follow from the general theorems.
 
 No joint hedge is assumed or constructed here.  Exhausted exchange alone
 can occur in an observationally identifiable query.  The direction is real
-graph-to-signal data, not a conditional countermodel: activation installation,
-the entire mandatory Small forest, and any required Small-to-pivot oddness
-transfer still have to be assembled before published conditional completeness.
+graph-to-signal data, not a conditional countermodel.  The separate
+`ConditionalFailureActivationInteraction` installs the actual activation
+traces; the entire mandatory Small forest and any required Small-to-pivot
+oddness transfer still have to be assembled before conditional completeness.
 -/
 
 variable {S : ObservedSignature.{0}} {graph : ObservedGraph S}

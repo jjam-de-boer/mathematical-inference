@@ -132,11 +132,14 @@ import Thesis.CausalTransport.HedgeChannelMarginal
 import Thesis.CausalTransport.HedgeChannelFlowDirection
 import Thesis.CausalTransport.HedgeChannelEnvironmentRouting
 import Thesis.CausalTransport.HedgeChannelEnvironmentAbsorption
+import Thesis.CausalTransport.HedgeChannelEnvironmentMaskPhase
+import Thesis.CausalTransport.HedgeChannelEnvironmentFusion
 import Thesis.CausalTransport.ConditionalFailureActivationForest
 import Thesis.CausalTransport.ConditionalFailurePathNormalization
 import Thesis.CausalTransport.ConditionalFailurePathDirection
 import Thesis.CausalTransport.ConditionalFailureActivationAvoidance
 import Thesis.CausalTransport.ConditionalFailureActivationSelection
+import Thesis.CausalTransport.ConditionalFailureActivationInteraction
 import Thesis.CausalTransport.HedgeChannelConditionalGap
 import Thesis.CausalTransport.HedgeChannelCounterexample
 import Thesis.CausalTransport.HedgeChannelJointCompleteness
@@ -267,8 +270,15 @@ source and successor, every shared suffix, and every genuinely conditioned
 sink.  Its intersection with the normalized path is exactly the collider
 source mask.  Difference from a supplied mandatory set gives the outside
 activation rows, with proved action freedom and ordinary-union reconstruction;
-overlapping Small rows are retained once rather than presumed absent.  The
-universal combined parity direction and conservation remain to be constructed.
+overlapping Small rows are retained once rather than presumed absent.
+`ConditionalFailureActivationInteraction` installs that actual restricted forest
+alongside the path heads.  The intersection is the common collider mask; the
+general fusion correction cancels it, leaving endpoint and genuine sink bits
+at every original cube point.  On the original action-plus-condition cylinder
+this is the selected outcome character.  Every trace coordinate is zero in
+the supported path direction, so the actual union retains just the pivot's odd
+row, and its complete phase is odd.  This closes the merged path/activation
+interaction, not coverage or oddness of a different mandatory Small forest.
 
 `ConditionalCollider` realizes an incoming-parent collider with two fresh
 private inputs in the original SCM graph.  It preserves positivity and,
@@ -670,8 +680,9 @@ and the actual first-pair shape, rather than another readiness premise.
 normalized outgoing-cut path, derives its first incoming edge, and proves
 support on the original action-plus-condition cylinder, including the pivot.
 The full phase conservation theorem itself needs no first incoming edge.
-Adding the actual activation traces and routing every mandatory Small row
-are still required for universal conditional coverage.
+The actual activation installation is supplied by
+`ConditionalFailureActivationInteraction`; routing every mandatory Small row
+and any required Small-to-pivot oddness transfer remain for universal coverage.
 `HedgeChannelEnvironmentMoments` identifies the actual background factors
 and event sums with these homogeneous moments.  The full normalized response
 is exactly the original-outcome covariance multiplied by the two installed
@@ -703,10 +714,21 @@ retain each original direction phase and prove every added row even.  The
 parity adapter deduplicates the Small/background selection and derives the full
 Small phase's oddness; it does not assume that every normalized active path
 already supplies the requisite interaction or absorbing forest.
-Constructing the requisite masks, direction and conservation proofs from
-every required irreducible active path remains open, especially for merging
-collider-activation branches and small-forest intersections; none of these bridges
-assumes that universal graph obligation.
+`HedgeChannelEnvironmentMaskPhase` identifies an observed-mask character with
+its actual observed XOR at every point of the original two-block cube.  Its
+finite XOR identities account for intersections, singleton characters and
+allowed original-outcome submasks without dropping reserved coordinates.
+`HedgeChannelEnvironmentFusion` reuses the same legal installation without the
+absorber's stopped-at-core premise.  Its whole-union phase is the original
+phase XOR the actual successor-forest phase XOR the overlap's own-bit correction.
+The mechanism keeps one own bit; the correction is proof-level accounting only.
+Zero actual domain coordinates preserve core rows and make new rows even,
+even when an overlapping collider transmits onward.  This supports the actual
+merged activation interaction above, including already-conditioned sinks.
+Universal mandatory-Small integration remains open: the pivot can lie outside
+Small, and an omitted path fork may have a nonzero direction bit.  A forest
+contact cannot therefore simply be assumed to have zero value.  None of these
+bridges supplies that remaining graph obligation as a readiness assumption.
 `HedgeChannelMonomial` regroups each actual complete row choice by hidden
 channel before using independence.  It derives selected support and forced
 row exclusion from the real local choice lists.  A selected connected channel

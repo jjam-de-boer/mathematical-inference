@@ -51,6 +51,7 @@ import Thesis.Examples.ConditionalFailurePathNormalization
 import Thesis.Examples.ConditionalFailureActivationAvoidance
 import Thesis.Examples.ConditionalFailureActivationAvoidanceZero
 import Thesis.Examples.ConditionalFailureActivationSelectionCounterexample
+import Thesis.Examples.ConditionalFailureActivationInteraction
 import Thesis.Examples.ConditionalCollider
 import Thesis.Examples.HedgeConditionalRoot
 import Thesis.Examples.HedgeConditionalCollider
@@ -83,6 +84,7 @@ import Thesis.Examples.HedgeChannelEnvironment
 import Thesis.Examples.HedgeChannelEnvironmentCounterexample
 import Thesis.Examples.HedgeChannelEnvironmentParity
 import Thesis.Examples.HedgeChannelEnvironmentAbsorption
+import Thesis.Examples.HedgeChannelEnvironmentFusion
 
 /-!
 Top-level convenience import for the thesis formalisation.
@@ -197,6 +199,12 @@ small.  The counterexample uses one legal signal and all three mandatory Small
 rows, proves actual whole-cylinder conservation, and yields a positive pair
 for the unchanged original conditional query.  This genuine overlap case does
 not assert universal conditional completeness or Small/activation disjointness.
+`ConditionalFailureActivationInteraction` applies the general fused construction
+to that genuine hedge's actual opaque normal form, proving original-query
+cylinder matching and the installed selected-row parities without evaluating
+its exhaustive search.  A separate already-conditioned collider checks the
+actual zero-edge trace, whole-cube sink term and once-only overlap own bit.
+It is an identifiable graph/signal fixture, not a conditional countermodel.
 `HedgeChannelEnvironmentAbsorption` checks a conditioned collider on an
 eight-vertex three-valued graph.  Two additional mandatory Small sources merge
 at a genuine background row and feed an already selected Small collider.
@@ -205,6 +213,13 @@ keeps the receiving own-bit once and derives the sole merge background's
 evenness.  A positive full-original-alphabet countermodel uses every mandatory
 Small row for the unchanged query.  The graph and semantic companions separate
 finite certificates from covariance assembly to retain capped local checks.
+`HedgeChannelEnvironmentFusion` tests two real complete activation traces merging
+at one vertex and then one conditioned sink.  Their overlapping collider seeds
+transmit onward, so the old stopped-at-core theorem does not apply.  The general
+fusion theorem gives whole-cube conservation, preserves a nonzero seed parity,
+and proves new-row evenness while keeping each own bit once.  The graph companion
+certifies literal trace and successor equalities for reuse in lightweight checks.
+These merged-interaction regressions do not claim mandatory-Small coverage.
 
 `HedgeChannelCoefficients` installs the explicit power coefficients in a
 positive actual bow-model pair with full observational equality and a
