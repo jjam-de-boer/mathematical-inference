@@ -5,6 +5,7 @@ import Thesis.CausalTransport.ActivePathNormalization
 import Thesis.CausalTransport.ActivePathTransport
 import Thesis.CausalTransport.ActivePathPairRoots
 import Thesis.CausalTransport.ActivePathInputSelection
+import Thesis.CausalTransport.ActivePathBoundary
 import Thesis.CausalTransport.ActivePathColliderRerouting
 import Thesis.CausalTransport.Certificates
 import Thesis.CausalTransport.Correspondence
@@ -119,6 +120,7 @@ import Thesis.CausalTransport.HedgeChannelEnvironmentCube
 import Thesis.CausalTransport.HedgeChannelEnvironmentLinear
 import Thesis.CausalTransport.HedgeChannelEnvironmentCoefficients
 import Thesis.CausalTransport.HedgeChannelPathInputs
+import Thesis.CausalTransport.HedgeChannelPathBoundary
 import Thesis.CausalTransport.HedgeChannelEnvironmentMoments
 import Thesis.CausalTransport.HedgeChannelEnvironmentCovariance
 import Thesis.CausalTransport.HedgeChannelProjection
@@ -180,6 +182,12 @@ only incoming observed heads, and names used original roots.  Its graph-only
 proofs show both children of every used root are selected heads and incoming-cut
 vertices are excluded.  An observed fork is not selected merely for being on
 the path; exact arrow orientation and the stored list control that selection.
+`ActivePathBoundary` proves the observed boundary is exactly the two distinct
+observed endpoints XOR every actual internal collider.  Simplicity fixes each
+window's neighbours; strict DAG rank fixes each adjacent arrow's orientation.
+Chains and forks cancel, while colliders and endpoints contribute once.
+The same executable collider mask supplies normalized activation selection,
+so graph balance and the trace construction do not maintain separate scans.
 `ConditionalFailurePaths` applies these facts to every
 conditioner left by an exhausted IDC exchange search: it returns an active
 back-door path in the action-cut graph, with an explicit first incoming edge
@@ -628,8 +636,13 @@ coefficients cancel at their two real child rows.  Observed coefficients are
 the selected own-row indicator XOR actual outgoing path-parent reads, and
 homogeneity proves the entire installed head phase equals this derived observed
 boundary character at every cube point.  Identifying that boundary with the
-endpoint/collider character, adding the real activation traces, and routing
-every mandatory Small row are still required for universal conditional coverage.
+endpoint/collider character is proved by `ActivePathBoundary` above.
+`HedgeChannelPathBoundary` connects this general graph identity to the actual
+installed phase on the complete cube, including every original reserved bit.
+The conservation theorem does not require a first incoming endpoint edge;
+that back-door constraint belongs to the remaining odd-direction construction.
+Adding the actual activation traces and routing every mandatory Small row
+are still required for universal conditional coverage.
 `HedgeChannelEnvironmentMoments` identifies the actual background factors
 and event sums with these homogeneous moments.  The full normalized response
 is exactly the original-outcome covariance multiplied by the two installed

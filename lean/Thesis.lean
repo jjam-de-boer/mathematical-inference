@@ -44,6 +44,7 @@ import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
 import Thesis.Examples.ActivePathPairRoots
 import Thesis.Examples.HedgeChannelPathInputs
+import Thesis.Examples.ActivePathBoundary
 import Thesis.Examples.ConditionalFailurePathNormalization
 import Thesis.Examples.ConditionalFailureActivationAvoidance
 import Thesis.Examples.ConditionalFailureActivationAvoidanceZero
@@ -149,6 +150,13 @@ original reserved input, and retains one odd source row among the selected
 heads.  The omitted fork's row is odd, guarding against selecting every path
 vertex.  Raw selection also rejects an incoming-cut endpoint without claiming
 that the old list remains a certified path after its edge is removed.
+`ActivePathBoundary` applies the general endpoint/collider graph identity and
+installed-phase bridge to the reversed-pair and observed-fork paths.  A new
+three-valued path has a genuine conditioned collider and a reversed original
+pair label.  Its installed head phase retains the collider bit at every cube
+point, and the false conditioning cylinder removes exactly that term.  The
+outgoing observed endpoint is not a head: its own row is odd but unselected,
+while the actual shared-input direction leaves just the source head odd.
 `ConditionalFailurePathNormalization` checks a restored three-valued pair
 path, its unchanged list, first incoming edge, and general count-minimality
 certificate.  Its action-free query deliberately remains observationally

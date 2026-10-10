@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.ConditionalFailureActivationAvoidance
+import Thesis.CausalTransport.ActivePathBoundary
 
 namespace Thesis
 namespace Causality
@@ -15,10 +16,12 @@ It can include noncolliders on the normalized path, even though each actual
 collider's complete trace meets that path only at its own source.  Consequently
 the whole auxiliary domain is not a sound interaction-row selection.
 
-Here an executable window scan finds exactly the observed internal colliders
-of the normal form.  A second finite scan takes the union of their complete
-common-policy traces.  This union is successor-closed, so restricting the
-policy to it preserves every selected trace and its genuinely conditioned
+The shared `ActivePathBoundary` window scan finds exactly the observed
+internal colliders of the normal form.  Phase balance and activation selection
+therefore use the same executable collider mask.  A second finite scan takes
+the union of their complete common-policy traces.  This union is
+successor-closed, so restricting the policy to it preserves every selected
+trace and its genuinely conditioned
 endpoint.  Branches may merge: a Boolean union retains a shared vertex once,
 and the common successor retains one outgoing map there.
 
@@ -31,75 +34,6 @@ direction, or prove the remaining combined path/forest parity conservation.
 
 /-! ## The finite scan has exactly the displayed collider windows -/
 
-private def colliderAt (graph : ObservedGraph S) (m : GraphMutilation S)
-    (collider : Fin S.count) : List (SeparationNode S) -> Bool
-  | previous :: middle :: next :: rest =>
-      (SeparationNode.beq middle (.observed collider) && isColliderBool graph m previous middle next) ||
-        colliderAt graph m collider (middle :: next :: rest)
-  | _ => false
-
-private theorem colliderAt_eq_true_iff (graph : ObservedGraph S) (m : GraphMutilation S)
-    (collider : Fin S.count) (nodes : List (SeparationNode S)) :
-    colliderAt graph m collider nodes = true ↔
-      Exists fun before : List (SeparationNode S) => Exists fun after : List (SeparationNode S) =>
-        Exists fun previous : SeparationNode S => Exists fun next : SeparationNode S =>
-          nodes = before ++ previous :: .observed collider :: next :: after ∧
-            IsCollider graph m previous (.observed collider) next := by
-  induction nodes with
-  | nil =>
-      constructor
-      · intro impossible; cases impossible
-      · rintro ⟨before, after, previous, next, window, _⟩
-        have lengths := congrArg List.length window
-        simp only [List.length_nil, List.length_append, List.length_cons] at lengths
-        omega
-  | cons previous tail inductionHypothesis =>
-      cases tail with
-      | nil =>
-          constructor
-          · intro impossible; cases impossible
-          · rintro ⟨before, after, first, next, window, _⟩
-            have lengths := congrArg List.length window
-            simp only [List.length_nil, List.length_append, List.length_cons] at lengths
-            omega
-      | cons middle rest =>
-          cases rest with
-          | nil =>
-              constructor
-              · intro impossible; cases impossible
-              · rintro ⟨before, after, first, next, window, _⟩
-                have lengths := congrArg List.length window
-                simp only [List.length_nil, List.length_append, List.length_cons] at lengths
-                omega
-          | cons next rest =>
-              rw [colliderAt, Bool.or_eq_true_iff, Bool.and_eq_true_iff]
-              constructor
-              · intro found
-                rcases found with here | later
-                · have same := (SeparationNode.beq_eq_true_iff middle (.observed collider)).mp here.1
-                  subst middle
-                  exact ⟨[], rest, previous, next, rfl,
-                    (IsCollider_iff_isColliderBool graph m previous (.observed collider) next).mpr here.2⟩
-                · rcases inductionHypothesis.mp later with ⟨before, after, first, last, window, actual⟩
-                  exact ⟨previous :: before, after, first, last, congrArg (List.cons previous) window, actual⟩
-              · rintro ⟨before, after, first, last, window, actual⟩
-                cases before with
-                | nil =>
-                    have heads := List.cons.inj window
-                    have middles := List.cons.inj heads.2
-                    have lasts := List.cons.inj middles.2
-                    have firstEq := heads.1
-                    have middleEq := middles.1
-                    have lastEq := lasts.1
-                    subst first
-                    subst middle
-                    subst last
-                    exact Or.inl ⟨(SeparationNode.beq_eq_true_iff _ _).mpr rfl,
-                      (IsCollider_iff_isColliderBool graph m _ _ _).mp actual⟩
-                | cons head before =>
-                    have tails := (List.cons.inj window).2
-                    exact Or.inr (inductionHypothesis.mpr ⟨before, after, first, last, tails, actual⟩)
-
 namespace ConditionalBackdoorPathNormalForm
 
 /-- The actual observed internal collider sources of this exact cut path.
@@ -107,8 +41,8 @@ Endpoints are not scanned as collider windows, and no latent vertex can
 silently be used as an observed activation source. -/
 def colliderSeeds {graph : ObservedGraph S} {query : ConditionalKernelQuery S} {node : Fin S.count}
     (normal : ConditionalBackdoorPathNormalForm graph query node) : NodeSet S :=
-  fun collider => colliderAt graph
-    (GraphMutilation.barUnderline query.action (NodeSet.singleton node)) collider normal.cutPath.nodes
+  ActivePathInput.colliderRows graph
+    (GraphMutilation.barUnderline query.action (NodeSet.singleton node)) normal.cutPath.nodes
 
 /-- Every selected source is tied to an actual internal window of the
 same normal form, and every such collider is selected.  The existential
@@ -121,7 +55,7 @@ theorem colliderSeeds_eq_true_iff {graph : ObservedGraph S} {query : Conditional
           normal.cutPath.nodes = before ++ previous :: .observed collider :: next :: after ∧
             IsCollider graph (GraphMutilation.barUnderline query.action (NodeSet.singleton node))
               previous (.observed collider) next :=
-  colliderAt_eq_true_iff graph _ collider normal.cutPath.nodes
+  ActivePathInput.colliderRows_eq_true_iff graph _ collider normal.cutPath.nodes
 
 variable {graph : ObservedGraph S} {query : ConditionalKernelQuery S} {source : Fin S.count}
     (pivot : LatestConditionalPivot graph query source)
