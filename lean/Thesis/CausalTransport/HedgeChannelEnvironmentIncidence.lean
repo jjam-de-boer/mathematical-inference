@@ -46,6 +46,31 @@ def selectedRowValue (data : LinearSignal G) (selected : NodeSet S)
     (row : Fin S.count) (point : Cube G) : Bool :=
   if selected row then (data.rowPhase row).value point else false
 
+/-- Guarding a literal two-row column preserves precisely its two entries
+when both receiving rows are selected.  All other raw zero entries remain
+zero; selection is not assumed for the entire observed signature. -/
+theorem selectedRowValue_pair_of_rows (data : LinearSignal G) (selected : NodeSet S)
+    (left right : Fin S.count) (point : Cube G)
+    (leftSelected : selected left = true) (rightSelected : selected right = true)
+    (column : forall row, (data.rowPhase row).value point =
+      Bool.xor (decide (row = left)) (decide (row = right))) (row : Fin S.count) :
+    data.selectedRowValue selected row point = Bool.xor (decide (row = left)) (decide (row = right)) := by
+  unfold selectedRowValue
+  rw [column row]
+  cases chosen : selected row with
+  | true => simp only [if_true]
+  | false =>
+      have notLeft : row ≠ left := by
+        intro same
+        subst row
+        exact Bool.false_ne_true (chosen.symm.trans leftSelected)
+      have notRight : row ≠ right := by
+        intro same
+        subst row
+        exact Bool.false_ne_true (chosen.symm.trans rightSelected)
+      simp only [Bool.false_eq_true, if_false, decide_eq_false notLeft, decide_eq_false notRight]
+      rfl
+
 /-- Test one original coordinate for a supported, outcome-even two-row
 column.  The complete selected-row enumeration is checked, not just the
 two desired endpoints or a previously supplied list of nonzero entries. -/
@@ -70,6 +95,25 @@ theorem pairCoordinateTest_of_column (data : LinearSignal G) (selected : NodeSet
   simp only [pairCoordinateTest, free, even, Bool.not_false, Bool.true_and]
   exact List.all_eq_true.mpr (fun row _listed => decide_eq_true (column row))
 
+/-- Actual pair columns have no preferred direction.  Exchanging the
+receiving endpoints does not change the coordinate test or its free and
+outcome-even guards. -/
+theorem pairCoordinateTest_swap (data : LinearSignal G) (selected : NodeSet S)
+    (fixed outcome : Cube G) (left right : Fin S.count)
+    (coordinate : Fin (pairRootCount G.binary + S.count)) :
+    data.pairCoordinateTest selected fixed outcome left right coordinate =
+      data.pairCoordinateTest selected fixed outcome right left coordinate := by
+  unfold pairCoordinateTest
+  have tests : (fun row : Fin S.count => decide
+      (data.selectedRowValue selected row (basisAssignment _ coordinate) =
+        Bool.xor (decide (row = left)) (decide (row = right)))) =
+      (fun row : Fin S.count => decide
+      (data.selectedRowValue selected row (basisAssignment _ coordinate) =
+        Bool.xor (decide (row = right)) (decide (row = left)))) := by
+    funext row
+    rw [Bool.xor_comm (decide (row = left)) (decide (row = right))]
+  rw [tests]
+
 private theorem pairCoordinateTest_spec (data : LinearSignal G) (selected : NodeSet S)
     (fixed outcome : Cube G) (left right : Fin S.count)
     (coordinate : Fin (pairRootCount G.binary + S.count))
@@ -93,6 +137,92 @@ def pairIncidence (data : LinearSignal G) (selected : NodeSet S)
   selected left && selected right && !finBeq left right &&
     (List.finRange (pairRootCount G.binary + S.count)).any
       (data.pairCoordinateTest selected fixed outcome left right)
+
+/-- The actual tested pair graph is symmetric, even though the causal
+arrows which supplied its columns are directed.  Incidence walks may
+therefore move toward a Small source against its genuine approach arrows. -/
+theorem pairIncidence_swap (data : LinearSignal G) (selected : NodeSet S)
+    (fixed outcome : Cube G) (left right : Fin S.count) :
+    data.pairIncidence selected fixed outcome left right =
+      data.pairIncidence selected fixed outcome right left := by
+  unfold pairIncidence
+  have tests : data.pairCoordinateTest selected fixed outcome left right =
+      data.pairCoordinateTest selected fixed outcome right left := by
+    funext coordinate
+    exact data.pairCoordinateTest_swap selected fixed outcome left right coordinate
+  have same : finBeq left right = finBeq right left := by
+    cases forward : finBeq left right <;> cases backward : finBeq right left
+    · rfl
+    · have equal := (finBeq_eq_true_iff right left).mp backward
+      exact False.elim (Bool.false_ne_true (forward.symm.trans ((finBeq_eq_true_iff left right).mpr equal.symm)))
+    · have equal := (finBeq_eq_true_iff left right).mp forward
+      exact False.elim (Bool.false_ne_true (backward.symm.trans ((finBeq_eq_true_iff right left).mpr equal.symm)))
+    · rfl
+  rw [tests, same, Bool.and_comm (selected left) (selected right)]
+
+/-- Reverse an incidence connection using its actual symmetric relation.
+Only a propositional walk is transported; executable direction construction
+still uses the independent successful finite scans in `ofReachability`. -/
+theorem pairIncidence_reachable_swap (data : LinearSignal G) (selected : NodeSet S)
+    (fixed outcome : Cube G) {source target : Fin S.count}
+    (reachable : FiniteReachability.Reachable (data.pairIncidence selected fixed outcome) source target) :
+    FiniteReachability.Reachable (data.pairIncidence selected fixed outcome) target source := by
+  rcases reachable with ⟨length, ⟨walk⟩⟩
+  apply FiniteReachability.Reachable.of_consecutive _ walk.nodes.reverse
+    (by simpa only [List.head?_reverse] using walk.nodes_getLast)
+    (by simpa only [List.getLast?_reverse] using walk.nodes_head)
+  exact PathSpecification.Consecutive.reverse (fun left right edge =>
+    (data.pairIncidence_swap selected fixed outcome right left).trans edge) _ walk.nodes_consecutive
+
+/-- A literal consecutive incidence list connects its displayed source
+to every listed row.  This proof-level adapter is shared by mandatory
+approaches and merged activation traces; it selects no subpath into data. -/
+theorem pairIncidence_reaches_member (data : LinearSignal G) (selected : NodeSet S)
+    (fixed outcome : Cube G) (nodes : List (Fin S.count)) (source : Fin S.count)
+    (starts : nodes.head? = some source)
+    (consecutive : PathSpecification.Consecutive
+      (fun parent child => data.pairIncidence selected fixed outcome parent child = true) nodes)
+    (target : Fin S.count) (member : target ∈ nodes) :
+    FiniteReachability.Reachable (data.pairIncidence selected fixed outcome) source target := by
+  induction nodes generalizing source with
+  | nil => cases member
+  | cons head tail inductionHypothesis =>
+      have same : head = source := Option.some.inj starts
+      subst head
+      rcases List.mem_cons.mp member with equal | later
+      · subst target
+        exact FiniteReachability.Reachable.refl _ source
+      · cases tail with
+        | nil => cases later
+        | cons next rest =>
+            exact FiniteReachability.Reachable.prepend consecutive.1
+              (inductionHypothesis next rfl consecutive.2 later)
+
+/-- Join proof-level actual incidence connections without choosing their
+walks into a direction.  The final finite search independently computes the
+route data after the joined connection has been constructively bounded. -/
+theorem pairIncidence_reachable_trans (data : LinearSignal G) (selected : NodeSet S)
+    (fixed outcome : Cube G) {source middle target : Fin S.count}
+    (first : FiniteReachability.Reachable (data.pairIncidence selected fixed outcome) source middle)
+    (second : FiniteReachability.Reachable (data.pairIncidence selected fixed outcome) middle target) :
+    FiniteReachability.Reachable (data.pairIncidence selected fixed outcome) source target := by
+  rcases first with ⟨firstLength, ⟨firstWalk⟩⟩
+  rcases second with ⟨secondLength, ⟨secondWalk⟩⟩
+  exact ⟨firstLength + secondLength, ⟨firstWalk.append secondWalk⟩⟩
+
+/-- Every actual incidence connection fits the original observed finite
+bound.  The existing constructive walk-shortening theorem supplies this
+bound; no longer fuel or selected simple-path representative is assumed. -/
+theorem pairIncidence_within_of_reachable (data : LinearSignal G) (selected : NodeSet S)
+    (fixed outcome : Cube G) {source target : Fin S.count}
+    (reachable : FiniteReachability.Reachable (data.pairIncidence selected fixed outcome) source target) :
+    FiniteReachability.within finBeq (NodeSet.enumerated S)
+      (data.pairIncidence selected fixed outcome) S.count source target = true := by
+  have bounded := FiniteReachability.boundedWalk_of_reachable finBeq (NodeSet.enumerated S)
+    (data.pairIncidence selected fixed outcome) finBeq_eq_true_iff (NodeSet.mem_enumerated S) reachable
+  rw [NodeSet.length_enumerated] at bounded
+  exact (FiniteReachability.within_eq_true_iff_boundedWalk finBeq (NodeSet.enumerated S)
+    (data.pairIncidence selected fixed outcome) finBeq_eq_true_iff (NodeSet.mem_enumerated S) _ _ _).mpr bounded
 
 /-- A proved actual pair column yields a real edge of the finite graph.
 Its endpoints must both be selected and distinct; neither fact is inferred

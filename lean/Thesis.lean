@@ -49,6 +49,7 @@ import Thesis.Examples.ConditionalFailureForkApproach
 import Thesis.Examples.ConditionalFailureCoreIncidence
 import Thesis.Examples.ConditionalFailurePathIncidence
 import Thesis.Examples.ConditionalFailureIncidenceDirection
+import Thesis.Examples.ConditionalFailureIncidenceConnectivity
 import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
@@ -221,6 +222,17 @@ outside-Small background row even, and positive original-three-valued
 conditional countermodels for the unchanged query.  This closes the
 connection-to-countermodel operation, not the still-required universal
 outcome-component-to-Small connectivity theorem.
+`ConditionalFailureIncidenceConnectivity` uses that same actual whole
+`U,R,P` prefix to obtain both tested pair edges and a connection from the
+outside-Small pivot back to the original Small source `U`.  The general
+starting-contact theorem proves the successful complete search at the original
+observed-count bound, and the existing finite constructor supplies positive
+unchanged-query countermodels without a manually supplied route or column.
+Its collider companion exercises actual trace-edge recognition, connection
+to a genuine collider head and mandatory approach contact on the real trace
+union inside Small.  Both use structural facts about opaque normalization,
+not repeated exhaustive evaluation.  The universal normalized-path argument
+that makes every terminal outcome component meet such a contact remains open.
 `ConditionalFailureActivationForest` checks two genuinely activated observed
 colliders whose branches merge before one conditioner.  The common forest
 retains both incoming branches, uses one shared outgoing successor, and stops

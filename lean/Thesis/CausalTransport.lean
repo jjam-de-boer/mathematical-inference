@@ -164,6 +164,9 @@ import Thesis.CausalTransport.ConditionalFailureCoreIncidence
 import Thesis.CausalTransport.ConditionalFailurePathIncidence
 import Thesis.CausalTransport.ConditionalFailureForkColumns
 import Thesis.CausalTransport.ConditionalFailureIncidenceDirection
+import Thesis.CausalTransport.ConditionalFailureIncidenceEdges
+import Thesis.CausalTransport.ConditionalFailureApproachConnectivity
+import Thesis.CausalTransport.ConditionalFailureTraceConnectivity
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -367,6 +370,25 @@ and positive original-alphabet conditional countermodels are then derived.
 The universal graph theorem that this actual search succeeds remains open;
 neither these conditional adapters nor a successful regression supplies all
 terminal countermodels or inhabits full published conditional completeness.
+`ConditionalFailureIncidenceEdges` proves that every genuine local connecting
+family passes this actual full-row test: used original roots, internal
+noncollider heads, trace transmitters, retained/unretained internal forks and
+proper mandatory approaches.  Full original fixed-set freedom and outcome
+evenness are derived for their literal original coordinates, not supplied as
+terminal readiness flags.  Incidence symmetry does not reverse causal arrows.
+`ConditionalFailureApproachConnectivity` lifts every edge of each actual
+complete first-contact prefix to that graph.  Every row in the full retained
+approach union consequently connects back to a genuine original Small source,
+including a fork contact which the new policy resumes beyond the old endpoint.
+Any true outcome connection to that union proves success of the complete Small
+search at the unchanged observed-count bound by constructive walk shortening.
+`ConditionalFailureTraceConnectivity` likewise lifts whole actual pruned
+activation traces.  Every selected trace row connects to its genuine original
+collider head, including conditioned sinks, zero-edge activations and merged
+branches.  The remaining terminal graph argument must connect the actual
+outcome component to a mandatory approach contact, using an appropriately
+constructed first-conditioned pivot rather than assuming every arbitrary
+retained pivot has such a connection.
 `ConditionalFailureActivationForest` gives all such collider activations one
 common directed successor policy.  Every selected nonconditioner has a real
 selected child, and conditioners are precisely its sinks.  The latest pivot
