@@ -57,7 +57,7 @@ theorem actual_selected_forks : normal.cutPath.forkRoutingNodes selected = NodeS
   funext child
   decide +kernel +revert
 
-/-- Enumeration picks the real first receiving head `P`; it does not keep
+/-- Path order picks the real first receiving head `P`; it does not keep
 an arbitrary original hedge successor or add a third off-path destination. -/
 theorem actual_successor : successor = (fun child => if child = parent then some pivotNode else none) := by
   funext child
@@ -67,6 +67,7 @@ theorem actual_successor : successor = (fun child => if child = parent then some
   · subst child
     rw [restrictChild_of_true (by decide +kernel : NodeSet.singleton parent parent = true), if_pos rfl]
     apply normal.cutPath.forkSuccessor_of_find distinct actual_fork
+    unfold PathSpecification.ActivePath.forkHeadCandidates ActivePathInput.observedNodes
     rw [normal_window]
     decide +kernel
   · have absent : NodeSet.singleton parent child = false := by

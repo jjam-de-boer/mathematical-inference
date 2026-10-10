@@ -135,6 +135,7 @@ import Thesis.CausalTransport.HedgeChannelEnvironmentRouting
 import Thesis.CausalTransport.HedgeChannelEnvironmentAbsorption
 import Thesis.CausalTransport.HedgeChannelEnvironmentPrefixDirection
 import Thesis.CausalTransport.ActivePathForkRouting
+import Thesis.CausalTransport.ActivePathForkOrientation
 import Thesis.CausalTransport.HedgeChannelEnvironmentMaskPhase
 import Thesis.CausalTransport.HedgeChannelEnvironmentFusion
 import Thesis.CausalTransport.ConditionalFailureActivationForest
@@ -156,6 +157,7 @@ import Thesis.CausalTransport.ConditionalFailureSmallApproach
 import Thesis.CausalTransport.ConditionalFailureSmallAbsorption
 import Thesis.CausalTransport.ConditionalFailureForkAbsorption
 import Thesis.CausalTransport.ConditionalFailureForkApproach
+import Thesis.CausalTransport.ConditionalFailureForkIncidence
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -304,8 +306,17 @@ The installed correction changes exactly its original Small source and actual
 receiving contact, even if the new policy resumes a fork endpoint.  Support,
 outcome character and all original reserved inputs are preserved.  This is a
 universal local approach transfer, not yet a proof of the globally successful
-contact combination or evenness of every outside-Small row.  Actual outcome-side
-connectivity and a suitable fork-exit orientation still require proof.
+contact combination or evenness of every outside-Small row.
+`ActivePathForkOrientation` proves that the executable fork scan cancels the
+preceding, source-side head in every actual internal fork window, independently
+of observed vertex numbering.  `ConditionalFailureForkIncidence` derives such
+a window for every retained fork: the source is a head, and the whole actual
+conditioned boundary route avoids every original outcome.  Actual trace fusion
+preserves its original column; source-side cancellation leaves precisely its
+own row and the following, outcome-side head as full-cube basis incidences.
+Neither a window nor a fork-orientation readiness flag is supplied by a terminal
+caller.  Connecting those actual incidences to an original Small source and
+constructing the globally supported, even-background direction remain open.
 `ConditionalFailureActivationForest` gives all such collider activations one
 common directed successor policy.  Every selected nonconditioner has a real
 selected child, and conditioners are precisely its sinks.  The latest pivot

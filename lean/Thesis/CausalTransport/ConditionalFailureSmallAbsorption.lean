@@ -140,6 +140,21 @@ theorem interactionStopPath_endpoint_in_interaction (source : Fin S.count) (insi
     interaction (boundary.interactionStopPath interaction receivesCondition source inside).endpoint = true :=
   (boundary.firstInteraction interaction receivesCondition source inside).selected
 
+/-- The complete first-contact list is an actual prefix of the original
+boundary list.  This membership contract keeps whole-route outcome freedom
+available after truncation; it does not replace that freedom by endpoint data. -/
+theorem interactionStopPath_subset_boundary (source : Fin S.count) (inside : w.small source = true)
+    (node : Fin S.count) (visited : node ∈ (boundary.interactionStopPath interaction receivesCondition source inside).nodes) :
+    node ∈ (w.conditionalBoundaryPath source inside).nodes := by
+  let first := boundary.firstInteraction interaction receivesCondition source inside
+  change node ∈ first.before ++ [first.target] at visited
+  rw [first.split]
+  rcases List.mem_append.mp visited with before | endpoint
+  · exact List.mem_append.mpr (Or.inl before)
+  · have same := List.mem_singleton.mp endpoint
+    subst node
+    exact List.mem_append.mpr (Or.inr (List.mem_cons.mpr (Or.inl rfl)))
+
 /-- Every proper vertex precedes the first receiving contact, even when
 that contact is unconditioned.  Merely stopping at the eventual conditioner
 would not establish this stronger interaction-prefix freedom. -/

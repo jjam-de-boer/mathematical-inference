@@ -130,6 +130,26 @@ theorem before_outcome_free (approach : FirstConditionedSmallApproach w) (node :
     (member : node ∈ approach.path.nodes) (different : node ≠ approach.path.endpoint) : query.outcome node = false :=
   (Bool.or_eq_false_iff.mp (approach.before_queried_free node member different)).1
 
+/-- Every vertex of a conditioned complete boundary path avoids all
+original queried outcomes, including its endpoint.  An outcome would stop
+the map there; the same endpoint is conditioned, contradicting the original
+query's disjointness.  No endpoint omission is mistaken for route freedom. -/
+theorem outcome_free (approach : FirstConditionedSmallApproach w) (node : Fin S.count)
+    (member : node ∈ approach.path.nodes) : query.outcome node = false := by
+  cases selected : query.outcome node with
+  | false => rfl
+  | true =>
+      have queried : query.jointNumerator.outcome node = true := by
+        change (query.outcome node || query.condition node) = true
+        rw [selected]
+        rfl
+      have stopped : w.conditionalBoundarySuccessor node = none := by
+        simp only [HedgeWitness.conditionalBoundarySuccessor, queried, if_true]
+      have same := approach.path.eq_endpoint_of_stopped node member stopped
+      have conditioned : query.condition node = true := same ▸ approach.endpoint_condition
+      have free := query.outcome_condition_disjoint node selected
+      exact False.elim (Bool.false_ne_true (free.symm.trans conditioned))
+
 /-- The literal prefix requires no separate nonendpoint certificate. -/
 theorem prefix_condition_free (approach : FirstConditionedSmallApproach w) (node : Fin S.count)
     (member : node ∈ approach.before) : query.condition node = false :=

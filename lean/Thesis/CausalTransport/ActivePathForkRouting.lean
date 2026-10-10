@@ -15,8 +15,10 @@ variable {S : ObservedSignature.{0}}
 An observed path vertex without an incoming path arrow is not an installed
 head.  On a nonsingleton path it nevertheless has a real neighbour, and every
 such adjacent arrow must point outward.  The neighbour is consequently an
-observed receiving head.  A finite scan chooses one actual outgoing head;
-no neighbour or edge is selected from propositional existence.
+observed receiving head.  A finite scan of the actual observed path order
+chooses the first outgoing head; no neighbour or edge is selected from
+propositional existence.  In particular an internal fork's preceding head
+is scanned before its following head, independently of vertex numbering.
 
 The restricted policy below permits any selected subset of these omitted
 vertices.  It stops at all original heads, has only genuine declared arrows,
@@ -30,6 +32,39 @@ assuming it away, and supplies a parity-aware exit when an all-Small approach
 first contacts an omitted normalized-path fork.  Constructing the complete
 all-Small policy and a universally supported odd direction remains separate.
 -/
+
+namespace ActivePathInput
+
+/-- Retain observed vertices in their literal path-list order, omitting
+latent aliases without sorting or consulting the signature's vertex order.
+This is the candidate data for source-side fork exits. -/
+def observedNodes (nodes : List (SeparationNode S)) : List (Fin S.count) :=
+  nodes.filterMap (fun entry => match entry with
+    | .observed node => some node
+    | .latentPair _ _ => none)
+
+/-- The order-preserving projection retains exactly actual observed
+members.  The existential unpacking remains in this propositional proof. -/
+theorem mem_observedNodes_iff (nodes : List (SeparationNode S)) (node : Fin S.count) :
+    node ∈ observedNodes nodes ↔ .observed node ∈ nodes := by
+  constructor
+  · intro member
+    rcases List.mem_filterMap.mp member with ⟨entry, visited, selected⟩
+    cases entry with
+    | latentPair _ _ => cases selected
+    | observed child =>
+        have same : child = node := Option.some.inj selected
+        exact same ▸ visited
+  · intro member
+    exact List.mem_filterMap.mpr ⟨.observed node, member, rfl⟩
+
+/-- Projection preserves concatenation, so a displayed path window also
+displays the corresponding candidate-prefix/window/suffix decomposition. -/
+theorem observedNodes_append (before after : List (SeparationNode S)) :
+    observedNodes (before ++ after) = observedNodes before ++ observedNodes after :=
+  List.filterMap_append
+
+end ActivePathInput
 
 namespace PathSpecification.ActivePath
 
@@ -77,6 +112,27 @@ theorem forkNodes_eq_true_iff (node : Fin S.count) :
   unfold forkNodes
   simp only [Bool.and_eq_true_iff, any_beq_eq_true_iff, Bool.not_eq_true']
 
+/-- An omitted vertex's actual neighbouring arrow must point outward.
+An incoming neighbour would select this vertex as a head.  This statement
+also rejects latent neighbours, since an observed-to-latent edge is false. -/
+theorem forkNodes_outgoing_step (parent : Fin S.count) (neighbor : SeparationNode S)
+    (selected : path.forkNodes parent = true)
+    (step : stepOnPath (.observed parent) neighbor path.nodes = true) :
+    graph.expandedMutilatedEdge m (.observed parent) neighbor = true := by
+  have parts := (path.forkNodes_eq_true_iff parent).mp selected
+  have adjacent : Adjacent graph m (.observed parent) neighbor := by
+    rcases (stepOnPath_eq_true_iff _ _ _).mp step with ⟨before, after, forward | backward⟩
+    · exact Consecutive.pair_of_append before after _ _ (forward ▸ path.adjacent)
+    · exact (Consecutive.pair_of_append before after _ _ (backward ▸ path.adjacent)).symm
+  rcases adjacent with outward | inward
+  · exact outward
+  · have reverseStep : stepOnPath neighbor (.observed parent) path.nodes = true := by
+      rw [stepOnPath_symm]
+      exact step
+    have head := incomingEdge_head (Bool.and_eq_true_iff.mpr ⟨reverseStep, inward⟩)
+    rw [parts.2] at head
+    cases head
+
 private theorem outgoing_head_exists (distinct : source ≠ target) (parent : Fin S.count)
     (selected : path.forkNodes parent = true) :
     Exists fun child : Fin S.count => incomingEdge graph m path.nodes (.observed parent) child = true := by
@@ -94,35 +150,29 @@ private theorem outgoing_head_exists (distinct : source ≠ target) (parent : Fi
             exact False.elim (distinct (SeparationNode.observed.inj (Option.some.inj (starts.symm.trans finishes))))
         | cons next rest => simp only [List.length_cons]; omega
   rcases neighbor_of_mem path.nodes (.observed parent) length parts.1 with ⟨neighbor, step⟩
-  have adjacent : Adjacent graph m (.observed parent) neighbor := by
-    rcases (stepOnPath_eq_true_iff _ _ _).mp step with ⟨before, after, forward | backward⟩
-    · exact Consecutive.pair_of_append before after _ _ (forward ▸ path.adjacent)
-    · exact (Consecutive.pair_of_append before after _ _ (backward ▸ path.adjacent)).symm
-  have outgoing : graph.expandedMutilatedEdge m (.observed parent) neighbor = true := by
-    rcases adjacent with outward | inward
-    · exact outward
-    · have reverseStep : stepOnPath neighbor (.observed parent) path.nodes = true := by
-        rw [stepOnPath_symm]
-        exact step
-      have head := incomingEdge_head (Bool.and_eq_true_iff.mpr ⟨reverseStep, inward⟩)
-      rw [parts.2] at head
-      cases head
+  have outgoing := path.forkNodes_outgoing_step parent neighbor selected step
   cases neighbor with
   | latentPair left right => cases outgoing
   | observed child => exact ⟨child, Bool.and_eq_true_iff.mpr ⟨step, outgoing⟩⟩
 
+/-- Outgoing candidates are scanned in the actual normalized path order,
+not in the unrelated topological numbering of their observed vertices. -/
+def forkHeadCandidates : List (Fin S.count) := observedNodes path.nodes
+
 private theorem outgoing_scan (distinct : source ≠ target) (parent : Fin S.count)
     (selected : path.forkNodes parent = true) :
-    (NodeSet.enumerated S).any (fun child => incomingEdge graph m path.nodes (.observed parent) child) = true := by
+    path.forkHeadCandidates.any (fun child => incomingEdge graph m path.nodes (.observed parent) child) = true := by
   rcases path.outgoing_head_exists distinct parent selected with ⟨child, edge⟩
-  exact List.any_eq_true.mpr ⟨child, NodeSet.mem_enumerated S child, edge⟩
+  exact List.any_eq_true.mpr ⟨child, (mem_observedNodes_iff path.nodes child).mpr
+    (headRows_member (incomingEdge_head edge)), edge⟩
 
 /-- One executable outgoing path-head choice per actual omitted vertex.
 Off-mask vertices keep `none`; the supporting existence proof is consumed
-only to certify success of this finite data scan. -/
+only to certify success of this finite path-order scan.  Source-side window
+orientation is proved separately from the existing edge/coverage contracts. -/
 def forkSuccessor (distinct : source ≠ target) : ForestChild S := fun parent =>
   if selected : path.forkNodes parent = true then
-    some (listFirstAny (NodeSet.enumerated S) (fun child => incomingEdge graph m path.nodes (.observed parent) child)
+    some (listFirstAny path.forkHeadCandidates (fun child => incomingEdge graph m path.nodes (.observed parent) child)
       (path.outgoing_scan distinct parent selected))
   else none
 
@@ -132,11 +182,11 @@ theorem forkSuccessor_edge (distinct : source ≠ target) {parent child : Fin S.
     (edge : path.forkSuccessor distinct parent = some child) :
     path.forkNodes parent = true ∧ incomingEdge graph m path.nodes (.observed parent) child = true := by
   by_cases selected : path.forkNodes parent = true
-  · have same : listFirstAny (NodeSet.enumerated S)
+  · have same : listFirstAny path.forkHeadCandidates
         (fun child => incomingEdge graph m path.nodes (.observed parent) child)
         (path.outgoing_scan distinct parent selected) = child := by
       simpa only [forkSuccessor, dif_pos selected, Option.some.injEq] using edge
-    exact ⟨selected, same ▸ listFirstAny_pred (NodeSet.enumerated S) _ (path.outgoing_scan distinct parent selected)⟩
+    exact ⟨selected, same ▸ listFirstAny_pred path.forkHeadCandidates _ (path.outgoing_scan distinct parent selected)⟩
   · simp only [forkSuccessor, dif_neg selected] at edge
     cases edge
 
@@ -150,7 +200,7 @@ can use a proved path window in the nondependent `find?` expression instead
 of reducing the normalization search or rewriting through its scan proof. -/
 theorem forkSuccessor_of_find (distinct : source ≠ target) {parent child : Fin S.count}
     (selected : path.forkNodes parent = true)
-    (found : (NodeSet.enumerated S).find?
+    (found : path.forkHeadCandidates.find?
       (fun next => incomingEdge graph m path.nodes (.observed parent) next) = some child) :
     path.forkSuccessor distinct parent = some child := by
   unfold forkSuccessor

@@ -44,6 +44,7 @@ import Thesis.Examples.ConditionalFailureSmallAbsorption
 import Thesis.Examples.ConditionalFailureSmallPrefixDirection
 import Thesis.Examples.ConditionalPrefixForkResidual
 import Thesis.Examples.ActivePathForkRouting
+import Thesis.Examples.ActivePathForkOrientation
 import Thesis.Examples.ConditionalFailureForkApproach
 import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
@@ -174,6 +175,14 @@ trace remains installed.  Full original-input conservation is proved before
 conditioning.  At the unchanged supported direction, the new selected `U`
 row is uniquely odd and `P,C,Z` are even.  This is a graph/signal regression,
 not a hedge countermodel or the universal remaining direction theorem.
+`ActivePathForkOrientation` deliberately reverses the two receiving heads'
+relative numbering on the actual path `P <- U -> C <- Y`, with collider `C`
+directly conditioned.  The proved path-order scan still cancels source-side
+`P`, retains outcome-side `C`'s read, and leaves the retained `U` row uniquely
+odd at the supported direction.  The former ascending-signature exit is a
+legal arrow but leaves both original heads odd at that same direction.  This
+isolates why edge legality and phase conservation do not themselves establish
+the orientation required by a global balance proof; it is not a countermodel.
 `ConditionalFailureForkApproach` uses the existing genuine outside-Small-pivot
 failure to check the actual `U -> R -> P` combined-contact approach.  It
 transports only its data through a proved target-mask identity, leaving the
