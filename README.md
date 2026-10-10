@@ -57,10 +57,13 @@ lake build Thesis.AxiomAudit
 The audit checks every declaration owned by an imported `Thesis.*` library
 module and fails the build if a transitive kernel dependency is not `propext`
 or `Quot.sound`. Continuous integration builds this audit target explicitly.
-Finite-model soundness and d-separation correctness are implemented
-constructively. General positive-model completeness still requires the
-remaining countermodel arguments; its transport interfaces retain these as
-explicit parameters rather than Lean axioms.
+Finite-model soundness, d-separation correctness, and positive-model joint
+and conditional completeness are implemented constructively. The public
+constructors are `ObservedGraph.publishedSoundness` and
+`ObservedGraph.publishedCompleteness`; completeness requires a value-rich
+finite signature (two supplied distinct labels at each observed node).
+Both joint and conditional fields return inspectable do-calculus/probability
+derivations, with no external countermodel-family assumption or new Lean axiom.
 
 Continuous probability, general measure theory, and a complete formalisation
 of every philosophical or sociological claim are outside this project's scope.

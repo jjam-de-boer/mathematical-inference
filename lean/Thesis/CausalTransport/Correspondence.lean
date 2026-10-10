@@ -11,9 +11,10 @@ Generic completeness and soundness interfaces with checked certificate transport
 The published identification theorems are represented by explicit records at
 this dependency boundary.  Internal query semantics and identifiability live
 in `Thesis.Causality.Identification`.  `Soundness` constructs its record from
-the finite model semantics; completeness assembly still exposes its genuinely
-open universal countermodel arguments.  Defining either interface is not an
-axiom declaring that it is inhabited.
+the finite model semantics; `HedgeChannelCompleteness` constructs the full
+positive-model record on value-rich finite signatures from internal joint and
+conditional countermodel families.  Defining either interface is not an axiom
+declaring that it is inhabited, and neither implementation is assumed here.
 
 Completeness and certificates are indexed by a `GraphModelClass`, so positivity
 and other regularity hypotheses are specialisations rather than constraints on
@@ -26,7 +27,9 @@ after independently defining source evaluation and its preservation map. A
 reader checking a transport theorem's parameters should begin with
 `PublishedCompleteness` and `PublishedSoundness`; a reader checking which
 records are actually inhabited should follow `ObservedGraph.publishedSoundness`
-in `Soundness` and the remaining-leaf boundary in `ConditionalFailureExtraction`.
+in `Soundness` and `ObservedGraph.publishedCompleteness` in
+`HedgeChannelCompleteness`.  The generic family-parametric assembler remains
+in `ConditionalFailureExtraction`, below this interface's dependency boundary.
 -/
 
 /-! ## Explicit theorem interfaces and checked transport -/

@@ -32,8 +32,9 @@ contact, parity, row coverage or outcome-freedom flag.
 This proves the connected-head branch of the terminal reduction.  It does
 not assume that arbitrary retained pivots work, or prove that all heads are
 connected when a retained fork cancels its preceding read.  The remaining
-normalized-path argument must supply a genuine approach contact at such a
-barrier, or establish this connected-head branch from the actual geometry.
+normalized-path argument is supplied by `ConditionalFailureHeadConnectivity`:
+it reaches a genuine approach contact at such a barrier or derives this
+connected-head branch from the actual geometry.
 -/
 
 namespace FirstConditionedSmallApproach

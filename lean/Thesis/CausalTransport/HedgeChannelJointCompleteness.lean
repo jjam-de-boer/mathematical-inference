@@ -18,7 +18,9 @@ failure refutes joint identifiability and identifiability supplies a published
 joint certificate.  The engine's own computed result is matched constructively;
 there is no excluded-middle test of identifiability and no selection from a
 mere existence proposition.  These declarations discharge the joint field
-and hedge field of `PublishedCompleteness`, but not its conditional field.
+and hedge field of `PublishedCompleteness`.  `HedgeChannelCompleteness` now
+adds the universal conditional terminal family and inhabits the full record;
+the joint implementation here remains independently usable.
 -/
 
 variable {S : ObservedSignature.{0}}
@@ -38,7 +40,8 @@ theorem ObservedGraph.identifyJointKernel_failed_not_identifiable
 /-- The published joint-completeness theorem for every value-rich finite
 signature, with no assumed countermodel family.  The certificate concerns the
 original kernel and the actual identified expression, in the same positive
-model class.  Universal conditional completeness remains separate. -/
+model class.  Full conditional completeness is assembled separately in
+`HedgeChannelCompleteness`, without changing this joint certificate API. -/
 noncomputable def ObservedGraph.publishedJointCompleteness
     (graph : ObservedGraph S) (rich : ObservedSignature.ValueRich S)
     (query : JointKernelQuery S)

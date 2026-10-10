@@ -51,6 +51,7 @@ import Thesis.Examples.ConditionalFailurePathIncidence
 import Thesis.Examples.ConditionalFailureIncidenceDirection
 import Thesis.Examples.ConditionalFailureIncidenceConnectivity
 import Thesis.Examples.ConditionalFailureFirstContact
+import Thesis.Examples.HedgeChannelCompleteness
 import Thesis.Examples.ConditionalFailureActivationForest
 import Thesis.Examples.ActivePathNormalization
 import Thesis.Examples.ActivePathColliderRerouting
@@ -151,7 +152,8 @@ without evaluating moral closure.  The residual classifier returns the real
 `U,P` approach data.  When the second original query also conditions `U`, the
 general fully conditioned Small branch constructs positive countermodels and
 the exhaustive classifier closes it.  The first query is not falsely claimed
-closed by its approach alone; the oddness-transfer obligation remains.
+closed by its approach alone; the separate universal incidence theorem
+now supplies its actual oddness-transfer argument.
 `ConditionalFailureSmallAbsorption` retains every actual `U,P` source trace
 in one pruned policy and verifies the real arrow, singleton conditioned stop,
 shared receiving endpoint and an irrelevant receiver's global stop.  Adding
@@ -159,7 +161,8 @@ unconditioned `U` to the interaction stops at that earlier zero-edge contact
 without changing the original query.  The actual opaque normalized signal
 then inherits complete Small coverage, action freedom, whole-cube conservation
 and the full original-cylinder outcome character from the general constructor.
-No supplied zero-tail or matching flags replace the remaining parity argument.
+No supplied zero-tail or matching flags replace the separate parity argument,
+which is now completed by the actual incidence connectivity theorem.
 `ConditionalFailureSmallPrefixDirection` closes a genuine three-valued hedge
 with Small `U,R` and a first conditioner `P` outside Small.  The actual normal
 path `P <- Y` is proved from its unique endpoint neighbour without evaluating
@@ -205,14 +208,16 @@ retention without evaluating normalization search.  The outside-Small-pivot
 fixture proves that neither of its two original roots is used by the actual
 `P <- Y` path, so every installed row's corresponding root basis value is zero.
 Both roots remain independent, supported original inputs, not removed coordinates.
-These are clients of the universal column proofs, not assertions of the still
-missing global incidence route or universal conditional completeness.
+These are clients of the universal column proofs, not by themselves assertions
+of the global incidence route or universal conditional completeness now proved
+by the head-connectivity and terminal companions.
 `ConditionalFailurePathIncidence` uses the genuine outside-Small-pivot failure's
 opaque normal form and actual hard boundary.  Its outgoing outcome has no row
 in the all-Small installation.  The general endpoint theorem nevertheless
 gives its supported basis exactly the selected pivot-row incidence, identified
 from the proved singleton core rather than by evaluating normalization search.
-This supplies an actual starting column, not the remaining universal route.
+This supplies an actual starting column; the universal route is proved
+separately by the normalized-head/fork dichotomy.
 `ConditionalFailureIncidenceDirection` exercises the entire finite connection
 adapter on that same genuine outside-Small failure.  The actual original `R`
 coordinate proves a supported outcome-even pair column at selected rows `R,P`.
@@ -221,8 +226,8 @@ in one step without evaluating the opaque normalization.  The general scan
 and transport constructor supplies supported outcome oddness, every actual
 outside-Small background row even, and positive original-three-valued
 conditional countermodels for the unchanged query.  This closes the
-connection-to-countermodel operation, not the still-required universal
-outcome-component-to-Small connectivity theorem.
+connection-to-countermodel operation; the universal outcome-component-to-Small
+connectivity theorem is supplied independently by the head-connectivity layer.
 `ConditionalFailureIncidenceConnectivity` uses that same actual whole
 `U,R,P` prefix to obtain both tested pair edges and a connection from the
 outside-Small pivot back to the original Small source `U`.  The general
@@ -233,7 +238,8 @@ Its collider companion exercises actual trace-edge recognition, connection
 to a genuine collider head and mandatory approach contact on the real trace
 union inside Small.  Both use structural facts about opaque normalization,
 not repeated exhaustive evaluation.  The universal normalized-path argument
-that makes every terminal outcome component meet such a contact remains open.
+now makes every terminal outcome component meet such a contact in the actual
+first-conditioned construction.
 `ConditionalFailureFirstContact` reuses the genuine complete stopped approach
 from original Small `U`, whose first conditioner is outside-Small `P`.  Its
 actual fork-aware contact is the same `P` row.  The structural singleton-core
@@ -242,7 +248,15 @@ heads connected in this fixture.  The general first-contact reduction then
 supplies the complete successful Small search and positive unchanged-query
 countermodels, without evaluating the opaque normalization or replacing the
 first conditioner by an arbitrary retained pivot.  The universal connected-
-head/retained-fork-contact dichotomy is still a separate graph theorem.
+head/retained-fork-contact dichotomy is a separately proved graph theorem.
+`HedgeChannelCompleteness` exercises the unconditional version on that same
+real outside-Small approach, without its earlier singleton-head premise.
+It also applies the unrestricted public countermodel constructor to a genuine
+two-exchange failure and a nonempty-condition irreducible failure.  Neither a
+matched denominator nor the older roots-in-outcome restriction is supplied.
+A successful exchange query obtains an inspectable conditional certificate
+from semantic identifiability through the inhabited full published package;
+the same package's exact joint and hedge field types are checked as well.
 `ConditionalFailureActivationForest` checks two genuinely activated observed
 colliders whose branches merge before one conditioner.  The common forest
 retains both incoming branches, uses one shared outgoing successor, and stops
@@ -520,7 +534,8 @@ Constructive back-door regressions additionally check an actual conditional
 failure with a retained conditioner, nonempty action avoidance, a latent-pair
 first edge, descendant-activated colliders, blocked paths, and empty or equal
 endpoints.  The path data is selected by verified finite search; these graph
-certificates do not claim that the universal conditional countermodel exists.
+certificates are graph-only inputs to the separately implemented universal
+conditional countermodel, not themselves a proof of its semantic gap.
 A separate label-refinement regression starts with a binary bow pair whose
 third labels have zero probability.  An actual private sweep makes the entire
 three-valued alphabet positive while retaining the exact causal probabilities

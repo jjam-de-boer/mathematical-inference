@@ -28,9 +28,11 @@ construction: choose the hedge's actual Small action root, retain all original
 conditioners, and derive full Small coverage.  A second finite source scan then
 returns either positive original-query countermodels or a first-conditioned
 approach whose Small source is unconditioned.  This is an exhaustive reduction
-of the hard case, not the missing universal oddness-transfer theorem.  Contacts
-with normalized heads, activation traces and nonzero omitted forks still need
-handling, together with every uncovered mandatory Small row.
+of the hard case, not by itself a universal oddness-transfer theorem.
+`ConditionalFailureHeadConnectivity` now handles normalized heads, actual
+activation traces and nonzero omitted forks.  The terminal companion uses
+the genuine first approach and complete mandatory-Small prefix union to
+construct countermodels without an additional contact or coverage premise.
 -/
 
 /-- A complete actual boundary-flow path from an original Small source,

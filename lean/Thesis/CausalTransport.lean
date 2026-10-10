@@ -138,6 +138,7 @@ import Thesis.CausalTransport.HedgeChannelEnvironmentAbsorption
 import Thesis.CausalTransport.HedgeChannelEnvironmentPrefixDirection
 import Thesis.CausalTransport.ActivePathForkRouting
 import Thesis.CausalTransport.ActivePathForkOrientation
+import Thesis.CausalTransport.ActivePathHeadBridges
 import Thesis.CausalTransport.HedgeChannelEnvironmentMaskPhase
 import Thesis.CausalTransport.HedgeChannelEnvironmentFusion
 import Thesis.CausalTransport.ConditionalFailureActivationForest
@@ -168,6 +169,9 @@ import Thesis.CausalTransport.ConditionalFailureIncidenceEdges
 import Thesis.CausalTransport.ConditionalFailureApproachConnectivity
 import Thesis.CausalTransport.ConditionalFailureTraceConnectivity
 import Thesis.CausalTransport.ConditionalFailureFirstContact
+import Thesis.CausalTransport.ConditionalFailureHeadConnectivity
+import Thesis.CausalTransport.ConditionalFailureTerminalCounterexample
+import Thesis.CausalTransport.HedgeChannelCompleteness
 
 /-!
 Stable facade for external-theorem interfaces and their finite transports.
@@ -175,8 +179,10 @@ Stable facade for external-theorem interfaces and their finite transports.
 `Certificates` defines the shared certificate shapes, while `Correspondence`
 states the graph-indexed `PublishedSoundness` and `PublishedCompleteness`
 boundaries.  These records make theorem ownership explicit: soundness is
-inhabited constructively below, while importing this facade still does not
-assume completeness as an axiom.
+inhabited constructively by `ObservedGraph.publishedSoundness`, and full
+positive-model completeness on value-rich finite signatures by
+`ObservedGraph.publishedCompleteness`.  Neither theorem is an imported axiom
+or an external theorem-family parameter.
 
 `FiniteSource` supplies an independently executable finite-table semantics,
 proves preservation into the intrinsic semantics, and exposes source-level
@@ -206,7 +212,8 @@ aliases.  Canonical labels remain simple, and an executable lookup selects the
 actual original reserved input, proves its incidence at both children, and is
 injective on latent occurrences along the path.  This prevents an interaction
 construction from silently inventing independent inputs for reversed labels;
-it does not yet construct the general conditioned-path interaction.
+the actual conditioned-path interaction and mandatory-Small connectivity are
+constructed by the conditional companions below.
 `ActivePathInputSelection` scans the actual consecutive path pairs, selects
 only incoming observed heads, and names used original roots.  Its graph-only
 proofs show both children of every used root are selected heads and incoming-cut
@@ -257,14 +264,16 @@ intersections remain part of the countermodel construction.
 from that normalization branch.  A finite test of the entire actual source
 flow returns either a genuine original-query countermodel or a latest reachable
 conditioner; endpoint omission alone is not treated as whole-path freedom.
-The latter branch retains the remaining general parity obligation.
+The latter branch is a normalization reduction; the universal parity argument
+is supplied by the first-conditioned contact and incidence companions below.
 `ConditionalFailureFlowBoundary` first stops the actual flow at each original
 queried outcome or conditioner, then exhausts every original Small source.
 It returns either an actual positive original-query countermodel or a proved
 boundary at which every complete stopped path meets evidence.  That boundary
 implies Small contains no queried outcome and supplies latest reachable pivots
 from all Small sources.  These are derived graph facts, not new readiness
-premises; the conditioned active-path parity construction is still required.
+premises.  The conditioned active-path incidence construction below closes
+this boundary without assuming every arbitrary retained pivot works.
 `ConditionalFailureSmallApproach` instead retains the actual first conditioner
 of each stopped Small-source path.  A visited conditioner is a real sink, so
 it is the computed endpoint; every proper vertex avoids original action,
@@ -286,8 +295,8 @@ freedom, legal arrows and receiving sinks are derived.  Absorbing these rows
 into the actual normalized signal preserves its phase at every original cube
 point, its outcome character and the complete Small/background matching
 identity on the full original evidence cylinder.
-No zero-tail premise is used for conservation.  The remaining direction
-parities and Small-to-pivot oddness transfer at those contacts are still open.
+No zero-tail premise is used for conservation.  Direction parities and actual
+contact-to-Small transfer are proved by the later fork-aware incidence layer.
 `HedgeChannelEnvironmentPrefixDirection` constructs the actual proper-prefix
 flip without changing its receiving endpoint or any original reserved input.
 Its exact local-source parity is the source XOR the receiver, canceling for
@@ -311,8 +320,8 @@ fusion preserves the fork input; routing cancels precisely its chosen read
 and retains the other original parent and reserved inputs.  The semantic
 assembler derives complete Small oddness from a supported odd-outcome,
 even-background direction.  Constructing that direction universally at all
-actual head/trace/fork contacts is still required; the assembler alone does
-not inhabit the conditional field of `PublishedCompleteness`.
+actual head/trace/fork contacts is proved by the incidence connectivity layer;
+this semantic assembler alone does not assert that graph theorem.
 `ConditionalFailureForkApproach` proves that every proper combined-contact
 prefix is off the normalized path and actual activation core.  Its original
 parent column is absent; its new actual observed column has only its own and
@@ -321,8 +330,9 @@ the whole prefix direction is proved zero, not supplied as a zero-tail flag.
 The installed correction changes exactly its original Small source and actual
 receiving contact, even if the new policy resumes a fork endpoint.  Support,
 outcome character and all original reserved inputs are preserved.  This is a
-universal local approach transfer, not yet a proof of the globally successful
-contact combination or evenness of every outside-Small row.
+universal local approach transfer.  The later head/fork dichotomy supplies
+global contact connectivity, and the finite incidence direction makes every
+actual outside-Small row even.
 `ActivePathForkOrientation` proves that the executable fork scan cancels the
 preceding, source-side head in every actual internal fork window, independently
 of observed vertex numbering.  `ConditionalFailureForkIncidence` derives such
@@ -332,7 +342,8 @@ preserves its original column; source-side cancellation leaves precisely its
 own row and the following, outcome-side head as full-cube basis incidences.
 Neither a window nor a fork-orientation readiness flag is supplied by a terminal
 caller.  Connecting those actual incidences to an original Small source and
-constructing the globally supported, even-background direction remain open.
+constructing the globally supported, even-background direction are completed
+by the actual finite incidence transport and head-connectivity layer below.
 `ConditionalFailureCoreIncidence` derives two further actual column families.
 A retained trace vertex cannot supply an outgoing path read: any on-path
 trace vertex is a collider.  Its complete installed observed column is its
@@ -352,8 +363,9 @@ by every actual Small prefix.  In either endpoint orientation its original
 supported observed basis has exactly one selected-row incidence at a real
 retained head: the outcome's own row if incoming, or its unique receiving
 head if outgoing.  No endpoint orientation or receiver is a new terminal field.
-These are actual starting and connecting columns, not yet global incidence
-connectivity to Small.  `ConditionalFailureForkColumns` supplies the guarded
+These are actual starting and connecting columns; global incidence
+connectivity to Small is proved separately below.  `ConditionalFailureForkColumns`
+supplies the guarded
 internal-fork alternatives: a retained fork keeps its own/outcome-side-head
 pair, while an unretained fork keeps just its two original receiving heads.
 Its raw own bit is not a third incidence because that row is unselected.
@@ -368,9 +380,10 @@ and searches every original Small row.  Whenever that precise test succeeds,
 the outcome basis plus the computed transport leaves only the reached Small
 row odd.  Actual complete outside-Small background evenness, the parity witness
 and positive original-alphabet conditional countermodels are then derived.
-The universal graph theorem that this actual search succeeds remains open;
-neither these conditional adapters nor a successful regression supplies all
-terminal countermodels or inhabits full published conditional completeness.
+The universal graph theorem that this actual search succeeds for a genuine
+first-conditioned approach is proved in `ConditionalFailureHeadConnectivity`.
+These adapters then construct the terminal models used by full published
+conditional completeness; a regression alone would not establish universality.
 `ConditionalFailureIncidenceEdges` proves that every genuine local connecting
 family passes this actual full-row test: used original roots, internal
 noncollider heads, trace transmitters, retained/unretained internal forks and
@@ -386,10 +399,10 @@ search at the unchanged observed-count bound by constructive walk shortening.
 `ConditionalFailureTraceConnectivity` likewise lifts whole actual pruned
 activation traces.  Every selected trace row connects to its genuine original
 collider head, including conditioned sinks, zero-edge activations and merged
-branches.  The remaining terminal graph argument must connect the actual
-outcome component to a mandatory approach contact, using an appropriately
-constructed first-conditioned pivot rather than assuming every arbitrary
-retained pivot has such a connection.
+branches.  The terminal head-connectivity theorem below connects the actual
+outcome component to a mandatory approach contact, using a genuine
+first-conditioned pivot rather than assuming every arbitrary retained pivot
+has such a connection.
 The incidence edge module also identifies concrete steps of the original
 normalized list.  A head's actual outgoing input derives its internal,
 noncollider, specified-receiver edge.  A literal latent window joins its two
@@ -405,9 +418,24 @@ endpoint, which is a path head.  The contact is therefore a real path head,
 pruned trace row or omitted fork and belongs to the actual retained prefix
 union.  If all normalized heads are connected to the outcome incidence,
 the whole trace and approach lemmas close every contact case at the original
-observed-count bound.  Proving that connected-head branch, or an actual
-reachable retained-fork contact when source-side cancellation splits it,
-remains the universal normalized-path obligation before terminal assembly.
+observed-count bound.  `ActivePathHeadBridges` projects the original expanded
+list to its actual observed heads: omitted vertices are isolated, so successive
+heads have a literal observed-input, original-root or omitted-fork window.
+The last head is the actual outcome receiver in either endpoint orientation.
+`ConditionalFailureHeadConnectivity` walks backward through those windows.
+It either crosses genuine incidence edges to every head, or reaches a retained
+fork through its actual following head and hence a real mandatory approach
+contact.  The first-contact theorem closes the connected-head branch as well.
+Consequently the full Small search succeeds without connectivity readiness
+flags and supplies positive countermodels for the unchanged original query.
+`ConditionalFailureTerminalCounterexample` exhausts the actual all-Small
+boundary sum, using an existing free-path pair or the action root's genuine
+first-conditioned approach.  The no-exchange terminal construction has no
+additional parity, matched-denominator, row-coverage or source-freedom premise.
+`HedgeChannelCompleteness` combines this family with the unrestricted joint
+hedge pair and complete exchange transport.  It inhabits every field of
+`PublishedCompleteness (GraphModelClass.positive graph)` on value-rich finite
+signatures and exposes the public conditional failure and certificate APIs.
 `ConditionalFailureActivationForest` gives all such collider activations one
 common directed successor policy.  Every selected nonconditioner has a real
 selected child, and conditioners are precisely its sinks.  The latest pivot
@@ -686,8 +714,9 @@ joint result.  Its joint-completeness constructor now needs only the explicit
 general original-query hedge countermodel leaf in the same model class;
 termination, literal-output compilation, and structural failure extraction are
 proved internally.  `HedgeChannelJointCompleteness` below now discharges that
-general hedge leaf.  The full `PublishedCompleteness` package remains open
-because general conditional failure-side non-identifiability is still needed.
+general hedge leaf.  `HedgeChannelCompleteness` now supplies the full
+`PublishedCompleteness` package using the universal conditional terminal
+construction and original-query exchange transport.
 `ValueRefinementCounterexample` separates the fixed-alphabet support issue
 from that general semantic leaf.  Ordinary positive Boolean-valued models
 on the same graph are deterministically encoded at the supplied rich labels;
@@ -895,8 +924,8 @@ The full phase conservation theorem itself needs no first incoming edge.
 The actual activation installation is supplied by
 `ConditionalFailureActivationInteraction`; routing every mandatory Small row
 is now constructed at the all-Small boundary by `ConditionalFailureSmallAbsorption`.
-Its direction parities and any required Small-to-pivot oddness transfer remain
-for the universal conditional countermodel.
+Its direction parities and required Small-to-contact transfer are supplied
+by the fork-aware incidence and head-connectivity companions above.
 `HedgeChannelEnvironmentMoments` identifies the actual background factors
 and event sums with these homogeneous moments.  The full normalized response
 is exactly the original-outcome covariance multiplied by the two installed
@@ -939,20 +968,21 @@ The mechanism keeps one own bit; the correction is proof-level accounting only.
 Zero actual domain coordinates preserve core rows and make new rows even,
 even when an overlapping collider transmits onward.  This supports the actual
 merged activation interaction above, including already-conditioned sinks.
-Universal mandatory-Small integration remains open: the pivot can lie outside
-Small, and an omitted path fork may have a nonzero direction bit.  A forest
-contact cannot therefore simply be assumed to have zero value.  None of these
-bridges supplies that remaining graph obligation as a readiness assumption.
+The pivot can lie outside Small, and an omitted path fork may have a nonzero
+direction bit.  A forest contact cannot therefore simply be assumed to have
+zero value.  The actual fork-aware incidence and head-connectivity theorems
+above handle these cases without a readiness or zero-tail assumption.
 The conditioned completion in `ConditionalFailureSmallInteraction` covers
 additional missing evidence rows without a routing premise.
 `ConditionalFailureSmallAbsorption` additionally retains unconditioned missing
 Small rows through actual stopped prefixes and preserves full-cylinder matching.
 The direction parities of those new rows and outside-Small oddness transfer
-remain open; conservation alone does not prove background evenness.
+follow from the tested incidence transport, not conservation alone.
 The first-conditioned approach classifier additionally closes the case where
 every Small row is evidence, deriving its required coverage rather than taking
-a supplied Small parity certificate.  Its remaining branch preserves a real
-unconditioned Small source for the missing transfer argument.
+a supplied Small parity certificate.  Its residual branch preserves a real
+unconditioned Small source; the universal terminal constructor also handles
+all conditioned sources directly through their genuine first contacts.
 `HedgeChannelMonomial` regroups each actual complete row choice by hidden
 channel before using independence.  It derives selected support and forced
 row exclusion from the real local choice lists.  A selected connected channel
@@ -1005,7 +1035,8 @@ local background products.  All simultaneous interactions and literal
 forced-value zeros are retained.  The free background factors are strictly
 positive; that does not make the separate character perturbation positive.
 No exponentially large hidden-source enumeration is evaluated to prove these
-identities, and a nonzero normalized active-path interaction is still required.
+identities.  The nonzero normalized active-path interaction is constructed
+by the actual incidence connectivity and covariance theorems above.
 `HedgeChannelRouting` supplies homogeneous typed incoming-flow signals from
 the hedge's existing composed small/outcome successor.  Its distinguished
 outside-small mask completes that flow, and conservation makes its phase
@@ -1070,12 +1101,13 @@ at their actual common pair root; the complete environment sum cancels its
 linear evidence change but retains the joint interaction.  Its verified
 original-query counterexample overcomes the restrictive family's obstruction,
 without claiming arbitrary active-path coverage from this one instance.
-That terminal construction remains the load-bearing conditional obligation;
-the general Boolean-to-original-alphabet lift is no longer an extra premise.
+The universal terminal construction is now supplied by the shared-input,
+fork-aware incidence argument above; the general Boolean-to-original-alphabet
+lift is also internal rather than an extra premise.
 No common hidden source incident to the entire hedge is introduced by these
-channel constructions.  Universal conditional terminal countermodels remain open;
-the completed joint and hedge fields do not yet inhabit the entire
-`PublishedCompleteness` record.
+channel constructions.  The universal terminal family now combines that real
+shared-input installation with actual normalized-head/fork bridges, and
+`HedgeChannelCompleteness` inhabits the entire `PublishedCompleteness` record.
 `HedgeCompensatedPreimage` exposes the exact installed-row full-value
 preimages in both actual carriers: ordinary/nested incidence equations have
 a common private-background test.  That test retains the loss of a nonbinary
@@ -1094,9 +1126,9 @@ permission; those are separate obligations of a positive separated pair.
 identities, full observational replay, support, and compatibility.  It now
 constructs positive countermodels for the original joint query on all
 small-or-outside canonical routes, including responding internal kept
-children and composite actions.  Routes modifying the outer-only forest and
-the remaining conditional terminal families still prevent an unrestricted
-published completeness theorem.
+children and composite actions.  Routes modifying the outer-only forest remain outside that compensated
+carrier family.  They do not block published completeness: the unrestricted
+channel construction and universal terminal family use different models.
 `ConditionalCounterexampleNormalization` supplies an alternative to matched
 denominators: an existing positive joint countermodel with a common reverse
 conditional separates the requested conditional in those same models.
@@ -1179,8 +1211,8 @@ sequences are covered by fuel induction, and termination follows from strict
 conditioner decrease.  The terminal Bayes denominator marginalizes the one
 identified numerator certificate rather than making another ID call.  This
 proves success correctness and identifiability, not the converse: an
-irreducible terminal joint failure still needs a conditional countermodel or
-the equivalent semantic non-identifiability argument.
+irreducible terminal joint failure needs the separately proved universal
+conditional countermodel family above for the converse.
 `ConditionalFailureExtraction` supplies the matching general failure induction:
 every failed conditional invocation retains its actual irreducible terminal,
 exhausted singleton-exchange search, terminal numerator hedge, and complete
@@ -1189,15 +1221,17 @@ through that trace in the same positive model class using the same two models.
 The chain-rule leaf proves conditional separation whenever a numerator's
 countermodel pair agrees on the denominator; the empty-condition conversion
 does not require positivity.  Its final assembly constructor therefore makes
-the two remaining semantic families explicit rather than assuming that a
-failed numerator automatically separates its conditional.  Those families
-are not yet inhabited in general.
+the two semantic families explicit rather than assuming that a failed
+numerator automatically separates its conditional.  The unrestricted joint
+and universal terminal companions supply both families internally at the
+concrete positive value-rich assembly boundary.
 The constructor `HedgeWitness.positiveCounterexampleOfRootsSubsetOutcome`
 in `HedgePositive` also restores the original joint query whenever all common
 roots are selected outcomes, by
 finite marginalization of the full positive carrier pair.  Arbitrary extra
 outcomes and multiple roots are covered.  Root-to-outcome reachability alone
-is not the subset hypothesis, so the unrestricted routing gap remains open.
+is not the subset hypothesis, so this older carrier constructor does not
+discharge unrestricted routing; the channel constructor does so separately.
 That pair has identical intervention responses on every coordinate outside
 the large forest, with the same latent units and prior.  Thus a conditioner
 outside the forest has a matched denominator without a class-level
@@ -1260,7 +1294,8 @@ conditioner, and an omitted root still routing to an outside outcome; a
 second query balances at a non-root with an original kept child.  Both are
 actual irreducible engine failures.  Conditioners without protection or a
 suitable omitted-small closed set, and outer-only route updates, remain
-open general cases; no universal terminal countermodel is asserted.
+outside this older restricted family; its regressions do not themselves
+assert the separately proved universal terminal countermodel.
 `HedgeSmallAbsorption` handles further outer-route cases by changing the
 small forest before constructing the positive pair.  Its kept-descendant
 closure absorbs every large route vertex and all original successors they
@@ -1274,7 +1309,7 @@ models.  A three-value regression has formerly forbidden outer routes and
 an absorbed responding conditioner whose off-route kept child is added by
 closure and supplies a denominator balancing equation.  General failures
 of this normalization and the remaining conditional denominator geometries
-still require the unrestricted countermodel arguments.
+are handled by the separate unrestricted countermodel arguments above.
 `HedgeOutcomeNormalization` also changes the kept map and common roots,
 using all action-free large outcome ancestors as the new small side.
 Canonical routes then satisfy the compensated geometry automatically;
