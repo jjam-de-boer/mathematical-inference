@@ -188,7 +188,8 @@ private theorem collapseAncestorValue_eq_evalNode
     have hidden := hidden_of_observedIndex_none M node missing
     rw [evalNode]
     rw [interventionValueAt_of_observedIndex_none M intervention node missing]
-    congr 1
+    apply congrArg (fun parentValues : P.hiddenDAG.ParentValues M.NodeValue node =>
+      M.mechanism node parentValues (noise node))
     funext parent edge
     exact collapseAncestorValue_eq_evalNode M intervention noise child parent
       (path.prepend edge hidden)
