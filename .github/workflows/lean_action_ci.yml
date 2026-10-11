@@ -29,6 +29,7 @@ jobs:
           build-args: >-
             Thesis.Causality.ObservationalSupport
             Thesis.Causality.HiddenPathSearch
+            Thesis.CausalTransport.HiddenDAGCollapse
             Thesis.CausalTransport.SupportAwareChainCompilation
             Thesis.Examples.LocalSupportIdentification
             Thesis.Examples.HiddenPathSearch

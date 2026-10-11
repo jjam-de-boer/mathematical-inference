@@ -62,6 +62,18 @@ inductive HiddenInternalPathData (H : FiniteHiddenDAG S) :
       (hidden : H.hidden middle = true) (edge : H.edge middle target = true) :
       HiddenInternalPathData H source target
 
+/-- Extend a stored suffix by one incoming edge.  Its old source becomes an
+interior vertex and must therefore be hidden.  This is used when evaluating
+the parents of a hidden relay; an observed parent must instead remain an
+observed mechanism input, not be silently evaluated through an intervention. -/
+def HiddenInternalPathData.prepend
+    {H : FiniteHiddenDAG S} {source middle target : Fin H.count}
+    (edge : H.edge source middle = true) (hidden : H.hidden middle = true) :
+    HiddenInternalPathData H middle target -> HiddenInternalPathData H source target
+  | .direct lastEdge => .tail (.direct edge) hidden lastEdge
+  | .tail earlierPath lastHidden lastEdge =>
+      .tail (earlierPath.prepend edge hidden) lastHidden lastEdge
+
 /-- Every stored path satisfies the original projection specification. -/
 def HiddenInternalPathData.toSpecification
     {H : FiniteHiddenDAG S} {source target : Fin H.count} :
