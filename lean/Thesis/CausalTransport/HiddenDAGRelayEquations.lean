@@ -96,7 +96,7 @@ private theorem deliveredRoot_expectedValue (model : ExactModel S)
     (incident : model.latent.incident root child = true)
     (placement : HiddenDAGRootPlacement model.latent P root)
     (allocated : model.hiddenDAGRootPlacements compatible root = placement) :
-    (let delivery := placement.delivery child incident
+    (let delivery := placement.delivery child incident;
       rootAlongRoute model P (P.hiddenDAG.observedNode child)
         (fun parent _edge => expectedValue model compatible signals roots parent)
         (HiddenDAGPlacedNoise.encode model compatible roots (P.hiddenDAG.observedNode child))
