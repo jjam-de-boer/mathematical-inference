@@ -155,7 +155,7 @@ theorem signalAlong_expectedValue (model : ExactModel S)
         (expectedValue model compatible signals roots (P.hiddenDAG.observedNode index)) index = _
       rw [expectedValue_observed]
       exact readSignal_observed model index (signals index)
-  | @tail middle earlierRoute hidden edge =>
+  | @tail middle _target earlierRoute hidden edge =>
       change readSignal model P middle (expectedValue model compatible signals roots middle) index = _
       rw [expectedValue_hidden model compatible signals roots middle
         (P.hiddenDAG.observedIndex_hidden middle hidden),
@@ -181,7 +181,7 @@ theorem rootAlong_expectedValue (model : ExactModel S)
         (P.hiddenDAG.observedIndex_hidden source hidden),
         readRoot_hidden model source (P.hiddenDAG.observedIndex_hidden source hidden)]
       exact expectedRoots_at_source model compatible roots root source placed
-  | @tail middle earlierRoute lastHidden edge =>
+  | @tail middle _target earlierRoute lastHidden edge =>
       change readRoot model P middle (expectedValue model compatible signals roots middle) root = _
       rw [expectedValue_hidden model compatible signals roots middle
         (P.hiddenDAG.observedIndex_hidden middle lastHidden),

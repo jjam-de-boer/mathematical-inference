@@ -134,6 +134,51 @@ theorem observedMechanism_expectedValue (model : ExactModel S)
   unfold observedMechanism
   rw [observedParents_expectedValue, observedRoots_expectedValue]
 
+/-- The complete hidden-node equation reproduces the explicit payload on
+the supplied assignment and encoded noise.  This combines both coordinate
+families without identifying independent root inputs with observed signals. -/
+theorem mechanism_expectedValue_hidden (model : ExactModel S)
+    (compatible : Compatible model P.observedGraph) (signals : S.Assignment)
+    (roots : model.latent.Assignment) (node : Fin P.hiddenDAG.count)
+    (missing : P.hiddenDAG.observedIndex node = none) :
+    mechanism model compatible node
+      (fun parent _edge => expectedValue model compatible signals roots parent)
+      (HiddenDAGPlacedNoise.encode model compatible roots node) =
+      expectedValue model compatible signals roots node := by
+  rw [expectedValue_hidden model compatible signals roots node missing]
+  unfold mechanism
+  split
+  · apply congrArg (nodeValue_of_none model node missing).mpr
+    exact Prod.ext (hiddenSignals_expectedValue model compatible signals roots node)
+      (hiddenRoots_expectedValue model compatible signals roots node)
+  · rename_i index found
+    rw [missing] at found
+    cases found
+
+/-- At an observed node the complete constructed equation is the original
+equation on the reconstructed parents and root values, converted through
+the explicit unchanged observed presentation. -/
+theorem mechanism_expectedValue_observed (model : ExactModel S)
+    (compatible : Compatible model P.observedGraph) (signals : S.Assignment)
+    (roots : model.latent.Assignment) (child : Fin S.count) :
+    mechanism model compatible (P.hiddenDAG.observedNode child)
+      (fun parent _edge => expectedValue model compatible signals roots parent)
+      (HiddenDAGPlacedNoise.encode model compatible roots (P.hiddenDAG.observedNode child)) =
+      (observedEquivalence model P child).backward
+        (model.mechanism child (fun parent _edge => signals parent) (fun root _incident => roots root)) := by
+  unfold mechanism
+  split
+  · rename_i missing
+    have found := P.hiddenDAG.observedIndex_observed child
+    rw [missing] at found
+    cases found
+  · rename_i index found
+    have same : index = child := Option.some.inj
+      (found.symm.trans (P.hiddenDAG.observedIndex_observed child))
+    subst index
+    exact congrArg (observedEquivalence model P child).backward
+      (observedMechanism_expectedValue model compatible signals roots child)
+
 end HiddenDAGRelay
 end Causality
 end Thesis

@@ -99,6 +99,39 @@ def interventionValueAt (M : FiniteHiddenDAGSCM S projection)
           some (M.observedIndex_sound node i hindex ▸
             (M.observedEquiv i).backward value)
 
+/-- Hard observed interventions never force a node with no observed index.
+The dependent lookup is split explicitly so its value-conversion proof stays
+attached to the branch that produced it. -/
+theorem interventionValueAt_eq_none (M : FiniteHiddenDAGSCM S projection)
+    (intervention : HardIntervention S) (node : Fin projection.hiddenDAG.count)
+    (missing : M.observedIndex node = none) :
+    M.interventionValueAt intervention node = none := by
+  unfold interventionValueAt
+  split
+  · rfl
+  · rename_i index found
+    rw [missing] at found
+    cases found
+
+/-- At an embedded observed node the intervention is exactly its supplied
+value converted into the node's unchanged observed presentation.  An absent
+intervention remains absent; no default conditional or equation is inserted. -/
+theorem interventionValueAt_observed_eq_map (M : FiniteHiddenDAGSCM S projection)
+    (intervention : HardIntervention S) (index : Fin S.count) :
+    M.interventionValueAt intervention (projection.hiddenDAG.observedNode index) =
+      (intervention.value index).map (M.observedEquiv index).backward := by
+  unfold interventionValueAt
+  split
+  · rename_i missing
+    have found := M.observedIndex_observed index
+    rw [missing] at found
+    cases found
+  · rename_i ownIndex found
+    have same : ownIndex = index := Option.some.inj
+      (found.symm.trans (M.observedIndex_observed index))
+    subst ownIndex
+    cases intervention.value index <;> rfl
+
 /-- Well-founded structural evaluation along the full DAG rank. -/
 def evalNode (M : FiniteHiddenDAGSCM S projection)
     (intervention : HardIntervention S) (noise : M.NoiseAssignment)
