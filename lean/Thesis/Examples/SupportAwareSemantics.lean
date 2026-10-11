@@ -58,6 +58,16 @@ theorem noncanonical_zero_skips_undefined :
 theorem supported_positive_product :
     weightedMultiply (some half) (some half) = some (⟨1, 4, by decide⟩ : QProb) := rfl
 
+/-- A zero conditioning cell still has an undefined conditional ratio. -/
+theorem zero_conditional_remains_undefined :
+    divide (some QProb.zero) (some QProb.zero) = none := rfl
+
+/-- Only weighting that undefined ratio by its known zero conditioning mass
+recovers the zero joint contribution. -/
+theorem zero_weighted_chain_contribution :
+    weightedMultiply (some QProb.zero)
+      (divide (some QProb.zero) (some QProb.zero)) = some QProb.zero := rfl
+
 end LocalWeightedSupport
 end Examples
 end Causality

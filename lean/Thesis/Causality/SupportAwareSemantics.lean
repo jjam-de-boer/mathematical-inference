@@ -118,7 +118,7 @@ noncomputable def weightedMultiply_agrees {weight factor : Result}
             simp only [weightedMultiply, if_pos zero, multiply]
             exact .value (by
               simp only [QProb.Equiv, QProb.zero, QProb.mul, zero,
-                Nat.zero_mul, Nat.mul_zero])
+                Nat.zero_mul])
           else
             simpa only [weightedMultiply, if_neg zero] using
               refl (multiply (some weightValue) (some factorValue))
@@ -228,6 +228,69 @@ noncomputable def weightedSum_agrees_of_mem (values : List X)
       (sum (values.map (fun value => multiply (weight value) (factor value)))) :=
   sum_map_congr_mem values _ _ (fun value member => weightedMultiply_agrees
     (weightsSupported value member) (factorsSupported value member))
+
+/-! ## Recovering a dominated joint mass across zero conditioning cells -/
+
+/-- Multiplying a conditional ratio by its conditioning mass recovers the
+joint numerator even at a zero cell, provided zero conditioning mass forces
+zero joint mass.  The ratio itself remains undefined there; only its complete
+weighted contribution has the value zero.
+
+The premise is essential.  Without it, guarding an arbitrary nonzero
+numerator over a zero denominator would falsely turn that numerator into zero.
+For event probabilities the premise follows from event containment, not an
+assumption that every observational cell is positive. -/
+def weightedMultiply_divide_cancel (numerator denominator : QProb)
+    (zeroDominated : denominator.num = 0 -> numerator.num = 0) :
+    Equivalent
+      (weightedMultiply (some denominator)
+        (divide (some numerator) (some denominator)))
+      (some numerator) := by
+  if zero : denominator.num = 0 then
+    have numeratorZero : numerator.num = 0 := zeroDominated zero
+    simp only [weightedMultiply, if_pos zero]
+    exact .value (by
+      simp only [QProb.Equiv, QProb.zero, numeratorZero,
+        Nat.zero_mul, Nat.mul_zero])
+  else
+    have positive : 0 < denominator.num := Nat.pos_of_ne_zero zero
+    simp only [weightedMultiply, if_neg zero, divide, dif_pos positive, multiply]
+    exact .value (by
+      simp only [QProb.Equiv, QProb.mul, QProb.div]
+      ac_rfl)
+
+/-- Probability domination supplies precisely the zero-cell premise of the
+weighted chain identity.  Natural cross-multiplication proves it directly;
+no positive conditioning event or general real-order decision is required. -/
+def weightedMultiply_divide_cancel_of_le (numerator denominator : QProb)
+    (dominated : QProb.LE numerator denominator) :
+    Equivalent
+      (weightedMultiply (some denominator)
+        (divide (some numerator) (some denominator)))
+      (some numerator) :=
+  weightedMultiply_divide_cancel numerator denominator (fun zero => by
+    have bound : numerator.num * denominator.den ≤ 0 := by
+      simpa only [QProb.LE, zero, Nat.zero_mul] using dominated
+    have productZero : numerator.num * denominator.den = 0 :=
+      Nat.eq_zero_of_le_zero bound
+    exact (Nat.mul_eq_zero.mp productZero).resolve_right
+      (Nat.ne_of_gt denominator.den_pos))
+
+/-- Finite marginalization of dominated conditional contributions recovers
+the sum of joint masses, including zero conditioning cells.  This is the
+chain-algebra identity needed before support-aware marginal compilation;
+it is not permission to identify an unsupported causal intervention. -/
+noncomputable def weightedSum_divide_cancel_of_le (values : List X)
+    (numerator denominator : X -> QProb)
+    (dominated : forall value, value ∈ values ->
+      QProb.LE (numerator value) (denominator value)) :
+    Equivalent
+      (weightedSum values (fun value => some (denominator value))
+        (fun value => divide (some (numerator value)) (some (denominator value))))
+      (sum (values.map (fun value => some (numerator value)))) :=
+  sum_map_congr_mem values _ _ (fun value member =>
+    weightedMultiply_divide_cancel_of_le (numerator value)
+      (denominator value) (dominated value member))
 
 end ProbabilityResult
 end Causality
