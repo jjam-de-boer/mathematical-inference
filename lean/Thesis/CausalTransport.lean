@@ -82,6 +82,7 @@ import Thesis.CausalTransport.HiddenDAGPositiveCertificates
 import Thesis.CausalTransport.HiddenDAGIdentification
 import Thesis.CausalTransport.HiddenDAGRootPlacement
 import Thesis.CausalTransport.HiddenDAGPlacedNoise
+import Thesis.CausalTransport.HiddenDAGNoiseLaw
 import Thesis.CausalTransport.HiddenDAGRelayValues
 import Thesis.CausalTransport.HiddenDAGRealization
 import Thesis.CausalTransport.HiddenDAGRelayAssignment

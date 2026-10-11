@@ -48,9 +48,9 @@ the corresponding unit-or-zero indicator. -/
 theorem absentChannel_probVal {Value : Type u} (event : Option Value → Bool) :
     QProb.Equiv ((absentChannel Value).probVal event)
       (if event none then QProb.one else QProb.zero) := by
-  cases event none <;>
+  cases checked : event none <;>
     simp [absentChannel, FiniteProbRecord.probVal, FiniteProbRecord.eventMass,
-      QProb.Equiv, QProb.one, QProb.zero]
+      QProb.Equiv, QProb.one, QProb.zero, checked]
 
 /-- A product of deterministic Boolean checks is the indicator of their
 finite conjunction.  This includes the empty conjunction, whose mass is one. -/
@@ -65,9 +65,9 @@ theorem qProduct_indicator (count : Nat) (checks : Fin count → Bool) :
       exact QProb.equiv_trans
         (QProb.mul_congr (QProb.equiv_refl _) prefixLaw)
         (by
-          cases checks (Fin.last count) <;>
-            cases finAll count (fun index => checks index.castSucc) <;>
-            simp [finAll, QProb.Equiv, QProb.mul, QProb.one, QProb.zero])
+          cases lastCheck : checks (Fin.last count) <;>
+            cases prefixCheck : finAll count (fun index => checks index.castSucc) <;>
+            simp [finAll, QProb.Equiv, QProb.mul, QProb.one, QProb.zero, lastCheck, prefixCheck])
 
 /-- A constant Boolean event has unit or zero mass.  In particular, an
 unused original factor disappears by its genuine normalization theorem. -/
@@ -156,10 +156,10 @@ theorem channel_rectangular_probVal {Value : Type u} (count : Nat)
           (qProduct_indicator count checks)
         intro index
         by_cases same : index = chosen
-        · simp only [FiniteProduct.qProductWithout, checks, if_pos same]
+        · simp only [checks, if_pos same]
           exact QProb.equiv_refl _
         · have different : some chosen ≠ some index := fun equal => same (Option.some.inj equal).symm
-          simp only [FiniteProduct.qProductWithout, checks, if_neg same, channelFactor, if_neg different]
+          simp only [checks, if_neg same, channelFactor, if_neg different]
           exact absentChannel_probVal (events index)
       have selected : QProb.Equiv ((channelFactor record (some chosen) chosen).probVal (events chosen))
           (record.probVal (fun value => events chosen (some value))) := by

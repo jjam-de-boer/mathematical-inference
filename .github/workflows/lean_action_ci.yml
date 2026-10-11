@@ -39,6 +39,7 @@ jobs:
             Thesis.CausalTransport.HiddenDAGIdentification
             Thesis.CausalTransport.HiddenDAGRootPlacement
             Thesis.CausalTransport.HiddenDAGPlacedNoise
+            Thesis.CausalTransport.HiddenDAGNoiseLaw
             Thesis.CausalTransport.HiddenDAGRelayValues
             Thesis.CausalTransport.HiddenDAGRealization
             Thesis.CausalTransport.HiddenDAGRelayAssignment
