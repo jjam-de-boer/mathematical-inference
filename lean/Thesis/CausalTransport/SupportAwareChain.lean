@@ -24,7 +24,7 @@ distribution may contain arbitrary zeros.
 
 namespace ProbabilityTerm
 
-/-- `ProbabilityTerm.weightedChain_soundAt` now lives beside the intrinsic
+/-! `ProbabilityTerm.weightedChain_soundAt` now lives beside the intrinsic
 term semantics, so ordinary derivations and finite source transport use the
 same proved probability identity.  This module remains the stable transport
 import boundary; it does not introduce another copy or assumed law. -/

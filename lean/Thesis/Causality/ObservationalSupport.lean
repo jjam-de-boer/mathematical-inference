@@ -92,8 +92,8 @@ theorem condition_positive_of_observational_overlap
   have subset : forall unit, factualEvent unit = true ->
       intervenedEvent unit = true := by
     intro unit selected
-    have cylinder : agreesOn kernel.action reference (model.eval unit) &&
-        agreesOn kernel.condition reference (model.eval unit) = true := by
+    have cylinder : (agreesOn kernel.action reference (model.eval unit) &&
+        agreesOn kernel.condition reference (model.eval unit)) = true := by
       simpa only [factualEvent, agreesOn_union] using selected
     have actionAgreement := (Bool.and_eq_true_iff.mp cylinder).1
     have conditionAgreement := (Bool.and_eq_true_iff.mp cylinder).2
@@ -147,11 +147,12 @@ noncomputable def supportedAt_of_condition_positive
     (kernel.numeratorEvent reference)
   let denominator := (kernel.distribution model reference).probVal
     (kernel.conditionEvent reference)
-  refine ⟨QProb.div numerator denominator positive, ?_⟩
+  have denominatorPositive : 0 < denominator.num := positive
+  refine ⟨QProb.div numerator denominator denominatorPositive, ?_⟩
   change ProbabilityResult.Equivalent
     (ProbabilityResult.divide (some numerator) (some denominator))
-    (some (QProb.div numerator denominator positive))
-  simp only [ProbabilityResult.divide, dif_pos positive]
+    (some (QProb.div numerator denominator denominatorPositive))
+  simp only [ProbabilityResult.divide, dif_pos denominatorPositive]
   exact .value (QProb.equiv_refl _)
 
 /-- Observable action-and-condition overlap supplies recursive support of
