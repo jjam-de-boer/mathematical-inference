@@ -81,6 +81,25 @@ def HiddenInternalPathData.toSpecification
   | .direct edge => .direct edge
   | .tail earlierPath hidden edge => .tail earlierPath.toSpecification hidden edge
 
+/-- Read the actual final incoming edge of a stored path.  A relay equation
+may use only this declared parent value, not inspect an arbitrary ancestor's
+equation or select a predecessor from propositional reachability. -/
+def HiddenInternalPathData.lastParent
+    {H : FiniteHiddenDAG S} {source target : Fin H.count} :
+    HiddenInternalPathData H source target -> { parent : Fin H.count // H.edge parent target = true }
+  | .direct edge => ⟨_, edge⟩
+  | .tail _earlierPath _hidden edge => ⟨_, edge⟩
+
+/-- A path beginning at a hidden source has a hidden final predecessor:
+either that source itself or its explicitly hidden last interior vertex. -/
+theorem HiddenInternalPathData.lastParent_hidden
+    {H : FiniteHiddenDAG S} {source target : Fin H.count}
+    (path : HiddenInternalPathData H source target) (hidden : H.hidden source = true) :
+    H.hidden path.lastParent.val = true := by
+  cases path with
+  | direct => exact hidden
+  | tail _earlierPath lastHidden _edge => exact lastHidden
+
 /-- Prefer a direct edge; otherwise scan all actual hidden predecessors of
 the target in their finite index order.  Recursive calls occur only under a
 verified incoming edge, whose rank inequality establishes termination.
