@@ -115,7 +115,9 @@ theorem expectedRoots_at_source (model : ExactModel S) (compatible : Compatible 
     (placed : (model.hiddenDAGRootPlacements compatible root).source? = some source) :
     expectedRoots model compatible roots source root = roots root := by
   unfold expectedRoots
-  rw [placed, if_pos rfl]
+  rw [placed]
+  dsimp only []
+  rw [if_pos rfl]
 
 /-- A hidden source's root coordinate reaches every actual hidden-internal
 descendant.  The finite search need not choose this supplied path: completeness
@@ -129,6 +131,7 @@ theorem expectedRoots_of_path (model : ExactModel S) (compatible : Compatible mo
     expectedRoots model compatible roots node root = roots root := by
   unfold expectedRoots
   rw [placed]
+  dsimp only []
   by_cases localSource : source = node
   · rw [if_pos localSource]
   · rw [if_neg localSource, if_pos hidden,
@@ -152,11 +155,12 @@ theorem signalAlong_expectedValue (model : ExactModel S)
         (expectedValue model compatible signals roots (P.hiddenDAG.observedNode index)) index = _
       rw [expectedValue_observed]
       exact readSignal_observed model index (signals index)
-  | @tail middle prefix hidden edge =>
+  | @tail middle earlierRoute hidden edge =>
       change readSignal model P middle (expectedValue model compatible signals roots middle) index = _
       rw [expectedValue_hidden model compatible signals roots middle
-        (P.hiddenDAG.observedIndex_hidden middle hidden), readSignal_hidden]
-      exact expectedSignals_of_path signals index middle prefix
+        (P.hiddenDAG.observedIndex_hidden middle hidden),
+        readSignal_hidden model middle (P.hiddenDAG.observedIndex_hidden middle hidden)]
+      exact expectedSignals_of_path signals index middle earlierRoute
 
 /-- A shared-root route reads the supplied root channel at its last actual
 predecessor.  The hidden-source premise is essential: an observed node's
@@ -174,13 +178,15 @@ theorem rootAlong_expectedValue (model : ExactModel S)
   | direct edge =>
       change readRoot model P source (expectedValue model compatible signals roots source) root = _
       rw [expectedValue_hidden model compatible signals roots source
-        (P.hiddenDAG.observedIndex_hidden source hidden), readRoot_hidden]
+        (P.hiddenDAG.observedIndex_hidden source hidden),
+        readRoot_hidden model source (P.hiddenDAG.observedIndex_hidden source hidden)]
       exact expectedRoots_at_source model compatible roots root source placed
-  | @tail middle prefix lastHidden edge =>
+  | @tail middle earlierRoute lastHidden edge =>
       change readRoot model P middle (expectedValue model compatible signals roots middle) root = _
       rw [expectedValue_hidden model compatible signals roots middle
-        (P.hiddenDAG.observedIndex_hidden middle lastHidden), readRoot_hidden]
-      exact expectedRoots_of_path model compatible roots root source middle placed hidden prefix
+        (P.hiddenDAG.observedIndex_hidden middle lastHidden),
+        readRoot_hidden model middle (P.hiddenDAG.observedIndex_hidden middle lastHidden)]
+      exact expectedRoots_of_path model compatible roots root source middle placed hidden earlierRoute
 
 end HiddenDAGRelay
 end Causality
