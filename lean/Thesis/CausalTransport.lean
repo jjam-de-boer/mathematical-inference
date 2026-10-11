@@ -12,6 +12,7 @@ import Thesis.CausalTransport.ActivePathRootInputs
 import Thesis.CausalTransport.ActivePathDirection
 import Thesis.CausalTransport.ActivePathColliderRerouting
 import Thesis.CausalTransport.Certificates
+import Thesis.CausalTransport.SupportAwareProbability
 import Thesis.CausalTransport.Correspondence
 import Thesis.CausalTransport.FiniteSource
 import Thesis.CausalTransport.Soundness
@@ -70,6 +71,7 @@ import Thesis.CausalTransport.HedgeConditionalReadout
 import Thesis.CausalTransport.Counterfactual
 import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.CausalTransport.HiddenDAG
+import Thesis.CausalTransport.HiddenDAGFullFamily
 import Thesis.CausalTransport.Construction
 import Thesis.CausalTransport.Modal
 import Thesis.CausalTransport.ModalRealization
