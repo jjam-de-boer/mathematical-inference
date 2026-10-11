@@ -71,6 +71,7 @@ theorem toHiddenDAGSCM_expectedValue_solution (model : ExactModel S)
           rw [mechanism_expectedValue_observed]
           apply congrArg (observedEquivalence model P index).backward
           rw [evalNodeUnder, equationUnder, selected]
+          rfl
 
 /-- Every full-DAG node, including its hidden payload coordinates, agrees
 with the explicit intervened relay solution at the encoded original unit.
@@ -87,8 +88,14 @@ theorem toHiddenDAGSCM_evalNode (model : ExactModel S)
     (expectedValue model compatible (model.evalUnder intervention.value roots) roots)
     ?_ node
   intro actualNode
-  simpa only [toHiddenDAGSCM] using
+  have solution :=
     model.toHiddenDAGSCM_expectedValue_solution compatible intervention roots actualNode
+  -- The two elaborated matches use equivalent presentations of the same
+  -- node type.  Splitting their actual computed option removes those motives
+  -- before comparing the local equations; no semantic hypothesis is added.
+  cases forced : (model.toHiddenDAGSCM compatible).interventionValueAt intervention actualNode with
+  | none => simpa only [forced] using solution
+  | some value => simpa only [forced] using solution
 
 /-- Complete observed assignments agree pointwise under every partial hard
 intervention and every original root assignment.  Observed domains are kept
