@@ -7,6 +7,8 @@ namespace Causality
 
 open Probability
 
+section NativeSemantics
+
 universe u
 
 variable {S : ObservedSignature.{u}} {P : FiniteLatentProjection S}
@@ -230,6 +232,25 @@ noncomputable def actionFree_invariant (left right : FiniteHiddenDAGSCM S P)
 
 end FiniteHiddenDAGSCM
 
+namespace HiddenDAGModelFamily
+
+/-- The native kernel semantics agrees definitionally with the existing
+family-level query API, for every selected family as well as the full family.
+This does not assert identifiability equivalence between different families. -/
+theorem kernelResult_eq_native (family : HiddenDAGModelFamily S P)
+    (model : family.Model) (kernel : Kernel S) (assignment : S.Assignment) :
+    family.kernelResult model kernel assignment =
+      (family.semantics model).kernelDenote kernel assignment := rfl
+
+end HiddenDAGModelFamily
+end NativeSemantics
+
+-- The existing derivation language uses finite carriers in `Type`, whereas
+-- native model/term semantics above remains universe-polymorphic.  This is
+-- the same carrier universe as the established ID/IDC and soundness APIs;
+-- it places no bound on the finite cardinality of hidden or noise domains.
+variable {S : ObservedSignature} {P : FiniteLatentProjection S}
+
 /-- Native recursive support for an arbitrary do-calculus derivation.  The
 graph only indexes syntax; soundness will separately use the actual projection.
 Guarded factor support is requested only under a positive *native* weight. -/
@@ -339,16 +360,5 @@ noncomputable def HiddenDAGLocalDerivationSupport.toCollapsed
       exact ⟨model.termSupportedAt_to_collapsed _ _ supported.1,
         model.termSupportedAt_to_collapsed _ _ supported.2.1, ih supported.2.2⟩
 
-namespace HiddenDAGModelFamily
-
-/-- The native kernel semantics agrees definitionally with the existing
-family-level query API, for every selected family as well as the full family.
-This does not assert identifiability equivalence between different families. -/
-theorem kernelResult_eq_native (family : HiddenDAGModelFamily S P)
-    (model : family.Model) (kernel : Kernel S) (assignment : S.Assignment) :
-    family.kernelResult model kernel assignment =
-      (family.semantics model).kernelDenote kernel assignment := rfl
-
-end HiddenDAGModelFamily
 end Causality
 end Thesis

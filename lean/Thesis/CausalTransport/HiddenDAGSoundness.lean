@@ -6,9 +6,7 @@ namespace Causality
 
 open Probability
 
-universe u
-
-variable {S : ObservedSignature.{u}} {P : FiniteLatentProjection S}
+variable {S : ObservedSignature} {P : FiniteLatentProjection S}
 
 /-!
 # Support-qualified do-calculus soundness for all finite hidden DAGs
