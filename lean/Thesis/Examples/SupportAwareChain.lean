@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.SupportAwareChain
+import Thesis.CausalTransport.SupportAwareChainCompilation
 import Thesis.Causality.ProbabilityTermEquality
 
 namespace Thesis
@@ -122,6 +123,35 @@ are action-free; a guard does not erase causal actions from syntax. -/
 theorem guarded_chain_actionFree :
     (.weightedMultiply weight conditional : ProbabilityTerm signature).ActionFree :=
   ⟨fun _ => rfl, fun _ => rfl⟩
+
+/-! ## A whole compiled chain, not only its two-kernel step -/
+
+/-- At an impossible joint cell the *generated whole-host formula* has a
+defined zero value, even though its final displayed conditional is undefined.
+This checks the compiler's prefix weights and their direction numerically. -/
+theorem compiled_joint_is_zero :
+    (guardedChainTerm (NodeSet.full : NodeSet signature)).denote model reference =
+      some QProb.zero := rfl
+
+/-- The generated formula has a constructive support witness at every
+assignment of this nonpositive SCM.  No positivity record is supplied. -/
+noncomputable def compiled_joint_supported (assignment : signature.Assignment) :
+    (guardedChainTerm (NodeSet.full : NodeSet signature)).SupportedAt model assignment :=
+  guardedChainTerm_supportedAt model NodeSet.full assignment
+
+/-- A host containing only the later variable leaves a gap in the prefix
+enumeration.  The general compiled formula still denotes that host joint. -/
+noncomputable def gapped_host_chain (assignment : signature.Assignment) :
+    ProbabilityTerm.EquivalentAt model
+      (.kernel ⟨NodeSet.singleton y, NodeSet.empty, NodeSet.empty⟩)
+      (guardedChainTerm (NodeSet.singleton y)) assignment :=
+  guardedChainTerm_soundAt model (NodeSet.singleton y) assignment
+
+/-- An empty host needs no selected vertex or nonempty-list premise.  Its
+generated unit formula is supported by the same general compiler. -/
+noncomputable def empty_host_supported (assignment : signature.Assignment) :
+    (guardedChainTerm (NodeSet.empty : NodeSet signature)).SupportedAt model assignment :=
+  guardedChainTerm_supportedAt model NodeSet.empty assignment
 
 end ZeroCellChain
 end Examples

@@ -250,9 +250,8 @@ def weightedDivide_chain (numerator middle base : QProb)
   if basePositive : 0 < base.num then
     if middleZero : middle.num = 0 then
       have numeratorZero : numerator.num = 0 := zeroDominated middleZero
-      simp only [divide, dif_pos basePositive,
-        dif_neg (show ¬ 0 < middle.num by omega), weightedMultiply,
-        QProb.div, middleZero, Nat.zero_mul, if_pos rfl]
+      simp only [divide, dif_pos basePositive, weightedMultiply,
+        QProb.div, middleZero, Nat.zero_mul]
       exact .value (by
         simp only [QProb.Equiv, QProb.zero, numeratorZero, Nat.zero_mul])
     else

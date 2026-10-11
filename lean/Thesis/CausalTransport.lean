@@ -19,6 +19,7 @@ import Thesis.CausalTransport.FiniteSource
 import Thesis.CausalTransport.Soundness
 import Thesis.CausalTransport.Completeness
 import Thesis.CausalTransport.ChainCompilation
+import Thesis.CausalTransport.SupportAwareChainCompilation
 import Thesis.CausalTransport.KernelIdentification
 import Thesis.CausalTransport.KernelCompilation
 import Thesis.CausalTransport.ProductCompilation

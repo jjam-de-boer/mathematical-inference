@@ -60,7 +60,7 @@ noncomputable def weightedMultiply_supportedAt
     (factorOnPositive :
       ProbabilityResult.PositiveSupportedValue (weight.denote model reference) ->
         factor.SupportedAt model reference) :
-    (.weightedMultiply weight factor).SupportedAt model reference :=
+    (ProbabilityTerm.weightedMultiply weight factor).SupportedAt model reference :=
   ProbabilityResult.weightedMultiply_supported weightSupported factorOnPositive
 
 /-- Guarded congruence preserves the support domain and rational value of the
