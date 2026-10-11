@@ -13,6 +13,7 @@ import Thesis.CausalTransport.ActivePathDirection
 import Thesis.CausalTransport.ActivePathColliderRerouting
 import Thesis.CausalTransport.Certificates
 import Thesis.CausalTransport.SupportAwareProbability
+import Thesis.CausalTransport.SupportAwareChain
 import Thesis.CausalTransport.Correspondence
 import Thesis.CausalTransport.FiniteSource
 import Thesis.CausalTransport.Soundness

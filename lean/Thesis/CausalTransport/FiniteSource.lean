@@ -358,6 +358,9 @@ def termDenote (M : FiniteTableSCM T) :
   | .multiply left right, assignment =>
       ProbabilityResult.multiply
         (M.termDenote left assignment) (M.termDenote right assignment)
+  | .weightedMultiply weight factor, assignment =>
+      ProbabilityResult.weightedMultiply
+        (M.termDenote weight assignment) (M.termDenote factor assignment)
   | .divide numerator denominator, assignment =>
       ProbabilityResult.divide
         (M.termDenote numerator assignment) (M.termDenote denominator assignment)
@@ -402,6 +405,10 @@ noncomputable def termDenote_preserved (M : FiniteTableSCM T)
       simpa only [termDenote, ProbabilityTerm.denote] using
         ProbabilityResult.multiply_congr
           (leftIH assignment) (rightIH assignment)
+  | weightedMultiply weight factor weightIH factorIH =>
+      simpa only [termDenote, ProbabilityTerm.denote] using
+        ProbabilityResult.weightedMultiply_congr
+          (weightIH assignment) (factorIH assignment)
   | divide numerator denominator numeratorIH denominatorIH =>
       simpa only [termDenote, ProbabilityTerm.denote] using
         ProbabilityResult.divide_congr
@@ -801,6 +808,10 @@ noncomputable def finiteSource_actionFree_invariant
       exact ProbabilityResult.multiply_congr
         (firstIH actionFree.1 assignment)
         (secondIH actionFree.2 assignment)
+  | weightedMultiply weight factor weightIH factorIH =>
+      exact ProbabilityResult.weightedMultiply_congr
+        (weightIH actionFree.1 assignment)
+        (factorIH actionFree.2 assignment)
   | divide numerator denominator numeratorIH denominatorIH =>
       exact ProbabilityResult.divide_congr
         (numeratorIH actionFree.1 assignment)

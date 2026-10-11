@@ -81,6 +81,8 @@ def equal : ProbabilityTerm S -> ProbabilityTerm S -> Bool
       assignmentEqual leftAssignment rightAssignment && equal left right
   | .add first second, .add first' second' => equal first first' && equal second second'
   | .multiply first second, .multiply first' second' => equal first first' && equal second second'
+  | .weightedMultiply weight factor, .weightedMultiply weight' factor' =>
+      equal weight weight' && equal factor factor'
   | .divide first second, .divide first' second' => equal first first' && equal second second'
   | _, _ => false
 
@@ -96,6 +98,8 @@ theorem equal_eq_true_iff (left right : ProbabilityTerm S) : equal left right = 
       cases right <;> simp [equal, assignmentEqual_eq_true_iff, inductionHypothesis]
   | add first second firstIH secondIH => cases right <;> simp [equal, firstIH, secondIH]
   | multiply first second firstIH secondIH => cases right <;> simp [equal, firstIH, secondIH]
+  | weightedMultiply weight factor weightIH factorIH =>
+      cases right <;> simp [equal, weightIH, factorIH]
   | divide first second firstIH secondIH => cases right <;> simp [equal, firstIH, secondIH]
 
 /-- The entire Boolean comparison runs before its equality proof is built.

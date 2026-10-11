@@ -38,6 +38,7 @@ import Thesis.Causality.PairRootChannels
 import Thesis.Causality.PairRootChannelsEnvironment
 import Thesis.Causality.Semantics
 import Thesis.Causality.SupportAwareSemantics
+import Thesis.Causality.SupportAwareTerms
 import Thesis.Causality.ProbabilityTermEquality
 import Thesis.Causality.ModalDerivation
 import Thesis.Causality.Modalities

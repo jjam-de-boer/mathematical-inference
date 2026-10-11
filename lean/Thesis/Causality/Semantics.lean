@@ -1,4 +1,5 @@
 import Thesis.Causality.ProbabilityResult
+import Thesis.Causality.SupportAwareSemantics
 import Thesis.Causality.Model
 import Thesis.Causality.Derivation
 
@@ -587,6 +588,9 @@ def denote (model : FiniteLatentSCM S) :
   | .multiply left right, assignment =>
       ProbabilityResult.multiply
         (denote model left assignment) (denote model right assignment)
+  | .weightedMultiply weight factor, assignment =>
+      ProbabilityResult.weightedMultiply
+        (denote model weight assignment) (denote model factor assignment)
   | .divide numerator denominator, assignment =>
       ProbabilityResult.divide
         (denote model numerator assignment) (denote model denominator assignment)
@@ -798,6 +802,11 @@ noncomputable def actionFree_invariant
         ProbabilityResult.multiply_congr
           (firstIH actionFree.1 assignment)
           (secondIH actionFree.2 assignment)
+  | weightedMultiply weight factor weightIH factorIH =>
+      simpa only [denote] using
+        ProbabilityResult.weightedMultiply_congr
+          (weightIH actionFree.1 assignment)
+          (factorIH actionFree.2 assignment)
   | divide numerator denominator numeratorIH denominatorIH =>
       simpa only [denote] using
         ProbabilityResult.divide_congr

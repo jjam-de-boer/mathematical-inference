@@ -435,6 +435,12 @@ inductive ProbabilityTerm (S : ObservedSignature) where
   | evaluateAt : S.Assignment -> ProbabilityTerm S -> ProbabilityTerm S
   | add : ProbabilityTerm S -> ProbabilityTerm S -> ProbabilityTerm S
   | multiply : ProbabilityTerm S -> ProbabilityTerm S -> ProbabilityTerm S
+  /-- A directed weighted product: a defined zero left weight contributes
+  zero without requiring the right factor to be defined.  Positive weights
+  retain strict multiplication.  This separate constructor does not change
+  `multiply`, make an undefined weight into zero, or assign a value to `0/0`.
+  Its intended use is a chain contribution before finite marginalization. -/
+  | weightedMultiply : ProbabilityTerm S -> ProbabilityTerm S -> ProbabilityTerm S
   | divide : ProbabilityTerm S -> ProbabilityTerm S -> ProbabilityTerm S
 
 namespace ProbabilityTerm
@@ -446,6 +452,7 @@ def ActionFree : ProbabilityTerm S -> Prop
   | evaluateAt _ term => term.ActionFree
   | add left right => left.ActionFree /\ right.ActionFree
   | multiply left right => left.ActionFree /\ right.ActionFree
+  | weightedMultiply weight factor => weight.ActionFree /\ factor.ActionFree
   | divide numerator denominator => numerator.ActionFree /\ denominator.ActionFree
 
 end ProbabilityTerm

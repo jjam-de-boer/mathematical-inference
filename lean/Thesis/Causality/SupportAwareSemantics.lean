@@ -231,6 +231,60 @@ noncomputable def weightedSum_agrees_of_mem (values : List X)
 
 /-! ## Recovering a dominated joint mass across zero conditioning cells -/
 
+/-- The conditional chain identity with an explicit base conditioner.
+The weight is `middle/base`, not the rightmost factor of the old strict
+product.  If the base has zero mass, both complete expressions remain
+undefined; if the middle cell has zero mass under a positive base, domination
+forces the joint numerator to zero and only that weighted contribution is
+defined.  Neither case fills in the conditional `numerator/middle`.
+
+This form is the algebraic boundary needed by conditional kernel chains.
+Its sole zero-cell premise is later discharged by containment of actual
+events, rather than by requiring a globally positive distribution. -/
+def weightedDivide_chain (numerator middle base : QProb)
+    (zeroDominated : middle.num = 0 -> numerator.num = 0) :
+    Equivalent
+      (weightedMultiply (divide (some middle) (some base))
+        (divide (some numerator) (some middle)))
+      (divide (some numerator) (some base)) := by
+  if basePositive : 0 < base.num then
+    if middleZero : middle.num = 0 then
+      have numeratorZero : numerator.num = 0 := zeroDominated middleZero
+      simp only [divide, dif_pos basePositive,
+        dif_neg (show ¬ 0 < middle.num by omega), weightedMultiply,
+        QProb.div, middleZero, Nat.zero_mul, if_pos rfl]
+      exact .value (by
+        simp only [QProb.Equiv, QProb.zero, numeratorZero, Nat.zero_mul])
+    else
+      have middlePositive : 0 < middle.num := Nat.pos_of_ne_zero middleZero
+      have weightNonzero : middle.num * base.den ≠ 0 :=
+        Nat.ne_of_gt (Nat.mul_pos middlePositive base.den_pos)
+      simp only [divide, dif_pos basePositive, dif_pos middlePositive,
+        weightedMultiply, QProb.div, if_neg weightNonzero, multiply]
+      exact .value (by
+        simp only [QProb.Equiv, QProb.mul]
+        ac_rfl)
+  else
+    simp only [divide, dif_neg basePositive, weightedMultiply]
+    exact .unsupported
+
+/-- Domination discharges the zero-middle premise of the guarded conditional
+chain.  This compares natural cross-products, without choosing conditional
+values on null events. -/
+def weightedDivide_chain_of_le (numerator middle base : QProb)
+    (dominated : QProb.LE numerator middle) :
+    Equivalent
+      (weightedMultiply (divide (some middle) (some base))
+        (divide (some numerator) (some middle)))
+      (divide (some numerator) (some base)) :=
+  weightedDivide_chain numerator middle base (fun zero => by
+    have bound : numerator.num * middle.den ≤ 0 := by
+      simpa only [QProb.LE, zero, Nat.zero_mul] using dominated
+    have productZero : numerator.num * middle.den = 0 :=
+      Nat.eq_zero_of_le_zero bound
+    exact (Nat.mul_eq_zero.mp productZero).resolve_right
+      (Nat.ne_of_gt middle.den_pos))
+
 /-- Multiplying a conditional ratio by its conditioning mass recovers the
 joint numerator even at a zero cell, provided zero conditioning mass forces
 zero joint mass.  The ratio itself remains undefined there; only its complete
