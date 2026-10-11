@@ -30,6 +30,8 @@ jobs:
             Thesis.Causality.ObservationalSupport
             Thesis.Causality.HiddenPathSearch
             Thesis.CausalTransport.HiddenDAGCollapse
+            Thesis.CausalTransport.HiddenDAGSemantics
+            Thesis.CausalTransport.HiddenDAGSoundness
             Thesis.CausalTransport.SupportAwareChainCompilation
             Thesis.Examples.LocalSupportIdentification
             Thesis.Examples.HiddenPathSearch

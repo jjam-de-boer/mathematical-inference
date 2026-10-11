@@ -76,6 +76,8 @@ import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.CausalTransport.HiddenDAG
 import Thesis.CausalTransport.HiddenDAGFullFamily
 import Thesis.CausalTransport.HiddenDAGCollapse
+import Thesis.CausalTransport.HiddenDAGSemantics
+import Thesis.CausalTransport.HiddenDAGSoundness
 import Thesis.CausalTransport.Construction
 import Thesis.CausalTransport.Modal
 import Thesis.CausalTransport.ModalRealization
