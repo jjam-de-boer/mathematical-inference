@@ -52,7 +52,7 @@ def fullGraph : FiniteHiddenDAG signature where
     if index.val = 0 then ⟨1, by decide⟩
     else if index.val = 1 then ⟨3, by decide⟩
     else ⟨4, by decide⟩
-  observedNode_injective := by decide +kernel
+  observedNode_injective := by unfold Function.Injective; decide +kernel
   hidden := fun node => decide (node.val = 0 ∨ node.val = 2)
   observed_not_hidden := by decide +kernel
   node_classified := by decide +kernel
@@ -120,16 +120,20 @@ def model : FiniteHiddenDAGSCM signature projection where
   mechanism := fun node parents seed =>
     if atU : node.val = 0 then seed
     else if atX : node.val = 1 then
-      parents u (by simp [fullGraph, u, atX])
+      parents u (by simp [projection, FiniteHiddenDAG.computedLatentProjection,
+        fullGraph, u, atX])
     else if atV : node.val = 2 then
-      Bool.xor (parents u (by simp [fullGraph, u, atV]))
-        (parents fullX (by simp [fullGraph, fullX, atV]))
+      Bool.xor (parents u (by simp [projection, FiniteHiddenDAG.computedLatentProjection,
+        fullGraph, u, atV]))
+        (parents fullX (by simp [projection, FiniteHiddenDAG.computedLatentProjection,
+          fullGraph, fullX, atV]))
     else if atY : node.val = 3 then
-      parents v (by simp [fullGraph, v, atY])
+      parents v (by simp [projection, FiniteHiddenDAG.computedLatentProjection,
+        fullGraph, v, atY])
     else parents u (by
       have bounded : node.val < 5 := node.isLt
       have atZ : node.val = 4 := by omega
-      simp [fullGraph, u, atZ])
+      simp [projection, FiniteHiddenDAG.computedLatentProjection, fullGraph, u, atZ])
 
 def allTrueNoise : model.NoiseAssignment := fun _ => true
 
