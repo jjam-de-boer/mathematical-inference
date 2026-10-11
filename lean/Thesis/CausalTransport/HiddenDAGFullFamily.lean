@@ -46,7 +46,8 @@ def observedIndex (H : FiniteHiddenDAG S) (node : Fin H.count) :
 theorem observedIndex_sound (H : FiniteHiddenDAG S) (node : Fin H.count)
     (index : Fin S.count) (found : H.observedIndex node = some index) :
     H.observedNode index = node :=
-  of_decide_eq_true (List.find?_some found)
+  of_decide_eq_true
+    (List.find?_some (p := fun candidate => decide (H.observedNode candidate = node)) found)
 
 /-- Every embedded observed node is found, with its original index.  The
 missing case contradicts the explicitly listed index; the successful case
@@ -84,22 +85,24 @@ def defaultNodeValue (H : FiniteHiddenDAG S) (node : Fin H.count) : Type u :=
 
 /-- The default presentation carries an explicit complete finite enumeration. -/
 def defaultNodeEnumeration (H : FiniteHiddenDAG S) (node : Fin H.count) :
-    List (H.defaultNodeValue node) :=
-  match H.observedIndex node with
-  | none => [PUnit.unit]
-  | some index => S.valueEnumeration index
+    List (H.defaultNodeValue node) := by
+  -- Expose the dependent value type before inspecting the lookup.  A
+  -- nondependent match would leave both branch lists at the unreduced type.
+  unfold defaultNodeValue
+  cases H.observedIndex node with
+  | none => exact [PUnit.unit]
+  | some index => exact S.valueEnumeration index
 
 theorem defaultNode_complete (H : FiniteHiddenDAG S) (node : Fin H.count) :
     forall value, value ∈ H.defaultNodeEnumeration node := by
+  unfold defaultNodeEnumeration defaultNodeValue
   cases index : H.observedIndex node with
   | none =>
-      simp only [defaultNodeValue, defaultNodeEnumeration, index]
       intro value
       cases value
       exact List.mem_cons.mpr (Or.inl rfl)
   | some observed =>
-      simpa only [defaultNodeValue, defaultNodeEnumeration, index] using
-        S.value_complete observed
+      exact S.value_complete observed
 
 /-- Equality is inherited from the observed signature or the singleton type. -/
 def defaultNodeDecidableEq (H : FiniteHiddenDAG S) (node : Fin H.count) :

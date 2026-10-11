@@ -251,7 +251,7 @@ def weightedMultiply_divide_cancel (numerator denominator : QProb)
     simp only [weightedMultiply, if_pos zero]
     exact .value (by
       simp only [QProb.Equiv, QProb.zero, numeratorZero,
-        Nat.zero_mul, Nat.mul_zero])
+        Nat.zero_mul])
   else
     have positive : 0 < denominator.num := Nat.pos_of_ne_zero zero
     simp only [weightedMultiply, if_neg zero, divide, dif_pos positive, multiply]
