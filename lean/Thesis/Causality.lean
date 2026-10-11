@@ -28,6 +28,7 @@ import Thesis.Causality.IdentificationKernel
 import Thesis.Causality.ConditionalIdentificationKernel
 import Thesis.Causality.Reductions
 import Thesis.Causality.HiddenPathSearch
+import Thesis.Causality.HiddenCommonCauseSearch
 import Thesis.Causality.LatentRationalCPT
 import Thesis.Causality.LatentTableResponse
 import Thesis.Causality.LatentTableBlockResponse

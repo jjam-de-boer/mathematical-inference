@@ -80,6 +80,7 @@ import Thesis.CausalTransport.HiddenDAGSemantics
 import Thesis.CausalTransport.HiddenDAGSoundness
 import Thesis.CausalTransport.HiddenDAGPositiveCertificates
 import Thesis.CausalTransport.HiddenDAGIdentification
+import Thesis.CausalTransport.HiddenDAGRootPlacement
 import Thesis.CausalTransport.Construction
 import Thesis.CausalTransport.Modal
 import Thesis.CausalTransport.ModalRealization
