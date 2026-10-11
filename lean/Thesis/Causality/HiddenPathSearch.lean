@@ -58,7 +58,7 @@ inductive HiddenInternalPathData (H : FiniteHiddenDAG S) :
   | direct {source target} (edge : H.edge source target = true) :
       HiddenInternalPathData H source target
   | tail {source middle target}
-      (prefix : HiddenInternalPathData H source middle)
+      (earlierPath : HiddenInternalPathData H source middle)
       (hidden : H.hidden middle = true) (edge : H.edge middle target = true) :
       HiddenInternalPathData H source target
 
@@ -67,7 +67,7 @@ def HiddenInternalPathData.toSpecification
     {H : FiniteHiddenDAG S} {source target : Fin H.count} :
     HiddenInternalPathData H source target -> H.HiddenInternalPath source target
   | .direct edge => .direct edge
-  | .tail prefix hidden edge => .tail prefix.toSpecification hidden edge
+  | .tail earlierPath hidden edge => .tail earlierPath.toSpecification hidden edge
 
 /-- Prefer a direct edge; otherwise scan all actual hidden predecessors of
 the target in their finite index order.  Recursive calls occur only under a
@@ -80,7 +80,8 @@ def hiddenInternalPath? (H : FiniteHiddenDAG S) (source target : Fin H.count) :
   else (List.finRange H.count).findSome? (fun middle =>
     if hidden : H.hidden middle = true then
       if edge : H.edge middle target = true then
-        (H.hiddenInternalPath? source middle).map (fun prefix => .tail prefix hidden edge)
+        (H.hiddenInternalPath? source middle).map (fun earlierPath =>
+          .tail earlierPath hidden edge)
       else none
     else none)
 termination_by H.rank target
@@ -96,7 +97,7 @@ theorem hiddenInternalPath?_complete (H : FiniteHiddenDAG S)
   | direct edge =>
       rw [hiddenInternalPath?, dif_pos edge]
       rfl
-  | @tail source middle target _prefix hidden edge inductionHypothesis =>
+  | @tail middle target _earlierPath hidden edge inductionHypothesis =>
       rw [hiddenInternalPath?]
       by_cases direct : H.edge source target = true
       · rw [dif_pos direct]

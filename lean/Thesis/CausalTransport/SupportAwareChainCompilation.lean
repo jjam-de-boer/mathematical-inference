@@ -222,7 +222,7 @@ private noncomputable def guardedChainPrefixCompilation
   | n + 1, bound => by
       let node : Fin S.count := ⟨n, Nat.lt_of_succ_le bound⟩
       let previousBound : n ≤ S.count := Nat.le_trans (Nat.le_succ n) bound
-      let previous := guardedChainPrefixCompilation correct remaining n previousBound
+      let previous := guardedChainPrefixCompilation (C := C) correct remaining n previousBound
       have prefixStep := chainPrefix_succ remaining n (Nat.lt_of_succ_le bound)
       cases selected : remaining node with
       | false =>
