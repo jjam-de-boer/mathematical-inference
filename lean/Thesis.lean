@@ -119,10 +119,14 @@ import Thesis.Examples.HedgeChannelEnvironmentFusion
 /-!
 Top-level convenience import for the thesis formalisation.
 
-General joint completeness is now implemented by `HedgeChannelJointCompleteness`:
+Full positive-model completeness is implemented by `HedgeChannelCompleteness`:
 every supplied original-query hedge has a full-alphabet positive counterexample,
-and every identifiable joint query has a published certificate.  Universal
-conditional terminal countermodels remain open.  The older restricted carrier
+and every identifiable joint or conditional query has a published certificate.
+`HiddenDAGCompleteness` realizes the countermodels on every finite original
+hidden DAG, and `HiddenDAGCorrespondence` proves the native positive-class
+ID/IDC success iff theorems.  Hidden and private-noise alphabets may have any
+finite sizes; observed alphabets remain fixed and value-rich.  Recursive
+zero-aware ID/IDC compilation remains open.  The older restricted carrier
 families below retain their genuine limitations; they are not the proof of
 unrestricted coverage supplied by the newer channel construction.
 

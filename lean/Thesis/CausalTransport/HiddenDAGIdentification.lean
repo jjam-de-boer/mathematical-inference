@@ -26,9 +26,11 @@ The public conclusions deliberately assume an *actual successful engine
 equation*.  They prove the forward direction: successful ID/IDC runs identify
 their original query throughout any positive full-model family over the
 projection.  They do not assert that every query identifiable in that family
-must succeed.  Establishing that converse still needs countermodel lifting
-to the original hidden DAG.  Nor is global positivity silently weakened to
-arbitrary observational zeros: that needs the separate local-support compiler.
+must succeed.  That converse is proved separately by countermodel lifting
+in `HiddenDAGCompleteness`, and `HiddenDAGCorrespondence` combines both
+directions for the full positive class.  Global positivity is not silently
+weakened to arbitrary observational zeros: that needs the separate local-
+support compiler.
 -/
 
 /-- A successful joint ID formula denotes its original query in every

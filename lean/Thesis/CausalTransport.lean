@@ -197,7 +197,7 @@ import Thesis.CausalTransport.ConditionalFailureTerminalCounterexample
 import Thesis.CausalTransport.HedgeChannelCompleteness
 
 /-!
-Stable facade for external-theorem interfaces and their finite transports.
+Stable facade for constructive published theorems and their finite transports.
 
 `Certificates` defines the shared certificate shapes, while `Correspondence`
 states the graph-indexed `PublishedSoundness` and `PublishedCompleteness`
@@ -243,8 +243,23 @@ intervention, without positivity or value-richness assumptions.
 `HiddenDAGNoiseLaw` preserves the complete grouped-noise law;
 `HiddenDAGProbability` consequently preserves all observed/interventional
 event probabilities and partial kernel results, including undefined results.
-Countermodel lifting, zero-aware recursive ID/IDC, and the final
-support-qualified hidden-DAG completeness bridge remain separate obligations.
+`HiddenDAGModelClass` quantifies over actual original-DAG records rather than
+an arbitrary selected family.  `HiddenDAGCountermodelLift` realizes the
+positive projected countermodels in that full class, retaining whole observed
+agreement and genuine conditional common-support value separation.
+`HiddenDAGCompleteness` inhabits the published joint, conditional and hedge
+fields for every value-rich positive original-DAG class;
+`HiddenDAGCorrespondence` combines native soundness with that converse into
+ID/IDC success iff identifiability and positive projected-class equivalence.
+These results allow arbitrary finite hidden and private-noise sizes without
+an external `PublishedLatentProjection` premise.  Zero-aware recursive ID/IDC
+remains a separate obligation; positive success is not asserted over the
+entire zero-permitting class.
+
+The module-by-module descriptions below also retain local limitations of
+older restricted constructions.  Such a limitation is not an outstanding
+obligation of the full positive published theorem: the unrestricted channel
+construction and hidden-DAG realization above supply its general coverage.
 
 `DSeparationWitness` additionally returns certified active-path data for every
 negative separation answer, using a bounded finite search instead of choice.
@@ -655,9 +670,10 @@ at each common root.  It first retains the genuinely separated semantic root,
 then constructs that root's admissible observed or shared-latent entry; it
 does not require all roots to admit one uniform kind or choose a root merely
 because its graph geometry is convenient.
-General mixed active-path composition, unrestricted outcome/conditioner
-placement, and the universal
-conditional terminal family remain separate obligations.
+General mixed active-path composition and unrestricted outcome/conditioner
+placement are not supplied by these restricted entry families.  The universal
+conditional terminal countermodels are instead supplied by
+`ConditionalFailureTerminalCounterexample` and `HedgeChannelCompleteness`.
 `ConditionalCounterexampleFailure` proves the converse easy direction:
 an independently constructed positive conditional countermodel forces the
 actual IDC program to fail, by success soundness and termination.  It returns
@@ -682,9 +698,9 @@ outcome coordinate.  Its strongest localized mix selects a directed-and-
 bidirected action-parent bow and reads only that bow's pair-root.  This removes
 parent-uniqueness, odd-parity, identical-neighbourhood assumptions, and all
 restrictions on the pivot's other outgoing edges without choosing a family of
-pointwise equivalences.  A complete `PublishedCompleteness`
-inhabitant still needs a positive countermodel for an arbitrary original-query
-hedge and the failure-side conditional non-identifiability argument.  `ChainCompilation`
+pointwise equivalences.  The older constructions do not themselves supply
+arbitrary original-query hedge or conditional-failure countermodels; those
+fields are inhabited by `HedgeChannelCompleteness`.  `ChainCompilation`
 supplies the probability-algebra foundation of that compiler: an exact,
 support-carrying observational chain certificate on any finite host, including
 hosts with topological gaps.  It does not identify a recursive ID input with
@@ -700,7 +716,8 @@ fuel bound for every invocation of that replacement.  `KernelSuccessCompilation`
 now compiles every successful invocation of the changed program by fuel
 induction.  `KernelFailureExtraction` supplies the matching general failure
 induction for the changed program; old failure traces are not silently reused.
-The remaining semantic step is the positive original-query hedge countermodel.
+The positive original-query hedge countermodel is supplied by the unrestricted
+`HedgeChannelCounterexample` construction and its published assembly.
 `KernelCompilation` now certifies host marginals and the complete topological
 chain product of an arbitrary certified current input, retaining external
 intervention parameters and the engine's exact prefix-quotient syntax.  Its
@@ -1385,9 +1402,9 @@ arbitrary-route scan fail despite a valid hedge and an actual ID failure.
 Every alternative hedge lacks an all-root family of paths avoiding its
 outer-only vertices.  Consequently changing route tie-breaking or adding
 more forest-search wrappers cannot complete the general positive hedge
-leaf; that construction must be broadened or replaced.  The covered
-countermodels remain valid, and the general hedge and conditional terminal
-countermodel arguments remain open.
+leaf.  The covered countermodels remain valid; the unrestricted channel
+construction replaces that missing route argument and supplies the general
+hedge and conditional terminal countermodels in `HedgeChannelCompleteness`.
 
 The remaining modules transport ordinary, modal, learning, hidden-DAG, and
 counterfactual certificates.  The project-wide axiom audit checks declarations

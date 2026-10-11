@@ -25,8 +25,8 @@ included.  No positivity or observed value-richness premise is used.
 These are individual-model preservation theorems for the *reverse* canonical
 realization.  They do not assert that an arbitrary multi-child hidden cause
 can be replaced by independent pair roots while preserving its distribution.
-Countermodel lifting and the native completeness converse remain the next
-applications, separate from this probability law.
+`HiddenDAGCountermodelLift` and `HiddenDAGCompleteness` use this law to lift
+actual countermodels and prove the native completeness converse separately.
 -/
 
 namespace FiniteLatentSCM

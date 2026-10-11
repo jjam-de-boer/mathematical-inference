@@ -65,5 +65,23 @@ finite signature (two supplied distinct labels at each observed node).
 Both joint and conditional fields return inspectable do-calculus/probability
 derivations, with no external countermodel-family assumption or new Lean axiom.
 
+The same positive-model result is implemented for every finite original
+hidden DAG, with fixed observed domains and arbitrary finite hidden-variable
+and private-noise domains. The constructor is
+`FiniteLatentProjection.publishedHiddenDAGCompleteness`. In
+`HiddenDAGCorrespondence`, `HiddenDAGModelClass.identifyJointKernel_identifiable_iff`
+and `HiddenDAGModelClass.identifyConditionalKernel_identifiable_iff` prove that
+the corrected ID/IDC engines succeed exactly for identifiable queries in the
+full positive original-DAG class. Failure constructs actual original-DAG
+countermodels, including genuine conditional value disagreement on common
+support; no external latent-projection interface is assumed.
+
+The finite probability records permit zeros. Native hidden-DAG soundness
+already accepts explicit local derivation-support witnesses, and guarded
+observational-chain compilation handles null prefixes without assigning a
+value to `0 / 0`. A full recursive zero-aware ID/IDC compiler is still open;
+the positive-model engine equivalences above do not silently cover that
+larger zero-permitting model class.
+
 Continuous probability, general measure theory, and a complete formalisation
 of every philosophical or sociological claim are outside this project's scope.

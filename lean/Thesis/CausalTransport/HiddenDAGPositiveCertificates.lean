@@ -27,9 +27,10 @@ native hidden-DAG soundness theorem then interprets the actual derivation.
 
 The result covers positive full models with arbitrary finite hidden and
 private-noise sizes, without an external `PublishedLatentProjection` premise.
-It is a forward certificate interpretation, not the converse completeness
-theorem.  Countermodel lifting to the original hidden graph is still needed;
-models with observational zeros still require their separate local-support
+This module supplies forward certificate interpretation.  Countermodel
+lifting and the converse are proved separately in `HiddenDAGCountermodelLift`
+and `HiddenDAGCompleteness`; `HiddenDAGCorrespondence` combines the directions.
+Models with observational zeros still require their separate local-support
 compiler rather than this positivity-based adapter.
 -/
 
