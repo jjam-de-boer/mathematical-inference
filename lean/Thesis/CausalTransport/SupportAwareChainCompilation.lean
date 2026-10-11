@@ -261,9 +261,16 @@ private noncomputable def guardedChainPrefixCompilation
                   previous.certificate.formula assignment := by
                 rw [previous.formula_eq]
                 exact guardedChainPrefixTerm_soundAt model remaining assignment n previousBound
+              have assembledEquivalent : ProbabilityTerm.EquivalentAt model
+                  (.weightedMultiply
+                    (.kernel ⟨chainPrefix remaining n, NodeSet.empty, NodeSet.empty⟩)
+                    (.kernel (chainKernel remaining node)))
+                  (.weightedMultiply previous.certificate.formula factor.formula)
+                  assignment :=
+                ProbabilityResult.weightedMultiply_congr weights
+                  (ProbabilityResult.refl _)
               exact ProbabilityTerm.SupportedAt.of_equivalent
-                (ProbabilityResult.weightedMultiply_congr weights
-                  (ProbabilityResult.refl _)) sourceSupported)
+                assembledEquivalent sourceSupported)
           let assembled := PublishedIdentificationCertificate.trans split tail
           let certificate := assembled.reindex
             (show ProbabilityTerm.kernel
@@ -275,7 +282,7 @@ private noncomputable def guardedChainPrefixCompilation
               change _ = ProbabilityTerm.weightedMultiply previous.certificate.formula
                 (.kernel (chainKernel remaining node))
               rw [previous.formula_eq]
-              simp only [guardedChainPrefixTerm, node, selected, if_true, previousBound])
+              simp only [guardedChainPrefixTerm, node, selected, if_true])
           exact ⟨certificate, rfl⟩
 
 /-- The ordinary published certificate for the whole guarded host joint.

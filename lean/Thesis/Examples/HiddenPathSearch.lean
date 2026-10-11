@@ -35,7 +35,9 @@ def signature : ObservedSignature where
 Every declared edge increases its natural vertex rank. -/
 def fullGraph : FiniteHiddenDAG signature where
   count := 4
-  observedNode := fun index => ⟨2 * index.val + 1, by have := index.isLt; omega⟩
+  observedNode := fun index => ⟨2 * index.val + 1, by
+    have bounded : index.val < 2 := index.isLt
+    omega⟩
   observedNode_injective := by
     intro left right equal
     apply Fin.ext
@@ -98,8 +100,9 @@ hidden-internal directed projection.  The search proves absence as well as
 presence; no externally assumed projection match is used in this fixture. -/
 theorem directed_matches : fullGraph.DirectedProjectionMatches := by
   intro first second
+  change false = true <-> fullGraph.HiddenInternalPath
+    (fullGraph.observedNode first) (fullGraph.observedNode second)
   rw [← fullGraph.hiddenInternalPath?_iff]
-  change false = true <-> _
   rw [observed_paths_missing first second]
 
 /-- Assemble the projection using the internally computed bidirected field. -/
