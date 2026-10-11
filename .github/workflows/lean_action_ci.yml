@@ -46,6 +46,8 @@ jobs:
             Thesis.CausalTransport.HiddenDAGRelayEquations
             Thesis.CausalTransport.HiddenDAGEvaluation
             Thesis.CausalTransport.HiddenDAGProbability
+            Thesis.CausalTransport.HiddenDAGModelClass
+            Thesis.CausalTransport.HiddenDAGCountermodelLift
             Thesis.CausalTransport.SupportAwareChainCompilation
             Thesis.Examples.LocalSupportIdentification
             Thesis.Examples.HiddenPathSearch

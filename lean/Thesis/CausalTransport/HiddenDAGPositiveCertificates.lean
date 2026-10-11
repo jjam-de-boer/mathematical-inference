@@ -35,13 +35,6 @@ compiler rather than this positivity-based adapter.
 
 namespace FiniteHiddenDAGSCM
 
-/-- Strict positivity of the original observed probability record.  Hidden
-values and private-noise atoms need not all have positive mass. -/
-def ObservationallyPositive (model : FiniteHiddenDAGSCM S P) : Prop :=
-  forall assignment : S.Assignment,
-    0 < (model.observationalDist.probVal
-      (FiniteProbRecord.singletonEvent assignment)).num
-
 /-- Literal observational preservation transfers positivity to the actual
 collapsed root model, regardless of how many children each root has. -/
 theorem observationallyPositive_to_collapsed {model : FiniteHiddenDAGSCM S P}

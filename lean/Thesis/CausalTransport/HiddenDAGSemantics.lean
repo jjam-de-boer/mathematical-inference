@@ -35,6 +35,17 @@ latent-projection interface or supply the remaining completeness countermodels.
 
 namespace FiniteHiddenDAGSCM
 
+/-! ## Intrinsic observed regularity, independent of certificate soundness -/
+
+/-- Strict positivity of the original observed probability record.  Hidden
+values and private-noise atoms need not all have positive mass.  Keeping this
+definition with native semantics lets countermodel completeness express its
+model class without importing a denotational soundness theorem. -/
+def ObservationallyPositive (model : FiniteHiddenDAGSCM S P) : Prop :=
+  forall assignment : S.Assignment,
+    0 < (model.observationalDist.probVal
+      (FiniteProbRecord.singletonEvent assignment)).num
+
 /-! ## Direct finite-record and expression evaluation -/
 
 /-- Select the original model's actual distribution for this query.  Hard

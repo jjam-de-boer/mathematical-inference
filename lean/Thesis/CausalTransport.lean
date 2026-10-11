@@ -77,6 +77,7 @@ import Thesis.CausalTransport.HiddenDAG
 import Thesis.CausalTransport.HiddenDAGFullFamily
 import Thesis.CausalTransport.HiddenDAGCollapse
 import Thesis.CausalTransport.HiddenDAGSemantics
+import Thesis.CausalTransport.HiddenDAGModelClass
 import Thesis.CausalTransport.HiddenDAGSoundness
 import Thesis.CausalTransport.HiddenDAGPositiveCertificates
 import Thesis.CausalTransport.HiddenDAGIdentification
@@ -89,6 +90,7 @@ import Thesis.CausalTransport.HiddenDAGRelayAssignment
 import Thesis.CausalTransport.HiddenDAGRelayEquations
 import Thesis.CausalTransport.HiddenDAGEvaluation
 import Thesis.CausalTransport.HiddenDAGProbability
+import Thesis.CausalTransport.HiddenDAGCountermodelLift
 import Thesis.CausalTransport.Construction
 import Thesis.CausalTransport.Modal
 import Thesis.CausalTransport.ModalRealization
