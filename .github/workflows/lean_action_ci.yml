@@ -11,9 +11,38 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+      # Reuse completed module artifacts even when a later proof or policy
+      # check fails.  Lake still checks dependency traces; a cache is never
+      # treated as evidence that this commit built or passed the axiom audit.
+      - uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: lean/.lake
+          key: lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain') }}-${{ hashFiles('lean/lake-manifest.json') }}-${{ github.sha }}
+          restore-keys: lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain') }}-${{ hashFiles('lean/lake-manifest.json') }}-
       - uses: leanprover/lean-action@v1
         with:
           lake-package-directory: lean
+          use-github-cache: 'false'
+          # Fail quickly on the current load-bearing proof modules and their
+          # concrete regressions, rather than first recompiling every large
+          # hedge countermodel fixture.  The full build below is not removed.
+          build-args: >-
+            Thesis.Causality.ObservationalSupport
+            Thesis.Causality.HiddenPathSearch
+            Thesis.CausalTransport.SupportAwareChainCompilation
+            Thesis.Examples.LocalSupportIdentification
+            Thesis.Examples.HiddenPathSearch
+      - name: Build complete Lean project
+        working-directory: lean
+        run: lake build
       - name: Enforce kernel-axiom policy
         working-directory: lean
         run: lake build Thesis.AxiomAudit
+      # Save partial *compiled* progress after failure as well as a complete
+      # verified build after success.  No failing check is silenced, and every
+      # new run must still pass both full-project and transitive-axiom gates.
+      - uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
+        if: always()
+        with:
+          path: lean/.lake
+          key: lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain') }}-${{ hashFiles('lean/lake-manifest.json') }}-${{ github.sha }}
