@@ -64,7 +64,7 @@ theorem toHiddenDAGSCM_expectedValue_solution (model : ExactModel S)
       | none =>
           change (observedEquivalence model P index).backward
             (model.evalNodeUnder intervention.value roots index) =
-              mechanism model compatible (P.hiddenDAG.observedNode index)
+              HiddenDAGRelay.mechanism model compatible (P.hiddenDAG.observedNode index)
                 (fun parent _edge =>
                   expectedValue model compatible (model.evalUnder intervention.value roots) roots parent)
                 (HiddenDAGPlacedNoise.encode model compatible roots (P.hiddenDAG.observedNode index))
@@ -81,11 +81,14 @@ theorem toHiddenDAGSCM_evalNode (model : ExactModel S)
     (roots : model.latent.Assignment) (node : Fin P.hiddenDAG.count) :
     (model.toHiddenDAGSCM compatible).evalNode intervention
       (HiddenDAGPlacedNoise.encode model compatible roots) node =
-      expectedValue model compatible (model.evalUnder intervention.value roots) roots node :=
-  (model.toHiddenDAGSCM compatible).evalNode_eq_of_solution intervention
+      expectedValue model compatible (model.evalUnder intervention.value roots) roots node := by
+  refine (model.toHiddenDAGSCM compatible).evalNode_eq_of_solution intervention
     (HiddenDAGPlacedNoise.encode model compatible roots)
     (expectedValue model compatible (model.evalUnder intervention.value roots) roots)
-    (model.toHiddenDAGSCM_expectedValue_solution compatible intervention roots) node
+    ?_ node
+  intro actualNode
+  simpa only [toHiddenDAGSCM] using
+    model.toHiddenDAGSCM_expectedValue_solution compatible intervention roots actualNode
 
 /-- Complete observed assignments agree pointwise under every partial hard
 intervention and every original root assignment.  Observed domains are kept
