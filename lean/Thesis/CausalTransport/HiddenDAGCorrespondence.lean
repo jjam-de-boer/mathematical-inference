@@ -66,7 +66,7 @@ theorem identifyJointKernel_identifiable_iff (rich : ObservedSignature.ValueRich
   constructor
   · intro identified
     cases result : identifyJointKernel P.observedGraph query with
-    | identified term => exact ⟨term, result⟩
+    | identified term => exact ⟨term, rfl⟩
     | failed fail =>
         exact False.elim
           (identifyJointKernel_hiddenDAG_failed_not_identifiable rich query result identified)
@@ -84,7 +84,7 @@ theorem identifyConditionalKernel_identifiable_iff (rich : ObservedSignature.Val
   constructor
   · intro identified
     cases result : identifyConditionalKernel P.observedGraph query with
-    | identified term => exact ⟨term, result⟩
+    | identified term => exact ⟨term, rfl⟩
     | failed fail =>
         exact False.elim
           (identifyConditionalKernel_hiddenDAG_failed_not_identifiable rich query result identified)

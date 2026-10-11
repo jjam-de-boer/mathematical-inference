@@ -93,7 +93,7 @@ def jointFailure : {fail : IdentificationFail signature //
     decide +kernel
   cases result : identifyJointKernel projection.observedGraph failedJointQuery with
   | identified term => simp only [result, failedResult, Bool.false_eq_true] at checked
-  | failed fail => exact ⟨fail, result⟩
+  | failed fail => exact ⟨fail, rfl⟩
   | unfinished => simp only [result, failedResult, Bool.false_eq_true] at checked
 
 def conditionalFailure : {fail : IdentificationFail signature //
@@ -103,7 +103,7 @@ def conditionalFailure : {fail : IdentificationFail signature //
     decide +kernel
   cases result : identifyConditionalKernel projection.observedGraph failedConditionalQuery with
   | identified term => simp only [result, failedResult, Bool.false_eq_true] at checked
-  | failed fail => exact ⟨fail, result⟩
+  | failed fail => exact ⟨fail, rfl⟩
   | unfinished => simp only [result, failedResult, Bool.false_eq_true] at checked
 
 /-- Both members are actual positive finite SCM records on the original
