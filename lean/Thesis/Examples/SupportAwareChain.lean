@@ -79,19 +79,51 @@ def weight : ProbabilityTerm signature :=
 def conditional : ProbabilityTerm signature :=
   .kernel ⟨NodeSet.singleton y, NodeSet.empty, NodeSet.singleton x⟩
 
+/-- Inspect only the support tag before proving that a result is undefined.
+The SCM evaluator uses well-founded recursion, so the kernel-backed finite
+decision check below is more appropriate than a bare reflexivity check. -/
+private theorem eq_none_of_isNone (result : ProbabilityResult.Result)
+    (checked : result.isNone = true) : result = none := by
+  cases result with
+  | none => rfl
+  | some _ => cases checked
+
+/-- Inspect the two natural fields of the literal guarded zero.  This does
+not request classical equality on `QProb` or on dependent assignments. -/
+private def literalZeroTest : ProbabilityResult.Result -> Bool
+  | none => false
+  | some value => decide (value.num = 0) && decide (value.den = 1)
+
+private theorem eq_zero_of_literalZeroTest (result : ProbabilityResult.Result)
+    (checked : literalZeroTest result = true) : result = some QProb.zero := by
+  cases result with
+  | none => cases checked
+  | some value =>
+      cases value with
+      | mk numerator denominator positive =>
+          have fields : (decide (numerator = 0) && decide (denominator = 1)) = true := checked
+          have numeratorZero : numerator = 0 :=
+            of_decide_eq_true (Bool.and_eq_true_iff.mp fields).1
+          have denominatorOne : denominator = 1 :=
+            of_decide_eq_true (Bool.and_eq_true_iff.mp fields).2
+          subst numerator
+          subst denominator
+          rfl
+
 /-- The factor is genuinely unsupported at the impossible `X = true` cell. -/
-theorem conditional_is_undefined : conditional.denote model reference = none := rfl
+theorem conditional_is_undefined : conditional.denote model reference = none :=
+  eq_none_of_isNone _ (by decide +kernel)
 
 /-- Strict multiplication keeps its previous support propagation. -/
 theorem strict_chain_is_undefined :
     (.multiply conditional weight : ProbabilityTerm signature).denote model reference =
-      none := rfl
+      none := eq_none_of_isNone _ (by decide +kernel)
 
 /-- Only the complete guarded contribution becomes zero.  The conditional
 regression above remains undefined. -/
 theorem guarded_chain_is_zero :
     (.weightedMultiply weight conditional : ProbabilityTerm signature).denote
-      model reference = some QProb.zero := rfl
+      model reference = some QProb.zero := eq_zero_of_literalZeroTest _ (by decide +kernel)
 
 /-- A zero base conditioner cannot be rescued by the guard.  Here the weight
 `P(Y | X = true)` is itself undefined, rather than a defined zero. -/
@@ -99,7 +131,8 @@ theorem unsupported_base_remains_undefined :
     (.weightedMultiply conditional
       (.kernel ⟨NodeSet.empty, NodeSet.empty,
         NodeSet.union (NodeSet.singleton y) (NodeSet.singleton x)⟩) :
-        ProbabilityTerm signature).denote model reference = none := rfl
+        ProbabilityTerm signature).denote model reference = none :=
+  eq_none_of_isNone _ (by decide +kernel)
 
 /-- The general zero-aware chain identity holds at every valuation of this
 SCM, including both its supported and zero-probability cells. -/
@@ -131,7 +164,7 @@ defined zero value, even though its final displayed conditional is undefined.
 This checks the compiler's prefix weights and their direction numerically. -/
 theorem compiled_joint_is_zero :
     (guardedChainTerm (NodeSet.full : NodeSet signature)).denote model reference =
-      some QProb.zero := rfl
+      some QProb.zero := eq_zero_of_literalZeroTest _ (by decide +kernel)
 
 /-- The generated formula has a constructive support witness at every
 assignment of this nonpositive SCM.  No positivity record is supplied. -/

@@ -17,6 +17,7 @@ import Thesis.CausalTransport.SupportAwareChain
 import Thesis.CausalTransport.Correspondence
 import Thesis.CausalTransport.FiniteSource
 import Thesis.CausalTransport.Soundness
+import Thesis.CausalTransport.LocalSupportIdentification
 import Thesis.CausalTransport.Completeness
 import Thesis.CausalTransport.ChainCompilation
 import Thesis.CausalTransport.SupportAwareChainCompilation

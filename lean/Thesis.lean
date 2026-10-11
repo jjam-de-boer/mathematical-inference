@@ -6,6 +6,7 @@ import Thesis.Examples.IdentificationRegression
 import Thesis.Examples.IdentificationAPIIsolation
 import Thesis.Examples.SupportAwareSemantics
 import Thesis.Examples.SupportAwareChain
+import Thesis.Examples.LocalSupportIdentification
 import Thesis.Examples.KernelCompilation
 import Thesis.Examples.ComponentCompilation
 import Thesis.Examples.KernelRecursionCompilation
