@@ -78,8 +78,13 @@ noncomputable def unconditionalQuotient_equivalentAt (model : FiniteLatentSCM S)
       ((ProbabilityTerm.kernel kernel).denote model reference)
       (ProbabilityResult.divide
         (some (distribution.probVal (agreesOn joint reference)))
-        (some (distribution.probVal (agreesOn kernel.condition reference)))) :=
-    ProbabilityResult.divide_congr (.value numerator) (ProbabilityResult.refl _)
+        (some (distribution.probVal (agreesOn kernel.condition reference)))) := by
+    change ProbabilityResult.Equivalent
+      (ProbabilityResult.divide
+        (some (distribution.probVal (kernel.numeratorEvent reference)))
+        (some (distribution.probVal (agreesOn kernel.condition reference)))) _
+    exact ProbabilityResult.divide_congr (.value numerator)
+      (ProbabilityResult.refl (some (distribution.probVal (agreesOn kernel.condition reference))))
   have quotientCanonical : ProbabilityResult.Equivalent
       (kernel.unconditionalQuotientTerm.denote model reference)
       (ProbabilityResult.divide
