@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.Soundness
+import Thesis.Causality.ObservationalSupport
 
 namespace Thesis
 namespace Causality
@@ -26,50 +27,6 @@ query, and does not yet cover full hidden-DAG SCMs outside the compatible
 latent-root model class.  No external soundness assumption is supplied.
 -/
 
-/-- Positive observational mass of exactly one selected cylinder.  This is
-assignment-local and is decidable from the finite observational record; it
-does not require a positive outcome or a positive full joint distribution. -/
-def ObservationalCylinderPositiveAt (model : FiniteLatentSCM S)
-    (nodes : NodeSet S) (reference : S.Assignment) : Prop :=
-  0 < (model.observationalDist.probVal (Kernel.agreesOn nodes reference)).num
-
-/-- Observational agreement preserves the local support condition.  The
-finite rational numerator test is invariant under probability equivalence. -/
-theorem ObservationalCylinderPositiveAt.transfer
-    {left right : FiniteLatentSCM S}
-    (observational : ProbabilityTerm.ObservationalAgreement left right)
-    {nodes : NodeSet S} {reference : S.Assignment}
-    (positive : ObservationalCylinderPositiveAt left nodes reference) :
-    ObservationalCylinderPositiveAt right nodes reference :=
-  (QProb.equiv_num_pos_iff
-    (observational (Kernel.agreesOn nodes reference))).mp positive
-
-/-- Construct the displayed conditional from its actual finite numerator and
-positive conditioner.  Zero outcome mass is allowed, and no representative
-is chosen from an existence proposition. -/
-noncomputable def observationalConditional_supportedAt_of_positive
-    (model : FiniteLatentSCM S) (outcome condition : NodeSet S)
-    (reference : S.Assignment)
-    (positive : ObservationalCylinderPositiveAt model condition reference) :
-    (ProbabilityTerm.kernel ⟨outcome, NodeSet.empty, condition⟩).SupportedAt
-      model reference := by
-  let kernel : Kernel S := ⟨outcome, NodeSet.empty, condition⟩
-  have noAction : kernel.hasAction = false :=
-    ProbabilityTerm.actionFree_hasAction_false kernel (fun _ => rfl)
-  have observational : kernel.distribution model reference = model.observationalDist := by
-    simp only [Kernel.distribution, noAction, Bool.false_eq_true, if_false]
-  let numerator := (kernel.distribution model reference).probVal
-    (kernel.numeratorEvent reference)
-  let denominator := (kernel.distribution model reference).probVal
-    (kernel.conditionEvent reference)
-  have denominatorPositive : 0 < denominator.num := by
-    simpa only [denominator, observational, kernel, Kernel.conditionEvent] using positive
-  refine ⟨QProb.div numerator denominator denominatorPositive, ?_⟩
-  change ProbabilityResult.Equivalent
-    (ProbabilityResult.divide (some numerator) (some denominator))
-    (some (QProb.div numerator denominator denominatorPositive))
-  simp only [ProbabilityResult.divide, dif_pos denominatorPositive]
-  exact .value (QProb.equiv_refl _)
 
 namespace JointKernelQuery
 

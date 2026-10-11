@@ -164,6 +164,17 @@ noncomputable def supported_factor_of_weightedMultiply
       rw [weightedMultiply_of_positive weightValue factor valuePositive] at supported
       exact supported_right_of_multiply supported
 
+/-- Even a zero contribution must have a known weight.  An undefined
+weight cannot be used to discharge a factor's support obligation. -/
+noncomputable def supported_weight_of_weightedMultiply
+    {weight factor : Result}
+    (supported : Supported (weightedMultiply weight factor)) : Supported weight := by
+  cases weight with
+  | none =>
+      rcases supported with ⟨_, impossible⟩
+      cases impossible
+  | some value => exact ⟨value, refl _⟩
+
 /-! ## Finite weighted marginalization -/
 
 /-- Sum weighted factors over the supplied finite enumeration.  No filtering

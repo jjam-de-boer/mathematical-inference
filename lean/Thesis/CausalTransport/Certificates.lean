@@ -358,6 +358,47 @@ noncomputable def PublishedIdentificationCertificate.multiply
       ⟨sourceSupported,
         ⟨targetSupported, ⟨leftSupported, rightSupported⟩⟩⟩
 
+/-- Lift two published reductions through a directed guarded product.
+
+The factor's source support and recursive derivation are required only on
+the positive source-weight branch.  Its symbolic tree is nevertheless retained
+in the certificate.  Target support is supplied separately, just as for the
+existing quotient constructor: at this probability-algebra boundary we must
+not assume causal soundness of either supplied certificate to infer which
+target weights are positive.  Concrete compilers prove this support premise
+from their actual finite probability identities. -/
+noncomputable def PublishedIdentificationCertificate.weightedMultiplyWithSupport
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {correct : DSeparationCorrectness G}
+    {weightSource factorSource : ProbabilityTerm S}
+    (weight : PublishedIdentificationCertificate C correct weightSource)
+    (factor : PublishedIdentificationCertificate C correct factorSource)
+    (targetSupported : forall (model : ExactModel S), C.Mem model ->
+      forall assignment,
+        (ProbabilityTerm.weightedMultiply weightSource factorSource).SupportedAt
+            model assignment ->
+          (ProbabilityTerm.weightedMultiply weight.formula factor.formula).SupportedAt
+            model assignment) :
+    PublishedIdentificationCertificate C correct
+      (.weightedMultiply weightSource factorSource) where
+  formula := .weightedMultiply weight.formula factor.formula
+  actionFree := ⟨weight.actionFree, factor.actionFree⟩
+  derivation := DoCalculusDerivation.weightedMultiplyCongr
+    (G := G) (separation := pathRuleSeparation G)
+    weight.derivation factor.derivation
+  supported := fun model member assignment sourceSupported => by
+    let weightSourceSupported : weightSource.SupportedAt model assignment :=
+      ProbabilityResult.supported_weight_of_weightedMultiply sourceSupported
+    let weightSupported :=
+      weight.supported model member assignment weightSourceSupported
+    let factorSupported := fun positive =>
+      factor.supported model member assignment
+        (ProbabilityResult.supported_factor_of_weightedMultiply positive sourceSupported)
+    dsimp [PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
+    exact ⟨sourceSupported,
+      ⟨targetSupported model member assignment sourceSupported,
+        ⟨weightSupported, factorSupported⟩⟩⟩
+
 /--
 Lift two published reductions through division once support of the target
 quotient is supplied.  This extra premise is essential: support of both

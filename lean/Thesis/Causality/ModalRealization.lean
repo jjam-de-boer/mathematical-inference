@@ -663,6 +663,7 @@ noncomputable def OperationRealizations
   | .marginalization .. => Unit
   | .conditioning .. => Unit
   | .chain .. => Unit
+  | .weightedChain .. => Unit
   | .multiplyComm .. => Unit
   | .multiplyAssoc .. => Unit
   | .marginalizeCongr nodes inner =>
@@ -679,6 +680,12 @@ noncomputable def OperationRealizations
   | .multiplyCongr first second =>
       first.OperationRealizations assignment semantics supported.2.2.1 ×
         second.OperationRealizations assignment semantics supported.2.2.2
+  | @ModalDerivationTrace.weightedMultiplyCongr _ _ weight _ _ _ _ _ first second =>
+      first.OperationRealizations assignment semantics supported.2.2.1 ×
+        (forall positive : ProbabilityResult.PositiveSupportedValue
+            (weight.denote model assignment),
+          second.OperationRealizations assignment semantics
+            (supported.2.2.2 positive))
   | .divideCongr numerator denominator =>
       numerator.OperationRealizations assignment semantics supported.2.2.1 ×
         denominator.OperationRealizations assignment semantics supported.2.2.2
@@ -706,6 +713,7 @@ noncomputable def realizeOperations
   | marginalization => exact Unit.unit
   | conditioning => exact Unit.unit
   | chain => exact Unit.unit
+  | weightedChain => exact Unit.unit
   | multiplyComm => exact Unit.unit
   | multiplyAssoc => exact Unit.unit
   | marginalizeCongr nodes inner ih =>
@@ -719,6 +727,9 @@ noncomputable def realizeOperations
   | multiplyCongr first second firstIH secondIH =>
       exact ⟨firstIH assignment supported.2.2.1,
         secondIH assignment supported.2.2.2⟩
+  | weightedMultiplyCongr first second firstIH secondIH =>
+      exact ⟨firstIH assignment supported.2.2.1,
+        fun positive => secondIH assignment (supported.2.2.2 positive)⟩
   | divideCongr numerator denominator numeratorIH denominatorIH =>
       exact ⟨numeratorIH assignment supported.2.2.1,
         denominatorIH assignment supported.2.2.2⟩

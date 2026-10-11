@@ -496,6 +496,20 @@ inductive DoCalculusDerivation (G : ObservedGraph S)
         (.multiply
           (.kernel ⟨y, x, NodeSet.union z w⟩)
           (.kernel ⟨z, x, w⟩))
+  /-- A zero-aware chain identity, with the earlier cylinder as the weight.
+
+  Unlike strict `chain`, this constructor does not require its conditional
+  factor to be defined at a zero-weight cell.  The semantic identity is
+  proved from event containment in the actual intervened probability record;
+  it is not an additional primitive soundness assumption.  Its endpoints
+  still need the ordinary recursive support evidence. -/
+  | weightedChain (x y z w : NodeSet S)
+      (disjoint : FourWayDisjoint x y z w) :
+      DoCalculusDerivation G (separation := separation)
+        (.kernel ⟨NodeSet.union y z, x, w⟩)
+        (.weightedMultiply
+          (.kernel ⟨z, x, w⟩)
+          (.kernel ⟨y, x, NodeSet.union z w⟩))
   /-- Exchange two factors without changing either partial expression.
 
   This is ordinary rational multiplication, not a do-rule or an assumed
@@ -531,6 +545,17 @@ inductive DoCalculusDerivation (G : ObservedGraph S)
       DoCalculusDerivation G (separation := separation) right right' ->
       DoCalculusDerivation G (separation := separation)
         (.multiply left right) (.multiply left' right')
+  /-- Replace a weight everywhere and a factor only on its positive branch.
+
+  Both symbolic subderivations remain inspectable.  Their local support tree
+  demands the factor subderivation only when the source weight has a positive
+  supported value.  No commutation or association law for guarded products
+  is introduced by this congruence constructor. -/
+  | weightedMultiplyCongr {weight weight' factor factor'} :
+      DoCalculusDerivation G (separation := separation) weight weight' ->
+      DoCalculusDerivation G (separation := separation) factor factor' ->
+      DoCalculusDerivation G (separation := separation)
+        (.weightedMultiply weight factor) (.weightedMultiply weight' factor')
   | divideCongr {left left' right right'} :
       DoCalculusDerivation G (separation := separation) left left' ->
       DoCalculusDerivation G (separation := separation) right right' ->
@@ -579,6 +604,8 @@ def DoCalculusDerivation.mapRules
       @DoCalculusDerivation.conditioning S G target x y z w disjoint
   | @DoCalculusDerivation.chain _ _ source x y z w disjoint =>
       @DoCalculusDerivation.chain S G target x y z w disjoint
+  | @DoCalculusDerivation.weightedChain _ _ source x y z w disjoint =>
+      @DoCalculusDerivation.weightedChain S G target x y z w disjoint
   | @DoCalculusDerivation.multiplyComm _ _ source first second =>
       @DoCalculusDerivation.multiplyComm S G target first second
   | @DoCalculusDerivation.multiplyAssoc _ _ source first second third =>
@@ -601,6 +628,11 @@ def DoCalculusDerivation.mapRules
       @DoCalculusDerivation.multiplyCongr S G target first first' second second'
         (firstDerivation.mapRules (source := source) (target := target) translate)
         (secondDerivation.mapRules (source := source) (target := target) translate)
+  | @DoCalculusDerivation.weightedMultiplyCongr _ _ source weight weight' factor factor'
+      weightDerivation factorDerivation =>
+      @DoCalculusDerivation.weightedMultiplyCongr S G target weight weight' factor factor'
+        (weightDerivation.mapRules (source := source) (target := target) translate)
+        (factorDerivation.mapRules (source := source) (target := target) translate)
   | @DoCalculusDerivation.divideCongr _ _ source first first' second second'
       firstDerivation secondDerivation =>
       @DoCalculusDerivation.divideCongr S G target first first' second second'

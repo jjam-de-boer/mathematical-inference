@@ -922,7 +922,10 @@ def FiniteSourcePathPrimitiveSoundness.compile
   conditioning := semantics.conditioning
   chain := semantics.chain
 
-/-- Recursive source support for every endpoint and subderivation. -/
+/-- Recursive source support for every endpoint and required subderivation.
+Guarded products retain the weight subtree everywhere, and the factor subtree
+only under a positive source-native weight.  Interpretation transports that
+positivity through the proved finite-source denotation equality. -/
 def FiniteSourceLocalDerivationSupport {T : FiniteTableSignature}
     {G : FiniteTableGraph T} (model : FiniteTableSCM T)
     (assignment : T.Assignment) {left right : ProbabilityTerm T.toObserved}
@@ -940,6 +943,7 @@ def FiniteSourceLocalDerivationSupport {T : FiniteTableSignature}
       | .marginalization _ _ _ _ _ => Unit
       | .conditioning _ _ _ _ _ => Unit
       | .chain _ _ _ _ _ => Unit
+      | .weightedChain _ _ _ _ _ => Unit
       | .multiplyComm _ _ => Unit
       | .multiplyAssoc _ _ _ => Unit
       | .marginalizeCongr nodes inner =>
@@ -955,6 +959,10 @@ def FiniteSourceLocalDerivationSupport {T : FiniteTableSignature}
       | .multiplyCongr first second =>
           FiniteSourceLocalDerivationSupport model assignment first ×
             FiniteSourceLocalDerivationSupport model assignment second
+      | @DoCalculusDerivation.weightedMultiplyCongr _ _ _ weight _ _ _ first second =>
+          FiniteSourceLocalDerivationSupport model assignment first ×
+            (ProbabilityResult.PositiveSupportedValue (model.termDenote weight assignment) ->
+              FiniteSourceLocalDerivationSupport model assignment second)
       | .divideCongr numerator denominator =>
           FiniteSourceLocalDerivationSupport model assignment numerator ×
             FiniteSourceLocalDerivationSupport model assignment denominator
@@ -994,6 +1002,9 @@ noncomputable def FiniteSourceLocalDerivationSupport.toTarget
   | chain =>
       exact ⟨model.termSupportedAt_to_target _ _ supported.1,
         model.termSupportedAt_to_target _ _ supported.2.1, ()⟩
+  | weightedChain =>
+      exact ⟨model.termSupportedAt_to_target _ _ supported.1,
+        model.termSupportedAt_to_target _ _ supported.2.1, ()⟩
   | multiplyComm =>
       exact ⟨model.termSupportedAt_to_target _ _ supported.1,
         model.termSupportedAt_to_target _ _ supported.2.1, ()⟩
@@ -1016,6 +1027,14 @@ noncomputable def FiniteSourceLocalDerivationSupport.toTarget
       exact ⟨model.termSupportedAt_to_target _ _ supported.1,
         model.termSupportedAt_to_target _ _ supported.2.1,
         firstIH supported.2.2.1, secondIH supported.2.2.2⟩
+  | @weightedMultiplyCongr weight _ _ _ first second firstIH secondIH =>
+      exact ⟨model.termSupportedAt_to_target _ _ supported.1,
+        model.termSupportedAt_to_target _ _ supported.2.1,
+        firstIH supported.2.2.1,
+        fun positive => secondIH (supported.2.2.2
+          (ProbabilityResult.PositiveSupportedValue.transport
+            (ProbabilityResult.symm (model.termDenote_preserved weight assignment))
+            positive))⟩
   | divideCongr numerator denominator numeratorIH denominatorIH =>
       exact ⟨model.termSupportedAt_to_target _ _ supported.1,
         model.termSupportedAt_to_target _ _ supported.2.1,
@@ -1053,6 +1072,9 @@ noncomputable def DoCalculusDerivation.finiteSource_denotational_soundAt
   | chain x y z w disjoint =>
       exact semantics.chain x y z w assignment disjoint
         supported.1 supported.2.1
+  | weightedChain x y z w _disjoint =>
+      exact model.termEquivalentAt_of_target _ _ assignment
+        (ProbabilityTerm.weightedChain_soundAt model.interpret x y z w assignment)
   | multiplyComm first second =>
       exact ProbabilityResult.multiply_comm _ _
   | multiplyAssoc first second third =>
@@ -1077,6 +1099,12 @@ noncomputable def DoCalculusDerivation.finiteSource_denotational_soundAt
         FiniteTableSCM.termDenote] using
         ProbabilityResult.multiply_congr
           (firstIH supported.2.2.1) (secondIH supported.2.2.2)
+  | weightedMultiplyCongr first second firstIH secondIH =>
+      simpa only [FiniteTableSCM.TermEquivalentAt,
+        FiniteTableSCM.termDenote] using
+        ProbabilityResult.weightedMultiply_congr_on_positive
+          (firstIH supported.2.2.1)
+          (fun positive => secondIH (supported.2.2.2 positive))
   | divideCongr numerator denominator numeratorIH denominatorIH =>
       simpa only [FiniteTableSCM.TermEquivalentAt,
         FiniteTableSCM.termDenote] using

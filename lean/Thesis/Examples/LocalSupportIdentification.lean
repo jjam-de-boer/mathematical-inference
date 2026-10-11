@@ -87,6 +87,85 @@ noncomputable def effect_in_any_observationally_equal_model
     model other compatible otherCompatible observational supportedReference
     action_cylinder_positive
 
+/-! ## Recursive guarded certificates in the same nonpositive model -/
+
+/-- Compile the whole observational joint inside the unrestricted compatible
+model class.  The positive model class would exclude this regression SCM. -/
+noncomputable def guarded_compilation :
+    PublishedObservationalGuardedChainCompilation (GraphModelClass.all graph)
+      graph.dSeparationCorrectness (NodeSet.full : NodeSet signature) :=
+  PublishedObservationalGuardedChainCompilation.ofModelClass
+    (GraphModelClass.all graph) graph.dSeparationCorrectness NodeSet.full
+
+/-- The certificate retains exactly the generated guarded syntax; it does
+not replace the undefined conditional by an arbitrary observational value. -/
+theorem guarded_compilation_formula :
+    guarded_compilation.certificate.formula =
+      guardedChainTerm (NodeSet.full : NodeSet signature) :=
+  guarded_compilation.formula_eq
+
+/-- At the impossible `X = true` reference, the complete joint is supported
+but the displayed `P(Y | X)` factor is not.  The ordinary recursive support
+tree can nevertheless be constructed because its factor branch is demanded
+only under a positive prefix weight. -/
+noncomputable def guarded_compilation_supported :
+    LocalDerivationSupport model reference
+      (guarded_compilation.certificate.derivation.compile graph.dSeparationCorrectness) :=
+  guarded_compilation.certificate.supported model compatible reference
+    ⟨((Kernel.mk NodeSet.full NodeSet.empty NodeSet.empty).distribution
+        model reference).probVal (Kernel.agreesOn NodeSet.full reference),
+      Kernel.unconditionalDenote model NodeSet.full NodeSet.empty reference⟩
+
+/-- The existing derivation-soundness theorem interprets the guarded
+certificate, rather than bypassing that theorem with a bespoke equality. -/
+noncomputable def guarded_compilation_sound :
+    ProbabilityTerm.EquivalentAt model
+      (.kernel ⟨NodeSet.full, NodeSet.empty, NodeSet.empty⟩)
+      guarded_compilation.certificate.formula reference :=
+  (guarded_compilation.certificate.derivation.compile
+    graph.dSeparationCorrectness).denotational_soundAt
+      (graph.publishedSoundness.primitive model compatible)
+      guarded_compilation_supported
+
+/-! ## Observable overlap does not demand a positive outcome -/
+
+/-- `Y = true` has observational mass although the selected full reference
+also asks for the impossible outcome `X = true`. -/
+theorem zero_outcome_action_overlap :
+    ObservationalCylinderPositiveAt model (NodeSet.singleton y) reference := by
+  unfold ObservationalCylinderPositiveAt
+  decide +kernel
+
+/-- The causal kernel at that action is supported even with a zero outcome
+numerator.  Its support comes from observable overlap and SCM consistency,
+not from observational positivity or a graph-dependent do-rule. -/
+noncomputable def zero_outcome_effect_supported :
+    (ProbabilityTerm.kernel
+      ⟨NodeSet.singleton x, NodeSet.singleton y, NodeSet.empty⟩).SupportedAt
+      model reference :=
+  Kernel.supportedAt_of_observational_overlap model
+    ⟨NodeSet.singleton x, NodeSet.singleton y, NodeSet.empty⟩ reference
+    (by simpa only [NodeSet.union_empty_right] using zero_outcome_action_overlap)
+
+/-- A nonempty conditioner is checked with its actual action-and-condition
+cylinder, rather than silently dropping the conditioner from the overlap. -/
+theorem action_condition_cylinder_positive :
+    ObservationalCylinderPositiveAt model
+      (NodeSet.union (NodeSet.singleton x) (NodeSet.singleton y))
+      supportedReference := by
+  unfold ObservationalCylinderPositiveAt
+  decide +kernel
+
+/-- The actual intervened conditional is supported from the verified joint
+overlap above.  This claims support, not identification of an arbitrary query. -/
+noncomputable def nonempty_condition_effect_supported :
+    (ProbabilityTerm.kernel
+      ⟨NodeSet.empty, NodeSet.singleton x, NodeSet.singleton y⟩).SupportedAt
+      model supportedReference :=
+  Kernel.supportedAt_of_observational_overlap model
+    ⟨NodeSet.empty, NodeSet.singleton x, NodeSet.singleton y⟩ supportedReference
+    action_condition_cylinder_positive
+
 end ZeroCellLocalIdentification
 end Examples
 end Causality

@@ -167,6 +167,10 @@ inductive ModalDerivationTrace (G : ObservedGraph S) :
   | chain (x y z w : NodeSet S)
       (disjoint : FourWayDisjoint x y z w) :
       ModalDerivationTrace G (.chain x y z w disjoint)
+  /-- Guarded probability algebra adds no modal action/observation cell. -/
+  | weightedChain (x y z w : NodeSet S)
+      (disjoint : FourWayDisjoint x y z w) :
+      ModalDerivationTrace G (.weightedChain x y z w disjoint)
   /-- Pure factor exchange creates no modal action/observation cell. -/
   | multiplyComm (left right : ProbabilityTerm S) :
       ModalDerivationTrace G (.multiplyComm left right)
@@ -191,6 +195,13 @@ inductive ModalDerivationTrace (G : ObservedGraph S) :
       {second : DoCalculusDerivation G right right'} :
       ModalDerivationTrace G first -> ModalDerivationTrace G second ->
         ModalDerivationTrace G (.multiplyCongr first second)
+  /-- Retain both symbolic branches; local support selects the positive
+  factor branch during realization rather than erasing it from the trace. -/
+  | weightedMultiplyCongr {weight weight' factor factor'}
+      {first : DoCalculusDerivation G weight weight'}
+      {second : DoCalculusDerivation G factor factor'} :
+      ModalDerivationTrace G first -> ModalDerivationTrace G second ->
+        ModalDerivationTrace G (.weightedMultiplyCongr first second)
   | divideCongr {left left' right right'}
       {numerator : DoCalculusDerivation G left left'}
       {denominator : DoCalculusDerivation G right right'} :
@@ -216,6 +227,7 @@ def DoCalculusDerivation.toModalTrace :
   | .conditioning x y z w disjoint =>
       .conditioning x y z w disjoint
   | .chain x y z w disjoint => .chain x y z w disjoint
+  | .weightedChain x y z w disjoint => .weightedChain x y z w disjoint
   | .multiplyComm first second => .multiplyComm first second
   | .multiplyAssoc first second third => .multiplyAssoc first second third
   | .marginalizeCongr nodes derivation =>
@@ -226,6 +238,8 @@ def DoCalculusDerivation.toModalTrace :
       .addCongr first.toModalTrace second.toModalTrace
   | .multiplyCongr first second =>
       .multiplyCongr first.toModalTrace second.toModalTrace
+  | .weightedMultiplyCongr first second =>
+      .weightedMultiplyCongr first.toModalTrace second.toModalTrace
   | .divideCongr numerator denominator =>
       .divideCongr numerator.toModalTrace denominator.toModalTrace
   | .eqCongr _hleft _hright inner =>
@@ -243,12 +257,14 @@ def ruleKinds : {derivation : DoCalculusDerivation G left right} ->
   | _, .marginalization .. => []
   | _, .conditioning .. => []
   | _, .chain .. => []
+  | _, .weightedChain .. => []
   | _, .multiplyComm .. => []
   | _, .multiplyAssoc .. => []
   | _, .marginalizeCongr _ trace => trace.ruleKinds
   | _, .evaluateAtCongr _ trace => trace.ruleKinds
   | _, .addCongr first second => first.ruleKinds ++ second.ruleKinds
   | _, .multiplyCongr first second => first.ruleKinds ++ second.ruleKinds
+  | _, .weightedMultiplyCongr first second => first.ruleKinds ++ second.ruleKinds
   | _, .divideCongr numerator denominator =>
       numerator.ruleKinds ++ denominator.ruleKinds
   | _, .eqCongr inner => inner.ruleKinds
