@@ -75,61 +75,70 @@ theorem observedIndex_hidden (H : FiniteHiddenDAG S) (node : Fin H.count)
 
 /-! ## A finite default presentation for the nonempty-family witness -/
 
+/-- Keep a chosen node's value type and all of its finite presentation data
+together.  Selecting this record by the computed observed index avoids moving
+an enumeration across an unrelated dependent type equality afterward. -/
+private structure DefaultNodePresentation where
+  Value : Type u
+  enumeration : List Value
+  complete : forall value, value ∈ enumeration
+  valueDecidableEq : DecidableEq Value
+  defaultValue : Value
+
+/-- Both branches explicitly construct all presentation data.  The observed
+branch retains the original signature; the hidden branch is a singleton.
+This finite match does not choose a type or an inhabitant from a proposition. -/
+private def defaultNodePresentation (H : FiniteHiddenDAG S) (node : Fin H.count) :
+    DefaultNodePresentation.{u} :=
+  match H.observedIndex node with
+  | none =>
+      { Value := PUnit.{u + 1}
+        enumeration := [PUnit.unit]
+        complete := by
+          intro value
+          cases value
+          exact List.mem_cons.mpr (Or.inl rfl)
+        valueDecidableEq := inferInstance
+        defaultValue := PUnit.unit }
+  | some index =>
+      { Value := S.Value index
+        enumeration := S.valueEnumeration index
+        complete := S.value_complete index
+        valueDecidableEq := S.valueDecidableEq index
+        defaultValue := S.defaultValue index }
+
 /-- Use each observed node's unchanged value domain and a singleton at hidden
 nodes.  This presentation belongs only to the constant witness constructed
 below; it places no restriction on the full family. -/
 def defaultNodeValue (H : FiniteHiddenDAG S) (node : Fin H.count) : Type u :=
-  match H.observedIndex node with
-  | none => PUnit.{u + 1}
-  | some index => S.Value index
+  (defaultNodePresentation H node).Value
 
 /-- The default presentation carries an explicit complete finite enumeration. -/
 def defaultNodeEnumeration (H : FiniteHiddenDAG S) (node : Fin H.count) :
-    List (H.defaultNodeValue node) := by
-  -- Expose the dependent value type before inspecting the lookup.  A
-  -- nondependent match would leave both branch lists at the unreduced type.
-  unfold defaultNodeValue
-  cases H.observedIndex node with
-  | none => exact [PUnit.unit]
-  | some index => exact S.valueEnumeration index
+    List (H.defaultNodeValue node) :=
+  (defaultNodePresentation H node).enumeration
 
 theorem defaultNode_complete (H : FiniteHiddenDAG S) (node : Fin H.count) :
-    forall value, value ∈ H.defaultNodeEnumeration node := by
-  unfold defaultNodeEnumeration defaultNodeValue
-  cases index : H.observedIndex node with
-  | none =>
-      intro value
-      cases value
-      exact List.mem_cons.mpr (Or.inl rfl)
-  | some observed =>
-      exact S.value_complete observed
+    forall value, value ∈ H.defaultNodeEnumeration node :=
+  (defaultNodePresentation H node).complete
 
 /-- Equality is inherited from the observed signature or the singleton type. -/
 def defaultNodeDecidableEq (H : FiniteHiddenDAG S) (node : Fin H.count) :
-    DecidableEq (H.defaultNodeValue node) := by
-  cases index : H.observedIndex node with
-  | none =>
-      simpa only [defaultNodeValue, index] using
-        (inferInstance : DecidableEq PUnit.{u + 1})
-  | some observed =>
-      simpa only [defaultNodeValue, index] using S.valueDecidableEq observed
+    DecidableEq (H.defaultNodeValue node) :=
+  (defaultNodePresentation H node).valueDecidableEq
 
 /-- The witness's observed presentation is constructively equivalent to the
 original signature, not merely equinumerous or propositionally inhabited. -/
 def defaultObservedEquivalence (H : FiniteHiddenDAG S) (index : Fin S.count) :
     ValueEquivalence (H.defaultNodeValue (H.observedNode index)) (S.Value index) := by
-  unfold defaultNodeValue
+  unfold defaultNodeValue defaultNodePresentation
   rw [H.observedIndex_observed index]
   exact ⟨id, id, fun _ => rfl, fun _ => rfl⟩
 
 /-- An explicit default value at every node avoids any finite-choice step. -/
 def defaultNodeAssignment (H : FiniteHiddenDAG S) (node : Fin H.count) :
-    H.defaultNodeValue node := by
-  cases index : H.observedIndex node with
-  | none =>
-      simpa only [defaultNodeValue, index] using (PUnit.unit : PUnit.{u + 1})
-  | some observed =>
-      simpa only [defaultNodeValue, index] using S.defaultValue observed
+    H.defaultNodeValue node :=
+  (defaultNodePresentation H node).defaultValue
 
 end FiniteHiddenDAG
 
