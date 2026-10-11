@@ -210,6 +210,12 @@ collapse, including undefined results.  `HiddenDAGSoundness` interprets every
 locally supported do-calculus derivation natively, using the proved path
 partition laws at projected-graph agreement rather than a canonical-root
 assumption.  It also identifies a rule-2 leaf from observable local overlap.
+`HiddenDAGPositiveCertificates` reconstructs recursive support for existing
+kernel-generated certificates from native observational positivity, without
+calling their canonical-class support fields.  `HiddenDAGIdentification`
+therefore interprets the corrected ID/IDC engines' literal successful outputs
+in positive original hidden-DAG models and proves forward identification in
+any selected positive full-model family over the projection.
 Countermodel lifting, zero-aware recursive ID/IDC, and the final
 support-qualified hidden-DAG completeness bridge remain separate obligations.
 

@@ -100,8 +100,10 @@ theorem identifyJointKernel_identified
     (result : identifyJointKernel P.observedGraph query = .identified term) :
     family.JointIdentifiable query := by
   intro left right observational assignment
-  exact ⟨identifyJointKernel_hiddenDAG_identifiableAt query result
-    (family.semantics left) (family.semantics right) observational
+  have agreement : (family.semantics left).ObservationalAgreement (family.semantics right) :=
+    observational
+  exact ⟨identifyJointKernel_hiddenDAG_identifiableAt (P := P) query result
+    (family.semantics left) (family.semantics right) agreement
     (positive left) assignment⟩
 
 /-- Forward conditional identification in the same native family semantics.
@@ -114,8 +116,10 @@ theorem identifyConditionalKernel_identified
     (result : identifyConditionalKernel P.observedGraph query = .identified term) :
     family.ConditionalIdentifiable query := by
   intro left right observational assignment _leftSupported _rightSupported
-  exact ⟨identifyConditionalKernel_hiddenDAG_identifiableAt query result
-    (family.semantics left) (family.semantics right) observational
+  have agreement : (family.semantics left).ObservationalAgreement (family.semantics right) :=
+    observational
+  exact ⟨identifyConditionalKernel_hiddenDAG_identifiableAt (P := P) query result
+    (family.semantics left) (family.semantics right) agreement
     (positive left) assignment⟩
 
 end HiddenDAGModelFamily

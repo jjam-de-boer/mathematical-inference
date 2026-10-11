@@ -119,6 +119,11 @@ the large forest, used to derive conditioner avoidance in routed constructions.
 genuinely conditioned latent prior under its own reference-compatible action.
 Its support proof uses intrinsic observational positivity and finite SCM
 consistency, not do-calculus soundness or a selected latent realization.
+`PositiveDerivationSupport` propagates the kernel-generated zero-free syntax
+invariant through every derivation constructor and builds its recursive
+support directly from observational positivity.  It does not need canonical
+root incidence, graph compatibility or an assumed semantic soundness law;
+the separate local-support APIs remain necessary for observational zeros.
 `ConditionalCounterexampleWitness` finds an actual separated supported kernel
 cell in any positive countermodel by finite assignment search.  It returns
 the reference and both rational values as data without converting a
