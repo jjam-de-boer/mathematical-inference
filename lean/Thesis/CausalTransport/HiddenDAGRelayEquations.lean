@@ -59,7 +59,7 @@ theorem hiddenRoots_expectedValue (model : ExactModel S)
       dsimp only []
       by_cases owner : source = node
       · subst source
-        simp only [if_pos rfl]
+        simp only
         rw [HiddenDAGPlacedNoise.encode_of_placed model compatible roots node root placed]
         rfl
       · simp only [if_neg owner]
@@ -97,12 +97,10 @@ private theorem deliveredRoot_expectedValue (model : ExactModel S)
     (placement : HiddenDAGRootPlacement model.latent P root)
     (allocated : model.hiddenDAGRootPlacements compatible root = placement) :
     (let delivery := placement.delivery child incident
-      match delivery.route with
-      | .localInput _same =>
-          (HiddenDAGPlacedNoise.encode model compatible roots
-            (P.hiddenDAG.observedNode child) root).getD (defaultRoots model root)
-      | .hiddenRelay path => rootAlong model P (P.hiddenDAG.observedNode child)
-          (fun parent _edge => expectedValue model compatible signals roots parent) root path) =
+      rootAlongRoute model P (P.hiddenDAG.observedNode child)
+        (fun parent _edge => expectedValue model compatible signals roots parent)
+        (HiddenDAGPlacedNoise.encode model compatible roots (P.hiddenDAG.observedNode child))
+        root delivery.source delivery.route) =
       roots root := by
   cases placement with
   | unused absent =>
@@ -141,6 +139,7 @@ theorem observedRoots_expectedValue (model : ExactModel S)
       (HiddenDAGPlacedNoise.encode model compatible roots (P.hiddenDAG.observedNode child)) =
       (fun root _incident => roots root) := by
   funext root incident
+  unfold observedRoots
   exact deliveredRoot_expectedValue model compatible signals roots child root incident
     (model.hiddenDAGRootPlacements compatible root) rfl
 

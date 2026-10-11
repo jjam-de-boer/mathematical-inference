@@ -92,6 +92,20 @@ def observedParents (model : ExactModel S) (projection : FiniteLatentProjection 
   fun parent edge => signalAlong model projection _ parents parent
     (projection.directedPathData parent child edge)
 
+/-- Interpret one explicit delivery route.  Its source and dependent path
+are kept together as parameters of this single total reader, so mechanism
+construction and its later proof use the very same dependent match.  A local
+route reads noise; a nonempty route reads the final declared parent value. -/
+def rootAlongRoute (model : ExactModel S) (projection : FiniteLatentProjection S)
+    (node : Fin projection.hiddenDAG.count)
+    (parents : projection.hiddenDAG.ParentValues (NodeValue model projection) node)
+    (noise : HiddenDAGPlacedNoise.Row model) (root : Fin model.latent.count)
+    (source : Fin projection.hiddenDAG.count)
+    (route : HiddenDAGInputRoute projection.hiddenDAG source node) : model.latent.Value root :=
+  match route with
+  | .localInput _same => (noise root).getD (defaultRoots model root)
+  | .hiddenRelay path => rootAlong model projection node parents root path
+
 /-- Private input noise is read locally; a shared input is read along its
 allocated hidden relay.  The placement's delivery record certifies the source
 and every declared incidence, including arbitrary canonical root numbering. -/
@@ -101,9 +115,7 @@ def observedRoots (model : ExactModel S) (compatible : Compatible model P.observ
     (noise : HiddenDAGPlacedNoise.Row model) : model.latent.Inputs child :=
   fun root incident =>
     let delivery := (model.hiddenDAGRootPlacements compatible root).delivery child incident
-    match delivery.route with
-    | .localInput _same => (noise root).getD (defaultRoots model root)
-    | .hiddenRelay path => rootAlong model P _ parents root path
+    rootAlongRoute model P _ parents noise root delivery.source delivery.route
 
 /-- The unchanged observed equation consumes only its proved reconstructed
 parent and root inputs.  Incoming interventions will be handled by the full
