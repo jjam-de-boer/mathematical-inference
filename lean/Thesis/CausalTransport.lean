@@ -81,6 +81,7 @@ import Thesis.CausalTransport.HiddenDAGSoundness
 import Thesis.CausalTransport.HiddenDAGPositiveCertificates
 import Thesis.CausalTransport.HiddenDAGIdentification
 import Thesis.CausalTransport.HiddenDAGRootPlacement
+import Thesis.CausalTransport.HiddenDAGPlacedNoise
 import Thesis.CausalTransport.Construction
 import Thesis.CausalTransport.Modal
 import Thesis.CausalTransport.ModalRealization
@@ -217,6 +218,12 @@ calling their canonical-class support fields.  `HiddenDAGIdentification`
 therefore interprets the corrected ID/IDC engines' literal successful outputs
 in positive original hidden-DAG models and proves forward identification in
 any selected positive full-model family over the projection.
+`HiddenDAGRootPlacement` constructs original-DAG sources and actual relay
+paths for every input of any canonical projected-graph model, including
+private and unused roots.  `HiddenDAGPlacedNoise` groups distinct allocated
+roots as independent finite private-noise channels, preserving their original
+factor marginals and both inner and outer product laws.  Typed relay mechanisms
+and preservation of the resulting observed/interventional laws are still needed.
 Countermodel lifting, zero-aware recursive ID/IDC, and the final
 support-qualified hidden-DAG completeness bridge remain separate obligations.
 

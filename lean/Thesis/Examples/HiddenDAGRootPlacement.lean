@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.HiddenDAGRootPlacement
+import Thesis.CausalTransport.HiddenDAGPlacedNoise
 import Thesis.Examples.HiddenDAGCollapse
 
 namespace Thesis
@@ -6,7 +7,7 @@ namespace Causality
 namespace Examples
 namespace HiddenDAGRootPlacement
 
-open HiddenDAGCollapse
+open Probability HiddenDAGCollapse
 
 /-!
 # Allocate all input kinds on an original three-child hidden cause
@@ -19,10 +20,13 @@ original `U`, while their root indices remain distinct.  This is the geometry
 needed to group independent channels there, not a claim that those channels
 can be identified as one common bit.
 
-The root value type is `Unit` here because these are graph-data tests.  No
-noise law, countermodel, distribution-preservation interface or axiom is
-silently supplied.  Shared deliveries retain actual hidden-internal path
-data; private and unused inputs exercise the two other placement branches.
+The first fixture uses `Unit` root values because it tests graph data only.
+Shared deliveries retain actual hidden-internal path data; private and unused
+inputs exercise the two other placement branches.  The second fixture gives
+all roots independent fair bits and checks the actual grouped noise prior.
+The probability that two channels at `U` are both true is one quarter, not
+the one half produced by merging them as one common bit.  No countermodel
+or distribution-preservation interface is supplied by these noise tests.
 -/
 
 /-- Retain unused and private inputs as well as every projected pair root.
@@ -102,6 +106,51 @@ theorem x_y_has_no_direct_edge :
 /-- Common-cause search keeps the projection's irreflexivity convention. -/
 theorem reflexive_cause_absent : (fullGraph.hiddenCommonCause? x x).isNone = true := by
   decide +kernel
+
+/-! ## Distinct independent bit channels sharing one allocated node -/
+
+/-- Keep the same five input incidences, with actual Boolean root alphabets. -/
+def booleanLatent : LatentExtension signature where
+  count := 5
+  Value := fun _ => Bool
+  valueEnumeration := fun _ => [false, true]
+  value_complete := by intro _ value; cases value <;> simp
+  valueDecidableEq := fun _ => inferInstance
+  incident := latent.incident
+
+/-- A concrete canonical source model with an actual independent root prior.
+Its constant observed equations are allowed and contain observational zeros;
+no observed positivity premise is needed to construct the placed noise law. -/
+def noiseModel : ExactModel signature where
+  latent := booleanLatent
+  factor := fun _ => unbiased
+  prior := FiniteProduct.record 5 (fun _ => Bool) (fun _ => unbiased)
+  product_law := FiniteProduct.record_rectangular_probVal 5 (fun _ => Bool) (fun _ => unbiased)
+  mechanism := fun _child _parents _inputs => false
+
+theorem noiseModel_compatible : Compatible noiseModel projection.observedGraph :=
+  ⟨canonical, graph_matches⟩
+
+/-- A nontrivial joint-noise check: the two channels share their original
+hidden source, but retain separate independent random coordinates there. -/
+theorem two_channels_at_u_are_independent :
+    QProb.Equiv ((HiddenDAGPlacedNoise.prior noiseModel noiseModel_compatible).probVal
+      (fun noise => decide (noise u xyRoot = some true) && decide (noise u xzRoot = some true)))
+      ⟨1, 4, by decide⟩ := by
+  decide +kernel
+
+/-- Relay nodes receive no new random copy of a root channel.  Its absent
+local slot is filled later by the hidden-node relay mechanism, not by noise. -/
+theorem relay_has_no_random_copy :
+    QProb.Equiv ((HiddenDAGPlacedNoise.prior noiseModel noiseModel_compatible).probVal
+      (fun noise => (noise v xyRoot).isNone)) QProb.one := by
+  decide +kernel
+
+/-- Every encoded channel retains the original root value at its actual
+allocated source, independent of the other root assignments. -/
+theorem encoded_xy_channel (roots : noiseModel.latent.Assignment) :
+    HiddenDAGPlacedNoise.encode noiseModel noiseModel_compatible roots u xyRoot = some (roots xyRoot) :=
+  HiddenDAGPlacedNoise.encode_of_placed noiseModel noiseModel_compatible roots u xyRoot (by decide +kernel)
 
 end HiddenDAGRootPlacement
 end Examples
