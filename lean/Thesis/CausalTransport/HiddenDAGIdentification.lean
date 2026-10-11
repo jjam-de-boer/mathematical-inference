@@ -6,7 +6,11 @@ namespace Causality
 
 open Probability
 
-variable {S : ObservedSignature} {P : FiniteLatentProjection S}
+-- The established ID/IDC derivation and certificate APIs use carrier universe
+-- zero.  This is not a bound on finite cardinalities: hidden and private-noise
+-- domains may have any finite sizes, and original native semantics remains
+-- universe-polymorphic in `HiddenDAGSemantics`.
+variable {S : ObservedSignature.{0}} {P : FiniteLatentProjection S}
 
 /-!
 # Successful ID/IDC formulas in their original hidden-DAG models
