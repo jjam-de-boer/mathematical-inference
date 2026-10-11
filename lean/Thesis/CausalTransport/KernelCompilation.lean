@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.ChainCompilation
 import Thesis.Causality.IdentificationKernel
+import Thesis.Causality.SupportAwareKernelAlgebra
 
 namespace Thesis
 namespace Causality
@@ -125,10 +126,9 @@ The intermediate marginal still contains interventions, so it is *not*
 pretended to be an action-free identification certificate.  Instead, the
 primitive marginalization is composed with the lifted input certificate,
 and its support tree is retained explicitly. -/
-noncomputable def currentKernelMarginalPublishedCertificate
+noncomputable def currentKernelMarginalPublishedCertificateOfSupport
     {G : ObservedGraph S} {C : GraphModelClass G}
     (correct : DSeparationCorrectness G)
-    (obsPositive : forall {model}, C.Mem model -> ObservationallyPositive model)
     (remaining externalAction kept : NodeSet S)
     (outside : NodeSet.Disjoint externalAction remaining)
     (keptSubset : NodeSet.Subset kept remaining)
@@ -165,17 +165,50 @@ noncomputable def currentKernelMarginalPublishedCertificate
       (G := G) (separation := pathRuleSeparation G) split lifted.derivation
     supported := fun model member reference sourceSupported => by
       let intermediate :=
-        (ProbabilityTerm.marginalizePositiveSupportedValue model removed
+        ProbabilityTerm.marginalize_supportedAt_of_mem model removed
           (.kernel ⟨NodeSet.union kept removed, externalAction, NodeSet.empty⟩)
-          reference (fun variant =>
-            (obsPositive member).kernelPositiveSupportedValue
-              ⟨NodeSet.union kept removed, externalAction, NodeSet.empty⟩
-              variant)).toSupported
+          reference (fun variant _listed =>
+            Kernel.unconditional_supportedAt model (NodeSet.union kept removed)
+              externalAction variant)
       let liftedSupported := lifted.supported model member reference intermediate
       dsimp [PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules, split]
       exact ⟨sourceSupported, ⟨liftedSupported.endpoints.2,
         ⟨⟨sourceSupported, ⟨intermediate, ()⟩⟩, liftedSupported⟩⟩⟩
   }
+
+/-- Backward-compatible entry point for the positive recursive compiler.
+The historical regularity argument is retained so its callers and exact
+formula lemmas stay unchanged, but marginalization itself needs only the
+input certificate's recursive support.  The more general constructor above
+also applies to zero-containing model classes. -/
+noncomputable def currentKernelMarginalPublishedCertificate
+    {G : ObservedGraph S} {C : GraphModelClass G}
+    (correct : DSeparationCorrectness G)
+    (obsPositive : forall {model}, C.Mem model -> ObservationallyPositive model)
+    (remaining externalAction kept : NodeSet S)
+    (outside : NodeSet.Disjoint externalAction remaining)
+    (keptSubset : NodeSet.Subset kept remaining)
+    (input : PublishedIdentificationCertificate C correct
+      (.kernel ⟨remaining, externalAction, NodeSet.empty⟩)) :
+    PublishedIdentificationCertificate C correct
+      (.kernel ⟨kept, externalAction, NodeSet.empty⟩) := by
+  let _ := obsPositive
+  exact currentKernelMarginalPublishedCertificateOfSupport correct remaining
+    externalAction kept outside keptSubset input
+
+/-- The zero-permitting marginal constructor preserves the engine's exact
+current-expression syntax, including null summands and gaps in the host. -/
+theorem currentKernelMarginalPublishedCertificateOfSupport_formula
+    {G : ObservedGraph S} {C : GraphModelClass G}
+    (correct : DSeparationCorrectness G)
+    (remaining externalAction kept : NodeSet S)
+    (outside : NodeSet.Disjoint externalAction remaining)
+    (keptSubset : NodeSet.Subset kept remaining)
+    (input : PublishedIdentificationCertificate C correct
+      (.kernel ⟨remaining, externalAction, NodeSet.empty⟩)) :
+    (currentKernelMarginalPublishedCertificateOfSupport correct remaining
+      externalAction kept outside keptSubset input).formula =
+      .marginalize (NodeSet.diff remaining kept) input.formula := rfl
 
 /-- The current-input marginal compiler preserves the precise displayed
 syntax required by the replacement engine. -/

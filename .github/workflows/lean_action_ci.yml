@@ -29,6 +29,7 @@ jobs:
           build-args: >-
             Thesis.Probability.FiniteProductAllocation
             Thesis.Causality.ObservationalSupport
+            Thesis.Causality.SupportAwareKernelAlgebra
             Thesis.Causality.PositiveDerivationSupport
             Thesis.Causality.HiddenPathSearch
             Thesis.Causality.HiddenCommonCauseSearch
