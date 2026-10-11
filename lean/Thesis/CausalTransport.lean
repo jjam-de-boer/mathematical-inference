@@ -84,6 +84,7 @@ import Thesis.CausalTransport.HiddenDAGRootPlacement
 import Thesis.CausalTransport.HiddenDAGPlacedNoise
 import Thesis.CausalTransport.HiddenDAGRelayValues
 import Thesis.CausalTransport.HiddenDAGRealization
+import Thesis.CausalTransport.HiddenDAGRelayAssignment
 import Thesis.CausalTransport.Construction
 import Thesis.CausalTransport.Modal
 import Thesis.CausalTransport.ModalRealization
