@@ -118,6 +118,45 @@ def evalFull (M : FiniteHiddenDAGSCM S projection)
     M.NodeAssignment :=
   fun node => M.evalNode intervention noise node
 
+/-- An explicit assignment satisfying every intervened structural equation
+is the evaluator's assignment.  This is uniqueness for the finite acyclic
+equations, not existence obtained by choice: the candidate and its equation
+proof are supplied as data, and each parent comparison recurses along the
+graph's strict rank.  Reverse model constructions can therefore prove local
+relay equations first, without interleaving two different evaluators. -/
+theorem evalNode_eq_of_solution (M : FiniteHiddenDAGSCM S projection)
+    (intervention : HardIntervention S) (noise : M.NoiseAssignment)
+    (candidate : M.NodeAssignment)
+    (solution : forall node, candidate node =
+      match M.interventionValueAt intervention node with
+      | some value => value
+      | none => M.mechanism node (fun parent _edge => candidate parent) (noise node))
+    (node : Fin projection.hiddenDAG.count) :
+    M.evalNode intervention noise node = candidate node := by
+  rw [evalNode, solution node]
+  cases M.interventionValueAt intervention node with
+  | some => rfl
+  | none =>
+      apply congrArg (fun parents : projection.hiddenDAG.ParentValues M.NodeValue node =>
+        M.mechanism node parents (noise node))
+      funext parent edge
+      exact evalNode_eq_of_solution M intervention noise candidate solution parent
+termination_by projection.hiddenDAG.rank node
+decreasing_by exact projection.hiddenDAG.edge_rank_lt edge
+
+/-- The same uniqueness statement for the complete dependent assignment.
+No observational positivity or value-domain richness is used. -/
+theorem evalFull_eq_of_solution (M : FiniteHiddenDAGSCM S projection)
+    (intervention : HardIntervention S) (noise : M.NoiseAssignment)
+    (candidate : M.NodeAssignment)
+    (solution : forall node, candidate node =
+      match M.interventionValueAt intervention node with
+      | some value => value
+      | none => M.mechanism node (fun parent _edge => candidate parent) (noise node)) :
+    M.evalFull intervention noise = candidate := by
+  funext node
+  exact M.evalNode_eq_of_solution intervention noise candidate solution node
+
 def evalObserved (M : FiniteHiddenDAGSCM S projection)
     (intervention : HardIntervention S) (noise : M.NoiseAssignment) :
     S.Assignment :=
