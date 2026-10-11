@@ -40,6 +40,7 @@ jobs:
             Thesis.Examples.HiddenPathSearch
             Thesis.Examples.HiddenDAGCollapse
             Thesis.Examples.HiddenDAGSoundness
+            Thesis.Examples.HiddenDAGIdentification
       - name: Build complete Lean project
         working-directory: lean
         run: lake build

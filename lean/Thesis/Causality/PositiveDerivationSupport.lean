@@ -149,51 +149,68 @@ noncomputable def LocalDerivationSupport.ofObservationallyPositive
   | symm inner ih =>
       have innerZeroFree := inner.zeroFree_iff.mpr zeroFree
       let innerSupport := ih innerZeroFree assignment
-      exact ⟨innerSupport.2.1, innerSupport.1, innerSupport⟩
+      exact ⟨innerSupport.endpoints.2, innerSupport.endpoints.1, innerSupport⟩
   | trans first second firstIH secondIH =>
       let firstSupport := firstIH zeroFree assignment
       let secondSupport := secondIH (first.zeroFree_iff.mp zeroFree) assignment
-      exact ⟨firstSupport.1, secondSupport.2.1, firstSupport, secondSupport⟩
-  | doRule application =>
-      exact ⟨supported _ zeroFree assignment,
-        supported _ trivial assignment, ()⟩
-  | marginalization => exact ⟨supported _ zeroFree assignment, supported _ trivial assignment, ()⟩
-  | conditioning => exact ⟨supported _ zeroFree assignment, supported _ ⟨trivial, trivial⟩ assignment, ()⟩
-  | chain => exact ⟨supported _ zeroFree assignment, supported _ ⟨trivial, trivial⟩ assignment, ()⟩
-  | weightedChain => exact ⟨supported _ zeroFree assignment, supported _ ⟨trivial, trivial⟩ assignment, ()⟩
+      exact ⟨firstSupport.endpoints.1, secondSupport.endpoints.2, firstSupport, secondSupport⟩
+  | @doRule left right application =>
+      exact ⟨supported (.kernel left) zeroFree assignment,
+        supported (.kernel right) trivial assignment, ()⟩
+  | marginalization x y z w _disjoint =>
+      exact ⟨supported (.kernel ⟨y, x, w⟩) zeroFree assignment,
+        supported (.marginalize z (.kernel ⟨NodeSet.union y z, x, w⟩)) trivial assignment, ()⟩
+  | conditioning x y z w _disjoint =>
+      exact ⟨supported (.kernel ⟨y, x, NodeSet.union z w⟩) zeroFree assignment,
+        supported (.divide (.kernel ⟨NodeSet.union y z, x, w⟩) (.kernel ⟨z, x, w⟩))
+          ⟨trivial, trivial⟩ assignment, ()⟩
+  | chain x y z w _disjoint =>
+      exact ⟨supported (.kernel ⟨NodeSet.union y z, x, w⟩) zeroFree assignment,
+        supported (.multiply (.kernel ⟨y, x, NodeSet.union z w⟩) (.kernel ⟨z, x, w⟩))
+          ⟨trivial, trivial⟩ assignment, ()⟩
+  | weightedChain x y z w _disjoint =>
+      exact ⟨supported (.kernel ⟨NodeSet.union y z, x, w⟩) zeroFree assignment,
+        supported (.weightedMultiply (.kernel ⟨z, x, w⟩) (.kernel ⟨y, x, NodeSet.union z w⟩))
+          ⟨trivial, trivial⟩ assignment, ()⟩
   | multiplyComm first second =>
-      exact ⟨supported _ zeroFree assignment, supported _ ⟨zeroFree.2, zeroFree.1⟩ assignment, ()⟩
+      exact ⟨supported (.multiply first second) zeroFree assignment,
+        supported (.multiply second first) ⟨zeroFree.2, zeroFree.1⟩ assignment, ()⟩
   | multiplyAssoc first second third =>
-      exact ⟨supported _ zeroFree assignment,
-        supported _ ⟨zeroFree.1.1, zeroFree.1.2, zeroFree.2⟩ assignment, ()⟩
-  | marginalizeCongr nodes inner ih =>
-      exact ⟨supported _ zeroFree assignment,
-        supported _ (inner.zeroFree_iff.mp zeroFree) assignment,
+      exact ⟨supported (.multiply (.multiply first second) third) zeroFree assignment,
+        supported (.multiply first (.multiply second third))
+          ⟨zeroFree.1.1, zeroFree.1.2, zeroFree.2⟩ assignment, ()⟩
+  | @marginalizeCongr nodes left right inner ih =>
+      exact ⟨supported (.marginalize nodes left) zeroFree assignment,
+        supported (.marginalize nodes right) (inner.zeroFree_iff.mp zeroFree) assignment,
         fun variant _member => ih zeroFree variant⟩
-  | evaluateAtCongr fixed inner ih =>
-      exact ⟨supported _ zeroFree assignment,
-        supported _ (inner.zeroFree_iff.mp zeroFree) assignment, ih zeroFree fixed⟩
-  | addCongr first second firstIH secondIH =>
-      exact ⟨supported _ zeroFree assignment,
-        supported _ ⟨first.zeroFree_iff.mp zeroFree.1, second.zeroFree_iff.mp zeroFree.2⟩ assignment,
+  | @evaluateAtCongr fixed left right inner ih =>
+      exact ⟨supported (.evaluateAt fixed left) zeroFree assignment,
+        supported (.evaluateAt fixed right) (inner.zeroFree_iff.mp zeroFree) assignment, ih zeroFree fixed⟩
+  | @addCongr left left' right right' first second firstIH secondIH =>
+      exact ⟨supported (.add left right) zeroFree assignment,
+        supported (.add left' right')
+          ⟨first.zeroFree_iff.mp zeroFree.1, second.zeroFree_iff.mp zeroFree.2⟩ assignment,
         firstIH zeroFree.1 assignment, secondIH zeroFree.2 assignment⟩
-  | multiplyCongr first second firstIH secondIH =>
-      exact ⟨supported _ zeroFree assignment,
-        supported _ ⟨first.zeroFree_iff.mp zeroFree.1, second.zeroFree_iff.mp zeroFree.2⟩ assignment,
+  | @multiplyCongr left left' right right' first second firstIH secondIH =>
+      exact ⟨supported (.multiply left right) zeroFree assignment,
+        supported (.multiply left' right')
+          ⟨first.zeroFree_iff.mp zeroFree.1, second.zeroFree_iff.mp zeroFree.2⟩ assignment,
         firstIH zeroFree.1 assignment, secondIH zeroFree.2 assignment⟩
-  | weightedMultiplyCongr first second firstIH secondIH =>
-      exact ⟨supported _ zeroFree assignment,
-        supported _ ⟨first.zeroFree_iff.mp zeroFree.1, second.zeroFree_iff.mp zeroFree.2⟩ assignment,
+  | @weightedMultiplyCongr weight weight' factor factor' first second firstIH secondIH =>
+      exact ⟨supported (.weightedMultiply weight factor) zeroFree assignment,
+        supported (.weightedMultiply weight' factor')
+          ⟨first.zeroFree_iff.mp zeroFree.1, second.zeroFree_iff.mp zeroFree.2⟩ assignment,
         firstIH zeroFree.1 assignment, fun _positiveWeight => secondIH zeroFree.2 assignment⟩
-  | divideCongr numerator denominator numeratorIH denominatorIH =>
-      exact ⟨supported _ zeroFree assignment,
-        supported _ ⟨numerator.zeroFree_iff.mp zeroFree.1, denominator.zeroFree_iff.mp zeroFree.2⟩ assignment,
+  | @divideCongr left left' right right' numerator denominator numeratorIH denominatorIH =>
+      exact ⟨supported (.divide left right) zeroFree assignment,
+        supported (.divide left' right')
+          ⟨numerator.zeroFree_iff.mp zeroFree.1, denominator.zeroFree_iff.mp zeroFree.2⟩ assignment,
         numeratorIH zeroFree.1 assignment, denominatorIH zeroFree.2 assignment⟩
-  | eqCongr hleft hright inner ih =>
+  | @eqCongr left left' right right' hleft hright inner ih =>
       have innerZeroFree := hleft ▸ zeroFree
       let innerSupport := ih innerZeroFree assignment
-      exact ⟨supported _ zeroFree assignment,
-        supported _ (by rw [hright]; exact inner.zeroFree_iff.mp innerZeroFree) assignment,
+      exact ⟨supported left zeroFree assignment,
+        supported right (by rw [hright]; exact inner.zeroFree_iff.mp innerZeroFree) assignment,
         innerSupport⟩
 
 end Causality
