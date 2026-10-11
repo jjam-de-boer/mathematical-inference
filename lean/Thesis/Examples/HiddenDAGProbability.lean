@@ -53,6 +53,38 @@ theorem all_interventions_probability_agree (intervention : HardIntervention sig
       (sourceModel.interventionalValue intervention.value event) :=
   sourceModel.toHiddenDAGSCM_interventionalValue source_compatible intervention event
 
+/-! ## Unsupported conditionals remain distinct from supported zeros -/
+
+/-- The earlier constant source has observational zeros but retains the
+same canonical graph and independent root laws.  Its actual realization is
+constructed without a positivity premise. -/
+def zeroRealized : FiniteHiddenDAGSCM signature projection :=
+  noiseModel.toHiddenDAGSCM noiseModel_compatible
+
+def trueAssignment : signature.Assignment := fun _ => true
+
+def nullConditional : Kernel signature :=
+  ⟨NodeSet.singleton y, NodeSet.empty, NodeSet.singleton x⟩
+
+def zeroUnconditional : Kernel signature :=
+  ⟨NodeSet.singleton y, NodeSet.empty, NodeSet.empty⟩
+
+/-- Conditioning on `X = true` in the constant source is undefined. -/
+theorem source_null_conditional : nullConditional.denote noiseModel trueAssignment = none := by
+  decide +kernel
+
+/-- The native constructed model retains that missing conditional; it does
+not turn `0 / 0` into zero or an arbitrary chosen conditional distribution. -/
+theorem realized_null_conditional : zeroRealized.kernelDenote nullConditional trueAssignment = none := by
+  decide +kernel
+
+/-- Removing the null conditioner gives a supported zero outcome.  Testing
+the present value's numerator avoids demanding a particular denominator
+presentation for the rational zero. -/
+theorem realized_supported_zero :
+    (zeroRealized.kernelDenote zeroUnconditional trueAssignment).map (fun value => value.num) = some 0 := by
+  decide +kernel
+
 end HiddenDAGProbability
 end Examples
 end Causality
