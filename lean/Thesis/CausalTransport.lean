@@ -88,6 +88,7 @@ import Thesis.CausalTransport.HiddenDAGRealization
 import Thesis.CausalTransport.HiddenDAGRelayAssignment
 import Thesis.CausalTransport.HiddenDAGRelayEquations
 import Thesis.CausalTransport.HiddenDAGEvaluation
+import Thesis.CausalTransport.HiddenDAGProbability
 import Thesis.CausalTransport.Construction
 import Thesis.CausalTransport.Modal
 import Thesis.CausalTransport.ModalRealization

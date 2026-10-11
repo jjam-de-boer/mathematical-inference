@@ -45,6 +45,7 @@ jobs:
             Thesis.CausalTransport.HiddenDAGRelayAssignment
             Thesis.CausalTransport.HiddenDAGRelayEquations
             Thesis.CausalTransport.HiddenDAGEvaluation
+            Thesis.CausalTransport.HiddenDAGProbability
             Thesis.CausalTransport.SupportAwareChainCompilation
             Thesis.Examples.LocalSupportIdentification
             Thesis.Examples.HiddenPathSearch
@@ -53,6 +54,7 @@ jobs:
             Thesis.Examples.HiddenDAGIdentification
             Thesis.Examples.HiddenDAGRootPlacement
             Thesis.Examples.HiddenDAGRealization
+            Thesis.Examples.HiddenDAGProbability
       - name: Build complete Lean project
         working-directory: lean
         run: lake build
