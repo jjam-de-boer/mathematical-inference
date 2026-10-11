@@ -192,7 +192,7 @@ noncomputable def currentKernelMarginalPublishedCertificate
       (.kernel ⟨remaining, externalAction, NodeSet.empty⟩)) :
     PublishedIdentificationCertificate C correct
       (.kernel ⟨kept, externalAction, NodeSet.empty⟩) := by
-  let _ := obsPositive
+  let _ := @obsPositive
   exact currentKernelMarginalPublishedCertificateOfSupport correct remaining
     externalAction kept outside keptSubset input
 

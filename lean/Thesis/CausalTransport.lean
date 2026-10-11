@@ -21,6 +21,7 @@ import Thesis.CausalTransport.LocalSupportIdentification
 import Thesis.CausalTransport.Completeness
 import Thesis.CausalTransport.ChainCompilation
 import Thesis.CausalTransport.SupportAwareChainCompilation
+import Thesis.CausalTransport.SupportAwareKernelCompilation
 import Thesis.CausalTransport.KernelIdentification
 import Thesis.CausalTransport.KernelCompilation
 import Thesis.CausalTransport.ProductCompilation
