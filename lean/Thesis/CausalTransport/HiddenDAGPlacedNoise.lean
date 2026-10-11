@@ -25,8 +25,10 @@ of the complete outer prior, not merely stipulated in a factor field.
 value.  Thus no root alphabet inhabitant is selected, observational zeros
 and zero-weight noise atoms remain allowed, and empty root/node products
 retain their unique empty assignment.  These are genuine probability data
-for the reverse construction.  Typed relay mechanisms and equality of the
-resulting original-DAG observable/interventional laws remain to be proved.
+for the reverse construction.  `HiddenDAGRealization` supplies its typed relay
+mechanisms and `HiddenDAGEvaluation` proves unitwise evaluation preservation.
+Equality of the complete grouped-noise law, and hence of the resulting
+original-DAG observable/interventional probability laws, remains to be proved.
 -/
 
 namespace HiddenDAGPlacedNoise

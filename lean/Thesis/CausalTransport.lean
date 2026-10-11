@@ -230,8 +230,11 @@ roots as independent finite private-noise channels, preserving their original
 factor marginals and both inner and outer product laws.  `HiddenDAGRelayValues`
 gives explicit finite hidden alphabets, retaining unchanged observed domains;
 `HiddenDAGRealization` constructs the declared-parent-only relay mechanisms and
-the full hidden-DAG SCM.  Generic unitwise and joint-probability preservation
-of the resulting observed/interventional laws are still needed.
+the full hidden-DAG SCM.  `HiddenDAGRelayAssignment` and `HiddenDAGRelayEquations`
+prove exact readback of every required signal and root input;
+`HiddenDAGEvaluation` proves generic unitwise preservation under every hard
+intervention, without positivity or value-richness assumptions.  Complete
+joint-probability preservation of the grouped noise law is still needed.
 Countermodel lifting, zero-aware recursive ID/IDC, and the final
 support-qualified hidden-DAG completeness bridge remain separate obligations.
 

@@ -23,9 +23,10 @@ records from `HiddenDAGPlacedNoise`, not supplied semantic laws.
 The constructor below gives a genuine finite hidden-DAG SCM for every
 compatible canonical projected model.  No relay-readiness predicate or fixed
 hidden-alphabet restriction is an additional premise.  Construction alone is
-not the reverse completeness theorem: unit-level evaluation preservation and
-the full probability-preservation proof must still relate this record to its
-original projected model before lifting counterexamples.
+not the reverse completeness theorem.  `HiddenDAGEvaluation` now proves
+unit-level evaluation preservation under every hard intervention.  The full
+joint probability-preservation proof must still relate this record's grouped
+noise prior to its original projected model before lifting counterexamples.
 -/
 
 namespace HiddenDAGRelay

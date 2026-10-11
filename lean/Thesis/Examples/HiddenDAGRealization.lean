@@ -1,4 +1,4 @@
-import Thesis.CausalTransport.HiddenDAGRealization
+import Thesis.CausalTransport.HiddenDAGEvaluation
 import Thesis.Examples.HiddenDAGRootPlacement
 
 namespace Thesis
@@ -23,9 +23,10 @@ factual `Y` is false, but setting `X = true` makes `Y` true.  Re-evaluating the
 old factual `X` equation behind the relay would fail this regression.
 
 These are kernel-checked executions of the actual general constructor, not a
-hand-written full-DAG model.  The unrestricted all-model preservation theorem
-and probability preservation are separate obligations, not assumptions used
-to obtain the displayed results.
+hand-written full-DAG model.  The final example also instantiates the general
+unitwise theorem for every root assignment and hard intervention on this
+graph.  Complete probability preservation remains a separate obligation, not
+an assumption used to obtain any of these results.
 -/
 
 /-- Keep the actual root laws and incidence, replacing the constant source
@@ -116,6 +117,17 @@ theorem hidden_u_value_domain :
     realized.NodeValue u = HiddenDAGRelay.Payload sourceModel := by
   change HiddenDAGRelay.NodeValue sourceModel projection u = HiddenDAGRelay.Payload sourceModel
   exact HiddenDAGRelay.nodeValue_of_none (P := projection) sourceModel u (by decide +kernel)
+
+/-- The general unit-preservation theorem specializes to this nontrivial
+multi-channel relay geometry for *all* original units and interventions.
+The concrete decision proofs above independently test the forced values;
+this statement does not infer a general result from those finite examples. -/
+theorem all_interventions_observed_values_agree (intervention : HardIntervention signature)
+    (roots : sourceModel.latent.Assignment) :
+    realized.evalObserved intervention
+      (HiddenDAGPlacedNoise.encode sourceModel source_compatible roots) =
+      sourceModel.evalUnder intervention.value roots :=
+  sourceModel.toHiddenDAGSCM_evalObserved source_compatible intervention roots
 
 end HiddenDAGRealization
 end Examples

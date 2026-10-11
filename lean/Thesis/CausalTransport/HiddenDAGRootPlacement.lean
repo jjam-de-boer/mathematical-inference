@@ -23,8 +23,10 @@ in that node's private-noise vector, not be identified as one random variable.
 
 Unused roots have their own constructor.  No source is invented for them,
 so empty observed signatures and empty hidden graphs need no selected default
-vertex.  Actual noise grouping, typed hidden-node relay mechanisms and their
-probability preservation remain the next model-realization obligations.
+vertex.  `HiddenDAGPlacedNoise` constructs the actual noise grouping;
+`HiddenDAGRealization` supplies typed hidden-node relay mechanisms and
+`HiddenDAGEvaluation` proves unitwise preservation.  Complete probability
+preservation remains a separate model-realization obligation.
 -/
 
 variable {S : ObservedSignature} {P : FiniteLatentProjection S}
