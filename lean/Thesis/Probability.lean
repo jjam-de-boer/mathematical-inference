@@ -36,6 +36,7 @@ import Thesis.Probability.ColliderChannel
 import Thesis.Probability.ColliderRealization
 import Thesis.Probability.Construction
 import Thesis.Probability.FiniteProductResponse
+import Thesis.Probability.FiniteProductAllocation
 import Thesis.Probability.FiniteProductBalance
 import Thesis.Probability.Distros
 

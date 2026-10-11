@@ -27,6 +27,7 @@ jobs:
           # concrete regressions, rather than first recompiling every large
           # hedge countermodel fixture.  The full build below is not removed.
           build-args: >-
+            Thesis.Probability.FiniteProductAllocation
             Thesis.Causality.ObservationalSupport
             Thesis.Causality.PositiveDerivationSupport
             Thesis.Causality.HiddenPathSearch

@@ -32,6 +32,29 @@ theorem qProduct_pointwise_mul (n : Nat) (left right : Fin n → QProb) :
           (inductionHypothesis (fun index => left index.castSucc) (fun index => right index.castSucc)))
         (by simp only [qProduct, QProb.Equiv, QProb.mul]; ac_rfl)
 
+/-- Exchange the two orders of a finite matrix product.  Zero factors and
+arbitrary rational presentations are retained; associativity and finite
+pointwise regrouping suffice, with no cancellation or positive-cell premise.
+This permits independent channels grouped by node to be compared rootwise. -/
+theorem qProduct_exchange (rows columns : Nat)
+    (values : Fin rows → Fin columns → QProb) :
+    QProb.Equiv
+      (qProduct rows (fun row => qProduct columns (values row)))
+      (qProduct columns (fun column => qProduct rows (fun row => values row column))) := by
+  induction rows with
+  | zero => exact QProb.equiv_symm (qProduct_one columns)
+  | succ rows inductionHypothesis =>
+      change QProb.Equiv
+        (QProb.mul (qProduct columns (values (Fin.last rows)))
+          (qProduct rows (fun row => qProduct columns (values row.castSucc))))
+        (qProduct columns (fun column => QProb.mul (values (Fin.last rows) column)
+          (qProduct rows (fun row => values row.castSucc column))))
+      exact QProb.equiv_trans
+        (QProb.mul_congr (QProb.equiv_refl _)
+          (inductionHypothesis (fun row => values row.castSucc)))
+        (QProb.equiv_symm (qProduct_pointwise_mul columns (values (Fin.last rows))
+          (fun column => qProduct rows (fun row => values row.castSucc column))))
+
 /-- Keep every factor except the explicitly selected coordinate.  No index
 is erased or renumbered, so this definition also handles gapped selections. -/
 def qProductWithout (n : Nat) (chosen : Fin n) (values : Fin n → QProb) : QProb :=
