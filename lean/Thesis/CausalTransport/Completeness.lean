@@ -1,6 +1,6 @@
 import Thesis.CausalTransport.Correspondence
 import Thesis.CausalTransport.DSeparationCorrectness
-import Thesis.Causality.IdentificationInduction
+import Thesis.Causality.Legacy.IdentificationInduction
 import Thesis.Causality.IdentificationSearch
 import Thesis.Causality.PairRoot
 import Thesis.Probability.ConstructivePermutation
@@ -13,15 +13,14 @@ open Probability
 /-!
 # Constructive completeness machinery for finite identification
 
-This module develops the checked components needed to inhabit
-`PublishedCompleteness` for `GraphModelClass.positive`: supported certificates
-for successful ID branches, finite extraction of hedge witnesses from failed
-runs, and positive countermodels for realizable hedge shapes.  The published
-record is not yet inhabited.  The executable fuel bound is proved total below,
-so public joint and conditional ID cannot return `unfinished`; every public
-joint failure also yields a hedge witness through its structural trace.  The
-remaining load-bearing obligations are the general positive original-query
-hedge countermodel and the irreducible conditional terminal countermodel.
+This module retains shared certificate, graph, and countermodel lemmas alongside
+the quarantined legacy program's historical trace proofs.  The completed
+`PublishedCompleteness (GraphModelClass.positive graph)` package is assembled
+in `HedgeChannelCompleteness`, using the corrected current-kernel engines;
+it does not certify `Legacy.identifyJoint` or `Legacy.identifyConditional`.
+The legacy executable fuel bound is proved total below, and its failures yield
+hedge witnesses through exact historical traces.  These are control-flow and
+failure facts, not general semantic correctness of its identified outputs.
 `KernelFailureExtraction` now supplies original-query hedge transport for
 the replacement program by structural induction, while
 `ConditionalFailureExtraction` retains the full conditional exchange trace
@@ -31,7 +30,7 @@ the current-kernel replacement:
 `Examples.FrontDoorIdentification` in
 `IdentificationRegression` proves that one legacy identified formula is
 incorrect even in a positive compatible model, and consequently that the
-legacy formula-aligned `PublishedJointTraceCompiler` cannot be inhabited.
+legacy formula-aligned `Legacy.PublishedJointTraceCompiler` cannot be inhabited.
 `IdentificationKernel` supplies the replacement recursion and
 `KernelIdentification` proves its quadratic progress bound.  The new success
 compiler carries the actual current input and its support invariants through
@@ -81,7 +80,7 @@ and `KernelProductCompilation` supply its supported branch constructors.
 The remaining failure/countermodel work must likewise target the replacement
 program.  The historical obligations were:
 
-* success of `identifyJoint` on a nonempty action implies a
+* success of `Legacy.identifyJoint` on a nonempty action implies a
   `DoCalculusDerivation` to the identified formula, hence a
   support-carrying `IdentificationCertificate`; the empty-action base
   case is `emptyActionIdentifiedPublishedCertificate`, whose formula is
@@ -459,8 +458,8 @@ not by search through a `Prop`.
 /-!
 ### Top-level structural traces
 
-The generic trace relations retain every argument of `identifyFuel`.  These
-aliases specialize them to the public `identifyJoint` invocation, so subsequent
+The generic trace relations retain every argument of `Legacy.identifyFuel`.  These
+aliases specialize them to the public `Legacy.identifyJoint` invocation, so subsequent
 completeness proofs can enter structural induction without repeatedly exposing
 the engine's fuel, full remaining set, and observational starting term.
 -/
@@ -487,9 +486,9 @@ abbrev JointIdentificationUnfinishedTrace (G : ObservedGraph S)
 theorem identifyJoint_eq_failed_iff_failureTrace
     (G : ObservedGraph S) (q : JointKernelQuery S)
     (fail : IdentificationFail S) :
-    identifyJoint G q = IdentificationOutcome.failed fail ↔
+    Legacy.identifyJoint G q = IdentificationOutcome.failed fail ↔
       Nonempty (JointIdentificationFailureTrace G q fail) := by
-  simpa [identifyJoint, JointIdentificationFailureTrace] using
+  simpa [Legacy.identifyJoint, JointIdentificationFailureTrace] using
     identifyFuel_eq_failed_iff_failureTrace (identificationFuel S) G
       NodeSet.full q.outcome q.action (observationalJointTerm S) fail
 
@@ -497,9 +496,9 @@ theorem identifyJoint_eq_failed_iff_failureTrace
 theorem identifyJoint_eq_identified_iff_successTrace
     (G : ObservedGraph S) (q : JointKernelQuery S)
     (term : ProbabilityTerm S) :
-    identifyJoint G q = IdentificationOutcome.identified term ↔
+    Legacy.identifyJoint G q = IdentificationOutcome.identified term ↔
       Nonempty (JointIdentificationSuccessTrace G q term) := by
-  simpa [identifyJoint, JointIdentificationSuccessTrace] using
+  simpa [Legacy.identifyJoint, JointIdentificationSuccessTrace] using
     identifyFuel_eq_identified_iff_successTrace (identificationFuel S) G
       NodeSet.full q.outcome q.action (observationalJointTerm S) term
 
@@ -514,9 +513,9 @@ theorem JointIdentificationSuccessTrace.actionFree
 /-- The public unfinished sentinel is exactly a top-level unfinished trace. -/
 theorem identifyJoint_eq_unfinished_iff_unfinishedTrace
     (G : ObservedGraph S) (q : JointKernelQuery S) :
-    identifyJoint G q = IdentificationOutcome.unfinished ↔
+    Legacy.identifyJoint G q = IdentificationOutcome.unfinished ↔
       Nonempty (JointIdentificationUnfinishedTrace G q) := by
-  simpa [identifyJoint, JointIdentificationUnfinishedTrace] using
+  simpa [Legacy.identifyJoint, JointIdentificationUnfinishedTrace] using
     identifyFuel_eq_unfinished_iff_unfinishedTrace (identificationFuel S) G
       NodeSet.full q.outcome q.action (observationalJointTerm S)
 
@@ -525,7 +524,7 @@ Constructive top-level case analysis for executable joint identification.
 
 Unlike a disjunction of bare result equations, each case retains the complete
 structural trace needed by a downstream induction.  The classifier is obtained
-by evaluating `identifyJoint` and therefore uses neither excluded middle nor a
+by evaluating `Legacy.identifyJoint` and therefore uses neither excluded middle nor a
 choice of a recursive branch.
 -/
 inductive JointIdentificationTrace (G : ObservedGraph S)
@@ -540,7 +539,7 @@ inductive JointIdentificationTrace (G : ObservedGraph S)
 noncomputable def identifyJoint_trace (G : ObservedGraph S)
     (q : JointKernelQuery S) :
     JointIdentificationTrace G q := by
-  cases result : identifyJoint G q with
+  cases result : Legacy.identifyJoint G q with
   | identified term =>
       exact .identified term
         (IdentificationSuccessTrace.of_eq_identified (identificationFuel S) G
@@ -566,7 +565,7 @@ proposition or invoking choice.
 noncomputable def identifyJointImmediateFailureSite
     (G : ObservedGraph S) (q : JointKernelQuery S)
     (fail : IdentificationFail S)
-    (result : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (result : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     IdentificationImmediateFailureSite G fail :=
   (IdentificationFailureTrace.of_eq_failed (identificationFuel S) G
     NodeSet.full q.outcome q.action (observationalJointTerm S) result).immediateSite
@@ -592,7 +591,7 @@ kernel), they are identifiable in every class.
 theorem identifyJoint_empty_action_succeeds (G : ObservedGraph S)
     (q : JointKernelQuery S)
     (emptyAction : NodeSet.isEmpty q.action = true) :
-    identifyJoint G q =
+    Legacy.identifyJoint G q =
       IdentificationOutcome.identified
         (.marginalize (NodeSet.diff NodeSet.full q.outcome)
           (observationalJointTerm S)) :=
@@ -602,7 +601,7 @@ theorem identifyJoint_empty_action_succeeds (G : ObservedGraph S)
 theorem identifyJoint_success_actionFree
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {term : ProbabilityTerm S}
-    (h : identifyJoint G q = IdentificationOutcome.identified term) :
+    (h : Legacy.identifyJoint G q = IdentificationOutcome.identified term) :
     term.ActionFree :=
   identifyJoint_identified_actionFree G q h
 
@@ -946,7 +945,7 @@ noncomputable def emptyActionPublishedConditionalCertificate
 theorem identifyConditional_empty_action_succeeds
     (G : ObservedGraph S) (q : ConditionalKernelQuery S)
     (emptyAction : NodeSet.isEmpty q.action = true) :
-    identifyConditional G q =
+    Legacy.identifyConditional G q =
       IdentificationOutcome.identified
         (.divide
           (.marginalize
@@ -963,7 +962,7 @@ theorem emptyActionIdentifiedConditionalTerm_eq_identifyConditional
     (G : ObservedGraph S) (q : ConditionalKernelQuery S)
     (emptyAction : NodeSet.isEmpty q.action = true)
     {term : ProbabilityTerm S}
-    (h : identifyConditional G q = IdentificationOutcome.identified term) :
+    (h : Legacy.identifyConditional G q = IdentificationOutcome.identified term) :
     term =
       .divide
         (.marginalize
@@ -1158,7 +1157,7 @@ noncomputable def emptyActionIdentifiedPublishedConditionalCertificate
 /--
 The published certificate whose formula is the ID engine's empty-action
 output.  Unlike `emptyActionPublishedCertificate`, which reflects the
-source kernel, this one is the success-to-formula map: `identifyJoint`
+source kernel, this one is the success-to-formula map: `Legacy.identifyJoint`
 returns this same marginal of `P(V)`.
 -/
 noncomputable def emptyActionIdentifiedPublishedCertificate {G : ObservedGraph S}
@@ -3161,7 +3160,7 @@ def chainSingletonIdentifiedIdDerivation {G : ObservedGraph S}
             (chainSingleton_disjoint_predecessors q hmem)))))
 
 /-- Positive-class singleton 4.2 certificate: formula matches
-`identifyJoint` on a one-vertex free c-component equal to `Y`.  The
+`Legacy.identifyJoint` on a one-vertex free c-component equal to `Y`.  The
 action may be a subset of the topological predecessors; extra
 predecessors are inserted by rule 1. -/
 noncomputable def chainSingletonIdentifiedPublishedCertificate
@@ -6052,7 +6051,7 @@ theorem emptyActionIdentifiedTerm_eq_identifyJoint
     (G : ObservedGraph S) (q : JointKernelQuery S)
     (emptyAction : NodeSet.isEmpty q.action = true)
     {term : ProbabilityTerm S}
-    (h : identifyJoint G q = IdentificationOutcome.identified term) :
+    (h : Legacy.identifyJoint G q = IdentificationOutcome.identified term) :
     term =
       .marginalize (NodeSet.diff NodeSet.full q.outcome)
         (observationalJointTerm S) := by
@@ -6096,7 +6095,7 @@ theorem identifyJoint_eq_identified_of_empty_free
           q.outcome)
         NodeSet.full = true)
     (hfc : G.cComponents (NodeSet.diff NodeSet.full q.action) = []) :
-    identifyJoint G q =
+    Legacy.identifyJoint G q =
       IdentificationOutcome.identified
         (.marginalize NodeSet.full (observationalJointTerm S)) := by
   have hinter : NodeSet.inter q.action NodeSet.full = q.action :=
@@ -6118,7 +6117,7 @@ theorem identifyJoint_eq_identified_of_empty_free
         (NodeSet.diff NodeSet.full (NodeSet.inter q.action NodeSet.full)) =
         [] := by
     simpa [hinter] using hfc
-  rw [identifyJoint, identificationFuel]
+  rw [Legacy.identifyJoint, identificationFuel]
   simpa [hinter, hy] using
     identifyFuel_eq_identified_of_empty_free
       (S.count * Nat.succ S.count * Nat.succ S.count) G NodeSet.full
@@ -6142,7 +6141,7 @@ theorem identifyJoint_eq_identified_of_first_shrink_empty
         (NodeSet.inter q.action
           (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
             q.outcome)) = true) :
-    identifyJoint G q =
+    Legacy.identifyJoint G q =
       IdentificationOutcome.identified
         (.marginalize
           (NodeSet.diff
@@ -6186,7 +6185,7 @@ theorem identifyJoint_eq_identified_of_first_shrink_empty
       S.count * Nat.succ S.count * Nat.succ S.count =
         Nat.succ (Nat.pred (S.count * Nat.succ S.count * Nat.succ S.count)) :=
     (Nat.succ_pred_eq_of_pos hpos).symm
-  rw [identifyJoint, identificationFuel, hn]
+  rw [Legacy.identifyJoint, identificationFuel, hn]
   simpa [hinter, hy] using
     identifyFuel_eq_identified_of_shrink_empty
       (Nat.pred (S.count * Nat.succ S.count * Nat.succ S.count)) G
@@ -6543,7 +6542,7 @@ theorem identifyJoint_eq_identified_of_chain
     (hany :
       (G.cComponents NodeSet.full).any
         (fun piece => NodeSet.equal piece component) = true) :
-    identifyJoint G q =
+    Legacy.identifyJoint G q =
       IdentificationOutcome.identified
         (.marginalize (NodeSet.diff component q.outcome)
           (chainProduct NodeSet.full component)) := by
@@ -6566,7 +6565,7 @@ theorem identifyJoint_eq_identified_of_chain
         (NodeSet.diff NodeSet.full (NodeSet.inter q.action NodeSet.full)) =
         [component] := by
     simpa [hinter] using hfc
-  rw [identifyJoint, identificationFuel]
+  rw [Legacy.identifyJoint, identificationFuel]
   simpa [hinter, hy] using
     identifyFuel_eq_identified_of_chain
       (S.count * Nat.succ S.count * Nat.succ S.count) G NodeSet.full
@@ -6593,7 +6592,7 @@ theorem identifyJoint_eq_identified_of_chain_outcome
     (hany :
       (G.cComponents NodeSet.full).any
         (fun piece => NodeSet.equal piece q.outcome) = true) :
-    identifyJoint G q =
+    Legacy.identifyJoint G q =
       IdentificationOutcome.identified
         (.marginalize (NodeSet.diff q.outcome q.outcome)
           (chainProduct NodeSet.full q.outcome)) :=
@@ -6621,8 +6620,8 @@ theorem identifyJoint_eq_identified_of_first_restrict
         (fun piece => NodeSet.equal piece component) = false)
     (hcont :
       G.containingCComponent NodeSet.full component = some larger)
-    (h : identifyJoint G q = IdentificationOutcome.identified term) :
-    identifyFuel
+    (h : Legacy.identifyJoint G q = IdentificationOutcome.identified term) :
+    Legacy.identifyFuel
         (S.count * Nat.succ S.count * Nat.succ S.count) G larger
         q.outcome (NodeSet.inter q.action larger)
         (chainProduct NodeSet.full larger) =
@@ -6647,7 +6646,7 @@ theorem identifyJoint_eq_identified_of_first_restrict
         [component] := by
     simpa [hinter] using hfc
   have hfuel :
-      identifyFuel (identificationFuel S) G NodeSet.full q.outcome
+      Legacy.identifyFuel (identificationFuel S) G NodeSet.full q.outcome
         q.action (observationalJointTerm S) =
         IdentificationOutcome.identified term := h
   rw [identificationFuel] at hfuel
@@ -6680,7 +6679,7 @@ theorem identifyJoint_eq_identified_of_first_restrict_empty
     (hcont :
       G.containingCComponent NodeSet.full component = some larger)
     (hexNested : NodeSet.isEmpty (NodeSet.inter q.action larger) = true) :
-    identifyJoint G q =
+    Legacy.identifyJoint G q =
       IdentificationOutcome.identified
         (.marginalize
           (NodeSet.diff larger (NodeSet.inter q.outcome larger))
@@ -6718,7 +6717,7 @@ theorem identifyJoint_eq_identified_of_first_restrict_empty
       S.count * Nat.succ S.count * Nat.succ S.count =
         Nat.succ (Nat.pred (S.count * Nat.succ S.count * Nat.succ S.count)) :=
     (Nat.succ_pred_eq_of_pos hpos).symm
-  rw [identifyJoint, identificationFuel, hn]
+  rw [Legacy.identifyJoint, identificationFuel, hn]
   simpa [hinter, hy] using
     identifyFuel_eq_identified_of_restrict_empty
       (Nat.pred (S.count * Nat.succ S.count * Nat.succ S.count)) G
@@ -6743,7 +6742,7 @@ theorem identifyJoint_eq_identified_of_first_product
     (hfc :
       G.cComponents (NodeSet.diff NodeSet.full q.action) =
         component :: component2 :: rest)
-    (h : identifyJoint G q = IdentificationOutcome.identified term) :
+    (h : Legacy.identifyJoint G q = IdentificationOutcome.identified term) :
     Exists fun terms =>
       term =
           ProbabilityTerm.marginalize
@@ -6751,7 +6750,7 @@ theorem identifyJoint_eq_identified_of_first_product
               (NodeSet.union q.outcome q.action))
             (productTerms terms) ∧
         (component :: component2 :: rest).map (fun piece =>
-            identifyFuel
+            Legacy.identifyFuel
               (S.count * Nat.succ S.count * Nat.succ S.count) G
               NodeSet.full piece (NodeSet.diff NodeSet.full piece)
               (observationalJointTerm S)) =
@@ -6776,7 +6775,7 @@ theorem identifyJoint_eq_identified_of_first_product
         component :: component2 :: rest := by
     simpa [hinter] using hfc
   have hfuel :
-      identifyFuel (identificationFuel S) G NodeSet.full q.outcome
+      Legacy.identifyFuel (identificationFuel S) G NodeSet.full q.outcome
         q.action (observationalJointTerm S) =
         IdentificationOutcome.identified term := h
   rw [identificationFuel] at hfuel
@@ -7552,7 +7551,7 @@ theorem identifyFuel_ne_unfinished_of_rank_lt
     (remaining outcome action : NodeSet S)
     (current : ProbabilityTerm S)
     (enoughFuel : identificationTraceRank G remaining action < fuel) :
-    identifyFuel fuel G remaining outcome action current ≠
+    Legacy.identifyFuel fuel G remaining outcome action current ≠
       (IdentificationOutcome.unfinished : IdentificationOutcome S) := by
   intro unfinished
   let trace :=
@@ -7600,7 +7599,7 @@ theorem identificationTraceRank_full_lt_identificationFuel
 theorem identifyJoint_ne_unfinished
     {S : ObservedSignature.{0}}
     (G : ObservedGraph S) (q : JointKernelQuery S) :
-    identifyJoint G q ≠ IdentificationOutcome.unfinished := by
+    Legacy.identifyJoint G q ≠ IdentificationOutcome.unfinished := by
   exact identifyFuel_ne_unfinished_of_rank_lt
     (identificationFuel S) G NodeSet.full q.outcome q.action
     (observationalJointTerm S)
@@ -7623,7 +7622,7 @@ noncomputable def identifyJoint_terminalTrace
     {S : ObservedSignature.{0}}
     (G : ObservedGraph S) (q : JointKernelQuery S) :
     JointIdentificationTerminalTrace G q := by
-  cases result : identifyJoint G q with
+  cases result : Legacy.identifyJoint G q with
   | identified term =>
       exact .identified term
         (IdentificationSuccessTrace.of_eq_identified (identificationFuel S) G
@@ -7639,22 +7638,22 @@ noncomputable def identifyJoint_terminalTrace
 theorem identifyConditional_ne_unfinished
     {S : ObservedSignature.{0}}
     (G : ObservedGraph S) (q : ConditionalKernelQuery S) :
-    identifyConditional G q ≠ IdentificationOutcome.unfinished := by
+    Legacy.identifyConditional G q ≠ IdentificationOutcome.unfinished := by
   intro result
   have numeratorTotal := identifyJoint_ne_unfinished G q.jointNumerator
   have denominatorTotal := identifyJoint_ne_unfinished G q.jointDenominator
-  cases numeratorResult : identifyJoint G q.jointNumerator with
+  cases numeratorResult : Legacy.identifyJoint G q.jointNumerator with
   | identified numerator =>
-      cases denominatorResult : identifyJoint G q.jointDenominator with
+      cases denominatorResult : Legacy.identifyJoint G q.jointDenominator with
       | identified denominator =>
-          simp [identifyConditional, numeratorResult, denominatorResult] at result
+          simp [Legacy.identifyConditional, numeratorResult, denominatorResult] at result
       | failed fail =>
-          simp [identifyConditional, numeratorResult, denominatorResult] at result
+          simp [Legacy.identifyConditional, numeratorResult, denominatorResult] at result
       | unfinished =>
           exact denominatorTotal denominatorResult
   | failed fail =>
-      cases denominatorResult : identifyJoint G q.jointDenominator <;>
-        simp [identifyConditional, numeratorResult, denominatorResult] at result
+      cases denominatorResult : Legacy.identifyJoint G q.jointDenominator <;>
+        simp [Legacy.identifyConditional, numeratorResult, denominatorResult] at result
   | unfinished =>
       exact numeratorTotal numeratorResult
 
@@ -7863,7 +7862,7 @@ theorem thinnedHedgeSelection_largeVerticesReady_of_action_seed
 theorem thinnedHedgeSelection_largeVerticesReady_of_joint_fail
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     {seedY seedX : Fin S.count}
     (hY : forestSeed q.outcome fail.remaining = some seedY)
     (hX : NodeSet.firstMember (NodeSet.inter fail.remaining q.action) =
@@ -7964,7 +7963,7 @@ theorem identifyFuel_eq_failed_free_self
     (remaining outcome action : NodeSet S)
     (current : ProbabilityTerm S)
     {fail : IdentificationFail S}
-    (h : identifyFuel fuel G remaining outcome action current =
+    (h : Legacy.identifyFuel fuel G remaining outcome action current =
       IdentificationOutcome.failed fail) :
     Exists fun root =>
       fail.free root = true ∧
@@ -7981,7 +7980,7 @@ theorem identifyFuel_eq_failed_free_self
 theorem identifyJoint_eq_failed_free
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (h : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (h : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     NodeSet.Subset fail.free fail.remaining ∧
       Exists fun root =>
         fail.free root = true ∧
@@ -7999,7 +7998,7 @@ theorem identifyJoint_eq_failed_free
 theorem failedHedgeSelection_small_single
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     G.isSingleCComponent (failedHedgeSelection fail).small = true := by
   rcases (identifyJoint_eq_failed_free G q hfail).2 with ⟨root, hroot, hEq⟩
   exact isSingleCComponent_of_self G fail.free hroot hEq
@@ -8007,7 +8006,7 @@ theorem failedHedgeSelection_small_single
 theorem failedHedgeSelection_small_nonempty
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     NodeSet.isEmpty (failedHedgeSelection fail).small = false :=
   isSingleCComponent_nonempty G _
     (failedHedgeSelection_small_single G q hfail)
@@ -8015,7 +8014,7 @@ theorem failedHedgeSelection_small_nonempty
 theorem failedHedgeSelection_small_subset
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     NodeSet.subsetBool (failedHedgeSelection fail).small
       (failedHedgeSelection fail).large = true :=
   (NodeSet.subsetBool_eq_true_iff _ _).mpr
@@ -8024,7 +8023,7 @@ theorem failedHedgeSelection_small_subset
 theorem failedHedgeSelection_child_wellFormed
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     childWellFormedBool (failedHedgeSelection fail).large
       (failedHedgeSelection fail).child = true :=
   closedForestChild_wellFormed fail.remaining fail.free
@@ -8039,14 +8038,14 @@ theorem failedHedgeSelection_childClosed
 theorem failedHedgeSelection_large_single
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     G.isSingleCComponent (failedHedgeSelection fail).large = true :=
   identifyJoint_eq_failed G q hfail
 
 theorem failedHedgeSelection_large_nonempty
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     NodeSet.isEmpty (failedHedgeSelection fail).large = false :=
   isSingleCComponent_nonempty G _
     (failedHedgeSelection_large_single G q hfail)
@@ -8058,7 +8057,7 @@ still meets the original action.
 theorem failedHedgeSelection_largeVerticesReady
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hmeets :
       NodeSet.meetsBool (failedHedgeSelection fail).large q.action =
         true) :
@@ -8079,7 +8078,7 @@ of `closedForestChild`.
 theorem failedHedgeSelection_smallForestCore
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     ((!NodeSet.isEmpty (failedHedgeSelection fail).small) &&
       G.isSingleCComponent (failedHedgeSelection fail).small &&
       NodeSet.subsetBool (failedHedgeSelection fail).small
@@ -8171,7 +8170,7 @@ successor in the remaining set.
 theorem failedHedgeSelection_keptSinks_of_ancestral
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hanc :
       NodeSet.equal
         (G.ancestralSet fail.remaining
@@ -8220,7 +8219,7 @@ of that component in `G_{\overline{cut}}`.  The cut is disjoint from
 theorem failedHedgeSelection_keptSinks_of_free_ancestral
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hanc :
       NodeSet.equal
         (G.ancestralSet fail.remaining
@@ -8268,7 +8267,7 @@ the free component and the kept sinks lie in that component.
 theorem failedHedgeSelection_smallForestReady_of
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hdisj :
       NodeSet.disjointBool (failedHedgeSelection fail).small q.action =
         true)
@@ -8416,7 +8415,7 @@ theorem rootsReachOutcomeBool_of_each_ancestor
 theorem failedHedgeSelection_rootsReach_of_ancestral
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hanc :
       NodeSet.equal
         (G.ancestralSet fail.remaining (GraphMutilation.bar q.action)
@@ -8438,7 +8437,7 @@ small-side forest tests pass.
 theorem failedHedgeSelection_tests_of
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hmeets :
       NodeSet.meetsBool (failedHedgeSelection fail).large q.action = true)
     (hreach :
@@ -8482,7 +8481,7 @@ outcome, hence from remaining outcome vertices.
 theorem failedHedgeSelection_notY_of_cut
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hsub :
       NodeSet.Subset (NodeSet.diff fail.remaining fail.free) q.action) :
     NodeSet.Disjoint (NodeSet.diff fail.remaining fail.free)
@@ -8500,7 +8499,7 @@ ancestral of the original outcome in `G_{\overline{cut}}`.
 theorem failedHedgeSelection_tests_of_local_action
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hfree :
       NodeSet.equal fail.free
         (NodeSet.diff fail.remaining
@@ -10315,7 +10314,7 @@ Top-level ID failure with a remaining-local original action yields a
 theorem hedgeWitness?_eq_some_of_failed_local_action
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hfree :
       NodeSet.equal fail.free
         (NodeSet.diff fail.remaining
@@ -10340,7 +10339,7 @@ shrink and 4.3 restriction keep it.
 theorem failedHedgeSelection_tests_of_site_agrees
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (localOutcome localAction : NodeSet S)
     (hfree :
       NodeSet.equal fail.free
@@ -10388,7 +10387,7 @@ theorem failedHedgeSelection_tests_of_site_agrees
 theorem hedgeWitness?_eq_some_of_failed_site_agrees
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (localOutcome localAction : NodeSet S)
     (hfree :
       NodeSet.equal fail.free
@@ -10433,8 +10432,8 @@ theorem hedgeWitness?_eq_some_of_productFree_failureTrace
     (productFree : trace.hasNoProductFrame = true) :
     Exists fun witness => hedgeWitness? G q fail = some witness := by
   have hfail :
-      identifyJoint G q = IdentificationOutcome.failed fail := by
-    simpa [identifyJoint, JointIdentificationFailureTrace] using
+      Legacy.identifyJoint G q = IdentificationOutcome.failed fail := by
+    simpa [Legacy.identifyJoint, JointIdentificationFailureTrace] using
       trace.eq_failed
   let site : IdentificationImmediateFailureSite G fail := trace.immediateSite
   have localFacts := site.local_query_site
@@ -10455,7 +10454,7 @@ that free component.
 theorem failedHedgeSelection_tests_of_free_ancestral
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hmeets :
       NodeSet.meetsBool (failedHedgeSelection fail).large q.action = true)
     (hdisj :
@@ -10483,7 +10482,7 @@ theorem failedHedgeSelection_tests_of_free_ancestral
 theorem hedgeWitness?_eq_some_of_failed_free_ancestral
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hmeets :
       NodeSet.meetsBool (failedHedgeSelection fail).large q.action = true)
     (hdisj :
@@ -10513,7 +10512,7 @@ site ancestry is free-component ancestry.
 theorem failedHedgeSelection_free_ancestral_of_site
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (localOutcome _localAction : NodeSet S)
     (_hfree :
       NodeSet.equal fail.free
@@ -10548,7 +10547,7 @@ graph, with free side `V \ X`, is ancestral of `Y` in `G_{\overline{X}}`.
 theorem identifyJoint_eq_failed_query_of_full
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq : NodeSet.equal fail.remaining NodeSet.full = true)
     (hfree :
       NodeSet.equal fail.free
@@ -10567,7 +10566,7 @@ theorem identifyJoint_eq_failed_query_of_full
 theorem hedgeWitness?_eq_some_of_failed_remaining_eq
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq : NodeSet.equal fail.remaining NodeSet.full = true)
     (hfree :
       NodeSet.equal fail.free
@@ -10600,8 +10599,8 @@ theorem identifyJoint_eq_failed_of_first_shrink
         (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
           q.outcome)
         NodeSet.full = false)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
-    identifyFuel
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
+    Legacy.identifyFuel
         (S.count * Nat.succ S.count * Nat.succ S.count) G
         (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
           q.outcome)
@@ -10627,11 +10626,11 @@ theorem identifyJoint_eq_failed_of_first_shrink
         NodeSet.full = false := by
     simpa [hinter, hy] using hkept
   have hfuel :
-      identifyFuel (identificationFuel S) G NodeSet.full q.outcome
+      Legacy.identifyFuel (identificationFuel S) G NodeSet.full q.outcome
         q.action (observationalJointTerm S) =
         IdentificationOutcome.failed fail := hfail
   rw [identificationFuel] at hfuel
-  simp [identifyFuel, hex', hkept'] at hfuel
+  simp [Legacy.identifyFuel, hex', hkept'] at hfuel
   simpa [hinter, hy] using hfuel
 
 theorem hedgeWitness?_eq_some_of_failed_after_shrink
@@ -10643,7 +10642,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink
         (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
           q.outcome)
         NodeSet.full = false)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
@@ -10710,11 +10709,11 @@ theorem identifyJoint_eq_failed_of_first_shrink_product
             (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
               q.outcome))) =
         component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun piece =>
       piece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G
+          Legacy.identifyFuel n G
             (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
               q.outcome)
             piece
@@ -10731,7 +10730,7 @@ theorem identifyJoint_eq_failed_of_first_shrink_product
   let kept :=
     G.ancestralSet NodeSet.full (GraphMutilation.bar q.action) q.outcome
   have hnested :
-      identifyFuel
+      Legacy.identifyFuel
           (S.count * Nat.succ S.count * Nat.succ S.count) G kept
           q.outcome q.action
           (.marginalize
@@ -10741,17 +10740,17 @@ theorem identifyJoint_eq_failed_of_first_shrink_product
   cases hn : S.count * Nat.succ S.count * Nat.succ S.count with
   | zero =>
       have hzero :
-          identifyFuel 0 G kept q.outcome q.action
+          Legacy.identifyFuel 0 G kept q.outcome q.action
             (.marginalize
               (NodeSet.diff NodeSet.full kept)
               (observationalJointTerm S)) =
             IdentificationOutcome.failed fail := by
         rw [← hn]
         exact hnested
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G kept q.outcome q.action
+          Legacy.identifyFuel (n + 1) G kept q.outcome q.action
             (.marginalize
               (NodeSet.diff NodeSet.full kept)
               (observationalJointTerm S)) =
@@ -10824,7 +10823,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_product
               q.outcome))) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
@@ -10919,11 +10918,11 @@ theorem identifyFuel_eq_failed_of_product_piece_restrict
       G.containingCComponent remaining piece = some larger)
     (hinner :
       Exists fun n =>
-        identifyFuel n G remaining piece
+        Legacy.identifyFuel n G remaining piece
           (NodeSet.diff remaining piece) current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G larger piece
+      Legacy.identifyFuel n G larger piece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff remaining piece) remaining)
           larger)
@@ -10933,15 +10932,15 @@ theorem identifyFuel_eq_failed_of_product_piece_restrict
   cases hm' : m with
   | zero =>
       have hzero :
-          identifyFuel 0 G remaining piece
+          Legacy.identifyFuel 0 G remaining piece
             (NodeSet.diff remaining piece) current =
             IdentificationOutcome.failed fail := by
         rw [← hm']
         exact hm
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G remaining piece
+          Legacy.identifyFuel (n + 1) G remaining piece
             (NodeSet.diff remaining piece) current =
             IdentificationOutcome.failed fail := by
         rw [← hm']
@@ -11007,13 +11006,13 @@ theorem identifyFuel_eq_failed_of_product_piece_restrict_product
         component :: component2 :: rest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G remaining piece
+        Legacy.identifyFuel n G remaining piece
           (NodeSet.diff remaining piece) current =
           IdentificationOutcome.failed fail) :
     Exists fun subpiece =>
       subpiece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
+          Legacy.identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
             (chainProduct remaining larger) =
             IdentificationOutcome.failed fail := by
   rcases identifyFuel_eq_failed_of_product_piece_restrict G remaining piece
@@ -11021,7 +11020,7 @@ theorem identifyFuel_eq_failed_of_product_piece_restrict_product
   cases hm' : m with
   | zero =>
       have hzero :
-          identifyFuel 0 G larger piece
+          Legacy.identifyFuel 0 G larger piece
             (NodeSet.inter
               (NodeSet.inter (NodeSet.diff remaining piece) remaining)
               larger)
@@ -11029,10 +11028,10 @@ theorem identifyFuel_eq_failed_of_product_piece_restrict_product
             IdentificationOutcome.failed fail := by
         rw [← hm']
         exact hm
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G larger piece
+          Legacy.identifyFuel (n + 1) G larger piece
             (NodeSet.inter
               (NodeSet.inter (NodeSet.diff remaining piece) remaining)
               larger)
@@ -11116,11 +11115,11 @@ theorem identifyFuel_eq_failed_of_product_piece_shrink
         remaining = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G remaining piece
+        Legacy.identifyFuel n G remaining piece
           (NodeSet.diff remaining piece) current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet remaining
           (GraphMutilation.bar
             (NodeSet.inter (NodeSet.diff remaining piece) remaining))
@@ -11138,15 +11137,15 @@ theorem identifyFuel_eq_failed_of_product_piece_shrink
   cases hm' : m with
   | zero =>
       have hzero :
-          identifyFuel 0 G remaining piece
+          Legacy.identifyFuel 0 G remaining piece
             (NodeSet.diff remaining piece) current =
             IdentificationOutcome.failed fail := by
         rw [← hm']
         exact hm
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G remaining piece
+          Legacy.identifyFuel (n + 1) G remaining piece
             (NodeSet.diff remaining piece) current =
             IdentificationOutcome.failed fail := by
         rw [← hm']
@@ -11225,13 +11224,13 @@ theorem identifyFuel_eq_failed_of_product_piece_shrink_product
         component :: component2 :: rest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G remaining piece
+        Legacy.identifyFuel n G remaining piece
           (NodeSet.diff remaining piece) current =
           IdentificationOutcome.failed fail) :
     Exists fun subpiece =>
       subpiece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G
+          Legacy.identifyFuel n G
             (G.ancestralSet remaining
               (GraphMutilation.bar
                 (NodeSet.inter (NodeSet.diff remaining piece)
@@ -11259,7 +11258,7 @@ theorem identifyFuel_eq_failed_of_product_piece_shrink_product
   cases hm' : m with
   | zero =>
       have hzero :
-          identifyFuel 0 G
+          Legacy.identifyFuel 0 G
             (G.ancestralSet remaining
               (GraphMutilation.bar
                 (NodeSet.inter (NodeSet.diff remaining piece)
@@ -11277,10 +11276,10 @@ theorem identifyFuel_eq_failed_of_product_piece_shrink_product
             IdentificationOutcome.failed fail := by
         rw [← hm']
         exact hm
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G
+          Legacy.identifyFuel (n + 1) G
             (G.ancestralSet remaining
               (GraphMutilation.bar
                 (NodeSet.inter (NodeSet.diff remaining piece)
@@ -11343,26 +11342,26 @@ theorem identifyFuel_eq_failed_of_product_of
         component :: component2 :: rest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G remaining outcome action current =
+        Legacy.identifyFuel n G remaining outcome action current =
           IdentificationOutcome.failed fail) :
     Exists fun piece =>
       piece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G remaining piece
+          Legacy.identifyFuel n G remaining piece
             (NodeSet.diff remaining piece) current =
             IdentificationOutcome.failed fail := by
   rcases hinner with ⟨m, hm⟩
   cases hm' : m with
   | zero =>
       have hzero :
-          identifyFuel 0 G remaining outcome action current =
+          Legacy.identifyFuel 0 G remaining outcome action current =
             IdentificationOutcome.failed fail := by
         rw [← hm']
         exact hm
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G remaining outcome action current =
+          Legacy.identifyFuel (n + 1) G remaining outcome action current =
             IdentificationOutcome.failed fail := by
         rw [← hm']
         exact hm
@@ -11406,10 +11405,10 @@ theorem identifyFuel_eq_failed_of_restrict_of
       G.containingCComponent remaining component = some larger)
     (hinner :
       Exists fun n =>
-        identifyFuel n G remaining outcome action current =
+        Legacy.identifyFuel n G remaining outcome action current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G larger outcome
+      Legacy.identifyFuel n G larger outcome
         (NodeSet.inter (NodeSet.inter action remaining) larger)
         (chainProduct remaining larger) =
         IdentificationOutcome.failed fail := by
@@ -11417,14 +11416,14 @@ theorem identifyFuel_eq_failed_of_restrict_of
   cases hm' : m with
   | zero =>
       have hzero :
-          identifyFuel 0 G remaining outcome action current =
+          Legacy.identifyFuel 0 G remaining outcome action current =
             IdentificationOutcome.failed fail := by
         rw [← hm']
         exact hm
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G remaining outcome action current =
+          Legacy.identifyFuel (n + 1) G remaining outcome action current =
             IdentificationOutcome.failed fail := by
         rw [← hm']
         exact hm
@@ -11455,10 +11454,10 @@ theorem identifyFuel_eq_failed_of_shrink_of
         remaining = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G remaining outcome action current =
+        Legacy.identifyFuel n G remaining outcome action current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet remaining
           (GraphMutilation.bar (NodeSet.inter action remaining))
           (NodeSet.inter outcome remaining))
@@ -11474,14 +11473,14 @@ theorem identifyFuel_eq_failed_of_shrink_of
   cases hm' : m with
   | zero =>
       have hzero :
-          identifyFuel 0 G remaining outcome action current =
+          Legacy.identifyFuel 0 G remaining outcome action current =
             IdentificationOutcome.failed fail := by
         rw [← hm']
         exact hm
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G remaining outcome action current =
+          Legacy.identifyFuel (n + 1) G remaining outcome action current =
             IdentificationOutcome.failed fail := by
         rw [← hm']
         exact hm
@@ -11581,7 +11580,7 @@ theorem identifyJoint_eq_failed_of_first_shrink_product_restrict
         piece = some larger)
     (hinner :
       Exists fun n =>
-        identifyFuel n G
+        Legacy.identifyFuel n G
           (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
             q.outcome)
           piece
@@ -11595,9 +11594,9 @@ theorem identifyJoint_eq_failed_of_first_shrink_product_restrict
                 q.outcome))
             (observationalJointTerm S)) =
           IdentificationOutcome.failed fail)
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G larger piece
+      Legacy.identifyFuel n G larger piece
         (NodeSet.inter
           (NodeSet.inter
             (NodeSet.diff
@@ -11759,7 +11758,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_product_restrict
       NodeSet.isEmpty (NodeSet.inter q.action larger) = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G
+        Legacy.identifyFuel n G
           (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
             q.outcome)
           piece
@@ -11773,7 +11772,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_product_restrict
                 q.outcome))
             (observationalJointTerm S)) =
           IdentificationOutcome.failed fail)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq : NodeSet.equal fail.remaining larger = true)
     (hfree :
       NodeSet.equal fail.free
@@ -12065,7 +12064,7 @@ theorem identifyJoint_eq_failed_of_first_shrink_product_restrict_product
         inner :: inner2 :: innerRest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G
+        Legacy.identifyFuel n G
           (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
             q.outcome)
           piece
@@ -12079,11 +12078,11 @@ theorem identifyJoint_eq_failed_of_first_shrink_product_restrict_product
                 q.outcome))
             (observationalJointTerm S)) =
           IdentificationOutcome.failed fail)
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun subpiece =>
       subpiece ∈ inner :: inner2 :: innerRest ∧
         Exists fun n =>
-          identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
+          Legacy.identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
             (chainProduct
               (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
                 q.outcome)
@@ -12252,7 +12251,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_product_restrict_product
             larger)) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq : NodeSet.equal fail.remaining larger = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -12411,7 +12410,7 @@ theorem identifyJoint_eq_failed_of_first_shrink_product_shrink
           q.outcome) = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G
+        Legacy.identifyFuel n G
           (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
             q.outcome)
           piece
@@ -12425,9 +12424,9 @@ theorem identifyJoint_eq_failed_of_first_shrink_product_shrink
                 q.outcome))
             (observationalJointTerm S)) =
           IdentificationOutcome.failed fail)
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet
           (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
             q.outcome)
@@ -12602,7 +12601,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_product_shrink
                 q.outcome)))) = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G
+        Legacy.identifyFuel n G
           (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
             q.outcome)
           piece
@@ -12616,7 +12615,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_product_shrink
                 q.outcome))
             (observationalJointTerm S)) =
           IdentificationOutcome.failed fail)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet
@@ -12986,7 +12985,7 @@ theorem identifyJoint_eq_failed_of_first_shrink_product_shrink_product
         inner :: inner2 :: innerRest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G
+        Legacy.identifyFuel n G
           (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
             q.outcome)
           piece
@@ -13000,11 +12999,11 @@ theorem identifyJoint_eq_failed_of_first_shrink_product_shrink_product
                 q.outcome))
             (observationalJointTerm S)) =
           IdentificationOutcome.failed fail)
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun subpiece =>
       subpiece ∈ inner :: inner2 :: innerRest ∧
         Exists fun n =>
-          identifyFuel n G
+          Legacy.identifyFuel n G
             (G.ancestralSet
               (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
                 q.outcome)
@@ -13231,7 +13230,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_product_shrink_product
                   q.outcome))))) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet
@@ -13399,9 +13398,9 @@ theorem identifyJoint_eq_failed_of_first_shrink_restrict
         (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
           q.outcome)
         seed = some host)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host q.outcome
+      Legacy.identifyFuel n G host q.outcome
         (NodeSet.inter
           (NodeSet.inter q.action
             (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
@@ -13415,7 +13414,7 @@ theorem identifyJoint_eq_failed_of_first_shrink_restrict
   let kept :=
     G.ancestralSet NodeSet.full (GraphMutilation.bar q.action) q.outcome
   have hnested :
-      identifyFuel
+      Legacy.identifyFuel
           (S.count * Nat.succ S.count * Nat.succ S.count) G kept
           q.outcome q.action
           (.marginalize
@@ -13425,17 +13424,17 @@ theorem identifyJoint_eq_failed_of_first_shrink_restrict
   cases hn : S.count * Nat.succ S.count * Nat.succ S.count with
   | zero =>
       have hzero :
-          identifyFuel 0 G kept q.outcome q.action
+          Legacy.identifyFuel 0 G kept q.outcome q.action
             (.marginalize
               (NodeSet.diff NodeSet.full kept)
               (observationalJointTerm S)) =
             IdentificationOutcome.failed fail := by
         rw [← hn]
         exact hnested
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G kept q.outcome q.action
+          Legacy.identifyFuel (n + 1) G kept q.outcome q.action
             (.marginalize
               (NodeSet.diff NodeSet.full kept)
               (observationalJointTerm S)) =
@@ -13505,7 +13504,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_restrict
         (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
           q.outcome)
         seed = some host)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq : NodeSet.equal fail.remaining host = true)
     (hfree :
       NodeSet.equal fail.free
@@ -13648,11 +13647,11 @@ theorem identifyJoint_eq_failed_of_first_shrink_restrict_product
                 q.outcome))
             host)) =
         component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun piece =>
       piece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G host piece (NodeSet.diff host piece)
+          Legacy.identifyFuel n G host piece (NodeSet.diff host piece)
             (chainProduct
               (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
                 q.outcome)
@@ -13663,7 +13662,7 @@ theorem identifyJoint_eq_failed_of_first_shrink_restrict_product
   cases hm' : m with
   | zero =>
       have hzero :
-          identifyFuel 0 G host q.outcome
+          Legacy.identifyFuel 0 G host q.outcome
             (NodeSet.inter
               (NodeSet.inter q.action
                 (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
@@ -13676,10 +13675,10 @@ theorem identifyJoint_eq_failed_of_first_shrink_restrict_product
             IdentificationOutcome.failed fail := by
         rw [← hm']
         exact hm
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G host q.outcome
+          Legacy.identifyFuel (n + 1) G host q.outcome
             (NodeSet.inter
               (NodeSet.inter q.action
                 (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
@@ -13847,7 +13846,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_restrict_product
             host)) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq : NodeSet.equal fail.remaining host = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -14027,15 +14026,15 @@ theorem identifyJoint_eq_failed_of_first_shrink_restrict_product_restrict
       G.containingCComponent host piece = some larger)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host piece (NodeSet.diff host piece)
+        Legacy.identifyFuel n G host piece (NodeSet.diff host piece)
           (chainProduct
             (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
               q.outcome)
             host) =
           IdentificationOutcome.failed fail)
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G larger piece
+      Legacy.identifyFuel n G larger piece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff host piece) host) larger)
         (chainProduct host larger) =
@@ -14211,7 +14210,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_restrict_product_restrict
       G.containingCComponent host piece = some larger)
     (hexL :
       NodeSet.isEmpty (NodeSet.inter q.action larger) = false)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq : NodeSet.equal fail.remaining larger = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -14379,15 +14378,15 @@ theorem identifyJoint_eq_failed_of_first_shrink_restrict_product_shrink
         host = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host piece (NodeSet.diff host piece)
+        Legacy.identifyFuel n G host piece (NodeSet.diff host piece)
           (chainProduct
             (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
               q.outcome)
             host) =
           IdentificationOutcome.failed fail)
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet host
           (GraphMutilation.bar
             (NodeSet.inter (NodeSet.diff host piece) host))
@@ -14569,7 +14568,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_restrict_product_shrink
             (GraphMutilation.bar
               (NodeSet.inter (NodeSet.diff host piece) host))
             (NodeSet.inter piece host))) = false)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet host
@@ -14675,8 +14674,8 @@ theorem identifyJoint_eq_failed_of_first_restrict
         (fun piece => NodeSet.equal piece component) = false)
     (hcont :
       G.containingCComponent NodeSet.full component = some larger)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
-    identifyFuel
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
+    Legacy.identifyFuel
         (S.count * Nat.succ S.count * Nat.succ S.count) G larger
         q.outcome (NodeSet.inter q.action larger)
         (chainProduct NodeSet.full larger) =
@@ -14701,7 +14700,7 @@ theorem identifyJoint_eq_failed_of_first_restrict
         [component] := by
     simpa [hinter] using hfc
   have hfuel :
-      identifyFuel (identificationFuel S) G NodeSet.full q.outcome
+      Legacy.identifyFuel (identificationFuel S) G NodeSet.full q.outcome
         q.action (observationalJointTerm S) =
         IdentificationOutcome.failed fail := hfail
   rw [identificationFuel] at hfuel
@@ -14733,7 +14732,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict
         (fun piece => NodeSet.equal piece component) = false)
     (hcont :
       G.containingCComponent NodeSet.full component = some larger)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq : NodeSet.equal fail.remaining larger = true)
     (hfree :
       NodeSet.equal fail.free
@@ -14798,15 +14797,15 @@ theorem identifyJoint_eq_failed_of_first_restrict_product
       G.cComponents
         (NodeSet.diff host (NodeSet.inter q.action host)) =
         component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun piece =>
       piece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G host piece (NodeSet.diff host piece)
+          Legacy.identifyFuel n G host piece (NodeSet.diff host piece)
             (chainProduct NodeSet.full host) =
             IdentificationOutcome.failed fail := by
   have hnested :
-      identifyFuel
+      Legacy.identifyFuel
           (S.count * Nat.succ S.count * Nat.succ S.count) G host
           q.outcome (NodeSet.inter q.action host)
           (chainProduct NodeSet.full host) =
@@ -14816,15 +14815,15 @@ theorem identifyJoint_eq_failed_of_first_restrict_product
   cases hn : S.count * Nat.succ S.count * Nat.succ S.count with
   | zero =>
       have hzero :
-          identifyFuel 0 G host q.outcome (NodeSet.inter q.action host)
+          Legacy.identifyFuel 0 G host q.outcome (NodeSet.inter q.action host)
             (chainProduct NodeSet.full host) =
             IdentificationOutcome.failed fail := by
         rw [← hn]
         exact hnested
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G host q.outcome
+          Legacy.identifyFuel (n + 1) G host q.outcome
             (NodeSet.inter q.action host)
             (chainProduct NodeSet.full host) =
             IdentificationOutcome.failed fail := by
@@ -14899,7 +14898,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_product
         (NodeSet.diff host (NodeSet.inter q.action host)) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq : NodeSet.equal fail.remaining host = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -15010,12 +15009,12 @@ theorem identifyJoint_eq_failed_of_first_restrict_product_restrict
       G.containingCComponent host piece = some larger)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host piece (NodeSet.diff host piece)
+        Legacy.identifyFuel n G host piece (NodeSet.diff host piece)
           (chainProduct NodeSet.full host) =
           IdentificationOutcome.failed fail)
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G larger piece
+      Legacy.identifyFuel n G larger piece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff host piece) host) larger)
         (chainProduct host larger) =
@@ -15116,10 +15115,10 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_product_restrict
       NodeSet.isEmpty (NodeSet.inter q.action larger) = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host piece (NodeSet.diff host piece)
+        Legacy.identifyFuel n G host piece (NodeSet.diff host piece)
           (chainProduct NodeSet.full host) =
           IdentificationOutcome.failed fail)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq : NodeSet.equal fail.remaining larger = true)
     (hfree :
       NodeSet.equal fail.free
@@ -15335,14 +15334,14 @@ theorem identifyJoint_eq_failed_of_first_restrict_product_restrict_product
         inner :: inner2 :: innerRest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host piece (NodeSet.diff host piece)
+        Legacy.identifyFuel n G host piece (NodeSet.diff host piece)
           (chainProduct NodeSet.full host) =
           IdentificationOutcome.failed fail)
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun subpiece =>
       subpiece ∈ inner :: inner2 :: innerRest ∧
         Exists fun n =>
-          identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
+          Legacy.identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
             (chainProduct host larger) =
             IdentificationOutcome.failed fail := by
   have hmem' :
@@ -15447,7 +15446,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_product_restrict_product
             larger)) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq : NodeSet.equal fail.remaining larger = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -15571,12 +15570,12 @@ theorem identifyJoint_eq_failed_of_first_restrict_product_shrink
         host = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host piece (NodeSet.diff host piece)
+        Legacy.identifyFuel n G host piece (NodeSet.diff host piece)
           (chainProduct NodeSet.full host) =
           IdentificationOutcome.failed fail)
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet host
           (GraphMutilation.bar
             (NodeSet.inter (NodeSet.diff host piece) host))
@@ -15679,10 +15678,10 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_product_shrink
             (NodeSet.inter piece host))) = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host piece (NodeSet.diff host piece)
+        Legacy.identifyFuel n G host piece (NodeSet.diff host piece)
           (chainProduct NodeSet.full host) =
           IdentificationOutcome.failed fail)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet host
@@ -15921,14 +15920,14 @@ theorem identifyJoint_eq_failed_of_first_restrict_product_shrink_product
         inner :: inner2 :: innerRest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host piece (NodeSet.diff host piece)
+        Legacy.identifyFuel n G host piece (NodeSet.diff host piece)
           (chainProduct NodeSet.full host) =
           IdentificationOutcome.failed fail)
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun subpiece =>
       subpiece ∈ inner :: inner2 :: innerRest ∧
         Exists fun n =>
-          identifyFuel n G
+          Legacy.identifyFuel n G
             (G.ancestralSet host
               (GraphMutilation.bar
                 (NodeSet.inter (NodeSet.diff host piece) host))
@@ -16051,7 +16050,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_product_shrink_product
               (NodeSet.inter piece host)))) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet host
@@ -16175,9 +16174,9 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink
           (GraphMutilation.bar (NodeSet.inter q.action host))
           (NodeSet.inter q.outcome host))
         host = false)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet host
           (GraphMutilation.bar (NodeSet.inter q.action host))
           (NodeSet.inter q.outcome host))
@@ -16190,7 +16189,7 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink
           (chainProduct NodeSet.full host)) =
         IdentificationOutcome.failed fail := by
   have hnested :
-      identifyFuel
+      Legacy.identifyFuel
           (S.count * Nat.succ S.count * Nat.succ S.count) G host
           q.outcome (NodeSet.inter q.action host)
           (chainProduct NodeSet.full host) =
@@ -16200,15 +16199,15 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink
   cases hn : S.count * Nat.succ S.count * Nat.succ S.count with
   | zero =>
       have hzero :
-          identifyFuel 0 G host q.outcome (NodeSet.inter q.action host)
+          Legacy.identifyFuel 0 G host q.outcome (NodeSet.inter q.action host)
             (chainProduct NodeSet.full host) =
             IdentificationOutcome.failed fail := by
         rw [← hn]
         exact hnested
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G host q.outcome
+          Legacy.identifyFuel (n + 1) G host q.outcome
             (NodeSet.inter q.action host)
             (chainProduct NodeSet.full host) =
             IdentificationOutcome.failed fail := by
@@ -16269,7 +16268,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_shrink
           (GraphMutilation.bar (NodeSet.inter q.action host))
           (NodeSet.inter q.outcome host))
         host = false)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet host
@@ -16386,11 +16385,11 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink_product
               (GraphMutilation.bar (NodeSet.inter q.action host))
               (NodeSet.inter q.outcome host)))) =
         component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun piece =>
       piece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G
+          Legacy.identifyFuel n G
             (G.ancestralSet host
               (GraphMutilation.bar (NodeSet.inter q.action host))
               (NodeSet.inter q.outcome host))
@@ -16416,16 +16415,16 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink_product
   cases hm' : m with
   | zero =>
       have hzero :
-          identifyFuel 0 G kept q.outcome (NodeSet.inter q.action host)
+          Legacy.identifyFuel 0 G kept q.outcome (NodeSet.inter q.action host)
             (.marginalize
               (NodeSet.diff host kept) (chainProduct NodeSet.full host)) =
             IdentificationOutcome.failed fail := by
         rw [← hm']
         simpa [kept] using hm
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G kept q.outcome
+          Legacy.identifyFuel (n + 1) G kept q.outcome
             (NodeSet.inter q.action host)
             (.marginalize
               (NodeSet.diff host kept) (chainProduct NodeSet.full host)) =
@@ -16528,7 +16527,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_shrink_product
               (NodeSet.inter q.outcome host)))) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet host
@@ -16731,7 +16730,7 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink_product_restrict
         piece = some larger)
     (hinner :
       Exists fun n =>
-        identifyFuel n G
+        Legacy.identifyFuel n G
           (G.ancestralSet host
             (GraphMutilation.bar (NodeSet.inter q.action host))
             (NodeSet.inter q.outcome host))
@@ -16748,9 +16747,9 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink_product_restrict
                 (NodeSet.inter q.outcome host)))
             (chainProduct NodeSet.full host)) =
           IdentificationOutcome.failed fail)
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G larger piece
+      Legacy.identifyFuel n G larger piece
         (NodeSet.inter
           (NodeSet.inter
             (NodeSet.diff
@@ -16965,7 +16964,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_shrink_product_restrict
         piece = some larger)
     (hexH :
       NodeSet.isEmpty (NodeSet.inter q.action larger) = false)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq : NodeSet.equal fail.remaining larger = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -17131,7 +17130,7 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink_product_shrink
           (NodeSet.inter q.outcome host)) = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G
+        Legacy.identifyFuel n G
           (G.ancestralSet host
             (GraphMutilation.bar (NodeSet.inter q.action host))
             (NodeSet.inter q.outcome host))
@@ -17148,9 +17147,9 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink_product_shrink
                 (NodeSet.inter q.outcome host)))
             (chainProduct NodeSet.full host)) =
           IdentificationOutcome.failed fail)
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet
           (G.ancestralSet host
             (GraphMutilation.bar (NodeSet.inter q.action host))
@@ -17384,7 +17383,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_shrink_product_shrink
               (G.ancestralSet host
                 (GraphMutilation.bar (NodeSet.inter q.action host))
                 (NodeSet.inter q.outcome host))))) = false)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet
@@ -17500,10 +17499,10 @@ theorem identifyJoint_eq_failed_of_first_product
     (hfc :
       G.cComponents (NodeSet.diff NodeSet.full q.action) =
         component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun piece =>
       piece ∈ component :: component2 :: rest ∧
-        identifyFuel
+        Legacy.identifyFuel
             (S.count * Nat.succ S.count * Nat.succ S.count) G
             NodeSet.full piece (NodeSet.diff NodeSet.full piece)
             (observationalJointTerm S) =
@@ -17528,7 +17527,7 @@ theorem identifyJoint_eq_failed_of_first_product
         component :: component2 :: rest := by
     simpa [hinter] using hfc
   have hfuel :
-      identifyFuel (identificationFuel S) G NodeSet.full q.outcome
+      Legacy.identifyFuel (identificationFuel S) G NodeSet.full q.outcome
         q.action (observationalJointTerm S) =
         IdentificationOutcome.failed fail := hfail
   rw [identificationFuel] at hfuel
@@ -18108,8 +18107,8 @@ theorem hedgeWitness?_eq_some_of_failureTrace
     (trace : JointIdentificationFailureTrace G q fail) :
     Exists fun witness => hedgeWitness? G q fail = some witness := by
   have hfail :
-      identifyJoint G q = IdentificationOutcome.failed fail := by
-    simpa [identifyJoint, JointIdentificationFailureTrace] using
+      Legacy.identifyJoint G q = IdentificationOutcome.failed fail := by
+    simpa [Legacy.identifyJoint, JointIdentificationFailureTrace] using
       trace.eq_failed
   cases trace.queryTransport with
   | «local» outcomeAgreement actionAgreement =>
@@ -18140,7 +18139,7 @@ theorem hedgeWitness?_eq_some_of_identifyJoint_failed
     {S : ObservedSignature.{0}}
     (G : ObservedGraph S) (q : JointKernelQuery S)
     {fail : IdentificationFail S}
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun witness => hedgeWitness? G q fail = some witness := by
   let trace : JointIdentificationFailureTrace G q fail :=
     IdentificationFailureTrace.of_eq_failed (identificationFuel S) G
@@ -18197,11 +18196,11 @@ theorem identifyJoint_eq_identified_of_identifiable
     (hedgeCounterexample : HedgeWitness G q -> CounterexampleIn C q)
     (identifiable : C.identifiable q) :
     Exists fun term =>
-      identifyJoint G q = IdentificationOutcome.identified term := by
+      Legacy.identifyJoint G q = IdentificationOutcome.identified term := by
   cases identifyJoint_terminalTrace G q with
   | identified term trace =>
       exact ⟨term, by
-        simpa [identifyJoint, JointIdentificationSuccessTrace] using
+        simpa [Legacy.identifyJoint, JointIdentificationSuccessTrace] using
           trace.eq_identified⟩
   | failed fail trace =>
       let extracted := trace.extractedHedge G q
@@ -18308,13 +18307,13 @@ noncomputable def publishedJointSuccessLeafCompilation?
 
 /-- The intended branch-generic program for successful public joint ID.
 
-This record indexes the legacy `identifyJoint` trace, not the replacement
+This record indexes the legacy `Legacy.identifyJoint` trace, not the replacement
 `identifyJointKernel` program.  The exact-output requirement is substantive:
 `Examples.FrontDoorIdentification` proves that the legacy engine makes this
 record uninhabitable on a front-door graph.  The continuing compiler must
 target the current-kernel recursion instead; this legacy field must not be
 assumed as an axiom or filled by more branch unpackers. -/
-structure PublishedJointTraceCompiler
+structure Legacy.PublishedJointTraceCompiler
     {S : ObservedSignature} (G : ObservedGraph S)
     (C : GraphModelClass G) (correct : DSeparationCorrectness G) where
   compile : forall (q : JointKernelQuery S) (term : ProbabilityTerm S),
@@ -18327,10 +18326,10 @@ already imply semantic joint completeness.  The failed branch contradicts
 identifiability; the successful branch returns the compiler's inspectable
 certificate.  No unfinished branch exists by the rank theorem.
 -/
-noncomputable def PublishedJointTraceCompiler.certificateOfIdentifiable
+noncomputable def Legacy.PublishedJointTraceCompiler.certificateOfIdentifiable
     {S : ObservedSignature.{0}} {G : ObservedGraph S}
     {C : GraphModelClass G} {correct : DSeparationCorrectness G}
-    (compiler : PublishedJointTraceCompiler G C correct)
+    (compiler : Legacy.PublishedJointTraceCompiler G C correct)
     (hedgeCounterexample : forall q,
       HedgeWitness G q -> CounterexampleIn C q)
     (q : JointKernelQuery S) (identifiable : C.identifiable q) :
@@ -18394,7 +18393,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_of
       G.cComponents (NodeSet.diff NodeSet.full q.action) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
       NodeSet.equal
@@ -18444,7 +18443,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product
       G.cComponents (NodeSet.diff NodeSet.full q.action) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq : NodeSet.equal fail.remaining NodeSet.full = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -18493,7 +18492,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_first_product
     (hfc :
       G.cComponents (NodeSet.diff NodeSet.full q.action) =
         component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (heq : NodeSet.equal fail.remaining NodeSet.full = true)
     (hfreeMem :
       fail.free ∈ component :: component2 :: rest)
@@ -18667,12 +18666,12 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_immediate
         NodeSet.full = true)
     (hnestedFc : G.cComponents piece = [piece])
     (hnested :
-      identifyFuel
+      Legacy.identifyFuel
           (S.count * Nat.succ S.count * Nat.succ S.count) G
           NodeSet.full piece (NodeSet.diff NodeSet.full piece)
           (observationalJointTerm S) =
         IdentificationOutcome.failed fail)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun witness => hedgeWitness? G q fail = some witness := by
   have hmem' :
       piece ∈ G.cComponents (NodeSet.diff NodeSet.full q.action) := by
@@ -18711,14 +18710,14 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_immediate
     simpa [hfreeN] using hnestedFc
   cases hn : S.count * Nat.succ S.count * Nat.succ S.count with
   | zero =>
-      have hzero : identifyFuel 0 G NodeSet.full piece
+      have hzero : Legacy.identifyFuel 0 G NodeSet.full piece
           (NodeSet.diff NodeSet.full piece) (observationalJointTerm S) =
           IdentificationOutcome.failed fail := by
         rw [← hn]
         exact hnested
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
-      have hsucc : identifyFuel (n + 1) G NodeSet.full piece
+      have hsucc : Legacy.identifyFuel (n + 1) G NodeSet.full piece
           (NodeSet.diff NodeSet.full piece) (observationalJointTerm S) =
           IdentificationOutcome.failed fail := by
         rw [← hn]
@@ -18765,13 +18764,13 @@ theorem identifyFuel_eq_failed_of_product_nested_shrink
           (NodeSet.inter piece NodeSet.full))
         NodeSet.full = false)
     (hnested :
-      identifyFuel
+      Legacy.identifyFuel
           (S.count * Nat.succ S.count * Nat.succ S.count) G
           NodeSet.full piece (NodeSet.diff NodeSet.full piece)
           (observationalJointTerm S) =
         IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
           (G.ancestralSet NodeSet.full
             (GraphMutilation.bar
               (NodeSet.inter (NodeSet.diff NodeSet.full piece)
@@ -18807,14 +18806,14 @@ theorem identifyFuel_eq_failed_of_product_nested_shrink
     simpa [hact] using hnestedKept
   cases hn : S.count * Nat.succ S.count * Nat.succ S.count with
   | zero =>
-      have hzero : identifyFuel 0 G NodeSet.full piece
+      have hzero : Legacy.identifyFuel 0 G NodeSet.full piece
           (NodeSet.diff NodeSet.full piece) (observationalJointTerm S) =
           IdentificationOutcome.failed fail := by
         rw [← hn]
         exact hnested
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
-      have hsucc : identifyFuel (n + 1) G NodeSet.full piece
+      have hsucc : Legacy.identifyFuel (n + 1) G NodeSet.full piece
           (NodeSet.diff NodeSet.full piece) (observationalJointTerm S) =
           IdentificationOutcome.failed fail := by
         rw [← hn]
@@ -18891,7 +18890,7 @@ theorem identifyFuel_eq_failed_of_product_nested_shrink_product
               (NodeSet.inter piece NodeSet.full)))) =
         component :: component2 :: rest)
     (hnested :
-      identifyFuel
+      Legacy.identifyFuel
           (S.count * Nat.succ S.count * Nat.succ S.count) G
           NodeSet.full piece (NodeSet.diff NodeSet.full piece)
           (observationalJointTerm S) =
@@ -18899,7 +18898,7 @@ theorem identifyFuel_eq_failed_of_product_nested_shrink_product
     Exists fun subpiece =>
       subpiece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G
+          Legacy.identifyFuel n G
             (G.ancestralSet NodeSet.full
               (GraphMutilation.bar
                 (NodeSet.inter (NodeSet.diff NodeSet.full piece)
@@ -18932,17 +18931,17 @@ theorem identifyFuel_eq_failed_of_product_nested_shrink_product
   cases hm' : m with
   | zero =>
       have hzero :
-          identifyFuel 0 G kept piece (NodeSet.diff NodeSet.full piece)
+          Legacy.identifyFuel 0 G kept piece (NodeSet.diff NodeSet.full piece)
             (.marginalize
               (NodeSet.diff NodeSet.full kept)
               (observationalJointTerm S)) =
             IdentificationOutcome.failed fail := by
         rw [← hm']
         simpa [kept] using hm
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G kept piece
+          Legacy.identifyFuel (n + 1) G kept piece
             (NodeSet.diff NodeSet.full piece)
             (.marginalize
               (NodeSet.diff NodeSet.full kept)
@@ -19057,7 +19056,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_product
               (NodeSet.inter piece NodeSet.full)))) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet NodeSet.full
@@ -19164,12 +19163,12 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_product_restrict
       G.containingCComponent kept subpiece = some larger)
     (hinner :
       Exists fun n =>
-        identifyFuel n G kept subpiece (NodeSet.diff kept subpiece)
+        Legacy.identifyFuel n G kept subpiece (NodeSet.diff kept subpiece)
           (.marginalize
             (NodeSet.diff NodeSet.full kept) (observationalJointTerm S)) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G larger subpiece
+      Legacy.identifyFuel n G larger subpiece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff kept subpiece) kept) larger)
         (chainProduct kept larger) =
@@ -19218,7 +19217,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_product_restrict
               (NodeSet.inter piece NodeSet.full)))) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining larger = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -19307,12 +19306,12 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_product_shrink
         kept = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G kept subpiece (NodeSet.diff kept subpiece)
+        Legacy.identifyFuel n G kept subpiece (NodeSet.diff kept subpiece)
           (.marginalize
             (NodeSet.diff NodeSet.full kept) (observationalJointTerm S)) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet kept
           (GraphMutilation.bar
             (NodeSet.inter (NodeSet.diff kept subpiece) kept))
@@ -19371,7 +19370,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_product_shrink
               (NodeSet.inter piece NodeSet.full)))) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet
@@ -19555,13 +19554,13 @@ theorem identifyFuel_eq_failed_of_product_nested_shrink_restrict
           (NodeSet.inter piece NodeSet.full))
         seed = some host)
     (hnested :
-      identifyFuel
+      Legacy.identifyFuel
           (S.count * Nat.succ S.count * Nat.succ S.count) G
           NodeSet.full piece (NodeSet.diff NodeSet.full piece)
           (observationalJointTerm S) =
         IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host piece
+      Legacy.identifyFuel n G host piece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff NodeSet.full piece)
             (G.ancestralSet NodeSet.full
@@ -19588,17 +19587,17 @@ theorem identifyFuel_eq_failed_of_product_nested_shrink_restrict
   cases hm' : m with
   | zero =>
       have hzero :
-          identifyFuel 0 G kept piece (NodeSet.diff NodeSet.full piece)
+          Legacy.identifyFuel 0 G kept piece (NodeSet.diff NodeSet.full piece)
             (.marginalize
               (NodeSet.diff NodeSet.full kept)
               (observationalJointTerm S)) =
             IdentificationOutcome.failed fail := by
         rw [← hm']
         simpa [kept] using hm
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G kept piece
+          Legacy.identifyFuel (n + 1) G kept piece
             (NodeSet.diff NodeSet.full piece)
             (.marginalize
               (NodeSet.diff NodeSet.full kept)
@@ -19741,7 +19740,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_restrict
               NodeSet.full))
           (NodeSet.inter piece NodeSet.full))
         seed = some host)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host = true)
     (hfree :
       NodeSet.equal fail.free
@@ -19839,12 +19838,12 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink
           (NodeSet.inter (NodeSet.diff NodeSet.full piece)
             fail.remaining)) = true)
     (hnested :
-      identifyFuel
+      Legacy.identifyFuel
           (S.count * Nat.succ S.count * Nat.succ S.count) G
           NodeSet.full piece (NodeSet.diff NodeSet.full piece)
           (observationalJointTerm S) =
         IdentificationOutcome.failed fail)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hmeets :
       NodeSet.meetsBool (failedHedgeSelection fail).large q.action = true)
     (hancY :
@@ -19893,14 +19892,14 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink
     exact (NodeSet.equal_eq_true_iff _ _).mpr (hfreeR.trans hcut)
   cases hn : S.count * Nat.succ S.count * Nat.succ S.count with
   | zero =>
-      have hzero : identifyFuel 0 G NodeSet.full piece
+      have hzero : Legacy.identifyFuel 0 G NodeSet.full piece
           (NodeSet.diff NodeSet.full piece) (observationalJointTerm S) =
           IdentificationOutcome.failed fail := by
         rw [← hn]
         exact hnested
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
-      have hsucc : identifyFuel (n + 1) G NodeSet.full piece
+      have hsucc : Legacy.identifyFuel (n + 1) G NodeSet.full piece
           (NodeSet.diff NodeSet.full piece) (observationalJointTerm S) =
           IdentificationOutcome.failed fail := by
         rw [← hn]
@@ -20018,12 +20017,12 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_immediate
                   NodeSet.full))
               (NodeSet.inter piece NodeSet.full)))) = [piece])
     (hnested :
-      identifyFuel
+      Legacy.identifyFuel
           (S.count * Nat.succ S.count * Nat.succ S.count) G
           NodeSet.full piece (NodeSet.diff NodeSet.full piece)
           (observationalJointTerm S) =
         IdentificationOutcome.failed fail)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hmeets :
       NodeSet.meetsBool (failedHedgeSelection fail).large q.action = true)
     (hancY :
@@ -20055,14 +20054,14 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_immediate
     simpa [hact] using hnestedKept
   cases hn : S.count * Nat.succ S.count * Nat.succ S.count with
   | zero =>
-      have hzero : identifyFuel 0 G NodeSet.full piece
+      have hzero : Legacy.identifyFuel 0 G NodeSet.full piece
           (NodeSet.diff NodeSet.full piece) (observationalJointTerm S) =
           IdentificationOutcome.failed fail := by
         rw [← hn]
         exact hnested
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
-      have hsucc : identifyFuel (n + 1) G NodeSet.full piece
+      have hsucc : Legacy.identifyFuel (n + 1) G NodeSet.full piece
           (NodeSet.diff NodeSet.full piece) (observationalJointTerm S) =
           IdentificationOutcome.failed fail := by
         rw [← hn]
@@ -20073,7 +20072,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_immediate
           hexN hkeptN hsucc
       cases n with
       | zero =>
-          simp [identifyFuel] at hshrunk
+          simp [Legacy.identifyFuel] at hshrunk
       | succ n' =>
           have parts :=
             identifyFuel_eq_failed_immediate_query_site n' G
@@ -20151,12 +20150,12 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict
           (NodeSet.inter (NodeSet.diff NodeSet.full piece)
             fail.remaining)) = true)
     (hnested :
-      identifyFuel
+      Legacy.identifyFuel
           (S.count * Nat.succ S.count * Nat.succ S.count) G
           NodeSet.full piece (NodeSet.diff NodeSet.full piece)
           (observationalJointTerm S) =
         IdentificationOutcome.failed fail)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hmeets :
       NodeSet.meetsBool (failedHedgeSelection fail).large q.action = true)
     (hancY :
@@ -20243,14 +20242,14 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict
     simpa [hsame] using hfree
   cases hn : S.count * Nat.succ S.count * Nat.succ S.count with
   | zero =>
-      have hzero : identifyFuel 0 G NodeSet.full piece
+      have hzero : Legacy.identifyFuel 0 G NodeSet.full piece
           (NodeSet.diff NodeSet.full piece) (observationalJointTerm S) =
           IdentificationOutcome.failed fail := by
         rw [← hn]
         exact hnested
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
-      have hsucc : identifyFuel (n + 1) G NodeSet.full piece
+      have hsucc : Legacy.identifyFuel (n + 1) G NodeSet.full piece
           (NodeSet.diff NodeSet.full piece) (observationalJointTerm S) =
           IdentificationOutcome.failed fail := by
         rw [← hn]
@@ -20336,12 +20335,12 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_immediate
             larger)) = [piece])
     (hsingleL : G.isSingleCComponent larger = true)
     (hnested :
-      identifyFuel
+      Legacy.identifyFuel
           (S.count * Nat.succ S.count * Nat.succ S.count) G
           NodeSet.full piece (NodeSet.diff NodeSet.full piece)
           (observationalJointTerm S) =
         IdentificationOutcome.failed fail)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (hmeets :
       NodeSet.meetsBool (failedHedgeSelection fail).large q.action = true)
     (hancY :
@@ -20387,14 +20386,14 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_immediate
     simpa [hfreeN] using hnestedFc
   cases hn : S.count * Nat.succ S.count * Nat.succ S.count with
   | zero =>
-      have hzero : identifyFuel 0 G NodeSet.full piece
+      have hzero : Legacy.identifyFuel 0 G NodeSet.full piece
           (NodeSet.diff NodeSet.full piece) (observationalJointTerm S) =
           IdentificationOutcome.failed fail := by
         rw [← hn]
         exact hnested
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
-      have hsucc : identifyFuel (n + 1) G NodeSet.full piece
+      have hsucc : Legacy.identifyFuel (n + 1) G NodeSet.full piece
           (NodeSet.diff NodeSet.full piece) (observationalJointTerm S) =
           IdentificationOutcome.failed fail := by
         rw [← hn]
@@ -20405,7 +20404,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_immediate
           hexN hkeptN hfcN hsingle hany hcont hsucc
       cases n with
       | zero =>
-          simp [identifyFuel] at hrestricted
+          simp [Legacy.identifyFuel] at hrestricted
       | succ n' =>
           have hactL :
               NodeSet.inter
@@ -20501,13 +20500,13 @@ theorem identifyFuel_eq_failed_of_product_nested_restrict
     (hcont :
       G.containingCComponent NodeSet.full piece = some larger)
     (hnested :
-      identifyFuel
+      Legacy.identifyFuel
           (S.count * Nat.succ S.count * Nat.succ S.count) G
           NodeSet.full piece (NodeSet.diff NodeSet.full piece)
           (observationalJointTerm S) =
         IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G larger piece
+      Legacy.identifyFuel n G larger piece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff NodeSet.full piece) NodeSet.full)
           larger)
@@ -20547,14 +20546,14 @@ theorem identifyFuel_eq_failed_of_product_nested_restrict
     simpa [hfreeN] using hnestedFc
   cases hn : S.count * Nat.succ S.count * Nat.succ S.count with
   | zero =>
-      have hzero : identifyFuel 0 G NodeSet.full piece
+      have hzero : Legacy.identifyFuel 0 G NodeSet.full piece
           (NodeSet.diff NodeSet.full piece) (observationalJointTerm S) =
           IdentificationOutcome.failed fail := by
         rw [← hn]
         exact hnested
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
-      have hsucc : identifyFuel (n + 1) G NodeSet.full piece
+      have hsucc : Legacy.identifyFuel (n + 1) G NodeSet.full piece
           (NodeSet.diff NodeSet.full piece) (observationalJointTerm S) =
           IdentificationOutcome.failed fail := by
         rw [← hn]
@@ -20612,7 +20611,7 @@ theorem identifyFuel_eq_failed_of_product_nested_restrict_product
             larger)) =
         component :: component2 :: rest)
     (hnested :
-      identifyFuel
+      Legacy.identifyFuel
           (S.count * Nat.succ S.count * Nat.succ S.count) G
           NodeSet.full piece (NodeSet.diff NodeSet.full piece)
           (observationalJointTerm S) =
@@ -20620,7 +20619,7 @@ theorem identifyFuel_eq_failed_of_product_nested_restrict_product
     Exists fun subpiece =>
       subpiece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
+          Legacy.identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
             (chainProduct NodeSet.full larger) =
             IdentificationOutcome.failed fail := by
   rcases identifyFuel_eq_failed_of_product_nested_restrict G q hex hmem
@@ -20628,7 +20627,7 @@ theorem identifyFuel_eq_failed_of_product_nested_restrict_product
   cases hm' : m with
   | zero =>
       have hzero :
-          identifyFuel 0 G larger piece
+          Legacy.identifyFuel 0 G larger piece
             (NodeSet.inter
               (NodeSet.inter (NodeSet.diff NodeSet.full piece)
                 NodeSet.full)
@@ -20637,10 +20636,10 @@ theorem identifyFuel_eq_failed_of_product_nested_restrict_product
             IdentificationOutcome.failed fail := by
         rw [← hm']
         exact hm
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G larger piece
+          Legacy.identifyFuel (n + 1) G larger piece
             (NodeSet.inter
               (NodeSet.inter (NodeSet.diff NodeSet.full piece)
                 NodeSet.full)
@@ -20764,7 +20763,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_product
             larger)) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining larger = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -20899,12 +20898,12 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_product_restrict
       G.containingCComponent larger subpiece = some larger2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
+        Legacy.identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
           (chainProduct NodeSet.full larger) =
           IdentificationOutcome.failed fail)
-    (_hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (_hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G larger2 subpiece
+      Legacy.identifyFuel n G larger2 subpiece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff larger subpiece) larger) larger2)
         (chainProduct larger larger2) =
@@ -20994,7 +20993,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_product_restrict
         (fun c => NodeSet.equal c subpiece) = false)
     (_hcont2 :
       G.containingCComponent larger subpiece = some larger2)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining larger2 = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -21077,11 +21076,11 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_product_shrink
         larger = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
+        Legacy.identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
           (chainProduct NodeSet.full larger) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet larger
           (GraphMutilation.bar
             (NodeSet.inter (NodeSet.diff larger subpiece) larger))
@@ -21130,7 +21129,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_product_shrink
             larger)) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet larger
@@ -21236,13 +21235,13 @@ theorem identifyFuel_eq_failed_of_product_nested_restrict_shrink
           (NodeSet.inter piece larger))
         larger = false)
     (hnested :
-      identifyFuel
+      Legacy.identifyFuel
           (S.count * Nat.succ S.count * Nat.succ S.count) G
           NodeSet.full piece (NodeSet.diff NodeSet.full piece)
           (observationalJointTerm S) =
         IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet larger
           (GraphMutilation.bar
             (NodeSet.inter
@@ -21270,7 +21269,7 @@ theorem identifyFuel_eq_failed_of_product_nested_restrict_shrink
   cases hm' : m with
   | zero =>
       have hzero :
-          identifyFuel 0 G larger piece
+          Legacy.identifyFuel 0 G larger piece
             (NodeSet.inter
               (NodeSet.inter (NodeSet.diff NodeSet.full piece)
                 NodeSet.full)
@@ -21279,10 +21278,10 @@ theorem identifyFuel_eq_failed_of_product_nested_restrict_shrink
             IdentificationOutcome.failed fail := by
         rw [← hm']
         exact hm
-      simp [identifyFuel] at hzero
+      simp [Legacy.identifyFuel] at hzero
   | succ n =>
       have hsucc :
-          identifyFuel (n + 1) G larger piece
+          Legacy.identifyFuel (n + 1) G larger piece
             (NodeSet.inter
               (NodeSet.inter (NodeSet.diff NodeSet.full piece)
                 NodeSet.full)
@@ -21386,7 +21385,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_shrink
               larger))
           (NodeSet.inter piece larger))
         larger = false)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet larger
@@ -21535,7 +21534,7 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_shrink_product
         component :: component2 :: rest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G
+        Legacy.identifyFuel n G
           (G.ancestralSet larger
             (GraphMutilation.bar
               (NodeSet.inter
@@ -21561,7 +21560,7 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_shrink_product
     Exists fun subpiece =>
       subpiece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G
+          Legacy.identifyFuel n G
             (G.ancestralSet larger
               (GraphMutilation.bar
                 (NodeSet.inter
@@ -21655,7 +21654,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_shrink_product
               (NodeSet.inter piece larger)))) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet larger
@@ -21869,7 +21868,7 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_shrink_restrict
         piece = some host)
     (hinner :
       Exists fun n =>
-        identifyFuel n G
+        Legacy.identifyFuel n G
           (G.ancestralSet larger
             (GraphMutilation.bar
               (NodeSet.inter
@@ -21893,7 +21892,7 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_shrink_restrict
             (chainProduct NodeSet.full larger)) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host piece
+      Legacy.identifyFuel n G host piece
         (NodeSet.inter
           (NodeSet.inter
             (NodeSet.inter
@@ -21960,7 +21959,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_shrink_restrict
       G.cComponents (NodeSet.diff NodeSet.full q.action) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -22035,7 +22034,7 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_product
         component :: component2 :: rest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host piece
+        Legacy.identifyFuel n G host piece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff NodeSet.full piece) kept)
             host)
@@ -22044,7 +22043,7 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_product
     Exists fun subpiece =>
       subpiece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G host subpiece
+          Legacy.identifyFuel n G host subpiece
             (NodeSet.diff host subpiece)
             (chainProduct kept host) =
             IdentificationOutcome.failed fail :=
@@ -22087,7 +22086,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_restrict_product
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
     (hhost : NodeSet.Subset host kept)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -22196,14 +22195,14 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_restrict
     (hcontN : G.containingCComponent host seed = some host2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host piece
+        Legacy.identifyFuel n G host piece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff NodeSet.full piece) kept)
             host)
           (chainProduct kept host) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host2 piece
+      Legacy.identifyFuel n G host2 piece
         (NodeSet.inter
           (NodeSet.inter
             (NodeSet.inter
@@ -22241,7 +22240,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_restrict_restrict
       G.cComponents (NodeSet.diff NodeSet.full q.action) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -22306,14 +22305,14 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_shrink
         host = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host piece
+        Legacy.identifyFuel n G host piece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff NodeSet.full piece) kept)
             host)
           (chainProduct kept host) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet host
           (GraphMutilation.bar
             (NodeSet.inter
@@ -22367,7 +22366,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_restrict_shrink
       G.cComponents (NodeSet.diff NodeSet.full q.action) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining nestedAn = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -22443,7 +22442,7 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_shrink_product
         component :: component2 :: rest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn piece
+        Legacy.identifyFuel n G nestedAn piece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff NodeSet.full piece) kept)
             host)
@@ -22453,7 +22452,7 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_shrink_product
     Exists fun subpiece =>
       subpiece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G nestedAn subpiece
+          Legacy.identifyFuel n G nestedAn subpiece
             (NodeSet.diff nestedAn subpiece)
             (.marginalize
               (NodeSet.diff host nestedAn) (chainProduct kept host)) =
@@ -22501,7 +22500,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_restrict_shrink_pro
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
     (hAn : NodeSet.Subset nestedAn host)
     (hhost : NodeSet.Subset host kept)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining nestedAn = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -22612,7 +22611,7 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_shrink_restrict
     (hcontN : G.containingCComponent nestedAn seed = some host2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn piece
+        Legacy.identifyFuel n G nestedAn piece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff NodeSet.full piece) kept)
             host)
@@ -22620,7 +22619,7 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_shrink_restrict
             (NodeSet.diff host nestedAn) (chainProduct kept host)) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host2 piece
+      Legacy.identifyFuel n G host2 piece
         (NodeSet.inter
           (NodeSet.inter
             (NodeSet.inter
@@ -22660,7 +22659,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_restrict_shrink_res
       G.cComponents (NodeSet.diff NodeSet.full q.action) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -22728,11 +22727,11 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_product_restric
     (hcont2 : G.containingCComponent host subpiece = some host2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host subpiece (NodeSet.diff host subpiece)
+        Legacy.identifyFuel n G host subpiece (NodeSet.diff host subpiece)
           (chainProduct kept host) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host2 subpiece
+      Legacy.identifyFuel n G host2 subpiece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff host subpiece) host) host2)
         (chainProduct host host2) =
@@ -22775,7 +22774,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_restrict_product_re
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
     (hhost : NodeSet.Subset host kept)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -22862,11 +22861,11 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_product_shrink
         host = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host subpiece (NodeSet.diff host subpiece)
+        Legacy.identifyFuel n G host subpiece (NodeSet.diff host subpiece)
           (chainProduct kept host) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet host
           (GraphMutilation.bar
             (NodeSet.inter (NodeSet.diff host subpiece) host))
@@ -22917,7 +22916,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_restrict_product_sh
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
     (hhost : NodeSet.Subset host kept)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining nestedAn = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -23014,13 +23013,13 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_shrink_product_restric
     (hcont2 : G.containingCComponent nestedAn subpiece = some host2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn subpiece
+        Legacy.identifyFuel n G nestedAn subpiece
           (NodeSet.diff nestedAn subpiece)
           (.marginalize
             (NodeSet.diff larger nestedAn) (chainProduct NodeSet.full larger)) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host2 subpiece
+      Legacy.identifyFuel n G host2 subpiece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff nestedAn subpiece) nestedAn) host2)
         (chainProduct nestedAn host2) =
@@ -23077,7 +23076,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_shrink_product_re
               (NodeSet.inter piece larger)))) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -23191,13 +23190,13 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_shrink_product_shrink
         nestedAn = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn subpiece
+        Legacy.identifyFuel n G nestedAn subpiece
           (NodeSet.diff nestedAn subpiece)
           (.marginalize
             (NodeSet.diff larger nestedAn) (chainProduct NodeSet.full larger)) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet nestedAn
           (GraphMutilation.bar
             (NodeSet.inter (NodeSet.diff nestedAn subpiece) nestedAn))
@@ -23264,7 +23263,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_shrink_product_sh
               (NodeSet.inter piece larger)))) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining nestedAn2 = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -23402,7 +23401,7 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_shrink_restrict_produc
         component :: component2 :: rest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host piece
+        Legacy.identifyFuel n G host piece
           (NodeSet.inter
             (NodeSet.inter
               (NodeSet.inter (NodeSet.diff NodeSet.full piece) larger)
@@ -23413,7 +23412,7 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_shrink_restrict_produc
     Exists fun subpiece =>
       subpiece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G host subpiece
+          Legacy.identifyFuel n G host subpiece
             (NodeSet.diff host subpiece)
             (chainProduct nestedAn host) =
             IdentificationOutcome.failed fail :=
@@ -23462,7 +23461,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_shrink_restrict_p
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
     (hinner : NodeSet.Subset host nestedAn)
     (hAn : NodeSet.Subset nestedAn larger)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -23583,7 +23582,7 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_shrink_restrict_restri
     (hcontN : G.containingCComponent host seed = some host2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host piece
+        Legacy.identifyFuel n G host piece
           (NodeSet.inter
             (NodeSet.inter
               (NodeSet.inter (NodeSet.diff NodeSet.full piece) larger)
@@ -23592,7 +23591,7 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_shrink_restrict_restri
           (chainProduct nestedAn host) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host2 piece
+      Legacy.identifyFuel n G host2 piece
         (NodeSet.inter
           (NodeSet.inter
             (NodeSet.inter
@@ -23635,7 +23634,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_shrink_restrict_r
       G.cComponents (NodeSet.diff NodeSet.full q.action) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -23705,7 +23704,7 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_shrink_restrict_shrink
         host = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host piece
+        Legacy.identifyFuel n G host piece
           (NodeSet.inter
             (NodeSet.inter
               (NodeSet.inter (NodeSet.diff NodeSet.full piece) larger)
@@ -23714,7 +23713,7 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_shrink_restrict_shrink
           (chainProduct nestedAn host) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet host
           (GraphMutilation.bar
             (NodeSet.inter
@@ -23776,7 +23775,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_shrink_restrict_s
       G.cComponents (NodeSet.diff NodeSet.full q.action) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining nestedAn2 = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -23858,7 +23857,7 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_restrict_produc
         component :: component2 :: rest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host2 piece
+        Legacy.identifyFuel n G host2 piece
           (NodeSet.inter
             (NodeSet.inter
               (NodeSet.inter (NodeSet.diff NodeSet.full piece) kept)
@@ -23869,7 +23868,7 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_restrict_produc
     Exists fun subpiece =>
       subpiece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G host2 subpiece
+          Legacy.identifyFuel n G host2 subpiece
             (NodeSet.diff host2 subpiece)
             (chainProduct host host2) =
             IdentificationOutcome.failed fail :=
@@ -23918,7 +23917,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_restrict_restrict_p
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
     (hinner : NodeSet.Subset host2 host)
     (hAn : NodeSet.Subset host kept)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -24039,7 +24038,7 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_restrict_restri
     (hcontN : G.containingCComponent host2 seed = some host3)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host2 piece
+        Legacy.identifyFuel n G host2 piece
           (NodeSet.inter
             (NodeSet.inter
               (NodeSet.inter (NodeSet.diff NodeSet.full piece) kept)
@@ -24048,7 +24047,7 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_restrict_restri
           (chainProduct host host2) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host3 piece
+      Legacy.identifyFuel n G host3 piece
         (NodeSet.inter
           (NodeSet.inter
             (NodeSet.inter
@@ -24091,7 +24090,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_restrict_restrict_r
       G.cComponents (NodeSet.diff NodeSet.full q.action) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host3 = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -24161,7 +24160,7 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_restrict_shrink
         host2 = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G host2 piece
+        Legacy.identifyFuel n G host2 piece
           (NodeSet.inter
             (NodeSet.inter
               (NodeSet.inter (NodeSet.diff NodeSet.full piece) kept)
@@ -24170,7 +24169,7 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_restrict_restrict_shrink
           (chainProduct host host2) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet host2
           (GraphMutilation.bar
             (NodeSet.inter
@@ -24232,7 +24231,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_restrict_restrict_s
       G.cComponents (NodeSet.diff NodeSet.full q.action) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining nestedAn2 = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -24300,11 +24299,11 @@ theorem identifyJoint_eq_failed_of_first_shrink_product_restrict_product_restric
     (hcont2 : G.containingCComponent larger subpiece = some host2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
+        Legacy.identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
           (chainProduct kept larger) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host2 subpiece
+      Legacy.identifyFuel n G host2 subpiece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff larger subpiece) larger) host2)
         (chainProduct larger host2) =
@@ -24361,7 +24360,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_product_restrict_product_re
             larger)) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -24469,11 +24468,11 @@ theorem identifyJoint_eq_failed_of_first_shrink_product_restrict_product_shrink
         larger = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
+        Legacy.identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
           (chainProduct kept larger) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet larger
           (GraphMutilation.bar
             (NodeSet.inter (NodeSet.diff larger subpiece) larger))
@@ -24538,7 +24537,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_product_restrict_product_sh
             larger)) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet larger
@@ -24662,11 +24661,11 @@ theorem identifyJoint_eq_failed_of_first_shrink_product_shrink_product_restrict
     (hcont2 : G.containingCComponent nestedAn subpiece = some host2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn subpiece
+        Legacy.identifyFuel n G nestedAn subpiece
           (NodeSet.diff nestedAn subpiece) current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host2 subpiece
+      Legacy.identifyFuel n G host2 subpiece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff nestedAn subpiece) nestedAn) host2)
         (chainProduct nestedAn host2) =
@@ -24741,7 +24740,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_product_shrink_product_rest
                   q.outcome))))) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -24851,11 +24850,11 @@ theorem identifyJoint_eq_failed_of_first_shrink_product_shrink_product_shrink
         nestedAn = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn subpiece
+        Legacy.identifyFuel n G nestedAn subpiece
           (NodeSet.diff nestedAn subpiece) current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet nestedAn
           (GraphMutilation.bar
             (NodeSet.inter (NodeSet.diff nestedAn subpiece) nestedAn))
@@ -24939,7 +24938,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_product_shrink_product_shri
                   q.outcome))))) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet
@@ -25129,7 +25128,7 @@ theorem identifyJoint_eq_failed_of_first_shrink_restrict_product_restrict_produc
         component :: component2 :: rest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger piece
+        Legacy.identifyFuel n G larger piece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff host piece) host)
             larger)
@@ -25138,7 +25137,7 @@ theorem identifyJoint_eq_failed_of_first_shrink_restrict_product_restrict_produc
     Exists fun subpiece =>
       subpiece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G larger subpiece
+          Legacy.identifyFuel n G larger subpiece
             (NodeSet.diff larger subpiece)
             (chainProduct host larger) =
             IdentificationOutcome.failed fail :=
@@ -25192,7 +25191,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_restrict_product_restrict_p
       NodeSet.Subset host
         (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
           q.outcome))
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining larger = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -25323,14 +25322,14 @@ theorem identifyJoint_eq_failed_of_first_shrink_restrict_product_restrict_restri
     (hcontN : G.containingCComponent larger piece = some host2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger piece
+        Legacy.identifyFuel n G larger piece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff host piece) host)
             larger)
           (chainProduct host larger) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host2 piece
+      Legacy.identifyFuel n G host2 piece
         (NodeSet.inter
           (NodeSet.inter
             (NodeSet.inter
@@ -25379,7 +25378,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_restrict_product_restrict_r
       NodeSet.Subset host
         (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
           q.outcome))
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -25466,14 +25465,14 @@ theorem identifyJoint_eq_failed_of_first_shrink_restrict_product_restrict_shrink
         larger = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger piece
+        Legacy.identifyFuel n G larger piece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff host piece) host)
             larger)
           (chainProduct host larger) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet larger
           (GraphMutilation.bar
             (NodeSet.inter
@@ -25536,7 +25535,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_restrict_product_restrict_s
       NodeSet.Subset host
         (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
           q.outcome))
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining nestedAn = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -25622,13 +25621,13 @@ theorem identifyJoint_eq_failed_of_first_shrink_restrict_product_shrink_product
         component :: component2 :: rest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn piece (NodeSet.diff host piece)
+        Legacy.identifyFuel n G nestedAn piece (NodeSet.diff host piece)
           current =
           IdentificationOutcome.failed fail) :
     Exists fun subpiece =>
       subpiece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G nestedAn subpiece
+          Legacy.identifyFuel n G nestedAn subpiece
             (NodeSet.diff nestedAn subpiece) current =
             IdentificationOutcome.failed fail :=
   identifyFuel_eq_failed_of_product_of G nestedAn piece
@@ -25674,7 +25673,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_restrict_product_shrink_pro
       NodeSet.Subset host
         (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
           q.outcome))
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining nestedAn = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -25786,11 +25785,11 @@ theorem identifyJoint_eq_failed_of_first_shrink_restrict_product_shrink_restrict
     (hcontN : G.containingCComponent nestedAn piece = some host2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn piece (NodeSet.diff host piece)
+        Legacy.identifyFuel n G nestedAn piece (NodeSet.diff host piece)
           current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host2 piece
+      Legacy.identifyFuel n G host2 piece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff host piece) nestedAn)
           host2)
@@ -25832,7 +25831,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_restrict_product_shrink_res
       NodeSet.Subset host
         (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
           q.outcome))
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -25914,11 +25913,11 @@ theorem identifyJoint_eq_failed_of_first_shrink_restrict_product_shrink_shrink
         nestedAn = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn piece (NodeSet.diff host piece)
+        Legacy.identifyFuel n G nestedAn piece (NodeSet.diff host piece)
           current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet nestedAn
           (GraphMutilation.bar
             (NodeSet.inter (NodeSet.diff host piece) nestedAn))
@@ -25968,7 +25967,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_shrink_restrict_product_shrink_shr
       NodeSet.Subset host
         (G.ancestralSet NodeSet.full (GraphMutilation.bar q.action)
           q.outcome))
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining nestedAn2 = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -26057,11 +26056,11 @@ theorem identifyJoint_eq_failed_of_first_restrict_product_restrict_product_restr
     (hcont2 : G.containingCComponent larger subpiece = some host2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
+        Legacy.identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
           (chainProduct host larger) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host2 subpiece
+      Legacy.identifyFuel n G host2 subpiece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff larger subpiece) larger) host2)
         (chainProduct larger host2) =
@@ -26103,7 +26102,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_product_restrict_product_
             larger)) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -26195,11 +26194,11 @@ theorem identifyJoint_eq_failed_of_first_restrict_product_restrict_product_shrin
         larger = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
+        Legacy.identifyFuel n G larger subpiece (NodeSet.diff larger subpiece)
           (chainProduct host larger) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet larger
           (GraphMutilation.bar
             (NodeSet.inter (NodeSet.diff larger subpiece) larger))
@@ -26249,7 +26248,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_product_restrict_product_
             larger)) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet larger
@@ -26357,11 +26356,11 @@ theorem identifyJoint_eq_failed_of_first_restrict_product_shrink_product_restric
     (hcont2 : G.containingCComponent nestedAn subpiece = some host2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn subpiece
+        Legacy.identifyFuel n G nestedAn subpiece
           (NodeSet.diff nestedAn subpiece) current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host2 subpiece
+      Legacy.identifyFuel n G host2 subpiece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff nestedAn subpiece) nestedAn) host2)
         (chainProduct nestedAn host2) =
@@ -26400,7 +26399,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_product_shrink_product_re
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
     (hAn : NodeSet.Subset nestedAn host)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -26487,11 +26486,11 @@ theorem identifyJoint_eq_failed_of_first_restrict_product_shrink_product_shrink
         nestedAn = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn subpiece
+        Legacy.identifyFuel n G nestedAn subpiece
           (NodeSet.diff nestedAn subpiece) current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet nestedAn
           (GraphMutilation.bar
             (NodeSet.inter (NodeSet.diff nestedAn subpiece) nestedAn))
@@ -26539,7 +26538,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_product_shrink_product_sh
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
     (hAn : NodeSet.Subset nestedAn host)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet nestedAn
@@ -26648,7 +26647,7 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink_product_restrict_produc
         component :: component2 :: rest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger piece
+        Legacy.identifyFuel n G larger piece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff kept piece) kept)
             larger)
@@ -26657,7 +26656,7 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink_product_restrict_produc
     Exists fun subpiece =>
       subpiece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G larger subpiece
+          Legacy.identifyFuel n G larger subpiece
             (NodeSet.diff larger subpiece)
             (chainProduct kept larger) =
             IdentificationOutcome.failed fail :=
@@ -26720,7 +26719,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_shrink_product_restrict_p
       (G.ancestralSet host
         (GraphMutilation.bar (NodeSet.inter q.action host))
         (NodeSet.inter q.outcome host)))
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining larger = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -26868,14 +26867,14 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink_product_restrict_restri
     (hcontN : G.containingCComponent larger piece = some host2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger piece
+        Legacy.identifyFuel n G larger piece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff kept piece) kept)
             larger)
           (chainProduct kept larger) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host2 piece
+      Legacy.identifyFuel n G host2 piece
         (NodeSet.inter
           (NodeSet.inter
             (NodeSet.inter
@@ -26922,7 +26921,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_shrink_product_restrict_r
               (NodeSet.inter q.outcome host)))) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -27016,14 +27015,14 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink_product_restrict_shrink
         larger = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger piece
+        Legacy.identifyFuel n G larger piece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff kept piece) kept)
             larger)
           (chainProduct kept larger) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet larger
           (GraphMutilation.bar
             (NodeSet.inter
@@ -27084,7 +27083,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_shrink_product_restrict_s
               (NodeSet.inter q.outcome host)))) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining nestedAn = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -27177,13 +27176,13 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink_product_shrink_product
         component :: component2 :: rest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn piece (NodeSet.diff kept piece)
+        Legacy.identifyFuel n G nestedAn piece (NodeSet.diff kept piece)
           current =
           IdentificationOutcome.failed fail) :
     Exists fun subpiece =>
       subpiece ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G nestedAn subpiece
+          Legacy.identifyFuel n G nestedAn subpiece
             (NodeSet.diff nestedAn subpiece) current =
             IdentificationOutcome.failed fail :=
   identifyFuel_eq_failed_of_product_of G nestedAn piece
@@ -27236,7 +27235,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_shrink_product_shrink_pro
       (G.ancestralSet host
         (GraphMutilation.bar (NodeSet.inter q.action host))
         (NodeSet.inter q.outcome host)))
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining nestedAn = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -27361,11 +27360,11 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink_product_shrink_restrict
     (hcontN : G.containingCComponent nestedAn piece = some host2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn piece (NodeSet.diff kept piece)
+        Legacy.identifyFuel n G nestedAn piece (NodeSet.diff kept piece)
           current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host2 piece
+      Legacy.identifyFuel n G host2 piece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff kept piece) nestedAn)
           host2)
@@ -27405,7 +27404,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_shrink_product_shrink_res
               (NodeSet.inter q.outcome host)))) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -27494,11 +27493,11 @@ theorem identifyJoint_eq_failed_of_first_restrict_shrink_product_shrink_shrink
         nestedAn = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn piece (NodeSet.diff kept piece)
+        Legacy.identifyFuel n G nestedAn piece (NodeSet.diff kept piece)
           current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet nestedAn
           (GraphMutilation.bar
             (NodeSet.inter (NodeSet.diff kept piece) nestedAn))
@@ -27546,7 +27545,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_restrict_shrink_product_shrink_shr
               (NodeSet.inter q.outcome host)))) =
         component :: component2 :: rest)
     (hmem : piece ∈ component :: component2 :: rest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining nestedAn2 = true)
     (hfreeEq : NodeSet.equal fail.free piece = true)
     (hancFree :
@@ -27654,14 +27653,14 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_product_restrict_restr
     (hcontN : G.containingCComponent larger2 subpiece = some host3)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger2 subpiece
+        Legacy.identifyFuel n G larger2 subpiece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff larger subpiece) larger)
             larger2)
           (chainProduct larger larger2) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host3 subpiece
+      Legacy.identifyFuel n G host3 subpiece
         (NodeSet.inter
           (NodeSet.inter
             (NodeSet.inter
@@ -27710,7 +27709,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_product_restrict_
             larger)) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host3 = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -27803,14 +27802,14 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_product_restrict_shrin
         larger2 = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger2 subpiece
+        Legacy.identifyFuel n G larger2 subpiece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff larger subpiece) larger)
             larger2)
           current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet larger2
           (GraphMutilation.bar
             (NodeSet.inter
@@ -27881,7 +27880,7 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_product_restrict_produ
         component :: component2 :: rest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger2 subpiece
+        Legacy.identifyFuel n G larger2 subpiece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff larger subpiece) larger)
             larger2)
@@ -27890,7 +27889,7 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_product_restrict_produ
     Exists fun nested =>
       nested ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G larger2 nested
+          Legacy.identifyFuel n G larger2 nested
             (NodeSet.diff larger2 nested)
             (chainProduct larger larger2) =
             IdentificationOutcome.failed fail :=
@@ -27944,7 +27943,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_product_restrict_
         outer :: outer2 :: outerRest)
     (hmemN : nested ∈ outer :: outer2 :: outerRest)
     (hhostL : NodeSet.Subset larger2 larger)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining larger2 = true)
     (hfreeEq : NodeSet.equal fail.free nested = true)
     (hancFree :
@@ -28068,7 +28067,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_product_restrict_
             larger)) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet larger2
@@ -28172,11 +28171,11 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_product_shrink_restric
     (hcontN : G.containingCComponent nestedAn subpiece = some host2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn subpiece
+        Legacy.identifyFuel n G nestedAn subpiece
           (NodeSet.diff larger subpiece) current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host2 subpiece
+      Legacy.identifyFuel n G host2 subpiece
         (NodeSet.inter
           (NodeSet.inter (NodeSet.diff larger subpiece) nestedAn)
           host2)
@@ -28218,7 +28217,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_product_shrink_re
             larger)) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -28303,11 +28302,11 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_product_shrink_shrink
         nestedAn = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn subpiece
+        Legacy.identifyFuel n G nestedAn subpiece
           (NodeSet.diff larger subpiece) current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet nestedAn
           (GraphMutilation.bar
             (NodeSet.inter (NodeSet.diff larger subpiece) nestedAn))
@@ -28357,7 +28356,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_product_shrink_sh
             larger)) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet nestedAn
@@ -28454,13 +28453,13 @@ theorem identifyJoint_eq_failed_of_first_product_restrict_product_shrink_product
         component :: component2 :: rest)
     (hinner :
       Exists fun n =>
-        identifyFuel n G nestedAn subpiece
+        Legacy.identifyFuel n G nestedAn subpiece
           (NodeSet.diff larger subpiece) current =
           IdentificationOutcome.failed fail) :
     Exists fun nested =>
       nested ∈ component :: component2 :: rest ∧
         Exists fun n =>
-          identifyFuel n G nestedAn nested
+          Legacy.identifyFuel n G nestedAn nested
             (NodeSet.diff nestedAn nested) current =
             IdentificationOutcome.failed fail :=
   identifyFuel_eq_failed_of_product_of G nestedAn subpiece
@@ -28506,7 +28505,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_restrict_product_shrink_pr
         outer :: outer2 :: outerRest)
     (hmemN : nested ∈ outer :: outer2 :: outerRest)
     (hAn : NodeSet.Subset nestedAn larger)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining nestedAn = true)
     (hfreeEq : NodeSet.equal fail.free nested = true)
     (hancFree :
@@ -28635,14 +28634,14 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_product_restrict_restric
     (hcontN : G.containingCComponent larger subpiece = some host2)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger subpiece
+        Legacy.identifyFuel n G larger subpiece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff kept subpiece) kept)
             larger)
           (chainProduct kept larger) =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G host2 subpiece
+      Legacy.identifyFuel n G host2 subpiece
         (NodeSet.inter
           (NodeSet.inter
             (NodeSet.inter
@@ -28698,7 +28697,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_product_restrict_re
               (NodeSet.inter piece NodeSet.full)))) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq : NodeSet.equal fail.remaining host2 = true)
     (hfreeEq : NodeSet.equal fail.free subpiece = true)
     (hancFree :
@@ -28797,14 +28796,14 @@ theorem identifyJoint_eq_failed_of_first_product_shrink_product_restrict_shrink
         larger = false)
     (hinner :
       Exists fun n =>
-        identifyFuel n G larger subpiece
+        Legacy.identifyFuel n G larger subpiece
           (NodeSet.inter
             (NodeSet.inter (NodeSet.diff kept subpiece) kept)
             larger)
           current =
           IdentificationOutcome.failed fail) :
     Exists fun n =>
-      identifyFuel n G
+      Legacy.identifyFuel n G
         (G.ancestralSet larger
           (GraphMutilation.bar
             (NodeSet.inter
@@ -28874,7 +28873,7 @@ theorem hedgeWitness?_eq_some_of_failed_after_product_shrink_product_restrict_sh
               (NodeSet.inter piece NodeSet.full)))) =
         inner :: inner2 :: innerRest)
     (hmemS : subpiece ∈ inner :: inner2 :: innerRest)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail)
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail)
     (_heq :
       NodeSet.equal fail.remaining
         (G.ancestralSet larger
@@ -28980,7 +28979,7 @@ theorem identifyJoint_eq_failed_immediate_query_site
     (hfc :
       G.cComponents (NodeSet.diff NodeSet.full q.action) = [fail.free])
     (hsingle : G.isSingleCComponent NodeSet.full = true)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     NodeSet.equal fail.free
         (NodeSet.diff fail.remaining
           (NodeSet.inter q.action fail.remaining)) = true ∧
@@ -29010,7 +29009,7 @@ theorem identifyJoint_eq_failed_immediate_query_site
         [fail.free] := by
     simpa [hinter] using hfc
   have hfuel :
-      identifyFuel (identificationFuel S) G NodeSet.full q.outcome
+      Legacy.identifyFuel (identificationFuel S) G NodeSet.full q.outcome
         q.action (observationalJointTerm S) =
         IdentificationOutcome.failed fail := hfail
   rw [identificationFuel] at hfuel
@@ -29033,7 +29032,7 @@ theorem hedgeWitness?_eq_some_of_failed_immediate
     (hfc :
       G.cComponents (NodeSet.diff NodeSet.full q.action) = [fail.free])
     (hsingle : G.isSingleCComponent NodeSet.full = true)
-    (hfail : identifyJoint G q = IdentificationOutcome.failed fail) :
+    (hfail : Legacy.identifyJoint G q = IdentificationOutcome.failed fail) :
     Exists fun witness => hedgeWitness? G q fail = some witness :=
   hedgeWitness?_eq_some_of_failed_local_action G q hfail
     (identifyJoint_eq_failed_immediate_query_site G q hex hkept hfc
@@ -29048,7 +29047,7 @@ failure half of the joint completeness diagram.
 -/
 def hedgeWitnessOfJoint (G : ObservedGraph S) (q : JointKernelQuery S) :
     Option (HedgeWitness G q) :=
-  match identifyJoint G q with
+  match Legacy.identifyJoint G q with
   | .failed fail => hedgeWitness? G q fail
   | _ => none
 

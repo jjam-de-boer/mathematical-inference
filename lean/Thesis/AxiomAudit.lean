@@ -28,6 +28,16 @@ open Lean Elab Command
 
 run_cmd do
   let env ← getEnv
+  -- Historical traces and the counterexample fixture deliberately retain
+  -- explicitly qualified Legacy declarations.  Their import must never
+  -- restore the removed unsafe ordinary API, even through a compatibility
+  -- alias or a forwarding module elsewhere in the complete development.
+  for removed in #[`Thesis.Causality.identifyFuel,
+      `Thesis.Causality.identifyJoint,
+      `Thesis.Causality.identifyConditional,
+      `Thesis.Causality.PublishedJointTraceCompiler] do
+    if env.contains removed then
+      throwError m!"removed unsafe identification API is present: {removed}"
   let mut checked := 0
   let mut violations : Array (Name × Array Name) := #[]
   for (declName, _) in env.constants do

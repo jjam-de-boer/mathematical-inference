@@ -1,4 +1,4 @@
-import Thesis.Causality.IdentificationSearch
+import Thesis.Causality.Legacy.IdentificationSearch
 
 namespace Thesis
 namespace Causality
@@ -8,9 +8,15 @@ open Probability
 universe u
 
 /-!
-# Structural induction over executable ID searches
+# Exact structural traces for the quarantined legacy ID recursion
 
-`identifyFuel` is structurally recursive on its fuel, but its definition contains
+This module records the old program's executable control flow, not the
+corrected engine's semantic certificates.  Every result equation below names
+a `Legacy` program explicitly.  The current joint and conditional programs
+have their own structural success compilers and failure extractors; importing
+either current program does not import this module.
+
+`Legacy.identifyFuel` is structurally recursive on its fuel, but its definition contains
 several nested Boolean decisions and a list-valued product branch.  Consequently,
 proofs about a search result can easily turn into a manual enumeration of paths
 such as “shrink, then product, then restrict, then fail”.  The number of such
@@ -546,7 +552,7 @@ inductive IdentificationUnfinishedTrace {S : ObservedSignature}
       (firstUnfinishedFactor :
         IdentificationOutcome.FirstUnfinishedAt
           (fun factor =>
-            identifyFuel fuel G remaining factor
+            Legacy.identifyFuel fuel G remaining factor
               (NodeSet.diff remaining factor) current)
           (component :: component2 :: rest) piece)
       (nested :
@@ -562,7 +568,7 @@ theorem eq_unfinished {S : ObservedSignature} {G : ObservedGraph S}
     {current : ProbabilityTerm S}
     (trace :
       IdentificationUnfinishedTrace G fuel remaining outcome action current) :
-    identifyFuel fuel G remaining outcome action current =
+    Legacy.identifyFuel fuel G remaining outcome action current =
       IdentificationOutcome.unfinished := by
   induction trace with
   | exhausted remaining outcome action current =>
@@ -570,16 +576,16 @@ theorem eq_unfinished {S : ObservedSignature} {G : ObservedGraph S}
   | missingHost fuel remaining outcome action current component actionNonempty
       ancestral oneFreeComponent severalRemainingComponents componentNotMaximal
       noContainingComponent =>
-      simp [identifyFuel, actionNonempty, ancestral, oneFreeComponent,
+      simp [Legacy.identifyFuel, actionNonempty, ancestral, oneFreeComponent,
         severalRemainingComponents, componentNotMaximal,
         noContainingComponent]
   | shrink fuel remaining outcome action current actionNonempty notAncestral
       nested nestedResult =>
-      simpa [identifyFuel, actionNonempty, notAncestral] using nestedResult
+      simpa [Legacy.identifyFuel, actionNonempty, notAncestral] using nestedResult
   | restrict fuel remaining outcome action current component larger
       actionNonempty ancestral oneFreeComponent severalRemainingComponents
       componentNotMaximal containingComponent nested nestedResult =>
-      simpa [identifyFuel, actionNonempty, ancestral, oneFreeComponent,
+      simpa [Legacy.identifyFuel, actionNonempty, ancestral, oneFreeComponent,
         severalRemainingComponents, componentNotMaximal,
         containingComponent] using nestedResult
   | product fuel remaining outcome action current component component2 rest
@@ -588,7 +594,7 @@ theorem eq_unfinished {S : ObservedSignature} {G : ObservedGraph S}
       have combinedResult :=
         IdentificationOutcome.combine_map_eq_unfinished_of_firstUnfinishedAt
           (fun factor =>
-            identifyFuel fuel G remaining factor
+            Legacy.identifyFuel fuel G remaining factor
               (NodeSet.diff remaining factor) current)
           (fun terms =>
             .marginalize
@@ -598,7 +604,7 @@ theorem eq_unfinished {S : ObservedSignature} {G : ObservedGraph S}
                   (NodeSet.inter action remaining)))
               (productTerms terms))
           firstUnfinishedFactor
-      simpa [identifyFuel, actionNonempty, ancestral, freeComponents] using
+      simpa [Legacy.identifyFuel, actionNonempty, ancestral, freeComponents] using
         combinedResult
 
 /--
@@ -626,7 +632,7 @@ noncomputable def of_eq_unfinished {S : ObservedSignature}
     (fuel : Nat) (G : ObservedGraph S)
     (remaining outcome action : NodeSet S)
     (current : ProbabilityTerm S)
-    (result : identifyFuel fuel G remaining outcome action current =
+    (result : Legacy.identifyFuel fuel G remaining outcome action current =
       IdentificationOutcome.unfinished) :
     IdentificationUnfinishedTrace G fuel remaining outcome action current := by
   induction fuel generalizing remaining outcome action current with
@@ -636,7 +642,7 @@ noncomputable def of_eq_unfinished {S : ObservedSignature}
       cases actionEmpty :
           NodeSet.isEmpty (NodeSet.inter action remaining) with
       | true =>
-          simp [identifyFuel, actionEmpty] at result
+          simp [Legacy.identifyFuel, actionEmpty] at result
       | false =>
           cases ancestral :
               NodeSet.equal
@@ -646,7 +652,7 @@ noncomputable def of_eq_unfinished {S : ObservedSignature}
                 remaining with
           | false =>
               have nestedResult :
-                  identifyFuel fuel G
+                  Legacy.identifyFuel fuel G
                       (G.ancestralSet remaining
                         (GraphMutilation.bar
                           (NodeSet.inter action remaining))
@@ -660,7 +666,7 @@ noncomputable def of_eq_unfinished {S : ObservedSignature}
                             (NodeSet.inter outcome remaining)))
                         current) =
                     IdentificationOutcome.unfinished := by
-                simpa [identifyFuel, actionEmpty, ancestral] using result
+                simpa [Legacy.identifyFuel, actionEmpty, ancestral] using result
               exact .shrink fuel remaining outcome action current actionEmpty
                 ancestral
                 (inductionHypothesis
@@ -682,7 +688,7 @@ noncomputable def of_eq_unfinished {S : ObservedSignature}
                     (NodeSet.diff remaining
                       (NodeSet.inter action remaining)) with
               | nil =>
-                  simp [identifyFuel, actionEmpty, ancestral,
+                  simp [Legacy.identifyFuel, actionEmpty, ancestral,
                     freeComponents] at result
               | cons component rest =>
                   cases rest with
@@ -690,7 +696,7 @@ noncomputable def of_eq_unfinished {S : ObservedSignature}
                       cases oneRemainingComponent :
                           G.isSingleCComponent remaining with
                       | true =>
-                          simp [identifyFuel, actionEmpty, ancestral,
+                          simp [Legacy.identifyFuel, actionEmpty, ancestral,
                             freeComponents, oneRemainingComponent] at result
                       | false =>
                           cases componentMaximal :
@@ -698,7 +704,7 @@ noncomputable def of_eq_unfinished {S : ObservedSignature}
                                 (fun piece =>
                                   NodeSet.equal piece component) with
                           | true =>
-                              simp [identifyFuel, actionEmpty, ancestral,
+                              simp [Legacy.identifyFuel, actionEmpty, ancestral,
                                 freeComponents, oneRemainingComponent,
                                 componentMaximal] at result
                           | false =>
@@ -711,13 +717,13 @@ noncomputable def of_eq_unfinished {S : ObservedSignature}
                                     componentMaximal containingComponent
                               | some larger =>
                                   have nestedResult :
-                                      identifyFuel fuel G larger outcome
+                                      Legacy.identifyFuel fuel G larger outcome
                                           (NodeSet.inter
                                             (NodeSet.inter action remaining)
                                             larger)
                                           (chainProduct remaining larger) =
                                         IdentificationOutcome.unfinished := by
-                                    simpa [identifyFuel, actionEmpty, ancestral,
+                                    simpa [Legacy.identifyFuel, actionEmpty, ancestral,
                                       freeComponents, oneRemainingComponent,
                                       componentMaximal, containingComponent] using
                                       result
@@ -735,7 +741,7 @@ noncomputable def of_eq_unfinished {S : ObservedSignature}
                           IdentificationOutcome.combine
                             ((component :: component2 :: rest).map
                               (fun factor =>
-                                identifyFuel fuel G remaining factor
+                                Legacy.identifyFuel fuel G remaining factor
                                   (NodeSet.diff remaining factor) current))
                             (fun terms =>
                               .marginalize
@@ -745,12 +751,12 @@ noncomputable def of_eq_unfinished {S : ObservedSignature}
                                     (NodeSet.inter action remaining)))
                                 (productTerms terms)) =
                             IdentificationOutcome.unfinished := by
-                        simpa [identifyFuel, actionEmpty, ancestral,
+                        simpa [Legacy.identifyFuel, actionEmpty, ancestral,
                           freeComponents] using result
                       rcases
                           IdentificationOutcome.firstUnfinishedAt_of_combine_map_eq_unfinished
                             (fun factor =>
-                              identifyFuel fuel G remaining factor
+                              Legacy.identifyFuel fuel G remaining factor
                                 (NodeSet.diff remaining factor) current)
                             (component :: component2 :: rest)
                             (fun terms =>
@@ -781,7 +787,7 @@ theorem identifyFuel_eq_unfinished_iff_unfinishedTrace
     (fuel : Nat) (G : ObservedGraph S)
     (remaining outcome action : NodeSet S)
     (current : ProbabilityTerm S) :
-    identifyFuel fuel G remaining outcome action current =
+    Legacy.identifyFuel fuel G remaining outcome action current =
         IdentificationOutcome.unfinished ↔
       Nonempty
         (IdentificationUnfinishedTrace G fuel remaining outcome action current) :=
@@ -791,7 +797,7 @@ theorem identifyFuel_eq_unfinished_iff_unfinishedTrace
     fun ⟨trace⟩ => IdentificationUnfinishedTrace.eq_unfinished trace⟩
 
 /--
-A structural path from an invocation of `identifyFuel` to its reported failure.
+A structural path from an invocation of `Legacy.identifyFuel` to its reported failure.
 
 The indices deliberately retain the complete invocation, including `current`.
 This makes the trace useful for semantic invariants whose statement changes
@@ -913,7 +919,7 @@ inductive IdentificationFailureTrace {S : ObservedSignature}
       (firstFailingFactor :
         IdentificationOutcome.FirstFailureAt
           (fun factor =>
-            identifyFuel fuel G remaining factor
+            Legacy.identifyFuel fuel G remaining factor
               (NodeSet.diff remaining factor) current)
           fail (component :: component2 :: rest) piece)
       (nested :
@@ -936,20 +942,20 @@ theorem eq_failed {S : ObservedSignature} {G : ObservedGraph S}
     {current : ProbabilityTerm S} {fail : IdentificationFail S}
     (trace :
       IdentificationFailureTrace G fuel remaining outcome action current fail) :
-    identifyFuel fuel G remaining outcome action current =
+    Legacy.identifyFuel fuel G remaining outcome action current =
       IdentificationOutcome.failed fail := by
   induction trace with
   | immediate fuel remaining outcome action current component
       actionNonempty ancestral oneFreeComponent oneRemainingComponent =>
-      simp [identifyFuel, actionNonempty, ancestral, oneFreeComponent,
+      simp [Legacy.identifyFuel, actionNonempty, ancestral, oneFreeComponent,
         oneRemainingComponent]
   | shrink fuel remaining outcome action current fail actionNonempty
       notAncestral nested nestedResult =>
-      simpa [identifyFuel, actionNonempty, notAncestral] using nestedResult
+      simpa [Legacy.identifyFuel, actionNonempty, notAncestral] using nestedResult
   | restrict fuel remaining outcome action current fail component larger
       actionNonempty ancestral oneFreeComponent severalRemainingComponents
       componentNotMaximal containingComponent nested nestedResult =>
-      simpa [identifyFuel, actionNonempty, ancestral, oneFreeComponent,
+      simpa [Legacy.identifyFuel, actionNonempty, ancestral, oneFreeComponent,
         severalRemainingComponents, componentNotMaximal,
         containingComponent] using nestedResult
   | product fuel remaining outcome action current fail component component2 rest
@@ -958,7 +964,7 @@ theorem eq_failed {S : ObservedSignature} {G : ObservedGraph S}
       have combinedResult :=
         IdentificationOutcome.combine_map_eq_failed_of_firstFailureAt
           (fun factor =>
-            identifyFuel fuel G remaining factor
+            Legacy.identifyFuel fuel G remaining factor
               (NodeSet.diff remaining factor) current)
           (fun terms =>
             .marginalize
@@ -968,7 +974,7 @@ theorem eq_failed {S : ObservedSignature} {G : ObservedGraph S}
                   (NodeSet.inter action remaining)))
               (productTerms terms))
           firstFailingFactor
-      simpa [identifyFuel, actionNonempty, ancestral, freeComponents] using
+      simpa [Legacy.identifyFuel, actionNonempty, ancestral, freeComponents] using
         combinedResult
 
 /--
@@ -985,17 +991,17 @@ noncomputable def of_eq_failed {S : ObservedSignature}
     (remaining outcome action : NodeSet S)
     (current : ProbabilityTerm S)
     {fail : IdentificationFail S}
-    (result : identifyFuel fuel G remaining outcome action current =
+    (result : Legacy.identifyFuel fuel G remaining outcome action current =
       IdentificationOutcome.failed fail) :
     IdentificationFailureTrace G fuel remaining outcome action current fail := by
   induction fuel generalizing remaining outcome action current with
   | zero =>
-      simp [identifyFuel] at result
+      simp [Legacy.identifyFuel] at result
   | succ fuel inductionHypothesis =>
       cases actionNonempty :
           NodeSet.isEmpty (NodeSet.inter action remaining) with
       | true =>
-          simp [identifyFuel, actionNonempty] at result
+          simp [Legacy.identifyFuel, actionNonempty] at result
       | false =>
           cases ancestral :
               NodeSet.equal
@@ -1028,7 +1034,7 @@ noncomputable def of_eq_failed {S : ObservedSignature}
                     (NodeSet.diff remaining
                       (NodeSet.inter action remaining)) with
               | nil =>
-                  simp [identifyFuel, actionNonempty, ancestral,
+                  simp [Legacy.identifyFuel, actionNonempty, ancestral,
                     freeComponents] at result
               | cons component rest =>
                   cases rest with
@@ -1036,7 +1042,7 @@ noncomputable def of_eq_failed {S : ObservedSignature}
                       cases oneRemainingComponent :
                           G.isSingleCComponent remaining with
                       | true =>
-                          simp [identifyFuel, actionNonempty, ancestral,
+                          simp [Legacy.identifyFuel, actionNonempty, ancestral,
                             freeComponents, oneRemainingComponent] at result
                           cases result
                           exact .immediate fuel remaining outcome action current
@@ -1048,14 +1054,14 @@ noncomputable def of_eq_failed {S : ObservedSignature}
                                 (fun piece =>
                                   NodeSet.equal piece component) with
                           | true =>
-                              simp [identifyFuel, actionNonempty, ancestral,
+                              simp [Legacy.identifyFuel, actionNonempty, ancestral,
                                 freeComponents, oneRemainingComponent,
                                 componentMaximal] at result
                           | false =>
                               cases containingComponent :
                                   G.containingCComponent remaining component with
                               | none =>
-                                  simp [identifyFuel, actionNonempty, ancestral,
+                                  simp [Legacy.identifyFuel, actionNonempty, ancestral,
                                     freeComponents, oneRemainingComponent,
                                     componentMaximal, containingComponent] at result
                               | some larger =>
@@ -1080,7 +1086,7 @@ noncomputable def of_eq_failed {S : ObservedSignature}
                           IdentificationOutcome.combine
                             ((component :: component2 :: rest).map
                               (fun factor =>
-                                identifyFuel fuel G remaining factor
+                                Legacy.identifyFuel fuel G remaining factor
                                   (NodeSet.diff remaining factor) current))
                             (fun terms =>
                               .marginalize
@@ -1090,12 +1096,12 @@ noncomputable def of_eq_failed {S : ObservedSignature}
                                     (NodeSet.inter action remaining)))
                                 (productTerms terms)) =
                             IdentificationOutcome.failed fail := by
-                        simpa [identifyFuel, actionNonempty, ancestral,
+                        simpa [Legacy.identifyFuel, actionNonempty, ancestral,
                           freeComponents] using result
                       rcases
                           IdentificationOutcome.firstFailureAt_of_combine_map_eq_failed
                             (fun factor =>
-                              identifyFuel fuel G remaining factor
+                              Legacy.identifyFuel fuel G remaining factor
                                 (NodeSet.diff remaining factor) current)
                             (component :: component2 :: rest)
                             (fun terms =>
@@ -1130,7 +1136,7 @@ theorem identifyFuel_eq_failed_iff_failureTrace
     (remaining outcome action : NodeSet S)
     (current : ProbabilityTerm S)
     (fail : IdentificationFail S) :
-    identifyFuel fuel G remaining outcome action current =
+    Legacy.identifyFuel fuel G remaining outcome action current =
         IdentificationOutcome.failed fail ↔
       Nonempty
         (IdentificationFailureTrace G fuel remaining outcome action current fail) :=
@@ -1331,13 +1337,13 @@ namespace IdentificationImmediateFailureSite
 theorem eq_failed {S : ObservedSignature} {G : ObservedGraph S}
     {fail : IdentificationFail S}
     (site : IdentificationImmediateFailureSite G fail) :
-    identifyFuel (site.fuel + 1) G site.remaining site.outcome site.action
+    Legacy.identifyFuel (site.fuel + 1) G site.remaining site.outcome site.action
         site.current = IdentificationOutcome.failed fail := by
   rcases site with
     ⟨fuel, remaining, outcome, action, current, component, failEq,
       actionNonempty, ancestral, oneFreeComponent, oneRemainingComponent⟩
   cases failEq
-  simp [identifyFuel, actionNonempty, ancestral, oneFreeComponent,
+  simp [Legacy.identifyFuel, actionNonempty, ancestral, oneFreeComponent,
     oneRemainingComponent]
 
 /-- The failure record's remaining set is the terminal immediate host. -/
@@ -1396,7 +1402,7 @@ explicitly rather than the ordinary `induction` tactic.
 mutual
 
 /--
-A structural derivation of `identifyFuel ... = identified term`.
+A structural derivation of `Legacy.identifyFuel ... = identified term`.
 
 Each constructor mirrors one successful branch of the executable definition.
 Recursive constructors retain their nested success traces, and the product
@@ -1567,7 +1573,7 @@ inductive IdentificationProductSuccessTrace {S : ObservedSignature}
       (component : NodeSet S) (term : ProbabilityTerm S)
       (rest : List (NodeSet S)) (terms : List (ProbabilityTerm S))
       (headResult :
-        identifyFuel fuel G remaining component
+        Legacy.identifyFuel fuel G remaining component
             (NodeSet.diff remaining component) current =
           IdentificationOutcome.identified term)
       (headTrace :
@@ -1590,7 +1596,7 @@ theorem results_eq {S : ObservedSignature} {G : ObservedGraph S}
       IdentificationProductSuccessTrace G fuel remaining current
         components terms) :
     components.map (fun component =>
-        identifyFuel fuel G remaining component
+        Legacy.identifyFuel fuel G remaining component
           (NodeSet.diff remaining component) current) =
       terms.map IdentificationOutcome.identified :=
   match traces with
@@ -1609,32 +1615,32 @@ theorem eq_identified {S : ObservedSignature} {G : ObservedGraph S}
     {current term : ProbabilityTerm S}
     (trace :
       IdentificationSuccessTrace G fuel remaining outcome action current term) :
-    identifyFuel fuel G remaining outcome action current =
+    Legacy.identifyFuel fuel G remaining outcome action current =
       IdentificationOutcome.identified term :=
   match trace with
   | .emptyAction fuel remaining outcome action current actionEmpty => by
-      simp [identifyFuel, actionEmpty]
+      simp [Legacy.identifyFuel, actionEmpty]
   | .emptyFree fuel remaining outcome action current actionNonempty ancestral
       noFreeComponents => by
-      simp [identifyFuel, actionNonempty, ancestral, noFreeComponents]
+      simp [Legacy.identifyFuel, actionNonempty, ancestral, noFreeComponents]
   | .chain fuel remaining outcome action current component actionNonempty
       ancestral oneFreeComponent severalRemainingComponents componentMaximal => by
-      simp [identifyFuel, actionNonempty, ancestral, oneFreeComponent,
+      simp [Legacy.identifyFuel, actionNonempty, ancestral, oneFreeComponent,
         severalRemainingComponents, componentMaximal]
   | .shrink fuel remaining outcome action current term actionNonempty
       notAncestral nested => by
-      simpa [identifyFuel, actionNonempty, notAncestral] using
+      simpa [Legacy.identifyFuel, actionNonempty, notAncestral] using
         eq_identified nested
   | .restrict fuel remaining outcome action current term component larger
       actionNonempty ancestral oneFreeComponent severalRemainingComponents
       componentNotMaximal containingComponent nested => by
-      simpa [identifyFuel, actionNonempty, ancestral, oneFreeComponent,
+      simpa [Legacy.identifyFuel, actionNonempty, ancestral, oneFreeComponent,
         severalRemainingComponents, componentNotMaximal,
         containingComponent] using eq_identified nested
   | .product fuel remaining outcome action current component component2 rest
       terms actionNonempty ancestral freeComponents factors => by
       let run := fun factor =>
-        identifyFuel fuel G remaining factor
+        Legacy.identifyFuel fuel G remaining factor
           (NodeSet.diff remaining factor) current
       let assemble := fun factorTerms =>
         ProbabilityTerm.marginalize
@@ -1653,7 +1659,7 @@ theorem eq_identified {S : ObservedSignature} {G : ObservedGraph S}
             IdentificationOutcome.identified (assemble terms) := by
         rw [factorResults]
         exact IdentificationOutcome.combine_map_identified terms assemble
-      simpa [identifyFuel, actionNonempty, ancestral, freeComponents,
+      simpa [Legacy.identifyFuel, actionNonempty, ancestral, freeComponents,
         run, assemble] using combinedResult
 
 /--
@@ -1712,17 +1718,17 @@ noncomputable def of_eq_identified {S : ObservedSignature}
     (fuel : Nat) (G : ObservedGraph S)
     (remaining outcome action : NodeSet S)
     (current term : ProbabilityTerm S)
-    (result : identifyFuel fuel G remaining outcome action current =
+    (result : Legacy.identifyFuel fuel G remaining outcome action current =
       IdentificationOutcome.identified term) :
     IdentificationSuccessTrace G fuel remaining outcome action current term := by
   induction fuel generalizing remaining outcome action current term with
   | zero =>
-      simp [identifyFuel] at result
+      simp [Legacy.identifyFuel] at result
   | succ fuel inductionHypothesis =>
       cases actionEmpty :
           NodeSet.isEmpty (NodeSet.inter action remaining) with
       | true =>
-          simp [identifyFuel, actionEmpty] at result
+          simp [Legacy.identifyFuel, actionEmpty] at result
           cases result
           exact .emptyAction fuel remaining outcome action current actionEmpty
       | false =>
@@ -1757,7 +1763,7 @@ noncomputable def of_eq_identified {S : ObservedSignature}
                     (NodeSet.diff remaining
                       (NodeSet.inter action remaining)) with
               | nil =>
-                  simp [identifyFuel, actionEmpty, ancestral,
+                  simp [Legacy.identifyFuel, actionEmpty, ancestral,
                     freeComponents] at result
                   cases result
                   exact .emptyFree fuel remaining outcome action current
@@ -1768,7 +1774,7 @@ noncomputable def of_eq_identified {S : ObservedSignature}
                       cases oneRemainingComponent :
                           G.isSingleCComponent remaining with
                       | true =>
-                          simp [identifyFuel, actionEmpty, ancestral,
+                          simp [Legacy.identifyFuel, actionEmpty, ancestral,
                             freeComponents, oneRemainingComponent] at result
                       | false =>
                           cases componentMaximal :
@@ -1776,7 +1782,7 @@ noncomputable def of_eq_identified {S : ObservedSignature}
                                 (fun piece =>
                                   NodeSet.equal piece component) with
                           | true =>
-                              simp [identifyFuel, actionEmpty, ancestral,
+                              simp [Legacy.identifyFuel, actionEmpty, ancestral,
                                 freeComponents, oneRemainingComponent,
                                 componentMaximal] at result
                               cases result
@@ -1787,7 +1793,7 @@ noncomputable def of_eq_identified {S : ObservedSignature}
                               cases containingComponent :
                                   G.containingCComponent remaining component with
                               | none =>
-                                  simp [identifyFuel, actionEmpty, ancestral,
+                                  simp [Legacy.identifyFuel, actionEmpty, ancestral,
                                     freeComponents, oneRemainingComponent,
                                     componentMaximal, containingComponent] at result
                               | some larger =>
@@ -1809,7 +1815,7 @@ noncomputable def of_eq_identified {S : ObservedSignature}
                                       nestedResult)
                   | cons component2 rest =>
                       let run := fun factor =>
-                        identifyFuel fuel G remaining factor
+                        Legacy.identifyFuel fuel G remaining factor
                           (NodeSet.diff remaining factor) current
                       let assemble := fun terms =>
                         ProbabilityTerm.marginalize
@@ -1823,7 +1829,7 @@ noncomputable def of_eq_identified {S : ObservedSignature}
                               ((component :: component2 :: rest).map run)
                               assemble =
                             IdentificationOutcome.identified term := by
-                        simpa [identifyFuel, actionEmpty, ancestral,
+                        simpa [Legacy.identifyFuel, actionEmpty, ancestral,
                           freeComponents, run, assemble] using result
                       rcases IdentificationOutcome.combineIdentifiedData
                           ((component :: component2 :: rest).map run)
@@ -1854,7 +1860,7 @@ noncomputable def of_eq_identified {S : ObservedSignature}
                             | cons factorTerm factorTerms =>
                                 simp only [List.map_cons, List.cons.injEq] at results
                                 have headResult :
-                                    identifyFuel fuel G remaining factor
+                                    Legacy.identifyFuel fuel G remaining factor
                                         (NodeSet.diff remaining factor) current =
                                       IdentificationOutcome.identified
                                         factorTerm := by
@@ -1886,7 +1892,7 @@ theorem identifyFuel_eq_identified_iff_successTrace
     (fuel : Nat) (G : ObservedGraph S)
     (remaining outcome action : NodeSet S)
     (current term : ProbabilityTerm S) :
-    identifyFuel fuel G remaining outcome action current =
+    Legacy.identifyFuel fuel G remaining outcome action current =
         IdentificationOutcome.identified term ↔
       Nonempty
         (IdentificationSuccessTrace G fuel remaining outcome action current term) :=

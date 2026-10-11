@@ -12,8 +12,9 @@ changes both the mutilated graph and the remaining conditioning set.  Only
 when no exchange is available does it identify the joint numerator and divide
 by its marginal denominator.
 
-The older `identifyConditional` implements only a Bayes fallback and calls the
-legacy joint engine.  This independent entry point uses `identifyJointKernel`
+The quarantined `Legacy.identifyConditional` implements only a Bayes fallback
+and calls the refuted legacy joint engine.  Its implementation is not imported
+here.  This supported entry point uses `identifyJointKernel`
 and retains every successful rule-2 test in an inspectable exchange step.
 It never tests semantic identifiability or selects data from an existential
 proposition.  The finite member enumeration determines which eligible node is
@@ -22,9 +23,11 @@ exchanged first.
 The terminal denominator is a marginal of the *identified numerator*, not a
 second potentially failing ID invocation.  `ConditionalCompilation` proves
 termination and constructs a supported published derivation for every success.
-Success correctness is distinct from conditional completeness: the latter
-still needs a non-identifiability proof for an irreducible failed terminal
-query, as well as the general positive hedge countermodel.
+Success correctness is distinct from conditional completeness.  The latter
+is assembled in `HedgeChannelCompleteness` from the constructive original-query
+hedge and irreducible conditional countermodels, on the explicit value-rich
+positive model class.  None of those semantic results is an axiom of this
+executable definition module.
 -/
 
 /-! ## Exchanging one selected conditioner -/

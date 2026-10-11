@@ -21,13 +21,16 @@ action block `W` in line 3.  That block is added to the action while the host
 and its current distribution are retained; it is not used to marginalize
 the input distribution.
 
-The old `identifyFuel` and its exact trace library remain available while
-the structural compiler is migrated.  Their front-door counterexample is
-retained as a baseline, not accepted as a sound implementation.  The new
-engine is general over hosts and input terms, not a front-door shortcut.
-The definitions here assert neither global semantic correctness nor an
-inhabitant of `PublishedCompleteness`; those require support-carrying
-compilation of every recursive branch and the general hedge countermodel.
+The old `Legacy.identifyFuel` and its exact trace library are isolated in
+`Legacy.IdentificationSearch` and `Legacy.IdentificationInduction`; neither
+module is imported here.  Their front-door counterexample is retained as a
+baseline, not accepted as a sound implementation.  This engine is general
+over hosts and input terms, not a front-door shortcut.
+The definitions here supply the executable program.  Its support-carrying
+success compiler and constructive countermodels are proved in separate
+transport modules, culminating in `ObservedGraph.publishedCompleteness` for
+the value-rich positive model class.  This definition module itself does
+not assume that theorem as an axiom or import its proof.
 -/
 
 /-! ## Chain factors of the current input kernel -/

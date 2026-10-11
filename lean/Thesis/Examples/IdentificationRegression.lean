@@ -14,7 +14,7 @@ open Probability
 
 This module records a load-bearing discrepancy in the legacy ID engine,
 not an extra assumption and not a completed identification theorem.  In the
-three-node graph `X → M → Y`, with `X ↔ Y`, `identifyJoint` returns a formula
+three-node graph `X → M → Y`, with `X ↔ Y`, `Legacy.identifyJoint` returns a formula
 for `P(Y | do(X))`.  In the explicit positive compatible model below the
 true value at `X = Y = true` is `1/2`, whereas that formula has value `9/16`.
 Both claims are checked by Lean's kernel, including all divisions.
@@ -28,7 +28,7 @@ and the latent projection, not faithfulness or dependence on every parent.
 Every observed assignment nevertheless has strictly positive probability.
 
 The final theorem makes the consequence for completeness explicit: a
-`PublishedJointTraceCompiler` aligned with *every* current successful engine
+`Legacy.PublishedJointTraceCompiler` aligned with *every* current successful engine
 formula cannot exist.  Published soundness would turn such a certificate
 into the false equality `1/2 = 9/16`.  This does not refute mathematical
 identification completeness; it requires repairing the executable recursion
@@ -137,7 +137,7 @@ def query : JointKernelQuery signature where
 only to make this definition total.  `legacyEngine_identified` proves that the
 fallback is not used; a failed or unfinished run cannot fake the regression. -/
 def legacyEngineFormula : ProbabilityTerm signature :=
-  match identifyJoint graph query with
+  match Legacy.identifyJoint graph query with
   | .identified term => term
   | _ => unitProbabilityTerm signature
 
@@ -164,7 +164,7 @@ private def equivalentOfValueTest (result : ProbabilityResult.Result) (expected 
 set_option maxRecDepth 100000 in
 /-- The current executable run genuinely takes the identified branch. -/
 theorem legacyEngine_identified :
-    identifyJoint graph query = .identified legacyEngineFormula := by rfl
+    Legacy.identifyJoint graph query = .identified legacyEngineFormula := by rfl
 
 set_option maxRecDepth 100000 in
 /-- Intervening on `X` does not change `Y = U xor E`, so the requested
@@ -244,13 +244,13 @@ graph.  A compiler would have to certify the identified trace; completed
 published soundness then contradicts the two exact value checks above.
 This theorem pinpoints an engine-repair obligation, not a missing axiom. -/
 theorem legacyTraceCompiler_is_uninhabited :
-    ¬ Nonempty (PublishedJointTraceCompiler graph (GraphModelClass.positive graph)
+    ¬ Nonempty (Legacy.PublishedJointTraceCompiler graph (GraphModelClass.positive graph)
       graph.dSeparationCorrectness) := by
   intro ⟨compiler⟩
   cases identifyJoint_terminalTrace graph query with
   | identified term trace =>
       let compiled := compiler.compile query term trace
-      have identified : identifyJoint graph query = .identified term := by
+      have identified : Legacy.identifyJoint graph query = .identified term := by
         exact trace.eq_identified
       have termEqual : term = legacyEngineFormula := by
         have resultsEqual := identified.symm.trans legacyEngine_identified
@@ -264,7 +264,7 @@ theorem legacyTraceCompiler_is_uninhabited :
         reference supported
       exact legacyEngineFormula_not_equivalent ⟨formulaEqual ▸ sound⟩
   | failed fail trace =>
-      have failed : identifyJoint graph query = .failed fail := trace.eq_failed
+      have failed : Legacy.identifyJoint graph query = .failed fail := trace.eq_failed
       rw [legacyEngine_identified] at failed
       cases failed
 

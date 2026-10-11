@@ -26,7 +26,6 @@ import Thesis.Causality.HedgeSelectionSearch
 import Thesis.Causality.ConditionalUniqueness
 import Thesis.Causality.IdentificationKernel
 import Thesis.Causality.ConditionalIdentificationKernel
-import Thesis.Causality.IdentificationInduction
 import Thesis.Causality.Reductions
 import Thesis.Causality.LatentRationalCPT
 import Thesis.Causality.LatentTableResponse
@@ -73,9 +72,10 @@ and `IdentificationSearch`; `HedgeSelectionSearch` exhaustively scans alternativ
 forest selections with an additional Boolean requirement tested before
 accepting a leaf.  Its candidate-completeness theorem is independent of
 countermodel semantics and does not assert universal geometric coverage.
-`IdentificationInduction` supplies exact structural
-traces for failed, successful, and unfinished arbitrary nested ID runs; then
-`IdentificationKernel` provides the replacement current-kernel recursion,
+The quarantined `Legacy.IdentificationSearch` and
+`Legacy.IdentificationInduction` modules are not ordinary API imports; their
+refuted program and exact historical traces require an explicit legacy import.
+`IdentificationKernel` provides the supported current-kernel recursion,
 separating ordinary ancestral pruning from action augmentation and retaining
 the actual recursive input when extracting chain factors; then
 `ConditionalIdentificationKernel` performs arbitrary finite sequences of IDC

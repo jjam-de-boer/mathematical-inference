@@ -3,6 +3,7 @@ import Thesis.Causality
 import Thesis.CausalTransport
 import Thesis.Examples.TenureTrack
 import Thesis.Examples.IdentificationRegression
+import Thesis.Examples.IdentificationAPIIsolation
 import Thesis.Examples.KernelCompilation
 import Thesis.Examples.ComponentCompilation
 import Thesis.Examples.KernelRecursionCompilation
