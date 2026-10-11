@@ -56,11 +56,13 @@ theorem hiddenRoots_expectedValue (model : ExactModel S)
   cases placed : (model.hiddenDAGRootPlacements compatible root).source? with
   | none => rfl
   | some source =>
+      dsimp only []
       by_cases owner : source = node
       · subst source
-        rw [if_pos rfl, HiddenDAGPlacedNoise.encode_of_placed model compatible roots node root placed]
+        simp only [if_pos rfl]
+        rw [HiddenDAGPlacedNoise.encode_of_placed model compatible roots node root placed]
         rfl
-      · rw [if_neg owner]
+      · simp only [if_neg owner]
         cases hidden : P.hiddenDAG.hidden source with
         | false => rfl
         | true =>
@@ -83,6 +85,50 @@ theorem observedParents_expectedValue (model : ExactModel S)
   exact signalAlong_expectedValue model compatible signals roots parent
     (P.hiddenDAG.observedNode child) (P.directedPathData parent child edge)
 
+/-- Abstract the placement before inspecting its dependent delivery route.
+Keeping that parameter explicit lets the route's source vary together with
+its path type; generalizing just an occurrence inside `observedRoots` would
+leave an ill-typed dependent match.  Agreement with the actual allocation
+still controls every local-noise or shared-source read. -/
+private theorem deliveredRoot_expectedValue (model : ExactModel S)
+    (compatible : Compatible model P.observedGraph) (signals : S.Assignment)
+    (roots : model.latent.Assignment) (child : Fin S.count) (root : Fin model.latent.count)
+    (incident : model.latent.incident root child = true)
+    (placement : HiddenDAGRootPlacement model.latent P root)
+    (allocated : model.hiddenDAGRootPlacements compatible root = placement) :
+    (let delivery := placement.delivery child incident
+      match delivery.route with
+      | .localInput _same =>
+          (HiddenDAGPlacedNoise.encode model compatible roots
+            (P.hiddenDAG.observedNode child) root).getD (defaultRoots model root)
+      | .hiddenRelay path => rootAlong model P (P.hiddenDAG.observedNode child)
+          (fun parent _edge => expectedValue model compatible signals roots parent) root path) =
+      roots root := by
+  cases placement with
+  | unused absent =>
+      rw [absent child] at incident
+      cases incident
+  | privateInput ownChild ownIncident onlyChild =>
+      have same : child = ownChild := onlyChild child incident
+      have placed : (model.hiddenDAGRootPlacements compatible root).source? =
+          some (P.hiddenDAG.observedNode child) := by
+        rw [allocated]
+        change some (P.hiddenDAG.observedNode ownChild) = some (P.hiddenDAG.observedNode child)
+        rw [same]
+      change (HiddenDAGPlacedNoise.encode model compatible roots
+        (P.hiddenDAG.observedNode child) root).getD (defaultRoots model root) = roots root
+      rw [HiddenDAGPlacedNoise.encode_of_placed model compatible roots _ root placed]
+      rfl
+  | sharedInput source hidden routes =>
+      have placed : (model.hiddenDAGRootPlacements compatible root).source? = some source := by
+        rw [allocated]
+        rfl
+      change rootAlong model P (P.hiddenDAG.observedNode child)
+        (fun parent _edge => expectedValue model compatible signals roots parent)
+        root (routes child incident) = roots root
+      exact rootAlong_expectedValue model compatible signals roots root source
+        (P.hiddenDAG.observedNode child) placed hidden (routes child incident)
+
 /-- Every declared root input of an observed equation receives its original
 coordinate.  The proof inspects the constructed placement data, so a private
 input uses its own local channel and a shared input has a hidden source.
@@ -95,31 +141,8 @@ theorem observedRoots_expectedValue (model : ExactModel S)
       (HiddenDAGPlacedNoise.encode model compatible roots (P.hiddenDAG.observedNode child)) =
       (fun root _incident => roots root) := by
   funext root incident
-  unfold observedRoots
-  cases placement : model.hiddenDAGRootPlacements compatible root with
-  | unused absent =>
-      rw [absent child] at incident
-      cases incident
-  | privateInput ownChild ownIncident onlyChild =>
-      have same : child = ownChild := onlyChild child incident
-      have placed : (model.hiddenDAGRootPlacements compatible root).source? =
-          some (P.hiddenDAG.observedNode child) := by
-        rw [placement]
-        change some (P.hiddenDAG.observedNode ownChild) = some (P.hiddenDAG.observedNode child)
-        rw [same]
-      change (HiddenDAGPlacedNoise.encode model compatible roots
-        (P.hiddenDAG.observedNode child) root).getD (defaultRoots model root) = roots root
-      rw [HiddenDAGPlacedNoise.encode_of_placed model compatible roots _ root placed]
-      rfl
-  | sharedInput source hidden routes =>
-      have placed : (model.hiddenDAGRootPlacements compatible root).source? = some source := by
-        rw [placement]
-        rfl
-      change rootAlong model P (P.hiddenDAG.observedNode child)
-        (fun parent _edge => expectedValue model compatible signals roots parent)
-        root (routes child incident) = roots root
-      exact rootAlong_expectedValue model compatible signals roots root source
-        (P.hiddenDAG.observedNode child) placed hidden (routes child incident)
+  exact deliveredRoot_expectedValue model compatible signals roots child root incident
+    (model.hiddenDAGRootPlacements compatible root) rfl
 
 /-- Reconstructed observed inputs reproduce the original structural
 equation on the supplied parent signals and original root values.  Forced
