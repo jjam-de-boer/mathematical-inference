@@ -360,5 +360,77 @@ noncomputable def HiddenDAGLocalDerivationSupport.toCollapsed
       exact ⟨model.termSupportedAt_to_collapsed _ _ supported.1,
         model.termSupportedAt_to_collapsed _ _ supported.2.1, ih supported.2.2⟩
 
+/-- Read a complete collapsed support tree back into the original model.
+This is the reverse of `toCollapsed`, not a new support assumption.  Literal
+term preservation retains every rational witness and every marginal branch.
+For guarded congruence, a positive native weight is transported to the
+collapsed result before its factor-support function is called. -/
+noncomputable def HiddenDAGLocalDerivationSupport.ofCollapsed
+    {G : ObservedGraph S} {model : FiniteHiddenDAGSCM S P} {assignment : S.Assignment}
+    {left right : ProbabilityTerm S} {derivation : DoCalculusDerivation G left right}
+    (supported : LocalDerivationSupport model.toLatentRootSCM assignment derivation) :
+    HiddenDAGLocalDerivationSupport model assignment derivation := by
+  induction derivation generalizing assignment with
+  | refl =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1, ()⟩
+  | symm inner ih =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1, ih supported.2.2⟩
+  | trans first second firstIH secondIH =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1,
+        firstIH supported.2.2.1, secondIH supported.2.2.2⟩
+  | doRule =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1, ()⟩
+  | marginalization =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1, ()⟩
+  | conditioning =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1, ()⟩
+  | chain =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1, ()⟩
+  | weightedChain =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1, ()⟩
+  | multiplyComm =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1, ()⟩
+  | multiplyAssoc =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1, ()⟩
+  | marginalizeCongr nodes inner ih =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1,
+        fun variant member => ih (supported.2.2 variant member)⟩
+  | evaluateAtCongr fixed inner ih =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1, ih supported.2.2⟩
+  | addCongr first second firstIH secondIH =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1,
+        firstIH supported.2.2.1, secondIH supported.2.2.2⟩
+  | multiplyCongr first second firstIH secondIH =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1,
+        firstIH supported.2.2.1, secondIH supported.2.2.2⟩
+  | @weightedMultiplyCongr weight _ _ _ first second firstIH secondIH =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1,
+        firstIH supported.2.2.1, fun positive => secondIH (supported.2.2.2 (by
+          change ProbabilityResult.PositiveSupportedValue (model.termDenote weight assignment) at positive
+          rw [model.termDenote_preserved weight assignment] at positive
+          exact positive))⟩
+  | divideCongr numerator denominator numeratorIH denominatorIH =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1,
+        numeratorIH supported.2.2.1, denominatorIH supported.2.2.2⟩
+  | eqCongr _hleft _hright inner ih =>
+      exact ⟨model.termSupportedAt_of_collapsed _ _ supported.1,
+        model.termSupportedAt_of_collapsed _ _ supported.2.1, ih supported.2.2⟩
+
 end Causality
 end Thesis
