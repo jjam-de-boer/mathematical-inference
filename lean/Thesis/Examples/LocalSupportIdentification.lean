@@ -53,6 +53,7 @@ def supportedReference : signature.Assignment :=
 
 theorem action_cylinder_positive :
     ObservationalCylinderPositiveAt model query.action supportedReference := by
+  unfold ObservationalCylinderPositiveAt
   decide +kernel
 
 /-- The local theorem is not being applied to an implicitly positive model:
