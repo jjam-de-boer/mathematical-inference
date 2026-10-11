@@ -140,7 +140,8 @@ def hiddenDAGRootPlacement (latent : LatentExtension S)
       | true =>
           exact False.elim ((List.find?_eq_none.mp first) child (List.mem_finRange child) incident)
   | some left =>
-      have leftIncident : latent.incident root left = true := List.find?_some first
+      have leftIncident : latent.incident root left = true :=
+        List.find?_some (p := latent.incident root) first
       cases second : (List.finRange S.count).find? (fun child =>
           latent.incident root child && decide (child ≠ left)) with
       | none =>
@@ -152,7 +153,7 @@ def hiddenDAGRootPlacement (latent : LatentExtension S)
               (Bool.and_eq_true_iff.mpr ⟨incident, decide_eq_true equal⟩))
       | some right =>
           have selected : (latent.incident root right && decide (right ≠ left)) = true :=
-            List.find?_some second
+            List.find?_some (p := fun child => latent.incident root child && decide (child ≠ left)) second
           have found := Bool.and_eq_true_iff.mp selected
           have rightIncident : latent.incident root right = true := found.1
           have different : left ≠ right := Ne.symm (of_decide_eq_true found.2)

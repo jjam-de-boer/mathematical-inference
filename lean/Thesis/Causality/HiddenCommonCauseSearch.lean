@@ -50,7 +50,8 @@ def hiddenCommonCause? (H : FiniteHiddenDAG S) (left right : Fin S.count) :
     | none => none
     | some source =>
         let selected : (H.hiddenInputIncident source left && H.hiddenInputIncident source right) = true :=
-          List.find?_some found
+          List.find?_some (p := fun candidate =>
+            H.hiddenInputIncident candidate left && H.hiddenInputIncident candidate right) found
         let incidences := Bool.and_eq_true_iff.mp selected
         let leftIncident := (H.hiddenInputIncident_iff source left).mp incidences.1
         let rightIncident := (H.hiddenInputIncident_iff source right).mp incidences.2
