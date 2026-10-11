@@ -52,8 +52,8 @@ def collapseIncident (H : FiniteHiddenDAG S)
 /-- An observed mechanism always retains its own private-noise input. -/
 theorem collapseIncident_observed (H : FiniteHiddenDAG S) (child : Fin S.count) :
     H.collapseIncident (H.observedNode child) child = true := by
-  simp only [collapseIncident, H.observed_not_hidden, Bool.false_eq_true, if_false]
-  exact decide_eq_true rfl
+  simp only [collapseIncident, H.observed_not_hidden, Bool.false_eq_true,
+    if_false, decide_true]
 
 /-- A typed hidden relay justifies access to its private-noise coordinate. -/
 theorem collapseIncident_of_hidden_path (H : FiniteHiddenDAG S)
@@ -112,6 +112,8 @@ private def collapseAncestorValue (M : FiniteHiddenDAGSCM S P)
       M.observedIndex_sound node index selected ▸
         (M.observedEquiv index).backward
           (parents index ((P.directed_matches index child).mpr (by
+            change P.hiddenDAG.HiddenInternalPath (P.hiddenDAG.observedNode index)
+              (P.hiddenDAG.observedNode child)
             rw [M.observedIndex_sound node index selected]
             exact path.toSpecification)))
   | none =>
@@ -149,6 +151,20 @@ def toLatentRootSCM (M : FiniteHiddenDAGSCM S P) : ExactModel S where
 
 /-! ## Unit-level preservation under every hard intervention -/
 
+/-- The full model never intervenes on a node with no observed index.
+Splitting the dependent lookup preserves its equality proof explicitly;
+rewriting the lookup inside a cast-bearing match would lose that dependency. -/
+private theorem interventionValueAt_of_observedIndex_none
+    (M : FiniteHiddenDAGSCM S P) (intervention : HardIntervention S)
+    (node : Fin P.hiddenDAG.count) (missing : M.observedIndex node = none) :
+    M.interventionValueAt intervention node = none := by
+  unfold interventionValueAt
+  split
+  · rfl
+  · rename_i index found
+    rw [missing] at found
+    cases found
+
 /-- Restricting the actual full evaluation to projected parent inputs gives
 the same value at every ancestor.  The hidden case unfolds its old equation;
 the observed case uses the two-sided value equivalence and does not unfold
@@ -171,7 +187,7 @@ private theorem collapseAncestorValue_eq_evalNode
   · rename_i missing
     have hidden := hidden_of_observedIndex_none M node missing
     rw [evalNode]
-    simp only [interventionValueAt, M.hidden_has_no_observed_index node hidden]
+    rw [interventionValueAt_of_observedIndex_none M intervention node missing]
     congr 1
     funext parent edge
     exact collapseAncestorValue_eq_evalNode M intervention noise child parent
@@ -210,8 +226,17 @@ private theorem interventionValueAt_observed (M : FiniteHiddenDAGSCM S P)
     (intervention : HardIntervention S) (child : Fin S.count) :
     M.interventionValueAt intervention (P.hiddenDAG.observedNode child) =
       (intervention.value child).map (M.observedEquiv child).backward := by
-  simp only [interventionValueAt, M.observedIndex_observed]
-  cases intervention.value child <;> rfl
+  unfold interventionValueAt
+  split
+  · rename_i missing
+    have found := M.observedIndex_observed child
+    rw [missing] at found
+    cases found
+  · rename_i index found
+    have same : index = child := Option.some.inj
+      (found.symm.trans (M.observedIndex_observed child))
+    subst index
+    cases intervention.value child <;> rfl
 
 /-- The full-model observed evaluator obeys the same intervention match as
 a latent-root evaluator.  Hidden recursion is confined to its unforced
@@ -351,7 +376,9 @@ theorem collapsedLatentExtension_projectedBidirected_iff
     apply Bool.and_eq_true_iff.mpr
     refine ⟨?_, (finAny_eq_true_iff _).mpr ⟨source, ?_⟩⟩
     · have differentValues : left.val ≠ right.val := fun equal => different (Fin.ext equal)
-      simpa only [Bool.not_eq_true', Nat.beq_eq_false_iff_ne] using differentValues
+      cases same : Nat.beq left.val right.val with
+      | false => rfl
+      | true => exact False.elim (differentValues (Nat.eq_of_beq_eq_true same))
     · apply Bool.and_eq_true_iff.mpr
       constructor
       · exact P.hiddenDAG.collapseIncident_of_hidden_path hidden leftPath.toData
@@ -371,6 +398,7 @@ theorem toLatentRootSCM_projectedGraph (M : FiniteHiddenDAGSCM S P)
       | true =>
           have projected := (P.bidirected_matches left right).mp targetEdge
           have found := (M.collapsedLatentExtension_projectedBidirected_iff left right).mpr projected
+          change M.toLatentRootSCM.observedGraph.bidirected left right = true at found
           rw [sourceEdge] at found
           cases found
   | true =>

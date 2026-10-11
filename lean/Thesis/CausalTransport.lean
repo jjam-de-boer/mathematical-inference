@@ -194,6 +194,15 @@ or an external theorem-family parameter.
 proves preservation into the intrinsic semantics, and exposes source-level
 adapters.  `DSeparationCorrectness` connects the finite ancestry and moral
 reachability searches to active-path separation.
+
+`HiddenDAGFullFamily` indexes all finite SCM records over a full hidden DAG,
+with arbitrary finite hidden and private-noise domains.  `HiddenDAGCollapse`
+constructs a latent-root SCM from each such record and preserves its complete
+observational and hard-interventional distributions, including zeros.  Hidden
+inputs keep all their observed children; the resulting model is not claimed
+to be canonical semi-Markovian.  Countermodel lifting and the final
+support-qualified hidden-DAG completeness bridge remain separate obligations.
+
 `DSeparationWitness` additionally returns certified active-path data for every
 negative separation answer, using a bounded finite search instead of choice.
 Its separate least-score search compares all checked branches, stopping a
