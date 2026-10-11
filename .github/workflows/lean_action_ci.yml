@@ -54,6 +54,7 @@ jobs:
             Thesis.CausalTransport.SupportAwareChainCompilation
             Thesis.CausalTransport.SupportAwareKernelCompilation
             Thesis.Examples.LocalSupportIdentification
+            Thesis.Examples.SupportAwareKernelCompilation
             Thesis.Examples.HiddenPathSearch
             Thesis.Examples.HiddenDAGCollapse
             Thesis.Examples.HiddenDAGSoundness

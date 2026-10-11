@@ -7,6 +7,7 @@ import Thesis.Examples.IdentificationAPIIsolation
 import Thesis.Examples.SupportAwareSemantics
 import Thesis.Examples.SupportAwareChain
 import Thesis.Examples.LocalSupportIdentification
+import Thesis.Examples.SupportAwareKernelCompilation
 import Thesis.Examples.HiddenPathSearch
 import Thesis.Examples.HiddenDAGCollapse
 import Thesis.Examples.HiddenDAGSoundness

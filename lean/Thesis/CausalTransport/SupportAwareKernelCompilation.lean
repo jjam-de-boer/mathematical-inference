@@ -52,7 +52,7 @@ def observational (G : ObservedGraph S) :
     PublishedCurrentKernelReduction G NodeSet.full NodeSet.empty where
   formula := observationalJointTerm S
   actionFree := observationalJointTerm_actionFree S
-  derivation := .refl _
+  derivation := DoCalculusDerivation.refl (G := G) (separation := pathRuleSeparation G) _
 
 /-- Retain the actual syntax of an existing published input, without
 calling its class-indexed support field or strengthening its model class. -/
@@ -78,12 +78,14 @@ def marginal (input : PublishedCurrentKernelReduction G remaining externalAction
     rw [NodeSet.union_diff_eq keptSubset]
   let covered : PathDoCalculusDerivation G
       (.kernel ⟨NodeSet.union kept removed, externalAction, NodeSet.empty⟩) input.formula :=
-    .eqCongr sourceEq rfl input.derivation
+    DoCalculusDerivation.eqCongr (G := G) (separation := pathRuleSeparation G)
+      sourceEq rfl input.derivation
   let split : PathDoCalculusDerivation G
       (.kernel ⟨kept, externalAction, NodeSet.empty⟩)
       (.marginalize removed
         (.kernel ⟨NodeSet.union kept removed, externalAction, NodeSet.empty⟩)) :=
-    .marginalization externalAction kept removed NodeSet.empty
+    DoCalculusDerivation.marginalization (G := G) (separation := pathRuleSeparation G)
+      externalAction kept removed NodeSet.empty
       (FourWayDisjoint.of_empty_w externalAction kept removed
         (NodeSet.disjoint_of_subset_right outside keptSubset)
         (NodeSet.disjoint_of_subset_right outside (NodeSet.diff_subset_left remaining kept))
@@ -91,7 +93,9 @@ def marginal (input : PublishedCurrentKernelReduction G remaining externalAction
   exact {
     formula := .marginalize removed input.formula
     actionFree := input.actionFree
-    derivation := .trans split (.marginalizeCongr removed covered)
+    derivation := DoCalculusDerivation.trans (G := G) (separation := pathRuleSeparation G)
+      split (DoCalculusDerivation.marginalizeCongr (G := G)
+        (separation := pathRuleSeparation G) removed covered)
   }
 
 theorem marginal_formula (input : PublishedCurrentKernelReduction G remaining externalAction)
@@ -151,13 +155,17 @@ def factorDerivation (input : PublishedCurrentKernelReduction G remaining extern
       (.divide
         (.kernel ⟨NodeSet.union (NodeSet.singleton node) earlier, externalAction, NodeSet.empty⟩)
         (.kernel ⟨earlier, externalAction, NodeSet.empty⟩)) :=
-    .conditioning externalAction (NodeSet.singleton node) earlier NodeSet.empty
+    DoCalculusDerivation.conditioning (G := G) (separation := pathRuleSeparation G)
+      externalAction (NodeSet.singleton node) earlier NodeSet.empty
       (FourWayDisjoint.of_empty_w externalAction (NodeSet.singleton node) earlier
         (NodeSet.disjoint_of_subset_right outside (NodeSet.singleton_subset_of_mem selected))
         (NodeSet.disjoint_of_subset_right outside earlierSubset)
         (disjoint_singleton_chainCondition remaining node))
-  exact .eqCongr (by rw [NodeSet.union_empty_right]) rfl
-    (.trans split (.divideCongr numerator.derivation denominator.derivation))
+  exact DoCalculusDerivation.eqCongr (G := G) (separation := pathRuleSeparation G)
+    (by rw [NodeSet.union_empty_right]) rfl
+    (DoCalculusDerivation.trans (G := G) (separation := pathRuleSeparation G)
+      split (DoCalculusDerivation.divideCongr (G := G) (separation := pathRuleSeparation G)
+        numerator.derivation denominator.derivation))
 
 /-- Prefix quotients remain action-free even if some references have null
 denominators.  Action-freeness is syntax, not a claim of global support. -/
