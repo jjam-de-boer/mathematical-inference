@@ -99,10 +99,23 @@ def conditionalFormula : ProbabilityTerm signature :=
   | .identified term => term
   | _ => unitProbabilityTerm signature
 
+/-- Inspect the computed tag without asking for decidable equality of
+probability terms, whose node sets are function-valued. -/
+private def identifiedResult (result : IdentificationOutcome S) : Bool :=
+  match result with
+  | .identified _ => true
+  | _ => false
+
 theorem conditional_identified :
     identifyConditionalKernel projection.observedGraph conditionalQuery =
       .identified conditionalFormula := by
-  rfl
+  have checked : identifiedResult
+      (identifyConditionalKernel projection.observedGraph conditionalQuery) = true := by
+    decide +kernel
+  cases result : identifyConditionalKernel projection.observedGraph conditionalQuery with
+  | identified term => simp only [conditionalFormula, result]
+  | failed fail => simp only [result, identifiedResult, Bool.false_eq_true] at checked
+  | unfinished => simp only [result, identifiedResult, Bool.false_eq_true] at checked
 
 noncomputable def conditional_soundAt (assignment : signature.Assignment) :
     positiveModel.TermEquivalentAt conditionalQuery.sourceTerm conditionalFormula assignment :=
