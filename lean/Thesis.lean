@@ -9,6 +9,7 @@ import Thesis.Examples.SupportAwareChain
 import Thesis.Examples.LocalSupportIdentification
 import Thesis.Examples.HiddenPathSearch
 import Thesis.Examples.HiddenDAGCollapse
+import Thesis.Examples.HiddenDAGSoundness
 import Thesis.Examples.KernelCompilation
 import Thesis.Examples.ComponentCompilation
 import Thesis.Examples.KernelRecursionCompilation

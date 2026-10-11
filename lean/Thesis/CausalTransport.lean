@@ -202,7 +202,13 @@ with arbitrary finite hidden and private-noise domains.  `HiddenDAGCollapse`
 constructs a latent-root SCM from each such record and preserves its complete
 observational and hard-interventional distributions, including zeros.  Hidden
 inputs keep all their observed children; the resulting model is not claimed
-to be canonical semi-Markovian.  Countermodel lifting and the final
+to be canonical semi-Markovian.  `HiddenDAGSemantics` evaluates all probability
+terms in the original full-DAG records and proves preservation through that
+collapse, including undefined results.  `HiddenDAGSoundness` interprets every
+locally supported do-calculus derivation natively, using the proved path
+partition laws at projected-graph agreement rather than a canonical-root
+assumption.  It also identifies a rule-2 leaf from observable local overlap.
+Countermodel lifting, zero-aware recursive ID/IDC, and the final
 support-qualified hidden-DAG completeness bridge remain separate obligations.
 
 `DSeparationWitness` additionally returns certified active-path data for every

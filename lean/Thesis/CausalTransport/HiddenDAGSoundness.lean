@@ -34,11 +34,12 @@ namespace FiniteHiddenDAGSCM
 model.  Projected-graph equality is the only model-compatibility input; roots
 may retain three or more children. -/
 noncomputable def collapsedPathPrimitiveSoundness (M : FiniteHiddenDAGSCM S P) :
-    PathPrimitiveSoundness P.observedGraph M.toLatentRootSCM :=
-  PathPrimitiveSoundness.ofDoRule M.toLatentRootSCM P.observedGraph
-    (PathDoRulePartitionWitnesses.ofPathProjected P.observedGraph M.toLatentRootSCM
-      (fun first second => M.toLatentRootSCM_projectedGraph first second)).toProductCrossProductLaws
-        .toDistributionLaws.toCrossProductSoundness.toDoRule
+    PathPrimitiveSoundness P.observedGraph M.toLatentRootSCM := by
+  let witnesses := PathDoRulePartitionWitnesses.ofPathProjected
+    P.observedGraph M.toLatentRootSCM
+    (fun first second => M.toLatentRootSCM_projectedGraph first second)
+  exact PathPrimitiveSoundness.ofDoRule M.toLatentRootSCM P.observedGraph
+    witnesses.toProductCrossProductLaws.toDistributionLaws.toCrossProductSoundness.toDoRule
 
 /-- Each of the three path do-rules is sound in the original full hidden
 model whenever its displayed native endpoint kernels are supported. -/
