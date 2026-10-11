@@ -19,9 +19,9 @@ then identifies this solution with the actual full-DAG evaluator.
 
 This is a unitwise theorem, including original zero-weight units.  No
 positivity or observed value-richness assumption is needed.  Equality of the
-complete probability laws remains a separate task: the grouped private-noise
-prior must be related to the original root prior for arbitrary joint events,
-not just by its channel marginals.
+complete probability laws is proved separately in `HiddenDAGNoiseLaw` and
+`HiddenDAGProbability`: the grouped private-noise prior is related to the
+original root prior for arbitrary joint events, not just its channel marginals.
 -/
 
 namespace FiniteLatentSCM

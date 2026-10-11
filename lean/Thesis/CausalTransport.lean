@@ -235,8 +235,10 @@ gives explicit finite hidden alphabets, retaining unchanged observed domains;
 the full hidden-DAG SCM.  `HiddenDAGRelayAssignment` and `HiddenDAGRelayEquations`
 prove exact readback of every required signal and root input;
 `HiddenDAGEvaluation` proves generic unitwise preservation under every hard
-intervention, without positivity or value-richness assumptions.  Complete
-joint-probability preservation of the grouped noise law is still needed.
+intervention, without positivity or value-richness assumptions.
+`HiddenDAGNoiseLaw` preserves the complete grouped-noise law;
+`HiddenDAGProbability` consequently preserves all observed/interventional
+event probabilities and partial kernel results, including undefined results.
 Countermodel lifting, zero-aware recursive ID/IDC, and the final
 support-qualified hidden-DAG completeness bridge remain separate obligations.
 

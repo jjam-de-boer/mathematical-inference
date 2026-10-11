@@ -25,8 +25,8 @@ old factual `X` equation behind the relay would fail this regression.
 These are kernel-checked executions of the actual general constructor, not a
 hand-written full-DAG model.  The final example also instantiates the general
 unitwise theorem for every root assignment and hard intervention on this
-graph.  Complete probability preservation remains a separate obligation, not
-an assumption used to obtain any of these results.
+graph.  Complete probability preservation is separately proved in
+`HiddenDAGProbability`, not assumed to obtain these evaluation results.
 -/
 
 /-- Keep the actual root laws and incidence, replacing the constant source

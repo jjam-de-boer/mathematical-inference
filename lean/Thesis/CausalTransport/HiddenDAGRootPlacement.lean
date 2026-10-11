@@ -25,8 +25,9 @@ Unused roots have their own constructor.  No source is invented for them,
 so empty observed signatures and empty hidden graphs need no selected default
 vertex.  `HiddenDAGPlacedNoise` constructs the actual noise grouping;
 `HiddenDAGRealization` supplies typed hidden-node relay mechanisms and
-`HiddenDAGEvaluation` proves unitwise preservation.  Complete probability
-preservation remains a separate model-realization obligation.
+`HiddenDAGEvaluation` proves unitwise preservation.  `HiddenDAGNoiseLaw` and
+`HiddenDAGProbability` separately prove complete probability preservation.
+Lifting the published countermodels is the next completeness application.
 -/
 
 variable {S : ObservedSignature} {P : FiniteLatentProjection S}

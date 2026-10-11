@@ -46,6 +46,11 @@ Stable facade for the finite constructive probability development.
 This facade imports the complete public probability API, whose implementation
 is split by responsibility.
 
+`FiniteProductResponse` includes exchange of finite matrix products;
+`FiniteProductAllocation` proves the law of one optionally allocated random
+channel, with deterministic absence elsewhere and normalization of unused
+channels.  Neither result requires positive event probabilities or division.
+
 Reading order:
 
 1. `Core` defines Boolean decidable events, finite inspection, elementary
