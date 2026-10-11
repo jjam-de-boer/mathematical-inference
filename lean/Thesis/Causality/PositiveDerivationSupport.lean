@@ -135,7 +135,7 @@ The guarded factor branch is a function of positive weight, as required by
 the ordinary support tree.  Here its body can be built everywhere because
 global positivity is an explicit premise, not because the guard is removed. -/
 noncomputable def LocalDerivationSupport.ofObservationallyPositive
-    {G : ObservedGraph S} [RuleSeparation G]
+    {G : ObservedGraph S}
     (model : ExactModel S) (positive : ObservationallyPositive model)
     {left right : ProbabilityTerm S}
     (derivation : DoCalculusDerivation G left right)

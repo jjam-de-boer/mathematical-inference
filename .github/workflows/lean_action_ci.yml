@@ -34,6 +34,7 @@ jobs:
             Thesis.CausalTransport.HiddenDAGSemantics
             Thesis.CausalTransport.HiddenDAGSoundness
             Thesis.CausalTransport.HiddenDAGPositiveCertificates
+            Thesis.CausalTransport.HiddenDAGIdentification
             Thesis.CausalTransport.SupportAwareChainCompilation
             Thesis.Examples.LocalSupportIdentification
             Thesis.Examples.HiddenPathSearch
