@@ -49,7 +49,9 @@ def hiddenCommonCause? (H : FiniteHiddenDAG S) (left right : Fin S.count) :
         H.hiddenInputIncident source left && H.hiddenInputIncident source right) with
     | none => none
     | some source =>
-        let incidences := Bool.and_eq_true_iff.mp (List.find?_some found)
+        let selected : (H.hiddenInputIncident source left && H.hiddenInputIncident source right) = true :=
+          List.find?_some found
+        let incidences := Bool.and_eq_true_iff.mp selected
         let leftIncident := (H.hiddenInputIncident_iff source left).mp incidences.1
         let rightIncident := (H.hiddenInputIncident_iff source right).mp incidences.2
         some {
@@ -68,7 +70,7 @@ theorem hiddenCommonCause?_complete (H : FiniteHiddenDAG S)
     {left right : Fin S.count} (edge : H.projectedBidirected left right) :
     (H.hiddenCommonCause? left right).isSome = true := by
   rcases edge with ⟨different, source, hidden, leftPath, rightPath⟩
-  have selected : H.hiddenInputIncident source left && H.hiddenInputIncident source right = true :=
+  have selected : (H.hiddenInputIncident source left && H.hiddenInputIncident source right) = true :=
     Bool.and_eq_true_iff.mpr
       ⟨(H.hiddenInputIncident_iff source left).mpr ⟨hidden, leftPath⟩,
         (H.hiddenInputIncident_iff source right).mpr ⟨hidden, rightPath⟩⟩

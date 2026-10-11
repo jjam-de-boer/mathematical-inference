@@ -151,7 +151,9 @@ def hiddenDAGRootPlacement (latent : LatentExtension S)
           · exact False.elim ((List.find?_eq_none.mp second) child (List.mem_finRange child)
               (Bool.and_eq_true_iff.mpr ⟨incident, decide_eq_true equal⟩))
       | some right =>
-          have found := Bool.and_eq_true_iff.mp (List.find?_some second)
+          have selected : (latent.incident root right && decide (right ≠ left)) = true :=
+            List.find?_some second
+          have found := Bool.and_eq_true_iff.mp selected
           have rightIncident : latent.incident root right = true := found.1
           have different : left ≠ right := Ne.symm (of_decide_eq_true found.2)
           have bidirected : P.observedGraph.bidirected left right = true := by
