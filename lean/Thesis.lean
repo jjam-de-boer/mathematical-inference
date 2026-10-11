@@ -12,6 +12,7 @@ import Thesis.Examples.HiddenDAGCollapse
 import Thesis.Examples.HiddenDAGSoundness
 import Thesis.Examples.HiddenDAGIdentification
 import Thesis.Examples.HiddenDAGRootPlacement
+import Thesis.Examples.HiddenDAGRealization
 import Thesis.Examples.KernelCompilation
 import Thesis.Examples.ComponentCompilation
 import Thesis.Examples.KernelRecursionCompilation
