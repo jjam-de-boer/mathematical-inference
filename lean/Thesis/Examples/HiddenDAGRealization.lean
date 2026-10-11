@@ -36,25 +36,37 @@ def sourceModel : ExactModel signature :=
       if atX : child.val = 0 then
         Bool.xor
           (inputs privateRoot (by
-            simp [booleanLatent, latent, privateRoot, x, Fin.ext_iff, atX]))
+            have same : child = x := Fin.ext atX
+            subst child
+            decide +kernel))
           (inputs xyRoot (by
-            simp [booleanLatent, latent, xyRoot, x, y, Fin.ext_iff, atX]))
+            have same : child = x := Fin.ext atX
+            subst child
+            decide +kernel))
       else if atY : child.val = 1 then
         Bool.xor (parents x (by simp [signature, x, atY]))
           (Bool.xor
             (inputs xyRoot (by
-              simp [booleanLatent, latent, xyRoot, x, y, Fin.ext_iff, atY]))
+              have same : child = y := Fin.ext atY
+              subst child
+              decide +kernel))
             (inputs yzRoot (by
-              simp [booleanLatent, latent, yzRoot, y, z, Fin.ext_iff, atY])))
+              have same : child = y := Fin.ext atY
+              subst child
+              decide +kernel)))
       else
         let atZ : child.val = 2 := by
           have bounded : child.val < 3 := child.isLt
           omega
         Bool.xor
           (inputs xzRoot (by
-            simp [booleanLatent, latent, xzRoot, x, z, Fin.ext_iff, atZ]))
+            have same : child = z := Fin.ext atZ
+            subst child
+            decide +kernel))
           (inputs yzRoot (by
-            simp [booleanLatent, latent, yzRoot, y, z, Fin.ext_iff, atZ])) }
+            have same : child = z := Fin.ext atZ
+            subst child
+            decide +kernel)) }
 
 theorem source_compatible : Compatible sourceModel projection.observedGraph :=
   noiseModel_compatible
@@ -101,8 +113,9 @@ theorem forced_observed_values_agree : forall index : Fin signature.count,
 /-- A hidden node uses a genuine finite pair of signal vectors.  This is
 the constructor's declared domain, not a restricted singleton witness. -/
 theorem hidden_u_value_domain :
-    realized.NodeValue u = HiddenDAGRelay.Payload sourceModel :=
-  HiddenDAGRelay.nodeValue_of_none sourceModel u (by decide +kernel)
+    realized.NodeValue u = HiddenDAGRelay.Payload sourceModel := by
+  change HiddenDAGRelay.NodeValue sourceModel projection u = HiddenDAGRelay.Payload sourceModel
+  exact HiddenDAGRelay.nodeValue_of_none (P := projection) sourceModel u (by decide +kernel)
 
 end HiddenDAGRealization
 end Examples

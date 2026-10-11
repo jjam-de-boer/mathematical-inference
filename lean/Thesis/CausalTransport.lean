@@ -224,8 +224,11 @@ any selected positive full-model family over the projection.
 paths for every input of any canonical projected-graph model, including
 private and unused roots.  `HiddenDAGPlacedNoise` groups distinct allocated
 roots as independent finite private-noise channels, preserving their original
-factor marginals and both inner and outer product laws.  Typed relay mechanisms
-and preservation of the resulting observed/interventional laws are still needed.
+factor marginals and both inner and outer product laws.  `HiddenDAGRelayValues`
+gives explicit finite hidden alphabets, retaining unchanged observed domains;
+`HiddenDAGRealization` constructs the declared-parent-only relay mechanisms and
+the full hidden-DAG SCM.  Generic unitwise and joint-probability preservation
+of the resulting observed/interventional laws are still needed.
 Countermodel lifting, zero-aware recursive ID/IDC, and the final
 support-qualified hidden-DAG completeness bridge remain separate obligations.
 
