@@ -127,7 +127,7 @@ private noncomputable def xDenominatorPositive (reference : signature.Assignment
           (NodeSet.disjoint_empty_left _))
         (Kernel.unconditional_supportedAt nativeModel.toLatentRootSCM NodeSet.empty NodeSet.empty reference))
   have input := ProbabilityTerm.marginalize_congrAt nativeModel.toLatentRootSCM host reference
-    (fun variant _listed => ProbabilityTerm.emptyActionKernel_equiv_fullMarginal nativeModel.toLatentRootSCM host variant)
+    (fun variant _listed => emptyActionKernel_equiv_fullMarginal nativeModel.toLatentRootSCM host variant)
   exact ProbabilityResult.PositiveSupportedValue.transport (ProbabilityResult.trans marginal input) (emptyPositive reference)
 
 private noncomputable def xInputs (reference : signature.Assignment) :
