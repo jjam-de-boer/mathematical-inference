@@ -114,9 +114,9 @@ an expensive repeated numerical check, and does not invoke graph-indexed
 derivation soundness or assume the component's yet-to-be-built support. -/
 private noncomputable def xDenominatorPositive (reference : signature.Assignment) :
     ProbabilityResult.PositiveSupportedValue ((denominatorTerm x).denote nativeModel.toLatentRootSCM reference) := by
-  have syntax : denominatorTerm x = .marginalize host ancestralFormula :=
+  have formulaEq : denominatorTerm x = .marginalize host ancestralFormula :=
     (ProbabilityTerm.equal_eq_true_iff _ _).mp (by decide +kernel)
-  rw [syntax]
+  rw [formulaEq]
   have marginal : ProbabilityTerm.EquivalentAt nativeModel.toLatentRootSCM
       (.kernel ⟨NodeSet.empty, NodeSet.empty, NodeSet.empty⟩)
       (.marginalize host (.kernel ⟨host, NodeSet.empty, NodeSet.empty⟩)) reference := by
