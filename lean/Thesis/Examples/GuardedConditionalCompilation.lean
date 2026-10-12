@@ -80,8 +80,10 @@ noncomputable def localData : compilation.Data model.toLatentRootSCM reference :
     denominatorData := ?_
     denominatorPositive := ?_
   }
-  · refine ⟨QProb.zero, .value ?_⟩
-    decide +kernel
+  · exact model.termSupportedAt_to_collapsed query.sourceTerm reference
+      (model.kernelSupportedAt_of_observational_overlap query.operationKernel reference (by
+        unfold FiniteHiddenDAGSCM.ObservationalCylinderPositiveAt
+        decide +kernel))
   · exact fun _variant _listed => ()
   · exact fun _variant _listed _innerVariant _innerListed => ()
   · refine ⟨(⟨1, 2, by decide⟩ : QProb), .value ?_, by decide⟩
