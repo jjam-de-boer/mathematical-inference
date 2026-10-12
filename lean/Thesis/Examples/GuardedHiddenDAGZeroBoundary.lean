@@ -133,14 +133,31 @@ theorem observational_records_equal : constantModel.observationalDist = copyingM
   change constantModel.prior.map (constantModel.evalObserved (HardIntervention.empty signature)) =
     constantModel.prior.map (copyingModel.evalObserved (HardIntervention.empty signature))
   apply congrArg (FiniteProbRecord.map constantModel.prior)
-  funext unit
-  have unique : unit = (fun _node => ()) := by
-    funext node
-    cases unit node
+  funext unit node
+  have either : node = x ∨ node = y := by
+    have bounded := node.isLt
+    change node.val < 2 at bounded
+    if first : node.val = 0 then
+      exact Or.inl (Fin.ext first)
+    else
+      exact Or.inr (Fin.ext (by change node.val = 1; omega))
+  rcases either with first | second
+  · subst node
+    change constantModel.evalNode (HardIntervention.empty signature) unit x =
+      copyingModel.evalNode (HardIntervention.empty signature) unit x
+    rw [FiniteHiddenDAGSCM.evalNode]
+    change false = copyingModel.evalNode (HardIntervention.empty signature) unit x
+    rw [FiniteHiddenDAGSCM.evalNode]
     rfl
-  rw [unique]
-  letI : DecidableEq signature.Assignment := signature.assignmentDecidableEq
-  decide +kernel
+  · subst node
+    change constantModel.evalNode (HardIntervention.empty signature) unit y =
+      copyingModel.evalNode (HardIntervention.empty signature) unit y
+    rw [FiniteHiddenDAGSCM.evalNode]
+    change false = copyingModel.evalNode (HardIntervention.empty signature) unit y
+    rw [FiniteHiddenDAGSCM.evalNode]
+    change false = copyingModel.evalNode (HardIntervention.empty signature) unit x
+    rw [FiniteHiddenDAGSCM.evalNode]
+    rfl
 
 theorem observational_agreement : constantModel.ObservationalAgreement copyingModel := by
   intro event
