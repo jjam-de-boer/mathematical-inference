@@ -100,8 +100,15 @@ conditions for original hidden DAGs, including noncanonical multi-child
 collapsed roots. Regressions exercise an undefined quotient skipped by a
 zero prefix, without replacing it by an arbitrary conditional value.
 
-The remaining zero-aware compiler work is the reverse component-to-host
-factor bridge, support-sensitive assembly of recursive component families
+The reverse component-to-host bridge is also implemented by
+`PublishedCurrentKernelReduction.hostFactorOfComponent_supportedAt` and its
+native adapter `hiddenDAG_hostFactorOfComponent_supportedAt`. It keeps the
+independently compiled component's exact prefix quotient and builds the two
+reversed graph-rule trees from explicit local data, without assuming a
+reduction of the whole host joint. Zero-outcome regressions exercise both a
+compound component marginal and a noncanonical original hidden-DAG model.
+
+The remaining zero-aware compiler work is support-sensitive assembly of recursive component families
 (without commuting guarded products by strict-product algebra), propagation
 through the recursive ID branches, and conditional IDC/Bayes assembly.
 These local constructors are sufficient support boundaries, not an

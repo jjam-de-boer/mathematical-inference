@@ -11,7 +11,7 @@ variable {S : ObservedSignature} {G : ObservedGraph S}
 variable {remaining externalAction : NodeSet S}
 
 /-!
-# Component-factor extraction at explicit local support
+# Forward and reverse component-factor bridges at explicit local support
 
 The graph-only rule applications are shared with the established positive
 compiler.  Parent closure and bidirected closure supply the same actual
@@ -33,6 +33,12 @@ assembles that product with explicit branch-local conditions.  The full
 zero-aware ID/IDC recursion remains separate and unfinished.  The
 ordinary derivation constructors and support tree are retained, rather than
 adding an assumed semantic equality as a new rule.
+
+The reverse bridge below starts from an independently compiled component
+factor and constructs the host conditional's reduction.  Its support tree
+retains the two reversed graph rules and the component's actual marginal
+subtrees.  It deliberately requires no reduction of the whole host joint,
+which would be circular in the recursive component-family product branch.
 -/
 
 namespace PublishedCurrentKernelReduction
