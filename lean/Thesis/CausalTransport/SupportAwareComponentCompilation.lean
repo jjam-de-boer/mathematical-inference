@@ -159,5 +159,189 @@ noncomputable def componentFactor_supportedAt
             ⟨hostSource, ⟨targetSupported, hostSupport⟩⟩⟩⟩⟩⟩⟩⟩⟩⟩
 
 end PublishedCurrentKernelReduction
+
+/-! ## Reverse bridge: identified component factors back to host factors -/
+
+/-- Use an independently identified component factor to reduce the host
+conditional.  Rule 2 is reversed first, turning the outside predecessor
+observations into actions; reversed rule 3 then restores the later outside
+actions before the supplied component derivation is used.
+
+The target is the caller's exact expression.  There is no assumed reduction
+of the whole host joint, no reset to an observational marginal and no new
+semantic-equality leaf.  Host and bidirected closure prove the two graph
+side conditions through the same constructor as forward extraction. -/
+noncomputable def hostFactorOfComponentDerivation
+    (remaining externalAction component : NodeSet S)
+    (closed : G.KernelHostClosed remaining externalAction)
+    (componentSubset : NodeSet.Subset component remaining)
+    (bidirectedClosed : forall {source target}, component source = true →
+      remaining target = true → G.bidirected source target = true → component target = true)
+    (node : Fin S.count) (nodeInside : component node = true)
+    {formula : ProbabilityTerm S}
+    (factor : PathDoCalculusDerivation G
+      (.kernel ⟨NodeSet.singleton node,
+        NodeSet.union externalAction (NodeSet.diff remaining component), chainCondition component node⟩)
+      formula) :
+    PathDoCalculusDerivation G
+      (.kernel ⟨NodeSet.singleton node, externalAction, chainCondition remaining node⟩) formula := by
+  let earlier := chainCondition component node
+  let exchanged := NodeSet.diff (chainCondition remaining node) component
+  let later := chainLaterOutside remaining component node
+  let rules := ComponentFactorRuleApplications.ofClosed remaining externalAction component
+    closed componentSubset bidirectedClosed node nodeInside
+  have componentEq : ProbabilityTerm.kernel
+      (rule3Left (NodeSet.union externalAction exchanged) (NodeSet.singleton node) later earlier) =
+      .kernel ⟨NodeSet.singleton node, NodeSet.union externalAction (NodeSet.diff remaining component), earlier⟩ := by
+    rw [chainOutside_eq_earlier_union_later remaining component node]
+    simp only [rule3Left, NodeSet.union_assoc]
+    rfl
+  let reindexed := DoCalculusDerivation.eqCongr (G := G) (separation := pathRuleSeparation G)
+    componentEq rfl factor
+  let added := DoCalculusDerivation.trans (G := G) (separation := pathRuleSeparation G)
+    (DoCalculusDerivation.symm (G := G) (separation := pathRuleSeparation G)
+      (DoCalculusDerivation.doRule (G := G) (separation := pathRuleSeparation G) rules.deletion)) reindexed
+  let exchange := DoCalculusDerivation.trans (G := G) (separation := pathRuleSeparation G)
+    (DoCalculusDerivation.symm (G := G) (separation := pathRuleSeparation G)
+      (DoCalculusDerivation.doRule (G := G) (separation := pathRuleSeparation G) rules.exchange)) added
+  have hostEq : ProbabilityTerm.kernel
+      ⟨NodeSet.singleton node, externalAction, chainCondition remaining node⟩ =
+      .kernel (rule2Right externalAction (NodeSet.singleton node) exchanged earlier) := by
+    change ProbabilityTerm.kernel ⟨NodeSet.singleton node, externalAction,
+      chainCondition remaining node⟩ = .kernel ⟨NodeSet.singleton node, externalAction,
+      NodeSet.union exchanged earlier⟩
+    rw [chainCondition_outside_union_inside remaining component componentSubset node]
+  exact DoCalculusDerivation.eqCongr (G := G) (separation := pathRuleSeparation G) hostEq rfl exchange
+
+/-- Construct the reversed graph bridge's complete ordinary support tree.
+The supplied component tree already supports its source and exact target;
+only the host source and exchange intermediate need additional local data.
+Each reversed rule retains the support tree of its forward rule as well.
+Zero outcomes are allowed throughout, and no positivity is manufactured by
+applying a soundness theorem to one of these derivations. -/
+noncomputable def hostFactorOfComponentDerivation_supportedAt
+    (correct : DSeparationCorrectness G)
+    (remaining externalAction component : NodeSet S)
+    (closed : G.KernelHostClosed remaining externalAction)
+    (componentSubset : NodeSet.Subset component remaining)
+    (bidirectedClosed : forall {source target}, component source = true →
+      remaining target = true → G.bidirected source target = true → component target = true)
+    (node : Fin S.count) (nodeInside : component node = true)
+    {formula : ProbabilityTerm S}
+    (factor : PathDoCalculusDerivation G
+      (.kernel ⟨NodeSet.singleton node,
+        NodeSet.union externalAction (NodeSet.diff remaining component), chainCondition component node⟩) formula)
+    (model : ExactModel S) (reference : S.Assignment)
+    (hostSupported : (ProbabilityTerm.kernel
+      ⟨NodeSet.singleton node, externalAction, chainCondition remaining node⟩).SupportedAt model reference)
+    (middleSupported : (ProbabilityTerm.kernel
+      (rule2Left externalAction (NodeSet.singleton node)
+        (NodeSet.diff (chainCondition remaining node) component) (chainCondition component node))).SupportedAt
+      model reference)
+    (factorSupport : LocalDerivationSupport model reference (factor.compile correct)) :
+    LocalDerivationSupport model reference
+      ((hostFactorOfComponentDerivation remaining externalAction component closed componentSubset
+        bidirectedClosed node nodeInside factor).compile correct) := by
+  let earlier := chainCondition component node
+  let exchanged := NodeSet.diff (chainCondition remaining node) component
+  let later := chainLaterOutside remaining component node
+  have hostEq : ProbabilityTerm.kernel
+      ⟨NodeSet.singleton node, externalAction, chainCondition remaining node⟩ =
+      .kernel (rule2Right externalAction (NodeSet.singleton node) exchanged earlier) := by
+    change ProbabilityTerm.kernel ⟨NodeSet.singleton node, externalAction,
+      chainCondition remaining node⟩ = .kernel ⟨NodeSet.singleton node, externalAction,
+      NodeSet.union exchanged earlier⟩
+    rw [chainCondition_outside_union_inside remaining component componentSubset node]
+  have componentEq : ProbabilityTerm.kernel
+      ⟨NodeSet.singleton node, NodeSet.union externalAction (NodeSet.diff remaining component), earlier⟩ =
+      .kernel (rule3Left (NodeSet.union externalAction exchanged) (NodeSet.singleton node) later earlier) := by
+    rw [chainOutside_eq_earlier_union_later remaining component node]
+    simp only [rule3Left, NodeSet.union_assoc]
+    rfl
+  let ruleHostSupported := ProbabilityTerm.SupportedAt.congr hostEq hostSupported
+  let ruleComponentSupported := ProbabilityTerm.SupportedAt.congr componentEq factorSupport.endpoints.1
+  let targetSupported := factorSupport.endpoints.2
+  dsimp [hostFactorOfComponentDerivation, PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
+  exact ⟨hostSupported, ⟨targetSupported,
+    ⟨ruleHostSupported, ⟨targetSupported,
+      ⟨⟨ruleHostSupported, ⟨middleSupported, ⟨middleSupported, ⟨ruleHostSupported, ()⟩⟩⟩⟩,
+        ⟨middleSupported, ⟨targetSupported,
+          ⟨⟨middleSupported, ⟨ruleComponentSupported, ⟨ruleComponentSupported, ⟨middleSupported, ()⟩⟩⟩⟩,
+            ⟨ruleComponentSupported, ⟨targetSupported, factorSupport⟩⟩⟩⟩⟩⟩⟩⟩⟩⟩
+
+namespace PublishedCurrentKernelReduction
+
+/-- Reduce a host factor by the exact prefix quotient of its independently
+compiled component input.  In particular, `input.formula` is that recursive
+component expression, not an assumed formula for the whole host. -/
+noncomputable def hostFactorOfComponentDerivation
+    {component : NodeSet S}
+    (input : PublishedCurrentKernelReduction G component
+      (NodeSet.union externalAction (NodeSet.diff remaining component)))
+    (closed : G.KernelHostClosed remaining externalAction)
+    (componentSubset : NodeSet.Subset component remaining)
+    (bidirectedClosed : forall {source target}, component source = true →
+      remaining target = true → G.bidirected source target = true → component target = true)
+    (node : Fin S.count) (nodeInside : component node = true) :
+    PathDoCalculusDerivation G
+      (.kernel ⟨NodeSet.singleton node, externalAction, chainCondition remaining node⟩)
+      (chainFactorFrom component input.formula node) :=
+  Causality.hostFactorOfComponentDerivation remaining externalAction component closed componentSubset
+    bidirectedClosed node nodeInside
+    (input.factorDerivation
+      (NodeSet.disjoint_union_left_of
+        (NodeSet.disjoint_of_subset_right closed.action_disjoint componentSubset)
+        (NodeSet.disjoint_diff_right remaining component)) node nodeInside)
+
+/-- Build every subtree from the component input's finite marginal variants
+and its one displayed positive denominator.  Observable host-predecessor
+overlap constructs both extra causal endpoints by consistency.  The caller
+supplies only the component conditional's local support, not a whole-host
+identification tree or everywhere-positive recursive distribution. -/
+noncomputable def hostFactorOfComponent_supportedAt
+    {component : NodeSet S}
+    (input : PublishedCurrentKernelReduction G component
+      (NodeSet.union externalAction (NodeSet.diff remaining component)))
+    (correct : DSeparationCorrectness G)
+    (closed : G.KernelHostClosed remaining externalAction)
+    (componentSubset : NodeSet.Subset component remaining)
+    (bidirectedClosed : forall {source target}, component source = true →
+      remaining target = true → G.bidirected source target = true → component target = true)
+    (node : Fin S.count) (nodeInside : component node = true)
+    (model : ExactModel S) (reference : S.Assignment)
+    (componentSupported : (ProbabilityTerm.kernel
+      ⟨NodeSet.singleton node, NodeSet.union externalAction (NodeSet.diff remaining component),
+        chainCondition component node⟩).SupportedAt model reference)
+    (overlap : ObservationalCylinderPositiveAt model
+      (NodeSet.union externalAction (chainCondition remaining node)) reference)
+    (numeratorInputSupport : forall variant,
+      variant ∈ ProbabilityTerm.marginalAssignments S
+        (NodeSet.diff component (NodeSet.union (NodeSet.singleton node) (chainCondition component node))) reference →
+        LocalDerivationSupport model variant (input.derivation.compile correct))
+    (denominatorInputSupport : forall variant,
+      variant ∈ ProbabilityTerm.marginalAssignments S
+        (NodeSet.diff component (chainCondition component node)) reference →
+        LocalDerivationSupport model variant (input.derivation.compile correct))
+    (denominatorPositive : ProbabilityResult.PositiveSupportedValue
+      ((ProbabilityTerm.marginalize (NodeSet.diff component (chainCondition component node))
+        input.formula).denote model reference)) :
+    LocalDerivationSupport model reference
+      ((input.hostFactorOfComponentDerivation closed componentSubset bidirectedClosed node nodeInside).compile
+        correct) := by
+  let outside : NodeSet.Disjoint (NodeSet.union externalAction (NodeSet.diff remaining component)) component :=
+    NodeSet.disjoint_union_left_of
+      (NodeSet.disjoint_of_subset_right closed.action_disjoint componentSubset)
+      (NodeSet.disjoint_diff_right remaining component)
+  let factor := input.factorDerivation outside node nodeInside
+  let factorSupport := input.factor_supportedAt correct outside node nodeInside model reference componentSupported
+    numeratorInputSupport denominatorInputSupport denominatorPositive
+  let hostSupported := Kernel.supportedAt_of_observational_overlap model
+    ⟨NodeSet.singleton node, externalAction, chainCondition remaining node⟩ reference overlap
+  let middleSupported := componentFactor_middle_supportedAt_of_overlap model component componentSubset
+    node reference overlap
+  exact Causality.hostFactorOfComponentDerivation_supportedAt correct remaining externalAction component closed
+    componentSubset bidirectedClosed node nodeInside factor model reference hostSupported middleSupported factorSupport
+
+end PublishedCurrentKernelReduction
 end Causality
 end Thesis

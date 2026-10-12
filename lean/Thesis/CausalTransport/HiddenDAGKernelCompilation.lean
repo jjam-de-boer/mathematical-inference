@@ -213,6 +213,62 @@ noncomputable def hiddenDAG_guardedComponent_supportedAt
   .ofCollapsed (input.guardedComponent_supportedAt P.observedGraph.dSeparationCorrectness
     component closed componentSubset bidirectedClosed model.toLatentRootSCM reference conditions.toCollapsed)
 
+/-- Native reverse extraction retains the independently compiled component
+input and its exact quotient.  The host and intermediate supports come from
+one native predecessor cylinder; the component conditional, finite input
+trees and displayed denominator remain explicit native data.
+
+Term and observational-record preservation transport those data literally.
+There is no assumed whole-host certificate, canonical collapse, global
+positivity or appeal to causal soundness to manufacture the denominator. -/
+noncomputable def hiddenDAG_hostFactorOfComponent_supportedAt
+    {component : NodeSet S}
+    (input : PublishedCurrentKernelReduction P.observedGraph component
+      (NodeSet.union externalAction (NodeSet.diff remaining component)))
+    (closed : P.observedGraph.KernelHostClosed remaining externalAction)
+    (componentSubset : NodeSet.Subset component remaining)
+    (bidirectedClosed : forall {source target}, component source = true →
+      remaining target = true → P.observedGraph.bidirected source target = true → component target = true)
+    (node : Fin S.count) (nodeInside : component node = true)
+    (model : FiniteHiddenDAGSCM S P) (reference : S.Assignment)
+    (componentSupported : model.TermSupportedAt
+      (.kernel ⟨NodeSet.singleton node, NodeSet.union externalAction (NodeSet.diff remaining component),
+        chainCondition component node⟩) reference)
+    (overlap : model.ObservationalCylinderPositiveAt
+      (NodeSet.union externalAction (chainCondition remaining node)) reference)
+    (numeratorInputSupport : forall variant,
+      variant ∈ ProbabilityTerm.marginalAssignments S
+        (NodeSet.diff component (NodeSet.union (NodeSet.singleton node) (chainCondition component node))) reference →
+        HiddenDAGLocalDerivationSupport model variant
+          (input.derivation.compile P.observedGraph.dSeparationCorrectness))
+    (denominatorInputSupport : forall variant,
+      variant ∈ ProbabilityTerm.marginalAssignments S
+        (NodeSet.diff component (chainCondition component node)) reference →
+        HiddenDAGLocalDerivationSupport model variant
+          (input.derivation.compile P.observedGraph.dSeparationCorrectness))
+    (denominatorPositive : ProbabilityResult.PositiveSupportedValue
+      (model.termDenote
+        (.marginalize (NodeSet.diff component (chainCondition component node)) input.formula) reference)) :
+    HiddenDAGLocalDerivationSupport model reference
+      ((input.hostFactorOfComponentDerivation closed componentSubset bidirectedClosed node nodeInside).compile
+        P.observedGraph.dSeparationCorrectness) := by
+  have collapsedOverlap : ObservationalCylinderPositiveAt model.toLatentRootSCM
+      (NodeSet.union externalAction (chainCondition remaining node)) reference := by
+    change 0 < (model.toLatentRootSCM.observationalDist.probVal
+      (Kernel.agreesOn (NodeSet.union externalAction (chainCondition remaining node)) reference)).num
+    rw [model.toLatentRootSCM_observationalDist]
+    exact overlap
+  have collapsedPositive : ProbabilityResult.PositiveSupportedValue
+      ((ProbabilityTerm.marginalize (NodeSet.diff component (chainCondition component node))
+        input.formula).denote model.toLatentRootSCM reference) := by
+    rw [model.termDenote_preserved _ reference] at denominatorPositive
+    exact denominatorPositive
+  exact .ofCollapsed (input.hostFactorOfComponent_supportedAt P.observedGraph.dSeparationCorrectness
+    closed componentSubset bidirectedClosed node nodeInside model.toLatentRootSCM reference
+    (model.termSupportedAt_to_collapsed _ reference componentSupported) collapsedOverlap
+    (fun variant listed => (numeratorInputSupport variant listed).toCollapsed)
+    (fun variant listed => (denominatorInputSupport variant listed).toCollapsed) collapsedPositive)
+
 end PublishedCurrentKernelReduction
 end Causality
 end Thesis

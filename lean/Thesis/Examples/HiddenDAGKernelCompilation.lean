@@ -186,6 +186,45 @@ theorem skipped_last_factor_is_undefined :
     (model.termDenote (chainFactorFrom NodeSet.full input.formula z) HiddenDAGSoundness.reference).isNone = true := by
   decide +kernel
 
+/-! ## The native reverse bridge permits a zero factor outcome -/
+
+noncomputable def reverseFactorDerivation := input.hostFactorOfComponentDerivation
+  (remaining := NodeSet.full) (externalAction := NodeSet.empty)
+  (ObservedGraph.KernelHostClosed.full projection.observedGraph)
+  (fun _node selected => selected) full_bidirected_closed y (by rfl)
+
+/-- The full component of this graph has a noncanonical three-child root.
+Its first nontrivial prefix is the positive `X = true` cylinder, while the
+`Y = true` outcome is zero.  The reverse bridge transports the actual native
+input variants and denominator rather than importing a positive certificate. -/
+noncomputable def reverse_factor_supported : HiddenDAGLocalDerivationSupport model HiddenDAGSoundness.reference
+    (reverseFactorDerivation.compile projection.observedGraph.dSeparationCorrectness) := by
+  have componentSupported := model.kernelSupportedAt_of_observational_overlap
+    ⟨NodeSet.singleton y, NodeSet.union NodeSet.empty (NodeSet.diff NodeSet.full NodeSet.full),
+      chainCondition NodeSet.full y⟩ HiddenDAGSoundness.reference (by
+        unfold FiniteHiddenDAGSCM.ObservationalCylinderPositiveAt
+        decide +kernel)
+  exact input.hiddenDAG_hostFactorOfComponent_supportedAt
+    (remaining := NodeSet.full) (externalAction := NodeSet.empty)
+    (ObservedGraph.KernelHostClosed.full projection.observedGraph)
+    (fun _node selected => selected) full_bidirected_closed y (by rfl)
+    model HiddenDAGSoundness.reference componentSupported (by
+      unfold FiniteHiddenDAGSCM.ObservationalCylinderPositiveAt
+      decide +kernel)
+    (fun variant _listed => input_supported variant) (fun variant _listed => input_supported variant)
+    denominator_positive
+
+noncomputable def reverse_factor_sound : model.TermEquivalentAt
+    (.kernel ⟨NodeSet.singleton y, NodeSet.empty, chainCondition NodeSet.full y⟩)
+    (chainFactorFrom NodeSet.full input.formula y) HiddenDAGSoundness.reference :=
+  (reverseFactorDerivation.compile projection.observedGraph.dSeparationCorrectness).hiddenDAG_denotational_soundAt
+    reverse_factor_supported
+
+theorem reverse_factor_is_supported_zero :
+    (model.termDenote (chainFactorFrom NodeSet.full input.formula y) HiddenDAGSoundness.reference).map
+      (fun value => value.num) = some 0 := by
+  decide +kernel
+
 end HiddenDAGKernelCompilation
 end Examples
 end Causality
