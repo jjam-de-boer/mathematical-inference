@@ -33,6 +33,9 @@ import Thesis.CausalTransport.GuardedKernelSuccessCompilation
 import Thesis.CausalTransport.GuardedKernelSoundness
 import Thesis.CausalTransport.GuardedConditionalIdentification
 import Thesis.CausalTransport.ConditionalExchangeCompilation
+import Thesis.CausalTransport.LocalConditionalCompilation
+import Thesis.CausalTransport.GuardedConditionalSuccessCompilation
+import Thesis.CausalTransport.GuardedConditionalSoundness
 import Thesis.CausalTransport.KernelIdentification
 import Thesis.CausalTransport.KernelCompilation
 import Thesis.CausalTransport.ProductCompilation
