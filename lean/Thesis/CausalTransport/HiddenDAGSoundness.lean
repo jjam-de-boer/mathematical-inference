@@ -24,8 +24,9 @@ conditioners are not assigned arbitrary values.
 
 No `PublishedLatentProjection`, published soundness assumption, global
 positivity premise, or extra hidden-DAG law is supplied by the caller.  This
-establishes soundness, not completeness: a reverse countermodel construction
-and the support-aware recursive identification compiler are still needed.
+establishes soundness.  The reverse positive countermodel construction and
+published completeness are supplied separately by `HiddenDAGCompleteness`;
+the full support-aware recursive identification compiler remains open.
 -/
 
 namespace FiniteHiddenDAGSCM

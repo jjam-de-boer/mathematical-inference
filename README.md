@@ -83,5 +83,14 @@ value to `0 / 0`. A full recursive zero-aware ID/IDC compiler is still open;
 the positive-model engine equivalences above do not silently cover that
 larger zero-permitting model class.
 
+The current-input algebra is also zero-permitting: recursive marginal
+certificates no longer require observed positivity, and exact prefix-quotient
+derivations accept support at their enumerated input variants plus positivity
+of the one displayed denominator. Their numerator may be zero. Native
+hidden-DAG adapters preserve those same local conditions without assuming
+canonical membership of a collapsed model. The remaining compiler work is
+to propagate these conditions through component extraction, the recursive ID
+branches, and conditional IDC/Bayes assembly.
+
 Continuous probability, general measure theory, and a complete formalisation
 of every philosophical or sociological claim are outside this project's scope.

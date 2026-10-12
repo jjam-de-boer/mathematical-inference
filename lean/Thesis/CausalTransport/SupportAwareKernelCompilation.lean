@@ -54,6 +54,16 @@ def observational (G : ObservedGraph S) :
   actionFree := observationalJointTerm_actionFree S
   derivation := DoCalculusDerivation.refl (G := G) (separation := pathRuleSeparation G) _
 
+/-- Initial local support is constructed from the actual observational joint
+cell, which is supported even when it is zero.  This starts a recursive
+support-aware input without an everywhere-positive regularity premise. -/
+noncomputable def observational_supportedAt (G : ObservedGraph S)
+    (correct : DSeparationCorrectness G) (model : ExactModel S) (reference : S.Assignment) :
+    LocalDerivationSupport model reference ((observational G).derivation.compile correct) := by
+  let supported := Kernel.unconditional_supportedAt model NodeSet.full NodeSet.empty reference
+  dsimp [observational, PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
+  exact ⟨supported, ⟨supported, ()⟩⟩
+
 /-- Retain the actual syntax of an existing published input, without
 calling its class-indexed support field or strengthening its model class. -/
 def ofCertificate {C : GraphModelClass G} {correct : DSeparationCorrectness G}

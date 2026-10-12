@@ -8,6 +8,7 @@ import Thesis.Examples.SupportAwareSemantics
 import Thesis.Examples.SupportAwareChain
 import Thesis.Examples.LocalSupportIdentification
 import Thesis.Examples.SupportAwareKernelCompilation
+import Thesis.Examples.SupportAwareComponentCompilation
 import Thesis.Examples.HiddenPathSearch
 import Thesis.Examples.HiddenDAGCollapse
 import Thesis.Examples.HiddenDAGSoundness
@@ -16,6 +17,7 @@ import Thesis.Examples.HiddenDAGRootPlacement
 import Thesis.Examples.HiddenDAGRealization
 import Thesis.Examples.HiddenDAGProbability
 import Thesis.Examples.HiddenDAGCompleteness
+import Thesis.Examples.HiddenDAGKernelCompilation
 import Thesis.Examples.KernelCompilation
 import Thesis.Examples.ComponentCompilation
 import Thesis.Examples.KernelRecursionCompilation

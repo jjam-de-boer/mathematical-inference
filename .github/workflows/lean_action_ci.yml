@@ -35,6 +35,7 @@ jobs:
             Thesis.Causality.HiddenCommonCauseSearch
             Thesis.CausalTransport.HiddenDAGCollapse
             Thesis.CausalTransport.HiddenDAGSemantics
+            Thesis.CausalTransport.HiddenDAGKernelCompilation
             Thesis.CausalTransport.HiddenDAGSoundness
             Thesis.CausalTransport.HiddenDAGPositiveCertificates
             Thesis.CausalTransport.HiddenDAGIdentification
@@ -53,8 +54,10 @@ jobs:
             Thesis.CausalTransport.HiddenDAGCorrespondence
             Thesis.CausalTransport.SupportAwareChainCompilation
             Thesis.CausalTransport.SupportAwareKernelCompilation
+            Thesis.CausalTransport.SupportAwareComponentCompilation
             Thesis.Examples.LocalSupportIdentification
             Thesis.Examples.SupportAwareKernelCompilation
+            Thesis.Examples.SupportAwareComponentCompilation
             Thesis.Examples.HiddenPathSearch
             Thesis.Examples.HiddenDAGCollapse
             Thesis.Examples.HiddenDAGSoundness
@@ -63,6 +66,7 @@ jobs:
             Thesis.Examples.HiddenDAGRealization
             Thesis.Examples.HiddenDAGProbability
             Thesis.Examples.HiddenDAGCompleteness
+            Thesis.Examples.HiddenDAGKernelCompilation
       - name: Build complete Lean project
         working-directory: lean
         run: lake build

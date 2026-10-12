@@ -50,6 +50,35 @@ noncomputable def zero_marginal_supported :
     (NodeSet.disjoint_empty_left _) (fun _node _selected => rfl) model reference
     (fun variant _listed => input_supported variant)
 
+/-! ## A compound guarded current expression, not a reset observational input -/
+
+/-- The generalized published marginal compiler also consumes the existing
+guarded whole-host certificate in the unrestricted compatible model class.
+Its input is a recursively compiled expression, not the bare joint kernel. -/
+noncomputable def guardedPublishedMarginal :
+    PublishedIdentificationCertificate (GraphModelClass.all graph) graph.dSeparationCorrectness
+      (.kernel ⟨NodeSet.singleton x, NodeSet.empty, NodeSet.empty⟩) :=
+  currentKernelMarginalPublishedCertificateOfSupport graph.dSeparationCorrectness
+    NodeSet.full NodeSet.empty (NodeSet.singleton x) (NodeSet.disjoint_empty_left _)
+    (fun _node _selected => rfl) guarded_compilation.certificate
+
+/-- The exact guarded current expression survives the marginal step.  It is
+not silently replaced by the original observational joint distribution. -/
+theorem guardedPublishedMarginal_formula : guardedPublishedMarginal.formula =
+    .marginalize (NodeSet.diff NodeSet.full (NodeSet.singleton x))
+      (guardedChainTerm (NodeSet.full : NodeSet signature)) := by
+  change ProbabilityTerm.marginalize (NodeSet.diff NodeSet.full (NodeSet.singleton x))
+    guarded_compilation.certificate.formula = _
+  rw [guarded_compilation_formula]
+
+/-- At the impossible outcome cell, the compound marginal certificate has
+its full ordinary recursive support tree in the actual nonpositive model. -/
+noncomputable def guardedPublishedMarginal_supported :
+    LocalDerivationSupport model reference
+      (guardedPublishedMarginal.derivation.compile graph.dSeparationCorrectness) :=
+  guardedPublishedMarginal.supported model compatible reference
+    (Kernel.unconditional_supportedAt model (NodeSet.singleton x) NodeSet.empty reference)
+
 /-- The first node has an empty host prefix.  This is a finite Boolean-set
 identity, not a decidable-equality instance for arbitrary function types. -/
 private theorem firstCondition_empty : chainCondition (NodeSet.full : NodeSet signature) x = NodeSet.empty := by

@@ -92,7 +92,7 @@ theorem chainLaterOutside_after (remaining component : NodeSet S)
 /-- The two graph-derived factor transformations, retained independently
 of any compiled current expression.  Component extraction uses them forward;
 the recursive product branch uses the same applications in reverse. -/
-private structure ComponentFactorRuleApplications (G : ObservedGraph S)
+structure ComponentFactorRuleApplications (G : ObservedGraph S)
     (remaining externalAction component : NodeSet S) (node : Fin S.count) where
   exchange : PathDoRuleApplication G
     (rule2Left externalAction (NodeSet.singleton node)
@@ -111,7 +111,7 @@ private structure ComponentFactorRuleApplications (G : ObservedGraph S)
 disjointness and path-separation obligations are proved here once; neither
 direction of compilation receives an additional graph Boolean or semantic
 independence hypothesis from its caller. -/
-private noncomputable def componentFactorRuleApplicationsOfClosed
+noncomputable def ComponentFactorRuleApplications.ofClosed
     {G : ObservedGraph S}
     (remaining externalAction component : NodeSet S)
     (closed : G.KernelHostClosed remaining externalAction)
@@ -210,7 +210,7 @@ noncomputable def currentKernelComponentFactorPublishedCertificate
   let earlier := chainCondition component node
   let exchanged := NodeSet.diff (chainCondition remaining node) component
   let later := chainLaterOutside remaining component node
-  let rules := componentFactorRuleApplicationsOfClosed remaining externalAction component
+  let rules := ComponentFactorRuleApplications.ofClosed remaining externalAction component
     closed componentSubset bidirectedClosed node nodeInside
   let factor := currentKernelFactorPublishedCertificate correct obsPositive
     remaining externalAction closed.action_disjoint node (componentSubset node nodeInside)
@@ -262,7 +262,7 @@ noncomputable def currentKernelHostFactorOfComponentPublishedCertificate
   let earlier := chainCondition component node
   let exchanged := NodeSet.diff (chainCondition remaining node) component
   let later := chainLaterOutside remaining component node
-  let rules := componentFactorRuleApplicationsOfClosed remaining externalAction component
+  let rules := ComponentFactorRuleApplications.ofClosed remaining externalAction component
     closed componentSubset bidirectedClosed node nodeInside
   let reindexed := factor.reindex
     (show ProbabilityTerm.kernel (rule3Left (NodeSet.union externalAction exchanged)

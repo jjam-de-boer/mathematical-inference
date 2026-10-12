@@ -22,6 +22,7 @@ import Thesis.CausalTransport.Completeness
 import Thesis.CausalTransport.ChainCompilation
 import Thesis.CausalTransport.SupportAwareChainCompilation
 import Thesis.CausalTransport.SupportAwareKernelCompilation
+import Thesis.CausalTransport.SupportAwareComponentCompilation
 import Thesis.CausalTransport.KernelIdentification
 import Thesis.CausalTransport.KernelCompilation
 import Thesis.CausalTransport.ProductCompilation
@@ -78,6 +79,7 @@ import Thesis.CausalTransport.HiddenDAG
 import Thesis.CausalTransport.HiddenDAGFullFamily
 import Thesis.CausalTransport.HiddenDAGCollapse
 import Thesis.CausalTransport.HiddenDAGSemantics
+import Thesis.CausalTransport.HiddenDAGKernelCompilation
 import Thesis.CausalTransport.HiddenDAGModelClass
 import Thesis.CausalTransport.HiddenDAGSoundness
 import Thesis.CausalTransport.HiddenDAGPositiveCertificates
@@ -256,6 +258,19 @@ These results allow arbitrary finite hidden and private-noise sizes without
 an external `PublishedLatentProjection` premise.  Zero-aware recursive ID/IDC
 remains a separate obligation; positive success is not asserted over the
 entire zero-permitting class.
+
+`SupportAwareKernelAlgebra` gives intrinsic unconditional, finite-marginal and
+quotient support laws allowing zero outcomes.  `KernelCompilation` now
+compiles a marginal of any supported current input without observational
+positivity, and its historical positive entry point delegates to that general
+constructor.  `SupportAwareKernelCompilation` separates current-expression
+path derivations from assignment-local support: the exact prefix quotient
+needs input subtrees only at its two finite marginal enumerations and a
+positive displayed denominator, not an everywhere-positive current input.
+`HiddenDAGKernelCompilation` supplies the corresponding native support trees
+through literal term preservation, permitting noncanonical collapses and
+observational zeros.  Component extraction and full ID/IDC support-aware
+recursion remain separate obligations.
 
 The module-by-module descriptions below also retain local limitations of
 older restricted constructions.  Such a limitation is not an outstanding
