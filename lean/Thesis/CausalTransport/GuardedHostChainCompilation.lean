@@ -53,7 +53,7 @@ theorem prefixTerm_congr (remaining : NodeSet S) (first second : Fin S.count →
           exact inductionHypothesis _
       | true =>
           simp only [prefixTerm, selected, if_true]
-          exact congrArg2 ProbabilityTerm.weightedMultiply (inductionHypothesis _) (same _ selected)
+          rw [inductionHypothesis _, same _ selected]
 
 theorem term_congr (remaining : NodeSet S) (first second : Fin S.count → ProbabilityTerm S)
     (same : forall node, remaining node = true → first node = second node) :
