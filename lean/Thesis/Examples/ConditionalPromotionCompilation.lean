@@ -93,6 +93,43 @@ private theorem positive_impossible_of_zero {result : ProbabilityResult.Result}
 private def denominatorTerm (node : Fin signature.count) : ProbabilityTerm signature :=
   .marginalize (NodeSet.diff host (chainCondition host node)) ancestralFormula
 
+/-- The empty cylinder has positive mass by the record's normalization,
+even when many observed cells are zero.  No model-class positivity is used. -/
+private noncomputable def emptyPositive (reference : signature.Assignment) :
+    ProbabilityResult.PositiveSupportedValue
+      ((ProbabilityTerm.kernel ⟨NodeSet.empty, NodeSet.empty, NodeSet.empty⟩).denote
+        nativeModel.toLatentRootSCM reference) := by
+  let distribution := (Kernel.mk NodeSet.empty NodeSet.empty NodeSet.empty).distribution
+    nativeModel.toLatentRootSCM reference
+  let value := distribution.probVal (Kernel.agreesOn NodeSet.empty reference)
+  have normalized : QProb.Equiv value QProb.one := QProb.equiv_trans
+    (distribution.probVal_congr _ Probability.topEvent (fun _sample => by
+      simp [Kernel.agreesOn, NodeSet.empty, Probability.topEvent, finAll_true])) distribution.normalization
+  exact ⟨value, Kernel.unconditionalDenote nativeModel.toLatentRootSCM NodeSet.empty NodeSet.empty reference,
+    (QProb.equiv_num_pos_iff normalized).mpr (by decide)⟩
+
+/-- Intrinsic finite marginalization and full observational marginal
+normalization prove the displayed first denominator positive.  This avoids
+an expensive repeated numerical check, and does not invoke graph-indexed
+derivation soundness or assume the component's yet-to-be-built support. -/
+private noncomputable def xDenominatorPositive (reference : signature.Assignment) :
+    ProbabilityResult.PositiveSupportedValue ((denominatorTerm x).denote nativeModel.toLatentRootSCM reference) := by
+  have syntax : denominatorTerm x = .marginalize host ancestralFormula :=
+    (ProbabilityTerm.equal_eq_true_iff _ _).mp (by decide +kernel)
+  rw [syntax]
+  have marginal : ProbabilityTerm.EquivalentAt nativeModel.toLatentRootSCM
+      (.kernel ⟨NodeSet.empty, NodeSet.empty, NodeSet.empty⟩)
+      (.marginalize host (.kernel ⟨host, NodeSet.empty, NodeSet.empty⟩)) reference := by
+    simpa only [NodeSet.union_empty_left] using
+      (ProbabilityTerm.marginalization_equivalentAt nativeModel.toLatentRootSCM NodeSet.empty NodeSet.empty host
+        NodeSet.empty reference
+        (FourWayDisjoint.of_empty_w _ _ _ (NodeSet.disjoint_empty_left _) (NodeSet.disjoint_empty_left _)
+          (NodeSet.disjoint_empty_left _))
+        (Kernel.unconditional_supportedAt nativeModel.toLatentRootSCM NodeSet.empty NodeSet.empty reference))
+  have input := ProbabilityTerm.marginalize_congrAt nativeModel.toLatentRootSCM host reference
+    (fun variant _listed => ProbabilityTerm.emptyActionKernel_equiv_fullMarginal nativeModel.toLatentRootSCM host variant)
+  exact ProbabilityResult.PositiveSupportedValue.transport (ProbabilityResult.trans marginal input) (emptyPositive reference)
+
 private noncomputable def xInputs (reference : signature.Assignment) :
     LocalComponentFactorData ancestralInput nativeModel.toLatentRootSCM reference x where
   overlap := by
@@ -105,9 +142,7 @@ private noncomputable def xInputs (reference : signature.Assignment) :
       (by decide +kernel) reference)
   numeratorData := fun _variant _listed _originalVariant _originalListed => ()
   denominatorData := fun _variant _listed _originalVariant _originalListed => ()
-  denominatorPositive := collapsedPositive (denominatorTerm x) reference
-    (checkedAt (fun assignment => (nativeModel.termDenote (denominatorTerm x) assignment).any
-      (fun value => decide (0 < value.num))) (by decide +kernel) reference)
+  denominatorPositive := xDenominatorPositive reference
 
 private noncomputable def yInputs (reference : signature.Assignment) (supportedX : reference x = false) :
     LocalComponentFactorData ancestralInput nativeModel.toLatentRootSCM reference y where
@@ -167,12 +202,15 @@ noncomputable def componentData (reference : signature.Assignment) :
     componentInput.Data nativeModel.toLatentRootSCM reference := by
   change LocalComponentData ancestralInput component nativeModel.toLatentRootSCM reference
   intro node selected branch
-  change (NodeSet.singleton x node || NodeSet.singleton y node) = true at selected
-  rcases Bool.or_eq_true_iff.mp selected with atX | atY
-  · have same : node = x := of_decide_eq_true atX
+  if atX : node = x then
     subst node
     exact xInputs reference
-  · have same : node = y := of_decide_eq_true atY
+  else
+    have same : node = y := by
+      change (NodeSet.singleton x node || NodeSet.singleton y node) = true at selected
+      rcases Bool.or_eq_true_iff.mp selected with first | second
+      · exact False.elim (atX (of_decide_eq_true first))
+      · exact of_decide_eq_true second
     subst node
     exact yInputs reference (x_false_of_y_guard reference branch)
 
