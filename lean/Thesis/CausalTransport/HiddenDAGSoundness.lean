@@ -26,7 +26,9 @@ No `PublishedLatentProjection`, published soundness assumption, global
 positivity premise, or extra hidden-DAG law is supplied by the caller.  This
 establishes soundness.  The reverse positive countermodel construction and
 published completeness are supplied separately by `HiddenDAGCompleteness`;
-the full support-aware recursive identification compiler remains open.
+`GuardedKernelSuccessCompilation` now supplies the recursive guarded joint
+compiler from local data, and `GuardedKernelSoundness` interprets that compiler
+natively.  Conditional support-aware IDC/Bayes compilation remains open.
 -/
 
 namespace FiniteHiddenDAGSCM

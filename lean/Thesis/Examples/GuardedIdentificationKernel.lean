@@ -24,7 +24,8 @@ Both engines identify structurally.  The strict engine leaves an undefined
 and returns a supported zero at `Y = true`.
 
 These are computations of the actual program and native probability record,
-not a substitute for the pending generic support-carrying success compiler.
+not a substitute for the generic support-carrying success compiler in
+`GuardedKernelSuccessCompilation`: they do not instantiate its local data.
 The general decision and action-free theorems are checked on this run too.
 -/
 

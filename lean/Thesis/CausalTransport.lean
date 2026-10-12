@@ -30,6 +30,7 @@ import Thesis.CausalTransport.LocalKernelQueryCompilation
 import Thesis.CausalTransport.HiddenDAGComponentFamilyCompilation
 import Thesis.CausalTransport.GuardedIdentificationKernel
 import Thesis.CausalTransport.GuardedKernelSuccessCompilation
+import Thesis.CausalTransport.GuardedKernelSoundness
 import Thesis.CausalTransport.KernelIdentification
 import Thesis.CausalTransport.KernelCompilation
 import Thesis.CausalTransport.ProductCompilation
@@ -262,9 +263,11 @@ fields for every value-rich positive original-DAG class;
 `HiddenDAGCorrespondence` combines native soundness with that converse into
 ID/IDC success iff identifiability and positive projected-class equivalence.
 These results allow arbitrary finite hidden and private-noise sizes without
-an external `PublishedLatentProjection` premise.  Zero-aware recursive ID/IDC
-remains a separate obligation; positive success is not asserted over the
-entire zero-permitting class.
+an external `PublishedLatentProjection` premise.  Guarded joint ID now has
+the local-data compiler and native interpretation described below.  Conditional
+IDC/Bayes assembly and a zero-aware completeness boundary remain separate
+obligations; positive success is not asserted over the entire zero-permitting
+class.
 
 `SupportAwareKernelAlgebra` gives intrinsic unconditional, finite-marginal and
 quotient support laws allowing zero outcomes.  `KernelCompilation` now
@@ -296,10 +299,19 @@ regression checks a supported zero and a skipped undefined final quotient.
 `GuardedIdentificationKernel` computes the complete guarded joint recursion
 and proves action-free syntax, identical graph decisions and exact failure
 witnesses, with no public unfinished sentinel. Its native mediator regression
-checks the actual recursive guarded/strict zero-value difference. These are
-program invariants and numerical regressions, not a substitute for the still
-pending generic recursive support-carrying success compiler and IDC/Bayes
-assembly.
+checks the actual recursive guarded/strict zero-value difference.
+`LocalKernelCompilation` composes primitive local data and constructs
+inherited support subtrees; `LocalKernelQueryCompilation` preserves that
+data through the actual query transformations. `GuardedKernelSuccessCompilation`
+now applies those constructors uniformly to every successful guarded joint
+invocation and aligns the literal returned expression, with no initial tree
+or global positivity assumption. `GuardedKernelSoundness` interprets that
+compiled tree both in compatible root models and natively in all original
+finite hidden-DAG models. Its two-model adapter explicitly requires local
+data in both models: causal-support fields are not silently transferred by
+observational agreement. Conditional IDC/Bayes compilation and a proved
+zero-aware completeness boundary remain open. Numerical regressions alone
+are not used as evidence for these generic semantic claims.
 
 The module-by-module descriptions below also retain local limitations of
 older restricted constructions.  Such a limitation is not an outstanding

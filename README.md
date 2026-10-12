@@ -79,9 +79,10 @@ support; no external latent-projection interface is assumed.
 The finite probability records permit zeros. Native hidden-DAG soundness
 already accepts explicit local derivation-support witnesses, and guarded
 observational-chain compilation handles null prefixes without assigning a
-value to `0 / 0`. A full recursive zero-aware ID/IDC compiler is still open;
-the positive-model engine equivalences above do not silently cover that
-larger zero-permitting model class.
+value to `0 / 0`. Guarded joint ID now has a uniform recursive local-data
+compiler and native interpretation. Conditional IDC/Bayes compilation and
+a zero-aware completeness boundary remain open; the positive-model engine
+equivalences above do not silently cover that larger zero-permitting class.
 
 The current-input algebra is also zero-permitting: recursive marginal
 certificates no longer require observed positivity, and exact prefix-quotient
@@ -136,9 +137,20 @@ mediator regression identifies structurally in both programs: the guarded
 formula gives a supported zero while the strict formula is undefined.
 
 The guarded `identified` outcome is still a candidate, not a blanket
-semantic claim. The remaining work is the generic recursive success compiler
-that constructs its full tree from finite local input data, its native
-interpretation, and conditional IDC/Bayes assembly.
+semantic claim. `identifyGuardedKernelFuelLocalCompilation` and
+`identifyGuardedJointKernelLocalCompilation` now construct its formula-aligned
+derivation and support tree from recursively composed primitive local data.
+The initial observational compilation requires only unit data; marginals
+request inherited data at their actual enumerated variants, and guarded
+folds request quotient data only on positive prefix branches.
+`identifyGuardedJointKernel_soundAt` interprets the exact successful expression
+in compatible root models, and `identifyGuardedJointKernel_hiddenDAG_soundAt`
+reads it in every original finite hidden-DAG model at the stated boundary.
+The native two-model identification adapter requests data in both models:
+the boundary includes causal-conditional support, so complete data transfer
+is not inferred from observational agreement alone.
+Conditional IDC/Bayes compilation and a zero-aware completeness boundary
+remain to be established.
 These local constructors are sufficient support boundaries, not an
 unrestricted identification equivalence for all distributions with zeros.
 
