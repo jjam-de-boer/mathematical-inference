@@ -108,9 +108,19 @@ reversed graph-rule trees from explicit local data, without assuming a
 reduction of the whole host joint. Zero-outcome regressions exercise both a
 compound component marginal and a noncanonical original hidden-DAG model.
 
-The remaining zero-aware compiler work is support-sensitive assembly of recursive component families
-(without commuting guarded products by strict-product algebra), propagation
-through the recursive ID branches, and conditional IDC/Bayes assembly.
+Whole-host component-family assembly is implemented by
+`PublishedComponentKernelReductionFamily.guardedReduction_supportedAt`.
+Its guarded topological fold reads each independently compiled component's
+exact quotient. Components may interleave; no whole-host reduction or
+strict-product regrouping is assumed. A regression has a supported zero
+first component and an undefined later component input: the guarded host
+is still a supported zero, while the old strict product remains undefined.
+`GuardedHostChain` provides the shared bounded derivation/support induction
+for this assembly and the earlier whole-component extraction.
+
+The remaining zero-aware compiler work is native component-family adapters,
+propagation through the recursive ID branches using this guarded target
+syntax, and conditional IDC/Bayes assembly.
 These local constructors are sufficient support boundaries, not an
 unrestricted identification equivalence for all distributions with zeros.
 

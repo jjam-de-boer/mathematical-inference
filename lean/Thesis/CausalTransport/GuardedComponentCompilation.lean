@@ -28,6 +28,11 @@ branches from the displayed formula prefix's positive branches.  Its local
 conditions supply only observable overlap, actual input subtrees and the
 displayed quotient denominator, not a semantic equivalence or a whole-product
 support tree.  This avoids using soundness to manufacture positivity.
+
+The bounded term and derivation fold is shared with whole-host assembly in
+`GuardedHostChainCompilation`.  The wrappers below retain this module's
+original endpoints and local conditions while supplying its component-factor
+callbacks.  Their actual generated probability expression is unchanged.
 -/
 
 /-- Previously fixed actions and the component's discarded host coordinates. -/

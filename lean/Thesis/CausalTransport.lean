@@ -275,8 +275,16 @@ observational zeros.  `SupportAwareComponentCompilation` shares the proved
 graph exchange/deletion applications with the positive compiler and assembles
 the extracted factor's full support tree from local endpoint and host-factor
 witnesses.  Observable predecessor/action overlap suffices for its exchange
-intermediate.  Whole guarded component products and full ID/IDC support-aware
-recursion remain separate obligations.
+intermediate.  The same module constructs the reverse component-to-host
+bridge without assuming a host-joint reduction.  `GuardedComponentCompilation`
+assembles a whole extracted component from these local inputs.
+`GuardedComponentFamilyCompilation` constructs a whole host from independent
+component reductions, retaining their exact quotients in guarded host order.
+Its new regression keeps a zero host supported despite an undefined later
+component input; a strict product of those component formulas is undefined.
+Both whole folds share the bounded `GuardedHostChain` induction rather than
+commuting guarded products by the older strict-product rules.  Native family
+adapters and full ID/IDC support-aware recursion remain separate obligations.
 
 The module-by-module descriptions below also retain local limitations of
 older restricted constructions.  Such a limitation is not an outstanding
