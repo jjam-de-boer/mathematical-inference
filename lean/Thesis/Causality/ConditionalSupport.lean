@@ -108,7 +108,12 @@ noncomputable def ConditionalKernelQuery.exchangeCondition_supportedAt
     (query.exchangeCondition node selected).sourceTerm.SupportedAt model reference :=
   Kernel.supportedAt_promoteCondition model query.action query.outcome (NodeSet.singleton node)
     (NodeSet.diff query.condition (NodeSet.singleton node)) reference
-    (by rw [query.exchangeCondition_partition node selected]; exact supported)
+    (by
+      have partition := query.exchangeCondition_partition node selected
+      change NodeSet.union (NodeSet.singleton node) (NodeSet.diff query.condition (NodeSet.singleton node)) =
+        query.condition at partition
+      rw [partition]
+      exact supported)
 
 end Causality
 end Thesis
