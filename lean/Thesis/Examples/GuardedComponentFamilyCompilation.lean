@@ -87,7 +87,6 @@ private noncomputable def xInput_supported (component : NodeSet signature)
   let source := Kernel.unconditional_supportedAt model component
     (NodeSet.union NodeSet.empty (NodeSet.diff NodeSet.full component)) variant
   dsimp [recursiveReduction]
-  simp only [isX, dif_pos]
   dsimp [PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
   exact ⟨source, ⟨inner.endpoints.2, inner⟩⟩
 
