@@ -52,7 +52,7 @@ def fullGraph : FiniteHiddenDAG signature where
   observedNode_injective := fun _ _ same => same
   hidden := fun _ => false
   observed_not_hidden := by intro _; rfl
-  node_classified := by decide +kernel
+  node_classified := fun node => Or.inr ⟨node, rfl⟩
   edge := fun parent child => decide (parent.val = 0 ∧ child.val = 1)
   rank := Fin.val
   edge_rank_lt := by decide +kernel
@@ -133,16 +133,14 @@ theorem observational_records_equal : constantModel.observationalDist = copyingM
   change constantModel.prior.map (constantModel.evalObserved (HardIntervention.empty signature)) =
     constantModel.prior.map (copyingModel.evalObserved (HardIntervention.empty signature))
   apply congrArg (FiniteProbRecord.map constantModel.prior)
-  funext unit node
-  have either : node = x ∨ node = y := by
-    have bounded : node.val < 2 := node.isLt
-    if first : node.val = 0 then
-      exact Or.inl (Fin.ext first)
-    else
-      exact Or.inr (Fin.ext (by omega))
-  rcases either with first | second
-  · subst node; rfl
-  · subst node; rfl
+  funext unit
+  have unique : unit = (fun _node => ()) := by
+    funext node
+    cases unit node
+    rfl
+  rw [unique]
+  letI : DecidableEq signature.Assignment := signature.assignmentDecidableEq
+  decide +kernel
 
 theorem observational_agreement : constantModel.ObservationalAgreement copyingModel := by
   intro event
