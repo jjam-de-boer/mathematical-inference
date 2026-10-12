@@ -55,6 +55,7 @@ jobs:
             Thesis.CausalTransport.SupportAwareChainCompilation
             Thesis.CausalTransport.SupportAwareKernelCompilation
             Thesis.CausalTransport.SupportAwareComponentCompilation
+            Thesis.CausalTransport.GuardedComponentCompilation
             Thesis.Examples.LocalSupportIdentification
             Thesis.Examples.SupportAwareKernelCompilation
             Thesis.Examples.SupportAwareComponentCompilation

@@ -51,6 +51,32 @@ noncomputable def unconditional_supportedAt (model : FiniteLatentSCM S)
       (agreesOn outcome reference),
     unconditionalDenote model outcome action reference⟩
 
+/-- A positive unconditional conditioner supplies the corresponding
+conditional kernel's support under the same intervention.  Its outcome
+numerator may be zero.  This is finite-record normalization, not an
+application of do-calculus soundness or observed global positivity. -/
+noncomputable def supportedAt_of_positive_unconditional_conditioner
+    (model : FiniteLatentSCM S) (outcome action condition : NodeSet S)
+    (reference : S.Assignment)
+    (positive : ProbabilityResult.PositiveSupportedValue
+      ((ProbabilityTerm.kernel ⟨condition, action, NodeSet.empty⟩).denote model reference)) :
+    (ProbabilityTerm.kernel ⟨outcome, action, condition⟩).SupportedAt model reference := by
+  let kernel : Kernel S := ⟨outcome, action, condition⟩
+  let distribution := kernel.distribution model reference
+  let numerator := distribution.probVal (kernel.numeratorEvent reference)
+  let denominator := distribution.probVal (kernel.conditionEvent reference)
+  let actual := ProbabilityResult.PositiveSupportedValue.transport
+    (unconditionalDenote model condition action reference) positive
+  have denominatorPositive : 0 < denominator.num := by
+    cases actual.equivalent with
+    | value same => exact (QProb.equiv_num_pos_iff same).mpr actual.positive
+  refine ⟨QProb.div numerator denominator denominatorPositive, ?_⟩
+  change ProbabilityResult.Equivalent
+    (ProbabilityResult.divide (some numerator) (some denominator))
+    (some (QProb.div numerator denominator denominatorPositive))
+  simp only [ProbabilityResult.divide, dif_pos denominatorPositive]
+  exact .value (QProb.equiv_refl _)
+
 /-- The unconditional numerator and denominator used by a displayed
 conditional.  The same action remains in both kernels; changing the current
 host or resetting to an observational marginal is not part of this syntax. -/
