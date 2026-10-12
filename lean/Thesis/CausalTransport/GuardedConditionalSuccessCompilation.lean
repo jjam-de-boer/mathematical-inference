@@ -53,19 +53,20 @@ noncomputable def identifyGuardedConditionalKernelFuelLocalCompilation
     (correct : DSeparationCorrectness G) (fuel : Nat) (query : ConditionalKernelQuery S)
     {term : ProbabilityTerm S}
     (result : identifyGuardedConditionalKernelFuel fuel G query = .identified term) :
-    PublishedLocalConditionalSuccess G correct query term := by
-  induction fuel generalizing query term with
-  | zero => cases result
-  | succ fuel inductionHypothesis =>
-      cases found : conditionalExchangeStep? G query with
+    PublishedLocalConditionalSuccess G correct query term :=
+  match fuel with
+  | 0 => by cases result
+  | fuel + 1 =>
+      match found : conditionalExchangeStep? G query with
       | some step =>
           -- The nested target is unchanged by promotion.  Local data records
           -- the original endpoint and recursively constructs the promoted one.
-          let nested := inductionHypothesis (query.exchangeCondition step.node step.selected)
+          let nested := identifyGuardedConditionalKernelFuelLocalCompilation correct fuel
+            (query.exchangeCondition step.node step.selected)
             (by simpa only [identifyGuardedConditionalKernelFuel, found] using result)
-          exact ⟨localConditionalExchangeCompilation query step nested.compilation, nested.formula_eq⟩
+          ⟨localConditionalExchangeCompilation query step nested.compilation, nested.formula_eq⟩
       | none =>
-          cases joint : identifyGuardedJointKernel G query.jointNumerator with
+          match joint : identifyGuardedJointKernel G query.jointNumerator with
           | identified numerator =>
               -- One actual joint expression appears in both Bayes positions.
               -- The marginal compiler builds the denominator from that input.
@@ -73,9 +74,9 @@ noncomputable def identifyGuardedConditionalKernelFuelLocalCompilation
                 simpa only [identifyGuardedConditionalKernelFuel, found, joint,
                   IdentificationOutcome.identified.injEq] using result
               let compiled := (identifyGuardedJointKernelLocalCompilation correct query.jointNumerator joint).aligned
-              exact ⟨localConditionalBayesCompilation query compiled, same⟩
-          | failed _fail => simp only [identifyGuardedConditionalKernelFuel, found, joint] at result; cases result
-          | unfinished => simp only [identifyGuardedConditionalKernelFuel, found, joint] at result; cases result
+              ⟨localConditionalBayesCompilation query compiled, same⟩
+          | failed _fail => by simp only [identifyGuardedConditionalKernelFuel, found, joint] at result; cases result
+          | unfinished => by simp only [identifyGuardedConditionalKernelFuel, found, joint] at result; cases result
 
 /-- The public conditional call constructs the complete sequence of local
 support constructors itself.  Only its actual successful equation and the
@@ -97,9 +98,7 @@ theorem identifyGuardedConditionalKernelFuelLocalCompilation_bayes_data
     (identifyGuardedConditionalKernelFuelLocalCompilation correct (fuel + 1) query result).compilation.Data =
       LocalConditionalBayesData query
         (identifyGuardedJointKernelLocalCompilation correct query.jointNumerator joint).aligned := by
-  dsimp only [identifyGuardedConditionalKernelFuelLocalCompilation, Nat.recAux]
-  rw [noExchange, joint]
-  rfl
+  simp only [identifyGuardedConditionalKernelFuelLocalCompilation, noExchange, joint]
 
 end Causality
 end Thesis
