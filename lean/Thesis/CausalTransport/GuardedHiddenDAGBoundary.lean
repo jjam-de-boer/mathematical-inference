@@ -88,7 +88,7 @@ noncomputable def identifyGuardedJointKernel_hiddenDAG_completeAtLocalBoundary
           query.outcome query.action term := by
   cases result : identifyGuardedJointKernel P.observedGraph query with
   | identified term =>
-      exact ⟨term, result, identifyGuardedJointKernelLocalCompilation P.observedGraph.dSeparationCorrectness query result⟩
+      exact ⟨term, rfl, identifyGuardedJointKernelLocalCompilation P.observedGraph.dSeparationCorrectness query result⟩
   | failed failure =>
       exact False.elim
         ((identifyGuardedJointKernel_hiddenDAG_failed_counterexample rich query result).not_identifiable identified)
@@ -105,7 +105,7 @@ noncomputable def identifyGuardedConditionalKernel_hiddenDAG_completeAtLocalBoun
         PublishedLocalConditionalSuccess P.observedGraph P.observedGraph.dSeparationCorrectness query term := by
   cases result : identifyGuardedConditionalKernel P.observedGraph query with
   | identified term =>
-      exact ⟨term, result, identifyGuardedConditionalKernelLocalCompilation P.observedGraph.dSeparationCorrectness query result⟩
+      exact ⟨term, rfl, identifyGuardedConditionalKernelLocalCompilation P.observedGraph.dSeparationCorrectness query result⟩
   | failed failure =>
       exact False.elim
         ((identifyGuardedConditionalKernel_hiddenDAG_failed_counterexample rich query result).not_identifiable identified)
