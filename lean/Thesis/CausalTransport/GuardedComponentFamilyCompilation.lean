@@ -10,6 +10,22 @@ open Probability
 variable {S : ObservedSignature} {G : ObservedGraph S}
 variable {remaining externalAction : NodeSet S}
 
+/-- Pure syntax for a guarded host assembled from a total component-formula
+map.  This is shared with the executable guarded ID engine, so its output
+does not depend on constructing a certificate or invoking soundness. -/
+def guardedComponentFamilyTerm (G : ObservedGraph S) (remaining : NodeSet S)
+    (formula : NodeSet S → ProbabilityTerm S) : ProbabilityTerm S :=
+  GuardedHostChain.term remaining (fun node => chainFactorFrom (G.componentAt remaining node)
+    (formula (G.componentAt remaining node)) node)
+
+/-- Only actual listed component formulas need be action-free. -/
+theorem guardedComponentFamilyTerm_actionFree (G : ObservedGraph S) (remaining : NodeSet S)
+    (formula : NodeSet S → ProbabilityTerm S)
+    (free : forall component, component ∈ G.cComponents remaining → (formula component).ActionFree) :
+    (guardedComponentFamilyTerm G remaining formula).ActionFree :=
+  GuardedHostChain.term_actionFree remaining _ (fun node selected => chainFactorFrom_actionFree _ _ node
+    (free _ (G.componentAt_spec remaining node selected).1))
+
 /-!
 # Whole-host assembly from independently compiled component inputs
 
@@ -156,6 +172,10 @@ noncomputable def guardedReduction (family : PublishedComponentKernelReductionFa
 theorem guardedReduction_formula (family : PublishedComponentKernelReductionFamily G remaining externalAction)
     (closed : G.KernelHostClosed remaining externalAction) :
     (family.guardedReduction closed).formula = GuardedHostChain.term remaining family.factor := rfl
+
+theorem guardedReduction_familyTerm (family : PublishedComponentKernelReductionFamily G remaining externalAction)
+    (closed : G.KernelHostClosed remaining externalAction) :
+    (family.guardedReduction closed).formula = guardedComponentFamilyTerm G remaining family.formula := rfl
 
 end PublishedComponentKernelReductionFamily
 

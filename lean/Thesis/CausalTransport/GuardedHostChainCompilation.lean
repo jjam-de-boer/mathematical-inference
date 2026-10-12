@@ -39,6 +39,27 @@ def prefixTerm (remaining : NodeSet S) (factor : Fin S.count → ProbabilityTerm
 def term (remaining : NodeSet S) (factor : Fin S.count → ProbabilityTerm S) : ProbabilityTerm S :=
   prefixTerm remaining factor S.count (Nat.le_refl _)
 
+/-- Two factor functions need agree only at selected host positions.  The
+fallbacks at absent positions never enter the actual guarded expression. -/
+theorem prefixTerm_congr (remaining : NodeSet S) (first second : Fin S.count → ProbabilityTerm S)
+    (same : forall node, remaining node = true → first node = second node)
+    (n : Nat) (bound : n ≤ S.count) : prefixTerm remaining first n bound = prefixTerm remaining second n bound := by
+  induction n with
+  | zero => rfl
+  | succ n inductionHypothesis =>
+      cases selected : remaining ⟨n, Nat.lt_of_succ_le bound⟩ with
+      | false =>
+          simp only [prefixTerm, selected, Bool.false_eq_true, if_false]
+          exact inductionHypothesis _
+      | true =>
+          simp only [prefixTerm, selected, if_true]
+          exact congrArg2 ProbabilityTerm.weightedMultiply (inductionHypothesis _) (same _ selected)
+
+theorem term_congr (remaining : NodeSet S) (first second : Fin S.count → ProbabilityTerm S)
+    (same : forall node, remaining node = true → first node = second node) :
+    term remaining first = term remaining second :=
+  prefixTerm_congr remaining first second same S.count (Nat.le_refl _)
+
 /-- Only factors belonging to the host need action-free syntax. -/
 theorem prefixTerm_actionFree (remaining : NodeSet S) (factor : Fin S.count → ProbabilityTerm S)
     (free : forall node, remaining node = true → (factor node).ActionFree)

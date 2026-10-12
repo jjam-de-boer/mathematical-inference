@@ -102,6 +102,7 @@ jobs:
             Thesis.CausalTransport.GuardedHostChainCompilation
             Thesis.CausalTransport.GuardedComponentFamilyCompilation
             Thesis.CausalTransport.HiddenDAGComponentFamilyCompilation
+            Thesis.CausalTransport.GuardedIdentificationKernel
             Thesis.Examples.LocalSupportIdentification
             Thesis.Examples.SupportAwareKernelCompilation
             Thesis.Examples.SupportAwareComponentCompilation
