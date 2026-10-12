@@ -86,8 +86,8 @@ private noncomputable def xInput_supported (component : NodeSet signature)
   let inner := ZeroCellReverseComponentCompilation.componentInput_supported variant
   let source := Kernel.unconditional_supportedAt model component
     (NodeSet.union NodeSet.empty (NodeSet.diff NodeSet.full component)) variant
-  dsimp [recursiveReduction]
-  dsimp [PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
+  dsimp [recursiveReduction, PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
+  simp only [isX, dif_pos]
   exact ⟨source, ⟨inner.endpoints.2, inner⟩⟩
 
 private noncomputable def firstInputs :
