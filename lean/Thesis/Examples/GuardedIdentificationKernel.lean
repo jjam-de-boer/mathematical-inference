@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.GuardedIdentificationKernel
 import Thesis.CausalTransport.HiddenDAGSoundness
+import Thesis.CausalTransport.HiddenDAGFullFamily
 
 namespace Thesis
 namespace Causality
@@ -115,7 +116,9 @@ def model : FiniteHiddenDAGSCM signature projection where
       simp [projection, FiniteHiddenDAG.computedLatentProjection, fullGraph, hiddenRoot, atZ])
 
 def query : JointKernelQuery signature :=
-  ⟨NodeSet.union (NodeSet.singleton y) (NodeSet.singleton z), NodeSet.singleton x, by decide +kernel⟩
+  ⟨NodeSet.union (NodeSet.singleton y) (NodeSet.singleton z), NodeSet.singleton x, by
+    unfold NodeSet.Disjoint
+    decide +kernel⟩
 
 def reference : signature.Assignment := fun _ => true
 
