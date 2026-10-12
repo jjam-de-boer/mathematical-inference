@@ -25,6 +25,8 @@ import Thesis.CausalTransport.SupportAwareKernelCompilation
 import Thesis.CausalTransport.SupportAwareComponentCompilation
 import Thesis.CausalTransport.GuardedComponentCompilation
 import Thesis.CausalTransport.GuardedComponentFamilyCompilation
+import Thesis.CausalTransport.LocalKernelCompilation
+import Thesis.CausalTransport.LocalKernelQueryCompilation
 import Thesis.CausalTransport.HiddenDAGComponentFamilyCompilation
 import Thesis.CausalTransport.GuardedIdentificationKernel
 import Thesis.CausalTransport.KernelIdentification
