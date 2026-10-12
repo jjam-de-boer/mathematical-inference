@@ -284,8 +284,12 @@ component reductions, retaining their exact quotients in guarded host order.
 Its new regression keeps a zero host supported despite an undefined later
 component input; a strict product of those component formulas is undefined.
 Both whole folds share the bounded `GuardedHostChain` induction rather than
-commuting guarded products by the older strict-product rules.  Native family
-adapters and full ID/IDC support-aware recursion remain separate obligations.
+commuting guarded products by the older strict-product rules.
+`HiddenDAGComponentFamilyCompilation` constructs the corresponding native
+trees from literal native prefix guards and quotient data, without canonical
+collapse or global positivity.  Its original five-node, three-child-root
+regression checks a supported zero and a skipped undefined final quotient.
+Full ID/IDC support-aware recursion remains a separate obligation.
 
 The module-by-module descriptions below also retain local limitations of
 older restricted constructions.  Such a limitation is not an outstanding

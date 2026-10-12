@@ -118,9 +118,18 @@ is still a supported zero, while the old strict product remains undefined.
 `GuardedHostChain` provides the shared bounded derivation/support induction
 for this assembly and the earlier whole-component extraction.
 
-The remaining zero-aware compiler work is native component-family adapters,
-propagation through the recursive ID branches using this guarded target
-syntax, and conditional IDC/Bayes assembly.
+Native component-family assembly is implemented by
+`PublishedComponentKernelReductionFamily.hiddenDAG_guardedReduction_supportedAt`.
+Both prefix guards, the component conditional, finite input trees and the
+displayed denominator are native data. Literal term and observational-record
+preservation construct the full original-DAG support tree without requiring
+a canonical collapse or a positive complete observed law. A nonpositive
+five-node regression with a three-child collapsed root checks the supported
+zero host and its genuinely undefined, skipped final quotient.
+
+The remaining zero-aware compiler work is propagation through the recursive
+ID branches using this guarded target syntax, and conditional IDC/Bayes
+assembly.
 These local constructors are sufficient support boundaries, not an
 unrestricted identification equivalence for all distributions with zeros.
 
