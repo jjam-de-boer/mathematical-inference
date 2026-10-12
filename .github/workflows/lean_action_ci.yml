@@ -11,6 +11,49 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+      - name: Verify committed Lean dependency manifest
+        run: test -f lean/lake-manifest.json
+      # The composite lean action reinstalls Elan unconditionally through a
+      # floating latest-download URL.  Reuse only a toolchain installation
+      # saved after all verification gates passed, and use a digest-checked
+      # official installer on misses.  The project still selects its exact
+      # Lean version through lean/lean-toolchain; this cache proves nothing
+      # about the current source or its axioms.
+      - uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+        id: lean-toolchain-cache
+        with:
+          path: ~/.elan
+          key: elan-v4.2.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain') }}
+      - name: Install or reuse the pinned Lean toolchain
+        working-directory: lean
+        env:
+          TOOLCHAIN_CACHE_HIT: ${{ steps.lean-toolchain-cache.outputs.cache-hit }}
+        run: |
+          if [ "$TOOLCHAIN_CACHE_HIT" != 'true' ]; then
+            lean_ci_install_dir="$(mktemp -d)"
+            curl --fail --location --retry 3 --retry-all-errors --retry-delay 10 \
+              --output "$lean_ci_install_dir/elan.tar.gz" \
+              https://github.com/leanprover/elan/releases/download/v4.2.4/elan-x86_64-unknown-linux-gnu.tar.gz
+            printf '%s  %s\n' \
+              42b94d4244e8353142c456ec0e4ca6528fd898a6c604d4059f494e706e431f63 \
+              "$lean_ci_install_dir/elan.tar.gz" | sha256sum --check -
+            tar -xzf "$lean_ci_install_dir/elan.tar.gz" -C "$lean_ci_install_dir"
+            "$lean_ci_install_dir/elan-init" -y --default-toolchain none
+          fi
+          printf '%s\n' "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          # A cold install may still need the exact Lean release.  Bound
+          # retries for transient release-download failures; a failed final
+          # attempt remains a hard failure, never a skipped proof check.
+          lean_ci_ready=false
+          for lean_ci_attempt in 1 2 3; do
+            if "$HOME/.elan/bin/lean" --version; then
+              lean_ci_ready=true
+              break
+            fi
+            if [ "$lean_ci_attempt" -lt 3 ]; then sleep 10; fi
+          done
+          [ "$lean_ci_ready" = true ]
+          "$HOME/.elan/bin/lake" --version
       # Reuse completed module artifacts even when a later proof or policy
       # check fails.  Lake still checks dependency traces; a cache is never
       # treated as evidence that this commit built or passed the axiom audit.
@@ -19,14 +62,13 @@ jobs:
           path: lean/.lake
           key: lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain') }}-${{ hashFiles('lean/lake-manifest.json') }}-${{ github.sha }}
           restore-keys: lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain') }}-${{ hashFiles('lean/lake-manifest.json') }}-
-      - uses: leanprover/lean-action@v1
-        with:
-          lake-package-directory: lean
-          use-github-cache: 'false'
-          # Fail quickly on the current load-bearing proof modules and their
-          # concrete regressions, rather than first recompiling every large
-          # hedge countermodel fixture.  The full build below is not removed.
-          build-args: >-
+      # These are the same targeted build, complete build and policy gates
+      # previously run by the composite action.  No verification is replaced
+      # by the runtime cache, and the optional test/lint detection is retained.
+      - name: Build load-bearing Lean modules
+        working-directory: lean
+        run: >-
+            lake build
             Thesis.Probability.FiniteProductAllocation
             Thesis.Causality.ObservationalSupport
             Thesis.Causality.SupportAwareKernelAlgebra
@@ -80,6 +122,19 @@ jobs:
       - name: Enforce kernel-axiom policy
         working-directory: lean
         run: lake build Thesis.AxiomAudit
+      - name: Run declared Lean tests
+        working-directory: lean
+        run: |
+          if lake check-test >/dev/null 2>&1; then lake test; fi
+      - name: Run declared Lean lint driver
+        working-directory: lean
+        run: |
+          if lake check-lint >/dev/null 2>&1; then lake lint; fi
+      - uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
+        if: success() && steps.lean-toolchain-cache.outputs.cache-hit != 'true'
+        with:
+          path: ~/.elan
+          key: elan-v4.2.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain') }}
       # Save partial *compiled* progress after failure as well as a complete
       # verified build after success.  No failing check is silenced, and every
       # new run must still pass both full-project and transitive-axiom gates.
