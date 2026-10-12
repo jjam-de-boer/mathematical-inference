@@ -91,6 +91,100 @@ adapter's class.  This reuses the existing concrete null-cylinder proof. -/
 theorem model_is_not_positive : ¬ model.ObservationallyPositive :=
   HiddenDAGIdentification.zero_model_not_positive
 
+/-! ## Whole native component with a genuinely skipped final quotient -/
+
+/-- The full host is bidirected-closed.  In this fixture its three observed
+vertices share a collapsed root, but the constructor does not require a
+canonical pair-root representation. -/
+private theorem full_bidirected_closed : forall {source target},
+    (NodeSet.full : NodeSet signature) source = true → NodeSet.full target = true →
+    projection.observedGraph.bidirected source target = true → NodeSet.full target = true :=
+  fun _ _ _ => rfl
+
+private theorem positive_impossible_of_zero {result : ProbabilityResult.Result}
+    (zero : result.map (fun value => value.num) = some 0)
+    (positive : ProbabilityResult.PositiveSupportedValue result) : False := by
+  cases result with
+  | none => cases positive.equivalent
+  | some value =>
+      have numeratorZero : value.num = 0 := Option.some.inj zero
+      cases positive.equivalent with
+      | value same =>
+          have numeratorPositive := (QProb.equiv_num_pos_iff same).mpr positive.positive
+          rw [numeratorZero] at numeratorPositive
+          exact Nat.not_lt_zero _ numeratorPositive
+
+/-- Only the first two host quotients need data: the `X` prefix is positive,
+whereas adjoining the impossible `Y = true` outcome makes the next prefix
+zero.  The actual `Z` quotient is therefore skipped on both branch guards. -/
+private noncomputable def whole_conditions :
+    HiddenDAGGuardedComponentSupportConditions input NodeSet.full model HiddenDAGSoundness.reference := by
+  intro node _inside branch
+  have position : node.val = 0 ∨ node.val = 1 ∨ node.val = 2 := by omega
+  cases position with
+  | inl atFirst =>
+      have same : node = x := Fin.ext atFirst
+      subst node
+      refine ⟨?_, (fun variant _listed => input_supported variant),
+        (fun variant _listed => input_supported variant), ?_⟩
+      · unfold FiniteHiddenDAGSCM.ObservationalCylinderPositiveAt
+        decide +kernel
+      · refine ⟨QProb.one, .value ?_, ?_⟩ <;> decide +kernel
+  | inr later =>
+      cases later with
+      | inl atSecond =>
+          have same : node = y := Fin.ext atSecond
+          subst node
+          refine ⟨?_, (fun variant _listed => input_supported variant),
+            (fun variant _listed => input_supported variant), denominator_positive⟩
+          unfold FiniteHiddenDAGSCM.ObservationalCylinderPositiveAt
+          decide +kernel
+      | inr atThird =>
+          have same : node = z := Fin.ext atThird
+          subst node
+          cases branch with
+          | inl sourcePositive =>
+              have zero : (model.termDenote
+                  (.kernel ⟨chainPrefix NodeSet.full z.val,
+                    componentExternalAction NodeSet.full NodeSet.empty NodeSet.full, NodeSet.empty⟩)
+                  HiddenDAGSoundness.reference).map (fun value => value.num) = some 0 := by
+                decide +kernel
+              exact False.elim (positive_impossible_of_zero zero sourcePositive)
+          | inr targetPositive =>
+              have zero : (model.termDenote
+                  (guardedComponentPrefixTerm NodeSet.full input.formula NodeSet.full z.val
+                    (Nat.le_of_lt z.isLt)) HiddenDAGSoundness.reference).map (fun value => value.num) = some 0 := by
+                decide +kernel
+              exact False.elim (positive_impossible_of_zero zero targetPositive)
+
+noncomputable def wholeComponent := input.guardedComponent NodeSet.full
+  (ObservedGraph.KernelHostClosed.full projection.observedGraph)
+  (fun _node selected => selected) full_bidirected_closed
+
+/-- All required native subtrees are constructed by the general adapter;
+no global positivity or support of the skipped `Z` quotient is asserted. -/
+noncomputable def whole_component_supported : HiddenDAGLocalDerivationSupport model HiddenDAGSoundness.reference
+    (wholeComponent.derivation.compile projection.observedGraph.dSeparationCorrectness) :=
+  input.hiddenDAG_guardedComponent_supportedAt NodeSet.full
+    (ObservedGraph.KernelHostClosed.full projection.observedGraph)
+    (fun _node selected => selected) full_bidirected_closed model HiddenDAGSoundness.reference whole_conditions
+
+noncomputable def whole_component_sound : model.TermEquivalentAt
+    (.kernel ⟨NodeSet.full, componentExternalAction NodeSet.full NodeSet.empty NodeSet.full, NodeSet.empty⟩)
+    wholeComponent.formula HiddenDAGSoundness.reference :=
+  (wholeComponent.derivation.compile projection.observedGraph.dSeparationCorrectness).hiddenDAG_denotational_soundAt
+    whole_component_supported
+
+theorem whole_component_is_supported_zero :
+    (model.termDenote wholeComponent.formula HiddenDAGSoundness.reference).map (fun value => value.num) = some 0 := by
+  decide +kernel
+
+/-- The compiler has not silently repaired the null conditional.  Its
+displayed quotient remains undefined inside the supported guarded product. -/
+theorem skipped_last_factor_is_undefined :
+    (model.termDenote (chainFactorFrom NodeSet.full input.formula z) HiddenDAGSoundness.reference).isNone = true := by
+  decide +kernel
+
 end HiddenDAGKernelCompilation
 end Examples
 end Causality

@@ -193,11 +193,15 @@ noncomputable def guardedComponentPrefixDerivation
             (by simp only [guardedComponentPrefixTerm, node, selected, if_true])
             (DoCalculusDerivation.trans (G := G) (separation := pathRuleSeparation G) split congruence)
       else
+          have absent : component node = false := by
+            cases value : component node with
+            | false => rfl
+            | true => exact False.elim (selected value)
           have samePrefix : chainPrefix component (n + 1) = chainPrefix component n := by
             simpa only [node, selected, if_neg] using prefixStep
           exact DoCalculusDerivation.eqCongr (G := G) (separation := pathRuleSeparation G)
             (by rw [samePrefix])
-            (by simp only [guardedComponentPrefixTerm, node, selected, if_neg])
+            (by simp only [guardedComponentPrefixTerm, node, absent, Bool.false_eq_true, if_false])
             previous
 
 /-- The whole guarded component is an actual new current-kernel reduction.
@@ -270,7 +274,7 @@ noncomputable def guardedComponentPrefix_supportedAt
               previousSupport.endpoints.2
           dsimp [guardedComponentPrefixDerivation, node]
           simp only [node] at notSelected
-          simp only [notSelected, dif_neg]
+          simp only [notSelected]
           dsimp [PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
           exact ⟨sourceSupported, ⟨targetSupported, previousSupport⟩⟩
       | true =>
