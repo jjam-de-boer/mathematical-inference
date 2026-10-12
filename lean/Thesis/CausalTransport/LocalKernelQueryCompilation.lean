@@ -124,7 +124,7 @@ noncomputable def localKernelAdditionalActionCompilation
     (identificationAdditionalAction_disjoint_outcome G remaining outcome action).symm
   let reindexed : PublishedLocalKernelCompilation G correct localOutcome
       (NodeSet.union baseAction additional) := nested.reindex nested.reduction.formula
-    (by simp only [baseAction, NodeSet.union_assoc]) rfl
+    (by simp only [baseAction, localAction, localOutcome, additional, NodeSet.union_assoc]) rfl
   exact PublishedLocalKernelCompilation.prependAddActions baseAction localOutcome additional
     (DoRuleApplication.rule3 (G := G) (separation := pathRuleSeparation G) baseAction localOutcome additional NodeSet.empty four
       (G.pathDSeparated_rule3_additional_action remaining externalAction action outcome closed)) reindexed
