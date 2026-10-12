@@ -238,6 +238,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation
       simp only [identifyGuardedKernelFuel, localAction, localOutcome] at result
       split at result
       · rename_i emptyAction
+        -- Empty local action leaves only the inherited external actions.
+        -- Summation asks for the input's own data at its actual variants.
         have actionEmpty := NodeSet.eq_empty_of_isEmpty emptyAction
         cases result
         let marginal := input.marginal outcome closed.action_disjoint outcomeSubset
@@ -247,6 +249,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation
         · split at result
           · split at result
             · rename_i noComponents
+              -- Coverage forces an empty outcome.  Even this degenerate
+              -- branch keeps the displayed current-input marginal.
               have emptyOutcome := outcome_empty_of_no_components G remaining action outcome
                 outcomeSubset disjoint noComponents
               cases result
@@ -261,6 +265,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation
               · cases result
               · split at result
                 · rename_i componentListed
+                  -- Terminal extraction fixes exactly the original local
+                  -- actions; unfold the named component action to align it.
                   have listed : component ∈ G.cComponents remaining := by
                     rcases List.any_eq_true.mp componentListed with ⟨piece, included, equal⟩
                     exact ((NodeSet.equal_eq_true_iff piece component).mp equal) ▸ included
@@ -270,9 +276,13 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation
                   let componentInput := input.ofComponent closed listed
                   let componentClosed := closed.restrict component (cComponents_subset G remaining listed)
                   let marginal := componentInput.marginal outcome componentClosed.action_disjoint outcomeInComponent
-                  exact ⟨marginal.reindex marginal.reduction.formula (by rw [discardedEqual]) rfl, rfl⟩
+                  exact ⟨marginal.reindex marginal.reduction.formula
+                    (by simp only [componentExternalAction, discardedEqual]) rfl, rfl⟩
                 · split at result
                   · rename_i larger containing
+                    -- Restrict the current input before recursion.  The
+                    -- discarded vertices were actions already, so query
+                    -- transport changes their split rather than their value.
                     have specification := containingCComponent_spec G remaining component containing
                     let componentInput := input.ofComponent closed specification.1
                     let componentClosed := closed.restrict larger (cComponents_subset G remaining specification.1)
@@ -305,6 +315,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation
               rw [assembleGuardedComponents_map] at termAlignment
               exact ⟨compiled.compilation, compiled.formula_eq.trans termAlignment.symm⟩
           · let additional := identificationAdditionalAction G remaining outcome action
+            -- Additional incoming-cut actions leave the current expression
+            -- unchanged; reverse rule 3 only transports the nested query.
             have additionalSubset := identificationAdditionalAction_subset_remaining G remaining outcome action
             have additionalDisjoint := identificationAdditionalAction_disjoint_outcome G remaining outcome action
             have additionalOutcome : NodeSet.Disjoint additional outcome := by
@@ -319,6 +331,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation
             exact ⟨transported.reindex transported.reduction.formula
               (by rw [localAction, localOutcome]) rfl, nested.formula_eq⟩
         · let kept := G.ancestralSet remaining (GraphMutilation.none S) outcome
+          -- Uncut ancestry marginalizes the actual inherited input.  A
+          -- separate rule-3 node removes actions outside that ancestry.
           have outcomeInKept : NodeSet.Subset outcome kept := fun node selected =>
             ancestralSet_contains_targets G remaining (GraphMutilation.none S) outcome
               (outcomeSubset node selected) selected
