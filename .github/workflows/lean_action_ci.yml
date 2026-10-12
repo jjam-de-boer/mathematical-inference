@@ -113,6 +113,7 @@ jobs:
             Thesis.CausalTransport.LocalConditionalCompilation
             Thesis.CausalTransport.GuardedConditionalSuccessCompilation
             Thesis.CausalTransport.GuardedConditionalSoundness
+            Thesis.CausalTransport.GuardedHiddenDAGBoundary
             Thesis.Examples.LocalSupportIdentification
             Thesis.Examples.SupportAwareKernelCompilation
             Thesis.Examples.SupportAwareComponentCompilation
