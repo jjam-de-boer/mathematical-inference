@@ -1,4 +1,4 @@
-import Thesis.Causality.ConditionalIdentificationKernel
+import Thesis.CausalTransport.ConditionalExchangeCompilation
 import Thesis.CausalTransport.CompletenessAssembly
 
 namespace Thesis
@@ -66,65 +66,11 @@ theorem identifyConditionalKernel_ne_unfinished
     identifyConditionalKernel graph query ≠ .unfinished :=
   identifyConditionalKernelFuel_ne_unfinished _ _ _ (Nat.lt_succ_self _)
 
-/-! ## Retaining the full rule-2 given-set -/
+/-! ## Retaining the full rule-2 given-set
 
-/-- All four rule blocks are disjoint when one selected conditioner is
-promoted.  The remaining conditioner is not replaced by an empty set. -/
-def ConditionalExchangeStep.disjoint
-    {graph : ObservedGraph S} {query : ConditionalKernelQuery S}
-    (step : ConditionalExchangeStep graph query) :
-    FourWayDisjoint query.action query.outcome (NodeSet.singleton step.node)
-      (NodeSet.diff query.condition (NodeSet.singleton step.node)) where
-  xy := query.action_outcome_disjoint
-  xz := by
-    intro node action
-    cases singleton : NodeSet.singleton step.node node with
-    | false => rfl
-    | true =>
-        have same : node = step.node := of_decide_eq_true singleton
-        subst node
-        have excluded := query.action_condition_disjoint step.node action
-        rw [step.selected] at excluded
-        contradiction
-  xw := NodeSet.disjoint_of_subset_right query.action_condition_disjoint
-    (NodeSet.diff_subset_left _ _)
-  yz := by
-    intro node outcome
-    cases singleton : NodeSet.singleton step.node node with
-    | false => rfl
-    | true =>
-        have same : node = step.node := of_decide_eq_true singleton
-        subst node
-        have excluded := query.outcome_condition_disjoint step.node outcome
-        rw [step.selected] at excluded
-        contradiction
-  yw := NodeSet.disjoint_of_subset_right query.outcome_condition_disjoint
-    (NodeSet.diff_subset_left _ _)
-  zw := by
-    intro node singleton
-    simp only [NodeSet.diff, singleton, Bool.not_true, Bool.and_false]
-
-/-- Compile the recorded executable graph test into the corresponding path
-do-rule.  Rule 2 is oriented from the promoted kernel to the original kernel;
-the certificate constructor below explicitly uses its symmetric direction. -/
-def ConditionalExchangeStep.pathRule
-    {graph : ObservedGraph S} {query : ConditionalKernelQuery S}
-    (step : ConditionalExchangeStep graph query)
-    (correct : DSeparationCorrectness graph) :
-    PathDoRuleApplication graph
-      (query.exchangeCondition step.node step.selected).operationKernel
-      query.operationKernel := by
-  have application := DoRuleApplication.rule2
-    (G := graph) (separation := pathRuleSeparation graph)
-    query.action query.outcome (NodeSet.singleton step.node)
-    (NodeSet.diff query.condition (NodeSet.singleton step.node)) step.disjoint
-    (correct.pathDSeparated_of_dSeparated step.separated)
-  have partition : NodeSet.union (NodeSet.singleton step.node)
-      (NodeSet.diff query.condition (NodeSet.singleton step.node)) = query.condition :=
-    query.exchangeCondition_partition step.node step.selected
-  simpa only [rule2Left, rule2Right, partition,
-    ConditionalKernelQuery.operationKernel,
-    ConditionalKernelQuery.exchangeCondition] using application
+`ConditionalExchangeCompilation` supplies the shared graph-only exchange
+application, also used by guarded IDC's local-support compiler.
+-/
 
 /-- Prepend a verified single-node exchange to an arbitrary nested conditional
 certificate.  This works after any number of prior promotions, for any formula

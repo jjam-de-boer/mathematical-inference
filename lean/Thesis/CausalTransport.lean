@@ -31,6 +31,8 @@ import Thesis.CausalTransport.HiddenDAGComponentFamilyCompilation
 import Thesis.CausalTransport.GuardedIdentificationKernel
 import Thesis.CausalTransport.GuardedKernelSuccessCompilation
 import Thesis.CausalTransport.GuardedKernelSoundness
+import Thesis.CausalTransport.GuardedConditionalIdentification
+import Thesis.CausalTransport.ConditionalExchangeCompilation
 import Thesis.CausalTransport.KernelIdentification
 import Thesis.CausalTransport.KernelCompilation
 import Thesis.CausalTransport.ProductCompilation
