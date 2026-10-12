@@ -86,8 +86,19 @@ private noncomputable def xInput_supported (component : NodeSet signature)
   let inner := ZeroCellReverseComponentCompilation.componentInput_supported variant
   let source := Kernel.unconditional_supportedAt model component
     (NodeSet.union NodeSet.empty (NodeSet.diff NodeSet.full component)) variant
-  dsimp [recursiveReduction, PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
-  simp only [isX, dif_pos]
+  have same := (NodeSet.equal_eq_true_iff _ _).mp isX
+  let picked : PublishedCurrentKernelReduction graph component
+      (NodeSet.union NodeSet.empty (NodeSet.diff NodeSet.full component)) := {
+    formula := ZeroCellReverseComponentCompilation.componentInput.formula
+    actionFree := ZeroCellReverseComponentCompilation.componentInput.actionFree
+    derivation := DoCalculusDerivation.eqCongr (G := graph) (separation := pathRuleSeparation graph)
+      (by rw [same]; rfl) rfl ZeroCellReverseComponentCompilation.componentInput.derivation
+  }
+  -- Select the entire record before compiling its derivation.  This keeps
+  -- dependent record projection from concealing the finite branch test.
+  have chosen : recursiveReduction component listed = picked := dif_pos isX
+  rw [chosen]
+  dsimp [picked, PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
   exact ⟨source, ⟨inner.endpoints.2, inner⟩⟩
 
 private noncomputable def firstInputs :
