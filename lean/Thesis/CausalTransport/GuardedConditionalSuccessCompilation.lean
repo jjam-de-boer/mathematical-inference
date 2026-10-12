@@ -86,5 +86,18 @@ noncomputable def identifyGuardedConditionalKernelLocalCompilation
     PublishedLocalConditionalSuccess G correct query term :=
   identifyGuardedConditionalKernelFuelLocalCompilation correct _ query result
 
+/-- Expose the terminal branch's exact primitive data through its proved
+search and joint equations.  Clients need not normalize the whole graph
+search or a target-equality transport merely to populate the Bayes record. -/
+theorem identifyGuardedConditionalKernelFuelLocalCompilation_bayes_data
+    (correct : DSeparationCorrectness G) (fuel : Nat) (query : ConditionalKernelQuery S)
+    (noExchange : conditionalExchangeStep? G query = none) {numerator term : ProbabilityTerm S}
+    (joint : identifyGuardedJointKernel G query.jointNumerator = .identified numerator)
+    (result : identifyGuardedConditionalKernelFuel (fuel + 1) G query = .identified term) :
+    (identifyGuardedConditionalKernelFuelLocalCompilation correct (fuel + 1) query result).compilation.Data =
+      LocalConditionalBayesData query
+        (identifyGuardedJointKernelLocalCompilation correct query.jointNumerator joint).aligned := by
+  simp only [identifyGuardedConditionalKernelFuelLocalCompilation, noExchange, joint]
+
 end Causality
 end Thesis

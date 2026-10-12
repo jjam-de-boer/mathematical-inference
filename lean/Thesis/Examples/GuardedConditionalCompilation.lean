@@ -69,9 +69,11 @@ noncomputable def compilation :=
 The displayed source and denominator are computed from the nonpositive
 model; the inherited joint data is unit at every requested finite variant. -/
 noncomputable def localData : compilation.Data model.toLatentRootSCM reference := by
-  change LocalConditionalBayesData query
-    (identifyGuardedJointKernelLocalCompilation projection.observedGraph.dSeparationCorrectness
-      query.jointNumerator numerator_identified).aligned model.toLatentRootSCM reference
+  change (identifyGuardedConditionalKernelFuelLocalCompilation
+    projection.observedGraph.dSeparationCorrectness (1 + 1) query identified).compilation.Data
+      model.toLatentRootSCM reference
+  rw [identifyGuardedConditionalKernelFuelLocalCompilation_bayes_data
+    projection.observedGraph.dSeparationCorrectness 1 query no_exchange numerator_identified identified]
   refine {
     sourceSupported := ?_
     numeratorData := ?_
