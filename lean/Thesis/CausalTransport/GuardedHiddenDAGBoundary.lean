@@ -33,6 +33,11 @@ and assignment merely from engine success or all-class identifiability.
 In particular it does not inhabit `PublishedCompleteness` for a weakened or
 silently relabelled model class.  The established full positive published
 theorems remain separate and unchanged.
+
+`Examples.GuardedHiddenDAGZeroBoundary` gives a native counterexample to the
+unrestricted reverse implication: even an unconfounded `X -> Y` query can
+succeed structurally while its effect at an unobserved action value is not
+identified.  That false equivalence is not an outstanding theorem here.
 -/
 
 /-! ## Actual native countermodels in the class allowing zeros -/

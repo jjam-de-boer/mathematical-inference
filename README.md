@@ -80,9 +80,12 @@ The finite probability records permit zeros. Native hidden-DAG soundness
 already accepts explicit local derivation-support witnesses, and guarded
 observational-chain compilation handles null prefixes without assigning a
 value to `0 / 0`. Guarded joint ID and conditional IDC now have uniform
-recursive local-data compilers and native interpretation. A zero-aware
-completeness boundary remains open; the positive-model engine equivalences
-above do not silently cover that larger zero-permitting class.
+recursive local-data compilers and native interpretation. The one-way
+all-model boundary is also implemented: identifiability in the full class
+allowing zeros returns an actual guarded success and its local-data
+compilation, while guarded failure constructs native countermodels in that
+class. This does not make the local data automatically available everywhere.
+The positive-model engine equivalences above remain distinct.
 
 The current-input algebra is also zero-permitting: recursive marginal
 certificates no longer require observed positivity, and exact prefix-quotient
@@ -162,10 +165,29 @@ interpretation, and its two-model adapter again requests local data on both
 sides. A nonpositive native regression actually populates the compiler data
 and applies the generic theorem to a supported-zero conditional, rather than
 only comparing numerical evaluations.
-A zero-aware completeness boundary and additional recursive/promotion data
-regressions remain to be established.
-These local constructors are sufficient support boundaries, not an
-unrestricted identification equivalence for all distributions with zeros.
+`Kernel.supportedAt_promoteCondition` proves that actual conditional support
+survives promotion by SCM composition and finite event-mass monotonicity.
+The native rule-2 adapter consequently needs only the original conditional's
+support, not factual action overlap or a separately assumed promoted support.
+A native regression applies it at an observationally null action, where the
+actual intervened conditioner is positive. Its deeper recursive program
+checks are still numerical/control-flow checks, not full data instantiation.
+
+`GuardedHiddenDAGBoundary` returns literal guarded success equations and
+local-data compilations from all-class joint/conditional identifiability,
+without choice or a semantic identifiability case split. Guarded failures
+retain actual original-query countermodels, including conditional value
+separation on common support. The returned local data is not asserted
+inhabited in every model merely from success or the semantic premise.
+
+An unrestricted zero-class **success iff identifiability** claim is false,
+not an unfinished theorem to force. `GuardedHiddenDAGZeroBoundary` constructs
+two finite original-DAG models on `X -> Y` with identical whole observed laws
+but effects zero and one at an unobserved action value. Guarded ID succeeds
+structurally there, its formula is undefined, and native soundness proves
+that the compiler's local data is unavailable at that invalid application.
+Further deep recursive/promotion data validation remains before the final
+scope audit; the results continue to use explicit local support conditions.
 
 Continuous probability, general measure theory, and a complete formalisation
 of every philosophical or sociological claim are outside this project's scope.

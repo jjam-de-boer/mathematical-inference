@@ -271,9 +271,11 @@ ID/IDC success iff identifiability and positive projected-class equivalence.
 These results allow arbitrary finite hidden and private-noise sizes without
 an external `PublishedLatentProjection` premise.  Guarded joint ID and
 conditional IDC now have the local-data compilers and native interpretation
-described below.  A zero-aware completeness boundary remains a separate
-obligation; positive success is not asserted over the entire zero-permitting
-class.
+described below. `GuardedHiddenDAGBoundary` adds the one-way all-model
+success/compilation and countermodel boundary without asserting automatic
+local-data availability. Positive success equivalences are not asserted
+over the entire zero-permitting class; the unrestricted reverse implication
+is refuted by an actual native counterexample.
 
 `SupportAwareKernelAlgebra` gives intrinsic unconditional, finite-marginal and
 quotient support laws allowing zero outcomes.  `KernelCompilation` now
@@ -326,10 +328,23 @@ applies these constructors to every successful fuel-bounded call, and
 `GuardedConditionalSoundness` interprets the exact conditional formula in
 root and native hidden-DAG semantics. Its nonpositive native Bayes regression
 supplies the actual compiled data and applies the generic soundness theorem
-to a supported-zero conditional. Additional recursive/promotion data
-regressions and a proved zero-aware completeness boundary remain open.
-Numerical regressions alone are not used as evidence for generic semantic
-claims or for automatic local-data transfer.
+to a supported-zero conditional. `ConditionalSupport` preserves actual
+conditional support through arbitrary block promotion by unit-level SCM
+composition and event-mass monotonicity, without observable overlap. The
+native rule-2 adapter thus constructs its promoted endpoint from only the
+original support. A null-factual-action regression applies that theorem
+where the intervened conditioner is positive; its deeper recursive checks
+are not claimed as full local-data instantiation.
+`GuardedHiddenDAGBoundary` returns a computed guarded success equation and
+its local-data compilation from all-class joint/conditional identifiability,
+and widens the actual failure countermodels to the class permitting zeros.
+It does not infer primitive support/denominator data from semantic agreement.
+The native two-node regression `GuardedHiddenDAGZeroBoundary` refutes an
+unrestricted zero-class success equivalence with whole observational
+agreement and causal effects zero versus one, and proves the local data
+cannot exist at that unsupported application. Further deep recursive data
+validation remains before the final scope audit. Numerical checks alone
+are not evidence for generic semantic claims or automatic local-data transfer.
 
 The module-by-module descriptions below also retain local limitations of
 older restricted constructions.  Such a limitation is not an outstanding
