@@ -170,8 +170,12 @@ survives promotion by SCM composition and finite event-mass monotonicity.
 The native rule-2 adapter consequently needs only the original conditional's
 support, not factual action overlap or a separately assumed promoted support.
 A native regression applies it at an observationally null action, where the
-actual intervened conditioner is positive. Its deeper recursive program
-checks are still numerical/control-flow checks, not full data instantiation.
+actual intervened conditioner is positive. `ConditionalPromotionCompilation`
+now supplies its deeper recursive data: every demanded marginal variant
+receives primitive component data, a zero `X` prefix skips the undefined
+later quotient, and the Bayes/promotion constructors build the whole native
+tree. `exact_program_formula` checks literal syntax and `native_sound`
+interprets the exact engine expression, not just a numerical zero check.
 
 `GuardedHiddenDAGBoundary` returns literal guarded success equations and
 local-data compilations from all-class joint/conditional identifiability,
@@ -186,8 +190,25 @@ two finite original-DAG models on `X -> Y` with identical whole observed laws
 but effects zero and one at an unobserved action value. Guarded ID succeeds
 structurally there, its formula is undefined, and native soundness proves
 that the compiler's local data is unavailable at that invalid application.
-Further deep recursive/promotion data validation remains before the final
-scope audit; the results continue to use explicit local support conditions.
+The final scope audit covers the requested implementation boundaries:
+
+- Removed ordinary legacy entry points are rejected by the axiom/API gate;
+  the modern engines' import-boundary regression excludes even qualified
+  legacy imports. Historical traces retain explicitly labelled legacy code.
+- Joint ID and conditional IDC construct the exact successful derivation and
+  its support tree from primitive local data, permitting observed zeros.
+  Native regressions validate skipped undefined quotients, compound recursive
+  data and null-factual-action promotion; an invalid unsupported action is
+  explicitly rejected by `no_local_data`.
+- Native soundness and inhabited positive-model joint/conditional/hedge
+  completeness cover original finite hidden DAGs, with fixed value-rich
+  observed domains and arbitrary finite hidden/private-noise sizes. Neither
+  canonical collapse nor an external latent-projection theorem is assumed.
+
+The qualifications are part of the theorem statements: zero-aware soundness
+requires the explicit local data, positive completeness retains its stated
+model class, and unrestricted zero-class success equivalence is refuted,
+not silently asserted.
 
 Continuous probability, general measure theory, and a complete formalisation
 of every philosophical or sociological claim are outside this project's scope.

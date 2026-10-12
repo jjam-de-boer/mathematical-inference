@@ -25,10 +25,11 @@ this application even though its actual conditional endpoints are defined.
 
 The full guarded conditional program also succeeds and computes a supported
 zero.  Its terminal joint recursion exercises ancestry pruning and a
-containing-component restriction.  These last checks are program/numerical
-checks, not an instantiation of every recursive joint data field: that deeper
-data-validation stage remains separate from the generic promotion proof
-actually applied here.
+containing-component restriction.  The checks in this module are numerical
+and control-flow checks, not complete recursive data.  The companion
+`ConditionalPromotionCompilation` now supplies that data at every demanded
+marginal variant, builds the complete native tree, and proves its formula
+literally equals this program's output before applying native soundness.
 -/
 
 def model : FiniteHiddenDAGSCM signature projection := {

@@ -29,7 +29,11 @@ two proved directions.  They do not identify arbitrary full-model collapses
 with canonical pairwise-root models, or inhabit an external projection
 interface for arbitrary selected families.  Neither the engine equivalences
 nor these semantic equivalences are asserted for the entire zero-permitting
-class; that requires the separate support-aware compilation development.
+class. The separate guarded compilers interpret zero-containing models at
+their explicit local-data boundary. `GuardedHiddenDAGBoundary` supplies the
+one-way all-class success/compilation and failure-countermodel directions;
+an actual native counterexample refutes an unrestricted zero-class success
+equivalence, so that reverse implication is not an unfinished theorem here.
 -/
 
 namespace HiddenDAGModelClass

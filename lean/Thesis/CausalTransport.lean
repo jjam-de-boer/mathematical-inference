@@ -333,8 +333,12 @@ conditional support through arbitrary block promotion by unit-level SCM
 composition and event-mass monotonicity, without observable overlap. The
 native rule-2 adapter thus constructs its promoted endpoint from only the
 original support. A null-factual-action regression applies that theorem
-where the intervened conditioner is positive; its deeper recursive checks
-are not claimed as full local-data instantiation.
+where the intervened conditioner is positive. The companion
+`ConditionalPromotionCompilation` now instantiates its recursive data at
+every demanded variant, derives the first denominator from intrinsic record
+normalization, skips the null-prefix quotient, builds the whole native tree,
+and aligns its literal syntax with the actual guarded IDC expression before
+applying native soundness.
 `GuardedHiddenDAGBoundary` returns a computed guarded success equation and
 its local-data compilation from all-class joint/conditional identifiability,
 and widens the actual failure countermodels to the class permitting zeros.
@@ -342,9 +346,11 @@ It does not infer primitive support/denominator data from semantic agreement.
 The native two-node regression `GuardedHiddenDAGZeroBoundary` refutes an
 unrestricted zero-class success equivalence with whole observational
 agreement and causal effects zero versus one, and proves the local data
-cannot exist at that unsupported application. Further deep recursive data
-validation remains before the final scope audit. Numerical checks alone
-are not evidence for generic semantic claims or automatic local-data transfer.
+cannot exist at that unsupported application. The final implementation scope
+is the isolated modern API, zero-permitting support-qualified compilation,
+and full original finite hidden-DAG soundness/positive completeness under
+the stated observed-value hypothesis. Numerical checks alone are not evidence
+for generic semantic claims or automatic local-data transfer.
 
 The module-by-module descriptions below also retain local limitations of
 older restricted constructions.  Such a limitation is not an outstanding
