@@ -79,10 +79,10 @@ support; no external latent-projection interface is assumed.
 The finite probability records permit zeros. Native hidden-DAG soundness
 already accepts explicit local derivation-support witnesses, and guarded
 observational-chain compilation handles null prefixes without assigning a
-value to `0 / 0`. Guarded joint ID now has a uniform recursive local-data
-compiler and native interpretation. Conditional IDC/Bayes compilation and
-a zero-aware completeness boundary remain open; the positive-model engine
-equivalences above do not silently cover that larger zero-permitting class.
+value to `0 / 0`. Guarded joint ID and conditional IDC now have uniform
+recursive local-data compilers and native interpretation. A zero-aware
+completeness boundary remains open; the positive-model engine equivalences
+above do not silently cover that larger zero-permitting class.
 
 The current-input algebra is also zero-permitting: recursive marginal
 certificates no longer require observed positivity, and exact prefix-quotient
@@ -149,8 +149,21 @@ reads it in every original finite hidden-DAG model at the stated boundary.
 The native two-model identification adapter requests data in both models:
 the boundary includes causal-conditional support, so complete data transfer
 is not inferred from observational agreement alone.
-Conditional IDC/Bayes compilation and a zero-aware completeness boundary
-remain to be established.
+`identifyGuardedConditionalKernel` retains the established finite rule-2
+search, uses guarded joint ID at termination, and keeps the exact Bayes
+numerator and its marginal denominator. Its decisions and failure witnesses
+match positive IDC, with no public unfinished sentinel.
+`identifyGuardedConditionalKernelFuelLocalCompilation` and
+`identifyGuardedConditionalKernelLocalCompilation` compose the complete
+promotion/Bayes support tree from primitive data; a terminal branch-data
+lemma makes that boundary inspectable without normalizing the graph search.
+`identifyGuardedConditionalKernel_hiddenDAG_soundAt` gives the native
+interpretation, and its two-model adapter again requests local data on both
+sides. A nonpositive native regression actually populates the compiler data
+and applies the generic theorem to a supported-zero conditional, rather than
+only comparing numerical evaluations.
+A zero-aware completeness boundary and additional recursive/promotion data
+regressions remain to be established.
 These local constructors are sufficient support boundaries, not an
 unrestricted identification equivalence for all distributions with zeros.
 

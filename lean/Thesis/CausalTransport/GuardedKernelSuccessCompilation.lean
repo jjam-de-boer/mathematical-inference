@@ -28,7 +28,10 @@ soundness of every successful formula at every zero-containing distribution.
 In particular the boundary still records the actual demanded conditional
 support, observable overlap, and positive displayed quotient denominators.
 There is no global positivity premise or assumed semantic-equality leaf.
-Soundness interpretation and conditional IDC compilation are separate steps.
+`GuardedKernelSoundness` supplies interpretation separately, while
+`GuardedConditionalSuccessCompilation` integrates the local conditional
+promotion/Bayes constructors.  A zero-unrestricted success equivalence is
+not a conclusion of either support-qualified compiler.
 -/
 
 variable {S : ObservedSignature} {G : ObservedGraph S} {correct : DSeparationCorrectness G}

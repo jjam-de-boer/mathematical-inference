@@ -28,7 +28,10 @@ establishes soundness.  The reverse positive countermodel construction and
 published completeness are supplied separately by `HiddenDAGCompleteness`;
 `GuardedKernelSuccessCompilation` now supplies the recursive guarded joint
 compiler from local data, and `GuardedKernelSoundness` interprets that compiler
-natively.  Conditional support-aware IDC/Bayes compilation remains open.
+natively. `GuardedConditionalSuccessCompilation` and
+`GuardedConditionalSoundness` now supply the corresponding local-data
+promotion/Bayes compiler and native interpretation for conditional IDC.
+An unrestricted zero-class completeness equivalence is not asserted here.
 -/
 
 namespace FiniteHiddenDAGSCM

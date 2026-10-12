@@ -268,10 +268,10 @@ fields for every value-rich positive original-DAG class;
 `HiddenDAGCorrespondence` combines native soundness with that converse into
 ID/IDC success iff identifiability and positive projected-class equivalence.
 These results allow arbitrary finite hidden and private-noise sizes without
-an external `PublishedLatentProjection` premise.  Guarded joint ID now has
-the local-data compiler and native interpretation described below.  Conditional
-IDC/Bayes assembly and a zero-aware completeness boundary remain separate
-obligations; positive success is not asserted over the entire zero-permitting
+an external `PublishedLatentProjection` premise.  Guarded joint ID and
+conditional IDC now have the local-data compilers and native interpretation
+described below.  A zero-aware completeness boundary remains a separate
+obligation; positive success is not asserted over the entire zero-permitting
 class.
 
 `SupportAwareKernelAlgebra` gives intrinsic unconditional, finite-marginal and
@@ -314,9 +314,21 @@ or global positivity assumption. `GuardedKernelSoundness` interprets that
 compiled tree both in compatible root models and natively in all original
 finite hidden-DAG models. Its two-model adapter explicitly requires local
 data in both models: causal-support fields are not silently transferred by
-observational agreement. Conditional IDC/Bayes compilation and a proved
-zero-aware completeness boundary remain open. Numerical regressions alone
-are not used as evidence for these generic semantic claims.
+observational agreement. `ConditionalExchangeCompilation` shares the same
+graph-only rule-2 bridge between the positive and guarded compilers.
+`GuardedConditionalIdentification` computes the actual recursive IDC program
+with guarded terminal joint ID, retaining exact decisions and failures and
+excluding the public sentinel. `LocalConditionalCompilation` constructs its
+promotion and Bayes subtrees from primitive support, inherited marginal data
+and the actual positive displayed denominator. `GuardedConditionalSuccessCompilation`
+applies these constructors to every successful fuel-bounded call, and
+`GuardedConditionalSoundness` interprets the exact conditional formula in
+root and native hidden-DAG semantics. Its nonpositive native Bayes regression
+supplies the actual compiled data and applies the generic soundness theorem
+to a supported-zero conditional. Additional recursive/promotion data
+regressions and a proved zero-aware completeness boundary remain open.
+Numerical regressions alone are not used as evidence for generic semantic
+claims or for automatic local-data transfer.
 
 The module-by-module descriptions below also retain local limitations of
 older restricted constructions.  Such a limitation is not an outstanding
