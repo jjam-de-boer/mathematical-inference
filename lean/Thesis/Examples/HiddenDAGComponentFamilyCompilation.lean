@@ -27,6 +27,15 @@ the existing native soundness theorem interprets in this original DAG.
 private theorem partition_eq : projection.observedGraph.cComponents NodeSet.full = [NodeSet.full] := by
   decide +kernel
 
+/-- The computed lookup is the full component extensionally.  It need not
+reduce to the literal full-set function definitionally, so denominator
+alignment below uses this actual partition theorem rather than guessing. -/
+private theorem componentAt_full (node : Fin signature.count) :
+    projection.observedGraph.componentAt NodeSet.full node = NodeSet.full := by
+  have listed := (projection.observedGraph.componentAt_spec NodeSet.full node rfl).1
+  rw [partition_eq] at listed
+  exact List.mem_singleton.mp listed
+
 /-- Reindex the independently available input only at actual listed
 components.  The formula remains the original current expression; the
 source equality is geometry, not an assumed probability identity. -/
@@ -78,6 +87,13 @@ private noncomputable def firstInputs :
     (projection.observedGraph.componentAt NodeSet.full x)
     (projection.observedGraph.componentAt_spec NodeSet.full x rfl).1 variant
   denominatorPositive := by
+    rw [family.formula_eq]
+    change ProbabilityResult.PositiveSupportedValue (model.termDenote
+      (.marginalize
+        (NodeSet.diff (projection.observedGraph.componentAt NodeSet.full x)
+          (chainCondition (projection.observedGraph.componentAt NodeSet.full x) x))
+        HiddenDAGKernelCompilation.input.formula) HiddenDAGSoundness.reference)
+    rw [componentAt_full x]
     refine ⟨QProb.one, .value ?_, ?_⟩ <;> decide +kernel
 
 private noncomputable def secondInputs :
@@ -92,7 +108,15 @@ private noncomputable def secondInputs :
   denominatorInputSupport := fun variant _listed => componentInput_supported
     (projection.observedGraph.componentAt NodeSet.full y)
     (projection.observedGraph.componentAt_spec NodeSet.full y rfl).1 variant
-  denominatorPositive := HiddenDAGKernelCompilation.denominator_positive
+  denominatorPositive := by
+    rw [family.formula_eq]
+    change ProbabilityResult.PositiveSupportedValue (model.termDenote
+      (.marginalize
+        (NodeSet.diff (projection.observedGraph.componentAt NodeSet.full y)
+          (chainCondition (projection.observedGraph.componentAt NodeSet.full y) y))
+        HiddenDAGKernelCompilation.input.formula) HiddenDAGSoundness.reference)
+    rw [componentAt_full y]
+    exact HiddenDAGKernelCompilation.denominator_positive
 
 private theorem positive_impossible_of_zero {result : ProbabilityResult.Result}
     (zero : result.map (fun value => value.num) = some 0)
