@@ -48,6 +48,11 @@ noncomputable def ancestralInput :=
 
 noncomputable def componentInput := ancestralInput.ofComponent host_closed component_listed
 
+/-- Pure syntax is named separately from its proof-carrying record.  Finite
+checks can inspect it without unfolding the support constructor. -/
+private def ancestralFormula : ProbabilityTerm signature :=
+  .marginalize (NodeSet.diff NodeSet.full host) (observationalJointTerm signature)
+
 /-! ## Reflect finite primitive checks into constructive value data -/
 
 private theorem checkedAt (test : signature.Assignment → Bool)
@@ -86,7 +91,7 @@ private theorem positive_impossible_of_zero {result : ProbabilityResult.Result}
 /-! ## Local factor inputs, at precisely their demanded references -/
 
 private def denominatorTerm (node : Fin signature.count) : ProbabilityTerm signature :=
-  .marginalize (NodeSet.diff host (chainCondition host node)) ancestralInput.reduction.formula
+  .marginalize (NodeSet.diff host (chainCondition host node)) ancestralFormula
 
 private noncomputable def xInputs (reference : signature.Assignment) :
     LocalComponentFactorData ancestralInput nativeModel.toLatentRootSCM reference x where
@@ -94,11 +99,15 @@ private noncomputable def xInputs (reference : signature.Assignment) :
     change 0 < (nativeModel.toLatentRootSCM.observationalDist.probVal
       (Kernel.agreesOn (NodeSet.union NodeSet.empty (chainCondition host x)) reference)).num
     rw [nativeModel.toLatentRootSCM_observationalDist]
-    exact of_decide_eq_true (checkedAt _ (by decide +kernel) reference)
+    exact of_decide_eq_true (checkedAt (fun assignment => decide
+      (0 < (nativeModel.observationalDist.probVal
+        (Kernel.agreesOn (NodeSet.union NodeSet.empty (chainCondition host x)) assignment)).num))
+      (by decide +kernel) reference)
   numeratorData := fun _variant _listed _originalVariant _originalListed => ()
   denominatorData := fun _variant _listed _originalVariant _originalListed => ()
   denominatorPositive := collapsedPositive (denominatorTerm x) reference
-    (checkedAt _ (by decide +kernel) reference)
+    (checkedAt (fun assignment => (nativeModel.termDenote (denominatorTerm x) assignment).any
+      (fun value => decide (0 < value.num))) (by decide +kernel) reference)
 
 private noncomputable def yInputs (reference : signature.Assignment) (supportedX : reference x = false) :
     LocalComponentFactorData ancestralInput nativeModel.toLatentRootSCM reference y where
@@ -123,7 +132,7 @@ private def sourceYPrefix : ProbabilityTerm signature :=
   .kernel ⟨chainPrefix component y.val, componentExternalAction host NodeSet.empty component, NodeSet.empty⟩
 
 private def displayedYPrefix : ProbabilityTerm signature :=
-  guardedComponentPrefixTerm host ancestralInput.reduction.formula component y.val (Nat.le_of_lt y.isLt)
+  guardedComponentPrefixTerm host ancestralFormula component y.val (Nat.le_of_lt y.isLt)
 
 /-- Each guard is checked separately.  Source support is not inferred from
 the displayed prefix, nor displayed positivity from denotational soundness. -/
@@ -158,7 +167,8 @@ noncomputable def componentData (reference : signature.Assignment) :
     componentInput.Data nativeModel.toLatentRootSCM reference := by
   change LocalComponentData ancestralInput component nativeModel.toLatentRootSCM reference
   intro node selected branch
-  rcases (NodeSet.union_eq_true (NodeSet.singleton x) (NodeSet.singleton y) node).mp selected with atX | atY
+  change (NodeSet.singleton x node || NodeSet.singleton y node) = true at selected
+  rcases Bool.or_eq_true_iff.mp selected with atX | atY
   · have same : node = x := of_decide_eq_true atX
     subst node
     exact xInputs reference
