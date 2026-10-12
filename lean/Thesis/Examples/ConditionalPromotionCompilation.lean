@@ -183,6 +183,128 @@ noncomputable def component_supported (reference : signature.Assignment) :
       (componentInput.reduction.derivation.compile correct) :=
   componentInput.hiddenDAG_supportedAt nativeModel reference (componentData reference)
 
+/-! ## Reassemble the exact recursive joint and conditional expression -/
+
+private def componentAction : NodeSet signature := componentExternalAction host NodeSet.empty component
+
+private theorem component_closed : graph.KernelHostClosed component componentAction :=
+  host_closed.restrict component (cComponents_subset graph host component_listed)
+
+private theorem y_subset_component : NodeSet.Subset (NodeSet.singleton y) component :=
+  NodeSet.subset_union_right _ _
+
+/-- Ancestry inside `{X,Y}` drops `X`.  The final empty-action invocation
+still prints its empty complementary marginal; neither marginal is erased. -/
+private noncomputable def firstMarginal :=
+  componentInput.marginal (NodeSet.singleton y) component_closed.action_disjoint y_subset_component
+
+private noncomputable def finalMarginal :=
+  firstMarginal.marginal (NodeSet.singleton y)
+    (NodeSet.disjoint_of_subset_right component_closed.action_disjoint y_subset_component)
+    (fun _node selected => selected)
+
+private noncomputable def innerPruneInput :
+    PublishedLocalKernelCompilation graph correct (NodeSet.singleton y)
+      (NodeSet.union componentAction (NodeSet.inter (NodeSet.singleton x)
+        (graph.ancestralSet component (.none signature) (NodeSet.singleton y)))) :=
+  finalMarginal.reindex finalMarginal.reduction.formula (by decide +kernel) rfl
+
+private noncomputable def innerPruned :=
+  localKernelPruneCompilation component_closed (NodeSet.singleton x) (NodeSet.singleton y)
+    (NodeSet.subset_union_left _ _) y_subset_component
+    (NodeSet.disjoint_singletons_of_ne (by decide)) innerPruneInput
+
+private def action : NodeSet signature := NodeSet.union (NodeSet.singleton x) (NodeSet.singleton mediator)
+
+private noncomputable def outerPruneInput :
+    PublishedLocalKernelCompilation graph correct (NodeSet.singleton y)
+      (NodeSet.union NodeSet.empty (NodeSet.inter action host)) :=
+  innerPruned.reindex innerPruned.reduction.formula (by decide +kernel) rfl
+
+private noncomputable def outerPruned :=
+  localKernelPruneCompilation (ObservedGraph.KernelHostClosed.full graph) action (NodeSet.singleton y)
+    (fun _node _selected => rfl) (fun _node _selected => rfl)
+    (NodeSet.disjoint_union_left_of (NodeSet.disjoint_singletons_of_ne (by decide))
+      (NodeSet.disjoint_singletons_of_ne (by decide))) outerPruneInput
+
+private def promotedQuery :=
+  NullActionPromotionSupport.query.exchangeCondition NullActionPromotionSupport.step.node
+    NullActionPromotionSupport.step.selected
+
+/-- Source equalities retain the original query's external/local action
+split.  They change no expression or support data and add no semantic law. -/
+noncomputable def jointCompilation :
+    PublishedLocalKernelCompilation graph correct promotedQuery.jointNumerator.outcome promotedQuery.action :=
+  outerPruned.reindex outerPruned.reduction.formula (by decide +kernel) rfl
+
+/-- Readable pure syntax for the actual retained nested marginals.  This is
+used for finite checks and literal alignment, not as a replacement formula. -/
+def jointFormula : ProbabilityTerm signature :=
+  .marginalize (NodeSet.diff (NodeSet.singleton y) (NodeSet.singleton y))
+    (.marginalize (NodeSet.diff component (NodeSet.singleton y))
+      (guardedComponentTerm host ancestralFormula component))
+
+theorem jointCompilation_formula : jointCompilation.reduction.formula = jointFormula := rfl
+
+/-- Every marginal variant receives the actual component's local data,
+including the variant with a zero `X` prefix.  No complete tree is supplied. -/
+noncomputable def jointData (reference : signature.Assignment) :
+    jointCompilation.Data nativeModel.toLatentRootSCM reference :=
+  fun _finalVariant _finalListed componentVariant _componentListed => componentData componentVariant
+
+private noncomputable def bayesCompilation := localConditionalBayesCompilation promotedQuery jointCompilation
+
+private def bayesDenominator : ProbabilityTerm signature :=
+  .marginalize (NodeSet.diff promotedQuery.jointNumerator.outcome promotedQuery.condition) jointFormula
+
+private noncomputable def bayesData (reference : signature.Assignment) :
+    bayesCompilation.Data nativeModel.toLatentRootSCM reference := by
+  refine {
+    sourceSupported := ?_
+    numeratorData := jointData reference
+    denominatorData := fun variant _listed => jointData variant
+    denominatorPositive := ?_
+  }
+  · have empty : promotedQuery.condition = NodeSet.empty := by decide +kernel
+    apply nativeModel.termSupportedAt_to_collapsed promotedQuery.sourceTerm reference
+    change nativeModel.TermSupportedAt
+      (.kernel ⟨promotedQuery.outcome, promotedQuery.action, promotedQuery.condition⟩) reference
+    rw [empty]
+    exact nativeModel.kernelSupportedAt_unconditional _ _ reference
+  · exact collapsedPositive bayesDenominator reference
+      (checkedAt (fun assignment => (nativeModel.termDenote bayesDenominator assignment).any
+        (fun value => decide (0 < value.num))) (by decide +kernel) reference)
+
+/-- The promotion and terminal Bayes constructors compose the complete
+conditional tree, preserving both intermediate support endpoints. -/
+noncomputable def conditionalCompilation :=
+  localConditionalExchangeCompilation NullActionPromotionSupport.query NullActionPromotionSupport.step bayesCompilation
+
+noncomputable def conditionalData : conditionalCompilation.Data nativeModel.toLatentRootSCM reference where
+  sourceSupported := nativeModel.termSupportedAt_to_collapsed _ _ NullActionPromotionSupport.original_supported
+  nestedData := bayesData reference
+
+/-- Compare literal finite syntax against the computed program expression.
+No numerical equivalence, cancellation or product regrouping substitutes
+for this exact formula alignment. -/
+theorem exact_program_formula : conditionalCompilation.formula = NullActionPromotionSupport.formula := by
+  apply (ProbabilityTerm.equal_eq_true_iff _ _).mp
+  decide +kernel
+
+/-- The full native support tree is constructed from the primitive data at
+every demanded recursive reference, not merely checked at its endpoints. -/
+noncomputable def native_supported :
+    HiddenDAGLocalDerivationSupport nativeModel reference (conditionalCompilation.derivation.compile correct) :=
+  conditionalCompilation.hiddenDAG_supportedAt nativeModel reference conditionalData
+
+/-- Interpret the exact engine expression using the assembled ordinary
+derivation and native soundness, rather than a bespoke numerical identity. -/
+noncomputable def native_sound : nativeModel.TermEquivalentAt NullActionPromotionSupport.query.sourceTerm
+    NullActionPromotionSupport.formula reference := by
+  have sound := conditionalCompilation.hiddenDAG_soundAt nativeModel reference conditionalData
+  rw [exact_program_formula] at sound
+  exact sound
+
 end NullActionPromotionCompilation
 end Examples
 end Causality
