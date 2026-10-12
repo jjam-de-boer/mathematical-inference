@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.GuardedComponentCompilation
 import Thesis.Examples.SupportAwareKernelCompilation
+import Thesis.Examples.SupportAwareComponentCompilation
 
 namespace Thesis
 namespace Causality
@@ -114,6 +115,46 @@ has not replaced it with an arbitrary conditional value. -/
 theorem skipped_factor_remains_undefined :
     (chainFactorFrom NodeSet.full input.formula y).denote model reference = none :=
   second_factor_at_null_prefix_is_undefined
+
+/-! ## A selected component with a missing earlier host position -/
+
+/-- Select only the later vertex `Y`.  The host position for `X` must leave
+the component prefix unchanged, while the actual `Y` quotient must still
+read the full-host predecessor marginal.  Its outside action stays fixed
+at the supported `X = false` reference. -/
+private noncomputable def gapped_conditions :
+    GuardedComponentSupportConditions input graph.dSeparationCorrectness
+      ZeroCellComponentCompilation.component model supportedReference := by
+  intro node inside _branch
+  have same : node = y := (NodeSet.singleton_eq_true_iff y node).mp inside
+  subst node
+  refine ⟨?_, (fun variant _listed => input_supported variant),
+    (fun variant _listed => input_supported variant), second_denominator_positive⟩
+  unfold ObservationalCylinderPositiveAt
+  decide +kernel
+
+noncomputable def gappedReduction := input.guardedComponent ZeroCellComponentCompilation.component
+  (ObservedGraph.KernelHostClosed.full graph) ZeroCellComponentCompilation.component_subset
+  ZeroCellComponentCompilation.component_bidirected_closed
+
+/-- The omitted first host position is tested through the whole ordinary
+support tree, not just through an isolated component-factor derivation. -/
+noncomputable def gapped_supported : LocalDerivationSupport model supportedReference
+    (gappedReduction.derivation.compile graph.dSeparationCorrectness) :=
+  input.guardedComponent_supportedAt graph.dSeparationCorrectness ZeroCellComponentCompilation.component
+    (ObservedGraph.KernelHostClosed.full graph) ZeroCellComponentCompilation.component_subset
+    ZeroCellComponentCompilation.component_bidirected_closed model supportedReference gapped_conditions
+
+noncomputable def gapped_sound : ProbabilityTerm.EquivalentAt model
+    (.kernel ⟨ZeroCellComponentCompilation.component,
+      componentExternalAction NodeSet.full NodeSet.empty ZeroCellComponentCompilation.component, NodeSet.empty⟩)
+    gappedReduction.formula supportedReference :=
+  (gappedReduction.derivation.compile graph.dSeparationCorrectness).denotational_soundAt
+    (graph.publishedSoundness.primitive model compatible) gapped_supported
+
+theorem gapped_product_is_supported :
+    (gappedReduction.formula.denote model supportedReference).isSome = true := by
+  decide +kernel
 
 end ZeroCellGuardedComponent
 end Examples

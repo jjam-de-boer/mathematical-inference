@@ -91,9 +91,21 @@ hidden-DAG adapters preserve those same local conditions without assuming
 canonical membership of a collapsed model. Component-factor extraction now
 uses the graph-derived exchange/deletion rules with explicit local support;
 its exchange intermediate can obtain support from observable predecessor
-overlap. The remaining compiler work is whole guarded component products,
-propagation through the recursive ID branches, and conditional IDC/Bayes
-assembly.
+overlap. `PublishedCurrentKernelReduction.guardedComponent_supportedAt`
+now constructs the whole prefix-first guarded component tree: each quotient
+retains the actual current input, and its subtrees are requested only on a
+positive causal or displayed prefix branch. The native adapter
+`hiddenDAG_guardedComponent_supportedAt` preserves these same explicit local
+conditions for original hidden DAGs, including noncanonical multi-child
+collapsed roots. Regressions exercise an undefined quotient skipped by a
+zero prefix, without replacing it by an arbitrary conditional value.
+
+The remaining zero-aware compiler work is the reverse component-to-host
+factor bridge, support-sensitive assembly of recursive component families
+(without commuting guarded products by strict-product algebra), propagation
+through the recursive ID branches, and conditional IDC/Bayes assembly.
+These local constructors are sufficient support boundaries, not an
+unrestricted identification equivalence for all distributions with zeros.
 
 Continuous probability, general measure theory, and a complete formalisation
 of every philosophical or sociological claim are outside this project's scope.

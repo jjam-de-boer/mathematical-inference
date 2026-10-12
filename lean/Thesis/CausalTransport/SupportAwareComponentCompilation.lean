@@ -28,7 +28,9 @@ intermediate; it need not include the selected outcome cell.
 
 These are factor-level ingredients for support-aware component extraction,
 including unions of complete components.  They do not yet assemble a whole
-guarded component product or discharge the full ID/IDC recursion.  The
+guarded component product in this module; `GuardedComponentCompilation`
+assembles that product with explicit branch-local conditions.  The full
+zero-aware ID/IDC recursion remains separate and unfinished.  The
 ordinary derivation constructors and support tree are retained, rather than
 adding an assumed semantic equality as a new rule.
 -/
