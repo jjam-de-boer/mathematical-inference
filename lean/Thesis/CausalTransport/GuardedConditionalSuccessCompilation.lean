@@ -97,7 +97,9 @@ theorem identifyGuardedConditionalKernelFuelLocalCompilation_bayes_data
     (identifyGuardedConditionalKernelFuelLocalCompilation correct (fuel + 1) query result).compilation.Data =
       LocalConditionalBayesData query
         (identifyGuardedJointKernelLocalCompilation correct query.jointNumerator joint).aligned := by
-  simp only [identifyGuardedConditionalKernelFuelLocalCompilation, noExchange, joint]
+  dsimp only [identifyGuardedConditionalKernelFuelLocalCompilation, Nat.recAux]
+  rw [noExchange, joint]
+  rfl
 
 end Causality
 end Thesis
