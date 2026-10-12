@@ -42,10 +42,19 @@ def formula : ProbabilityTerm signature := conditionalBayesTermFrom query numera
 theorem no_exchange : conditionalExchangeStep? projection.observedGraph query = none := by
   have absent : (NodeSet.members query.condition).find?
       (conditionalExchangeTest projection.observedGraph query) = none := by decide +kernel
-  simp only [conditionalExchangeStep?, absent]
+  unfold conditionalExchangeStep?
+  split
+  · rfl
+  · rename_i found
+    rw [absent] at found
+    cases found
 
 theorem numerator_identified :
-    identifyGuardedJointKernel projection.observedGraph query.jointNumerator = .identified numeratorFormula := rfl
+    identifyGuardedJointKernel projection.observedGraph query.jointNumerator = .identified numeratorFormula := by
+  have emptyAction : NodeSet.isEmpty query.jointNumerator.action = true := by decide +kernel
+  simp only [identifyGuardedJointKernel, kernelIdentificationFuel, identifyGuardedKernelFuel,
+    NodeSet.inter_full_right, emptyAction, if_true]
+  rfl
 
 theorem identified : identifyGuardedConditionalKernel projection.observedGraph query = .identified formula := by
   simp only [identifyGuardedConditionalKernel, identifyGuardedConditionalKernelFuel, no_exchange, numerator_identified]
@@ -79,7 +88,7 @@ noncomputable def localData : compilation.Data model.toLatentRootSCM reference :
 /-- This is the generic theorem applied to the literal successful formula
 and constructed native tree, not a numerical equality replacing soundness. -/
 noncomputable def native_sound : model.TermEquivalentAt query.sourceTerm formula reference :=
-  identifyGuardedConditionalKernel_hiddenDAG_soundAt query identified model reference localData
+  compilation.hiddenDAG_soundAt model reference localData
 
 theorem formula_supported_zero : (model.termDenote formula reference).map (fun value => value.num) = some 0 := by
   decide +kernel
