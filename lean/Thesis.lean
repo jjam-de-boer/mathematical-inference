@@ -9,6 +9,7 @@ import Thesis.Examples.SupportAwareChain
 import Thesis.Examples.LocalSupportIdentification
 import Thesis.Examples.SupportAwareKernelCompilation
 import Thesis.Examples.SupportAwareComponentCompilation
+import Thesis.Examples.GuardedComponentCompilation
 import Thesis.Examples.HiddenPathSearch
 import Thesis.Examples.HiddenDAGCollapse
 import Thesis.Examples.HiddenDAGSoundness

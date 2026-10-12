@@ -156,15 +156,11 @@ noncomputable def guardedComponentPrefixDerivation
       let previous := input.guardedComponentPrefixDerivation component closed componentSubset
         bidirectedClosed n previousBound
       have prefixStep := chainPrefix_succ component n (Nat.lt_of_succ_le bound)
-      cases selected : component node with
-      | false =>
-          have samePrefix : chainPrefix component (n + 1) = chainPrefix component n := by
-            simpa only [node, selected, Bool.false_eq_true, if_false] using prefixStep
-          exact DoCalculusDerivation.eqCongr (G := G) (separation := pathRuleSeparation G)
-            (by rw [samePrefix])
-            (by simp only [guardedComponentPrefixTerm, node, selected, Bool.false_eq_true, if_false])
-            previous
-      | true =>
+      -- Test the finite Boolean as a proposition with its constructive
+      -- decision procedure.  Unlike dependent `cases` on its value, this
+      -- keeps the result type fixed and exposes the selected constructor
+      -- when the support tree is unfolded below.
+      if selected : component node = true then
           let action := componentExternalAction remaining externalAction component
           have outside : NodeSet.Disjoint action component :=
             NodeSet.disjoint_union_left_of
@@ -196,6 +192,13 @@ noncomputable def guardedComponentPrefixDerivation
             (by rw [nextPrefix])
             (by simp only [guardedComponentPrefixTerm, node, selected, if_true])
             (DoCalculusDerivation.trans (G := G) (separation := pathRuleSeparation G) split congruence)
+      else
+          have samePrefix : chainPrefix component (n + 1) = chainPrefix component n := by
+            simpa only [node, selected, if_neg] using prefixStep
+          exact DoCalculusDerivation.eqCongr (G := G) (separation := pathRuleSeparation G)
+            (by rw [samePrefix])
+            (by simp only [guardedComponentPrefixTerm, node, selected, if_neg])
+            previous
 
 /-- The whole guarded component is an actual new current-kernel reduction.
 Its source fixes the discarded coordinates and its displayed expression
@@ -254,6 +257,9 @@ noncomputable def guardedComponentPrefix_supportedAt
       have prefixStep := chainPrefix_succ component n (Nat.lt_of_succ_le bound)
       cases selected : component node with
       | false =>
+          have notSelected : ¬ component node = true := by
+            rw [selected]
+            exact Bool.false_ne_true
           have samePrefix : chainPrefix component (n + 1) = chainPrefix component n := by
             simpa only [node, selected, Bool.false_eq_true, if_false] using prefixStep
           let sourceSupported := Kernel.unconditional_supportedAt model (chainPrefix component (n + 1))
@@ -263,7 +269,8 @@ noncomputable def guardedComponentPrefix_supportedAt
             simpa only [guardedComponentPrefixTerm, node, selected, Bool.false_eq_true, if_false] using
               previousSupport.endpoints.2
           dsimp [guardedComponentPrefixDerivation, node]
-          try simp only [selected, Bool.false_eq_true, if_false]
+          simp only [node] at notSelected
+          simp only [notSelected, dif_neg]
           dsimp [PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
           exact ⟨sourceSupported, ⟨targetSupported, previousSupport⟩⟩
       | true =>
@@ -300,7 +307,8 @@ noncomputable def guardedComponentPrefix_supportedAt
               NodeSet.union (NodeSet.singleton node) previousNodes := by
             simpa only [node, selected, if_true] using prefixStep
           dsimp [guardedComponentPrefixDerivation, node]
-          try simp only [selected, if_true]
+          simp only [node] at selected
+          simp only [selected, dif_pos]
           dsimp [PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
           exact ⟨sourceSupported, ⟨displayedSupported,
             ⟨jointSupported, ⟨targetSupported,
