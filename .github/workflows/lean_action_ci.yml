@@ -122,6 +122,7 @@ jobs:
             Thesis.Examples.HiddenDAGComponentFamilyCompilation
             Thesis.Examples.GuardedIdentificationKernel
             Thesis.Examples.GuardedConditionalCompilation
+            Thesis.Examples.GuardedHiddenDAGZeroBoundary
             Thesis.Examples.HiddenPathSearch
             Thesis.Examples.HiddenDAGCollapse
             Thesis.Examples.HiddenDAGSoundness

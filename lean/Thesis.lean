@@ -14,6 +14,7 @@ import Thesis.Examples.GuardedComponentFamilyCompilation
 import Thesis.Examples.HiddenDAGComponentFamilyCompilation
 import Thesis.Examples.GuardedIdentificationKernel
 import Thesis.Examples.GuardedConditionalCompilation
+import Thesis.Examples.GuardedHiddenDAGZeroBoundary
 import Thesis.Examples.HiddenPathSearch
 import Thesis.Examples.HiddenDAGCollapse
 import Thesis.Examples.HiddenDAGSoundness
