@@ -62,6 +62,7 @@ jobs:
             Thesis.Examples.SupportAwareKernelCompilation
             Thesis.Examples.SupportAwareComponentCompilation
             Thesis.Examples.GuardedComponentCompilation
+            Thesis.Examples.GuardedComponentFamilyCompilation
             Thesis.Examples.HiddenPathSearch
             Thesis.Examples.HiddenDAGCollapse
             Thesis.Examples.HiddenDAGSoundness

@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.SupportAwareComponentCompilation
+import Thesis.CausalTransport.GuardedHostChainCompilation
 
 namespace Thesis
 namespace Causality
@@ -36,15 +37,8 @@ def componentExternalAction (remaining externalAction component : NodeSet S) : N
 /-- Prefix-first selected-factor fold.  Every factor retains the full host
 and actual current input, while the weight selects only component vertices. -/
 def guardedComponentPrefixTerm (remaining : NodeSet S) (current : ProbabilityTerm S)
-    (component : NodeSet S) : (n : Nat) → n ≤ S.count → ProbabilityTerm S
-  | 0, _ => unitProbabilityTerm S
-  | n + 1, bound =>
-      let previous := guardedComponentPrefixTerm remaining current component n
-        (Nat.le_trans (Nat.le_succ n) bound)
-      let node : Fin S.count := ⟨n, Nat.lt_of_succ_le bound⟩
-      if component node then
-        .weightedMultiply previous (chainFactorFrom remaining current node)
-      else previous
+    (component : NodeSet S) : (n : Nat) → n ≤ S.count → ProbabilityTerm S :=
+  GuardedHostChain.prefixTerm component (chainFactorFrom remaining current)
 
 def guardedComponentTerm (remaining : NodeSet S) (current : ProbabilityTerm S)
     (component : NodeSet S) : ProbabilityTerm S :=
@@ -55,14 +49,9 @@ of a current input's prefix quotients. -/
 theorem guardedComponentPrefixTerm_actionFree (remaining : NodeSet S)
     (current : ProbabilityTerm S) (component : NodeSet S) (free : current.ActionFree)
     (n : Nat) (bound : n ≤ S.count) :
-    (guardedComponentPrefixTerm remaining current component n bound).ActionFree := by
-  induction n with
-  | zero => exact unitProbabilityTerm_actionFree S
-  | succ n inductionHypothesis =>
-      simp only [guardedComponentPrefixTerm]
-      split
-      · exact ⟨inductionHypothesis _, chainFactorFrom_actionFree remaining current _ free⟩
-      · exact inductionHypothesis _
+    (guardedComponentPrefixTerm remaining current component n bound).ActionFree :=
+  GuardedHostChain.prefixTerm_actionFree component (chainFactorFrom remaining current)
+    (fun node _selected => chainFactorFrom_actionFree remaining current node free) n bound
 
 theorem guardedComponentTerm_actionFree (remaining : NodeSet S)
     (current : ProbabilityTerm S) (component : NodeSet S) (free : current.ActionFree) :
@@ -142,67 +131,13 @@ noncomputable def guardedComponentPrefixDerivation
       PathDoCalculusDerivation G
         (.kernel ⟨chainPrefix component n, componentExternalAction remaining externalAction component,
           NodeSet.empty⟩)
-        (guardedComponentPrefixTerm remaining input.formula component n bound)
-  | 0, _ => by
-      let action := componentExternalAction remaining externalAction component
-      let query : JointKernelQuery S := ⟨NodeSet.empty, action, NodeSet.disjoint_empty_right _⟩
-      let separated := PathSpecification.PathDSeparated.of_isEmpty_left G
-        (GraphMutilation.bar action) NodeSet.empty action NodeSet.empty NodeSet.isEmpty_empty
-      exact DoCalculusDerivation.eqCongr (G := G) (separation := pathRuleSeparation G)
-        (by rw [chainPrefix_zero]; rfl) rfl (deleteActionRule3Derivation query separated)
-  | n + 1, bound => by
-      let node : Fin S.count := ⟨n, Nat.lt_of_succ_le bound⟩
-      let previousBound : n ≤ S.count := Nat.le_trans (Nat.le_succ n) bound
-      let previous := input.guardedComponentPrefixDerivation component closed componentSubset
-        bidirectedClosed n previousBound
-      have prefixStep := chainPrefix_succ component n (Nat.lt_of_succ_le bound)
-      -- Test the finite Boolean as a proposition with its constructive
-      -- decision procedure.  Unlike dependent `cases` on its value, this
-      -- keeps the result type fixed and exposes the selected constructor
-      -- when the support tree is unfolded below.
-      if selected : component node = true then
-          let action := componentExternalAction remaining externalAction component
-          have outside : NodeSet.Disjoint action component :=
-            NodeSet.disjoint_union_left_of
-              (NodeSet.disjoint_of_subset_right closed.action_disjoint componentSubset)
-              (NodeSet.disjoint_diff_right remaining component)
-          have prefixSubset : NodeSet.Subset (chainPrefix component n) component :=
-            fun _vertex member => (Bool.and_eq_true_iff.mp member).1
-          let split : PathDoCalculusDerivation G
-              (.kernel ⟨NodeSet.union (NodeSet.singleton node) (chainPrefix component n), action, NodeSet.empty⟩)
-              (.weightedMultiply
-                (.kernel ⟨chainPrefix component n, action, NodeSet.empty⟩)
-                (.kernel ⟨NodeSet.singleton node, action, chainCondition component node⟩)) :=
-            DoCalculusDerivation.eqCongr (G := G) (separation := pathRuleSeparation G) rfl
-              (by simp only [NodeSet.union_empty_right, chainCondition_eq_prefix, node])
-              (DoCalculusDerivation.weightedChain (G := G) (separation := pathRuleSeparation G)
-                action (NodeSet.singleton node) (chainPrefix component n) NodeSet.empty
-                (FourWayDisjoint.of_empty_w action (NodeSet.singleton node) (chainPrefix component n)
-                  (NodeSet.disjoint_of_subset_right outside (NodeSet.singleton_subset_of_mem selected))
-                  (NodeSet.disjoint_of_subset_right outside prefixSubset)
-                  (disjoint_singleton_chainPrefix component node)))
-          let factor := input.componentFactorDerivation component closed componentSubset bidirectedClosed
-            node selected
-          let congruence := DoCalculusDerivation.weightedMultiplyCongr (G := G)
-            (separation := pathRuleSeparation G) previous factor
-          have nextPrefix : chainPrefix component (n + 1) =
-              NodeSet.union (NodeSet.singleton node) (chainPrefix component n) := by
-            simpa only [node, selected, if_true] using prefixStep
-          exact DoCalculusDerivation.eqCongr (G := G) (separation := pathRuleSeparation G)
-            (by rw [nextPrefix])
-            (by simp only [guardedComponentPrefixTerm, node, selected, if_true])
-            (DoCalculusDerivation.trans (G := G) (separation := pathRuleSeparation G) split congruence)
-      else
-          have absent : component node = false := by
-            cases value : component node with
-            | false => rfl
-            | true => exact False.elim (selected value)
-          have samePrefix : chainPrefix component (n + 1) = chainPrefix component n := by
-            simpa only [node, selected, if_neg] using prefixStep
-          exact DoCalculusDerivation.eqCongr (G := G) (separation := pathRuleSeparation G)
-            (by rw [samePrefix])
-            (by simp only [guardedComponentPrefixTerm, node, absent, Bool.false_eq_true, if_false])
-            previous
+        (guardedComponentPrefixTerm remaining input.formula component n bound) :=
+  GuardedHostChain.prefixDerivation component (componentExternalAction remaining externalAction component)
+    (NodeSet.disjoint_union_left_of
+      (NodeSet.disjoint_of_subset_right closed.action_disjoint componentSubset)
+      (NodeSet.disjoint_diff_right remaining component))
+    (chainFactorFrom remaining input.formula)
+    (fun node selected => input.componentFactorDerivation component closed componentSubset bidirectedClosed node selected)
 
 /-- The whole guarded component is an actual new current-kernel reduction.
 Its source fixes the discarded coordinates and its displayed expression
@@ -239,86 +174,26 @@ noncomputable def guardedComponentPrefix_supportedAt
     (n : Nat) → (bound : n ≤ S.count) →
       LocalDerivationSupport model reference
         ((input.guardedComponentPrefixDerivation component closed componentSubset bidirectedClosed n bound).compile
-          correct)
-  | 0, _ => by
-      let action := componentExternalAction remaining externalAction component
-      let sourceSupported := Kernel.unconditional_supportedAt model NodeSet.empty action reference
-      let initialSupported := Kernel.unconditional_supportedAt model (chainPrefix component 0) action reference
-      let targetSupported := Kernel.unconditional_supportedAt model NodeSet.empty NodeSet.empty reference
-      let query : JointKernelQuery S := ⟨NodeSet.empty, action, NodeSet.disjoint_empty_right _⟩
-      let ruleSource := ProbabilityTerm.SupportedAt.congr
-        (JointKernelQuery.sourceTerm_eq_rule3Left_empty_xw query) sourceSupported
-      dsimp [guardedComponentPrefixDerivation, PathDoCalculusDerivation.compile,
-        DoCalculusDerivation.mapRules, deleteActionRule3Derivation]
-      exact ⟨initialSupported, ⟨targetSupported,
-        ⟨sourceSupported, ⟨targetSupported, ⟨ruleSource, ⟨targetSupported, ()⟩⟩⟩⟩⟩⟩
-  | n + 1, bound => by
-      let node : Fin S.count := ⟨n, Nat.lt_of_succ_le bound⟩
-      let previousBound : n ≤ S.count := Nat.le_trans (Nat.le_succ n) bound
-      let previousSupport := input.guardedComponentPrefix_supportedAt correct component closed componentSubset
-        bidirectedClosed model reference conditions n previousBound
-      let action := componentExternalAction remaining externalAction component
-      have prefixStep := chainPrefix_succ component n (Nat.lt_of_succ_le bound)
-      cases selected : component node with
-      | false =>
-          have notSelected : ¬ component node = true := by
-            rw [selected]
-            exact Bool.false_ne_true
-          have samePrefix : chainPrefix component (n + 1) = chainPrefix component n := by
-            simpa only [node, selected, Bool.false_eq_true, if_false] using prefixStep
-          let sourceSupported := Kernel.unconditional_supportedAt model (chainPrefix component (n + 1))
-            action reference
-          have targetSupported : (guardedComponentPrefixTerm remaining input.formula component (n + 1) bound).SupportedAt
-              model reference := by
-            simpa only [guardedComponentPrefixTerm, node, selected, Bool.false_eq_true, if_false] using
-              previousSupport.endpoints.2
-          dsimp [guardedComponentPrefixDerivation, node]
-          simp only [node] at notSelected
-          simp only [notSelected]
-          dsimp [PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
-          exact ⟨sourceSupported, ⟨targetSupported, previousSupport⟩⟩
-      | true =>
-          let previousNodes := chainPrefix component n
-          let sourceSupported := Kernel.unconditional_supportedAt model (chainPrefix component (n + 1)) action reference
-          let jointSupported := Kernel.unconditional_supportedAt model
-            (NodeSet.union (NodeSet.singleton node) previousNodes) action reference
-          let splitRawSupported := ProbabilityTerm.SupportedAt.of_equivalent
-            (ProbabilityTerm.weightedChain_soundAt model action (NodeSet.singleton node) previousNodes NodeSet.empty reference)
-            jointSupported
-          have intermediate : (ProbabilityTerm.weightedMultiply
-              (.kernel ⟨previousNodes, action, NodeSet.empty⟩)
-              (.kernel ⟨NodeSet.singleton node, action, chainCondition component node⟩)).SupportedAt model reference := by
-            simpa only [NodeSet.union_empty_right, chainCondition_eq_prefix, node] using splitRawSupported
-          have prefixCondition : chainCondition component node = previousNodes := rfl
-          let factorTree := fun (sourcePositive : ProbabilityResult.PositiveSupportedValue
-              ((ProbabilityTerm.kernel ⟨previousNodes, action, NodeSet.empty⟩).denote model reference)) => by
-            let data := conditions node selected (.inl sourcePositive)
-            let componentSupported := Kernel.supportedAt_of_positive_unconditional_conditioner
-              model (NodeSet.singleton node) action (chainCondition component node) reference
-              (by simpa only [prefixCondition] using sourcePositive)
-            let middle := componentFactor_middle_supportedAt_of_overlap model component componentSubset node reference data.overlap
-            exact input.componentFactor_supportedAt correct component closed componentSubset bidirectedClosed
-              node selected model reference componentSupported middle
-              (data.host_supportedAt closed.action_disjoint (componentSubset node selected))
-          let targetSupported := ProbabilityResult.weightedMultiply_supported previousSupport.endpoints.2
-            (fun targetPositive =>
-              ((conditions node selected (.inr targetPositive)).host_supportedAt closed.action_disjoint
-                (componentSubset node selected)).endpoints.2)
-          have displayedSupported : (guardedComponentPrefixTerm remaining input.formula component (n + 1) bound).SupportedAt
-              model reference := by
-            simpa only [guardedComponentPrefixTerm, node, selected, if_true] using targetSupported
-          have nextPrefix : chainPrefix component (n + 1) =
-              NodeSet.union (NodeSet.singleton node) previousNodes := by
-            simpa only [node, selected, if_true] using prefixStep
-          dsimp [guardedComponentPrefixDerivation, node]
-          simp only [node] at selected
-          simp only [selected, dif_pos]
-          dsimp [PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
-          exact ⟨sourceSupported, ⟨displayedSupported,
-            ⟨jointSupported, ⟨targetSupported,
-              ⟨⟨jointSupported, ⟨intermediate,
-                ⟨jointSupported, ⟨splitRawSupported, ()⟩⟩⟩⟩,
-                ⟨intermediate, ⟨targetSupported, ⟨previousSupport, factorTree⟩⟩⟩⟩⟩⟩⟩⟩
+          correct) :=
+  GuardedHostChain.prefix_supportedAt correct component
+    (componentExternalAction remaining externalAction component)
+    (NodeSet.disjoint_union_left_of
+      (NodeSet.disjoint_of_subset_right closed.action_disjoint componentSubset)
+      (NodeSet.disjoint_diff_right remaining component))
+    (chainFactorFrom remaining input.formula)
+    (fun node selected => input.componentFactorDerivation component closed componentSubset bidirectedClosed node selected)
+    model reference
+    (fun node selected sourcePositive => by
+      let data := conditions node selected (.inl sourcePositive)
+      let componentSupported := Kernel.supportedAt_of_positive_unconditional_conditioner model (NodeSet.singleton node)
+        (componentExternalAction remaining externalAction component) (chainCondition component node) reference
+        (by simpa only [chainCondition_eq_prefix] using sourcePositive)
+      let middle := componentFactor_middle_supportedAt_of_overlap model component componentSubset node reference data.overlap
+      exact input.componentFactor_supportedAt correct component closed componentSubset bidirectedClosed node selected
+        model reference componentSupported middle (data.host_supportedAt closed.action_disjoint (componentSubset node selected)))
+    (fun node selected targetPositive =>
+      ((conditions node selected (.inr targetPositive)).host_supportedAt closed.action_disjoint
+        (componentSubset node selected)).endpoints.2)
 
 /-- The assembled whole-component reduction has a genuine ordinary support
 tree under its explicit local branch conditions.  This is not a global
