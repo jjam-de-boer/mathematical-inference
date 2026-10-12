@@ -67,7 +67,7 @@ noncomputable def identifyGuardedConditionalKernelFuelLocalCompilation
           ⟨localConditionalExchangeCompilation query step nested.compilation, nested.formula_eq⟩
       | none =>
           match joint : identifyGuardedJointKernel G query.jointNumerator with
-          | identified numerator =>
+          | .identified numerator =>
               -- One actual joint expression appears in both Bayes positions.
               -- The marginal compiler builds the denominator from that input.
               have same : conditionalBayesTermFrom query numerator = term := by
@@ -75,8 +75,8 @@ noncomputable def identifyGuardedConditionalKernelFuelLocalCompilation
                   IdentificationOutcome.identified.injEq] using result
               let compiled := (identifyGuardedJointKernelLocalCompilation correct query.jointNumerator joint).aligned
               ⟨localConditionalBayesCompilation query compiled, same⟩
-          | failed _fail => by simp only [identifyGuardedConditionalKernelFuel, found, joint] at result; cases result
-          | unfinished => by simp only [identifyGuardedConditionalKernelFuel, found, joint] at result; cases result
+          | .failed _fail => by simp only [identifyGuardedConditionalKernelFuel, found, joint] at result; cases result
+          | .unfinished => by simp only [identifyGuardedConditionalKernelFuel, found, joint] at result; cases result
 
 /-- The public conditional call constructs the complete sequence of local
 support constructors itself.  Only its actual successful equation and the
@@ -98,7 +98,23 @@ theorem identifyGuardedConditionalKernelFuelLocalCompilation_bayes_data
     (identifyGuardedConditionalKernelFuelLocalCompilation correct (fuel + 1) query result).compilation.Data =
       LocalConditionalBayesData query
         (identifyGuardedJointKernelLocalCompilation correct query.jointNumerator joint).aligned := by
-  simp only [identifyGuardedConditionalKernelFuelLocalCompilation, noExchange, joint]
+  simp only [identifyGuardedConditionalKernelFuelLocalCompilation]
+  split
+  · rename_i step found
+    rw [noExchange] at found
+    cases found
+  · split
+    · rename_i actualNumerator actualJoint
+      have same : actualNumerator = numerator :=
+        IdentificationOutcome.identified.inj (actualJoint.symm.trans joint)
+      cases same
+      rfl
+    · rename_i _failure failed
+      rw [joint] at failed
+      cases failed
+    · rename_i unfinished
+      rw [joint] at unfinished
+      cases unfinished
 
 end Causality
 end Thesis
