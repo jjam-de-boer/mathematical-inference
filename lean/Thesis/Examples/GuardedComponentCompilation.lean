@@ -63,13 +63,15 @@ SCM and generated prefix formula.  No second-factor support is asserted. -/
 private noncomputable def conditions :
     GuardedComponentSupportConditions input graph.dSeparationCorrectness component model reference := by
   intro node _inside branch
-  have earlier : node.val = 0 ∨ node.val = 1 := by omega
-  cases earlier with
-  | inl atFirst =>
+  -- Branch on the decidable finite index, not on a propositional
+  -- disjunction: these branches must construct data in `Type`.
+  if atFirst : node.val = 0 then
       have same : node = x := Fin.ext atFirst
       subst node
       exact firstInputs
-  | inr atSecond =>
+  else
+      have bound : node.val < 2 := node.isLt
+      have atSecond : node.val = 1 := by omega
       have same : node = y := Fin.ext atSecond
       subst node
       cases branch with

@@ -120,9 +120,9 @@ zero.  The actual `Z` quotient is therefore skipped on both branch guards. -/
 private noncomputable def whole_conditions :
     HiddenDAGGuardedComponentSupportConditions input NodeSet.full model HiddenDAGSoundness.reference := by
   intro node _inside branch
-  have position : node.val = 0 ∨ node.val = 1 ∨ node.val = 2 := by omega
-  cases position with
-  | inl atFirst =>
+  -- Finite index equality has a constructive decision procedure.  Do not
+  -- eliminate a propositional disjunction into these support data in `Type`.
+  if atFirst : node.val = 0 then
       have same : node = x := Fin.ext atFirst
       subst node
       refine ⟨?_, (fun variant _listed => input_supported variant),
@@ -130,16 +130,17 @@ private noncomputable def whole_conditions :
       · unfold FiniteHiddenDAGSCM.ObservationalCylinderPositiveAt
         decide +kernel
       · refine ⟨QProb.one, .value ?_, ?_⟩ <;> decide +kernel
-  | inr later =>
-      cases later with
-      | inl atSecond =>
+  else
+      if atSecond : node.val = 1 then
           have same : node = y := Fin.ext atSecond
           subst node
           refine ⟨?_, (fun variant _listed => input_supported variant),
             (fun variant _listed => input_supported variant), denominator_positive⟩
           unfold FiniteHiddenDAGSCM.ObservationalCylinderPositiveAt
           decide +kernel
-      | inr atThird =>
+      else
+          have bound : node.val < 3 := node.isLt
+          have atThird : node.val = 2 := by omega
           have same : node = z := Fin.ext atThird
           subst node
           cases branch with
