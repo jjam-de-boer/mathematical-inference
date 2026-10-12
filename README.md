@@ -127,9 +127,18 @@ a canonical collapse or a positive complete observed law. A nonpositive
 five-node regression with a three-child collapsed root checks the supported
 zero host and its genuinely undefined, skipped final quotient.
 
-The remaining zero-aware compiler work is propagation through the recursive
-ID branches using this guarded target syntax, and conditional IDC/Bayes
-assembly.
+`identifyGuardedJointKernel` now computes the full guarded current-kernel ID
+program, including pruning, action augmentation, component restriction and
+multi-component assembly. Successful formulas remain action-free. Its graph
+decisions and exact failure witnesses match the corrected positive engine,
+and its public calls never return the unfinished sentinel. A complete native
+mediator regression identifies structurally in both programs: the guarded
+formula gives a supported zero while the strict formula is undefined.
+
+The guarded `identified` outcome is still a candidate, not a blanket
+semantic claim. The remaining work is the generic recursive success compiler
+that constructs its full tree from finite local input data, its native
+interpretation, and conditional IDC/Bayes assembly.
 These local constructors are sufficient support boundaries, not an
 unrestricted identification equivalence for all distributions with zeros.
 

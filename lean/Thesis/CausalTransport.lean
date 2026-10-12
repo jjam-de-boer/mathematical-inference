@@ -290,7 +290,13 @@ commuting guarded products by the older strict-product rules.
 trees from literal native prefix guards and quotient data, without canonical
 collapse or global positivity.  Its original five-node, three-child-root
 regression checks a supported zero and a skipped undefined final quotient.
-Full ID/IDC support-aware recursion remains a separate obligation.
+`GuardedIdentificationKernel` computes the complete guarded joint recursion
+and proves action-free syntax, identical graph decisions and exact failure
+witnesses, with no public unfinished sentinel. Its native mediator regression
+checks the actual recursive guarded/strict zero-value difference. These are
+program invariants and numerical regressions, not a substitute for the still
+pending generic recursive support-carrying success compiler and IDC/Bayes
+assembly.
 
 The module-by-module descriptions below also retain local limitations of
 older restricted constructions.  Such a limitation is not an outstanding
