@@ -295,23 +295,17 @@ private noncomputable def bayesCompilation := localConditionalBayesCompilation p
 private def bayesDenominator : ProbabilityTerm signature :=
   .marginalize (NodeSet.diff promotedQuery.jointNumerator.outcome promotedQuery.condition) jointFormula
 
-private noncomputable def bayesData (reference : signature.Assignment) :
-    bayesCompilation.Data nativeModel.toLatentRootSCM reference := by
+private noncomputable def bayesData :
+    LocalConditionalBayesData promotedQuery jointCompilation nativeModel.toLatentRootSCM reference := by
   refine {
     sourceSupported := ?_
     numeratorData := jointData reference
     denominatorData := fun variant _listed => jointData variant
     denominatorPositive := ?_
   }
-  · have empty : promotedQuery.condition = NodeSet.empty := by decide +kernel
-    apply nativeModel.termSupportedAt_to_collapsed promotedQuery.sourceTerm reference
-    change nativeModel.TermSupportedAt
-      (.kernel ⟨promotedQuery.outcome, promotedQuery.action, promotedQuery.condition⟩) reference
-    rw [empty]
-    exact nativeModel.kernelSupportedAt_unconditional _ _ reference
+  · exact nativeModel.termSupportedAt_to_collapsed _ _ NullActionPromotionSupport.promoted_supported
   · exact collapsedPositive bayesDenominator reference
-      (checkedAt (fun assignment => (nativeModel.termDenote bayesDenominator assignment).any
-        (fun value => decide (0 < value.num))) (by decide +kernel) reference)
+      (by decide +kernel)
 
 /-- The promotion and terminal Bayes constructors compose the complete
 conditional tree, preserving both intermediate support endpoints. -/
@@ -320,7 +314,7 @@ noncomputable def conditionalCompilation :=
 
 noncomputable def conditionalData : conditionalCompilation.Data nativeModel.toLatentRootSCM reference where
   sourceSupported := nativeModel.termSupportedAt_to_collapsed _ _ NullActionPromotionSupport.original_supported
-  nestedData := bayesData reference
+  nestedData := bayesData
 
 /-- Compare literal finite syntax against the computed program expression.
 No numerical equivalence, cancellation or product regrouping substitutes
