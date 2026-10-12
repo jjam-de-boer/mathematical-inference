@@ -47,7 +47,7 @@ theorem componentFormulaLookup_actionFree
   | cons entry rest inductionHypothesis =>
       simp only [componentFormulaLookup]
       split
-      · exact free entry (List.mem_cons_self _ _)
+      · exact free entry List.mem_cons_self
       · exact inductionHypothesis (fun value listed => free value (List.mem_cons_of_mem _ listed))
 
 /-- A zipped table of computed formulas returns the exact listed formula,
@@ -60,18 +60,18 @@ theorem componentFormulaLookup_zip_map (components : List (NodeSet S))
   induction components with
   | nil => exact False.elim (List.not_mem_nil listed)
   | cons head rest inductionHypothesis =>
-      if matches : NodeSet.equal component head = true then
-        simp only [List.map_cons, List.zip_cons_cons, componentFormulaLookup, matches, if_true]
-        exact congrArg formula ((NodeSet.equal_eq_true_iff _ _).mp matches).symm
+      if sameComponent : NodeSet.equal component head = true then
+        simp only [List.map_cons, List.zip_cons_cons, componentFormulaLookup, sameComponent, if_true]
+        exact congrArg formula ((NodeSet.equal_eq_true_iff _ _).mp sameComponent).symm
       else
         have inRest : component ∈ rest := by
           rcases List.mem_cons.mp listed with first | later
-          · exact False.elim (matches ((NodeSet.equal_eq_true_iff _ _).mpr first))
+          · exact False.elim (sameComponent ((NodeSet.equal_eq_true_iff _ _).mpr first))
           · exact later
         have absent : NodeSet.equal component head = false := by
           cases value : NodeSet.equal component head with
           | false => rfl
-          | true => exact False.elim (matches value)
+          | true => exact False.elim (sameComponent value)
         simpa only [List.map_cons, List.zip_cons_cons, componentFormulaLookup, absent,
           Bool.false_eq_true, if_false] using inductionHypothesis inRest
 
@@ -255,35 +255,35 @@ theorem identifyGuardedKernelFuel_decision_eq
   | succ fuel inductionHypothesis =>
       simp only [identifyGuardedKernelFuel, identifyKernelFuel]
       cases emptyAction : NodeSet.isEmpty (NodeSet.inter action remaining) with
-      | true => simp only [emptyAction, if_true, IdentificationOutcome.decision]
+      | true => simp only [if_true, IdentificationOutcome.decision]
       | false =>
-          simp only [emptyAction, Bool.false_eq_true, if_false]
+          simp only [Bool.false_eq_true, if_false]
           cases sameHost : NodeSet.equal
               (G.ancestralSet remaining (.none S) (NodeSet.inter outcome remaining)) remaining with
           | false =>
-              simp only [sameHost, Bool.false_eq_true, if_false]
+              simp only [Bool.false_eq_true, if_false]
               exact inductionHypothesis _ _ _ _ _
           | true =>
-              simp only [sameHost, if_true]
+              simp only [if_true]
               cases emptyAdditional : NodeSet.isEmpty (identificationAdditionalAction G remaining outcome action) with
               | false =>
-                  simp only [emptyAdditional, Bool.false_eq_true, if_false]
+                  simp only [Bool.false_eq_true, if_false]
                   exact inductionHypothesis _ _ _ _ _
               | true =>
-                  simp only [emptyAdditional, if_true]
+                  simp only [if_true]
                   cases partition : G.cComponents (NodeSet.diff remaining (NodeSet.inter action remaining)) with
                   | nil => simp only [IdentificationOutcome.decision]
                   | cons component rest =>
                       cases rest with
                       | nil =>
                           cases singleHost : G.isSingleCComponent remaining with
-                          | true => simp only [singleHost, if_true, IdentificationOutcome.decision]
+                          | true => simp only [if_true, IdentificationOutcome.decision]
                           | false =>
-                              simp only [singleHost, Bool.false_eq_true, if_false]
+                              simp only [Bool.false_eq_true, if_false]
                               cases listed : (G.cComponents remaining).any (fun piece => NodeSet.equal piece component) with
-                              | true => simp only [listed, if_true, IdentificationOutcome.decision]
+                              | true => simp only [if_true, IdentificationOutcome.decision]
                               | false =>
-                                  simp only [listed, Bool.false_eq_true, if_false]
+                                  simp only [Bool.false_eq_true, if_false]
                                   cases containing : G.containingCComponent remaining component with
                                   | none => rfl
                                   | some larger => exact inductionHypothesis _ _ _ _ _
@@ -324,16 +324,20 @@ theorem identifyGuardedJointKernel_failed_iff (G : ObservedGraph S) (query : Joi
     | identified _term => simp only [original, IdentificationOutcome.decision] at same; cases same
     | unfinished => simp only [original, IdentificationOutcome.decision] at same; cases same
     | failed other =>
-        have equal : failure = other := KernelIdentificationDecision.failed.inj same
-        exact original.trans (congrArg IdentificationOutcome.failed equal.symm)
+        have equal : failure = other := by
+          apply KernelIdentificationDecision.failed.inj
+          simpa only [original, IdentificationOutcome.decision] using same
+        exact congrArg IdentificationOutcome.failed equal.symm
   · intro failed
     rw [failed] at same
     cases guarded : identifyGuardedJointKernel G query with
     | identified _term => simp only [guarded, IdentificationOutcome.decision] at same; cases same
     | unfinished => simp only [guarded, IdentificationOutcome.decision] at same; cases same
     | failed other =>
-        have equal : other = failure := KernelIdentificationDecision.failed.inj same
-        exact guarded.trans (congrArg IdentificationOutcome.failed equal)
+        have equal : other = failure := by
+          apply KernelIdentificationDecision.failed.inj
+          simpa only [guarded, IdentificationOutcome.decision] using same
+        exact congrArg IdentificationOutcome.failed equal
 
 end Causality
 end Thesis
