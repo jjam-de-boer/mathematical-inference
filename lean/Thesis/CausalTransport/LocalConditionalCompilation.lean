@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.GuardedKernelSuccessCompilation
 import Thesis.CausalTransport.ConditionalExchangeCompilation
+import Thesis.Causality.ConditionalSupport
 
 namespace Thesis
 namespace Causality

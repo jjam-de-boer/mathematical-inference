@@ -72,6 +72,7 @@ jobs:
             lake build
             Thesis.Probability.FiniteProductAllocation
             Thesis.Causality.ObservationalSupport
+            Thesis.Causality.ConditionalSupport
             Thesis.Causality.SupportAwareKernelAlgebra
             Thesis.Causality.PositiveDerivationSupport
             Thesis.Causality.HiddenPathSearch

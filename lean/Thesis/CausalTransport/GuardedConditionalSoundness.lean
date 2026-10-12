@@ -50,9 +50,46 @@ noncomputable def identifyGuardedConditionalKernel_soundAt
   (identifyGuardedConditionalKernelLocalCompilation G.dSeparationCorrectness query result).aligned.soundAt
     model compatible reference data
 
+/-- A single recorded promotion needs support only of its original source.
+SCM composition supplies the promoted endpoint before the actual rule-2
+application is interpreted; no observational-overlap premise is introduced. -/
+noncomputable def ConditionalExchangeStep.soundAt
+    {query : ConditionalKernelQuery S} (step : ConditionalExchangeStep G query)
+    (model : ExactModel S) (compatible : Compatible model G) (reference : S.Assignment)
+    (sourceSupported : query.sourceTerm.SupportedAt model reference) :
+    ProbabilityTerm.EquivalentAt model query.sourceTerm
+      (query.exchangeCondition step.node step.selected).sourceTerm reference :=
+  ProbabilityResult.symm ((G.publishedSoundness.pathPrimitive model compatible).doRule reference
+    (step.pathRule G.dSeparationCorrectness)
+    (query.exchangeCondition_supportedAt step.node step.selected model reference sourceSupported) sourceSupported)
+
 section Native
 
 variable {P : FiniteLatentProjection S}
+
+/-- Original-DAG support survives a conditioner promotion even when the
+factual action cylinder is null.  Literal collapse preservation transports
+the intrinsic one-model composition proof; no canonical membership is used. -/
+noncomputable def ConditionalKernelQuery.hiddenDAG_exchangeCondition_supportedAt
+    (query : ConditionalKernelQuery S) (node : Fin S.count) (selected : query.condition node = true)
+    (model : FiniteHiddenDAGSCM S P) (reference : S.Assignment)
+    (sourceSupported : model.TermSupportedAt query.sourceTerm reference) :
+    model.TermSupportedAt (query.exchangeCondition node selected).sourceTerm reference :=
+  model.termSupportedAt_of_collapsed _ reference
+    (query.exchangeCondition_supportedAt node selected model.toLatentRootSCM reference
+      (model.termSupportedAt_to_collapsed _ reference sourceSupported))
+
+/-- The graph-tested rule-2 leaf is sound in the actual hidden DAG whenever
+the original conditional is supported.  The promoted endpoint is constructed
+above, rather than requested separately or supplied by global positivity. -/
+noncomputable def ConditionalExchangeStep.hiddenDAG_soundAt
+    {query : ConditionalKernelQuery S} (step : ConditionalExchangeStep P.observedGraph query)
+    (model : FiniteHiddenDAGSCM S P) (reference : S.Assignment)
+    (sourceSupported : model.TermSupportedAt query.sourceTerm reference) :
+    model.TermEquivalentAt query.sourceTerm (query.exchangeCondition step.node step.selected).sourceTerm reference :=
+  ProbabilityResult.symm (model.pathDoRule_soundAt reference
+    (step.pathRule P.observedGraph.dSeparationCorrectness)
+    (query.hiddenDAG_exchangeCondition_supportedAt step.node step.selected model reference sourceSupported) sourceSupported)
 
 /-- Build the original hidden-DAG support tree from the compiled primitive
 data.  This preserves every intermediate conditioner, finite marginal
