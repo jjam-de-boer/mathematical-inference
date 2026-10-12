@@ -76,18 +76,27 @@ noncomputable def promotion_sound :
     model.TermEquivalentAt query.sourceTerm (query.exchangeCondition step.node step.selected).sourceTerm reference :=
   step.hiddenDAG_soundAt model reference original_supported
 
-def formula : ProbabilityTerm signature :=
-  match identifyGuardedConditionalKernel projection.observedGraph query with
+private def candidateFormula (outcome : IdentificationOutcome signature) : ProbabilityTerm signature :=
+  match outcome with
   | .identified term => term
   | _ => unitProbabilityTerm signature
 
-theorem identified : identifyGuardedConditionalKernel projection.observedGraph query = .identified formula := by
-  have found : (match identifyGuardedConditionalKernel projection.observedGraph query with
-      | .identified _ => true | _ => false) = true := by decide +kernel
-  cases result : identifyGuardedConditionalKernel projection.observedGraph query with
-  | identified _term => simp only [formula, result]
-  | failed _failure => simp only [result, Bool.false_eq_true] at found
-  | unfinished => simp only [result, Bool.false_eq_true] at found
+/-- Inspect the constructor abstractly before substituting the concrete run.
+This keeps formula alignment from unfolding the complete recursive graph
+search during simplification; no proof limits need to be increased. -/
+private theorem identified_of_tag (outcome : IdentificationOutcome signature)
+    (found : (match outcome with | .identified _ => true | _ => false) = true) :
+    outcome = .identified (candidateFormula outcome) := by
+  cases outcome with
+  | identified _term => rfl
+  | failed _failure => cases found
+  | unfinished => cases found
+
+def formula : ProbabilityTerm signature :=
+  candidateFormula (identifyGuardedConditionalKernel projection.observedGraph query)
+
+theorem identified : identifyGuardedConditionalKernel projection.observedGraph query = .identified formula :=
+  identified_of_tag _ (by decide +kernel)
 
 theorem source_supported_zero : (model.termDenote query.sourceTerm reference).map (fun value => value.num) = some 0 := by
   decide +kernel
