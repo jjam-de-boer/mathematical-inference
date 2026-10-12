@@ -88,9 +88,12 @@ certificates no longer require observed positivity, and exact prefix-quotient
 derivations accept support at their enumerated input variants plus positivity
 of the one displayed denominator. Their numerator may be zero. Native
 hidden-DAG adapters preserve those same local conditions without assuming
-canonical membership of a collapsed model. The remaining compiler work is
-to propagate these conditions through component extraction, the recursive ID
-branches, and conditional IDC/Bayes assembly.
+canonical membership of a collapsed model. Component-factor extraction now
+uses the graph-derived exchange/deletion rules with explicit local support;
+its exchange intermediate can obtain support from observable predecessor
+overlap. The remaining compiler work is whole guarded component products,
+propagation through the recursive ID branches, and conditional IDC/Bayes
+assembly.
 
 Continuous probability, general measure theory, and a complete formalisation
 of every philosophical or sociological claim are outside this project's scope.

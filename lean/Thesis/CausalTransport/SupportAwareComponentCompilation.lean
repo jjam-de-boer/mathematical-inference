@@ -38,7 +38,9 @@ namespace PublishedCurrentKernelReduction
 /-- Extract a component vertex's factor into the exact host-input quotient.
 Later outside actions are deleted, earlier ones are exchanged for evidence,
 and the unchanged host factor is reduced by its current-input derivation.
-No positive-model certificate or assumed graph side condition is supplied. -/
+The caller supplies structural host/subset/closure invariants.  No positive-
+model certificate or additional path-separation assumption is supplied: the
+shared graph constructor proves the two rule side conditions. -/
 noncomputable def componentFactorDerivation
     (input : PublishedCurrentKernelReduction G remaining externalAction)
     (component : NodeSet S) (closed : G.KernelHostClosed remaining externalAction)

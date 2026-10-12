@@ -269,7 +269,11 @@ needs input subtrees only at its two finite marginal enumerations and a
 positive displayed denominator, not an everywhere-positive current input.
 `HiddenDAGKernelCompilation` supplies the corresponding native support trees
 through literal term preservation, permitting noncanonical collapses and
-observational zeros.  Component extraction and full ID/IDC support-aware
+observational zeros.  `SupportAwareComponentCompilation` shares the proved
+graph exchange/deletion applications with the positive compiler and assembles
+the extracted factor's full support tree from local endpoint and host-factor
+witnesses.  Observable predecessor/action overlap suffices for its exchange
+intermediate.  Whole guarded component products and full ID/IDC support-aware
 recursion remain separate obligations.
 
 The module-by-module descriptions below also retain local limitations of
