@@ -236,13 +236,14 @@ noncomputable def guardedComponentPrefix_supportedAt
   | 0, _ => by
       let action := componentExternalAction remaining externalAction component
       let sourceSupported := Kernel.unconditional_supportedAt model NodeSet.empty action reference
+      let initialSupported := Kernel.unconditional_supportedAt model (chainPrefix component 0) action reference
       let targetSupported := Kernel.unconditional_supportedAt model NodeSet.empty NodeSet.empty reference
       let query : JointKernelQuery S := ⟨NodeSet.empty, action, NodeSet.disjoint_empty_right _⟩
       let ruleSource := ProbabilityTerm.SupportedAt.congr
         (JointKernelQuery.sourceTerm_eq_rule3Left_empty_xw query) sourceSupported
       dsimp [guardedComponentPrefixDerivation, PathDoCalculusDerivation.compile,
         DoCalculusDerivation.mapRules, deleteActionRule3Derivation]
-      exact ⟨sourceSupported, ⟨targetSupported,
+      exact ⟨initialSupported, ⟨targetSupported,
         ⟨sourceSupported, ⟨targetSupported, ⟨ruleSource, ⟨targetSupported, ()⟩⟩⟩⟩⟩⟩
   | n + 1, bound => by
       let node : Fin S.count := ⟨n, Nat.lt_of_succ_le bound⟩
@@ -262,20 +263,24 @@ noncomputable def guardedComponentPrefix_supportedAt
             simpa only [guardedComponentPrefixTerm, node, selected, Bool.false_eq_true, if_false] using
               previousSupport.endpoints.2
           dsimp [guardedComponentPrefixDerivation, node]
-          simp only [selected, Bool.false_eq_true, if_false]
+          try simp only [selected, Bool.false_eq_true, if_false]
           dsimp [PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
           exact ⟨sourceSupported, ⟨targetSupported, previousSupport⟩⟩
       | true =>
-          let prefix := chainPrefix component n
+          let previousNodes := chainPrefix component n
           let sourceSupported := Kernel.unconditional_supportedAt model (chainPrefix component (n + 1)) action reference
           let jointSupported := Kernel.unconditional_supportedAt model
-            (NodeSet.union (NodeSet.singleton node) prefix) action reference
-          let intermediate := ProbabilityTerm.SupportedAt.of_equivalent
-            (ProbabilityTerm.weightedChain_soundAt model action (NodeSet.singleton node) prefix NodeSet.empty reference)
+            (NodeSet.union (NodeSet.singleton node) previousNodes) action reference
+          let splitRawSupported := ProbabilityTerm.SupportedAt.of_equivalent
+            (ProbabilityTerm.weightedChain_soundAt model action (NodeSet.singleton node) previousNodes NodeSet.empty reference)
             jointSupported
-          have prefixCondition : chainCondition component node = prefix := rfl
+          have intermediate : (ProbabilityTerm.weightedMultiply
+              (.kernel ⟨previousNodes, action, NodeSet.empty⟩)
+              (.kernel ⟨NodeSet.singleton node, action, chainCondition component node⟩)).SupportedAt model reference := by
+            simpa only [NodeSet.union_empty_right, chainCondition_eq_prefix, node] using splitRawSupported
+          have prefixCondition : chainCondition component node = previousNodes := rfl
           let factorTree := fun (sourcePositive : ProbabilityResult.PositiveSupportedValue
-              ((ProbabilityTerm.kernel ⟨prefix, action, NodeSet.empty⟩).denote model reference)) => by
+              ((ProbabilityTerm.kernel ⟨previousNodes, action, NodeSet.empty⟩).denote model reference)) => by
             let data := conditions node selected (.inl sourcePositive)
             let componentSupported := Kernel.supportedAt_of_positive_unconditional_conditioner
               model (NodeSet.singleton node) action (chainCondition component node) reference
@@ -292,15 +297,15 @@ noncomputable def guardedComponentPrefix_supportedAt
               model reference := by
             simpa only [guardedComponentPrefixTerm, node, selected, if_true] using targetSupported
           have nextPrefix : chainPrefix component (n + 1) =
-              NodeSet.union (NodeSet.singleton node) prefix := by
+              NodeSet.union (NodeSet.singleton node) previousNodes := by
             simpa only [node, selected, if_true] using prefixStep
           dsimp [guardedComponentPrefixDerivation, node]
-          simp only [selected, if_true]
+          try simp only [selected, if_true]
           dsimp [PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
           exact ⟨sourceSupported, ⟨displayedSupported,
             ⟨jointSupported, ⟨targetSupported,
               ⟨⟨jointSupported, ⟨intermediate,
-                ⟨jointSupported, ⟨intermediate, ()⟩⟩⟩⟩,
+                ⟨jointSupported, ⟨splitRawSupported, ()⟩⟩⟩⟩,
                 ⟨intermediate, ⟨targetSupported, ⟨previousSupport, factorTree⟩⟩⟩⟩⟩⟩⟩⟩
 
 /-- The assembled whole-component reduction has a genuine ordinary support
