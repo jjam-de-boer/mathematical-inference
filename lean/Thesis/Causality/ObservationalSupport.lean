@@ -48,7 +48,7 @@ theorem ObservationalCylinderPositiveAt.of_subset
     apply (finAll_eq_true_iff _).mpr
     intro node
     cases kept : smaller node with
-    | false => simp only [kept, Bool.false_eq_true, if_false]
+    | false => simp only [Bool.false_eq_true, if_false]
     | true =>
         have present := subset node kept
         have agrees := (finAll_eq_true_iff _).mp selected node

@@ -1,6 +1,7 @@
 import Thesis.CausalTransport.ComponentCompilation
 import Thesis.CausalTransport.SupportAwareKernelCompilation
 import Thesis.Causality.ObservationalSupport
+import Thesis.Causality.ConditionalSupport
 
 namespace Thesis
 namespace Causality
@@ -20,18 +21,21 @@ module composes those applications with the exact current-input prefix
 derivation, independently of global observational positivity.
 
 Support is a separate assignment-local construction.  It consumes support
-of the component factor, the intervening exchange kernel and the host
-factor's existing recursive tree.  No support is inferred merely because
-a graph test succeeded, and no undefined conditional is completed.  A
-proved observable predecessor-cylinder overlap suffices for the exchange
-intermediate; it need not include the selected outcome cell.
+of the component factor and the host factor's existing recursive tree.
+SCM composition supplies the intervening exchange kernel from the already
+supported host conditional: promotion cannot destroy its conditioner.
+No support is inferred merely because a graph test succeeded, and no
+undefined conditional is completed.  Observable predecessor-cylinder
+overlap remains an optional sufficient constructor when a host support
+witness is not yet available, not an extra premise of the graph bridge.
 
 These are factor-level ingredients for support-aware component extraction,
 including unions of complete components.  They do not yet assemble a whole
 guarded component product in this module; `GuardedComponentCompilation`
 assembles that product with explicit branch-local conditions.  The full
-zero-aware ID/IDC recursion remains separate and unfinished.  The
-ordinary derivation constructors and support tree are retained, rather than
+zero-aware ID/IDC compilers retain their separate primitive local-data
+boundaries; the general admissibility-to-support theorem remains unfinished.
+The ordinary derivation constructors and support tree are retained, rather than
 adding an assumed semantic equality as a new rule.
 
 The reverse bridge below starts from an independently compiled component
@@ -112,11 +116,36 @@ noncomputable def componentFactor_middle_supportedAt_of_overlap
     chainCondition_outside_union_inside remaining component componentSubset node]
   exact overlap
 
+/-- The exchange intermediate needs no additional observational overlap
+once the actual host conditional is supported.  Its outside predecessors
+are already conditioned to the reference values, so intrinsic SCM
+composition preserves support when they are promoted to actions.
+
+This is a support theorem independent of graph separation and denotational
+soundness.  It applies even when the corresponding factual action cylinder
+is null; no equality rule is used to manufacture a positive denominator. -/
+noncomputable def componentFactor_middle_supportedAt_of_host
+    (model : ExactModel S) (component : NodeSet S)
+    (componentSubset : NodeSet.Subset component remaining)
+    (node : Fin S.count) (reference : S.Assignment)
+    (hostSupported : (ProbabilityTerm.kernel
+      ⟨NodeSet.singleton node, externalAction, chainCondition remaining node⟩).SupportedAt model reference) :
+    (ProbabilityTerm.kernel
+      (rule2Left externalAction (NodeSet.singleton node)
+        (NodeSet.diff (chainCondition remaining node) component) (chainCondition component node))).SupportedAt
+      model reference := by
+  apply Kernel.supportedAt_promoteCondition model externalAction (NodeSet.singleton node)
+    (NodeSet.diff (chainCondition remaining node) component) (chainCondition component node) reference
+  rw [chainCondition_outside_union_inside remaining component componentSubset node]
+  exact hostSupported
+
 /-- Construct every endpoint and subtree of the extracted factor at this
 reference.  The host tree contains its finite marginal subtrees and local
 quotient denominator proof already; only the two preceding graph-rule
-endpoint supports are added here.  Every supported value may have a zero
-numerator.  No denotational soundness is used to manufacture support. -/
+endpoints are added here.  The component source is supplied, while promotion
+constructs the exchange intermediate from the host tree's source.  Every
+supported value may have a zero numerator.  No denotational soundness is
+used to manufacture support or to transfer causal support between models. -/
 noncomputable def componentFactor_supportedAt
     (input : PublishedCurrentKernelReduction G remaining externalAction)
     (correct : DSeparationCorrectness G)
@@ -129,15 +158,13 @@ noncomputable def componentFactor_supportedAt
     (componentSupported : (ProbabilityTerm.kernel
       ⟨NodeSet.singleton node, NodeSet.union externalAction (NodeSet.diff remaining component),
         chainCondition component node⟩).SupportedAt model reference)
-    (middleSupported : (ProbabilityTerm.kernel
-      (rule2Left externalAction (NodeSet.singleton node)
-        (NodeSet.diff (chainCondition remaining node) component) (chainCondition component node))).SupportedAt
-      model reference)
     (hostSupport : LocalDerivationSupport model reference
       ((input.factorDerivation closed.action_disjoint node (componentSubset node nodeInside)).compile correct)) :
     LocalDerivationSupport model reference
       ((input.componentFactorDerivation component closed componentSubset bidirectedClosed node nodeInside).compile
         correct) := by
+  let middleSupported := componentFactor_middle_supportedAt_of_host model component componentSubset node reference
+    hostSupport.endpoints.1
   let earlier := chainCondition component node
   let exchanged := NodeSet.diff (chainCondition remaining node) component
   let later := chainLaterOutside remaining component node
@@ -221,7 +248,9 @@ noncomputable def hostFactorOfComponentDerivation
 
 /-- Construct the reversed graph bridge's complete ordinary support tree.
 The supplied component tree already supports its source and exact target;
-only the host source and exchange intermediate need additional local data.
+only the host source needs additional local data.  Promotion constructs the
+exchange intermediate from that host source, including in zero-containing
+models without observable action-cylinder overlap.
 Each reversed rule retains the support tree of its forward rule as well.
 Zero outcomes are allowed throughout, and no positivity is manufactured by
 applying a soundness theorem to one of these derivations. -/
@@ -240,14 +269,12 @@ noncomputable def hostFactorOfComponentDerivation_supportedAt
     (model : ExactModel S) (reference : S.Assignment)
     (hostSupported : (ProbabilityTerm.kernel
       ⟨NodeSet.singleton node, externalAction, chainCondition remaining node⟩).SupportedAt model reference)
-    (middleSupported : (ProbabilityTerm.kernel
-      (rule2Left externalAction (NodeSet.singleton node)
-        (NodeSet.diff (chainCondition remaining node) component) (chainCondition component node))).SupportedAt
-      model reference)
     (factorSupport : LocalDerivationSupport model reference (factor.compile correct)) :
     LocalDerivationSupport model reference
       ((hostFactorOfComponentDerivation remaining externalAction component closed componentSubset
         bidirectedClosed node nodeInside factor).compile correct) := by
+  let middleSupported := PublishedCurrentKernelReduction.componentFactor_middle_supportedAt_of_host
+    model component componentSubset node reference hostSupported
   let earlier := chainCondition component node
   let exchanged := NodeSet.diff (chainCondition remaining node) component
   let later := chainLaterOutside remaining component node
@@ -343,10 +370,8 @@ noncomputable def hostFactorOfComponent_supportedAt
     numeratorInputSupport denominatorInputSupport denominatorPositive
   let hostSupported := Kernel.supportedAt_of_observational_overlap model
     ⟨NodeSet.singleton node, externalAction, chainCondition remaining node⟩ reference overlap
-  let middleSupported := componentFactor_middle_supportedAt_of_overlap model component componentSubset
-    node reference overlap
   exact Causality.hostFactorOfComponentDerivation_supportedAt correct remaining externalAction component closed
-    componentSubset bidirectedClosed node nodeInside factor model reference hostSupported middleSupported factorSupport
+    componentSubset bidirectedClosed node nodeInside factor model reference hostSupported factorSupport
 
 end PublishedCurrentKernelReduction
 end Causality
