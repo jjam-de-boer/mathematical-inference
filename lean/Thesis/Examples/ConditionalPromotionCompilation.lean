@@ -132,29 +132,14 @@ private noncomputable def xDenominatorPositive (reference : signature.Assignment
 
 private noncomputable def xInputs (reference : signature.Assignment) :
     LocalComponentFactorData ancestralInput nativeModel.toLatentRootSCM reference x where
-  overlap := by
-    change 0 < (nativeModel.toLatentRootSCM.observationalDist.probVal
-      (Kernel.agreesOn (NodeSet.union NodeSet.empty (chainCondition host x)) reference)).num
-    rw [nativeModel.toLatentRootSCM_observationalDist]
-    exact of_decide_eq_true (checkedAt (fun assignment => decide
-      (0 < (nativeModel.observationalDist.probVal
-        (Kernel.agreesOn (NodeSet.union NodeSet.empty (chainCondition host x)) assignment)).num))
-      (by decide +kernel) reference)
+  projected := fun first second => nativeModel.toLatentRootSCM_projectedGraph first second
   numeratorData := fun _variant _listed _originalVariant _originalListed => ()
   denominatorData := fun _variant _listed _originalVariant _originalListed => ()
   denominatorPositive := xDenominatorPositive reference
 
 private noncomputable def yInputs (reference : signature.Assignment) (supportedX : reference x = false) :
     LocalComponentFactorData ancestralInput nativeModel.toLatentRootSCM reference y where
-  overlap := by
-    change 0 < (nativeModel.toLatentRootSCM.observationalDist.probVal
-      (Kernel.agreesOn (NodeSet.union NodeSet.empty (chainCondition host y)) reference)).num
-    rw [nativeModel.toLatentRootSCM_observationalDist]
-    have checked : signature.assignmentEnumeration.all (fun assignment => decide
-        (assignment x = false → 0 < (nativeModel.observationalDist.probVal
-          (Kernel.agreesOn (NodeSet.union NodeSet.empty (chainCondition host y)) assignment)).num)) = true := by
-      decide +kernel
-    exact (of_decide_eq_true (checkedAt _ checked reference)) supportedX
+  projected := fun first second => nativeModel.toLatentRootSCM_projectedGraph first second
   numeratorData := fun _variant _listed _originalVariant _originalListed => ()
   denominatorData := fun _variant _listed _originalVariant _originalListed => ()
   denominatorPositive := collapsedPositive (denominatorTerm y) reference (by

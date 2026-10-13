@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.GuardedComponentCompilation
 import Thesis.CausalTransport.GuardedComponentFamilyCompilation
+import Thesis.CausalTransport.CurrentKernelSupportCompletion
 
 namespace Thesis
 namespace Causality
@@ -20,14 +21,16 @@ and builds the ordinary support tree from it.
 
 The observational initializer needs only `Unit`.  A marginal requests its
 operand's data at precisely the finite enumerated variants.  Guarded
-component extraction requests observable overlap, its actual displayed
+component extraction requests projected-graph accuracy, its actual displayed
 denominator and recursively requested operand data only on positive prefix
 branches.  Family assembly likewise requests each actual child compilation's
 data, rather than requiring a host-joint tree as an input.
 
 This is the input algebra for the uniform guarded-ID success compiler.  No
-global observational positivity, denotational-equality leaf or soundness-
-based inference of a positive denominator is introduced.  Graph parent
+global observational positivity or denotational-equality leaf is introduced.
+The completed inner denominator marginal is interpreted before its positive
+displayed value constructs the causal host conditioner; soundness of the new
+factor is never assumed to establish its own support.  Graph parent
 closure remains a separate recursion invariant: an arbitrary final marginal
 need not itself be a parent-closed host in the original graph.
 -/
@@ -98,8 +101,7 @@ support trees.  The constructor below recursively builds those trees. -/
 structure LocalComponentFactorData
     (input : PublishedLocalKernelCompilation G correct remaining externalAction)
     (model : ExactModel S) (reference : S.Assignment) (node : Fin S.count) where
-  overlap : ObservationalCylinderPositiveAt model
-    (NodeSet.union externalAction (chainCondition remaining node)) reference
+  projected : HasProjectedGraph model G
   numeratorData : forall variant,
     variant ∈ ProbabilityTerm.marginalAssignments S
       (NodeSet.diff remaining (NodeSet.union (NodeSet.singleton node) (chainCondition remaining node))) reference →
@@ -117,8 +119,8 @@ noncomputable def LocalComponentFactorData.toInputs
     {input : PublishedLocalKernelCompilation G correct remaining externalAction}
     {model : ExactModel S} {reference : S.Assignment} {node : Fin S.count}
     (data : LocalComponentFactorData input model reference node) :
-    GuardedComponentFactorInputs input.reduction correct model reference node where
-  overlap := data.overlap
+    CurrentKernelFactorInputs input.reduction correct model reference node where
+  projected := data.projected
   numeratorInputSupport := fun variant listed => input.supported model variant (data.numeratorData variant listed)
   denominatorInputSupport := fun variant listed => input.supported model variant (data.denominatorData variant listed)
   denominatorPositive := data.denominatorPositive
@@ -152,7 +154,7 @@ noncomputable def component
     PublishedLocalKernelCompilation G correct component (componentExternalAction remaining externalAction component) where
   reduction := input.reduction.guardedComponent component closed subset bidirectedClosed
   Data := LocalComponentData input component
-  supported := fun model reference data => input.reduction.guardedComponent_supportedAt correct component closed
+  supported := fun model reference data => input.reduction.guardedComponent_supportedAt_of_quotient_inputs correct component closed
     subset bidirectedClosed model reference (fun node selected branch => (data node selected branch).toInputs)
 
 /-- The actual partition supplies subset and bidirected closure, without
