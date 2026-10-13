@@ -7,6 +7,7 @@ import Thesis.Probability.Distros.Sampling
 import Thesis.Probability.Distros.LimitAnalogs
 import Thesis.Probability.Distros.Gaussian
 import Thesis.Probability.Distros.WaitingTime
+import Thesis.Probability.Distros.BernoulliWaiting
 
 /-!
 Named finite distros.
@@ -56,4 +57,8 @@ Reading order:
 9. `WaitingTime` identifies the truncated and censored one-success negative
    binomial with geometric as actual distributions and numeric embeddings,
    with event, PMF and general rational PGF consequences.
+10. `BernoulliWaiting` computes first-success occupancy on the actual finite
+    independent Bernoulli product, identifies its censored geometric
+    pushforward on every Boolean event, and obtains the truncated law by
+    conditioning that same record on success in the window.
 -/

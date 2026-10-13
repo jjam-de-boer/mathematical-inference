@@ -110,4 +110,25 @@ example : QProb.Equiv
     (pgf (negativeBinomialCensoredNatDistro 2 2 1 1 (by decide) (by decide)) ⟨1, 2, by decide⟩)
     ⟨1, 2, by decide⟩ := by decide
 
+/-- The independent trial construction, including its no-success paths. -/
+example : QProb.Equiv
+    ((geometricCensoredFromBernoulli 2 1 1 (by decide)).pmf ⟨2, by decide⟩)
+    ⟨1, 4, by decide⟩ := by decide
+
+example : QProb.Equiv
+    ((geometricCensoredFromBernoulli 0 1 1 (by decide)).pmf ⟨0, by decide⟩)
+    QProb.one := by decide
+
+example : QProb.Equiv
+    ((geometricFromBernoulli 2 1 1 (by decide)).pmf ⟨0, by decide⟩)
+    ⟨4, 7, by decide⟩ := by decide
+
+example : QProb.Equiv
+    ((geometricFromBernoulli 2 2 2 (by decide)).pmf ⟨2, by decide⟩)
+    ⟨1, 7, by decide⟩ := by decide
+
+example : QProb.Equiv
+    ((geometricFromBernoulli 0 1 1 (by decide)).pmf ⟨0, by decide⟩)
+    QProb.one := by decide
+
 end Thesis.Examples.DistributionLaws

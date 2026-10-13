@@ -142,6 +142,20 @@ theorem eventMass_top (atoms : List (Ω × Nat)) :
       rcases atom with ⟨ω, weight⟩
       simp [eventMass, totalMass, topEvent, ih]
 
+/-- An event and its Boolean complement exhaust the same weighted atoms. -/
+theorem eventMass_add_complement (atoms : List (Ω × Nat)) (event : Event Ω) :
+    eventMass atoms event + eventMass atoms (fun value => !(event value)) =
+      totalMass atoms := by
+  induction atoms with
+  | nil => rfl
+  | cons atom rest ih =>
+      rcases atom with ⟨value, weight⟩
+      cases h : event value with
+      | false =>
+          simp [eventMass, totalMass, h]
+          omega
+      | true => simp [eventMass, totalMass, h, Nat.add_assoc, ih]
+
 /-- An event cannot carry more mass than the complete weighted support. -/
 theorem eventMass_le_totalMass (atoms : List (Ω × Nat)) (E : Event Ω) :
     eventMass atoms E ≤ totalMass atoms := by
