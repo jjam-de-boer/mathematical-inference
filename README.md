@@ -210,5 +210,28 @@ requires the explicit local data, positive completeness retains its stated
 model class, and unrestricted zero-class success equivalence is refuted,
 not silently asserted.
 
+Work toward the broader support-qualified Shpitser--Pearl result is active.
+`Causality.Admissibility` formalizes the primitive displayed action test
+`P(x | Pa(X) \ X) > 0` and positivity of the actual intervened conditioner.
+The action test is proved equivalent to a genuinely defined positive
+conditional. Pointwise overlap and overlap on every supported parent context
+are distinct predicates, and their observational transfer is proved without
+choice. These primitive tests permit observed zeros; they do not yet assert
+that every conditional demanded by an ID/IDC run is admissible.
+
+`ConditionalSupport` also proves exact preservation of earlier conditioner
+probabilities under later interventions. Together with intrinsic promotion,
+this constructs both primitive component-factor endpoints from an already
+supported host conditional. The forward and reverse graph bridges no longer
+request an independent exchange-support witness, and forward extraction no
+longer requests a separate component-source witness. A native null-action
+regression demonstrates why factual overlap is unnecessary for these
+intrinsic support steps. The guarded compilers' remaining primitive data,
+especially recursive marginal variants and positive displayed denominators,
+are still explicit. General admissibility-to-data propagation and the final
+zero-containing joint/conditional completeness certificates remain open;
+neither the positive package nor the previously scoped implementation audit
+is relabelled as that broader result.
+
 Continuous probability, general measure theory, and a complete formalisation
 of every philosophical or sociological claim are outside this project's scope.
