@@ -40,10 +40,11 @@ availability proofs to build every recursive support obligation from those
 tests.  No field here assumes the compiler's complete `Data` or support tree.
 `CausalTransport.HiddenDAGAdmissibleDomain` separately states the original
 primitive query domain, and its completeness package constructs actual
-certificates from semantic identification there.  The final supported-zero
-correspondence must still retain the used-conditional qualification: action
-admissibility alone is not asserted to supply every quotient, component
-exchange, or Bayes marginal.
+certificates from semantic identification there.  The broader intrinsic
+result in `CausalTransport.HiddenDAGSupportedCorrespondence` retains the
+used-conditional qualification and drops unnecessary factual overlap.
+Action admissibility alone is not asserted to supply every quotient,
+component exchange, or Bayes marginal.
 -/
 
 variable {S : ObservedSignature}

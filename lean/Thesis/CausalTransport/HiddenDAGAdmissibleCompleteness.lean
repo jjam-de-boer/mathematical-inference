@@ -28,8 +28,9 @@ interprets success where its used conditionals are admissible, while the
 semantic premise here uses only the independent primitive query boundary.
 Thus this is not a success iff identifiability claim on that whole boundary,
 nor a declaration that those external query tests guarantee all internal
-quotients.  The final paper-scope correspondence must still account for that
-used-conditional application qualification rather than silently drop it.
+quotients.  `HiddenDAGSupportedCorrespondence` separately assembles the
+broader intrinsic correspondence with its used-conditional qualification;
+this primitive one-way package is not relabelled as that equivalence.
 -/
 
 /-- Every actual guarded joint failure supplies an original-query pair

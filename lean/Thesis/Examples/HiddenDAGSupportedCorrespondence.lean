@@ -88,31 +88,6 @@ theorem recursive_joint_formula : recursiveJointCertificate.formula = GuardedKer
   IdentificationOutcome.identified.inj
     (recursiveJointCertificate.result.symm.trans GuardedKernelZeroRegression.guarded_identified)
 
-/-- Small pointwise finite checks plus the general no-parent theorem supply
-uniform action overlap.  No quantifier over arbitrary assignments is made
-classically decidable and no globally positive model is substituted. -/
-private theorem actionAdmissibleOfNoParents (action : NodeSet signature)
-    (noParents : signature.actionParents action = NodeSet.empty)
-    (pointwise : model.ObservationalActionAdmissibleAt action reference) :
-    model.ObservationalActionAdmissibleOnParentSupport action reference :=
-  (model.observationalActionAdmissibleOnParentSupport_iff_collapsed action reference).mpr
-    (Thesis.Causality.ObservationalActionAdmissibleOnParentSupport.of_noParents noParents
-      ((model.observationalActionAdmissibleAt_iff_collapsed action reference).mp pointwise))
-
-private theorem recursive_action_admissible : model.ObservationalActionAdmissibleOnParentSupport
-    GuardedKernelZeroRegression.query.action reference := by
-  apply actionAdmissibleOfNoParents
-  · exact (NodeSet.equal_eq_true_iff _ _).mp (by decide +kernel)
-  · unfold FiniteHiddenDAGSCM.ObservationalActionAdmissibleAt
-    decide +kernel
-
-private theorem conditional_action_admissible : model.ObservationalActionAdmissibleOnParentSupport
-    GuardedConditionalZeroRegression.query.action reference := by
-  apply actionAdmissibleOfNoParents
-  · exact (NodeSet.equal_eq_true_iff _ _).mp (by decide +kernel)
-  · unfold FiniteHiddenDAGSCM.ObservationalActionAdmissibleAt
-    decide +kernel
-
 private theorem conditional_source_admissible : model.ConditioningAdmissibleAt
     GuardedConditionalZeroRegression.query.operationKernel reference := by
   unfold FiniteHiddenDAGSCM.ConditioningAdmissibleAt
@@ -137,7 +112,7 @@ private theorem usedConditionalsOfNumeratorZero (nativeModel : FiniteHiddenDAGSC
 nonpositive native model at the literal recursive multi-component formula. -/
 noncomputable def recursive_joint_native_sound : model.TermEquivalentAt
     GuardedKernelZeroRegression.query.sourceTerm recursiveJointCertificate.formula reference := by
-  apply recursiveJointCertificate.soundAt model reference recursive_action_admissible
+  apply recursiveJointCertificate.intrinsic_soundAt model reference
   rw [recursive_joint_formula]
   exact usedConditionalsOfNumeratorZero model _ GuardedKernelZeroRegression.guarded_value_is_supported_zero
 
@@ -145,7 +120,7 @@ noncomputable def recursive_joint_native_sound : model.TermEquivalentAt
 the actual Bayes expression from its primitive source and printed tests. -/
 noncomputable def conditional_native_sound : model.TermEquivalentAt
     GuardedConditionalZeroRegression.query.sourceTerm conditionalCertificate.formula reference := by
-  apply conditionalCertificate.soundAt model reference conditional_action_admissible conditional_source_admissible
+  apply conditionalCertificate.intrinsic_soundAt model reference conditional_source_admissible
   rw [conditional_formula]
   exact usedConditionalsOfNumeratorZero model _ GuardedConditionalZeroRegression.formula_supported_zero
 

@@ -369,9 +369,22 @@ domain. `AdmissibleFrontDoorBoundary` proves that positive external action
 overlap alone still does not imply identification at zeros: deterministic
 mediator cells leave the successful formula undefined despite two admissible
 records with the same observed law and effects zero versus one half.
-The final supported-zero domain and correspondence must therefore retain
-the papers' used-conditional restriction; a primitive-domain success
-equivalence is refuted, not an outstanding theorem to force.
+`HiddenDAGSupportedDomain` therefore retains each observational expression's
+primitive used-conditional domain and its actual native representation
+property, independently of engine success. Positive coverage prevents an
+empty-domain trick from discarding the established native countermodels.
+`HiddenDAGSupportedCorrespondence` proves joint/conditional success iff that
+semantic representation exists and inhabits the supported completeness
+package's joint/conditional/hedge fields. Its separate positive-class
+equivalences retain the full graph-level identification criterion.
+The intrinsic certificate constructors now drop the unnecessary factual
+action premise: joint applicability is exactly printed support; conditional
+applicability is exactly original and printed endpoint support. Pointwise
+and uniform-parent paper boundaries are both included. A null-action
+promotion regression applies the actual completeness output in that broader
+domain. No maximal coverage across alternative formulas or distribution-
+specific completeness at a fixed observed law is inferred from these
+query-level results; the raw primitive-domain reverse implication is refuted.
 `ConditionalSupport` preserves actual
 conditional support through arbitrary block promotion by unit-level SCM
 composition and event-mass monotonicity, without observable overlap. The

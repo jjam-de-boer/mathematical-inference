@@ -31,8 +31,10 @@ contexts remain distinct.  `HiddenDAGAdmissibleDomain` explicitly uses the
 uniform predicate for the original query's semantic boundary.  Native
 conditioner positivity is not replaced by factual action overlap, and
 observational agreement is not used to transfer causal conditioner support.
-The final supported-zero correspondence must additionally account for the
-separate used-conditional tests of an identifying expression.
+`HiddenDAGSupportedDomain` additionally states the used-conditional domain
+of an actual observational representation and proves its exact intrinsic
+support boundary. `HiddenDAGSupportedCorrespondence` assembles that broader
+support-qualified result; its application needs no factual action overlap.
 -/
 
 namespace FiniteHiddenDAGSCM

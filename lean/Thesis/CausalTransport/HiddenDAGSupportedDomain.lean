@@ -84,6 +84,35 @@ def ConditionalAdmissibleAt (model : FiniteHiddenDAGSCM S P) (query : Conditiona
   model.ConditioningAdmissibleAt query.operationKernel reference ∧
     model.UsedConditionalsAdmissibleAt term reference
 
+/-- The papers' displayed action condition at the supplied observed-parent
+context, together with the conditionals actually used by the expression.
+The stronger uniform-parent version remains separately specified in
+`HiddenDAGAdmissibleDomain`; neither reading restricts the intrinsic theorem. -/
+def PaperJointAdmissibleAt (model : FiniteHiddenDAGSCM S P) (query : JointKernelQuery S)
+    (term : ProbabilityTerm S) (reference : S.Assignment) : Prop :=
+  model.ObservationalActionAdmissibleAt query.action reference ∧
+    model.UsedConditionalsAdmissibleAt term reference
+
+/-- The conditional paper boundary additionally retains the actual original
+`P_x(z) > 0` condition.  Zero outcome probabilities remain permitted. -/
+def PaperConditionalAdmissibleAt (model : FiniteHiddenDAGSCM S P) (query : ConditionalKernelQuery S)
+    (term : ProbabilityTerm S) (reference : S.Assignment) : Prop :=
+  model.ObservationalActionAdmissibleAt query.action reference ∧
+    model.ConditioningAdmissibleAt query.operationKernel reference ∧
+      model.UsedConditionalsAdmissibleAt term reference
+
+/-- The pointwise displayed paper condition is covered, without requiring
+an unstated strengthening to every parent context as an application premise. -/
+theorem PaperJointAdmissibleAt.intrinsic {model : FiniteHiddenDAGSCM S P}
+    {query : JointKernelQuery S} {term : ProbabilityTerm S} {reference : S.Assignment}
+    (paper : PaperJointAdmissibleAt model query term reference) : JointAdmissibleAt model query term reference :=
+  paper.2
+
+theorem PaperConditionalAdmissibleAt.intrinsic {model : FiniteHiddenDAGSCM S P}
+    {query : ConditionalKernelQuery S} {term : ProbabilityTerm S} {reference : S.Assignment}
+    (paper : PaperConditionalAdmissibleAt model query term reference) : ConditionalAdmissibleAt model query term reference :=
+  paper.2
+
 /-- Every application satisfying the separate published action restriction
 and the expression's demand tests is also an intrinsic application.  Dropping
 an unused action premise enlarges coverage rather than changing its semantics. -/
@@ -257,8 +286,8 @@ theorem conditionalIdentifiableOn_positive (query : ConditionalKernelQuery S) (t
     (conditionalAdmissibleAt_of_positive query term covered rightPositive reference)
 
 /-- A supported observational representation cannot discard the positive
-joint countermodels.  Unpacking its existential is proof-only; the future
-compiler must read its own outcome to construct a formula in `Type`. -/
+joint countermodels.  Unpacking its existential is proof-only; the actual
+completeness constructor reads its own outcome to build a formula in `Type`. -/
 theorem jointIdentifiable_positive (query : JointKernelQuery S) (identified : jointIdentifiable P query) :
     (HiddenDAGModelClass.positive P).identifiable query := by
   rcases identified with ⟨term, actionFree, covered, represented⟩

@@ -342,13 +342,53 @@ used-conditional predicate correctly rejects it. Thus success iff semantic
 identifiability on the external primitive query domain alone is false,
 even after excluding null external actions.
 
-What remains is the final supported-zero semantic domain and correspondence
-assembly retaining the papers' used-conditional restriction, rather than
-forcing the refuted primitive-domain reverse implication. Its quantifiers
-and coverage still need to be checked against the papers: the exact domain
-of this particular evaluator is not silently claimed to cover every
-alternative identifying expression. The proved one-way primitive package
-and actual-success certificates are not relabelled as that final result.
+The supported-zero graph-level result is now assembled separately in
+`HiddenDAGSupportedDomain` and `HiddenDAGSupportedCorrespondence`. The semantic
+definition asks for an actual finite action-free observational expression
+that computes the native query on its primitive demand domain; it mentions
+neither engine success nor compiler support trees. Its explicit
+`PositiveCovered` condition admits every positive native record, preventing
+an invalid expression such as `0/0` from claiming identification on an empty
+domain. Coverage is proved for all kernel-generated expressions and also for
+valid zero-containing syntax, including a skipped undefined factor.
+
+`identifyGuardedJointKernel_identifiable_iff` and its conditional counterpart
+prove exact success correspondence with that independent semantic predicate.
+`identifiable_iff_positive` and `conditionalIdentifiable_iff_positive` also
+prove that it retains the full established graph-level identification
+criterion, rather than a smaller set chosen for the regressions. These
+semantic equivalences do not restrict soundness applications to positives.
+`publishedSupportedAdmissibleCompleteness` inhabits the actual joint,
+conditional and hedge fields, returning the literal guarded expressions,
+their path do-calculus derivations and their constructed native support.
+The actual native failure pairs satisfy every positive-covered candidate's
+application tests, so they refute all such observational representations.
+
+The certificates now expose a stronger intrinsic application boundary than
+the papers' separate factual-action restriction. Joint support needs only
+the returned expression's used-conditional tests; conditional support needs
+those tests and the positive original intervened conditioner. The
+`intrinsic_soundAt` and `intrinsic_identifiableAt` methods require no factual
+action overlap. The old paper-qualified wrappers remain available.
+`jointAdmissibleAt_iff_supported` and
+`conditionalAdmissibleAt_iff_endpoints_supported` prove exact applicability:
+no hidden extra data, positive outcome numerator or factual overlap is
+required. Pointwise and uniform-parent paper application boundaries are
+both proved included in this intrinsic domain. A native null-action
+promotion regression applies the new completeness output outside the
+paper-qualified action boundary, while supported-zero joint/Bayes examples
+and invalid null quotients remain checked.
+
+The scope is finite rational probability, fixed value-rich observed domains
+for the completeness/countermodel direction, and arbitrary finite hidden
+and private-noise alphabets in every original hidden DAG. It is query-level,
+support-qualified graph identification, not an unrestricted action-only
+zero-class equivalence. Applicability is maximal for each literal returned
+formula under the existing partial evaluation, but no theorem here promises
+that this formula covers every reference covered by any alternative formula,
+or that graph failure excludes every distribution-specific identification.
+Those stronger data-dependent coverage problems require a separate result;
+they are not silently asserted by the supported completeness package.
 
 Continuous probability, general measure theory, and a complete formalisation
 of every philosophical or sociological claim are outside this project's scope.
