@@ -95,7 +95,9 @@ end ZeroCellAdmissibility
 
 namespace IntrinsicComponentAdmissibility
 
-open Probability GuardedKernelZeroRegression NullActionPromotionSupport
+open Probability
+open GuardedKernelZeroRegression (signature y reference)
+open NullActionPromotionSupport (model query original_supported observational_action_is_null)
 
 /-!
 ## A supported host at a null factual action
