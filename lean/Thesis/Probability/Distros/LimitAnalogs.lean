@@ -11,7 +11,7 @@ No constructor here is a real density.  Each named object is a finite urn,
 presented as a `Distro` or `NatDistro`.
 
 * `discreteGaussianDistro` is the lattice Gaussian on the centred window
-  `Fin (2 * radius + 1)`, with weight `base^(k - radius)²`.  This is the
+  `Fin (2 * radius + 1)`, with rational kernel `q^((k - radius)²)`.  This is the
   finite object whose un-normalised shape is the Gaussian kernel
   `q^{x²}` on a lattice, without introducing `ℝ`.
 * `deMoivreLatticeDistro` is the de Moivre special case: a binomial success
@@ -40,95 +40,110 @@ theorem radius_lt_window (radius : Nat) :
     radius < 2 * radius + 1 := by
   omega
 
-/-- Lattice Gaussian weight `base^(k - radius)²` on the centred window
-of length `2 * radius + 1`. -/
-def discreteGaussianWeight (radius base : Nat)
+/-- Clear the common denominator `q.den^(radius²)` from the rational
+Gaussian kernel `q^((k - radius)²)`. -/
+def discreteGaussianWeight (radius : Nat) (q : QProb)
     (k : Fin (2 * radius + 1)) : Nat :=
-  base ^ natSqDiff k.val radius
+  q.num ^ natSqDiff k.val radius *
+    q.den ^ (radius * radius - natSqDiff k.val radius)
 
-theorem discreteGaussianWeight_center (radius base : Nat) :
-    discreteGaussianWeight radius base ⟨radius, radius_lt_window radius⟩ = 1 := by
+theorem discreteGaussianWeight_center (radius : Nat) (q : QProb) :
+    discreteGaussianWeight radius q ⟨radius, radius_lt_window radius⟩ =
+      q.den ^ (radius * radius) := by
   simp [discreteGaussianWeight, natSqDiff]
 
-theorem discreteGaussianWeight_sum_pos (radius base : Nat) :
+theorem discreteGaussianWeight_sum_pos (radius : Nat) (q : QProb) :
     0 < natSum (2 * radius + 1)
-        (finWeight (discreteGaussianWeight radius base)) := by
+        (finWeight (discreteGaussianWeight radius q)) := by
   have hterm :
-      0 < finWeight (discreteGaussianWeight radius base) radius := by
+      0 < finWeight (discreteGaussianWeight radius q) radius := by
     have hlt : radius < 2 * radius + 1 := radius_lt_window radius
     simp [finWeight, hlt, discreteGaussianWeight_center]
+    exact Nat.pow_pos q.den_pos
   exact natSum_pos_of_term (radius_lt_window radius) hterm
 
-/-- Lattice Gaussian distro: `q^{k²}` on a finite centred window. -/
-def discreteGaussianDistro (radius base : Nat) :
+/-- Exact finite rational Gaussian.  The bound on `q` enforces a kernel
+that decreases away from the centre; zero and one retain their limiting
+point-mass and uniform interpretations. -/
+def discreteGaussianDistro (radius : Nat) (q : QProb)
+    (_bounded : QProb.LE q QProb.one) :
     Distro (Fin (2 * radius + 1)) where
   record :=
-    ofFinWeights (2 * radius + 1) (discreteGaussianWeight radius base)
-      (discreteGaussianWeight_sum_pos radius base)
+    ofFinWeights (2 * radius + 1) (discreteGaussianWeight radius q)
+      (discreteGaussianWeight_sum_pos radius q)
 
 /-- Lattice Gaussian as a Nat-valued distro, embedding by the window index. -/
-def discreteGaussianNatDistro (radius base : Nat) :
+def discreteGaussianNatDistro (radius : Nat) (q : QProb)
+    (bounded : QProb.LE q QProb.one) :
     NatDistro (Fin (2 * radius + 1)) :=
   ofFin (2 * radius)
-    (discreteGaussianDistro radius base).record
+    (discreteGaussianDistro radius q bounded).record
 
-theorem discreteGaussian_den (radius base : Nat) :
-    (discreteGaussianDistro radius base).record.den =
+theorem discreteGaussian_den (radius : Nat) (q : QProb)
+    (bounded : QProb.LE q QProb.one) :
+    (discreteGaussianDistro radius q bounded).record.den =
       natSum (2 * radius + 1)
-        (finWeight (discreteGaussianWeight radius base)) := by
+        (finWeight (discreteGaussianWeight radius q)) := by
   simp [discreteGaussianDistro, ofFinWeights, totalMass_finWeighted]
 
-theorem discreteGaussian_pmf (radius base : Nat)
+theorem discreteGaussian_pmf (radius : Nat) (q : QProb)
+    (bounded : QProb.LE q QProb.one)
     (k : Fin (2 * radius + 1)) :
     QProb.Equiv
-      ((discreteGaussianDistro radius base).pmf k)
-      ⟨discreteGaussianWeight radius base k,
-        (discreteGaussianDistro radius base).record.den,
-        (discreteGaussianDistro radius base).record.den_pos⟩ := by
+      ((discreteGaussianDistro radius q bounded).pmf k)
+      ⟨discreteGaussianWeight radius q k,
+        (discreteGaussianDistro radius q bounded).record.den,
+        (discreteGaussianDistro radius q bounded).record.den_pos⟩ := by
   simp [Distro.pmf, discreteGaussianDistro, ofFinWeights,
     FiniteProbRecord.probVal, QProb.Equiv, eventMass_finWeighted_singleton]
 
 /-- The lattice Gaussian is symmetric about `radius`, so its Nat-shifted
 mean is the window centre.  Variance of this embedding is the variance of
 the signed lattice coordinate. -/
-theorem discreteGaussian_mean (radius base : Nat) :
+theorem discreteGaussian_mean (radius : Nat) (q : QProb)
+    (bounded : QProb.LE q QProb.one) :
     QProb.Equiv
-      (mean (discreteGaussianNatDistro radius base))
+      (mean (discreteGaussianNatDistro radius q bounded))
       (QProb.ofNat radius) := by
-  have hden := discreteGaussian_den radius base
+  have hden := discreteGaussian_den radius q bounded
   have hsym :
       forall k, k ≤ 2 * radius →
-        (base : Nat) ^ natSqDiff (2 * radius - k) radius =
-          base ^ natSqDiff k radius := by
+        q.num ^ natSqDiff (2 * radius - k) radius *
+            q.den ^ (radius * radius - natSqDiff (2 * radius - k) radius) =
+          q.num ^ natSqDiff k radius *
+            q.den ^ (radius * radius - natSqDiff k radius) := by
     intro k hk
     rw [natSqDiff_reflect radius k hk]
   have hcenter :=
     natSum_symm_center radius
-      (fun k => base ^ natSqDiff k radius) hsym
+      (fun k => q.num ^ natSqDiff k radius *
+        q.den ^ (radius * radius - natSqDiff k radius)) hsym
   have hsum :
-      weightedSum (natAtoms (discreteGaussianNatDistro radius base)) =
+      weightedSum (natAtoms (discreteGaussianNatDistro radius q bounded)) =
         radius *
           natSum (2 * radius + 1)
-            (finWeight (discreteGaussianWeight radius base)) := by
+            (finWeight (discreteGaussianWeight radius q)) := by
     simp [natAtoms, discreteGaussianNatDistro, ofFin, discreteGaussianDistro,
       ofFinWeights]
     have hfin :=
       weightedSum_finWeighted (2 * radius + 1)
-        (discreteGaussianWeight radius base)
+        (discreteGaussianWeight radius q)
     rw [hfin]
     have hcongr :
         natSum (2 * radius + 1) (fun k =>
-            k * finWeight (discreteGaussianWeight radius base) k) =
+            k * finWeight (discreteGaussianWeight radius q) k) =
           natSum (2 * radius + 1) (fun k =>
-            k * base ^ natSqDiff k radius) := by
+            k * (q.num ^ natSqDiff k radius *
+              q.den ^ (radius * radius - natSqDiff k radius))) := by
       apply natSum_congr
       intro k hk
       simp [finWeight, discreteGaussianWeight, hk]
     have htotal :
         natSum (2 * radius + 1)
-            (finWeight (discreteGaussianWeight radius base)) =
+            (finWeight (discreteGaussianWeight radius q)) =
           natSum (2 * radius + 1) (fun k =>
-            base ^ natSqDiff k radius) := by
+            q.num ^ natSqDiff k radius *
+              q.den ^ (radius * radius - natSqDiff k radius)) := by
       apply natSum_congr
       intro k hk
       simp [finWeight, discreteGaussianWeight, hk]
@@ -166,7 +181,8 @@ theorem natSqDiff_cons_lt (df radius : Nat)
 
 /-- Independent product of `df` lattice Gaussians, mapped to the sum of
 squared centred coordinates.  The `df = 0` record is the unit urn on `{0}`. -/
-def chiSquaredRecord (df radius base : Nat) :
+def chiSquaredRecord (df radius : Nat) (q : QProb)
+    (bounded : QProb.LE q QProb.one) :
     FiniteProbRecord (Fin (df * radius * radius + 1)) :=
   match df with
   | 0 =>
@@ -175,21 +191,23 @@ def chiSquaredRecord (df radius base : Nat) :
         den_pos := Nat.succ_pos 0
         total_mass := rfl }
   | df + 1 =>
-      ((chiSquaredRecord df radius base).product
-          (discreteGaussianDistro radius base).record).map
+      ((chiSquaredRecord df radius q bounded).product
+          (discreteGaussianDistro radius q bounded).record).map
         fun pair =>
           ⟨pair.1.val + natSqDiff pair.2.val radius,
             natSqDiff_cons_lt df radius pair.1 pair.2⟩
 
 /-- Chi-squared counterpart: sum of squared centred coordinates of `df`
 independent lattice Gaussians. -/
-def chiSquaredDistro (df radius base : Nat) :
+def chiSquaredDistro (df radius : Nat) (q : QProb)
+    (bounded : QProb.LE q QProb.one) :
     NatDistro (Fin (df * radius * radius + 1)) :=
-  ofFin (df * radius * radius) (chiSquaredRecord df radius base)
+  ofFin (df * radius * radius) (chiSquaredRecord df radius q bounded)
 
-theorem chiSquaredRecord_den (df radius base : Nat) :
-    (chiSquaredRecord df radius base).den =
-      (discreteGaussianDistro radius base).record.den ^ df := by
+theorem chiSquaredRecord_den (df radius : Nat) (q : QProb)
+    (bounded : QProb.LE q QProb.one) :
+    (chiSquaredRecord df radius q bounded).den =
+      (discreteGaussianDistro radius q bounded).record.den ^ df := by
   induction df with
   | zero =>
       simp [chiSquaredRecord, Nat.pow_zero]
@@ -197,11 +215,12 @@ theorem chiSquaredRecord_den (df radius base : Nat) :
       simp [chiSquaredRecord, FiniteProbRecord.map, FiniteProbRecord.product, ih]
       exact (Nat.pow_succ _ _).symm
 
-theorem chiSquared_den (df radius base : Nat) :
-    (chiSquaredDistro df radius base).distro.record.den =
-      (discreteGaussianDistro radius base).record.den ^ df := by
+theorem chiSquared_den (df radius : Nat) (q : QProb)
+    (bounded : QProb.LE q QProb.one) :
+    (chiSquaredDistro df radius q bounded).distro.record.den =
+      (discreteGaussianDistro radius q bounded).record.den ^ df := by
   simpa [chiSquaredDistro, ofFin] using
-    chiSquaredRecord_den df radius base
+    chiSquaredRecord_den df radius q bounded
 
 /-- Beta-binomial / Pólya weights. -/
 def betaBinomialWeight (trials α β : Nat) (k : Fin (trials + 1)) : Nat :=

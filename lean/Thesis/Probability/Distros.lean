@@ -5,6 +5,7 @@ import Thesis.Probability.Distros.Binomial
 import Thesis.Probability.Distros.Multinomial
 import Thesis.Probability.Distros.Sampling
 import Thesis.Probability.Distros.LimitAnalogs
+import Thesis.Probability.Distros.Gaussian
 
 /-!
 Named finite distros.
@@ -39,11 +40,15 @@ Reading order:
    the marked-count PGF is the homogenised Vandermonde generating polynomial.
    Truncated geometric PGFs are recorded at whole-number arguments and at a
    general nonnegative rational;
-7. `LimitAnalogs` records the lattice Gaussian `base^(k²)` window, the
+7. `LimitAnalogs` records the lattice Gaussian with rational kernel
+   `q^(k²)` for `0 ≤ q ≤ 1`, the
    de Moivre binomial special case, χ² as a sum of `df` centred squares,
    and the Pólya / truncated-gamma counterparts.  The lattice Gaussian mean
    is the window centre by reflection symmetry.  The truncated negative
    binomial has PGFs as ratios of `nbSum` generating sums, at whole-number
    arguments and at a general nonnegative rational, and a right-censored
    sibling that lumps the negative-binomial tail onto the last cell.
+8. `Gaussian` verifies the cleared-denominator kernel, proves decreasing
+   weights with increasing squared distance, identifies the zero-base point
+   mass and the unit-base discrete uniform law, and retains the shifted mean.
 -/

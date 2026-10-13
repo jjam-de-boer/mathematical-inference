@@ -860,6 +860,16 @@ theorem natSqDiff_self (n : Nat) :
     natSqDiff n n = 0 := by
   simp [natSqDiff]
 
+theorem natSqDiff_eq_zero_iff (left right : Nat) :
+    natSqDiff left right = 0 ↔ left = right := by
+  unfold natSqDiff
+  by_cases hle : left ≤ right
+  · simp only [if_pos hle, Nat.mul_eq_zero, or_self, Nat.sub_eq_zero_iff_le]
+    exact ⟨fun h => Nat.le_antisymm hle h, fun h => h ▸ Nat.le_refl right⟩
+  · have hge : right ≤ left := Nat.le_of_not_le hle
+    simp only [if_neg hle, Nat.mul_eq_zero, or_self, Nat.sub_eq_zero_iff_le]
+    exact ⟨fun h => Nat.le_antisymm h hge, fun h => h ▸ Nat.le_refl right⟩
+
 theorem natSqDiff_comm (left right : Nat) :
     natSqDiff left right = natSqDiff right left := by
   simp [natSqDiff]
