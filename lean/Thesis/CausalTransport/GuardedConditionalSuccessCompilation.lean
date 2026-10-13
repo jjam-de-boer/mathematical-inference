@@ -144,7 +144,15 @@ noncomputable def identifyGuardedConditionalKernelFuelLocalCompilation_printedAv
             (query.exchangeCondition step.node step.selected)
             (by simpa only [identifyGuardedConditionalKernelFuel, found] using result)
           have constructed := localConditionalExchangeCompilation_printedAvailable query step nestedAvailable
-          simpa only [identifyGuardedConditionalKernelFuelLocalCompilation, found] using constructed
+          simp only [identifyGuardedConditionalKernelFuelLocalCompilation]
+          split
+          · rename_i actual selected
+            have same : actual = step := Option.some.inj (selected.symm.trans found)
+            subst actual
+            exact constructed
+          · rename_i absent
+            rw [found] at absent
+            cases absent
       | none =>
           cases joint : identifyGuardedJointKernel Γ query.jointNumerator with
           | identified numerator =>
@@ -152,7 +160,22 @@ noncomputable def identifyGuardedConditionalKernelFuelLocalCompilation_printedAv
               have jointAvailable : compiled.PrintedAvailable :=
                 identifyGuardedJointKernelLocalCompilation_printedAvailable checked query.jointNumerator joint
               have constructed := localConditionalBayesCompilation_printedAvailable query jointAvailable
-              simpa only [identifyGuardedConditionalKernelFuelLocalCompilation, found, joint] using constructed
+              simp only [identifyGuardedConditionalKernelFuelLocalCompilation]
+              split
+              · rename_i _step selected
+                rw [found] at selected
+                cases selected
+              · split
+                · rename_i actual selected
+                  have same : actual = numerator := IdentificationOutcome.identified.inj (selected.symm.trans joint)
+                  subst actual
+                  exact constructed
+                · rename_i _failure selected
+                  rw [joint] at selected
+                  cases selected
+                · rename_i unfinished
+                  rw [joint] at unfinished
+                  cases unfinished
           | failed _failure =>
               simp only [identifyGuardedConditionalKernelFuel, found, joint] at result
               cases result

@@ -18,6 +18,7 @@ import Thesis.Examples.GuardedConditionalCompilation
 import Thesis.Examples.GuardedHiddenDAGZeroBoundary
 import Thesis.Examples.ConditionalPromotionSupport
 import Thesis.Examples.ConditionalPromotionCompilation
+import Thesis.Examples.GuardedPrintedSoundness
 import Thesis.Examples.HiddenPathSearch
 import Thesis.Examples.HiddenDAGCollapse
 import Thesis.Examples.HiddenDAGSoundness

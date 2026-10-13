@@ -482,7 +482,9 @@ private noncomputable def emptyOutcomeLocalKernelCompilation_printedAvailable
 /-- Every successful actual recursive ID compilation preserves printed
 availability from its preceding input.  This is one induction over all
 fuel values and every computed graph branch, not a finite nesting catalogue.
-The returned compilation is the existing literal-output compiler itself. -/
+The returned compilation is the existing literal-output compiler itself.
+Dependent finite-list matches are eliminated directly in the goal; impossible
+branches use constructor disjointness, not classical empty-list equivalences. -/
 noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
     (fuel : Nat) {remaining externalAction : NodeSet T}
     (input : PublishedLocalKernelCompilation Γ checked remaining externalAction) (available : input.PrintedAvailable)
