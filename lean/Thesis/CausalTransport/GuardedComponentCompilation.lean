@@ -190,11 +190,8 @@ noncomputable def guardedComponentPrefix_supportedAt
     model reference
     (fun node selected sourcePositive => by
       let data := conditions node selected (.inl sourcePositive)
-      let componentSupported := Kernel.supportedAt_of_positive_unconditional_conditioner model (NodeSet.singleton node)
-        (componentExternalAction remaining externalAction component) (chainCondition component node) reference
-        (by simpa only [chainCondition_eq_prefix] using sourcePositive)
       exact input.componentFactor_supportedAt correct component closed componentSubset bidirectedClosed node selected
-        model reference componentSupported (data.host_supportedAt closed.action_disjoint (componentSubset node selected)))
+        model reference (data.host_supportedAt closed.action_disjoint (componentSubset node selected)))
     (fun node selected targetPositive =>
       ((conditions node selected (.inr targetPositive)).host_supportedAt closed.action_disjoint
         (componentSubset node selected)).endpoints.2)

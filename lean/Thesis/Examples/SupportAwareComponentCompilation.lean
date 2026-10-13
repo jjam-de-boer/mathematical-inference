@@ -73,7 +73,7 @@ noncomputable def supported : LocalDerivationSupport model supportedReference
     (derivation.compile graph.dSeparationCorrectness) :=
   input.componentFactor_supportedAt graph.dSeparationCorrectness component
     (ObservedGraph.KernelHostClosed.full graph) component_subset component_bidirected_closed
-    y y_inside model supportedReference component_supported secondFactor_supported
+    y y_inside model supportedReference secondFactor_supported
 
 /-- The existing full derivation-soundness theorem interprets the assembled
 tree in the actual compatible nonpositive SCM. -/

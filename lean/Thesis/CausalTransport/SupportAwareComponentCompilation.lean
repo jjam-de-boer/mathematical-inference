@@ -139,11 +139,37 @@ noncomputable def componentFactor_middle_supportedAt_of_host
   rw [chainCondition_outside_union_inside remaining component componentSubset node]
   exact hostSupported
 
+/-- All outside-component actions can be added without requesting a second
+support witness.  Earlier outside vertices are promoted from the supported
+host conditioner; later vertices cannot affect any earlier conditioned node.
+The resulting kernel is exactly the component factor's original source.
+
+This supplies both primitive graph-rule endpoints intrinsically.  It does
+not assume that the component's entire reduction is supported, nor does it
+apply a soundness equality to manufacture the component conditioner. -/
+noncomputable def componentFactor_source_supportedAt_of_host
+    (model : ExactModel S) (component : NodeSet S)
+    (componentSubset : NodeSet.Subset component remaining)
+    (node : Fin S.count) (nodeInside : component node = true)
+    (reference : S.Assignment)
+    (hostSupported : (ProbabilityTerm.kernel
+      ⟨NodeSet.singleton node, externalAction, chainCondition remaining node⟩).SupportedAt model reference) :
+    (ProbabilityTerm.kernel
+      ⟨NodeSet.singleton node, NodeSet.union externalAction (NodeSet.diff remaining component),
+        chainCondition component node⟩).SupportedAt model reference := by
+  let middle := componentFactor_middle_supportedAt_of_host model component componentSubset node reference hostSupported
+  let source := Kernel.supportedAt_addLaterActions model
+    (NodeSet.union externalAction (NodeSet.diff (chainCondition remaining node) component)) (NodeSet.singleton node)
+    (chainLaterOutside remaining component node) (chainCondition component node) reference node.val
+    (fun vertex selected => of_decide_eq_true (Bool.and_eq_true_iff.mp selected).2)
+    (fun _vertex selected => Nat.le_of_lt (chainLaterOutside_after remaining component node nodeInside selected)) middle
+  simpa only [chainOutside_eq_earlier_union_later remaining component node, NodeSet.union_assoc] using source
+
 /-- Construct every endpoint and subtree of the extracted factor at this
 reference.  The host tree contains its finite marginal subtrees and local
 quotient denominator proof already; only the two preceding graph-rule
-endpoints are added here.  The component source is supplied, while promotion
-constructs the exchange intermediate from the host tree's source.  Every
+endpoints are added here.  Promotion and later-intervention invariance
+construct both endpoints from the host tree's source.  Every
 supported value may have a zero numerator.  No denotational soundness is
 used to manufacture support or to transfer causal support between models. -/
 noncomputable def componentFactor_supportedAt
@@ -155,14 +181,13 @@ noncomputable def componentFactor_supportedAt
       remaining target = true → G.bidirected source target = true → component target = true)
     (node : Fin S.count) (nodeInside : component node = true)
     (model : ExactModel S) (reference : S.Assignment)
-    (componentSupported : (ProbabilityTerm.kernel
-      ⟨NodeSet.singleton node, NodeSet.union externalAction (NodeSet.diff remaining component),
-        chainCondition component node⟩).SupportedAt model reference)
     (hostSupport : LocalDerivationSupport model reference
       ((input.factorDerivation closed.action_disjoint node (componentSubset node nodeInside)).compile correct)) :
     LocalDerivationSupport model reference
       ((input.componentFactorDerivation component closed componentSubset bidirectedClosed node nodeInside).compile
         correct) := by
+  let componentSupported := componentFactor_source_supportedAt_of_host model component componentSubset node nodeInside
+    reference hostSupport.endpoints.1
   let middleSupported := componentFactor_middle_supportedAt_of_host model component componentSubset node reference
     hostSupport.endpoints.1
   let earlier := chainCondition component node

@@ -45,10 +45,9 @@ theorem evalNodeUnder_eq_of_agree_before (model : FiniteLatentSCM S)
   rw [evalNodeUnder, evalNodeUnder]
   unfold equationUnder
   rw [agree child before]
-  cases fixed : second child with
+  cases second child with
   | some _value => rfl
   | none =>
-      simp only [fixed]
       congr 1
       funext parent edge
       exact model.evalNodeUnder_eq_of_agree_before first second unit boundary agree parent
