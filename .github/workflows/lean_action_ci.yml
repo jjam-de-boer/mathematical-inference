@@ -132,6 +132,7 @@ jobs:
             Thesis.Probability.FiniteRecordAlmostSure
             Thesis.Causality.AlmostSureIntervention
             Thesis.CausalTransport.HiddenDAGAlmostSureIntervention
+            Thesis.CausalTransport.ObservationalFormulaSelection
             Thesis.CausalTransport.GuardedHiddenDAGBoundary
             Thesis.Examples.LocalSupportIdentification
             Thesis.Examples.Admissibility
