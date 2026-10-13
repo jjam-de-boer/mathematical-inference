@@ -82,6 +82,20 @@ theorem observationalActionAdmissibleOnParentSupport_iff_collapsed (model : Fini
     Thesis.Causality.ObservationalActionAdmissibleAt, Thesis.Causality.ObservationalCylinderPositiveAt,
     model.toLatentRootSCM_observationalDist]
 
+/-- Uniform supported-parent action overlap is an observable property of
+the native law.  Parent positivity transfers backwards before action-cell
+positivity transfers forwards; no causal support transfer is inferred. -/
+theorem ObservationalActionAdmissibleOnParentSupport.transfer
+    {left right : FiniteHiddenDAGSCM S P} (observational : left.ObservationalAgreement right)
+    {action : NodeSet S} {reference : S.Assignment}
+    (admissible : left.ObservationalActionAdmissibleOnParentSupport action reference) :
+    right.ObservationalActionAdmissibleOnParentSupport action reference := by
+  intro variant sameAction parentPositive
+  have leftParent : 0 < (left.observationalDist.probVal
+      (Kernel.agreesOn (S.actionParents action) variant)).num :=
+    (QProb.equiv_num_pos_iff (observational _)).mpr parentPositive
+  exact (QProb.equiv_num_pos_iff (observational _)).mp (admissible variant sameAction leftParent)
+
 /-- Actual intervention preservation keeps the original conditioner test.
 This is equality of the finite distributions, not a soundness inference. -/
 theorem conditioningAdmissibleAt_iff_collapsed (model : FiniteHiddenDAGSCM S P)
