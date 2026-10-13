@@ -162,6 +162,38 @@ theorem identifyGuardedConditionalKernel_identifiable_iff (rich : ObservedSignat
   · rintro ⟨term, result⟩
     exact (identifyGuardedConditionalKernel_admissibleCertificate query result).supported_identifiable
 
+/-- The new supported representation predicate has exactly the established
+graph-level joint identifiability content, not merely a smaller syntactic
+notion chosen to match one fixture.  The reverse direction constructs a
+representation valid also in every zero-containing record satisfying its
+used-conditional tests; it does not restrict those applications to positives. -/
+theorem identifiable_iff_positive (rich : ObservedSignature.ValueRich S) (query : JointKernelQuery S) :
+    jointIdentifiable P query ↔ (HiddenDAGModelClass.positive P).identifiable query := by
+  constructor
+  · exact jointIdentifiable_positive query
+  · intro identified
+    cases result : identifyGuardedJointKernel P.observedGraph query with
+    | identified term => exact (identifyGuardedJointKernel_admissibleCertificate query result).supported_identifiable
+    | failed failure =>
+        exact False.elim
+          ((identifyGuardedJointKernel_supported_failed_counterexample rich query result).not_identifiable identified)
+    | unfinished => exact False.elim (identifyGuardedJointKernel_ne_unfinished _ query result)
+
+/-- Conditional graph-level semantic identifiability likewise agrees with
+supported observational representation.  The zero-containing representation
+still retains the original native conditioner's positivity explicitly. -/
+theorem conditionalIdentifiable_iff_positive (rich : ObservedSignature.ValueRich S) (query : ConditionalKernelQuery S) :
+    conditionalIdentifiable P query ↔ (HiddenDAGModelClass.positive P).conditionalIdentifiable query := by
+  constructor
+  · exact conditionalIdentifiable_positive query
+  · intro identified
+    cases result : identifyGuardedConditionalKernel P.observedGraph query with
+    | identified term => exact (identifyGuardedConditionalKernel_admissibleCertificate query result).supported_identifiable
+    | failed failure =>
+        exact False.elim
+          ((identifyGuardedConditionalKernel_supported_failed_counterexample rich query result).not_identifiable identified)
+    | unfinished => exact False.elim (identifyGuardedConditionalKernel_ne_unfinished _ query result)
+
 end HiddenDAGSupportedDomain
 
 /-- Inhabited supported-zero completeness for all original finite hidden
