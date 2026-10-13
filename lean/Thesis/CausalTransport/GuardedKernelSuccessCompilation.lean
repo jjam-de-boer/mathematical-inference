@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.GuardedIdentificationKernel
 import Thesis.CausalTransport.LocalKernelQueryCompilation
+import Thesis.CausalTransport.LocalKernelQueryDataAvailability
 
 namespace Thesis
 namespace Causality
@@ -25,8 +26,9 @@ components; no strict-product regrouping at zero cells is used.
 
 This establishes a sufficient local-support boundary, not unconditional
 soundness of every successful formula at every zero-containing distribution.
-In particular the boundary still records the actual demanded conditional
-support, observable overlap, and positive displayed quotient denominators.
+In particular the boundary retains recursively demanded input data and
+positive displayed quotient denominators.  Separate factor-level causal
+support and factual-overlap fields have been removed by the completion layer.
 There is no global positivity premise or assumed semantic-equality leaf.
 `GuardedKernelSoundness` supplies interpretation separately, while
 `GuardedConditionalSuccessCompilation` integrates the local conditional
@@ -348,6 +350,88 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation
             nested.formula_eq⟩
 
 /-! ## Public joint compilation constructs its initial invariants -/
+
+section PrintedDataAvailability
+
+variable {T : ObservedSignature.{0}} {Γ : ObservedGraph T} {checked : DSeparationCorrectness Γ}
+
+/-- The actual split-branch compiler preserves availability from its computed
+children, including interleaved components.  This proof follows the same
+family reindexing and final marginal as `localKernelSplitCompilation`; it
+does not assume availability of a complete host reduction. -/
+noncomputable def localKernelSplitCompilation_printedAvailable
+    {remaining externalAction : NodeSet T} (closed : Γ.KernelHostClosed remaining externalAction)
+    (action outcome : NodeSet T) (actionSubset : NodeSet.Subset action remaining)
+    (outcomeSubset : NodeSet.Subset outcome remaining) (disjoint : NodeSet.Disjoint action outcome)
+    (formulas : NodeSet T → ProbabilityTerm T)
+    (nested : forall component, component ∈ Γ.cComponents (NodeSet.diff remaining action) →
+      PublishedLocalKernelCompilation Γ checked component (NodeSet.union externalAction (NodeSet.diff remaining component)))
+    (aligned : forall component listed, (nested component listed).reduction.formula = formulas component)
+    (available : forall component listed, (nested component listed).PrintedAvailable) :
+    (localKernelSplitCompilation closed action outcome actionSubset outcomeSubset disjoint formulas nested aligned)
+      .compilation.PrintedAvailable := by
+  let free := NodeSet.diff remaining action
+  let baseAction := NodeSet.union externalAction action
+  have discarded : NodeSet.diff remaining free = action := by
+    change NodeSet.diff remaining (NodeSet.diff remaining action) = action
+    rw [NodeSet.diff_diff, NodeSet.inter_eq_of_subset actionSubset]
+  have freeClosed : Γ.KernelHostClosed free baseAction := by
+    have restricted := closed.restrict free (NodeSet.diff_subset_left remaining action)
+    rw [discarded] at restricted
+    exact restricted
+  let family : PublishedLocalComponentFamily Γ checked free baseAction := {
+    formula := formulas
+    compilation := fun component listed => (nested component listed).reindex (formulas component)
+      (by
+        change ProbabilityTerm.kernel ⟨component,
+          NodeSet.union (NodeSet.union externalAction action)
+            (NodeSet.diff (NodeSet.diff remaining action) component), NodeSet.empty⟩ = _
+        rw [NodeSet.union_assoc, componentAction_from_free_eq remaining action component
+          actionSubset (cComponents_subset Γ free listed)])
+      (aligned component listed).symm
+    formula_eq := fun _component _listed => rfl
+  }
+  have childAvailable : forall component listed, (family.compilation component listed).PrintedAvailable := by
+    intro component listed
+    exact (available component listed).reindex (formulas component)
+      (by
+        change ProbabilityTerm.kernel ⟨component,
+          NodeSet.union (NodeSet.union externalAction action)
+            (NodeSet.diff (NodeSet.diff remaining action) component), NodeSet.empty⟩ = _
+        rw [NodeSet.union_assoc, componentAction_from_free_eq remaining action component
+          actionSubset (cComponents_subset Γ free listed)])
+      (aligned component listed).symm
+  exact (PublishedLocalKernelCompilation.PrintedAvailable.guardedReduction childAvailable freeClosed).marginal
+    outcome freeClosed.action_disjoint (outcome_subset_free outcomeSubset disjoint)
+
+/-- Empty-free-host compilation also preserves printed availability.  Its
+inherited full-input marginal, source reindexing and empty-outcome rule-3
+wrapper add no new printed condition or probability-support assumption. -/
+private noncomputable def emptyOutcomeLocalKernelCompilation_printedAvailable
+    {remaining externalAction : NodeSet T}
+    {input : PublishedLocalKernelCompilation Γ checked remaining externalAction}
+    (available : input.PrintedAvailable) (closed : Γ.KernelHostClosed remaining externalAction)
+    (action : NodeSet T) (actionSubset : NodeSet.Subset action remaining) :
+    (emptyOutcomeLocalKernelCompilation input closed action actionSubset).compilation.PrintedAvailable := by
+  let marginal := input.marginal NodeSet.empty closed.action_disjoint
+    (fun _node selected => by cases selected)
+  have removedEqual : NodeSet.diff remaining NodeSet.empty = remaining := by
+    funext node
+    exact Bool.and_true (remaining node)
+  let nested := marginal.reindex (.marginalize remaining input.reduction.formula) rfl
+    (by change ProbabilityTerm.marginalize remaining input.reduction.formula =
+          .marginalize (NodeSet.diff remaining NodeSet.empty) input.reduction.formula
+        rw [removedEqual])
+  have marginalAvailable : marginal.PrintedAvailable := available.marginal NodeSet.empty closed.action_disjoint
+    (fun _node selected => by cases selected)
+  have nestedAvailable : nested.PrintedAvailable := marginalAvailable.reindex
+    (.marginalize remaining input.reduction.formula) rfl
+    (by change ProbabilityTerm.marginalize remaining input.reduction.formula =
+          .marginalize (NodeSet.diff remaining NodeSet.empty) input.reduction.formula
+        rw [removedEqual])
+  exact fun model projected reference supported => nestedAvailable model projected reference supported
+
+end PrintedDataAvailability
 
 /-- Every identified public guarded joint query has a formula-aligned
 compilation with recursively composed local data.  The observational input

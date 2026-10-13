@@ -185,7 +185,7 @@ noncomputable def marginal
     {input : PublishedLocalKernelCompilation G correct remaining externalAction} (available : input.PrintedAvailable)
     (kept : NodeSet S) (outside : NodeSet.Disjoint externalAction remaining) (subset : NodeSet.Subset kept remaining) :
     (input.marginal kept outside subset).PrintedAvailable :=
-  fun model projected reference supported variant listed => available model projected variant
+  fun model projected _reference supported variant listed => available model projected variant
     (ProbabilityTerm.marginal_summand_supportedAt (NodeSet.diff remaining kept) input.reduction.formula variant listed supported)
 
 /-- The complete component constructor preserves printed availability.
