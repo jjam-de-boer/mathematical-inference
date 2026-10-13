@@ -473,6 +473,7 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
           (newAction := NodeSet.union externalAction action) marginal.reduction.formula
           (by rw [actionEmpty, NodeSet.union_empty_right]) rfl
         simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+          Bool.false_eq_true, dite_true, dite_false, NodeSet.isEmpty_empty,
           localAction, localOutcome, *] using constructed
       · rename_i notEmpty
         have actionNonempty : NodeSet.isEmpty action = false := by
@@ -491,6 +492,7 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
               subst outcome
               have constructed := emptyOutcomeLocalKernelCompilation_printedAvailable available closed action actionSubset
               simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+                Bool.false_eq_true, dite_true, dite_false, NodeSet.isEmpty_empty,
                 localAction, localOutcome, *] using constructed
             · rename_i component oneComponent
               have componentEqual := cComponents_eq_of_singleton Γ (NodeSet.diff remaining action) oneComponent
@@ -522,6 +524,7 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
                     (newAction := NodeSet.union externalAction action) marginal.reduction.formula
                     (by simp only [componentExternalAction, discardedEqual]) rfl
                   simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+                    Bool.false_eq_true, dite_true, dite_false, NodeSet.isEmpty_empty,
                     localAction, localOutcome, *] using constructed
                 · rename_i notListed
                   have absentComponent : (Γ.cComponents remaining).any (fun piece => NodeSet.equal piece component) = false := by
@@ -549,6 +552,7 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
                     have constructed := localKernelRestrictionCompilation_printedAvailable remaining larger externalAction
                       action outcome actionSubset discarded nestedAvailable
                     simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+                      Bool.false_eq_true, dite_true, dite_false, NodeSet.isEmpty_empty,
                       localAction, localOutcome, *] using constructed
                   · cases result
             · let run := fun component => identifyGuardedKernelFuel fuel Γ remaining component
@@ -569,6 +573,7 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
                 disjoint formulas (fun component listed => (nested component listed).compilation)
                 (fun component listed => (nested component listed).formula_eq) childrenAvailable
               simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+                Bool.false_eq_true, dite_true, dite_false, NodeSet.isEmpty_empty,
                 localAction, localOutcome, *] using constructed
           · rename_i notNoAdditional
             have hasAdditional : NodeSet.isEmpty (identificationAdditionalAction Γ remaining outcome action) = false := by
@@ -596,6 +601,7 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
             have constructed := transportedAvailable.reindex (newRemaining := outcome)
               (newAction := NodeSet.union externalAction action) _ (by rw [localAction, localOutcome]) rfl
             simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+              Bool.false_eq_true, dite_true, dite_false, NodeSet.isEmpty_empty,
               localAction, localOutcome, *] using constructed
         · rename_i notSameHost
           have smallerHost : NodeSet.equal (Γ.ancestralSet remaining (GraphMutilation.none T) outcome) remaining = false := by
@@ -618,6 +624,7 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
           have constructed := localKernelPruneCompilation_printedAvailable closed action outcome actionSubset outcomeSubset
             disjoint nestedAvailable
           simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+            Bool.false_eq_true, dite_true, dite_false, NodeSet.isEmpty_empty,
             localAction, localOutcome, *] using constructed
 
 end PrintedDataAvailability
@@ -635,6 +642,39 @@ noncomputable def identifyGuardedJointKernelLocalCompilation
     (fun _node _selected => rfl) (fun _node _selected => rfl) query.action_outcome_disjoint result
   exact ⟨compiled.compilation.reindex compiled.compilation.reduction.formula
     (by rw [NodeSet.union_empty_left]) rfl, compiled.formula_eq⟩
+
+section PublicPrintedAvailability
+
+variable {T : ObservedSignature.{0}} {Γ : ObservedGraph T}
+
+/-- A defined literal public ID expression supplies all of its compiled
+primitive data in every model with the stated projected graph.  Observation
+initializes availability with unit data; the uniform fuel theorem propagates
+it through the actual successful run.  Both public endpoint reindexings are
+retained.  No observational positivity or assumed complete support tree is
+introduced, and this theorem does not assert that every action-admissible
+reference already makes the returned expression defined. -/
+noncomputable def identifyGuardedJointKernelLocalCompilation_printedAvailable
+    (checked : DSeparationCorrectness Γ) (query : JointKernelQuery T) {term : ProbabilityTerm T}
+    (result : identifyGuardedJointKernel Γ query = .identified term) :
+    (identifyGuardedJointKernelLocalCompilation checked query result).aligned.PrintedAvailable := by
+  let input := PublishedLocalKernelCompilation.observational Γ checked
+  let compiled := identifyGuardedKernelFuelLocalCompilation (kernelIdentificationFuel T)
+    input (ObservedGraph.KernelHostClosed.full Γ) query.action query.outcome
+    (fun _node _selected => rfl) (fun _node _selected => rfl) query.action_outcome_disjoint result
+  have recursiveAvailable : compiled.compilation.PrintedAvailable :=
+    identifyGuardedKernelFuelLocalCompilation_printedAvailable _ input
+      (PublishedLocalKernelCompilation.PrintedAvailable.observational Γ checked)
+      (ObservedGraph.KernelHostClosed.full Γ) query.action query.outcome
+      (fun _node _selected => rfl) (fun _node _selected => rfl) query.action_outcome_disjoint result
+  have publicAvailable : (identifyGuardedJointKernelLocalCompilation checked query result).compilation.PrintedAvailable := by
+    change (compiled.compilation.reindex compiled.compilation.reduction.formula
+      (by rw [NodeSet.union_empty_left]) rfl).PrintedAvailable
+    exact recursiveAvailable.reindex _ (by rw [NodeSet.union_empty_left]) rfl
+  exact publicAvailable.reindex term rfl
+    (identifyGuardedJointKernelLocalCompilation checked query result).formula_eq.symm
+
+end PublicPrintedAvailability
 
 end Causality
 end Thesis
