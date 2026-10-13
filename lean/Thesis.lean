@@ -7,6 +7,7 @@ import Thesis.Examples.IdentificationAPIIsolation
 import Thesis.Examples.SupportAwareSemantics
 import Thesis.Examples.SupportAwareChain
 import Thesis.Examples.LocalSupportIdentification
+import Thesis.Examples.Admissibility
 import Thesis.Examples.SupportAwareKernelCompilation
 import Thesis.Examples.SupportAwareComponentCompilation
 import Thesis.Examples.GuardedComponentCompilation

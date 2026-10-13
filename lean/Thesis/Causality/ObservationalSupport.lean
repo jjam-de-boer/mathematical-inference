@@ -32,6 +32,31 @@ def ObservationalCylinderPositiveAt (model : FiniteLatentSCM S)
     (nodes : NodeSet S) (reference : S.Assignment) : Prop :=
   0 < (model.observationalDist.probVal (Kernel.agreesOn nodes reference)).num
 
+/-- A positive cylinder remains positive after forgetting selected coordinates.
+This is an event-inclusion statement on the same finite observed record, not
+an assumption of positivity at every full assignment.  In particular a
+positive action-and-parent cylinder supplies its parent conditioner even
+when some outcome cells inside that cylinder have mass zero. -/
+theorem ObservationalCylinderPositiveAt.of_subset
+    {model : FiniteLatentSCM S} {smaller larger : NodeSet S}
+    {reference : S.Assignment} (subset : NodeSet.Subset smaller larger)
+    (positive : ObservationalCylinderPositiveAt model larger reference) :
+    ObservationalCylinderPositiveAt model smaller reference := by
+  have included : forall sample, Kernel.agreesOn larger reference sample = true →
+      Kernel.agreesOn smaller reference sample = true := by
+    intro sample selected
+    apply (finAll_eq_true_iff _).mpr
+    intro node
+    cases kept : smaller node with
+    | false => simp only [kept, Bool.false_eq_true, if_false]
+    | true =>
+        have present := subset node kept
+        have agrees := (finAll_eq_true_iff _).mp selected node
+        simpa only [kept, present, if_true] using agrees
+  exact Nat.lt_of_lt_of_le positive
+    (FiniteProbRecord.eventMass_mono model.observationalDist.atoms
+      (Kernel.agreesOn larger reference) (Kernel.agreesOn smaller reference) included)
+
 /-- Observational agreement preserves the local support condition.  The
 finite rational numerator test is invariant under probability equivalence. -/
 theorem ObservationalCylinderPositiveAt.transfer

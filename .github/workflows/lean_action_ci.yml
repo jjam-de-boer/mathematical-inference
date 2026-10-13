@@ -73,6 +73,7 @@ jobs:
             Thesis.Probability.FiniteProductAllocation
             Thesis.Causality.ObservationalSupport
             Thesis.Causality.ConditionalSupport
+            Thesis.Causality.Admissibility
             Thesis.Causality.SupportAwareKernelAlgebra
             Thesis.Causality.PositiveDerivationSupport
             Thesis.Causality.HiddenPathSearch
@@ -115,6 +116,7 @@ jobs:
             Thesis.CausalTransport.GuardedConditionalSoundness
             Thesis.CausalTransport.GuardedHiddenDAGBoundary
             Thesis.Examples.LocalSupportIdentification
+            Thesis.Examples.Admissibility
             Thesis.Examples.SupportAwareKernelCompilation
             Thesis.Examples.SupportAwareComponentCompilation
             Thesis.Examples.GuardedComponentCompilation
