@@ -234,10 +234,10 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation
     (outcomeSubset : NodeSet.Subset outcome remaining) (disjoint : NodeSet.Disjoint action outcome)
     {term : ProbabilityTerm S}
     (result : identifyGuardedKernelFuel fuel G remaining outcome action input.reduction.formula = .identified term) :
-    PublishedLocalKernelSuccess G correct outcome (NodeSet.union externalAction action) term := by
-  induction fuel generalizing remaining externalAction action outcome term with
-  | zero => cases result
-  | succ fuel inductionHypothesis =>
+    PublishedLocalKernelSuccess G correct outcome (NodeSet.union externalAction action) term :=
+  match fuel with
+  | 0 => by cases result
+  | fuel + 1 => by
       have localAction := intersectHost_eq actionSubset
       have localOutcome := intersectHost_eq outcomeSubset
       simp only [identifyGuardedKernelFuel, localAction, localOutcome] at result
@@ -291,7 +291,7 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation
                     have specification := containingCComponent_spec G remaining component containing
                     let componentInput := input.ofComponent closed specification.1
                     let componentClosed := closed.restrict larger (cComponents_subset G remaining specification.1)
-                    let nested := inductionHypothesis componentInput componentClosed
+                    let nested := identifyGuardedKernelFuelLocalCompilation fuel componentInput componentClosed
                       (NodeSet.inter action larger) outcome (NodeSet.inter_subset_right _ _)
                       (outcomeInComponent.trans specification.2)
                       (NodeSet.Disjoint.of_subset_left disjoint (NodeSet.inter_subset_left _ _)) result
@@ -308,7 +308,7 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation
               -- Formulas are read from computed outcomes; only their success
               -- equations are obtained from the successful collector in Prop.
               let nested := fun component (listed : component ∈ G.cComponents (NodeSet.diff remaining action)) =>
-                inductionHypothesis input closed (NodeSet.diff remaining component) component
+                identifyGuardedKernelFuelLocalCompilation fuel input closed (NodeSet.diff remaining component) component
                   (NodeSet.diff_subset_left _ _)
                   ((cComponents_subset G _ listed).trans (NodeSet.diff_subset_left _ _))
                   (NodeSet.disjoint_diff_right _ _)
@@ -326,7 +326,7 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation
             have additionalDisjoint := identificationAdditionalAction_disjoint_outcome G remaining outcome action
             have additionalOutcome : NodeSet.Disjoint additional outcome := by
               simpa only [localOutcome] using additionalDisjoint
-            let nested := inductionHypothesis input closed (NodeSet.union action additional) outcome
+            let nested := identifyGuardedKernelFuelLocalCompilation fuel input closed (NodeSet.union action additional) outcome
               (NodeSet.union_subset actionSubset additionalSubset) outcomeSubset
               (NodeSet.disjoint_union_left_of disjoint additionalOutcome) result
             let transported := localKernelAdditionalActionCompilation closed action outcome
@@ -343,11 +343,13 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation
               (outcomeSubset node selected) selected
           let nestedInput := input.marginal kept closed.action_disjoint
             (ancestralSet_subset G remaining (GraphMutilation.none S) outcome)
-          let nested := inductionHypothesis nestedInput (closed.ancestral outcome)
+          let nested := identifyGuardedKernelFuelLocalCompilation fuel nestedInput (closed.ancestral outcome)
             (NodeSet.inter action kept) outcome (NodeSet.inter_subset_right _ _) outcomeInKept
             (NodeSet.Disjoint.of_subset_left disjoint (NodeSet.inter_subset_left _ _)) result
           exact ⟨localKernelPruneCompilation closed action outcome actionSubset outcomeSubset disjoint nested.compilation,
             nested.formula_eq⟩
+
+termination_by fuel
 
 /-! ## Public joint compilation constructs its initial invariants -/
 
