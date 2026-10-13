@@ -121,15 +121,16 @@ private theorem conditional_source_admissible : model.ConditioningAdmissibleAt
 /-- Read a displayed supported-zero result directly into its primitive
 used-conditional tests.  The `some` branch retains its own rational value;
 no witness is selected from propositional existence. -/
-private theorem usedConditionalsOfNumeratorZero (term : ProbabilityTerm signature)
-    (zero : (model.termDenote term reference).map (fun value => value.num) = some 0) :
-    model.UsedConditionalsAdmissibleAt term reference := by
-  cases result : model.termDenote term reference with
+private theorem usedConditionalsOfNumeratorZero (nativeModel : FiniteHiddenDAGSCM signature projection)
+    (term : ProbabilityTerm signature)
+    (zero : (nativeModel.termDenote term reference).map (fun value => value.num) = some 0) :
+    nativeModel.UsedConditionalsAdmissibleAt term reference := by
+  cases result : nativeModel.termDenote term reference with
   | none =>
       rw [result] at zero
       cases zero
   | some value =>
-      apply (model.usedConditionalsAdmissibleAt_iff_supported term reference).mpr
+      apply (nativeModel.usedConditionalsAdmissibleAt_iff_supported term reference).mpr
       exact ⟨value, by rw [result]; exact .value (QProb.equiv_refl value)⟩
 
 /-- Apply the new completeness output's own support constructor in a
@@ -138,7 +139,7 @@ noncomputable def recursive_joint_native_sound : model.TermEquivalentAt
     GuardedKernelZeroRegression.query.sourceTerm recursiveJointCertificate.formula reference := by
   apply recursiveJointCertificate.soundAt model reference recursive_action_admissible
   rw [recursive_joint_formula]
-  exact usedConditionalsOfNumeratorZero _ GuardedKernelZeroRegression.guarded_value_is_supported_zero
+  exact usedConditionalsOfNumeratorZero model _ GuardedKernelZeroRegression.guarded_value_is_supported_zero
 
 /-- The new conditional field likewise constructs the full native tree for
 the actual Bayes expression from its primitive source and printed tests. -/
@@ -146,12 +147,57 @@ noncomputable def conditional_native_sound : model.TermEquivalentAt
     GuardedConditionalZeroRegression.query.sourceTerm conditionalCertificate.formula reference := by
   apply conditionalCertificate.soundAt model reference conditional_action_admissible conditional_source_admissible
   rw [conditional_formula]
-  exact usedConditionalsOfNumeratorZero _ GuardedConditionalZeroRegression.formula_supported_zero
+  exact usedConditionalsOfNumeratorZero model _ GuardedConditionalZeroRegression.formula_supported_zero
 
 theorem model_is_not_globally_positive : ¬ model.ObservationallyPositive :=
   GuardedConditionalZeroRegression.model_not_observationally_positive
 
 end SuccessfulQueries
+
+section NullActionGenerality
+
+open GuardedKernelZeroRegression (signature projection reference)
+open NullActionPromotionSupport (model query formula identified)
+
+/-- The same inhabited completeness package covers the actual successful
+conditional promotion at a null factual action.  Its intrinsic application
+domain is broader than the separate action restriction in the papers. -/
+noncomputable def promotionCertificate := published.conditional_complete query
+  (identifyGuardedConditionalKernel_admissibleCertificate query identified).supported_identifiable
+
+theorem promotion_certificate_formula : promotionCertificate.formula = formula :=
+  IdentificationOutcome.identified.inj (promotionCertificate.result.symm.trans identified)
+
+/-- Only actual causal source positivity and the printed primitive demand
+tests are supplied.  Factual action overlap is unavailable here and is not
+smuggled into a compiler-data or support-tree argument. -/
+theorem promotion_reference_is_intrinsically_admissible :
+    HiddenDAGSupportedDomain.ConditionalAdmissibleAt model query promotionCertificate.formula reference := by
+  constructor
+  · exact (model.conditioningAdmissibleAt_iff_supported query.operationKernel reference).mpr
+      ⟨NullActionPromotionSupport.original_supported⟩
+  · rw [promotion_certificate_formula]
+    exact usedConditionalsOfNumeratorZero model _ NullActionPromotionSupport.formula_supported_zero
+
+theorem promotion_factual_action_is_null :
+    (model.observationalDist.probVal (Kernel.agreesOn query.action reference)).num = 0 :=
+  NullActionPromotionSupport.observational_action_is_null
+
+/-- This application really exceeds the published factual-action boundary,
+not just a differently named positive-model wrapper. -/
+theorem promotion_reference_outside_published_domain : ¬
+    (HiddenDAGAdmissibleDomain.ConditionalAdmissibleAt model query reference ∧
+      model.UsedConditionalsAdmissibleAt promotionCertificate.formula reference) :=
+  fun application => GuardedAdmissibleCertificateRegression.null_factual_action_not_admissible application.1.1
+
+/-- The new completeness output's own native support constructor interprets
+its exact promoted formula despite the null observed action. -/
+noncomputable def promotion_intrinsic_native_sound : model.TermEquivalentAt
+    query.sourceTerm promotionCertificate.formula reference :=
+  promotionCertificate.intrinsic_soundAt model reference
+    promotion_reference_is_intrinsically_admissible.1 promotion_reference_is_intrinsically_admissible.2
+
+end NullActionGenerality
 
 section FailedQueries
 
