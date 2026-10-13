@@ -26,9 +26,11 @@ For two observationally equal models, data is requested in both models.
 The factor leaves now use projected-graph accuracy, the actual positive
 displayed denominator and preceding input data, not an extra causal
 conditional or factual-overlap field.  Their guards still mention both
-causal and displayed prefixes, so leaf observability alone does not prove
-transfer of the entire recursively indexed boundary.  No unproved automatic
-transfer is asserted.  These are support-qualified forward
+causal and displayed prefixes, so leaf observability alone is not used to
+infer transfer of the entire recursively indexed boundary.  The separate
+uniform availability induction and `GuardedPrintedSoundness` construct data
+from defined printed expressions and transfer that observable support.
+These raw local-data adapters remain support-qualified forward
 identification theorems, not zero-unrestricted ID success equivalences.
 -/
 
@@ -102,9 +104,9 @@ noncomputable def identifyGuardedJointKernel_hiddenDAG_soundAt
     model reference data
 
 /-- Compare the actual native source values through the identical compiled
-action-free expression.  Both local-data arguments remain explicit: the
-causal/displayed prefix demand sets still need their general transfer proof,
-even though the quotient leaves no longer ask for extra causal support. -/
+action-free expression at this raw local-data boundary.  Both data arguments
+remain explicit here.  `GuardedPrintedSoundness` provides the stronger public
+adapter that constructs them from transferred printed support instead. -/
 noncomputable def identifyGuardedJointKernel_hiddenDAG_identifiableAt
     (query : JointKernelQuery S) {term : ProbabilityTerm S}
     (result : identifyGuardedJointKernel P.observedGraph query = .identified term)

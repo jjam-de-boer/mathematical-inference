@@ -29,8 +29,9 @@ All formula alignments and marginal enumerations are the actual constructor
 ones.  There is no global positivity or arbitrary value at a null quotient.
 The availability invariant is not asserted for arbitrary user-defined
 compilations: its hypotheses must be established for each preceding input.
-The separate engine proof still has to propagate it through every actual
-fuel branch and initial query wrapper, before final completeness is assembled.
+`GuardedKernelSuccessCompilation` propagates it through every actual fuel
+branch and initial query wrapper.  Final completeness still needs the
+independent published admissibility-to-printed-definition argument.
 -/
 
 /-- Every defined printed value supplies this compilation's actual local

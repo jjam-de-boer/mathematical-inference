@@ -336,7 +336,16 @@ applies these constructors to every successful fuel-bounded call, and
 `GuardedConditionalSoundness` interprets the exact conditional formula in
 root and native hidden-DAG semantics. Its nonpositive native Bayes regression
 supplies the actual compiled data and applies the generic soundness theorem
-to a supported-zero conditional. `ConditionalSupport` preserves actual
+to a supported-zero conditional. `LocalKernelDataAvailability` and
+`LocalConditionalDataAvailability` supply constructive printed-support
+invariants; the joint and conditional success compilers propagate them
+through all actual fuel branches. `GuardedPrintedSoundness` then interprets
+defined literal program outputs without caller-populated recursive data,
+both in projected models and original hidden DAGs. Its native two-model
+adapters transfer printed support observationally, while conditional source
+common support remains explicit. This does not yet establish definition
+from the independently stated published admissibility domain.
+`ConditionalSupport` preserves actual
 conditional support through arbitrary block promotion by unit-level SCM
 composition and event-mass monotonicity, without observable overlap. The
 native rule-2 adapter thus constructs its promoted endpoint from only the

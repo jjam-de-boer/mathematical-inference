@@ -27,8 +27,9 @@ promoted source from the original supported source.  The printed expression
 is unchanged.  Neither factual action overlap nor an assumed observational
 transfer of causal support is used.
 
-These are constructor preservation results.  The separate guarded IDC fuel
-proof must compose them through its actual search.  They do not declare the
+These are constructor preservation results.  The guarded IDC fuel proof in
+`GuardedConditionalSuccessCompilation` composes them through its actual
+search.  They do not declare the
 compiler's `Data` to be the published admissible domain, or assert that action
 admissibility alone already defines every returned expression.
 -/

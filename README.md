@@ -254,7 +254,8 @@ take a compiler tree or global positivity as a premise. What remains is the
 uniform recursive construction of the local data from the published
 admissible observational domain, including the causal/printed prefix bridge,
 followed by the final support-qualified joint/conditional completeness
-certificates. No whole-program data-inhabitation theorem is asserted yet.
+certificates. The uniform printed-support availability results below close
+the recursive-data boundary, but do not replace that admissibility argument.
 
 The causal/printed prefix bridge is now proved generically in
 `GuardedPrintedSupportCompletion`. Its induction constructs the preceding
@@ -269,11 +270,30 @@ all preserve this constructive `PrintedAvailable` invariant.
 `LocalKernelQueryDataAvailability` preserves the same invariant through
 action deletion/addition, uncut ancestral pruning, incoming-cut action
 augmentation and containing-component restriction. The actual split and
-empty-host branch compilers also preserve it. What remains is to compose
-these constructor theorems in one proof for every actual fuel-bounded ID
-success, extend that availability proof through IDC promotion/Bayes, and
-assemble the final admissible-reference completeness packages. The generic
-compiler's data is not itself declared to be the published admissible domain.
+empty-host branch compilers also preserve it. The uniform
+`identifyGuardedKernelFuelLocalCompilation_printedAvailable` now composes
+these results for every actual fuel-bounded ID success, and the public joint
+wrapper retains the literal returned formula. `LocalConditionalDataAvailability`
+and `identifyGuardedConditionalKernelFuelLocalCompilation_printedAvailable`
+extend the invariant through every actual IDC promotion and terminal Bayes
+branch, retaining the original conditioner's support explicitly.
+
+`GuardedPrintedSoundness` interprets those complete constructions in projected
+root models and in all original finite hidden DAGs. Its public
+`*_soundAt_of_printed_support` adapters require defined printed expressions,
+plus original source support for conditional queries, not caller-populated
+recursive data. Its native two-model adapters transfer printed support by
+action-free observational invariance; original conditional common support
+remains explicit. Regressions apply these adapters to the actual recursive
+joint, zero-numerator Bayes and null-factual-action promotion programs, and
+reject the genuinely undefined null-action formula.
+
+What remains is to specify the paper's admissible-reference domain independently
+and prove its restrictions on every used action/conditional ensure definition
+of the returned expression, then assemble the joint/conditional completeness
+packages on that domain. Defined printed support is not silently inferred
+from a lone action-positivity test, and neither the compiler's `Data` nor its
+complete support tree is declared to be the published admissibility premise.
 
 Continuous probability, general measure theory, and a complete formalisation
 of every philosophical or sociological claim are outside this project's scope.

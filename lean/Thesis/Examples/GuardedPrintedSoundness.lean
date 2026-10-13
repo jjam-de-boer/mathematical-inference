@@ -87,7 +87,7 @@ theorem null_action_has_no_printed_support : ¬ Nonempty
         GuardedZeroClassBoundary.reference with
     | none => rfl
     | some _value => simp only [result, Option.isNone_some, Bool.false_eq_true] at undefined
-  have impossible := supported.2
+  rcases supported with ⟨value, impossible⟩
   rw [missing] at impossible
   cases impossible
 
