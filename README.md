@@ -256,5 +256,24 @@ admissible observational domain, including the causal/printed prefix bridge,
 followed by the final support-qualified joint/conditional completeness
 certificates. No whole-program data-inhabitation theorem is asserted yet.
 
+The causal/printed prefix bridge is now proved generically in
+`GuardedPrintedSupportCompletion`. Its induction constructs the preceding
+prefix tree before interpreting it, so a causal positive-prefix request can
+use printed-only factor conditions without assuming soundness of the next
+factor. `LocalKernelDataAvailability` uses that bridge and the evaluation
+inverses to construct component and family data from a defined printed
+expression and availability of the preceding inputs. Observation, literal
+reindexing, strict marginalization, component extraction and family assembly
+all preserve this constructive `PrintedAvailable` invariant.
+
+`LocalKernelQueryDataAvailability` preserves the same invariant through
+action deletion/addition, uncut ancestral pruning, incoming-cut action
+augmentation and containing-component restriction. The actual split and
+empty-host branch compilers also preserve it. What remains is to compose
+these constructor theorems in one proof for every actual fuel-bounded ID
+success, extend that availability proof through IDC promotion/Bayes, and
+assemble the final admissible-reference completeness packages. The generic
+compiler's data is not itself declared to be the published admissible domain.
+
 Continuous probability, general measure theory, and a complete formalisation
 of every philosophical or sociological claim are outside this project's scope.
