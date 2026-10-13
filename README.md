@@ -390,5 +390,46 @@ or that graph failure excludes every distribution-specific identification.
 Those stronger data-dependent coverage problems require a separate result;
 they are not silently asserted by the supported completeness package.
 
+A bounded extension now supports alternative formulas without changing the
+core ID/IDC correspondence. `ObservationalFormulaSelection` evaluates
+action-free terms directly from a finite observational record and searches a
+supplied finite catalogue of `GuardedObservationalFormula` certificates.
+Each certificate has a proved native interpretation and an explicit
+observable guard; it is not constrained to equal ID's literal output.
+Existing joint/conditional engine certificates embed unchanged as candidates.
+Selection is sound on genuine source support, returns a catalogue member,
+preserves an already available first candidate, and succeeds whenever any
+listed candidate is available. Accepted candidates agree, and availability
+transfers between observationally equivalent native models. Empty selection
+means only that this finite catalogue has no available formula; it is never
+reported as graph-level or distribution-specific non-identifiability.
+
+`BackdoorAdjustment` constructs independent zero-aware adjustment candidates
+from actual rule-3 and rule-2 graph witnesses. Their native support is proved
+from the selected formula's own conditional demands, with no external
+adjustment theorem or global positivity premise. `AlternativeFormulaSelection`
+checks a strict support gain: in the Boolean graph `C -> X`, `Z -> X`,
+`C -> Y`, `X -> Y`, independent fair `C,Z` give `X = C xor Z`,
+`Y = X xor C`. The literal guarded-ID formula and adjustment using `C,Z`
+are unavailable, while adjustment using only `C` is supported and computes
+the actual intervention probability one half. The finite selector reaches
+that alternative. A separate overlap model exercises agreement of both
+adjustments. Completeness is relative to the supplied catalogue, not to all
+possible formulas or all adjustment sets.
+
+`FiniteRecordAlmostSure`, `Causality.AlmostSureIntervention`, and
+`HiddenDAGAlmostSureIntervention` also prove a genuine distribution-specific
+boundary: setting action variables to values already factual with probability
+one preserves the entire observed law. The exact population probability-one
+guard is observable and transfers between native models; it does not infer
+population zeros from absent sample cells. Zero-weight exceptions are retained
+and may change under intervention. Native regressions apply the guarded
+candidate despite unchanged joint/conditional graph failure, check a changed
+zero-weight unit, and reject the opposite action even though its observational
+formula is defined. These results identify the specified already-factual
+action only, not another treatment value or a treatment contrast. They add no
+unqualified do-calculus rule, maximal-domain theorem, or complete procedure
+for identification at a fixed observed distribution.
+
 Continuous probability, general measure theory, and a complete formalisation
 of every philosophical or sociological claim are outside this project's scope.

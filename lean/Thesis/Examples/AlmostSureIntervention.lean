@@ -56,6 +56,16 @@ theorem zero_unit_factually_opposite :
     model.evalObserved (HardIntervention.empty signature) zeroUnit x = false := by
   decide +kernel
 
+/-- The retained exceptional unit genuinely has zero prior weight.  Its
+finite assignment equality is supplied explicitly, not made decidable by
+classical function equality or choice. -/
+private instance noiseAssignmentDecidableEq : DecidableEq model.NoiseAssignment :=
+  FiniteProduct.assignmentDecidableEq 5 (fun _ => Bool) (fun _ => inferInstance)
+
+theorem zero_unit_prior_mass :
+    (model.prior.probVal (FiniteProbRecord.singletonEvent zeroUnit)).num = 0 := by
+  decide +kernel
+
 /-- The population theorem must not demand agreement at every noise label:
 at this zero-weight unit forcing `X` really does change `Y`. -/
 theorem zero_unit_outcome_changes :
@@ -124,6 +134,37 @@ theorem opposite_action_rejected : jointCandidate.available model.observationalD
 theorem opposite_observational_formula_defined :
     (jointCandidate.formula.observationalDenote model.observationalDist opposite).isSome = true := by
   decide +kernel
+
+/-- Removing the guard would be wrong, not merely an unsupported API use:
+at the opposite action the causal queried cell is zero and its observational
+counterpart is one.  Both are genuinely defined values. -/
+noncomputable def opposite_causal_zero : ProbabilityResult.Equivalent
+    (model.termDenote HiddenDAGCompleteness.failedJointQuery.sourceTerm opposite) (some QProb.zero) := by
+  have checked : (model.termDenote HiddenDAGCompleteness.failedJointQuery.sourceTerm opposite).any
+      (fun value => decide (QProb.Equiv value QProb.zero)) = true := by decide +kernel
+  cases result : model.termDenote HiddenDAGCompleteness.failedJointQuery.sourceTerm opposite with
+  | none => simp only [result, Option.any_none, Bool.false_eq_true] at checked
+  | some value =>
+      exact .value (of_decide_eq_true (by simpa only [result, Option.any_some] using checked))
+
+noncomputable def opposite_observational_one : ProbabilityResult.Equivalent
+    (model.termDenote jointCandidate.formula opposite) (some QProb.one) := by
+  have checked : (model.termDenote jointCandidate.formula opposite).any
+      (fun value => decide (QProb.Equiv value QProb.one)) = true := by decide +kernel
+  cases result : model.termDenote jointCandidate.formula opposite with
+  | none => simp only [result, Option.any_none, Bool.false_eq_true] at checked
+  | some value =>
+      exact .value (of_decide_eq_true (by simpa only [result, Option.any_some] using checked))
+
+theorem opposite_formula_is_not_sound_without_guard : ¬ Nonempty
+    (model.TermEquivalentAt HiddenDAGCompleteness.failedJointQuery.sourceTerm jointCandidate.formula opposite) := by
+  rintro ⟨purported⟩
+  have impossible := ProbabilityResult.trans (ProbabilityResult.symm opposite_causal_zero)
+    (ProbabilityResult.trans purported opposite_observational_one)
+  cases impossible with
+  | value fractions =>
+      change 0 = 1 at fractions
+      cases fractions
 
 theorem opposite_selection_empty : GuardedObservationalFormula.select model.observationalDist opposite
     [jointCandidate] = none := by

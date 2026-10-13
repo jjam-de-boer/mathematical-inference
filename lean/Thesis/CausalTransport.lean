@@ -388,6 +388,19 @@ promotion regression applies the actual completeness output in that broader
 domain. No maximal coverage across alternative formulas or distribution-
 specific completeness at a fixed observed law is inferred from these
 query-level results; the raw primitive-domain reverse implication is refuted.
+`ObservationalFormulaSelection` adds a separate finite catalogue of
+formula-independent guarded certificates. Its evaluator uses only the
+observational record; selection is sound, catalogue-relative complete and
+preserves an accepted first candidate. `BackdoorAdjustment` supplies genuine
+alternatives by interpreted rule-3/rule-2 witnesses and zero-aware finite
+chain assembly. Its strict-gain regression falls back from unavailable ID
+and larger adjustment expressions to a supported smaller adjustment.
+`HiddenDAGAlmostSureIntervention` supplies a different, law-specific candidate:
+an action already factual with probability one preserves the whole law.
+Its observable guard is essential, not an extra unqualified do-rule. Native
+regressions retain zero-weight exceptions, unchanged graph failures and
+rejection of the opposite action. No universal maximality or full fixed-law
+completeness is inferred from this finite-catalogue extension.
 `ConditionalSupport` preserves actual
 conditional support through arbitrary block promotion by unit-level SCM
 composition and event-mass monotonicity, without observable overlap. The
