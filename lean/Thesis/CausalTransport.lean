@@ -48,6 +48,8 @@ import Thesis.CausalTransport.HiddenDAGAdmissibility
 import Thesis.CausalTransport.GuardedAdmissibleCertificates
 import Thesis.CausalTransport.HiddenDAGAdmissibleDomain
 import Thesis.CausalTransport.HiddenDAGAdmissibleCompleteness
+import Thesis.CausalTransport.HiddenDAGSupportedDomain
+import Thesis.CausalTransport.HiddenDAGSupportedCorrespondence
 import Thesis.CausalTransport.GuardedHiddenDAGBoundary
 import Thesis.CausalTransport.KernelIdentification
 import Thesis.CausalTransport.KernelCompilation
