@@ -38,7 +38,7 @@ The witness is obtained by inspecting partial results, without choosing a
 value from propositional existence. -/
 noncomputable def divide_numerator_supportedAt
     {model : ExactModel S} {reference : S.Assignment} {numerator denominator : ProbabilityTerm S}
-    (supported : (.divide numerator denominator).SupportedAt model reference) :
+    (supported : (ProbabilityTerm.divide numerator denominator).SupportedAt model reference) :
     numerator.SupportedAt model reference :=
   ProbabilityResult.supported_numerator_of_divide supported
 
@@ -47,7 +47,7 @@ positive value.  A supported zero numerator is permitted, whereas `0/0`
 does not supply this witness. -/
 noncomputable def divide_denominator_positiveAt
     {model : ExactModel S} {reference : S.Assignment} {numerator denominator : ProbabilityTerm S}
-    (supported : (.divide numerator denominator).SupportedAt model reference) :
+    (supported : (ProbabilityTerm.divide numerator denominator).SupportedAt model reference) :
     ProbabilityResult.PositiveSupportedValue (denominator.denote model reference) :=
   ProbabilityResult.positiveDenominatorOfSupportedDivide supported
 
@@ -57,7 +57,7 @@ constructive; equality of arbitrary functions is not assumed. -/
 noncomputable def marginal_summand_supportedAt
     {model : ExactModel S} {reference : S.Assignment} (nodes : NodeSet S) (term : ProbabilityTerm S)
     (variant : S.Assignment) (listed : variant ∈ marginalAssignments S nodes reference)
-    (supported : (.marginalize nodes term).SupportedAt model reference) : term.SupportedAt model variant := by
+    (supported : (ProbabilityTerm.marginalize nodes term).SupportedAt model reference) : term.SupportedAt model variant := by
   letI : DecidableEq S.Assignment :=
     FiniteProduct.assignmentDecidableEq S.count S.Value S.valueDecidableEq
   exact ProbabilityResult.supported_map_of_mem_sum (marginalAssignments S nodes reference)
