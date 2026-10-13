@@ -117,5 +117,64 @@ theorem identifyGuardedConditionalKernelFuelLocalCompilation_bayes_data
       rw [joint] at unfinished
       cases unfinished
 
+section PrintedDataAvailability
+
+variable {T : ObservedSignature.{0}} {Γ : ObservedGraph T}
+
+/-- Compose conditional availability through every actual fuel-bounded IDC
+run.  A promotion carries the unchanged printed target and intrinsically
+propagates the original conditioner support.  Terminal Bayes reads its
+primitive data from the one actual joint numerator and its displayed
+denominator.  The result constructs the existing compiler's `Data`; neither
+a whole recursive support tree nor global positivity is an input. -/
+noncomputable def identifyGuardedConditionalKernelFuelLocalCompilation_printedAvailable
+    (checked : DSeparationCorrectness Γ) (fuel : Nat) (query : ConditionalKernelQuery T)
+    {term : ProbabilityTerm T}
+    (result : identifyGuardedConditionalKernelFuel fuel Γ query = .identified term) :
+    (identifyGuardedConditionalKernelFuelLocalCompilation checked fuel query result).compilation.PrintedAvailable := by
+  induction fuel generalizing query term with
+  | zero => cases result
+  | succ fuel inductionHypothesis =>
+      cases found : conditionalExchangeStep? Γ query with
+      | some step =>
+          let nested := identifyGuardedConditionalKernelFuelLocalCompilation checked fuel
+            (query.exchangeCondition step.node step.selected)
+            (by simpa only [identifyGuardedConditionalKernelFuel, found] using result)
+          have nestedAvailable : nested.compilation.PrintedAvailable := inductionHypothesis
+            (query.exchangeCondition step.node step.selected)
+            (by simpa only [identifyGuardedConditionalKernelFuel, found] using result)
+          have constructed := localConditionalExchangeCompilation_printedAvailable query step nestedAvailable
+          simpa only [identifyGuardedConditionalKernelFuelLocalCompilation, found] using constructed
+      | none =>
+          cases joint : identifyGuardedJointKernel Γ query.jointNumerator with
+          | identified numerator =>
+              let compiled := (identifyGuardedJointKernelLocalCompilation checked query.jointNumerator joint).aligned
+              have jointAvailable : compiled.PrintedAvailable :=
+                identifyGuardedJointKernelLocalCompilation_printedAvailable checked query.jointNumerator joint
+              have constructed := localConditionalBayesCompilation_printedAvailable query jointAvailable
+              simpa only [identifyGuardedConditionalKernelFuelLocalCompilation, found, joint] using constructed
+          | failed _failure =>
+              simp only [identifyGuardedConditionalKernelFuel, found, joint] at result
+              cases result
+          | unfinished =>
+              simp only [identifyGuardedConditionalKernelFuel, found, joint] at result
+              cases result
+
+/-- Defined original and literal returned conditional endpoints supply all
+primitive data for public guarded IDC.  The automatic fuel bound and literal
+formula alignment are the existing public compiler's ones.  In particular,
+the original conditioner is not inferred from printed-expression support,
+and action admissibility is not silently equated with this availability
+invariant. -/
+noncomputable def identifyGuardedConditionalKernelLocalCompilation_printedAvailable
+    (checked : DSeparationCorrectness Γ) (query : ConditionalKernelQuery T) {term : ProbabilityTerm T}
+    (result : identifyGuardedConditionalKernel Γ query = .identified term) :
+    (identifyGuardedConditionalKernelLocalCompilation checked query result).aligned.PrintedAvailable := by
+  have available : (identifyGuardedConditionalKernelLocalCompilation checked query result).compilation.PrintedAvailable :=
+    identifyGuardedConditionalKernelFuelLocalCompilation_printedAvailable checked _ query result
+  exact available.reindex term (identifyGuardedConditionalKernelLocalCompilation checked query result).formula_eq.symm
+
+end PrintedDataAvailability
+
 end Causality
 end Thesis
