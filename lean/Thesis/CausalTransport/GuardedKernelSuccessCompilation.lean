@@ -527,8 +527,16 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
               cases result
               subst outcome
               have constructed := emptyOutcomeLocalKernelCompilation_printedAvailable available closed action actionSubset
-              simpa only [identifyGuardedKernelFuelLocalCompilation, notEmpty, sameHost, noAdditional,
-                noComponents, dif_pos, dif_neg, Bool.false_eq_true, dite_true, dite_false] using constructed
+              simp only [identifyGuardedKernelFuelLocalCompilation, notEmpty, sameHost, noAdditional,
+                dif_pos, dif_neg, Bool.false_eq_true, dite_true, dite_false]
+              split
+              · exact constructed
+              · rename_i _actual selected
+                rw [noComponents] at selected
+                cases selected
+              · rename_i _first _second _rest selected
+                rw [noComponents] at selected
+                cases selected
             · rename_i component oneComponent
               have componentEqual := cComponents_eq_of_singleton Γ (NodeSet.diff remaining action) oneComponent
               have outcomeInComponent : NodeSet.Subset outcome component := by
@@ -558,9 +566,20 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
                   have constructed := marginalAvailable.reindex (newRemaining := outcome)
                     (newAction := NodeSet.union externalAction action) marginal.reduction.formula
                     (by simp only [componentExternalAction, discardedEqual]) rfl
-                  simpa only [identifyGuardedKernelFuelLocalCompilation, notEmpty, sameHost, noAdditional,
-                    oneComponent, notSingle, componentListed, dif_pos, dif_neg, Bool.false_eq_true,
-                    dite_true, dite_false] using constructed
+                  simp only [identifyGuardedKernelFuelLocalCompilation, notEmpty, sameHost, noAdditional,
+                    dif_pos, dif_neg, Bool.false_eq_true, dite_true, dite_false]
+                  split
+                  · rename_i selected
+                    rw [oneComponent] at selected
+                    cases selected
+                  · rename_i actual selected
+                    have same : actual = component := (List.cons.inj (selected.symm.trans oneComponent)).1
+                    subst actual
+                    simpa only [notSingle, componentListed, dif_pos, dif_neg,
+                      Bool.false_eq_true, dite_true, dite_false] using constructed
+                  · rename_i _first _second _rest selected
+                    rw [oneComponent] at selected
+                    cases selected
                 · rename_i notListed
                   have absentComponent : (Γ.cComponents remaining).any (fun piece => NodeSet.equal piece component) = false := by
                     cases value : (Γ.cComponents remaining).any (fun piece => NodeSet.equal piece component) with
@@ -586,9 +605,28 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
                       simpa only [localAction] using obtained
                     have constructed := localKernelRestrictionCompilation_printedAvailable remaining larger externalAction
                       action outcome actionSubset discarded nestedAvailable
-                    simpa only [identifyGuardedKernelFuelLocalCompilation, notEmpty, sameHost, noAdditional,
-                      oneComponent, notSingle, notListed, containing, dif_pos, dif_neg, Bool.false_eq_true,
-                      dite_true, dite_false] using constructed
+                    simp only [identifyGuardedKernelFuelLocalCompilation, notEmpty, sameHost, noAdditional,
+                      dif_pos, dif_neg, Bool.false_eq_true, dite_true, dite_false]
+                    split
+                    · rename_i selected
+                      rw [oneComponent] at selected
+                      cases selected
+                    · rename_i actual selected
+                      have same : actual = component := (List.cons.inj (selected.symm.trans oneComponent)).1
+                      subst actual
+                      simp only [notSingle, notListed, dif_pos, dif_neg,
+                        Bool.false_eq_true, dite_true, dite_false]
+                      split
+                      · rename_i actualLarger selectedLarger
+                        have sameLarger : actualLarger = larger := Option.some.inj (selectedLarger.symm.trans containing)
+                        subst actualLarger
+                        exact constructed
+                      · rename_i absent
+                        rw [containing] at absent
+                        cases absent
+                    · rename_i _first _second _rest selected
+                      rw [oneComponent] at selected
+                      cases selected
                   · cases result
             · rename_i first second rest manyComponents
               let run := fun component => identifyGuardedKernelFuel fuel Γ remaining component
@@ -608,8 +646,16 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
               have constructed := localKernelSplitCompilation_printedAvailable closed action outcome actionSubset outcomeSubset
                 disjoint formulas (fun component listed => (nested component listed).compilation)
                 (fun component listed => (nested component listed).formula_eq) childrenAvailable
-              simpa only [identifyGuardedKernelFuelLocalCompilation, notEmpty, sameHost, noAdditional,
-                manyComponents, dif_pos, dif_neg, Bool.false_eq_true, dite_true, dite_false] using constructed
+              simp only [identifyGuardedKernelFuelLocalCompilation, notEmpty, sameHost, noAdditional,
+                dif_pos, dif_neg, Bool.false_eq_true, dite_true, dite_false]
+              split
+              · rename_i selected
+                rw [manyComponents] at selected
+                cases selected
+              · rename_i _actual selected
+                rw [manyComponents] at selected
+                cases selected
+              · exact constructed
           · rename_i notNoAdditional
             have hasAdditional : NodeSet.isEmpty (identificationAdditionalAction Γ remaining outcome action) = false := by
               cases value : NodeSet.isEmpty (identificationAdditionalAction Γ remaining outcome action) with
