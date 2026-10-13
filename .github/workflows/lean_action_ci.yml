@@ -74,6 +74,7 @@ jobs:
             Thesis.Causality.ObservationalSupport
             Thesis.Causality.ConditionalSupport
             Thesis.Causality.Admissibility
+            Thesis.Causality.UsedConditionalAdmissibility
             Thesis.Causality.SupportAwareKernelAlgebra
             Thesis.Causality.PositiveDerivationSupport
             Thesis.Causality.HiddenPathSearch
