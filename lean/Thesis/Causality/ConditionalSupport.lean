@@ -48,6 +48,7 @@ theorem evalNodeUnder_eq_of_agree_before (model : FiniteLatentSCM S)
   cases second child with
   | some _value => rfl
   | none =>
+      dsimp only
       congr 1
       funext parent edge
       exact model.evalNodeUnder_eq_of_agree_before first second unit boundary agree parent
