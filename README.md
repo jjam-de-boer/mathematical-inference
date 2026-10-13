@@ -150,8 +150,8 @@ folds request quotient data only on positive prefix branches.
 in compatible root models, and `identifyGuardedJointKernel_hiddenDAG_soundAt`
 reads it in every original finite hidden-DAG model at the stated boundary.
 The native two-model identification adapter requests data in both models:
-the boundary includes causal-conditional support, so complete data transfer
-is not inferred from observational agreement alone.
+the dual causal/displayed prefix demand sets still require a general
+recursive transfer proof; observable quotient leaves alone do not supply it.
 `identifyGuardedConditionalKernel` retains the established finite rule-2
 search, uses guarded joint ID at termination, and keeps the exact Bayes
 numerator and its marginal denominator. Its decisions and failure witnesses
@@ -232,6 +232,29 @@ are still explicit. General admissibility-to-data propagation and the final
 zero-containing joint/conditional completeness certificates remain open;
 neither the positive package nor the previously scoped implementation audit
 is relabelled as that broader result.
+
+The recursive factor boundaries have now been weakened further.
+`CurrentKernelSupportCompletion.marginal_source_positiveAt` interprets an
+already completed inner marginal and transports its displayed positive value
+to the actual causal predecessor. `CurrentKernelFactorInputs.host_supportedAt`
+then builds the new host factor without factual overlap. Component-family
+assembly uses the corresponding `CurrentKernelFamilyFactorInputs`: its causal
+branch constructs host support from the actual positive prefix, while its
+printed branch builds only the printed quotient. The actual guarded ID/IDC
+local-data algebra now requests projected-graph accuracy, the recursive
+finite input data and a positive displayed denominator; separate factor-level
+factual-overlap and causal-component-support fields are no longer required.
+The older raw sufficient-overlap constructors remain available separately.
+
+`GuardedEvaluationSupport` reads support of the actual printed expression
+back into its earlier printed prefixes, the factors demanded by positive
+printed weights, each defined quotient's positive denominator and every
+listed summand of a defined marginal. These general inversion lemmas do not
+take a compiler tree or global positivity as a premise. What remains is the
+uniform recursive construction of the local data from the published
+admissible observational domain, including the causal/printed prefix bridge,
+followed by the final support-qualified joint/conditional completeness
+certificates. No whole-program data-inhabitation theorem is asserted yet.
 
 Continuous probability, general measure theory, and a complete formalisation
 of every philosophical or sociological claim are outside this project's scope.

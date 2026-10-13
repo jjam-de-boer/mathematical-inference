@@ -102,8 +102,9 @@ noncomputable def identifyGuardedJointKernel_hiddenDAG_soundAt
     model reference data
 
 /-- Compare the actual native source values through the identical compiled
-action-free expression.  Both local-data arguments are explicit because
-observational agreement alone need not transfer causal-support fields. -/
+action-free expression.  Both local-data arguments remain explicit: the
+causal/displayed prefix demand sets still need their general transfer proof,
+even though the quotient leaves no longer ask for extra causal support. -/
 noncomputable def identifyGuardedJointKernel_hiddenDAG_identifiableAt
     (query : JointKernelQuery S) {term : ProbabilityTerm S}
     (result : identifyGuardedJointKernel P.observedGraph query = .identified term)
