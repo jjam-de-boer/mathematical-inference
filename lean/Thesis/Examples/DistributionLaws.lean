@@ -55,4 +55,59 @@ example : QProb.Equiv (mean (chiSquaredDistro 0 2 ⟨1, 2, by decide⟩ (by simp
 example : QProb.Equiv (mean (chiSquaredDistro 1 1 ⟨1, 2, by decide⟩ (by simp [QProb.LE, QProb.one])))
     ⟨1, 2, by decide⟩ := by decide
 
+/-- Fair Bernoulli waiting time conditioned on success by the third trial. -/
+example : QProb.Equiv ((geometricDistro 2 1 1 (by decide)).pmf ⟨0, by decide⟩)
+    ⟨4, 7, by decide⟩ := by decide
+
+example : QProb.Equiv ((geometricDistro 2 1 1 (by decide)).pmf ⟨2, by decide⟩)
+    ⟨1, 7, by decide⟩ := by decide
+
+/-- The same fair waiting time censored at two failures retains its tail. -/
+example : QProb.Equiv ((geometricCensoredDistro 2 1 1 (by decide)).pmf ⟨0, by decide⟩)
+    ⟨1, 2, by decide⟩ := by decide
+
+example : QProb.Equiv ((geometricCensoredDistro 2 1 1 (by decide)).pmf ⟨2, by decide⟩)
+    ⟨1, 4, by decide⟩ := by decide
+
+/-- Scaling both trial weights preserves the Bernoulli parameter. -/
+example : QProb.Equiv ((geometricDistro 2 2 2 (by decide)).pmf ⟨0, by decide⟩)
+    ⟨4, 7, by decide⟩ := by decide
+
+example : QProb.Equiv ((geometricCensoredDistro 2 2 2 (by decide)).pmf ⟨2, by decide⟩)
+    ⟨1, 4, by decide⟩ := by decide
+
+example : QProb.Equiv ((geometricCensoredDistro 0 1 1 (by decide)).pmf ⟨0, by decide⟩)
+    QProb.one := by decide
+
+example : QProb.Equiv ((geometricDistro 3 2 0 (by decide)).pmf ⟨0, by decide⟩)
+    QProb.one := by decide
+
+/-- Two successes: the censored occupancy denominator is four fair trials. -/
+example : QProb.Equiv
+    ((negativeBinomialDistro 2 2 1 1 (by decide) (by decide)).pmf ⟨0, by decide⟩)
+    ⟨4, 11, by decide⟩ := by decide
+
+example : QProb.Equiv
+    ((negativeBinomialCensoredDistro 2 2 1 1 (by decide) (by decide)).pmf ⟨2, by decide⟩)
+    ⟨1, 2, by decide⟩ := by decide
+
+example : QProb.Equiv
+    ((negativeBinomialCensoredDistro 2 2 2 2 (by decide) (by decide)).pmf ⟨2, by decide⟩)
+    ⟨1, 2, by decide⟩ := by decide
+
+example : QProb.Equiv
+    ((negativeBinomialCensoredDistro 2 0 1 1 (by decide) (by decide)).pmf ⟨0, by decide⟩)
+    QProb.one := by decide
+
+/-- A rational PGF argument must keep the original trial total fixed. -/
+example : QProb.Equiv (pgf (geometricNatDistro 2 1 1 (by decide)) ⟨1, 2, by decide⟩)
+    ⟨3, 4, by decide⟩ := by decide
+
+example : QProb.Equiv (pgf (geometricCensoredNatDistro 2 1 1 (by decide)) ⟨1, 2, by decide⟩)
+    ⟨11, 16, by decide⟩ := by decide
+
+example : QProb.Equiv
+    (pgf (negativeBinomialCensoredNatDistro 2 2 1 1 (by decide) (by decide)) ⟨1, 2, by decide⟩)
+    ⟨1, 2, by decide⟩ := by decide
+
 end Thesis.Examples.DistributionLaws

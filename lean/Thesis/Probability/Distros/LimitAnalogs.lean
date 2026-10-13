@@ -25,13 +25,12 @@ presented as a `Distro` or `NatDistro`.
 * `negativeBinomialDistro` is a truncated negative binomial, the finite
   counterpart of a gamma-Poisson mixture.  The `0 < successes` hypothesis
   is used as the `r - 1` shift in the Pascal-triangle term.  Its
-  whole-number PGF is the ratio of `nbSum` generating sums after
-  substituting `falseWeight * s`.  The same closed form holds at a general
-  nonnegative rational after homogenising `nbSum` against `s.den`.  The
-  right-censored sibling keeps ordinary occupancy weights on
-  `{0, …, cap - 1}` and lumps the tail
-  `falseWeight^{cap+1} ∑_{s < r} C(cap + s, s) trueWeight^s` onto the last
-  cell.
+  weights pad each stopped path to `cap + successes` Bernoulli trials by
+  `trueWeight + falseWeight`.  Its PGF is the ratio of `nbSumHomog`
+  generating sums, with that Bernoulli total retained at general rational
+  arguments.  The right-censored sibling also clears the denominator of
+  every tail path before placing it on the last cell.  Both versions have
+  whole-number PGFs as specializations of their general rational formulas.
 -/
 
 open Combinatorics
@@ -269,308 +268,155 @@ theorem betaBinomial_pmf (trials α β : Nat)
   simp [Distro.pmf, betaBinomialDistro, ofFinWeights, FiniteProbRecord.probVal,
     QProb.Equiv, eventMass_finWeighted_singleton]
 
-/-- Truncated negative-binomial weights: failures before `successes`
-true outcomes, restricted to `{0, ..., cap}`. -/
+/-- Failures before `successes` Bernoulli successes, cleared to the
+common trial denominator `(trueWeight + falseWeight)^(cap + successes)`. -/
 def negativeBinomialWeight (successes cap trueWeight falseWeight : Nat)
     (k : Fin (cap + 1)) : Nat :=
   binom (k.val + successes - 1) k.val *
-    trueWeight ^ successes * falseWeight ^ k.val
+    trueWeight ^ successes * falseWeight ^ k.val *
+      (trueWeight + falseWeight) ^ (cap - k.val)
 
-/-- The truncated negative-binomial normaliser is a success-power times
-the generating sum `nbSum`.  The `0 < successes` hypothesis is the
-`r - 1` shift that matches the Pascal triangle to `nbSum`. -/
 theorem negativeBinomialWeight_sum
-    (successes cap trueWeight falseWeight : Nat)
-    (hsuccesses : 0 < successes) :
+    (successes cap trueWeight falseWeight : Nat) :
     natSum (cap + 1)
-        (finWeight (negativeBinomialWeight successes cap
-          trueWeight falseWeight)) =
+        (finWeight (negativeBinomialWeight successes cap trueWeight falseWeight)) =
       trueWeight ^ successes *
-        nbSum successes falseWeight (cap + 1) := by
-  have hpred :=
-    nbSum_pred successes falseWeight (cap + 1) hsuccesses
+        nbSumHomog successes falseWeight (trueWeight + falseWeight) cap := by
   have hcongr :
       natSum (cap + 1)
-          (finWeight (negativeBinomialWeight successes cap
-            trueWeight falseWeight)) =
+          (finWeight (negativeBinomialWeight successes cap trueWeight falseWeight)) =
         natSum (cap + 1) (fun k =>
           trueWeight ^ successes *
-            (binom (k + (successes - 1)) k * falseWeight ^ k)) := by
+            (binom (k + successes - 1) k * falseWeight ^ k *
+              (trueWeight + falseWeight) ^ (cap - k))) := by
     apply natSum_congr
     intro k hk
-    have hshift : k + successes - 1 = k + (successes - 1) :=
-      Nat.add_sub_assoc (Nat.succ_le_of_lt hsuccesses) k
-    simp [finWeight, negativeBinomialWeight, hk, hshift]
+    simp [finWeight, negativeBinomialWeight, hk]
     ac_rfl
-  rw [hcongr, natSum_mul_left, ← hpred]
+  rw [hcongr, natSum_mul_left]
+  rfl
 
-/-- Truncated negative binomial, the finite gamma-Poisson counterpart. -/
+/-- The waiting time conditioned on reaching the required successes before
+the failure count exceeds the finite cap. -/
 def negativeBinomialDistro (successes cap trueWeight falseWeight : Nat)
-    (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
+    (_hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
     Distro (Fin (cap + 1)) where
   record :=
     have hpos : 0 < natSum (cap + 1)
-        (finWeight (negativeBinomialWeight successes cap
-          trueWeight falseWeight)) := by
-      rw [negativeBinomialWeight_sum successes cap trueWeight falseWeight
-        hsuccesses]
+        (finWeight (negativeBinomialWeight successes cap trueWeight falseWeight)) := by
+      rw [negativeBinomialWeight_sum]
       exact Nat.mul_pos (Nat.pow_pos htrue)
-        (nbSum_pos successes falseWeight (cap + 1) hsuccesses
-          (Nat.succ_pos cap))
+        (nbSumHomog_pos _ _ _ _ (Nat.add_pos_left htrue _))
     ofFinWeights (cap + 1)
       (negativeBinomialWeight successes cap trueWeight falseWeight) hpos
 
 def negativeBinomialNatDistro (successes cap trueWeight falseWeight : Nat)
     (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
     NatDistro (Fin (cap + 1)) :=
-  ofFin cap (negativeBinomialDistro successes cap trueWeight falseWeight
-    hsuccesses htrue).record
+  ofFin cap (negativeBinomialDistro successes cap trueWeight falseWeight hsuccesses htrue).record
 
 theorem negativeBinomial_pmf (successes cap trueWeight falseWeight : Nat)
-    (hsuccesses : 0 < successes) (htrue : 0 < trueWeight)
-    (k : Fin (cap + 1)) :
+    (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) (k : Fin (cap + 1)) :
     QProb.Equiv
-      ((negativeBinomialDistro successes cap trueWeight falseWeight
-        hsuccesses htrue).pmf k)
+      ((negativeBinomialDistro successes cap trueWeight falseWeight hsuccesses htrue).pmf k)
       ⟨negativeBinomialWeight successes cap trueWeight falseWeight k,
-        (negativeBinomialDistro successes cap trueWeight falseWeight
-          hsuccesses htrue).record.den,
-        (negativeBinomialDistro successes cap trueWeight falseWeight
-          hsuccesses htrue).record.den_pos⟩ := by
+        (negativeBinomialDistro successes cap trueWeight falseWeight hsuccesses htrue).record.den,
+        (negativeBinomialDistro successes cap trueWeight falseWeight hsuccesses htrue).record.den_pos⟩ := by
   simp [Distro.pmf, negativeBinomialDistro, ofFinWeights,
     FiniteProbRecord.probVal, QProb.Equiv, eventMass_finWeighted_singleton]
 
-/-- The constructor denominator is the same `nbSum` normaliser. -/
-theorem negativeBinomial_den
-    (successes cap trueWeight falseWeight : Nat)
+theorem negativeBinomial_den (successes cap trueWeight falseWeight : Nat)
     (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
-    (negativeBinomialDistro successes cap trueWeight falseWeight
-        hsuccesses htrue).record.den =
+    (negativeBinomialDistro successes cap trueWeight falseWeight hsuccesses htrue).record.den =
       trueWeight ^ successes *
-        nbSum successes falseWeight (cap + 1) := by
-  simp [negativeBinomialDistro, ofFinWeights, totalMass_finWeighted]
-  exact negativeBinomialWeight_sum successes cap trueWeight falseWeight
-    hsuccesses
+        nbSumHomog successes falseWeight (trueWeight + falseWeight) cap := by
+  simp [negativeBinomialDistro, ofFinWeights, totalMass_finWeighted, negativeBinomialWeight_sum]
 
-/-- Scaling the truncated negative-binomial weight by `s^k` substitutes
-`falseWeight * s` for the failure weight. -/
 theorem negativeBinomialWeight_scale_pow
-    (successes cap trueWeight falseWeight s : Nat)
-    (k : Fin (cap + 1)) :
+    (successes cap trueWeight falseWeight s : Nat) (k : Fin (cap + 1)) :
     negativeBinomialWeight successes cap trueWeight falseWeight k * s ^ k.val =
-      negativeBinomialWeight successes cap trueWeight (falseWeight * s) k := by
+      binom (k.val + successes - 1) k.val * trueWeight ^ successes *
+        (falseWeight * s) ^ k.val *
+          (trueWeight + falseWeight) ^ (cap - k.val) := by
   simp [negativeBinomialWeight, Nat.mul_pow]
   ac_rfl
 
-/-- The truncated negative-binomial PGF, evaluated at a whole number `s`,
-is the ratio of `nbSum` generating sums after substituting
-`falseWeight * s`. -/
-theorem negativeBinomial_pgf_ofNat
-    (successes cap trueWeight falseWeight s : Nat)
-    (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
-    QProb.Equiv
-      (pgf (negativeBinomialNatDistro successes cap trueWeight falseWeight
-          hsuccesses htrue)
-        (QProb.ofNat s))
-      ⟨trueWeight ^ successes *
-          nbSum successes (falseWeight * s) (cap + 1),
-        trueWeight ^ successes *
-          nbSum successes falseWeight (cap + 1),
-        Nat.mul_pos (Nat.pow_pos htrue)
-          (nbSum_pos successes falseWeight (cap + 1) hsuccesses
-            (Nat.succ_pos cap))⟩ := by
-  have hatoms :
-      (negativeBinomialNatDistro successes cap trueWeight falseWeight
-          hsuccesses htrue).distro.record.atoms =
-        finWeighted (cap + 1)
-          (negativeBinomialWeight successes cap trueWeight falseWeight) := by
-    simp [negativeBinomialNatDistro, ofFin, negativeBinomialDistro,
-      ofFinWeights]
-  have hnum :
-      QProb.Equiv
-        (QProb.listSum
-          ((negativeBinomialNatDistro successes cap trueWeight falseWeight
-              hsuccesses htrue).distro.record.atoms.map fun atom =>
-            QProb.scale atom.2
-              (qpow (QProb.ofNat s)
-                ((negativeBinomialNatDistro successes cap trueWeight falseWeight
-                    hsuccesses htrue).embed atom.1))))
-        (QProb.ofNat
-          (trueWeight ^ successes *
-            nbSum successes (falseWeight * s) (cap + 1))) := by
-    rw [hatoms]
-    have hsum :=
-      listSum_scale_qpow_finWeighted (cap + 1)
-        (negativeBinomialWeight successes cap trueWeight falseWeight) s
-    have hterm :
-        natSum (cap + 1) (fun i =>
-            finWeight (negativeBinomialWeight successes cap trueWeight
-              falseWeight) i * s ^ i) =
-          trueWeight ^ successes *
-            nbSum successes (falseWeight * s) (cap + 1) := by
-      have hcongr :
-          natSum (cap + 1) (fun i =>
-              finWeight (negativeBinomialWeight successes cap trueWeight
-                falseWeight) i * s ^ i) =
-            natSum (cap + 1)
-              (finWeight (negativeBinomialWeight successes cap trueWeight
-                (falseWeight * s))) := by
-        apply natSum_congr
-        intro i hi
-        simp [finWeight, hi]
-        exact negativeBinomialWeight_scale_pow successes cap trueWeight
-          falseWeight s ⟨i, hi⟩
-      rw [hcongr, negativeBinomialWeight_sum successes cap trueWeight
-        (falseWeight * s) hsuccesses]
-    exact QProb.equiv_trans hsum (by
-      simp [QProb.Equiv, QProb.ofNat]
-      exact hterm)
-  have hden :
-      QProb.Equiv
-        (QProb.ofNat
-          (negativeBinomialNatDistro successes cap trueWeight falseWeight
-            hsuccesses htrue).distro.record.den)
-        (QProb.ofNat
-          (trueWeight ^ successes *
-            nbSum successes falseWeight (cap + 1))) := by
-    simp [QProb.Equiv, QProb.ofNat]
-    exact negativeBinomial_den successes cap trueWeight falseWeight
-      hsuccesses htrue
-  have hdiv :=
-    QProb.div_congr hnum hden
-      (negativeBinomialNatDistro successes cap trueWeight falseWeight
-        hsuccesses htrue).distro.record.den_pos
-      (Nat.mul_pos (Nat.pow_pos htrue)
-        (nbSum_pos successes falseWeight (cap + 1) hsuccesses
-          (Nat.succ_pos cap)))
-  refine QProb.equiv_trans (by simpa [pgf] using hdiv) ?_
-  simp [QProb.div, QProb.ofNat, QProb.Equiv]
-
-/-- Homogenising a truncated negative-binomial weight against a common
-denominator power substitutes `falseWeight * num` in the generating base. -/
 theorem negativeBinomialWeight_homogenize
-    (successes cap trueWeight falseWeight num den : Nat)
-    (k : Fin (cap + 1)) :
+    (successes cap trueWeight falseWeight num den : Nat) (k : Fin (cap + 1)) :
     negativeBinomialWeight successes cap trueWeight falseWeight k *
         num ^ k.val * den ^ (cap - k.val) =
-      trueWeight ^ successes *
-        binom (k.val + successes - 1) k.val *
-          (falseWeight * num) ^ k.val * den ^ (cap - k.val) := by
+      trueWeight ^ successes * binom (k.val + successes - 1) k.val *
+        (falseWeight * num) ^ k.val *
+          ((trueWeight + falseWeight) * den) ^ (cap - k.val) := by
   simp [negativeBinomialWeight, Nat.mul_pow]
   ac_rfl
 
-/-- The truncated negative-binomial PGF at a nonnegative rational `s` is
-the ratio of a homogenised `nbSum` to the ordinary `nbSum` normaliser. -/
-theorem negativeBinomial_pgf
-    (successes cap trueWeight falseWeight : Nat) (s : QProb)
+theorem negativeBinomialWeight_homog_sum
+    (successes cap trueWeight falseWeight num den : Nat) :
+    natSum (cap + 1) (fun k =>
+        finWeight (negativeBinomialWeight successes cap trueWeight falseWeight) k *
+          num ^ k * den ^ (cap - k)) =
+      trueWeight ^ successes * nbSumHomog successes (falseWeight * num)
+        ((trueWeight + falseWeight) * den) cap := by
+  have hcongr :
+      natSum (cap + 1) (fun k =>
+          finWeight (negativeBinomialWeight successes cap trueWeight falseWeight) k *
+            num ^ k * den ^ (cap - k)) =
+        natSum (cap + 1) (fun k =>
+          trueWeight ^ successes *
+            (binom (k + successes - 1) k * (falseWeight * num) ^ k *
+              ((trueWeight + falseWeight) * den) ^ (cap - k))) := by
+    apply natSum_congr
+    intro k hk
+    simpa [finWeight, hk, Nat.mul_assoc] using
+      negativeBinomialWeight_homogenize successes cap trueWeight falseWeight num den ⟨k, hk⟩
+  rw [hcongr, natSum_mul_left]
+  rfl
+
+theorem negativeBinomial_pgf (successes cap trueWeight falseWeight : Nat) (s : QProb)
     (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
     QProb.Equiv
-      (pgf (negativeBinomialNatDistro successes cap trueWeight falseWeight
-          hsuccesses htrue)
-        s)
-      (QProb.div
-        ⟨trueWeight ^ successes *
-            nbSumHomog successes (falseWeight * s.num) s.den cap,
-          s.den ^ cap,
-          Nat.pow_pos s.den_pos⟩
-        (QProb.ofNat
-          (trueWeight ^ successes *
-            nbSum successes falseWeight (cap + 1)))
-        (Nat.mul_pos (Nat.pow_pos htrue)
-          (nbSum_pos successes falseWeight (cap + 1) hsuccesses
-            (Nat.succ_pos cap)))) := by
-  have hatoms :
-      (negativeBinomialNatDistro successes cap trueWeight falseWeight
-          hsuccesses htrue).distro.record.atoms =
-        finWeighted (cap + 1)
-          (negativeBinomialWeight successes cap trueWeight falseWeight) := by
-    simp [negativeBinomialNatDistro, ofFin, negativeBinomialDistro,
-      ofFinWeights]
-  have hnum :
-      QProb.Equiv
-        (QProb.listSum
-          ((negativeBinomialNatDistro successes cap trueWeight falseWeight
-              hsuccesses htrue).distro.record.atoms.map fun atom =>
-            QProb.scale atom.2
-              (qpow s
-                ((negativeBinomialNatDistro successes cap trueWeight falseWeight
-                    hsuccesses htrue).embed atom.1))))
-        ⟨trueWeight ^ successes *
-            nbSumHomog successes (falseWeight * s.num) s.den cap,
-          s.den ^ cap,
-          Nat.pow_pos s.den_pos⟩ := by
-    rw [hatoms]
-    have hsum :=
-      listSum_scale_qpow_finWeighted_qprob cap
-        (negativeBinomialWeight successes cap trueWeight falseWeight) s
-    have hterm :
-        natSum (cap + 1) (fun i =>
-            finWeight (negativeBinomialWeight successes cap trueWeight
-              falseWeight) i * s.num ^ i * s.den ^ (cap - i)) =
-          trueWeight ^ successes *
-            nbSumHomog successes (falseWeight * s.num) s.den cap := by
-      have hcongr :
-          natSum (cap + 1) (fun i =>
-              finWeight (negativeBinomialWeight successes cap trueWeight
-                falseWeight) i * s.num ^ i * s.den ^ (cap - i)) =
-            natSum (cap + 1) (fun i =>
-              trueWeight ^ successes *
-                binom (i + successes - 1) i *
-                  (falseWeight * s.num) ^ i * s.den ^ (cap - i)) := by
-        apply natSum_congr
-        intro i hi
-        simp [finWeight, hi]
-        exact negativeBinomialWeight_homogenize successes cap trueWeight
-          falseWeight s.num s.den ⟨i, hi⟩
-      rw [hcongr]
-      have hfactor :
-          natSum (cap + 1) (fun i =>
-            trueWeight ^ successes * binom (i + successes - 1) i *
-              (falseWeight * s.num) ^ i * s.den ^ (cap - i)) =
-          natSum (cap + 1) (fun i =>
-            trueWeight ^ successes *
-              (binom (i + successes - 1) i *
-                (falseWeight * s.num) ^ i * s.den ^ (cap - i))) := by
-        apply natSum_congr
-        intro i _
-        simp [Nat.mul_assoc]
-      rw [hfactor, natSum_mul_left]
-      rfl
-    refine QProb.equiv_trans hsum ?_
-    simp [QProb.Equiv, hterm]
-  have hden :
-      QProb.Equiv
-        (QProb.ofNat
-          (negativeBinomialNatDistro successes cap trueWeight falseWeight
-            hsuccesses htrue).distro.record.den)
-        (QProb.ofNat
-          (trueWeight ^ successes *
-            nbSum successes falseWeight (cap + 1))) := by
-    simp [QProb.Equiv, QProb.ofNat]
-    exact negativeBinomial_den successes cap trueWeight falseWeight
-      hsuccesses htrue
-  have hdiv :=
-    QProb.div_congr hnum hden
-      (negativeBinomialNatDistro successes cap trueWeight falseWeight
-        hsuccesses htrue).distro.record.den_pos
-      (Nat.mul_pos (Nat.pow_pos htrue)
-        (nbSum_pos successes falseWeight (cap + 1) hsuccesses
-          (Nat.succ_pos cap)))
-  simpa [pgf] using hdiv
+      (pgf (negativeBinomialNatDistro successes cap trueWeight falseWeight hsuccesses htrue) s)
+      ⟨trueWeight ^ successes * nbSumHomog successes (falseWeight * s.num)
+          ((trueWeight + falseWeight) * s.den) cap,
+        s.den ^ cap *
+          (trueWeight ^ successes * nbSumHomog successes falseWeight (trueWeight + falseWeight) cap),
+        Nat.mul_pos (Nat.pow_pos s.den_pos) (Nat.mul_pos (Nat.pow_pos htrue)
+          (nbSumHomog_pos _ _ _ _ (Nat.add_pos_left htrue _)))⟩ := by
+  have hpos : 0 < natSum (cap + 1)
+      (finWeight (negativeBinomialWeight successes cap trueWeight falseWeight)) := by
+    rw [negativeBinomialWeight_sum]
+    exact Nat.mul_pos (Nat.pow_pos htrue)
+      (nbSumHomog_pos _ _ _ _ (Nat.add_pos_left htrue _))
+  have h := ofFinWeights_pgf cap
+    (negativeBinomialWeight successes cap trueWeight falseWeight) hpos s
+  refine QProb.equiv_trans
+    (by simpa [negativeBinomialNatDistro, negativeBinomialDistro] using h) ?_
+  simp [QProb.Equiv, negativeBinomialWeight_homog_sum, negativeBinomialWeight_sum]
 
-/-- Negative-binomial tail after `cap` failures: sequences that record
-`cap + 1` failures with fewer than `successes` successes, ending in a
-failure.  For one success this is `falseWeight^{cap+1}`. -/
-def negativeBinomialCensorTail
-    (successes cap trueWeight falseWeight : Nat) : Nat :=
+theorem negativeBinomial_pgf_ofNat (successes cap trueWeight falseWeight s : Nat)
+    (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
+    QProb.Equiv
+      (pgf (negativeBinomialNatDistro successes cap trueWeight falseWeight hsuccesses htrue)
+        (QProb.ofNat s))
+      ⟨trueWeight ^ successes * nbSumHomog successes (falseWeight * s)
+          (trueWeight + falseWeight) cap,
+        trueWeight ^ successes * nbSumHomog successes falseWeight (trueWeight + falseWeight) cap,
+        Nat.mul_pos (Nat.pow_pos htrue)
+          (nbSumHomog_pos _ _ _ _ (Nat.add_pos_left htrue _))⟩ := by
+  simpa [QProb.ofNat] using
+    negativeBinomial_pgf successes cap trueWeight falseWeight (QProb.ofNat s) hsuccesses htrue
+
+/-- Paths reaching `cap + 1` failures before the requested successes.
+Each variable-length terminal path is padded to `cap + successes` trials
+by the same Bernoulli total, so its mass shares the occupancy denominator. -/
+def negativeBinomialCensorTail (successes cap trueWeight falseWeight : Nat) : Nat :=
   falseWeight ^ (cap + 1) *
-    natSum successes (fun s => binom (cap + s) s * trueWeight ^ s)
+    natSum successes (fun s =>
+      binom (cap + s) s * trueWeight ^ s *
+        (trueWeight + falseWeight) ^ (successes - 1 - s))
 
-/-- Right-censored negative-binomial weights: ordinary occupancy on
-`{0, …, cap - 1}`, and on the last cell the mass at `cap` together with
-`negativeBinomialCensorTail`. -/
-def negativeBinomialCensoredWeight
-    (successes cap trueWeight falseWeight : Nat)
+def negativeBinomialCensoredWeight (successes cap trueWeight falseWeight : Nat)
     (k : Fin (cap + 1)) : Nat :=
   if k.val < cap then
     negativeBinomialWeight successes cap trueWeight falseWeight k
@@ -579,108 +425,148 @@ def negativeBinomialCensoredWeight
       negativeBinomialCensorTail successes cap trueWeight falseWeight
 
 theorem negativeBinomialCensoredWeight_sum
-    (successes cap trueWeight falseWeight : Nat)
-    (hsuccesses : 0 < successes) :
+    (successes cap trueWeight falseWeight : Nat) :
     natSum (cap + 1)
-        (finWeight (negativeBinomialCensoredWeight successes cap
-          trueWeight falseWeight)) =
-      trueWeight ^ successes *
-          nbSum successes falseWeight (cap + 1) +
+        (finWeight (negativeBinomialCensoredWeight successes cap trueWeight falseWeight)) =
+      trueWeight ^ successes * nbSumHomog successes falseWeight (trueWeight + falseWeight) cap +
         negativeBinomialCensorTail successes cap trueWeight falseWeight := by
   have hcongr :
       natSum (cap + 1)
-          (finWeight (negativeBinomialCensoredWeight successes cap
-            trueWeight falseWeight)) =
+          (finWeight (negativeBinomialCensoredWeight successes cap trueWeight falseWeight)) =
         natSum (cap + 1)
-            (finWeight (negativeBinomialWeight successes cap
-              trueWeight falseWeight)) +
-          negativeBinomialCensorTail successes cap trueWeight falseWeight := by
-    rw [natSum_succ,
-      natSum_succ (n := cap)
-        (finWeight (negativeBinomialWeight successes cap
-          trueWeight falseWeight))]
-    have hprefix :
-        natSum cap
-            (finWeight (negativeBinomialCensoredWeight successes cap
-              trueWeight falseWeight)) =
-          natSum cap
-            (finWeight (negativeBinomialWeight successes cap
-              trueWeight falseWeight)) := by
+          (finWeight (negativeBinomialWeight successes cap trueWeight falseWeight)) +
+            negativeBinomialCensorTail successes cap trueWeight falseWeight := by
+    rw [natSum_succ, natSum_succ (n := cap)
+      (finWeight (negativeBinomialWeight successes cap trueWeight falseWeight))]
+    have hp :
+        natSum cap (finWeight (negativeBinomialCensoredWeight successes cap trueWeight falseWeight)) =
+          natSum cap (finWeight (negativeBinomialWeight successes cap trueWeight falseWeight)) := by
       apply natSum_congr
-      intro i hi
-      have hfin : i < cap + 1 := Nat.lt_succ_of_lt hi
-      simp [finWeight, negativeBinomialCensoredWeight, hfin, hi]
-    have hlast :
-        finWeight (negativeBinomialCensoredWeight successes cap
-            trueWeight falseWeight) cap =
-          finWeight (negativeBinomialWeight successes cap
-              trueWeight falseWeight) cap +
-            negativeBinomialCensorTail successes cap trueWeight
-              falseWeight := by
-      have hfin : cap < cap + 1 := Nat.lt_succ_self cap
-      have hnlt : ¬ cap < cap := Nat.lt_irrefl cap
-      simp [finWeight, negativeBinomialCensoredWeight, hfin, hnlt]
-    rw [hprefix, hlast]
+      intro k hk
+      simp [finWeight, negativeBinomialCensoredWeight, hk, Nat.lt_succ_of_lt hk]
+    have hl :
+        finWeight (negativeBinomialCensoredWeight successes cap trueWeight falseWeight) cap =
+          finWeight (negativeBinomialWeight successes cap trueWeight falseWeight) cap +
+            negativeBinomialCensorTail successes cap trueWeight falseWeight := by
+      simp [finWeight, negativeBinomialCensoredWeight]
+    rw [hp, hl]
     ac_rfl
-  rw [hcongr, negativeBinomialWeight_sum successes cap trueWeight
-    falseWeight hsuccesses]
+  rw [hcongr, negativeBinomialWeight_sum]
 
-/-- Right-censored negative binomial on `{0, ..., cap}`. -/
-def negativeBinomialCensoredDistro
-    (successes cap trueWeight falseWeight : Nat)
-    (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
+def negativeBinomialCensoredDistro (successes cap trueWeight falseWeight : Nat)
+    (_hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
     Distro (Fin (cap + 1)) where
   record :=
-    have hsum :=
-      negativeBinomialCensoredWeight_sum successes cap trueWeight
-        falseWeight hsuccesses
     have hpos : 0 < natSum (cap + 1)
-        (finWeight (negativeBinomialCensoredWeight successes cap
-          trueWeight falseWeight)) := by
-      rw [hsum]
+        (finWeight (negativeBinomialCensoredWeight successes cap trueWeight falseWeight)) := by
+      rw [negativeBinomialCensoredWeight_sum]
       exact Nat.lt_of_lt_of_le
         (Nat.mul_pos (Nat.pow_pos htrue)
-          (nbSum_pos successes falseWeight (cap + 1) hsuccesses
-            (Nat.succ_pos cap)))
+          (nbSumHomog_pos _ _ _ _ (Nat.add_pos_left htrue _)))
         (Nat.le_add_right _ _)
     ofFinWeights (cap + 1)
-      (negativeBinomialCensoredWeight successes cap trueWeight falseWeight)
-      hpos
+      (negativeBinomialCensoredWeight successes cap trueWeight falseWeight) hpos
 
-def negativeBinomialCensoredNatDistro
-    (successes cap trueWeight falseWeight : Nat)
+def negativeBinomialCensoredNatDistro (successes cap trueWeight falseWeight : Nat)
     (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
     NatDistro (Fin (cap + 1)) :=
-  ofFin cap
-    (negativeBinomialCensoredDistro successes cap trueWeight falseWeight
-      hsuccesses htrue).record
+  ofFin cap (negativeBinomialCensoredDistro successes cap trueWeight falseWeight hsuccesses htrue).record
 
-theorem negativeBinomialCensored_den
-    (successes cap trueWeight falseWeight : Nat)
+theorem negativeBinomialCensored_den (successes cap trueWeight falseWeight : Nat)
     (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
-    (negativeBinomialCensoredDistro successes cap trueWeight falseWeight
-        hsuccesses htrue).record.den =
-      trueWeight ^ successes *
-          nbSum successes falseWeight (cap + 1) +
+    (negativeBinomialCensoredDistro successes cap trueWeight falseWeight hsuccesses htrue).record.den =
+      trueWeight ^ successes * nbSumHomog successes falseWeight (trueWeight + falseWeight) cap +
         negativeBinomialCensorTail successes cap trueWeight falseWeight := by
-  simp [negativeBinomialCensoredDistro, ofFinWeights, totalMass_finWeighted]
-  exact negativeBinomialCensoredWeight_sum successes cap trueWeight
-    falseWeight hsuccesses
+  simp [negativeBinomialCensoredDistro, ofFinWeights, totalMass_finWeighted,
+    negativeBinomialCensoredWeight_sum]
 
-theorem negativeBinomialCensored_pmf
-    (successes cap trueWeight falseWeight : Nat)
-    (hsuccesses : 0 < successes) (htrue : 0 < trueWeight)
-    (k : Fin (cap + 1)) :
+theorem negativeBinomialCensored_pmf (successes cap trueWeight falseWeight : Nat)
+    (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) (k : Fin (cap + 1)) :
     QProb.Equiv
-      ((negativeBinomialCensoredDistro successes cap trueWeight falseWeight
-        hsuccesses htrue).pmf k)
+      ((negativeBinomialCensoredDistro successes cap trueWeight falseWeight hsuccesses htrue).pmf k)
       ⟨negativeBinomialCensoredWeight successes cap trueWeight falseWeight k,
-        (negativeBinomialCensoredDistro successes cap trueWeight falseWeight
-          hsuccesses htrue).record.den,
-        (negativeBinomialCensoredDistro successes cap trueWeight falseWeight
-          hsuccesses htrue).record.den_pos⟩ := by
+        (negativeBinomialCensoredDistro successes cap trueWeight falseWeight hsuccesses htrue).record.den,
+        (negativeBinomialCensoredDistro successes cap trueWeight falseWeight hsuccesses htrue).record.den_pos⟩ := by
   simp [Distro.pmf, negativeBinomialCensoredDistro, ofFinWeights,
     FiniteProbRecord.probVal, QProb.Equiv, eventMass_finWeighted_singleton]
+
+theorem negativeBinomialCensoredWeight_homog_sum
+    (successes cap trueWeight falseWeight num den : Nat) :
+    natSum (cap + 1) (fun k =>
+        finWeight (negativeBinomialCensoredWeight successes cap trueWeight falseWeight) k *
+          num ^ k * den ^ (cap - k)) =
+      trueWeight ^ successes * nbSumHomog successes (falseWeight * num)
+          ((trueWeight + falseWeight) * den) cap +
+        negativeBinomialCensorTail successes cap trueWeight falseWeight * num ^ cap := by
+  have hp :
+      natSum cap (fun k =>
+          finWeight (negativeBinomialCensoredWeight successes cap trueWeight falseWeight) k *
+            num ^ k * den ^ (cap - k)) =
+        natSum cap (fun k =>
+          finWeight (negativeBinomialWeight successes cap trueWeight falseWeight) k *
+            num ^ k * den ^ (cap - k)) := by
+    apply natSum_congr
+    intro k hk
+    simp [finWeight, negativeBinomialCensoredWeight, hk, Nat.lt_succ_of_lt hk]
+  have hsum :
+      natSum (cap + 1) (fun k =>
+          finWeight (negativeBinomialCensoredWeight successes cap trueWeight falseWeight) k *
+            num ^ k * den ^ (cap - k)) =
+        natSum (cap + 1) (fun k =>
+          finWeight (negativeBinomialWeight successes cap trueWeight falseWeight) k *
+            num ^ k * den ^ (cap - k)) +
+          negativeBinomialCensorTail successes cap trueWeight falseWeight * num ^ cap := by
+    rw [natSum_succ, natSum_succ (n := cap)
+      (fun k => finWeight (negativeBinomialWeight successes cap trueWeight falseWeight) k *
+        num ^ k * den ^ (cap - k))]
+    rw [hp]
+    simp [finWeight, negativeBinomialCensoredWeight, Nat.add_mul, Nat.add_assoc]
+  rw [hsum, negativeBinomialWeight_homog_sum]
+
+theorem negativeBinomialCensored_pgf
+    (successes cap trueWeight falseWeight : Nat) (s : QProb)
+    (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
+    QProb.Equiv
+      (pgf (negativeBinomialCensoredNatDistro successes cap trueWeight falseWeight hsuccesses htrue) s)
+      ⟨trueWeight ^ successes * nbSumHomog successes (falseWeight * s.num)
+          ((trueWeight + falseWeight) * s.den) cap +
+          negativeBinomialCensorTail successes cap trueWeight falseWeight * s.num ^ cap,
+        s.den ^ cap *
+          (trueWeight ^ successes * nbSumHomog successes falseWeight (trueWeight + falseWeight) cap +
+            negativeBinomialCensorTail successes cap trueWeight falseWeight),
+        Nat.mul_pos (Nat.pow_pos s.den_pos)
+          (Nat.lt_of_lt_of_le
+            (Nat.mul_pos (Nat.pow_pos htrue) (nbSumHomog_pos _ _ _ _ (Nat.add_pos_left htrue _)))
+            (Nat.le_add_right _ _))⟩ := by
+  have hpos : 0 < natSum (cap + 1)
+      (finWeight (negativeBinomialCensoredWeight successes cap trueWeight falseWeight)) := by
+    rw [negativeBinomialCensoredWeight_sum]
+    exact Nat.lt_of_lt_of_le
+      (Nat.mul_pos (Nat.pow_pos htrue) (nbSumHomog_pos _ _ _ _ (Nat.add_pos_left htrue _)))
+      (Nat.le_add_right _ _)
+  have h := ofFinWeights_pgf cap
+    (negativeBinomialCensoredWeight successes cap trueWeight falseWeight) hpos s
+  refine QProb.equiv_trans
+    (by simpa [negativeBinomialCensoredNatDistro, negativeBinomialCensoredDistro] using h) ?_
+  simp [QProb.Equiv, negativeBinomialCensoredWeight_homog_sum,
+    negativeBinomialCensoredWeight_sum]
+
+theorem negativeBinomialCensored_pgf_ofNat
+    (successes cap trueWeight falseWeight s : Nat)
+    (hsuccesses : 0 < successes) (htrue : 0 < trueWeight) :
+    QProb.Equiv
+      (pgf (negativeBinomialCensoredNatDistro successes cap trueWeight falseWeight hsuccesses htrue)
+        (QProb.ofNat s))
+      ⟨trueWeight ^ successes * nbSumHomog successes (falseWeight * s)
+          (trueWeight + falseWeight) cap +
+          negativeBinomialCensorTail successes cap trueWeight falseWeight * s ^ cap,
+        trueWeight ^ successes * nbSumHomog successes falseWeight (trueWeight + falseWeight) cap +
+          negativeBinomialCensorTail successes cap trueWeight falseWeight,
+        Nat.lt_of_lt_of_le
+          (Nat.mul_pos (Nat.pow_pos htrue) (nbSumHomog_pos _ _ _ _ (Nat.add_pos_left htrue _)))
+          (Nat.le_add_right _ _)⟩ := by
+  simpa [QProb.ofNat] using
+    negativeBinomialCensored_pgf successes cap trueWeight falseWeight (QProb.ofNat s) hsuccesses htrue
 
 end Distros
 end Probability

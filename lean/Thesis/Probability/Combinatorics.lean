@@ -526,6 +526,43 @@ is the `d = 1` case. -/
 def geomSumHomog (r d len : Nat) : Nat :=
   natSum (len + 1) (fun k => r ^ k * d ^ (len - k))
 
+theorem geomSumHomog_succ (r d len : Nat) :
+    geomSumHomog r d (len + 1) = d * geomSumHomog r d len + r ^ (len + 1) := by
+  unfold geomSumHomog
+  rw [natSum_succ]
+  have hp : natSum (len + 1) (fun k => r ^ k * d ^ (len + 1 - k)) =
+      natSum (len + 1) (fun k => d * (r ^ k * d ^ (len - k))) := by
+    apply natSum_congr
+    intro k hk
+    have hs : len + 1 - k = (len - k) + 1 := by omega
+    rw [hs, Nat.pow_succ]
+    ac_rfl
+  rw [hp, natSum_mul_left]
+  simp
+
+theorem geomSumHomog_pos (r d len : Nat) (hd : 0 < d) :
+    0 < geomSumHomog r d len := by
+  unfold geomSumHomog
+  apply natSum_pos_of_term (i := 0) (Nat.succ_pos _)
+  simpa using Nat.pow_pos (n := len) hd
+
+/-- Exhaustion of a bounded Bernoulli waiting window: either success
+occurs by the last trial or every trial fails. -/
+theorem geomSumHomog_bernoulli (a b cap : Nat) :
+    a * geomSumHomog b (a + b) cap + b ^ (cap + 1) = (a + b) ^ (cap + 1) := by
+  induction cap with
+  | zero => simp [geomSumHomog, natSum]
+  | succ cap ih =>
+    rw [geomSumHomog_succ, Nat.mul_add, Nat.pow_succ b (cap + 1)]
+    calc
+      a * ((a + b) * geomSumHomog b (a + b) cap) + a * b ^ (cap + 1) +
+          b ^ (cap + 1) * b =
+          (a + b) * (a * geomSumHomog b (a + b) cap + b ^ (cap + 1)) := by
+        simp [Nat.mul_add, Nat.add_mul]
+        ac_rfl
+      _ = (a + b) ^ (cap + 1) * (a + b) := by rw [ih]; ac_rfl
+      _ = (a + b) ^ (cap + 1 + 1) := (Nat.pow_succ _ _).symm
+
 theorem geomSumHomog_one (r len : Nat) :
     geomSumHomog r 1 len = geomSum r (len + 1) := by
   unfold geomSumHomog geomSum
@@ -570,6 +607,12 @@ theorem nbSum_pos (r x n : Nat) (hr : 0 < r) (hn : 0 < n) :
 def nbSumHomog (r x d len : Nat) : Nat :=
   natSum (len + 1) (fun k =>
     binom (k + r - 1) k * x ^ k * d ^ (len - k))
+
+theorem nbSumHomog_pos (r x d len : Nat) (hd : 0 < d) :
+    0 < nbSumHomog r x d len := by
+  unfold nbSumHomog
+  apply natSum_pos_of_term (i := 0) (Nat.succ_pos _)
+  simpa using Nat.pow_pos (n := len) hd
 
 theorem nbSumHomog_one (r x len : Nat) :
     nbSumHomog r x 1 len = nbSum r x (len + 1) := by

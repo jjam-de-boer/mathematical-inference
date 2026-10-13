@@ -6,6 +6,7 @@ import Thesis.Probability.Distros.Multinomial
 import Thesis.Probability.Distros.Sampling
 import Thesis.Probability.Distros.LimitAnalogs
 import Thesis.Probability.Distros.Gaussian
+import Thesis.Probability.Distros.WaitingTime
 
 /-!
 Named finite distros.
@@ -38,17 +39,21 @@ Reading order:
    that lumps leftover mass onto the last cell.  Hypergeometric event
    probabilities are selected-weight sums against the Vandermonde total, and
    the marked-count PGF is the homogenised Vandermonde generating polynomial.
-   Truncated geometric PGFs are recorded at whole-number arguments and at a
-   general nonnegative rational;
+   Truncated and censored geometric PGFs are recorded at whole-number
+   arguments and at a general nonnegative rational.  Their integer weights
+   retain the common Bernoulli trial denominator;
 7. `LimitAnalogs` records the lattice Gaussian with rational kernel
    `q^(k²)` for `0 ≤ q ≤ 1`, the
    de Moivre binomial special case, χ² as a sum of `df` centred squares,
    and the Pólya / truncated-gamma counterparts.  The lattice Gaussian mean
    is the window centre by reflection symmetry.  The truncated negative
-   binomial has PGFs as ratios of `nbSum` generating sums, at whole-number
-   arguments and at a general nonnegative rational, and a right-censored
-   sibling that lumps the negative-binomial tail onto the last cell.
+   binomial has PGFs as ratios of `nbSumHomog` generating sums, at
+   whole-number arguments and at a general nonnegative rational, and a
+   right-censored sibling with the tail on the same trial denominator.
 8. `Gaussian` verifies the cleared-denominator kernel, proves decreasing
    weights with increasing squared distance, identifies the zero-base point
    mass and the unit-base discrete uniform law, and retains the shifted mean.
+9. `WaitingTime` identifies the truncated and censored one-success negative
+   binomial with geometric as actual distributions and numeric embeddings,
+   with event, PMF and general rational PGF consequences.
 -/
