@@ -153,6 +153,7 @@ jobs:
             Thesis.Examples.AdmissibleFrontDoorBoundary
             Thesis.Examples.HiddenDAGSupportedCorrespondence
             Thesis.Examples.AlmostSureIntervention
+            Thesis.Examples.AlternativeFormulaSelection
             Thesis.Examples.HiddenPathSearch
             Thesis.Examples.HiddenDAGCollapse
             Thesis.Examples.HiddenDAGSoundness
