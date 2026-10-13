@@ -128,13 +128,16 @@ noncomputable def parity_effect : ProbabilityResult.Equivalent
 action cell supplies every supported-parent context constructively. -/
 private theorem actionAdmissibleEverywhere (model : FiniteHiddenDAGSCM signature projection)
     (checked : signature.assignmentEnumeration.all
-      (fun assignment => decide (model.ObservationalActionAdmissibleAt query.action assignment)) = true) :
+      (fun assignment => decide (0 < (model.observationalDist.probVal
+        (Kernel.agreesOn (NodeSet.union query.action (signature.actionParents query.action)) assignment)).num)) = true) :
     forall assignment, HiddenDAGAdmissibleDomain.JointAdmissibleAt model query assignment := by
   intro assignment
   apply (model.observationalActionAdmissibleOnParentSupport_iff_collapsed query.action assignment).mpr
   apply Thesis.Causality.ObservationalActionAdmissibleOnParentSupport.of_noParents
   · exact (NodeSet.equal_eq_true_iff _ _).mp (by decide +kernel)
   · apply (model.observationalActionAdmissibleAt_iff_collapsed query.action assignment).mp
+    change 0 < (model.observationalDist.probVal
+      (Kernel.agreesOn (NodeSet.union query.action (signature.actionParents query.action)) assignment)).num
     exact of_decide_eq_true ((List.all_eq_true.mp checked) assignment
       (signature.assignmentEnumeration_complete assignment))
 
