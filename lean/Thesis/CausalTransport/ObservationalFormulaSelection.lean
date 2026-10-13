@@ -418,7 +418,7 @@ noncomputable def select_plan_soundAt (model : FiniteHiddenDAGSCM S P) (referenc
     rw [select_plan, ← certified]
     exact selected
   cases result : select model.observationalDist reference candidates with
-  | none => simp only [result, Option.map_none, Option.none_ne_some] at mapped
+  | none => cases mapped
   | some candidate =>
       have same : candidate.plan = chosen := Option.some.inj
         (by simpa only [result, Option.map_some] using mapped)
