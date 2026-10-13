@@ -39,10 +39,10 @@ For certified action-free terms this is literally the native evaluation. -/
 def observationalDenote (record : FiniteProbRecord S.Assignment) :
     ProbabilityTerm S → S.Assignment → ProbabilityResult.Result
   | .zero, _ => some QProb.zero
-  | .kernel kernel, reference =>
-      if kernel.hasAction then none else
-        ProbabilityResult.divide (some (record.probVal (kernel.numeratorEvent reference)))
-          (some (record.probVal (kernel.conditionEvent reference)))
+  | .kernel queryKernel, reference =>
+      if queryKernel.hasAction then none else
+        ProbabilityResult.divide (some (record.probVal (queryKernel.numeratorEvent reference)))
+          (some (record.probVal (queryKernel.conditionEvent reference)))
   | .marginalize nodes inner, reference =>
       ProbabilityResult.sum ((marginalAssignments S nodes reference).map
         (fun variant => inner.observationalDenote record variant))
@@ -279,7 +279,7 @@ theorem select_none_iff (record : FiniteProbRecord S.Assignment) (reference : S.
           · intro failed
             simp only [select, accepted, if_true, Option.some_ne_none] at failed
           · intro unavailable
-            have impossible := unavailable candidate (List.mem_cons_self _ _)
+            have impossible := unavailable candidate List.mem_cons_self
             rw [accepted] at impossible
             cases impossible
 
@@ -290,7 +290,7 @@ theorem select_complete (record : FiniteProbRecord S.Assignment) (reference : S.
     (available : ∃ candidate, candidate ∈ candidates ∧ candidate.available record reference = true) :
     ∃ chosen, select record reference candidates = some chosen := by
   cases result : select record reference candidates with
-  | some chosen => exact ⟨chosen, result⟩
+  | some chosen => exact ⟨chosen, rfl⟩
   | none =>
       rcases available with ⟨candidate, listed, accepted⟩
       have unavailable := (select_none_iff record reference candidates).mp result candidate listed
