@@ -80,7 +80,7 @@ are allowed, but strict multiplication and marginalization keep their ordinary
 semantics.  For action-free terms all these tests use only the observed law. -/
 def UsedConditionalsAdmissibleAt (model : ExactModel S) : ProbabilityTerm S → S.Assignment → Prop
   | .zero, _ => True
-  | .kernel kernel, reference => kernel.ConditioningAdmissibleAt model reference
+  | .kernel queryKernel, reference => queryKernel.ConditioningAdmissibleAt model reference
   | .marginalize nodes inner, reference =>
       forall variant, variant ∈ marginalAssignments S nodes reference → inner.UsedConditionalsAdmissibleAt model variant
   | .evaluateAt fixed inner, _ => inner.UsedConditionalsAdmissibleAt model fixed
