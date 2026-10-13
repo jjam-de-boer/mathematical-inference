@@ -457,12 +457,20 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
         cases result
         let marginal := input.marginal outcome closed.action_disjoint outcomeSubset
         have marginalAvailable : marginal.PrintedAvailable := available.marginal outcome closed.action_disjoint outcomeSubset
-        have constructed := marginalAvailable.reindex marginal.reduction.formula
+        have constructed := marginalAvailable.reindex (newRemaining := outcome)
+          (newAction := NodeSet.union externalAction action) marginal.reduction.formula
           (by rw [actionEmpty, NodeSet.union_empty_right]) rfl
         simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
-      · split at result
-        · split at result
-          · split at result
+      · rename_i notEmpty
+        have actionNonempty : NodeSet.isEmpty action = false := by
+          cases value : NodeSet.isEmpty action with
+          | false => rfl
+          | true => exact False.elim (notEmpty value)
+        split at result
+        · rename_i sameHost
+          split at result
+          · rename_i noAdditional
+            split at result
             · rename_i noComponents
               have emptyOutcome := outcome_empty_of_no_components Γ remaining action outcome
                 outcomeSubset disjoint noComponents
@@ -477,7 +485,12 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
                 exact outcome_subset_free outcomeSubset disjoint
               split at result
               · cases result
-              · split at result
+              · rename_i notSingle
+                have hostNotSingle : Γ.isSingleCComponent remaining = false := by
+                  cases value : Γ.isSingleCComponent remaining with
+                  | false => rfl
+                  | true => exact False.elim (notSingle value)
+                split at result
                 · rename_i componentListed
                   have listed : component ∈ Γ.cComponents remaining := by
                     rcases List.any_eq_true.mp componentListed with ⟨piece, included, equal⟩
@@ -491,10 +504,16 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
                   have componentAvailable : componentInput.PrintedAvailable := available.ofComponent closed listed
                   have marginalAvailable : marginal.PrintedAvailable := componentAvailable.marginal outcome
                     componentClosed.action_disjoint outcomeInComponent
-                  have constructed := marginalAvailable.reindex marginal.reduction.formula
+                  have constructed := marginalAvailable.reindex (newRemaining := outcome)
+                    (newAction := NodeSet.union externalAction action) marginal.reduction.formula
                     (by simp only [componentExternalAction, discardedEqual]) rfl
                   simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
-                · split at result
+                · rename_i notListed
+                  have absentComponent : (Γ.cComponents remaining).any (fun piece => NodeSet.equal piece component) = false := by
+                    cases value : (Γ.cComponents remaining).any (fun piece => NodeSet.equal piece component) with
+                    | false => rfl
+                    | true => exact False.elim (notListed value)
+                  split at result
                   · rename_i larger containing
                     have specification := containingCComponent_spec Γ remaining component containing
                     let componentInput := input.ofComponent closed specification.1
@@ -534,7 +553,12 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
                 disjoint formulas (fun component listed => (nested component listed).compilation)
                 (fun component listed => (nested component listed).formula_eq) childrenAvailable
               simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
-          · let additional := identificationAdditionalAction Γ remaining outcome action
+          · rename_i notNoAdditional
+            have hasAdditional : NodeSet.isEmpty (identificationAdditionalAction Γ remaining outcome action) = false := by
+              cases value : NodeSet.isEmpty (identificationAdditionalAction Γ remaining outcome action) with
+              | false => rfl
+              | true => exact False.elim (notNoAdditional value)
+            let additional := identificationAdditionalAction Γ remaining outcome action
             have additionalSubset := identificationAdditionalAction_subset_remaining Γ remaining outcome action
             have additionalDisjoint := identificationAdditionalAction_disjoint_outcome Γ remaining outcome action
             have additionalOutcome : NodeSet.Disjoint additional outcome := by
@@ -545,13 +569,22 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
             have nestedAvailable : nested.compilation.PrintedAvailable := inductionHypothesis input available closed
               (NodeSet.union action additional) outcome (NodeSet.union_subset actionSubset additionalSubset) outcomeSubset
               (NodeSet.disjoint_union_left_of disjoint additionalOutcome) result
-            have reindexedAvailable := nestedAvailable.reindex nested.compilation.reduction.formula
+            have reindexedAvailable := nestedAvailable.reindex
+              (newRemaining := NodeSet.inter outcome remaining)
+              (newAction := NodeSet.union externalAction (NodeSet.union (NodeSet.inter action remaining) additional))
+              nested.compilation.reduction.formula
               (by rw [localAction, localOutcome]) rfl
             have transportedAvailable := localKernelAdditionalActionCompilation_printedAvailable closed action outcome
               (by simpa only [localAction, localOutcome] using disjoint) reindexedAvailable
-            have constructed := transportedAvailable.reindex _ (by rw [localAction, localOutcome]) rfl
+            have constructed := transportedAvailable.reindex (newRemaining := outcome)
+              (newAction := NodeSet.union externalAction action) _ (by rw [localAction, localOutcome]) rfl
             simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
-        · let kept := Γ.ancestralSet remaining (GraphMutilation.none T) outcome
+        · rename_i notSameHost
+          have smallerHost : NodeSet.equal (Γ.ancestralSet remaining (GraphMutilation.none T) outcome) remaining = false := by
+            cases value : NodeSet.equal (Γ.ancestralSet remaining (GraphMutilation.none T) outcome) remaining with
+            | false => rfl
+            | true => exact False.elim (notSameHost value)
+          let kept := Γ.ancestralSet remaining (GraphMutilation.none T) outcome
           have outcomeInKept : NodeSet.Subset outcome kept := fun node selected =>
             ancestralSet_contains_targets Γ remaining (GraphMutilation.none T) outcome (outcomeSubset node selected) selected
           let nestedInput := input.marginal kept closed.action_disjoint
