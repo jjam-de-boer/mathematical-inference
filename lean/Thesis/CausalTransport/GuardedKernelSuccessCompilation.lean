@@ -355,6 +355,18 @@ termination_by structural fuel
 
 section PrintedDataAvailability
 
+/-- The existing compiler's tactic-level Boolean splits elaborate to
+`Decidable.rec`, rather than to a displayed dependent `if`.  Expose the same
+constructive branch selection as `dite` so the availability induction can
+use its already known branch equations.  This does not decide an arbitrary
+proposition: the supplied decision is exactly the compiler's finite Boolean
+test, and inspection of that decision proves the equality without choice. -/
+private theorem decidableRec_eq_dite {α : Sort _} {p : Prop}
+    (decision : Decidable p) (negative : ¬p → α) (positive : p → α) :
+    @Decidable.rec p (fun _ => α) negative positive decision =
+      @dite α p decision positive negative := by
+  cases decision <;> rfl
+
 variable {T : ObservedSignature.{0}} {Γ : ObservedGraph T} {checked : DSeparationCorrectness Γ}
 
 /-- The actual split-branch compiler preserves availability from its computed
@@ -460,7 +472,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
         have constructed := marginalAvailable.reindex (newRemaining := outcome)
           (newAction := NodeSet.union externalAction action) marginal.reduction.formula
           (by rw [actionEmpty, NodeSet.union_empty_right]) rfl
-        simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
+        simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+          localAction, localOutcome, *] using constructed
       · rename_i notEmpty
         have actionNonempty : NodeSet.isEmpty action = false := by
           cases value : NodeSet.isEmpty action with
@@ -477,7 +490,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
               cases result
               subst outcome
               have constructed := emptyOutcomeLocalKernelCompilation_printedAvailable available closed action actionSubset
-              simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
+              simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+                localAction, localOutcome, *] using constructed
             · rename_i component oneComponent
               have componentEqual := cComponents_eq_of_singleton Γ (NodeSet.diff remaining action) oneComponent
               have outcomeInComponent : NodeSet.Subset outcome component := by
@@ -507,7 +521,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
                   have constructed := marginalAvailable.reindex (newRemaining := outcome)
                     (newAction := NodeSet.union externalAction action) marginal.reduction.formula
                     (by simp only [componentExternalAction, discardedEqual]) rfl
-                  simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
+                  simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+                    localAction, localOutcome, *] using constructed
                 · rename_i notListed
                   have absentComponent : (Γ.cComponents remaining).any (fun piece => NodeSet.equal piece component) = false := by
                     cases value : (Γ.cComponents remaining).any (fun piece => NodeSet.equal piece component) with
@@ -533,7 +548,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
                       simpa only [localAction] using obtained
                     have constructed := localKernelRestrictionCompilation_printedAvailable remaining larger externalAction
                       action outcome actionSubset discarded nestedAvailable
-                    simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
+                    simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+                      localAction, localOutcome, *] using constructed
                   · cases result
             · let run := fun component => identifyGuardedKernelFuel fuel Γ remaining component
                 (NodeSet.diff remaining component) input.reduction.formula
@@ -552,7 +568,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
               have constructed := localKernelSplitCompilation_printedAvailable closed action outcome actionSubset outcomeSubset
                 disjoint formulas (fun component listed => (nested component listed).compilation)
                 (fun component listed => (nested component listed).formula_eq) childrenAvailable
-              simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
+              simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+                localAction, localOutcome, *] using constructed
           · rename_i notNoAdditional
             have hasAdditional : NodeSet.isEmpty (identificationAdditionalAction Γ remaining outcome action) = false := by
               cases value : NodeSet.isEmpty (identificationAdditionalAction Γ remaining outcome action) with
@@ -578,7 +595,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
               (by simpa only [localAction, localOutcome] using disjoint) reindexedAvailable
             have constructed := transportedAvailable.reindex (newRemaining := outcome)
               (newAction := NodeSet.union externalAction action) _ (by rw [localAction, localOutcome]) rfl
-            simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
+            simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+              localAction, localOutcome, *] using constructed
         · rename_i notSameHost
           have smallerHost : NodeSet.equal (Γ.ancestralSet remaining (GraphMutilation.none T) outcome) remaining = false := by
             cases value : NodeSet.equal (Γ.ancestralSet remaining (GraphMutilation.none T) outcome) remaining with
@@ -599,7 +617,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
             (NodeSet.Disjoint.of_subset_left disjoint (NodeSet.inter_subset_left _ _)) result
           have constructed := localKernelPruneCompilation_printedAvailable closed action outcome actionSubset outcomeSubset
             disjoint nestedAvailable
-          simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
+          simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+            localAction, localOutcome, *] using constructed
 
 end PrintedDataAvailability
 
