@@ -368,8 +368,7 @@ noncomputable def localKernelSplitCompilation_printedAvailable
       PublishedLocalKernelCompilation Γ checked component (NodeSet.union externalAction (NodeSet.diff remaining component)))
     (aligned : forall component listed, (nested component listed).reduction.formula = formulas component)
     (available : forall component listed, (nested component listed).PrintedAvailable) :
-    (localKernelSplitCompilation closed action outcome actionSubset outcomeSubset disjoint formulas nested aligned)
-      .compilation.PrintedAvailable := by
+    (localKernelSplitCompilation closed action outcome actionSubset outcomeSubset disjoint formulas nested aligned).compilation.PrintedAvailable := by
   let free := NodeSet.diff remaining action
   let baseAction := NodeSet.union externalAction action
   have discarded : NodeSet.diff remaining free = action := by
