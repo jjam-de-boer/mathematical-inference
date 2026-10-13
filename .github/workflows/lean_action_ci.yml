@@ -143,6 +143,7 @@ jobs:
             Thesis.Examples.GuardedPrintedSoundness
             Thesis.Examples.GuardedAdmissibleCertificates
             Thesis.Examples.HiddenDAGAdmissibleCompleteness
+            Thesis.Examples.AdmissibleFrontDoorBoundary
             Thesis.Examples.HiddenPathSearch
             Thesis.Examples.HiddenDAGCollapse
             Thesis.Examples.HiddenDAGSoundness
