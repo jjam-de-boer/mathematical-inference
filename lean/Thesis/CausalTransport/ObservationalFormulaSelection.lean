@@ -132,6 +132,28 @@ theorem check_transfer (guard : ObservationalFormulaGuard S)
 
 end ObservationalFormulaGuard
 
+/-- Executable candidate data, without native semantic proof functions.
+Applications can run this evaluator/search on literal plans; certification
+is a separate proof relating that plan list to a certified catalogue. -/
+structure ObservationalFormulaPlan (S : ObservedSignature) where
+  formula : ProbabilityTerm S
+  guard : ObservationalFormulaGuard S
+
+namespace ObservationalFormulaPlan
+
+def available (plan : ObservationalFormulaPlan S) (record : FiniteProbRecord S.Assignment)
+    (reference : S.Assignment) : Bool :=
+  plan.guard.check record reference && (plan.formula.observationalDenote record reference).isSome
+
+/-- The data-only selector is computable independently of all proof-bearing
+candidate constructors.  Unsupported formula evaluation remains unavailable. -/
+def select (record : FiniteProbRecord S.Assignment) (reference : S.Assignment) :
+    List (ObservationalFormulaPlan S) → Option (ObservationalFormulaPlan S)
+  | [] => none
+  | plan :: plans => if plan.available record reference then some plan else select record reference plans
+
+end ObservationalFormulaPlan
+
 /-- A formula-independent native certificate.  Source support is explicit
 so this common API also handles conditional queries without filling null
 conditioners.  The observable guard is an additional assumption, not a claim
@@ -147,6 +169,11 @@ structure GuardedObservationalFormula (projection : FiniteLatentProjection S)
     model.TermEquivalentAt source formula reference
 
 namespace GuardedObservationalFormula
+
+/-- Forget only the interpretation proof, retaining the literal expression
+and observable guard used by the runtime program. -/
+def plan (candidate : GuardedObservationalFormula P source) : ObservationalFormulaPlan S :=
+  ⟨candidate.formula, candidate.guard⟩
 
 /-- Acceptance is entirely observable: the guard must pass and the actual
 printed formula must have a value.  A defined zero is available; `none` is not. -/
@@ -256,6 +283,21 @@ def select (record : FiniteProbRecord S.Assignment) (reference : S.Assignment) :
   | candidate :: candidates =>
       if candidate.available record reference then some candidate else select record reference candidates
 
+/-- Certified selection and the independently executable data-only search
+make exactly the same choice.  Proof fields are not needed by the runtime. -/
+theorem select_plan (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
+    (candidates : List (GuardedObservationalFormula P source)) :
+    (select record reference candidates).map plan =
+      ObservationalFormulaPlan.select record reference (candidates.map plan) := by
+  induction candidates with
+  | nil => rfl
+  | cons candidate candidates inductionHypothesis =>
+      have sameAvailability : candidate.plan.available record reference = candidate.available record reference := rfl
+      cases accepted : candidate.available record reference <;>
+        simp only [select, List.map_cons, ObservationalFormulaPlan.select,
+          sameAvailability, accepted, Bool.false_eq_true, if_false, if_true,
+          Option.map_some, inductionHypothesis]
+
 /-- Putting an existing ID/IDC candidate first preserves every supported
 application it already handled.  Fallbacks cannot replace that accepted
 output, nor turn an old supported success into an empty selection. -/
@@ -359,6 +401,29 @@ noncomputable def select_soundAt (model : FiniteHiddenDAGSCM S P) (reference : S
     model.TermEquivalentAt source chosen.formula reference :=
   chosen.soundAt model reference sourceSupported
     (select_available model.observationalDist reference candidates chosen selected)
+
+/-- Interpret an actual result of the executable data-only selector.  The
+plan list is certified offline by equality with the supplied catalogue's
+data projection.  The chosen proof certificate is recovered by matching
+the already computed certified search, never selected from an existential
+proposition by choice. -/
+noncomputable def select_plan_soundAt (model : FiniteHiddenDAGSCM S P) (reference : S.Assignment)
+    (candidates : List (GuardedObservationalFormula P source))
+    (plans : List (ObservationalFormulaPlan S)) (certified : plans = candidates.map plan)
+    (chosen : ObservationalFormulaPlan S)
+    (selected : ObservationalFormulaPlan.select model.observationalDist reference plans = some chosen)
+    (sourceSupported : model.TermSupportedAt source reference) :
+    model.TermEquivalentAt source chosen.formula reference := by
+  have mapped : (select model.observationalDist reference candidates).map plan = some chosen := by
+    rw [select_plan, ← certified]
+    exact selected
+  cases result : select model.observationalDist reference candidates with
+  | none => simp only [result, Option.map_none, Option.none_ne_some] at mapped
+  | some candidate =>
+      have same : candidate.plan = chosen := Option.some.inj
+        (by simpa only [result, Option.map_some] using mapped)
+      rw [← same]
+      exact select_soundAt model reference candidates candidate result sourceSupported
 
 /-- A selected candidate identifies the source in observationally agreeing
 native models on their common genuine source support.  Its availability is

@@ -397,6 +397,9 @@ supplied finite catalogue of `GuardedObservationalFormula` certificates.
 Each certificate has a proved native interpretation and an explicit
 observable guard; it is not constrained to equal ID's literal output.
 Existing joint/conditional engine certificates embed unchanged as candidates.
+The separately executable `ObservationalFormulaPlan` search contains only
+formula and guard data; `select_plan` proves it makes exactly the certified
+search's choice, without executing semantic proof functions.
 Selection is sound on genuine source support, returns a catalogue member,
 preserves an already available first candidate, and succeeds whenever any
 listed candidate is available. Accepted candidates agree, and availability

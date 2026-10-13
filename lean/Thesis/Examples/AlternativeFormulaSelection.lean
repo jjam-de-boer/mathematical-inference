@@ -202,9 +202,30 @@ theorem selects_supported_alternative :
   simp only [catalogue, GuardedObservationalFormula.select, id_unavailable, large_unavailable,
     small_available, Bool.false_eq_true, if_false, if_true]
 
+/-- Literal runtime plans contain only formula syntax and observable guards;
+the noncomputable semantic interpretation functions are not runtime inputs. -/
+def plans : List (ObservationalFormulaPlan signature) :=
+  [⟨idFormula, .always⟩,
+    ⟨BackdoorAdjustmentWitness.formula query large, .always⟩,
+    ⟨BackdoorAdjustmentWitness.formula query small, .always⟩]
+
+theorem plans_certified : plans = catalogue.map GuardedObservationalFormula.plan := rfl
+
+theorem executable_selects_alternative : ObservationalFormulaPlan.select model.observationalDist reference plans =
+    some (ObservationalFormulaPlan.mk (BackdoorAdjustmentWitness.formula query small) .always) := by
+  rw [plans_certified, ← GuardedObservationalFormula.select_plan, selects_supported_alternative]
+  rfl
+
 noncomputable def selected_native_sound : model.TermEquivalentAt query.sourceTerm smallCandidate.formula reference :=
   GuardedObservationalFormula.select_soundAt model reference catalogue smallCandidate selects_supported_alternative
     (model.kernelSupportedAt_unconditional query.outcome query.action reference)
+
+/-- The executable result is interpreted via the offline plan certification,
+not by passing hidden SCM mechanisms to the selector. -/
+noncomputable def executable_native_sound : model.TermEquivalentAt query.sourceTerm
+    (BackdoorAdjustmentWitness.formula query small) reference :=
+  GuardedObservationalFormula.select_plan_soundAt model reference catalogue plans plans_certified _
+    executable_selects_alternative (model.kernelSupportedAt_unconditional query.outcome query.action reference)
 
 def half : QProb := ⟨1, 2, by decide⟩
 
