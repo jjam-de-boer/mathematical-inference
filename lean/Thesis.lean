@@ -23,6 +23,7 @@ import Thesis.Examples.GuardedAdmissibleCertificates
 import Thesis.Examples.HiddenDAGAdmissibleCompleteness
 import Thesis.Examples.AdmissibleFrontDoorBoundary
 import Thesis.Examples.HiddenDAGSupportedCorrespondence
+import Thesis.Examples.AlmostSureIntervention
 import Thesis.Examples.HiddenPathSearch
 import Thesis.Examples.HiddenDAGCollapse
 import Thesis.Examples.HiddenDAGSoundness
