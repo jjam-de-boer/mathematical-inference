@@ -226,12 +226,12 @@ supported host conditional. The forward and reverse graph bridges no longer
 request an independent exchange-support witness, and forward extraction no
 longer requests a separate component-source witness. A native null-action
 regression demonstrates why factual overlap is unnecessary for these
-intrinsic support steps. The guarded compilers' remaining primitive data,
-especially recursive marginal variants and positive displayed denominators,
-are still explicit. General admissibility-to-data propagation and the final
-zero-containing joint/conditional completeness certificates remain open;
-neither the positive package nor the previously scoped implementation audit
-is relabelled as that broader result.
+intrinsic support steps. The original local-data APIs keep their primitive
+data explicit, especially recursive marginal variants and positive displayed
+denominators. The newer availability and admissibility constructors described
+below now build that data internally. The final zero-containing semantic
+completeness package remains open; neither the positive package nor the
+previously scoped implementation audit is relabelled as that broader result.
 
 The recursive factor boundaries have now been weakened further.
 `CurrentKernelSupportCompletion.marginal_source_positiveAt` interprets an
@@ -288,12 +288,43 @@ remains explicit. Regressions apply these adapters to the actual recursive
 joint, zero-numerator Bayes and null-factual-action promotion programs, and
 reject the genuinely undefined null-action formula.
 
-What remains is to specify the paper's admissible-reference domain independently
-and prove its restrictions on every used action/conditional ensure definition
-of the returned expression, then assemble the joint/conditional completeness
-packages on that domain. Defined printed support is not silently inferred
-from a lone action-positivity test, and neither the compiler's `Data` nor its
-complete support tree is declared to be the published admissibility premise.
+`UsedConditionalAdmissibility` now specifies the used-conditional boundary
+independently of the graph, identification engine and compiler. Kernel leaves
+test their actual conditioners; quotients test their displayed denominators;
+marginals inspect their listed variants. A guarded product demands its factor
+only under a positive defined weight, whereas an ordinary product remains
+strict. `supportedAt_of_usedConditionalsAdmissible` constructs support from
+these primitive tests, and `usedConditionalsAdmissibleAt_iff_supported`
+proves they introduce no stronger hidden requirement than this expression
+language's actual partial evaluation. Neither direction uses causal soundness.
+
+`HiddenDAGAdmissibility` states the tests directly on original finite
+hidden-DAG records and proves their exact preservation through collapse.
+Observable action overlap and action-free used-conditional tests transfer
+between observationally agreeing records. The original causal conditioner's
+positivity does not transfer by that argument and remains explicit.
+
+`GuardedAdmissibleCertificates` constructs joint and conditional certificates
+from every actual guarded success. Their support fields are inhabited
+uniformly from the primitive native tests, using the full ID/IDC availability
+proofs; callers do not supply compiler `Data` or recursive support trees.
+These certificates have native one-model soundness and two-model
+identification methods at admissible references. Their stated application
+boundary uses fixed action values on all supported observed-parent contexts,
+not a silently substituted pointwise action test. Native regressions apply
+both certificates outside the globally positive model class, exclude an
+inadmissible factual action, and distinguish a skipped null quotient from a
+strict product that demands it.
+
+What remains is the final query/reference-domain statement and the semantic
+joint/conditional completeness and correspondence assembly on that domain,
+including the countermodel direction. Its quantifiers and coverage still
+need to be checked against the papers' supported-zero scope. In particular,
+admissibility of a lone external action is not asserted to guarantee every
+conditional in the returned expression, and the exact domain of this
+particular evaluator is not silently claimed to cover every alternative
+identifying expression. The actual-success certificates above do not yet
+constitute that final completeness package.
 
 Continuous probability, general measure theory, and a complete formalisation
 of every philosophical or sociological claim are outside this project's scope.

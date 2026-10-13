@@ -31,12 +31,16 @@ assigned to division by zero.  Conditioning admissibility uses the actual
 intervened record and is equivalent to having a supported partial kernel.
 Neither test demands that the outcome probability itself be positive.
 
-These are not yet the admissibility invariant of a whole ID/IDC run.  In
-particular the module does not assert that action admissibility alone supplies
-every recursive quotient, component exchange, or Bayes marginal.  Connecting
-the paper's restrictions on *all used conditionals* to those recursive
-obligations is the remaining support-propagation work, not a hidden field
-assuming the compiler's complete `Data` or its whole support tree.
+These primitive action and source tests do not by themselves supply every
+conditional used by an ID/IDC run.  `UsedConditionalAdmissibility` separately
+states the tests demanded by expression syntax and proves their exact support
+boundary without importing an engine or compiler.  The native constructions
+in `CausalTransport.GuardedAdmissibleCertificates` then use the uniform
+availability proofs to build every recursive support obligation from those
+tests.  No field here assumes the compiler's complete `Data` or support tree.
+The final query/reference-domain statement and semantic completeness package
+are separate remaining obligations; action admissibility alone is not
+asserted to supply every quotient, component exchange, or Bayes marginal.
 -/
 
 variable {S : ObservedSignature}

@@ -345,8 +345,18 @@ through all actual fuel branches. `GuardedPrintedSoundness` then interprets
 defined literal program outputs without caller-populated recursive data,
 both in projected models and original hidden DAGs. Its native two-model
 adapters transfer printed support observationally, while conditional source
-common support remains explicit. This does not yet establish definition
-from the independently stated published admissibility domain.
+common support remains explicit. `Causality.UsedConditionalAdmissibility`
+specifies primitive positivity tests at every actually demanded conditional,
+independently of the engine or compiler, and proves their exact equivalence
+to this expression language's partial support. `HiddenDAGAdmissibility`
+defines those tests directly on the original native records and preserves
+them through collapse without causal soundness. `GuardedAdmissibleCertificates`
+constructs actual joint and conditional success certificates from the native
+tests, building the whole support tree internally. Their one-model soundness
+and two-model identification methods permit observed zeros; causal source
+positivity remains explicit on both sides of a conditional comparison.
+The final query/reference-domain statement and semantic completeness package,
+with their correspondence to the papers' supported-zero scope, remain open.
 `ConditionalSupport` preserves actual
 conditional support through arbitrary block promotion by unit-level SCM
 composition and event-mass monotonicity, without observable overlap. The
