@@ -118,8 +118,9 @@ noncomputable def FiniteLatentProjection.supportedAdmissibleJointCompleteness
     PublishedAdmissibleJointCertificate projection query := by
   cases result : identifyGuardedJointKernel projection.observedGraph query with
   | identified term => exact identifyGuardedJointKernel_admissibleCertificate query result
-  | failed failure => exact False.elim
-      ((identifyGuardedJointKernel_supported_failed_counterexample rich query result).not_supported_identifiable identified)
+  | failed failure =>
+      exact False.elim
+        ((identifyGuardedJointKernel_supported_failed_counterexample rich query result).not_supported_identifiable identified)
   | unfinished => exact False.elim (identifyGuardedJointKernel_ne_unfinished _ query result)
 
 /-- Conditional completeness has the same constructive outcome match and
@@ -131,8 +132,9 @@ noncomputable def FiniteLatentProjection.supportedAdmissibleConditionalCompleten
     PublishedAdmissibleConditionalCertificate projection query := by
   cases result : identifyGuardedConditionalKernel projection.observedGraph query with
   | identified term => exact identifyGuardedConditionalKernel_admissibleCertificate query result
-  | failed failure => exact False.elim
-      ((identifyGuardedConditionalKernel_supported_failed_counterexample rich query result).not_supported_identifiable identified)
+  | failed failure =>
+      exact False.elim
+        ((identifyGuardedConditionalKernel_supported_failed_counterexample rich query result).not_supported_identifiable identified)
   | unfinished => exact False.elim (identifyGuardedConditionalKernel_ne_unfinished _ query result)
 
 namespace HiddenDAGSupportedDomain
