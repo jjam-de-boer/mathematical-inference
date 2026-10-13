@@ -46,6 +46,8 @@ import Thesis.CausalTransport.GuardedConditionalSoundness
 import Thesis.CausalTransport.GuardedPrintedSoundness
 import Thesis.CausalTransport.HiddenDAGAdmissibility
 import Thesis.CausalTransport.GuardedAdmissibleCertificates
+import Thesis.CausalTransport.HiddenDAGAdmissibleDomain
+import Thesis.CausalTransport.HiddenDAGAdmissibleCompleteness
 import Thesis.CausalTransport.GuardedHiddenDAGBoundary
 import Thesis.CausalTransport.KernelIdentification
 import Thesis.CausalTransport.KernelCompilation

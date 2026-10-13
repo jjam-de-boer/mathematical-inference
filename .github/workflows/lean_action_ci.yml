@@ -125,6 +125,8 @@ jobs:
             Thesis.CausalTransport.GuardedPrintedSoundness
             Thesis.CausalTransport.HiddenDAGAdmissibility
             Thesis.CausalTransport.GuardedAdmissibleCertificates
+            Thesis.CausalTransport.HiddenDAGAdmissibleDomain
+            Thesis.CausalTransport.HiddenDAGAdmissibleCompleteness
             Thesis.CausalTransport.GuardedHiddenDAGBoundary
             Thesis.Examples.LocalSupportIdentification
             Thesis.Examples.Admissibility

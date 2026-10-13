@@ -169,6 +169,22 @@ noncomputable def supportedAt_of_conditioningAdmissible (model : FiniteHiddenDAG
     (Kernel.supportedAt_of_condition_positive model.toLatentRootSCM kernel reference
       ((model.conditioningAdmissibleAt_iff_collapsed kernel reference).mp admissible))
 
+/-- The native query conditioner is admissible exactly when its own kernel
+has a genuine value.  The reverse implication inspects the actual quotient's
+denominator after literal collapse preservation; it does not infer causal
+support from observational agreement or from a printed identifying formula. -/
+theorem conditioningAdmissibleAt_iff_supported (model : FiniteHiddenDAGSCM S P)
+    (kernel : Kernel S) (reference : S.Assignment) :
+    model.ConditioningAdmissibleAt kernel reference ↔
+      Nonempty (model.TermSupportedAt (.kernel kernel) reference) := by
+  constructor
+  · intro admissible
+    exact ⟨model.supportedAt_of_conditioningAdmissible kernel reference admissible⟩
+  · rintro ⟨supported⟩
+    exact (model.conditioningAdmissibleAt_iff_collapsed kernel reference).mpr
+      (Kernel.conditionPositive_of_supportedAt model.toLatentRootSCM kernel reference
+        (model.termSupportedAt_to_collapsed (.kernel kernel) reference supported))
+
 /-- All primitive native used-conditional tests construct a native printed
 value.  The syntax-directed construction and literal collapse bridge are
 independent of graph-indexed soundness and of every compiler's `Data`. -/
@@ -233,6 +249,17 @@ theorem ObservationallyPositive.usedConditionalsAdmissibleAt_of_zeroFree
   exact (model.usedConditionalsAdmissibleAt_iff_collapsed term reference).mpr
     (ProbabilityTerm.usedConditionalsAdmissibleAt_of_supported model.toLatentRootSCM term reference
       (term.positiveSupportedValue_of_zeroFree model.toLatentRootSCM rootPositive zeroFree reference).toSupported)
+
+/-- Every primitive native kernel conditioner is positive in an observed-
+positive record.  This is the kernel case of the independently proved
+syntax-directed positivity construction, not a consequence of causal
+soundness.  It will place positive failure countermodels inside the original
+query's admissible conditioning domain at every reference. -/
+theorem ObservationallyPositive.conditioningAdmissibleAt
+    {model : FiniteHiddenDAGSCM S P} (positive : model.ObservationallyPositive)
+    (kernel : Kernel S) (reference : S.Assignment) :
+    model.ConditioningAdmissibleAt kernel reference :=
+  positive.usedConditionalsAdmissibleAt_of_zeroFree (.kernel kernel) trivial reference
 
 end FiniteHiddenDAGSCM
 
