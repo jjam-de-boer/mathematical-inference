@@ -177,12 +177,12 @@ noncomputable def guardedComponent_supportedAt_of_quotient_inputs
     (conditions : CurrentKernelComponentSupportConditions input correct component model reference) :
     LocalDerivationSupport model reference
       ((input.guardedComponent component closed componentSubset bidirectedClosed).derivation.compile correct) := by
-  let prefix := input.guardedComponentPrefix_supportedAt_of_quotient_inputs correct component closed componentSubset
+  let prefixSupport := input.guardedComponentPrefix_supportedAt_of_quotient_inputs correct component closed componentSubset
     bidirectedClosed model reference conditions S.count (Nat.le_refl _)
   let source := Kernel.unconditional_supportedAt model component
     (componentExternalAction remaining externalAction component) reference
   dsimp [guardedComponent, PathDoCalculusDerivation.compile, DoCalculusDerivation.mapRules]
-  exact ⟨source, ⟨prefix.endpoints.2, prefix⟩⟩
+  exact ⟨source, ⟨prefixSupport.endpoints.2, prefixSupport⟩⟩
 
 end PublishedCurrentKernelReduction
 
