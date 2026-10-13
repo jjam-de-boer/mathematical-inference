@@ -546,6 +546,20 @@ theorem geomSumHomog_pos (r d len : Nat) (hd : 0 < d) :
   apply natSum_pos_of_term (i := 0) (Nat.succ_pos _)
   simpa using Nat.pow_pos (n := len) hd
 
+theorem geomSumHomog_head (r d len : Nat) :
+    geomSumHomog r d (len + 1) = r * geomSumHomog r d len + d ^ (len + 1) := by
+  unfold geomSumHomog
+  rw [natSum_head (len + 1) (fun k => r ^ k * d ^ (len + 1 - k))]
+  simp only [Nat.pow_zero, Nat.one_mul, Nat.sub_zero]
+  have hp : natSum (len + 1) (fun k => r ^ (k + 1) * d ^ (len + 1 - (k + 1))) =
+      natSum (len + 1) (fun k => r * (r ^ k * d ^ (len - k))) := by
+    apply natSum_congr
+    intro k _
+    rw [Nat.add_sub_add_right, Nat.pow_succ]
+    ac_rfl
+  rw [hp, natSum_mul_left]
+  exact Nat.add_comm _ _
+
 /-- Exhaustion of a bounded Bernoulli waiting window: either success
 occurs by the last trial or every trial fails. -/
 theorem geomSumHomog_bernoulli (a b cap : Nat) :
@@ -613,6 +627,43 @@ theorem nbSumHomog_pos (r x d len : Nat) (hd : 0 < d) :
   unfold nbSumHomog
   apply natSum_pos_of_term (i := 0) (Nat.succ_pos _)
   simpa using Nat.pow_pos (n := len) hd
+
+theorem nbSumHomog_one_success (x d len : Nat) :
+    nbSumHomog 1 x d len = geomSumHomog x d len := by
+  unfold nbSumHomog geomSumHomog
+  apply natSum_congr
+  intro k _
+  simp [binom_self]
+
+/-- Pascal splits a negative-binomial generating row into the preceding
+success row and a shifted copy of the same row. -/
+theorem nbSumHomog_pascal (r x d len : Nat) :
+    nbSumHomog (r + 2) x d (len + 1) =
+      nbSumHomog (r + 1) x d (len + 1) + x * nbSumHomog (r + 2) x d len := by
+  unfold nbSumHomog
+  rw [natSum_head (len + 1)
+      (fun k => binom (k + (r + 2) - 1) k * x ^ k * d ^ (len + 1 - k)),
+    natSum_head (len + 1)
+      (fun k => binom (k + (r + 1) - 1) k * x ^ k * d ^ (len + 1 - k))]
+  simp only [binom_zero_right, Nat.pow_zero, Nat.one_mul, Nat.sub_zero]
+  have hsum :
+      natSum (len + 1) (fun k =>
+        binom (k + 1 + (r + 2) - 1) (k + 1) * x ^ (k + 1) *
+          d ^ (len + 1 - (k + 1))) =
+        natSum (len + 1) (fun k =>
+          binom (k + 1 + (r + 1) - 1) (k + 1) * x ^ (k + 1) *
+              d ^ (len + 1 - (k + 1)) +
+            x * (binom (k + (r + 2) - 1) k * x ^ k * d ^ (len - k))) := by
+    apply natSum_congr
+    intro k _
+    have hfirst : k + 1 + (r + 2) - 1 = (k + r + 1) + 1 := by omega
+    have hsecond : k + 1 + (r + 1) - 1 = k + r + 1 := by omega
+    have hthird : k + (r + 2) - 1 = k + r + 1 := by omega
+    rw [hfirst, hsecond, hthird, Nat.add_sub_add_right, binom_succ_succ, Nat.pow_succ]
+    simp only [Nat.add_mul]
+    ac_rfl
+  rw [hsum, natSum_add, natSum_mul_left]
+  exact (Nat.add_assoc _ _ _).symm
 
 theorem nbSumHomog_one (r x len : Nat) :
     nbSumHomog r x 1 len = nbSum r x (len + 1) := by

@@ -8,6 +8,7 @@ import Thesis.Probability.Distros.LimitAnalogs
 import Thesis.Probability.Distros.Gaussian
 import Thesis.Probability.Distros.WaitingTime
 import Thesis.Probability.Distros.BernoulliWaiting
+import Thesis.Probability.Distros.BernoulliRace
 
 /-!
 Named finite distros.
@@ -61,4 +62,8 @@ Reading order:
     independent Bernoulli product, identifies its censored geometric
     pushforward on every Boolean event, and obtains the truncated law by
     conditioning that same record on success in the window.
+11. `BernoulliRace` stops the actual Bernoulli product at either a success
+    or failure threshold.  Its ordinary and terminal occupancies give the
+    corrected NB weights and tail, exhaust the fixed trial horizon, and
+    agree with both the truncated and censored NB laws on every event.
 -/

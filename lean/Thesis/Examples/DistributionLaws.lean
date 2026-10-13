@@ -131,4 +131,29 @@ example : QProb.Equiv
     ((geometricFromBernoulli 0 1 1 (by decide)).pmf ⟨0, by decide⟩)
     QProb.one := by decide
 
+/-- Unequal trial weights exercise every denominator-clearing factor. -/
+example :
+    2 ^ 3 * Combinatorics.nbSumHomog 3 3 5 2 + negativeBinomialCensorTail 3 2 2 3 =
+      5 ^ 5 := by decide
+
+example : QProb.Equiv
+    ((negativeBinomialFromBernoulli 3 2 2 3 (by decide) (by decide)).pmf ⟨0, by decide⟩)
+    ⟨25, 124, by decide⟩ := by decide
+
+example : QProb.Equiv
+    ((negativeBinomialCensoredFromBernoulli 3 2 2 3 (by decide) (by decide)).pmf ⟨2, by decide⟩)
+    ⟨513, 625, by decide⟩ := by decide
+
+example : QProb.Equiv
+    ((negativeBinomialCensoredFromBernoulli 2 2 1 1 (by decide) (by decide)).pmf ⟨2, by decide⟩)
+    ⟨1, 2, by decide⟩ := by decide
+
+example : QProb.Equiv
+    ((negativeBinomialFromBernoulli 3 0 2 3 (by decide) (by decide)).pmf ⟨0, by decide⟩)
+    QProb.one := by decide
+
+example : QProb.Equiv
+    ((negativeBinomialCensoredFromBernoulli 3 2 2 0 (by decide) (by decide)).pmf ⟨0, by decide⟩)
+    QProb.one := by decide
+
 end Thesis.Examples.DistributionLaws
