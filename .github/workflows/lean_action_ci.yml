@@ -133,6 +133,7 @@ jobs:
             Thesis.Causality.AlmostSureIntervention
             Thesis.CausalTransport.HiddenDAGAlmostSureIntervention
             Thesis.CausalTransport.ObservationalFormulaSelection
+            Thesis.CausalTransport.BackdoorAdjustment
             Thesis.CausalTransport.GuardedHiddenDAGBoundary
             Thesis.Examples.LocalSupportIdentification
             Thesis.Examples.Admissibility
