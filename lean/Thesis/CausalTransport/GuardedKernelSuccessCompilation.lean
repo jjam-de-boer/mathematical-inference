@@ -472,7 +472,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
         have constructed := marginalAvailable.reindex (newRemaining := outcome)
           (newAction := NodeSet.union externalAction action) marginal.reduction.formula
           (by rw [actionEmpty, NodeSet.union_empty_right]) rfl
-        simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+        simpa only [identifyGuardedKernelFuelLocalCompilation, identifyGuardedKernelFuel.match_3.splitter,
+          identifyGuardedKernelFuel.match_1.splitter, decidableRec_eq_dite, dif_pos, dif_neg,
           Bool.false_eq_true, dite_true, dite_false, NodeSet.isEmpty_empty,
           localAction, localOutcome, *] using constructed
       · rename_i notEmpty
@@ -491,7 +492,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
               cases result
               subst outcome
               have constructed := emptyOutcomeLocalKernelCompilation_printedAvailable available closed action actionSubset
-              simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+              simpa only [identifyGuardedKernelFuelLocalCompilation, identifyGuardedKernelFuel.match_3.splitter,
+                identifyGuardedKernelFuel.match_1.splitter, decidableRec_eq_dite, dif_pos, dif_neg,
                 Bool.false_eq_true, dite_true, dite_false, NodeSet.isEmpty_empty,
                 localAction, localOutcome, *] using constructed
             · rename_i component oneComponent
@@ -523,7 +525,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
                   have constructed := marginalAvailable.reindex (newRemaining := outcome)
                     (newAction := NodeSet.union externalAction action) marginal.reduction.formula
                     (by simp only [componentExternalAction, discardedEqual]) rfl
-                  simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+                  simpa only [identifyGuardedKernelFuelLocalCompilation, identifyGuardedKernelFuel.match_3.splitter,
+                    identifyGuardedKernelFuel.match_1.splitter, decidableRec_eq_dite, dif_pos, dif_neg,
                     Bool.false_eq_true, dite_true, dite_false, NodeSet.isEmpty_empty,
                     localAction, localOutcome, *] using constructed
                 · rename_i notListed
@@ -551,7 +554,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
                       simpa only [localAction] using obtained
                     have constructed := localKernelRestrictionCompilation_printedAvailable remaining larger externalAction
                       action outcome actionSubset discarded nestedAvailable
-                    simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+                    simpa only [identifyGuardedKernelFuelLocalCompilation, identifyGuardedKernelFuel.match_3.splitter,
+                      identifyGuardedKernelFuel.match_1.splitter, decidableRec_eq_dite, dif_pos, dif_neg,
                       Bool.false_eq_true, dite_true, dite_false, NodeSet.isEmpty_empty,
                       localAction, localOutcome, *] using constructed
                   · cases result
@@ -572,7 +576,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
               have constructed := localKernelSplitCompilation_printedAvailable closed action outcome actionSubset outcomeSubset
                 disjoint formulas (fun component listed => (nested component listed).compilation)
                 (fun component listed => (nested component listed).formula_eq) childrenAvailable
-              simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+              simpa only [identifyGuardedKernelFuelLocalCompilation, identifyGuardedKernelFuel.match_3.splitter,
+                identifyGuardedKernelFuel.match_1.splitter, decidableRec_eq_dite, dif_pos, dif_neg,
                 Bool.false_eq_true, dite_true, dite_false, NodeSet.isEmpty_empty,
                 localAction, localOutcome, *] using constructed
           · rename_i notNoAdditional
@@ -600,7 +605,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
               (by simpa only [localAction, localOutcome] using disjoint) reindexedAvailable
             have constructed := transportedAvailable.reindex (newRemaining := outcome)
               (newAction := NodeSet.union externalAction action) _ (by rw [localAction, localOutcome]) rfl
-            simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+            simpa only [identifyGuardedKernelFuelLocalCompilation, identifyGuardedKernelFuel.match_3.splitter,
+              identifyGuardedKernelFuel.match_1.splitter, decidableRec_eq_dite, dif_pos, dif_neg,
               Bool.false_eq_true, dite_true, dite_false, NodeSet.isEmpty_empty,
               localAction, localOutcome, *] using constructed
         · rename_i notSameHost
@@ -623,7 +629,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
             (NodeSet.Disjoint.of_subset_left disjoint (NodeSet.inter_subset_left _ _)) result
           have constructed := localKernelPruneCompilation_printedAvailable closed action outcome actionSubset outcomeSubset
             disjoint nestedAvailable
-          simpa only [identifyGuardedKernelFuelLocalCompilation, decidableRec_eq_dite, dif_pos, dif_neg,
+          simpa only [identifyGuardedKernelFuelLocalCompilation, identifyGuardedKernelFuel.match_3.splitter,
+            identifyGuardedKernelFuel.match_1.splitter, decidableRec_eq_dite, dif_pos, dif_neg,
             Bool.false_eq_true, dite_true, dite_false, NodeSet.isEmpty_empty,
             localAction, localOutcome, *] using constructed
 
