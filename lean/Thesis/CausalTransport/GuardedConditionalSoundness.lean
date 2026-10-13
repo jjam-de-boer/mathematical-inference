@@ -22,9 +22,11 @@ collapse.  Its full support tree is reconstructed in the original model by
 `ofCollapsed`, so no canonical projected membership or global positivity is
 assumed.  Arbitrary finite hidden and private-noise alphabets are allowed.
 
-Two-model comparison deliberately requests local data on both sides.  Some
-fields concern causal support, not just observational overlap; their transfer
-is not smuggled into observational agreement.  These theorems establish
+Two-model comparison deliberately requests local data on both sides.  The
+conditional source and the dual causal/displayed prefix guards remain in
+the recursive boundary; transfer of the whole indexed data is not smuggled
+into observational agreement merely because its quotient leaves are now
+observable.  These theorems establish
 support-qualified forward identification, not an unrestricted zero-class
 success iff identifiability claim.
 -/

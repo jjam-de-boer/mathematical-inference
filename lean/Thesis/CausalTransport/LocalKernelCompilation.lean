@@ -1,6 +1,7 @@
 import Thesis.CausalTransport.GuardedComponentCompilation
 import Thesis.CausalTransport.GuardedComponentFamilyCompilation
 import Thesis.CausalTransport.CurrentKernelSupportCompletion
+import Thesis.CausalTransport.CurrentKernelFamilySupportCompletion
 
 namespace Thesis
 namespace Causality
@@ -24,7 +25,10 @@ operand's data at precisely the finite enumerated variants.  Guarded
 component extraction requests projected-graph accuracy, its actual displayed
 denominator and recursively requested operand data only on positive prefix
 branches.  Family assembly likewise requests each actual child compilation's
-data, rather than requiring a host-joint tree as an input.
+data, rather than requiring a host-joint tree as an input.  Its causal guard
+constructs host support from the actual prefix; its displayed guard needs
+only the printed quotient.  Neither factor-data record now asks for a
+separate causal component conditional or factual overlap.
 
 This is the input algebra for the uniform guarded-ID success compiler.  No
 global observational positivity or denotational-equality leaf is introduced.
@@ -97,7 +101,9 @@ theorem marginal_formula (input : PublishedLocalKernelCompilation G correct rema
 end PublishedLocalKernelCompilation
 
 /-- Primitive quotient data asks for the operand's own data, not its whole
-support trees.  The constructor below recursively builds those trees. -/
+support trees.  Projected-graph accuracy lets the completed inner marginal
+identify the causal conditioner; factual overlap is no longer a field.
+The constructor below recursively builds all preceding trees. -/
 structure LocalComponentFactorData
     (input : PublishedLocalKernelCompilation G correct remaining externalAction)
     (model : ExactModel S) (reference : S.Assignment) (node : Fin S.count) where
@@ -193,14 +199,13 @@ def PublishedLocalComponentFamily.toFamily
   formula_eq := family.formula_eq
 
 /-- One demanded child quotient's primitive boundary.  Its inherited data
-are indexed by exactly that child's two finite marginal enumerations. -/
+are indexed by exactly that child's two finite marginal enumerations.
+The causal branch constructs its host conditioner from its prefix; the
+printed branch needs no separate host or component conditional support. -/
 structure LocalFamilyFactorData
     (family : PublishedLocalComponentFamily G correct remaining externalAction)
     (model : ExactModel S) (reference : S.Assignment) (node : Fin S.count) (selected : remaining node = true) where
-  componentSupported : (ProbabilityTerm.kernel ⟨NodeSet.singleton node,
-    componentExternalAction remaining externalAction (G.componentAt remaining node),
-    chainCondition (G.componentAt remaining node) node⟩).SupportedAt model reference
-  overlap : ObservationalCylinderPositiveAt model (NodeSet.union externalAction (chainCondition remaining node)) reference
+  projected : HasProjectedGraph model G
   numeratorData : forall variant,
     variant ∈ ProbabilityTerm.marginalAssignments S (NodeSet.diff (G.componentAt remaining node)
       (NodeSet.union (NodeSet.singleton node) (chainCondition (G.componentAt remaining node) node))) reference →
@@ -218,9 +223,8 @@ noncomputable def LocalFamilyFactorData.toInputs
     {family : PublishedLocalComponentFamily G correct remaining externalAction}
     {model : ExactModel S} {reference : S.Assignment} {node : Fin S.count} {selected : remaining node = true}
     (data : LocalFamilyFactorData family model reference node selected) :
-    ComponentFamilyFactorInputs family.toFamily correct model reference node selected where
-  componentSupported := data.componentSupported
-  overlap := data.overlap
+    CurrentKernelFamilyFactorInputs family.toFamily correct model reference node selected where
+  projected := data.projected
   numeratorInputSupport := fun variant listed =>
     (family.compilation _ _).supported model variant (data.numeratorData variant listed)
   denominatorInputSupport := fun variant listed =>
@@ -246,7 +250,7 @@ noncomputable def PublishedLocalComponentFamily.guardedReduction
     PublishedLocalKernelCompilation G correct remaining externalAction where
   reduction := family.toFamily.guardedReduction closed
   Data := LocalFamilyData family
-  supported := fun model reference data => family.toFamily.guardedReduction_supportedAt correct closed model reference
+  supported := fun model reference data => family.toFamily.guardedReduction_supportedAt_of_quotient_inputs correct closed model reference
     (fun node selected branch => (data node selected branch).toInputs)
 
 end Causality

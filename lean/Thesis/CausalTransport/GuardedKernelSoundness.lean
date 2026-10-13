@@ -23,9 +23,12 @@ the literal native support tree before native soundness is applied.  Hidden
 and private-noise alphabets may have arbitrary finite sizes.
 
 For two observationally equal models, data is requested in both models.
-Unlike a purely observational overlap premise, the current local boundary
-also contains demanded causal-conditional support, so no unproved automatic
-transfer of all its fields is asserted.  These are support-qualified forward
+The factor leaves now use projected-graph accuracy, the actual positive
+displayed denominator and preceding input data, not an extra causal
+conditional or factual-overlap field.  Their guards still mention both
+causal and displayed prefixes, so leaf observability alone does not prove
+transfer of the entire recursively indexed boundary.  No unproved automatic
+transfer is asserted.  These are support-qualified forward
 identification theorems, not zero-unrestricted ID success equivalences.
 -/
 
