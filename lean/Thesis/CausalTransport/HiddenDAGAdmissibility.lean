@@ -27,10 +27,12 @@ latent-projection interface nor do-calculus soundness is used for these
 positivity and support constructions.
 
 Pointwise action admissibility and uniform overlap on supported parent
-contexts remain distinct.  The final application-domain statement must say
-which one it quantifies.  In particular native conditioner positivity is
-not replaced by factual action overlap, and observational agreement is not
-used to transfer causal conditioner support.
+contexts remain distinct.  `HiddenDAGAdmissibleDomain` explicitly uses the
+uniform predicate for the original query's semantic boundary.  Native
+conditioner positivity is not replaced by factual action overlap, and
+observational agreement is not used to transfer causal conditioner support.
+The final supported-zero correspondence must additionally account for the
+separate used-conditional tests of an identifying expression.
 -/
 
 namespace FiniteHiddenDAGSCM

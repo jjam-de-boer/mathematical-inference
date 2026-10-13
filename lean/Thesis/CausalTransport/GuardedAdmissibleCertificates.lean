@@ -32,9 +32,12 @@ conditional support recursion continues to use intrinsic conditioner
 promotion rather than factual action overlap.
 
 These are automatic certificates at actual success, valid throughout their
-explicit zero-permitting application domain.  The semantic completeness
-direction and the final query-domain package must still be assembled; this
-module does not relabel the old positive `PublishedCompleteness` record.
+explicit zero-permitting application domain.  The independent primitive
+query-domain completeness direction is assembled in
+`HiddenDAGAdmissibleCompleteness`.  The final semantic correspondence retaining
+the used-conditional qualification remains separate; this module does not
+relabel the old positive `PublishedCompleteness` record or assert that
+external action admissibility alone supplies every internal quotient.
 -/
 
 /-- An actual successful guarded joint formula with its native path proof

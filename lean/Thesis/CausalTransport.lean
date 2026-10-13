@@ -357,8 +357,19 @@ constructs actual joint and conditional success certificates from the native
 tests, building the whole support tree internally. Their one-model soundness
 and two-model identification methods permit observed zeros; causal source
 positivity remains explicit on both sides of a conditional comparison.
-The final query/reference-domain statement and semantic completeness package,
-with their correspondence to the papers' supported-zero scope, remain open.
+`HiddenDAGAdmissibleDomain` states the primitive original-query semantic
+domain independently of the engine. `HiddenDAGAdmissibleCompleteness`
+constructs the actual joint/conditional certificates from identification on
+that domain and inhabits its joint/conditional/hedge completeness fields.
+The native counterpairs meet the primitive conditions at every reference;
+positivity is used for their admissibility, not to restrict the quantified
+domain. `AdmissibleFrontDoorBoundary` proves that positive external action
+overlap alone still does not imply identification at zeros: deterministic
+mediator cells leave the successful formula undefined despite two admissible
+records with the same observed law and effects zero versus one half.
+The final supported-zero domain and correspondence must therefore retain
+the papers' used-conditional restriction; a primitive-domain success
+equivalence is refuted, not an outstanding theorem to force.
 `ConditionalSupport` preserves actual
 conditional support through arbitrary block promotion by unit-level SCM
 composition and event-mass monotonicity, without observable overlap. The

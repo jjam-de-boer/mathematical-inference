@@ -316,15 +316,39 @@ both certificates outside the globally positive model class, exclude an
 inadmissible factual action, and distinguish a skipped null quotient from a
 strict product that demands it.
 
-What remains is the final query/reference-domain statement and the semantic
-joint/conditional completeness and correspondence assembly on that domain,
-including the countermodel direction. Its quantifiers and coverage still
-need to be checked against the papers' supported-zero scope. In particular,
-admissibility of a lone external action is not asserted to guarantee every
-conditional in the returned expression, and the exact domain of this
-particular evaluator is not silently claimed to cover every alternative
-identifying expression. The actual-success certificates above do not yet
-constitute that final completeness package.
+`HiddenDAGAdmissibleDomain` now states primitive query admissibility and
+semantic identification independently of any engine or proposed output:
+uniform action overlap, plus positive original causal conditioners for
+conditional queries. Identification quantifies over all native model pairs
+at jointly admissible references. Independently proved positive coverage
+puts the existing failure pairs inside this zero-containing domain without
+restricting the domain itself to positive models or choosing a separating
+reference. `HiddenDAGAdmissibleCompleteness` then constructs actual joint and
+conditional certificates from those semantic premises and assembles the
+inhabited `PrimitiveAdmissibleCompleteness` joint/conditional/hedge fields.
+Failure and hedge witnesses retain their original native records, with
+explicit admissibility at every reference. Regressions also feed directly
+proved observational identification into both completeness fields and apply
+the returned literal formulas in a genuinely nonpositive native model.
+
+The missing used-conditional qualification cannot simply be removed.
+`AdmissibleFrontDoorBoundary` retains a structurally successful graph but
+uses a deterministic mediator, with `X = M = U`, `Z = U`, and respectively
+`Y = false` or `Y = M xor U`. Both native records have identical whole
+observed distributions and both action values are admissible everywhere.
+Nevertheless `P(Y = true,Z = false | do(X = true))` is zero versus one half.
+The exact guarded expression is undefined at that reference and its
+used-conditional predicate correctly rejects it. Thus success iff semantic
+identifiability on the external primitive query domain alone is false,
+even after excluding null external actions.
+
+What remains is the final supported-zero semantic domain and correspondence
+assembly retaining the papers' used-conditional restriction, rather than
+forcing the refuted primitive-domain reverse implication. Its quantifiers
+and coverage still need to be checked against the papers: the exact domain
+of this particular evaluator is not silently claimed to cover every
+alternative identifying expression. The proved one-way primitive package
+and actual-success certificates are not relabelled as that final result.
 
 Continuous probability, general measure theory, and a complete formalisation
 of every philosophical or sociological claim are outside this project's scope.
