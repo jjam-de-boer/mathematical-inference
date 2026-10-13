@@ -118,13 +118,22 @@ def smallWitness : BackdoorAdjustmentWitness projection query small where
     (FourWayDisjoint.emptyAction _ _ _
       (NodeSet.disjoint_singletons_of_ne (by decide))
       (NodeSet.disjoint_empty_right _) (NodeSet.disjoint_empty_right _))
-    (by decide +kernel)
+    (by
+      change projection.observedGraph.dSeparated
+        { removeIncoming := NodeSet.union NodeSet.empty
+            (projection.observedGraph.nonAncestorsOf (.bar NodeSet.empty) query.action NodeSet.empty),
+          removeOutgoing := NodeSet.empty }
+        small query.action (NodeSet.union NodeSet.empty NodeSet.empty) = true
+      decide +kernel)
   exchangeAction := .rule2 NodeSet.empty query.outcome query.action small
     (FourWayDisjoint.emptyAction _ _ _
       (NodeSet.disjoint_singletons_of_ne (by decide))
       (NodeSet.disjoint_singletons_of_ne (by decide))
       (NodeSet.disjoint_singletons_of_ne (by decide)))
-    (by decide +kernel)
+    (by
+      change projection.observedGraph.dSeparated (.barUnderline NodeSet.empty query.action)
+        query.outcome query.action (NodeSet.union NodeSet.empty small) = true
+      decide +kernel)
 
 def largeWitness : BackdoorAdjustmentWitness projection query large where
   action_disjoint := NodeSet.disjoint_union_of
@@ -136,7 +145,13 @@ def largeWitness : BackdoorAdjustmentWitness projection query large where
       (NodeSet.disjoint_union_left_of
         (NodeSet.disjoint_singletons_of_ne (by decide)) (NodeSet.disjoint_singletons_of_ne (by decide)))
       (NodeSet.disjoint_empty_right _) (NodeSet.disjoint_empty_right _))
-    (by decide +kernel)
+    (by
+      change projection.observedGraph.dSeparated
+        { removeIncoming := NodeSet.union NodeSet.empty
+            (projection.observedGraph.nonAncestorsOf (.bar NodeSet.empty) query.action NodeSet.empty),
+          removeOutgoing := NodeSet.empty }
+        large query.action (NodeSet.union NodeSet.empty NodeSet.empty) = true
+      decide +kernel)
   exchangeAction := .rule2 NodeSet.empty query.outcome query.action large
     (FourWayDisjoint.emptyAction _ _ _
       (NodeSet.disjoint_singletons_of_ne (by decide))
@@ -144,7 +159,10 @@ def largeWitness : BackdoorAdjustmentWitness projection query large where
         (NodeSet.disjoint_singletons_of_ne (by decide)) (NodeSet.disjoint_singletons_of_ne (by decide)))
       (NodeSet.disjoint_union_of
         (NodeSet.disjoint_singletons_of_ne (by decide)) (NodeSet.disjoint_singletons_of_ne (by decide))))
-    (by decide +kernel)
+    (by
+      change projection.observedGraph.dSeparated (.barUnderline NodeSet.empty query.action)
+        query.outcome query.action (NodeSet.union NodeSet.empty large) = true
+      decide +kernel)
 
 noncomputable def smallCandidate := smallWitness.candidate
 noncomputable def largeCandidate := largeWitness.candidate
@@ -194,8 +212,12 @@ def half : QProb := ⟨1, 2, by decide⟩
 nonzero rational result.  This is not merely a supported-zero smoke test. -/
 noncomputable def selected_value_half : ProbabilityResult.Equivalent
     (smallCandidate.formula.observationalDenote model.observationalDist reference) (some half) := by
-  apply ProbabilityResult.Equivalent.value
-  decide +kernel
+  have checked : (smallCandidate.formula.observationalDenote model.observationalDist reference).any
+      (fun value => decide (QProb.Equiv value half)) = true := by decide +kernel
+  cases result : smallCandidate.formula.observationalDenote model.observationalDist reference with
+  | none => simp only [result, Option.any_none, Bool.false_eq_true] at checked
+  | some value =>
+      exact .value (of_decide_eq_true (by simpa only [result, Option.any_some] using checked))
 
 noncomputable def actual_effect_half : ProbabilityResult.Equivalent
     (model.termDenote query.sourceTerm reference) (some half) :=
