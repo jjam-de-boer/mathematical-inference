@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.ObservationalFormulaSelection
+import Thesis.CausalTransport.HiddenDAGSupportedDomain
 
 namespace Thesis
 namespace Causality
@@ -173,6 +174,19 @@ noncomputable def candidate {query : JointKernelQuery S} {covariates : NodeSet S
   actionFree := formula_actionFree query covariates
   guard := .always
   interpret := fun model reference _ _ printed => witness.soundAt model reference printed
+
+/-- Unlike an action-one candidate, this alternative is a graph-valid
+positive-covered representation on its entire printed support domain.  It
+therefore inhabits the existing graph-level semantic identification predicate
+without changing that predicate to a law-specific one. -/
+theorem supported_identifiable {query : JointKernelQuery S} {covariates : NodeSet S}
+    (witness : BackdoorAdjustmentWitness P query covariates) :
+    HiddenDAGSupportedDomain.jointIdentifiable P query :=
+  ⟨formula query covariates, formula_actionFree query covariates,
+    HiddenDAGSupportedDomain.positiveCovered_of_zeroFree _ ⟨trivial, trivial⟩,
+    fun model reference admissible =>
+      ⟨witness.soundAt model reference
+        (model.supportedAt_of_usedConditionalsAdmissible _ reference admissible)⟩⟩
 
 end BackdoorAdjustmentWitness
 end Causality

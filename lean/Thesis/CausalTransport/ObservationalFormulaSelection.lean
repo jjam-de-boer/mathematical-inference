@@ -191,6 +191,25 @@ noncomputable def agreeAt (left right : GuardedObservationalFormula P source)
   ProbabilityResult.trans (ProbabilityResult.symm (left.soundAt model reference sourceSupported leftAccepted))
     (right.soundAt model reference sourceSupported rightAccepted)
 
+/-- Availability transfers across equality of the whole observed law, even
+when the records use different atom lists, hidden alphabets or unreduced
+fraction representatives.  Only printed support and the observable guard
+transfer; this does not infer the right model's causal source support. -/
+theorem available_transfer (candidate : GuardedObservationalFormula P source)
+    {left right : FiniteHiddenDAGSCM S P} (observational : left.ObservationalAgreement right)
+    (reference : S.Assignment)
+    (accepted : candidate.available left.observationalDist reference = true) :
+    candidate.available right.observationalDist reference = true := by
+  apply Bool.and_eq_true_iff.mpr
+  refine ⟨candidate.guard.check_transfer observational reference (Bool.and_eq_true_iff.mp accepted).1, ?_⟩
+  rw [ProbabilityTerm.observationalDenote_eq_native right candidate.formula candidate.actionFree reference]
+  let printed := ProbabilityResult.Supported.transport
+    (FiniteHiddenDAGSCM.actionFree_invariant left right observational candidate.formula candidate.actionFree reference)
+    (candidate.printedSupported left reference accepted)
+  rcases printed with ⟨value, equivalent⟩
+  cases equivalent with
+  | value _ => rfl
+
 /-- Read a joint engine certificate as one candidate while retaining its
 original separate engine-result certificate unchanged. -/
 noncomputable def ofJoint {query : JointKernelQuery S}
@@ -232,6 +251,35 @@ def select (record : FiniteProbRecord S.Assignment) (reference : S.Assignment) :
   | [] => none
   | candidate :: candidates =>
       if candidate.available record reference then some candidate else select record reference candidates
+
+/-- Putting an existing ID/IDC candidate first preserves every supported
+application it already handled.  Fallbacks cannot replace that accepted
+output, nor turn an old supported success into an empty selection. -/
+theorem select_cons_of_available (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
+    (candidate : GuardedObservationalFormula P source)
+    (candidates : List (GuardedObservationalFormula P source))
+    (accepted : candidate.available record reference = true) :
+    select record reference (candidate :: candidates) = some candidate := by
+  simp only [select, accepted, if_true]
+
+/-- Search returns an actual member of the given finite catalogue; it does
+not construct a new unverified formula when all candidates are unavailable. -/
+theorem select_mem (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
+    (candidates : List (GuardedObservationalFormula P source))
+    (chosen : GuardedObservationalFormula P source)
+    (selected : select record reference candidates = some chosen) : chosen ∈ candidates := by
+  induction candidates with
+  | nil => cases selected
+  | cons candidate candidates inductionHypothesis =>
+      cases accepted : candidate.available record reference with
+      | false =>
+          exact List.mem_cons_of_mem candidate
+            (inductionHypothesis (by simpa only [select, accepted, Bool.false_eq_true, if_false] using selected))
+      | true =>
+          have same : candidate = chosen := Option.some.inj
+            (by simpa only [select, accepted, if_true] using selected)
+          rw [← same]
+          exact List.mem_cons_self
 
 theorem select_available (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
     (candidates : List (GuardedObservationalFormula P source))
@@ -307,6 +355,24 @@ noncomputable def select_soundAt (model : FiniteHiddenDAGSCM S P) (reference : S
     model.TermEquivalentAt source chosen.formula reference :=
   chosen.soundAt model reference sourceSupported
     (select_available model.observationalDist reference candidates chosen selected)
+
+/-- A selected candidate identifies the source in observationally agreeing
+native models on their common genuine source support.  Its availability is
+transferred observably; hidden mechanisms are never inspected by selection. -/
+noncomputable def select_identifiableAt
+    (left right : FiniteHiddenDAGSCM S P) (observational : left.ObservationalAgreement right)
+    (reference : S.Assignment) (candidates : List (GuardedObservationalFormula P source))
+    (chosen : GuardedObservationalFormula P source)
+    (selected : select left.observationalDist reference candidates = some chosen)
+    (leftSource : left.TermSupportedAt source reference)
+    (rightSource : right.TermSupportedAt source reference) :
+    ProbabilityResult.Equivalent (left.termDenote source reference) (right.termDenote source reference) := by
+  have leftAccepted := select_available left.observationalDist reference candidates chosen selected
+  have rightAccepted := chosen.available_transfer observational reference leftAccepted
+  exact ProbabilityResult.trans (chosen.soundAt left reference leftSource leftAccepted)
+    (ProbabilityResult.trans
+      (FiniteHiddenDAGSCM.actionFree_invariant left right observational chosen.formula chosen.actionFree reference)
+      (ProbabilityResult.symm (chosen.soundAt right reference rightSource rightAccepted)))
 
 end GuardedObservationalFormula
 end Causality
