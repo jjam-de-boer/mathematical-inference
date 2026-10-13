@@ -528,7 +528,7 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
               subst outcome
               have constructed := emptyOutcomeLocalKernelCompilation_printedAvailable available closed action actionSubset
               simpa only [identifyGuardedKernelFuelLocalCompilation, notEmpty, sameHost, noAdditional,
-                noComponents, dif_pos, dif_neg, dite_true, dite_false] using constructed
+                noComponents, dif_pos, dif_neg, Bool.false_eq_true, dite_true, dite_false] using constructed
             · rename_i component oneComponent
               have componentEqual := cComponents_eq_of_singleton Γ (NodeSet.diff remaining action) oneComponent
               have outcomeInComponent : NodeSet.Subset outcome component := by
@@ -559,7 +559,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
                     (newAction := NodeSet.union externalAction action) marginal.reduction.formula
                     (by simp only [componentExternalAction, discardedEqual]) rfl
                   simpa only [identifyGuardedKernelFuelLocalCompilation, notEmpty, sameHost, noAdditional,
-                    oneComponent, notSingle, componentListed, dif_pos, dif_neg, dite_true, dite_false] using constructed
+                    oneComponent, notSingle, componentListed, dif_pos, dif_neg, Bool.false_eq_true,
+                    dite_true, dite_false] using constructed
                 · rename_i notListed
                   have absentComponent : (Γ.cComponents remaining).any (fun piece => NodeSet.equal piece component) = false := by
                     cases value : (Γ.cComponents remaining).any (fun piece => NodeSet.equal piece component) with
@@ -586,7 +587,8 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
                     have constructed := localKernelRestrictionCompilation_printedAvailable remaining larger externalAction
                       action outcome actionSubset discarded nestedAvailable
                     simpa only [identifyGuardedKernelFuelLocalCompilation, notEmpty, sameHost, noAdditional,
-                      oneComponent, notSingle, notListed, containing, dif_pos, dif_neg, dite_true, dite_false] using constructed
+                      oneComponent, notSingle, notListed, containing, dif_pos, dif_neg, Bool.false_eq_true,
+                      dite_true, dite_false] using constructed
                   · cases result
             · rename_i first second rest manyComponents
               let run := fun component => identifyGuardedKernelFuel fuel Γ remaining component
@@ -607,7 +609,7 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
                 disjoint formulas (fun component listed => (nested component listed).compilation)
                 (fun component listed => (nested component listed).formula_eq) childrenAvailable
               simpa only [identifyGuardedKernelFuelLocalCompilation, notEmpty, sameHost, noAdditional,
-                manyComponents, dif_pos, dif_neg, dite_true, dite_false] using constructed
+                manyComponents, dif_pos, dif_neg, Bool.false_eq_true, dite_true, dite_false] using constructed
           · rename_i notNoAdditional
             have hasAdditional : NodeSet.isEmpty (identificationAdditionalAction Γ remaining outcome action) = false := by
               cases value : NodeSet.isEmpty (identificationAdditionalAction Γ remaining outcome action) with

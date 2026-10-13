@@ -43,6 +43,7 @@ import Thesis.CausalTransport.LocalConditionalCompilation
 import Thesis.CausalTransport.LocalConditionalDataAvailability
 import Thesis.CausalTransport.GuardedConditionalSuccessCompilation
 import Thesis.CausalTransport.GuardedConditionalSoundness
+import Thesis.CausalTransport.GuardedPrintedSoundness
 import Thesis.CausalTransport.GuardedHiddenDAGBoundary
 import Thesis.CausalTransport.KernelIdentification
 import Thesis.CausalTransport.KernelCompilation

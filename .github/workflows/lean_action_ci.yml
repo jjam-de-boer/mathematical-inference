@@ -118,8 +118,10 @@ jobs:
             Thesis.CausalTransport.GuardedConditionalIdentification
             Thesis.CausalTransport.ConditionalExchangeCompilation
             Thesis.CausalTransport.LocalConditionalCompilation
+            Thesis.CausalTransport.LocalConditionalDataAvailability
             Thesis.CausalTransport.GuardedConditionalSuccessCompilation
             Thesis.CausalTransport.GuardedConditionalSoundness
+            Thesis.CausalTransport.GuardedPrintedSoundness
             Thesis.CausalTransport.GuardedHiddenDAGBoundary
             Thesis.Examples.LocalSupportIdentification
             Thesis.Examples.Admissibility
