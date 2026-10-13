@@ -91,10 +91,11 @@ theorem waitingFailures_mass (n a b : Nat) (positive : 0 < b + a) (k : Nat) :
             simp
           simp only [Bool.false_eq_true, if_false, if_true]
           rw [hslice]
-          simp
+          simp only [Nat.zero_ne_add_one k, decide_false]
           rw [FiniteProbRecord.eventMass_false, Nat.mul_zero, Nat.add_zero, ih]
           by_cases hlt : k < n
-          · have hexp : n - (k + 1) = n - 1 - k := by omega
+          · have hexp : n - (k + 1) = n - 1 - k := by
+              rw [Nat.sub_sub, Nat.add_comm k 1]
             simp [hlt, hexp, Nat.pow_succ]
             ac_rfl
           · by_cases heq : k = n
@@ -200,11 +201,15 @@ theorem geometricCensoredFromBernoulli_pmf (cap a b : Nat) (ha : 0 < a)
         Fin.ext_iff, union, hlast]
       by_cases hx : x.val ≤ cap
       · by_cases heq : x.val = cap
-        · simp [j, last, heq]
+        · rw [heq]
+          simp only [j, last, Nat.min_self, eq_self,
+            Nat.ne_of_lt (Nat.lt_succ_self cap), decide_true, decide_false, Bool.or_false]
         · have hne : x.val ≠ cap + 1 := by omega
           simp [Nat.min_eq_left hx, j, last, heq, hne]
       · have heq : x.val = cap + 1 := by have := x.isLt; omega
-        simp [heq, j, last, Nat.min_eq_right (Nat.le_succ _)]
+        rw [heq]
+        simp only [j, last, Nat.min_eq_right (Nat.le_succ _), eq_self,
+          Nat.succ_ne_self cap, decide_true, decide_false, Bool.or_true]
     have hdisjoint : disjoint (FiniteProbRecord.singletonEvent j)
         (FiniteProbRecord.singletonEvent last) := by
       intro x hx hy
