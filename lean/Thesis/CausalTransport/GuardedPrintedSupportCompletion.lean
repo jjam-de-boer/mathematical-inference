@@ -91,9 +91,9 @@ noncomputable def prefix_supportedAt_of_printed_factors
           exact ⟨sourceSupported, ⟨targetSupported, previousSupport⟩⟩
       | true =>
           let previousNodes := chainPrefix remaining n
-          let previousEquality :=
-            ((prefixDerivation remaining action outside factor factorDerivation n previousBound).compile correct)
-              .denotational_soundAt semantics previousSupport
+          let precedingDerivation :=
+            (prefixDerivation remaining action outside factor factorDerivation n previousBound).compile correct
+          let previousEquality := precedingDerivation.denotational_soundAt semantics previousSupport
           let sourceSupported := Kernel.unconditional_supportedAt model (chainPrefix remaining (n + 1)) action reference
           let jointSupported := Kernel.unconditional_supportedAt model
             (NodeSet.union (NodeSet.singleton node) previousNodes) action reference
