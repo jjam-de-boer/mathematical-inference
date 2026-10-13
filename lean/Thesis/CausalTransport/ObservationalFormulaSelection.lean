@@ -418,7 +418,12 @@ noncomputable def select_plan_soundAt (model : FiniteHiddenDAGSCM S P) (referenc
     rw [select_plan, ← certified]
     exact selected
   cases result : select model.observationalDist reference candidates with
-  | none => cases mapped
+  | none =>
+      -- Normalize the computed option before eliminating its impossible
+      -- constructor equality; the opaque search is not an equality index.
+      have impossible : (none : Option (ObservationalFormulaPlan S)) = some chosen := by
+        simpa only [result, Option.map_none] using mapped
+      cases impossible
   | some candidate =>
       have same : candidate.plan = chosen := Option.some.inj
         (by simpa only [result, Option.map_some] using mapped)
