@@ -206,9 +206,13 @@ theorem available_transfer (candidate : GuardedObservationalFormula P source)
   let printed := ProbabilityResult.Supported.transport
     (FiniteHiddenDAGSCM.actionFree_invariant left right observational candidate.formula candidate.actionFree reference)
     (candidate.printedSupported left reference accepted)
-  rcases printed with ⟨value, equivalent⟩
-  cases equivalent with
-  | value _ => rfl
+  cases result : right.termDenote candidate.formula reference with
+  | none =>
+      rcases printed with ⟨value, equivalent⟩
+      have impossible : ProbabilityResult.Equivalent none (some value) := by
+        simpa only [result] using equivalent
+      cases impossible
+  | some value => rfl
 
 /-- Read a joint engine certificate as one candidate while retaining its
 original separate engine-result certificate unchanged. -/
