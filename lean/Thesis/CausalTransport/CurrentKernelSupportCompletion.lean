@@ -40,12 +40,19 @@ prove that every recursive input tree or displayed denominator requested by
 a whole ID/IDC program is available from the published admissibility domain.
 -/
 
-private noncomputable def projectedPrimitives (model : ExactModel S)
+namespace FiniteLatentSCM
+
+/-- The internally proved primitive semantics need only the actual projected
+graph.  Export this boundary for support inductions that interpret an already
+completed inner tree; canonical pairwise-root membership is not required. -/
+noncomputable def projectedLocalPrimitiveSoundness (model : ExactModel S)
     (projected : HasProjectedGraph model G) (correct : DSeparationCorrectness G) :
     LocalPrimitiveSoundness G model := by
   let witnesses := PathDoRulePartitionWitnesses.ofPathProjected G model projected
   exact (PathPrimitiveSoundness.ofDoRule model G
     witnesses.toProductCrossProductLaws.toDistributionLaws.toCrossProductSoundness.toDoRule).compile correct
+
+end FiniteLatentSCM
 
 namespace PublishedCurrentKernelReduction
 
@@ -68,7 +75,7 @@ noncomputable def marginal_source_positiveAt
   let marginal := input.marginal kept outside subset
   let completed := input.marginal_supportedAt correct kept outside subset model reference inputSupport
   let interpreted := (marginal.derivation.compile correct).denotational_soundAt
-    (projectedPrimitives model projected correct) completed
+    (model.projectedLocalPrimitiveSoundness projected correct) completed
   exact ProbabilityResult.PositiveSupportedValue.transport (ProbabilityResult.symm interpreted) displayedPositive
 
 end PublishedCurrentKernelReduction

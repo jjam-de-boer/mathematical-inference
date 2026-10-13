@@ -106,6 +106,7 @@ jobs:
             Thesis.CausalTransport.CurrentKernelSupportCompletion
             Thesis.CausalTransport.CurrentKernelFamilySupportCompletion
             Thesis.CausalTransport.GuardedEvaluationSupport
+            Thesis.CausalTransport.GuardedPrintedSupportCompletion
             Thesis.CausalTransport.LocalKernelCompilation
             Thesis.CausalTransport.LocalKernelQueryCompilation
             Thesis.CausalTransport.HiddenDAGComponentFamilyCompilation
