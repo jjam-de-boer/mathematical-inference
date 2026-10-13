@@ -18,8 +18,10 @@ An observational expression therefore specifies its *own* primitive
 used-conditional domain.  These definitions inspect that expression's
 syntax-directed tests in each original native record.  They neither inspect
 an identification engine nor assume compiler data or a complete support tree.
-The action test is explicitly uniform over supported observed-parent contexts;
-the original intervened conditioner remains separate from observable tests.
+The intrinsic domain below is more general than that separate action test:
+the uniform availability proofs need no factual action overlap.  The original
+intervened conditioner remains separate from observable tests.  Explicit
+inclusion lemmas retain the paper-qualified domain as a special case.
 
 `jointRepresentedOn` and `conditionalRepresentedOn` state that evaluating the
 finite observational expression actually computes the requested causal value
@@ -66,21 +68,56 @@ an invalid denominator such as the one in `0/0` fails coverage. -/
 theorem positiveCovered_zero : PositiveCovered P (ProbabilityTerm.zero : ProbabilityTerm S) :=
   fun _ _ _ => trivial
 
-/-- A joint application requires the original primitive action test and
-exactly the conditionals demanded by this independently supplied expression.
-No engine success equation or support tree is part of the application. -/
-def JointAdmissibleAt (model : FiniteHiddenDAGSCM S P) (query : JointKernelQuery S)
+/-- The strongest intrinsic joint application boundary for the selected
+expression: exactly its primitive used-conditional tests.  No factual action
+overlap, engine success equation or support tree is assumed.  The query
+parameter is retained for the matching semantic comparison below. -/
+def JointAdmissibleAt (model : FiniteHiddenDAGSCM S P) (_query : JointKernelQuery S)
     (term : ProbabilityTerm S) (reference : S.Assignment) : Prop :=
-  HiddenDAGAdmissibleDomain.JointAdmissibleAt model query reference ∧
-    model.UsedConditionalsAdmissibleAt term reference
+  model.UsedConditionalsAdmissibleAt term reference
 
 /-- A conditional application additionally retains its original native
 causal conditioner.  Positivity of the displayed observational expression
 does not manufacture a value for an unsupported original target. -/
 def ConditionalAdmissibleAt (model : FiniteHiddenDAGSCM S P) (query : ConditionalKernelQuery S)
     (term : ProbabilityTerm S) (reference : S.Assignment) : Prop :=
-  HiddenDAGAdmissibleDomain.ConditionalAdmissibleAt model query reference ∧
+  model.ConditioningAdmissibleAt query.operationKernel reference ∧
     model.UsedConditionalsAdmissibleAt term reference
+
+/-- Every application satisfying the separate published action restriction
+and the expression's demand tests is also an intrinsic application.  Dropping
+an unused action premise enlarges coverage rather than changing its semantics. -/
+theorem joint_publishedBoundary_subset_intrinsic (model : FiniteHiddenDAGSCM S P)
+    (query : JointKernelQuery S) (term : ProbabilityTerm S) (reference : S.Assignment)
+    (published : HiddenDAGAdmissibleDomain.JointAdmissibleAt model query reference ∧
+      model.UsedConditionalsAdmissibleAt term reference) : JointAdmissibleAt model query term reference :=
+  published.2
+
+theorem conditional_publishedBoundary_subset_intrinsic (model : FiniteHiddenDAGSCM S P)
+    (query : ConditionalKernelQuery S) (term : ProbabilityTerm S) (reference : S.Assignment)
+    (published : HiddenDAGAdmissibleDomain.ConditionalAdmissibleAt model query reference ∧
+      model.UsedConditionalsAdmissibleAt term reference) : ConditionalAdmissibleAt model query term reference :=
+  ⟨published.1.2, published.2⟩
+
+/-- No hidden extra application restriction remains: for a fixed joint
+expression the primitive domain is exactly its ordinary partial support.
+This is maximal coverage for that literal expression without completing
+undefined conditionals or replacing it by some alternative formula. -/
+theorem jointAdmissibleAt_iff_supported (model : FiniteHiddenDAGSCM S P)
+    (query : JointKernelQuery S) (term : ProbabilityTerm S) (reference : S.Assignment) :
+    JointAdmissibleAt model query term reference ↔ Nonempty (model.TermSupportedAt term reference) :=
+  model.usedConditionalsAdmissibleAt_iff_supported term reference
+
+/-- A conditional application's domain is exactly support of both original
+target and displayed expression.  No factual action overlap or positive
+outcome numerator is demanded, and neither missing endpoint is totalized. -/
+theorem conditionalAdmissibleAt_iff_endpoints_supported (model : FiniteHiddenDAGSCM S P)
+    (query : ConditionalKernelQuery S) (term : ProbabilityTerm S) (reference : S.Assignment) :
+    ConditionalAdmissibleAt model query term reference ↔
+      Nonempty (model.TermSupportedAt query.sourceTerm reference) ∧
+        Nonempty (model.TermSupportedAt term reference) :=
+  and_congr (model.conditioningAdmissibleAt_iff_supported query.operationKernel reference)
+    (model.usedConditionalsAdmissibleAt_iff_supported term reference)
 
 /-- An action-free candidate's entire joint application domain is
 observable.  This transfers primitive demand tests, not causal support
@@ -89,8 +126,7 @@ theorem JointAdmissibleAt.transfer {left right : FiniteHiddenDAGSCM S P}
     {query : JointKernelQuery S} {term : ProbabilityTerm S} {reference : S.Assignment}
     (observational : left.ObservationalAgreement right) (actionFree : term.ActionFree)
     (admissible : JointAdmissibleAt left query term reference) : JointAdmissibleAt right query term reference :=
-  ⟨HiddenDAGAdmissibleDomain.JointAdmissibleAt.transfer observational admissible.1,
-    admissible.2.transfer observational term actionFree reference⟩
+  FiniteHiddenDAGSCM.UsedConditionalsAdmissibleAt.transfer observational term actionFree reference admissible
 
 /-- Only the observable part of a conditional application transfers.  The
 actual right source conditioner is supplied explicitly, never concluded
@@ -100,17 +136,15 @@ theorem ConditionalAdmissibleAt.transfer {left right : FiniteHiddenDAGSCM S P}
     (observational : left.ObservationalAgreement right) (actionFree : term.ActionFree)
     (rightSource : right.ConditioningAdmissibleAt query.operationKernel reference)
     (admissible : ConditionalAdmissibleAt left query term reference) : ConditionalAdmissibleAt right query term reference :=
-  ⟨⟨FiniteHiddenDAGSCM.ObservationalActionAdmissibleOnParentSupport.transfer observational admissible.1.1,
-      rightSource⟩, admissible.2.transfer observational term actionFree reference⟩
+  ⟨rightSource, admissible.2.transfer observational term actionFree reference⟩
 
-/-- Positive coverage supplies the exact candidate's demand tests in every
-positive record, in addition to the primitive external action boundary. -/
+/-- Positive coverage supplies the exact candidate's intrinsic demand tests
+in every positive record, without adding factual action overlap. -/
 theorem jointAdmissibleAt_of_positive (query : JointKernelQuery S) (term : ProbabilityTerm S)
     (covered : PositiveCovered P term) {model : FiniteHiddenDAGSCM S P}
     (positive : model.ObservationallyPositive) (reference : S.Assignment) :
     JointAdmissibleAt model query term reference :=
-  ⟨HiddenDAGAdmissibleDomain.jointAdmissibleAt_of_positive positive query reference,
-    covered model positive reference⟩
+  covered model positive reference
 
 /-- Positive candidate coverage and separately proved source positivity put
 the full positive native class inside the conditional application domain. -/
@@ -118,7 +152,7 @@ theorem conditionalAdmissibleAt_of_positive (query : ConditionalKernelQuery S) (
     (covered : PositiveCovered P term) {model : FiniteHiddenDAGSCM S P}
     (positive : model.ObservationallyPositive) (reference : S.Assignment) :
     ConditionalAdmissibleAt model query term reference :=
-  ⟨HiddenDAGAdmissibleDomain.conditionalAdmissibleAt_of_positive positive query reference,
+  ⟨positive.conditioningAdmissibleAt query.operationKernel reference,
     covered model positive reference⟩
 
 /-- Semantic joint uniqueness on a fixed, engine-independent used-

@@ -68,7 +68,7 @@ theorem PublishedAdmissibleJointCertificate.representedOn {query : JointKernelQu
     (certificate : PublishedAdmissibleJointCertificate P query) :
     HiddenDAGSupportedDomain.jointRepresentedOn P query certificate.formula := by
   intro model reference admissible
-  exact ⟨certificate.soundAt model reference admissible.1 admissible.2⟩
+  exact ⟨certificate.intrinsic_soundAt model reference admissible⟩
 
 /-- Conditional representation retains the actual original source
 conditioner.  Positive displayed support is not treated as source support. -/
@@ -76,7 +76,7 @@ theorem PublishedAdmissibleConditionalCertificate.representedOn {query : Conditi
     (certificate : PublishedAdmissibleConditionalCertificate P query) :
     HiddenDAGSupportedDomain.conditionalRepresentedOn P query certificate.formula := by
   intro model reference admissible
-  exact ⟨certificate.soundAt model reference admissible.1.1 admissible.1.2 admissible.2⟩
+  exact ⟨certificate.intrinsic_soundAt model reference admissible.1 admissible.2⟩
 
 /-- Actual joint success witnesses the engine-independent semantic
 identification predicate with the literal returned observational expression. -/

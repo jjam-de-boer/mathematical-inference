@@ -238,7 +238,7 @@ theorem frontdoor_supported_identifiable : HiddenDAGSupportedDomain.jointIdentif
 theorem frontdoor_reference_excluded : ¬ HiddenDAGSupportedDomain.JointAdmissibleAt
     AdmissibleFrontDoorBoundary.constantModel GuardedKernelZeroRegression.query
     GuardedKernelZeroRegression.guardedFormula AdmissibleFrontDoorBoundary.reference :=
-  fun admissible => AdmissibleFrontDoorBoundary.used_conditionals_not_admissible admissible.2
+  AdmissibleFrontDoorBoundary.used_conditionals_not_admissible
 
 end NativeSupportedCorrespondenceRegression
 end Examples
