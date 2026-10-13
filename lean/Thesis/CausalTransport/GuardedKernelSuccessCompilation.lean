@@ -349,7 +349,7 @@ noncomputable def identifyGuardedKernelFuelLocalCompilation
           exact ⟨localKernelPruneCompilation closed action outcome actionSubset outcomeSubset disjoint nested.compilation,
             nested.formula_eq⟩
 
-termination_by fuel
+termination_by structural fuel
 
 /-! ## Public joint compilation constructs its initial invariants -/
 
@@ -431,6 +431,142 @@ private noncomputable def emptyOutcomeLocalKernelCompilation_printedAvailable
           .marginalize (NodeSet.diff remaining NodeSet.empty) input.reduction.formula
         rw [removedEqual])
   exact fun model projected reference supported => nestedAvailable model projected reference supported
+
+/-- Every successful actual recursive ID compilation preserves printed
+availability from its preceding input.  This is one induction over all
+fuel values and every computed graph branch, not a finite nesting catalogue.
+The returned compilation is the existing literal-output compiler itself. -/
+noncomputable def identifyGuardedKernelFuelLocalCompilation_printedAvailable
+    (fuel : Nat) {remaining externalAction : NodeSet T}
+    (input : PublishedLocalKernelCompilation Γ checked remaining externalAction) (available : input.PrintedAvailable)
+    (closed : Γ.KernelHostClosed remaining externalAction)
+    (action outcome : NodeSet T) (actionSubset : NodeSet.Subset action remaining)
+    (outcomeSubset : NodeSet.Subset outcome remaining) (disjoint : NodeSet.Disjoint action outcome)
+    {term : ProbabilityTerm T}
+    (result : identifyGuardedKernelFuel fuel Γ remaining outcome action input.reduction.formula = .identified term) :
+    (identifyGuardedKernelFuelLocalCompilation fuel input closed action outcome actionSubset outcomeSubset disjoint result).compilation.PrintedAvailable := by
+  induction fuel generalizing remaining externalAction action outcome term with
+  | zero => cases result
+  | succ fuel inductionHypothesis =>
+      have localAction := intersectHost_eq actionSubset
+      have localOutcome := intersectHost_eq outcomeSubset
+      simp only [identifyGuardedKernelFuel, localAction, localOutcome] at result
+      split at result
+      · rename_i emptyAction
+        have actionEmpty := NodeSet.eq_empty_of_isEmpty emptyAction
+        cases result
+        let marginal := input.marginal outcome closed.action_disjoint outcomeSubset
+        have marginalAvailable : marginal.PrintedAvailable := available.marginal outcome closed.action_disjoint outcomeSubset
+        have constructed := marginalAvailable.reindex marginal.reduction.formula
+          (by rw [actionEmpty, NodeSet.union_empty_right]) rfl
+        simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
+      · split at result
+        · split at result
+          · split at result
+            · rename_i noComponents
+              have emptyOutcome := outcome_empty_of_no_components Γ remaining action outcome
+                outcomeSubset disjoint noComponents
+              cases result
+              subst outcome
+              have constructed := emptyOutcomeLocalKernelCompilation_printedAvailable available closed action actionSubset
+              simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
+            · rename_i component oneComponent
+              have componentEqual := cComponents_eq_of_singleton Γ (NodeSet.diff remaining action) oneComponent
+              have outcomeInComponent : NodeSet.Subset outcome component := by
+                rw [componentEqual]
+                exact outcome_subset_free outcomeSubset disjoint
+              split at result
+              · cases result
+              · split at result
+                · rename_i componentListed
+                  have listed : component ∈ Γ.cComponents remaining := by
+                    rcases List.any_eq_true.mp componentListed with ⟨piece, included, equal⟩
+                    exact ((NodeSet.equal_eq_true_iff piece component).mp equal) ▸ included
+                  have discardedEqual : NodeSet.diff remaining component = action := by
+                    rw [componentEqual, NodeSet.diff_diff, NodeSet.inter_eq_of_subset actionSubset]
+                  cases result
+                  let componentInput := input.ofComponent closed listed
+                  let componentClosed := closed.restrict component (cComponents_subset Γ remaining listed)
+                  let marginal := componentInput.marginal outcome componentClosed.action_disjoint outcomeInComponent
+                  have componentAvailable : componentInput.PrintedAvailable := available.ofComponent closed listed
+                  have marginalAvailable : marginal.PrintedAvailable := componentAvailable.marginal outcome
+                    componentClosed.action_disjoint outcomeInComponent
+                  have constructed := marginalAvailable.reindex marginal.reduction.formula
+                    (by simp only [componentExternalAction, discardedEqual]) rfl
+                  simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
+                · split at result
+                  · rename_i larger containing
+                    have specification := containingCComponent_spec Γ remaining component containing
+                    let componentInput := input.ofComponent closed specification.1
+                    let componentClosed := closed.restrict larger (cComponents_subset Γ remaining specification.1)
+                    have componentAvailable : componentInput.PrintedAvailable := available.ofComponent closed specification.1
+                    let nested := identifyGuardedKernelFuelLocalCompilation fuel componentInput componentClosed
+                      (NodeSet.inter action larger) outcome (NodeSet.inter_subset_right _ _)
+                      (outcomeInComponent.trans specification.2)
+                      (NodeSet.Disjoint.of_subset_left disjoint (NodeSet.inter_subset_left _ _)) result
+                    have nestedAvailable : nested.compilation.PrintedAvailable := inductionHypothesis componentInput
+                      componentAvailable componentClosed (NodeSet.inter action larger) outcome (NodeSet.inter_subset_right _ _)
+                      (outcomeInComponent.trans specification.2)
+                      (NodeSet.Disjoint.of_subset_left disjoint (NodeSet.inter_subset_left _ _)) result
+                    have discarded : NodeSet.Subset (NodeSet.diff remaining larger) action := by
+                      have obtained := currentKernelRestrictionDiscardedAction_of_containing Γ remaining action
+                        (by simpa only [localAction] using oneComponent) containing
+                      simpa only [localAction] using obtained
+                    have constructed := localKernelRestrictionCompilation_printedAvailable remaining larger externalAction
+                      action outcome actionSubset discarded nestedAvailable
+                    simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
+                  · cases result
+            · let run := fun component => identifyGuardedKernelFuel fuel Γ remaining component
+                (NodeSet.diff remaining component) input.reduction.formula
+              let formulas := fun component => identifiedFormula (run component)
+              let nested := fun component (listed : component ∈ Γ.cComponents (NodeSet.diff remaining action)) =>
+                identifyGuardedKernelFuelLocalCompilation fuel input closed (NodeSet.diff remaining component) component
+                  (NodeSet.diff_subset_left _ _)
+                  ((cComponents_subset Γ _ listed).trans (NodeSet.diff_subset_left _ _))
+                  (NodeSet.disjoint_diff_right _ _) (identifiedFormula_eq_of_combined _ run _ result listed)
+              have childrenAvailable : forall component listed, (nested component listed).compilation.PrintedAvailable := by
+                intro component listed
+                exact inductionHypothesis input available closed (NodeSet.diff remaining component) component
+                  (NodeSet.diff_subset_left _ _)
+                  ((cComponents_subset Γ _ listed).trans (NodeSet.diff_subset_left _ _))
+                  (NodeSet.disjoint_diff_right _ _) (identifiedFormula_eq_of_combined _ run _ result listed)
+              have constructed := localKernelSplitCompilation_printedAvailable closed action outcome actionSubset outcomeSubset
+                disjoint formulas (fun component listed => (nested component listed).compilation)
+                (fun component listed => (nested component listed).formula_eq) childrenAvailable
+              simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
+          · let additional := identificationAdditionalAction Γ remaining outcome action
+            have additionalSubset := identificationAdditionalAction_subset_remaining Γ remaining outcome action
+            have additionalDisjoint := identificationAdditionalAction_disjoint_outcome Γ remaining outcome action
+            have additionalOutcome : NodeSet.Disjoint additional outcome := by
+              simpa only [localOutcome] using additionalDisjoint
+            let nested := identifyGuardedKernelFuelLocalCompilation fuel input closed (NodeSet.union action additional) outcome
+              (NodeSet.union_subset actionSubset additionalSubset) outcomeSubset
+              (NodeSet.disjoint_union_left_of disjoint additionalOutcome) result
+            have nestedAvailable : nested.compilation.PrintedAvailable := inductionHypothesis input available closed
+              (NodeSet.union action additional) outcome (NodeSet.union_subset actionSubset additionalSubset) outcomeSubset
+              (NodeSet.disjoint_union_left_of disjoint additionalOutcome) result
+            have reindexedAvailable := nestedAvailable.reindex nested.compilation.reduction.formula
+              (by rw [localAction, localOutcome]) rfl
+            have transportedAvailable := localKernelAdditionalActionCompilation_printedAvailable closed action outcome
+              (by simpa only [localAction, localOutcome] using disjoint) reindexedAvailable
+            have constructed := transportedAvailable.reindex _ (by rw [localAction, localOutcome]) rfl
+            simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
+        · let kept := Γ.ancestralSet remaining (GraphMutilation.none T) outcome
+          have outcomeInKept : NodeSet.Subset outcome kept := fun node selected =>
+            ancestralSet_contains_targets Γ remaining (GraphMutilation.none T) outcome (outcomeSubset node selected) selected
+          let nestedInput := input.marginal kept closed.action_disjoint
+            (ancestralSet_subset Γ remaining (GraphMutilation.none T) outcome)
+          have inputAvailable : nestedInput.PrintedAvailable := available.marginal kept closed.action_disjoint
+            (ancestralSet_subset Γ remaining (GraphMutilation.none T) outcome)
+          let nested := identifyGuardedKernelFuelLocalCompilation fuel nestedInput (closed.ancestral outcome)
+            (NodeSet.inter action kept) outcome (NodeSet.inter_subset_right _ _) outcomeInKept
+            (NodeSet.Disjoint.of_subset_left disjoint (NodeSet.inter_subset_left _ _)) result
+          have nestedAvailable : nested.compilation.PrintedAvailable := inductionHypothesis nestedInput inputAvailable
+            (closed.ancestral outcome) (NodeSet.inter action kept) outcome (NodeSet.inter_subset_right _ _) outcomeInKept
+            (NodeSet.Disjoint.of_subset_left disjoint (NodeSet.inter_subset_left _ _)) result
+          have constructed := localKernelPruneCompilation_printedAvailable closed action outcome actionSubset outcomeSubset
+            disjoint nestedAvailable
+          simpa only [identifyGuardedKernelFuelLocalCompilation, localAction, localOutcome, *] using constructed
 
 end PrintedDataAvailability
 
