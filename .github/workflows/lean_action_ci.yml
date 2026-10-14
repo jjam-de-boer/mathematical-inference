@@ -134,6 +134,7 @@ jobs:
             Thesis.CausalTransport.HiddenDAGAlmostSureIntervention
             Thesis.CausalTransport.ObservationalFormulaSelection
             Thesis.CausalTransport.BackdoorAdjustment
+            Thesis.CausalTransport.BackdoorAdjustmentSearch
             Thesis.CausalTransport.GuardedHiddenDAGBoundary
             Thesis.Examples.LocalSupportIdentification
             Thesis.Examples.Admissibility
@@ -154,6 +155,7 @@ jobs:
             Thesis.Examples.HiddenDAGSupportedCorrespondence
             Thesis.Examples.AlmostSureIntervention
             Thesis.Examples.AlternativeFormulaSelection
+            Thesis.Examples.BackdoorAdjustmentSearch
             Thesis.Examples.HiddenPathSearch
             Thesis.Examples.HiddenDAGCollapse
             Thesis.Examples.HiddenDAGSoundness

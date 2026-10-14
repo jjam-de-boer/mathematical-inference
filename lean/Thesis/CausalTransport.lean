@@ -53,6 +53,7 @@ import Thesis.CausalTransport.HiddenDAGSupportedCorrespondence
 import Thesis.CausalTransport.HiddenDAGAlmostSureIntervention
 import Thesis.CausalTransport.ObservationalFormulaSelection
 import Thesis.CausalTransport.BackdoorAdjustment
+import Thesis.CausalTransport.BackdoorAdjustmentSearch
 import Thesis.CausalTransport.GuardedHiddenDAGBoundary
 import Thesis.CausalTransport.KernelIdentification
 import Thesis.CausalTransport.KernelCompilation

@@ -152,6 +152,93 @@ def select (record : FiniteProbRecord S.Assignment) (reference : S.Assignment) :
   | [] => none
   | plan :: plans => if plan.available record reference then some plan else select record reference plans
 
+/-- Runtime search cannot invent a plan absent from its input catalogue.
+This data-only statement is useful for generated catalogues: semantic proof
+functions need not be inputs of an executable adjustment search. -/
+theorem select_mem (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
+    (plans : List (ObservationalFormulaPlan S)) (chosen : ObservationalFormulaPlan S)
+    (selected : select record reference plans = some chosen) : chosen ∈ plans := by
+  induction plans with
+  | nil => cases selected
+  | cons plan plans inductionHypothesis =>
+      cases accepted : plan.available record reference with
+      | false =>
+          exact List.mem_cons_of_mem plan
+            (inductionHypothesis (by
+              simpa only [select, accepted, Bool.false_eq_true, if_false] using selected))
+      | true =>
+          have same : plan = chosen := Option.some.inj
+            (by simpa only [select, accepted, if_true] using selected)
+          rw [← same]
+          exact List.mem_cons_self
+
+/-- The selected literal plan has a passing guard and a genuinely defined
+observational evaluation.  A defined zero remains an available value. -/
+theorem select_available (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
+    (plans : List (ObservationalFormulaPlan S)) (chosen : ObservationalFormulaPlan S)
+    (selected : select record reference plans = some chosen) :
+    chosen.available record reference = true := by
+  induction plans with
+  | nil => cases selected
+  | cons plan plans inductionHypothesis =>
+      cases accepted : plan.available record reference with
+      | false =>
+          exact inductionHypothesis (by
+            simpa only [select, accepted, Bool.false_eq_true, if_false] using selected)
+      | true =>
+          have same : plan = chosen := Option.some.inj
+            (by simpa only [select, accepted, if_true] using selected)
+          rw [← same]
+          exact accepted
+
+/-- Exact runtime failure is relative to the actual finite plan list.
+It says nothing about a formula outside that list or about graph failure. -/
+theorem select_none_iff (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
+    (plans : List (ObservationalFormulaPlan S)) :
+    select record reference plans = none ↔
+      forall plan, plan ∈ plans → plan.available record reference = false := by
+  induction plans with
+  | nil =>
+      constructor
+      · intro _ plan member; cases member
+      · intro _; rfl
+  | cons plan plans inductionHypothesis =>
+      cases accepted : plan.available record reference with
+      | false =>
+          constructor
+          · intro failed chosen member
+            have tail : select record reference plans = none := by
+              simpa only [select, accepted, Bool.false_eq_true, if_false] using failed
+            rcases List.mem_cons.mp member with same | listed
+            · subst chosen; exact accepted
+            · exact inductionHypothesis.mp tail chosen listed
+          · intro unavailable
+            have tail := inductionHypothesis.mpr (fun chosen listed =>
+              unavailable chosen (List.mem_cons_of_mem plan listed))
+            simpa only [select, accepted, Bool.false_eq_true, if_false] using tail
+      | true =>
+          constructor
+          · intro failed
+            simp only [select, accepted, if_true, Option.some_ne_none] at failed
+          · intro unavailable
+            have impossible := unavailable plan List.mem_cons_self
+            rw [accepted] at impossible
+            cases impossible
+
+/-- An available listed plan forces the executable search to succeed.
+The result remains a computed option; no plan is chosen from a proposition. -/
+theorem select_complete (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
+    (plans : List (ObservationalFormulaPlan S))
+    (available : ∃ plan, plan ∈ plans ∧ plan.available record reference = true) :
+    ∃ chosen, select record reference plans = some chosen := by
+  cases result : select record reference plans with
+  | some chosen => exact ⟨chosen, rfl⟩
+  | none =>
+      rcases available with ⟨plan, listed, accepted⟩
+      have unavailable := (select_none_iff record reference plans).mp result plan listed
+      rw [accepted] at unavailable
+      cases unavailable
+
 end ObservationalFormulaPlan
 
 /-- A formula-independent native certificate.  Source support is explicit

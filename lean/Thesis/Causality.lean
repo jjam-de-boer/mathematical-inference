@@ -1,5 +1,6 @@
 import Thesis.Causality.Graph
 import Thesis.Causality.NodeSetCardinality
+import Thesis.Causality.NodeSetEnumeration
 import Thesis.Causality.Derivation
 import Thesis.Causality.Model
 import Thesis.Causality.SelectedAssignment
