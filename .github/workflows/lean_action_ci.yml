@@ -146,6 +146,8 @@ jobs:
             Thesis.CausalTransport.BinaryBowBounds
             Thesis.CausalTransport.BinaryBowAttainable
             Thesis.CausalTransport.BinaryInstrumentalRepresentation
+            Thesis.CausalTransport.BinaryInstrumentalFeasibility
+            Thesis.CausalTransport.BinaryInstrumentalEffect
             Thesis.CausalTransport.ObservationalFormulaSelection
             Thesis.CausalTransport.BackdoorAdjustment
             Thesis.CausalTransport.BackdoorAdjustmentSearch
