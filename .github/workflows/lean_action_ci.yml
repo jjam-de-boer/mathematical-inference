@@ -131,10 +131,12 @@ jobs:
             Thesis.CausalTransport.HiddenDAGSupportedCorrespondence
             Thesis.Probability.FiniteRecordAlmostSure
             Thesis.Probability.FiniteRecordConsistencyBounds
+            Thesis.Probability.AffineInterval
             Thesis.Causality.AlmostSureIntervention
             Thesis.Causality.ConsistencyBounds
             Thesis.Causality.BinaryBowModel
             Thesis.Causality.BinaryBowEndpoints
+            Thesis.Causality.BinaryBowMixture
             Thesis.CausalTransport.HiddenDAGAlmostSureIntervention
             Thesis.CausalTransport.HiddenDAGConsistencyBounds
             Thesis.CausalTransport.BinaryBowBounds
