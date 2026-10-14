@@ -91,11 +91,14 @@ def profileOfPair (pair : ResponsePair) (unobservedOutcome : Bool) : Profile :=
     else
       if pair.1.1 then pair.1.2 else (if pair.2.1 then pair.2.2 else unobservedOutcome)
 
-/-- A closed truth table checks this small universal data identity.  It
-does not evaluate a probability model, a large source cube, or an optimizer. -/
+/-- Explicit Boolean cases check this small universal data identity.  They
+do not evaluate a probability model, a large source cube, or an optimizer. -/
 theorem profileOfPair_responsePair : forall pair : ResponsePair, forall fill : Bool,
     permittedPair pair = true → responsePair (profileOfPair pair fill) = pair := by
-  decide +kernel
+  rintro ⟨⟨firstTreatment, firstOutcome⟩, ⟨secondTreatment, secondOutcome⟩⟩ fill valid
+  cases firstTreatment <;> cases secondTreatment <;> cases firstOutcome <;> cases secondOutcome <;>
+    cases fill <;>
+    simp [permittedPair, responsePair, profileOfPair, treatmentAt, outcomeAt] at valid ⊢
 
 /-- A coupling can be lifted by any explicit fill rule.  The rule may
 depend on the observed pair, which is needed for opposing ATE endpoints. -/
