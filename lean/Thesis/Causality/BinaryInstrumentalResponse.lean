@@ -1,4 +1,5 @@
 import Thesis.Causality.BinaryInstrumentalProfiles
+import Thesis.Causality.Identification
 import Thesis.Probability.FiniteProductSplicing
 
 namespace Thesis
@@ -68,20 +69,20 @@ private theorem shared_root_edge (model : ExactModel signature) (root : Fin mode
 /-- The IV graph itself proves the required disjoint noise access.  No
 counterfactual or independence theorem is assumed in this extraction. -/
 theorem noInstrumentConfounding_of_projectedGraph (model : ExactModel signature)
-    (matches : HasProjectedGraph model graph) : NoInstrumentConfounding model := by
+    (graphMatch : HasProjectedGraph model graph) : NoInstrumentConfounding model := by
   intro root atZ
   constructor
   · cases atX : model.latent.incident root x with
     | false => rfl
     | true =>
         have present := shared_root_edge model root z x (by decide) atZ atX
-        have absent := (matches z x).trans graph_no_z_x
+        have absent := (graphMatch z x).trans graph_no_z_x
         exact False.elim (Bool.false_ne_true (absent.symm.trans present))
   · cases atY : model.latent.incident root y with
     | false => rfl
     | true =>
         have present := shared_root_edge model root z y (by decide) atZ atY
-        have absent := (matches z y).trans graph_no_z_y
+        have absent := (graphMatch z y).trans graph_no_z_y
         exact False.elim (Bool.false_ne_true (absent.symm.trans present))
 
 private def constantParents (child : Fin signature.count) (value : Bool) : signature.ParentValues child :=
@@ -259,6 +260,20 @@ theorem eval_doX_outcome (model : ExactModel signature) (unit : model.latent.Ass
 
 def instrumentRecord (model : ExactModel signature) : FiniteProbRecord Bool := model.prior.map (instrumentRead model)
 def responseRecord (model : ExactModel signature) : FiniteProbRecord Profile := model.prior.map (profileRead model)
+
+/-- The instrument factor is observable: it is the original observed
+instrument marginal, not an additional unknown probability parameter. -/
+theorem instrumentRecord_observable (model : ExactModel signature) (event : Event Bool) :
+    QProb.Equiv ((instrumentRecord model).probVal event)
+      (model.observationalValue (fun sample => event (sample z))) := by
+  have evaluated (unit : model.latent.Assignment) : model.eval unit z = instrumentRead model unit := by
+    change model.evalUnder (FiniteLatentSCM.noIntervention signature) unit z = _
+    rw [eval_z]
+    rfl
+  exact QProb.equiv_trans (model.prior.map_probVal (instrumentRead model) event)
+    (QProb.equiv_trans
+      (model.prior.probVal_congr _ _ (fun unit => congrArg event (evaluated unit).symm))
+      (QProb.equiv_symm (model.observationalValue_eq (fun sample => event (sample z)))))
 
 /-- The record-level product is derived from the input SCM's actual root
 product law and proved mechanism locality, not from an IV completeness axiom. -/

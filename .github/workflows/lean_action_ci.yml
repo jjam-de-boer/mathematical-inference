@@ -145,6 +145,7 @@ jobs:
             Thesis.CausalTransport.HiddenDAGConsistencyBounds
             Thesis.CausalTransport.BinaryBowBounds
             Thesis.CausalTransport.BinaryBowAttainable
+            Thesis.CausalTransport.BinaryInstrumentalRepresentation
             Thesis.CausalTransport.ObservationalFormulaSelection
             Thesis.CausalTransport.BackdoorAdjustment
             Thesis.CausalTransport.BackdoorAdjustmentSearch
