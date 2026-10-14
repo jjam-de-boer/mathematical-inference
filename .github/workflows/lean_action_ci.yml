@@ -162,6 +162,7 @@ jobs:
             Thesis.CausalTransport.BinaryInstrumentalObservedMargins
             Thesis.CausalTransport.BinaryInstrumentalNativeTransportation
             Thesis.CausalTransport.BinaryInstrumentalRiskBounds
+            Thesis.CausalTransport.BinaryInstrumentalRiskEndpoints
             Thesis.CausalTransport.BinaryInstrumentalEffect
             Thesis.CausalTransport.ObservationalFormulaSelection
             Thesis.CausalTransport.BackdoorAdjustment
