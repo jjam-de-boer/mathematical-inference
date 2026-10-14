@@ -79,6 +79,23 @@ theorem edge_relabel_offDiagonal (coupling : FiniteProbRecord ResponsePair)
   QProb.equiv_trans (coupling.map_probVal edgeOfPair FourLabelTransportation.offDiagonal)
     (QProb.equiv_trans (coupling.probVal_congr _ _ edgeOfPair_offDiagonal) permitted)
 
+/-- Pull an arbitrary edge row back to its factual false-instrument cell.
+The proof concerns only four supplied Boolean values and a finite label. -/
+theorem edgeOfPair_row_match (pair : ResponsePair) (row : Fin 4) :
+    decide ((edgeOfPair pair).1 = row) = couplingCell false (decodeCategory row).1 (decodeCategory row).2 pair := by
+  rcases pair with ⟨⟨firstTreatment, firstOutcome⟩, ⟨secondTreatment, secondOutcome⟩⟩
+  cases firstTreatment <;> cases firstOutcome <;> cases secondTreatment <;> cases secondOutcome <;>
+    rcases FourLabelTransportation.label_cases row with same | same | same | same <;> subst row <;> rfl
+
+/-- The true-instrument arm uses the flipped column outcome, including
+when the original coupling record has an unrelated rational denominator. -/
+theorem edgeOfPair_column_match (pair : ResponsePair) (column : Fin 4) :
+    decide ((edgeOfPair pair).2 = column) =
+      couplingCell true (decodeCategory column).1 (!(decodeCategory column).2) pair := by
+  rcases pair with ⟨⟨firstTreatment, firstOutcome⟩, ⟨secondTreatment, secondOutcome⟩⟩
+  cases firstTreatment <;> cases firstOutcome <;> cases secondTreatment <;> cases secondOutcome <;>
+    rcases FourLabelTransportation.label_cases column with same | same | same | same <;> subst column <;> rfl
+
 /-- A small closed finite identity checks the actual forbidden-cell map;
 it is not an assumed equivalence between causal model families. -/
 theorem pairOfEdge_permitted : forall row column : Fin 4,
