@@ -98,11 +98,17 @@ theorem native_risk_bounds (native : FiniteHiddenDAGSCM signature P) (graphMatch
     have failLower := native_outcome_lower_mass native graphMatch law observed total positive rows columns margins arms falsePositive truePositive action false
     have partition := congrArg (fun mass => mass * total) (outcomeEvent_partition responses action)
     simp only [Nat.add_mul] at partition
-    have commuted : responses.den * total = total * responses.den := Nat.mul_comm _ _
+    have failBound : outcomeLowerMass total rows columns action false * responses.den ≤
+        FiniteProbRecord.eventMass responses.atoms (outcomeEvent action false) * total := failLower
     change FiniteProbRecord.eventMass responses.atoms (outcomeEvent action true) * total ≤
       (total - outcomeLowerMass total rows columns action false) * responses.den
     rw [Nat.sub_mul]
-    omega
+    apply Nat.le_sub_of_add_le
+    calc
+      _ ≤ FiniteProbRecord.eventMass responses.atoms (outcomeEvent action true) * total +
+          FiniteProbRecord.eventMass responses.atoms (outcomeEvent action false) * total := Nat.add_le_add_left failBound _
+      _ = responses.den * total := partition
+      _ = total * responses.den := Nat.mul_comm _ _
   have semantics := native_risk_response native graphMatch action
   exact ⟨QProb.le_congr (QProb.equiv_refl _) (QProb.equiv_symm semantics) lower,
     QProb.le_congr (QProb.equiv_symm semantics) (QProb.equiv_refl _) upper⟩
