@@ -18,6 +18,7 @@ import Thesis.Probability.Distros.MultivariatePGF
 import Thesis.Probability.Distros.BinomialMoments
 import Thesis.Probability.Distros.BetaBinomialMoments
 import Thesis.Probability.Distros.GeometricMoments
+import Thesis.Probability.Distros.HypergeometricMoments
 
 /-!
 Named finite distros.
@@ -96,4 +97,7 @@ Reading order:
 20. `GeometricMoments` uses finite summation by parts to prove closed means,
     second moments and witnessed variances for the corrected truncated and
     censored waiting times.  All formulas include zero cap and zero failure weight.
+21. `HypergeometricMoments` derives the first and second factorial moments
+    by absorption and Vandermonde, proves the finite-population mean and variance,
+    and handles empty and one-cell urns explicitly.
 -/

@@ -293,4 +293,35 @@ example : QProb.Equiv (geometricVarianceClosed 3 2 0 (by decide)) QProb.zero := 
 
 example : QProb.Equiv (geometricCensoredVarianceClosed 3 2 0 (by decide)) QProb.zero := by decide
 
+/-- The without-replacement correction is present in the variance. -/
+example : QProb.Equiv (mean (hypergeometricNatDistro 4 10 3 (by decide) (by decide)))
+    ⟨6, 5, by decide⟩ := by decide
+
+example : QProb.Equiv (secondMoment (hypergeometricNatDistro 4 10 3 (by decide) (by decide)))
+    (QProb.ofNat 2) := by decide
+
+example : QProb.Equiv (variance (hypergeometricNatDistro 4 10 3 (by decide) (by decide)))
+    ⟨14, 25, by decide⟩ := by decide
+
+example : QProb.Equiv (variance (hypergeometricNatDistro 4 10 10 (by decide) (by decide)))
+    QProb.zero := by decide
+
+example : QProb.Equiv (variance (hypergeometricNatDistro 4 4 2 (by decide) (by decide)))
+    QProb.zero := by decide
+
+example : QProb.Equiv (variance (hypergeometricNatDistro 0 10 3 (by decide) (by decide)))
+    QProb.zero := by decide
+
+example : QProb.Equiv (variance (hypergeometricNatDistro 4 10 0 (by decide) (by decide)))
+    QProb.zero := by decide
+
+example : QProb.Equiv (variance (hypergeometricNatDistro 0 0 0 (by decide) (by decide)))
+    QProb.zero := by decide
+
+example : QProb.Equiv (variance (hypergeometricNatDistro 1 1 1 (by decide) (by decide)))
+    QProb.zero := by decide
+
+example : QProb.Equiv (variance (hypergeometricNatDistro 0 1 1 (by decide) (by decide)))
+    QProb.zero := by decide
+
 end Thesis.Examples.DistributionLaws

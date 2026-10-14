@@ -16,6 +16,17 @@ def gaussianEvenMoment (radius : Nat) (q : QProb) (bounded : QProb.LE q QProb.on
   (discreteGaussianDistro radius q bounded).expectNat
     (fun k => natSqDiff k.val radius ^ power)
 
+/-- The natural squared-distance observable is the square of the actual
+signed centred coordinate. -/
+theorem natSqDiff_signed_square (k radius : Nat) :
+    ((k : Int) - (radius : Int)) * ((k : Int) - (radius : Int)) =
+      (natSqDiff k radius : Int) := by
+  by_cases h : k ≤ radius
+  · have hd : (k : Int) - (radius : Int) = -((radius - k : Nat) : Int) := by omega
+    simp [natSqDiff, h, hd, Int.natCast_mul, Int.neg_mul_neg]
+  · have hd : (k : Int) - (radius : Int) = ((k - radius : Nat) : Int) := by omega
+    simp [natSqDiff, h, hd, Int.natCast_mul]
+
 theorem gaussianEvenMoment_finite_sum (radius : Nat) (q : QProb)
     (bounded : QProb.LE q QProb.one) (power : Nat) :
     gaussianEvenMoment radius q bounded power =

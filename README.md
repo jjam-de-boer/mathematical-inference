@@ -37,6 +37,33 @@ flowchart LR
   T --> E
 ```
 
+### Finite distributions
+
+[`Thesis.Probability.Distros`](lean/Thesis/Probability/Distros.lean) exposes
+the named finite laws and their checked interpretations. Geometric and
+negative-binomial outcomes count Bernoulli failures before the requested
+successes. Truncation conditions on success within the finite window;
+censoring clips the failure count to the cap and retains the entire tail.
+Both laws are derived from actual finite Bernoulli products, and the
+one-success negative binomial equals geometric.
+
+The lattice Gaussian uses the rational kernel `q^(x²)` on `x ∈ [-radius, radius]`,
+with `0 ≤ q ≤ 1`. Zero gives a point mass and one gives the discrete uniform
+law. Its signed mean is zero and its variance is the exact finite second
+centred moment. The finite χ² law sums independent squared coordinates:
+equal radius and kernel give additivity in the degrees of freedom, mean
+`df · m₂`, and variance `df · (m₄ − m₂²)`.
+
+The library includes reusable expectation, map, independent-sum and PGF laws;
+closed Bernoulli, binomial, geometric, hypergeometric and beta-binomial
+moments; general rational censored PGFs; and a multivariate multinomial PGF
+with matching occupancy dimensions. Beta-binomial normalization is the
+rising factorial `(α+β)↑trials`, and its success-count law agrees on every
+event with sequential finite Pólya urn draws and same-colour reinforcement.
+Variance uses the existing witnessed `QProb.sub` operation, and boundary
+cases are covered by theorem statements and kernel-checked
+[`DistributionLaws`](lean/Thesis/Examples/DistributionLaws.lean) regressions.
+
 ### Verification
 
 The project uses Lean `v4.30.0-rc2` and has no third-party Lake dependencies.
