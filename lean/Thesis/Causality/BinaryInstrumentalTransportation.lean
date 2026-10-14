@@ -45,6 +45,40 @@ theorem encode_decodeCategory (label : Fin 4) : encodeCategory (decodeCategory l
 def pairOfEdge (edge : Fin 4 × Fin 4) : ResponsePair :=
   (decodeCategory edge.1, ((decodeCategory edge.2).1, !(decodeCategory edge.2).2))
 
+/-- The literal inverse keeps arbitrary coupling records in scope, including
+their original denominators and repeated atom labels. -/
+def edgeOfPair (pair : ResponsePair) : Fin 4 × Fin 4 :=
+  (encodeCategory pair.1.1 pair.1.2, encodeCategory pair.2.1 (!pair.2.2))
+
+theorem pairOfEdge_edgeOfPair (pair : ResponsePair) : pairOfEdge (edgeOfPair pair) = pair := by
+  rcases pair with ⟨⟨firstTreatment, firstOutcome⟩, ⟨secondTreatment, secondOutcome⟩⟩
+  cases firstTreatment <;> cases firstOutcome <;> cases secondTreatment <;> cases secondOutcome <;> rfl
+
+theorem edgeOfPair_pairOfEdge (edge : Fin 4 × Fin 4) : edgeOfPair (pairOfEdge edge) = edge := by
+  rcases edge with ⟨row, column⟩
+  rcases FourLabelTransportation.label_cases row with same | same | same | same <;> subst row <;>
+    rcases FourLabelTransportation.label_cases column with same | same | same | same <;> subst column <;> rfl
+
+theorem edgeOfPair_offDiagonal (pair : ResponsePair) :
+    FourLabelTransportation.offDiagonal (edgeOfPair pair) = permittedPair pair := by
+  rcases pair with ⟨⟨firstTreatment, firstOutcome⟩, ⟨secondTreatment, secondOutcome⟩⟩
+  cases firstTreatment <;> cases firstOutcome <;> cases secondTreatment <;> cases secondOutcome <;> rfl
+
+/-- Every arbitrary finite coupling can be moved to edge labels and back
+without changing any event.  Thus the relabelling itself imposes no selected
+record-family or common-denominator restriction on a native model. -/
+theorem edge_relabel_preserves (coupling : FiniteProbRecord ResponsePair) (event : Event ResponsePair) :
+    QProb.Equiv (((coupling.map edgeOfPair).map pairOfEdge).probVal event) (coupling.probVal event) :=
+  QProb.equiv_trans ((coupling.map edgeOfPair).map_probVal pairOfEdge event)
+    (QProb.equiv_trans (coupling.map_probVal edgeOfPair (fun edge => event (pairOfEdge edge)))
+      (coupling.probVal_congr _ _ (fun pair => congrArg event (pairOfEdge_edgeOfPair pair))))
+
+theorem edge_relabel_offDiagonal (coupling : FiniteProbRecord ResponsePair)
+    (permitted : QProb.Equiv (coupling.probVal permittedPair) QProb.one) :
+    QProb.Equiv ((coupling.map edgeOfPair).probVal FourLabelTransportation.offDiagonal) QProb.one :=
+  QProb.equiv_trans (coupling.map_probVal edgeOfPair FourLabelTransportation.offDiagonal)
+    (QProb.equiv_trans (coupling.probVal_congr _ _ edgeOfPair_offDiagonal) permitted)
+
 /-- A small closed finite identity checks the actual forbidden-cell map;
 it is not an assumed equivalence between causal model families. -/
 theorem pairOfEdge_permitted : forall row column : Fin 4,

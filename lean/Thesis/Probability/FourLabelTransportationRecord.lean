@@ -54,7 +54,7 @@ def offDiagonal : Event (Fin 4 × Fin 4) := fun pair => decide (pair.1 ≠ pair.
 theorem tableAtoms_offDiagonal (cells : Cells) (excluded : forall label, cells label label = 0) :
     FiniteProbRecord.eventMass (tableAtoms cells) offDiagonal = FiniteProbRecord.totalMass (tableAtoms cells) := by
   simp [tableAtoms, candidateEdges, FiniteProbRecord.eventMass, FiniteProbRecord.totalMass,
-    offDiagonal, excluded, Nat.add_assoc]
+    offDiagonal, excluded]
 
 /-- A normalized probability record, with the original sixteen natural
 weights and the supplied positive total.  There is no assumed semantic law

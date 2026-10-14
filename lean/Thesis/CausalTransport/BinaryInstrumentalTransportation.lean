@@ -1,5 +1,6 @@
 import Thesis.Causality.BinaryInstrumentalTransportation
 import Thesis.CausalTransport.BinaryInstrumentalCoupling
+import Thesis.Probability.FourLabelTransportationScaling
 
 namespace Thesis
 namespace Causality

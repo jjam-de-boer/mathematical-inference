@@ -76,6 +76,7 @@ jobs:
             Thesis.Probability.FourLabelTransportationExtrema
             Thesis.Probability.FourLabelTransportationJointExtrema
             Thesis.Probability.FourLabelTransportationRecord
+            Thesis.Probability.FourLabelTransportationScaling
             Thesis.Causality.ObservationalSupport
             Thesis.Causality.ConditionalSupport
             Thesis.Causality.Admissibility

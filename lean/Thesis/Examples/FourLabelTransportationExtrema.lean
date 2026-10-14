@@ -1,4 +1,5 @@
 import Thesis.Probability.FourLabelTransportationJointExtrema
+import Thesis.Probability.FourLabelTransportationScaling
 
 namespace Thesis
 namespace Probability
@@ -95,6 +96,32 @@ theorem asymmetric_sum_optimal (other : Transportation asymmetricRows asymmetric
     other.cells 0 1 + other.cells 3 2 ≤ asymmetricJoint.cells 0 1 + asymmetricJoint.cells 3 2 :=
   maximizeComplementary_sum 5 asymmetricRows asymmetricColumns asymmetric_margins selected opposite
     selected_different opposite_different complementary_edges other
+
+/-! ## Unknown rational weights need not lie on the observed denominator grid -/
+
+/-- Eight unit cells yield row and column masses two.  Individual cells
+have odd mass, so this table is not twice an integer table on total four. -/
+def nongridTable : Transportation (fun label => units label * 2) (fun label => units label * 2) where
+  cells := fun row column => if column.val = (row.val + 1) % 4 ∨ column.val = (row.val + 2) % 4 then 1 else 0
+  row_sum := by decide +kernel
+  column_sum := by decide +kernel
+  diagonal_zero := by decide +kernel
+
+theorem nongrid_cell : nongridTable.cells 0 1 = 1 := rfl
+
+theorem nongrid_not_rescaled : ¬ ∃ original : Transportation units units,
+    forall row column, nongridTable.cells row column = original.cells row column * 2 := by
+  rintro ⟨original, same⟩
+  have cell := same 0 1
+  rw [nongrid_cell] at cell
+  omega
+
+/-- The universal bound still covers this compatible rational-grid
+refinement; no assumption that the unknown table is an integral rescaling
+has slipped into the optimization theorem. -/
+theorem nongrid_bound : nongridTable.cells 0 1 ≤ 2 := by
+  have bounded := scaled_cell_bound 4 units units unit_margins 2 selected selected_different nongridTable
+  simpa only [unit_capacity] using bounded
 
 end FourLabelTransportationExtrema
 end Examples
