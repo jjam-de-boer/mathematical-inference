@@ -75,6 +75,7 @@ jobs:
             Thesis.Probability.FourLabelTransportation
             Thesis.Probability.FourLabelTransportationExtrema
             Thesis.Probability.FourLabelTransportationJointExtrema
+            Thesis.Probability.FourLabelTransportationRecord
             Thesis.Causality.ObservationalSupport
             Thesis.Causality.ConditionalSupport
             Thesis.Causality.Admissibility
@@ -143,6 +144,7 @@ jobs:
             Thesis.Causality.BinaryBowMixture
             Thesis.Causality.BinaryInstrumentalProfiles
             Thesis.Causality.BinaryInstrumentalCoupling
+            Thesis.Causality.BinaryInstrumentalTransportation
             Thesis.Causality.BinaryInstrumentalResponse
             Thesis.Causality.BinaryInstrumentalModel
             Thesis.CausalTransport.HiddenDAGAlmostSureIntervention
@@ -152,6 +154,7 @@ jobs:
             Thesis.CausalTransport.BinaryInstrumentalRepresentation
             Thesis.CausalTransport.BinaryInstrumentalFeasibility
             Thesis.CausalTransport.BinaryInstrumentalCoupling
+            Thesis.CausalTransport.BinaryInstrumentalTransportation
             Thesis.CausalTransport.BinaryInstrumentalEffect
             Thesis.CausalTransport.ObservationalFormulaSelection
             Thesis.CausalTransport.BackdoorAdjustment
