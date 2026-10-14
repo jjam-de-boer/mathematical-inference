@@ -56,6 +56,7 @@ import Thesis.CausalTransport.BinaryBowBounds
 import Thesis.CausalTransport.BinaryBowAttainable
 import Thesis.CausalTransport.BinaryInstrumentalRepresentation
 import Thesis.CausalTransport.BinaryInstrumentalFeasibility
+import Thesis.CausalTransport.BinaryInstrumentalCoupling
 import Thesis.CausalTransport.BinaryInstrumentalEffect
 import Thesis.CausalTransport.ObservationalFormulaSelection
 import Thesis.CausalTransport.BackdoorAdjustment
