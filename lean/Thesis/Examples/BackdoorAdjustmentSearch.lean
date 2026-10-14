@@ -25,13 +25,17 @@ unobserved requested action makes every generated formula unavailable.
 These last records test literal support, not additional causal assumptions.
 -/
 
+/-- Explicit finite coordinate equality for this fixture.  Keeping the
+instance as a closed declaration also lets kernel-only decision reduction
+check list equality without an elaborator-local instance variable. -/
+private instance nodeSetDecidableEq : DecidableEq (NodeSet signature) :=
+  FiniteProduct.assignmentDecidableEq signature.count (fun _ => Bool) (fun _ => inferInstance)
+
 /-- The permitted region consists of the two nonquery covariates.  The
 finite equality instance explicitly checks coordinates; no function-choice
 instance or classical node-set equality is used. -/
 theorem generated_covariates_exact :
     Causality.BackdoorAdjustmentSearch.covariates projection.observedGraph query = [small, large] := by
-  letI : DecidableEq (NodeSet signature) :=
-    FiniteProduct.assignmentDecidableEq signature.count (fun _ => Bool) (fun _ => inferInstance)
   decide +kernel
 
 /-- The runtime program discovers the supported smaller adjustment.  The
