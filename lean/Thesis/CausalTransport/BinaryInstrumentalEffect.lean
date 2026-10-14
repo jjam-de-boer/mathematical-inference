@@ -86,7 +86,7 @@ theorem responseEffectScore_le_one (responses : FiniteProbRecord Profile) :
   have negativeBound := FiniteProbRecord.eventMass_le_totalMass responses.atoms
     (fun profile => !outcomeAt profile false)
   rw [responses.total_mass] at positiveBound negativeBound
-  change _ + _ ≤ 2 * responses.den
+  simp only [QProb.LE, responseEffectScore, QProb.one, Nat.mul_one, Nat.one_mul]
   omega
 
 /-- This common-denominator objective is exactly the average of the
