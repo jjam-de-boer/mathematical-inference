@@ -22,8 +22,9 @@ module also supplies literal signed integer cross-product bounds.
 
 These certificates currently require both instrument values to have positive
 mass.  They allow every other observed cell to be zero.  A missing instrument
-arm has a separate consistency-bound construction, because its unobserved
-response margin must not be treated as fixed by the observational law.
+arm still requires a separate consistency-bound construction: its unobserved
+response margin must not be treated as fixed by the observational law.  This
+module does not claim that remaining branch has already been implemented.
 -/
 
 /-- Every attained risk pair is contained, and every lower/upper corner
