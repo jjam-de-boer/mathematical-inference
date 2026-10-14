@@ -48,6 +48,7 @@ import Thesis.Causality.ConsistencyBounds
 import Thesis.Causality.BinaryBowModel
 import Thesis.Causality.BinaryBowEndpoints
 import Thesis.Causality.BinaryBowMixture
+import Thesis.Causality.BinaryInstrumentalProfiles
 import Thesis.Causality.Admissibility
 import Thesis.Causality.UsedConditionalAdmissibility
 import Thesis.Causality.SupportAwareKernelAlgebra
