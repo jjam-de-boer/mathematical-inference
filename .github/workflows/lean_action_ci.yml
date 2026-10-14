@@ -183,6 +183,7 @@ jobs:
             Thesis.Examples.ConsistencyBounds
             Thesis.Examples.BinaryBowBounds
             Thesis.Examples.BinaryInstrumentalRepresentation
+            Thesis.Examples.BinaryInstrumentalTransportation
             Thesis.Examples.FourLabelTransportation
             Thesis.Examples.FourLabelTransportationExtrema
             Thesis.Examples.FiniteProductSplicing

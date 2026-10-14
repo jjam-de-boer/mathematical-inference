@@ -73,7 +73,7 @@ theorem record_row (total : Nat) (positive : 0 < total) (rows columns : Masses)
     QProb.Equiv ((record total positive rows columns margins table).probVal (fun pair => decide (pair.1 = row)))
       ⟨rows row, total, positive⟩ := by
   have mass := (tableAtoms_row table.cells row).trans (table.row_sum row)
-  change FiniteProbRecord.eventMass (tableAtoms table.cells) _ * total = rows row * total
+  change FiniteProbRecord.eventMass (tableAtoms table.cells) (fun pair => decide (pair.1 = row)) * total = rows row * total
   rw [mass]
 
 theorem record_column (total : Nat) (positive : 0 < total) (rows columns : Masses)
@@ -81,7 +81,7 @@ theorem record_column (total : Nat) (positive : 0 < total) (rows columns : Masse
     QProb.Equiv ((record total positive rows columns margins table).probVal (fun pair => decide (pair.2 = column)))
       ⟨columns column, total, positive⟩ := by
   have mass := (tableAtoms_column table.cells column).trans (table.column_sum column)
-  change FiniteProbRecord.eventMass (tableAtoms table.cells) _ * total = columns column * total
+  change FiniteProbRecord.eventMass (tableAtoms table.cells) (fun pair => decide (pair.2 = column)) * total = columns column * total
   rw [mass]
 
 theorem record_cell (total : Nat) (positive : 0 < total) (rows columns : Masses)
