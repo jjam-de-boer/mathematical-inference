@@ -35,6 +35,23 @@ def multivariateMonomial : List QProb → List Nat → QProb
   | arg :: args, count :: counts => QProb.mul (qpow arg count) (multivariateMonomial args counts)
   | _, _ => QProb.zero
 
+def natMonomial : List Nat → List Nat → Nat
+  | [], [] => 1
+  | arg :: args, count :: counts => arg ^ count * natMonomial args counts
+  | _, _ => 0
+
+theorem multivariateMonomial_ofNat (args counts : List Nat) :
+    QProb.Equiv (multivariateMonomial (args.map QProb.ofNat) counts) (QProb.ofNat (natMonomial args counts)) := by
+  induction args generalizing counts with
+  | nil => cases counts <;> exact QProb.equiv_refl _
+  | cons arg args ih =>
+      cases counts with
+      | nil => exact QProb.equiv_refl _
+      | cons count counts =>
+          simp only [List.map_cons, multivariateMonomial, natMonomial]
+          refine QProb.equiv_trans (QProb.mul_congr (qpow_ofNat arg count) (ih counts)) ?_
+          simp only [QProb.Equiv, QProb.mul, QProb.ofNat, Nat.mul_one]
+
 def multivariatePGF (μ : Distro (List Nat)) (args : List QProb) : QProb :=
   μ.expectation (multivariateMonomial args)
 

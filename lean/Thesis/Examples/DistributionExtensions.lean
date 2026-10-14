@@ -124,4 +124,17 @@ example : QProb.Equiv ((hypergeometricFromUrn 3 3 2 (by decide) (by decide)).pmf
 example : QProb.Equiv ((hypergeometricFromUrn 0 0 0 (by decide) (by decide)).pmf ⟨0, by decide⟩)
     QProb.one := by decide
 
+/-- Generating functions recover law equality across distinct outcome types
+and different denominator presentations. -/
+example : (bernoulliNatDistro 1 1 (by decide)).SameLaw (binomialNatDistro 1 2 2 (by decide)) :=
+  NatDistro.sameLaw_of_pgf_largeNat _ _ (by decide)
+example : decodeCounts 3 3 (encodeCounts 3 [2, 0, 1]) = [2, 0, 1] := by decide
+
+/-- Categorical sampling includes zero-weight categories and the empty word. -/
+example : QProb.Equiv
+    ((categoricalOccupancyDistro 3 [2, 0, 1] (by decide)).pmf [2, 0, 1])
+    ⟨4, 9, by decide⟩ := by decide
+example : QProb.Equiv
+    ((categoricalOccupancyDistro 0 [0, 2] (by decide)).pmf [0, 0]) QProb.one := by decide
+
 end Thesis.Examples.DistributionExtensions

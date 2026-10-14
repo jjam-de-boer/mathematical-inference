@@ -70,7 +70,10 @@ endpoints. Existing strict constructors agree with these variants.
 Law equivalence transports event agreement through maps, products, positive
 conditioning, expectations, moments, variance and PGFs, without requiring
 finite enumerations of outcome types. Chebyshev is connected to variance
-and holds at every positive rational radius. Falling-factorial moments of
+and holds at every positive rational radius. Finite generating functions determine numeric and bounded count-vector laws
+constructively. Independent draws from the categorical constructor produce
+the multinomial occupancy law on every event, including zero-weight colours.
+Falling-factorial moments of
 binomial, hypergeometric and beta-binomial laws are proved at every order,
 including orders above their finite support. General negative-binomial
 factorial moments reduce to shifted finite generating sums; their means,

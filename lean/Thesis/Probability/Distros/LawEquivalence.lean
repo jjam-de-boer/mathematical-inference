@@ -375,4 +375,17 @@ theorem Distro.sameLaw_of_singletons_except [DecidableEq Ω] (μ ν : Distro Ω)
         (QProb.equiv_symm (ν.probVal_complement_balance _)))
   · exact agree x eq
 
+theorem Distro.probVal_congr_on_support (μ : Distro Ω) (left right : Event Ω)
+    (agree : ∀ atom ∈ μ.record.atoms, left atom.1 = right atom.1) :
+    QProb.Equiv (μ.record.probVal left) (μ.record.probVal right) := by
+  have mass : FiniteProbRecord.eventMass μ.record.atoms left =
+      FiniteProbRecord.eventMass μ.record.atoms right := by
+    rw [← natIntegral_indicator, ← natIntegral_indicator]
+    apply natIntegral_congr_on_support
+    intro atom member
+    rw [agree atom member]
+  change FiniteProbRecord.eventMass μ.record.atoms left * μ.record.den =
+    FiniteProbRecord.eventMass μ.record.atoms right * μ.record.den
+  rw [mass]
+
 end Thesis.Probability.Distros

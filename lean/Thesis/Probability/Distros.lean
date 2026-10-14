@@ -19,6 +19,8 @@ import Thesis.Probability.Distros.ChiSquared
 import Thesis.Probability.Distros.GaussianMoments
 import Thesis.Probability.Distros.BetaBinomial
 import Thesis.Probability.Distros.MultivariatePGF
+import Thesis.Probability.Distros.PGFUniqueness
+import Thesis.Probability.Distros.CategoricalProduct
 import Thesis.Probability.Distros.BinomialMoments
 import Thesis.Probability.Distros.BetaBinomialMoments
 import Thesis.Probability.Distros.GeometricMoments
@@ -134,4 +136,10 @@ Reading order:
     Bernoulli colour draws and removal. Its marked-count pushforward agrees
     with hypergeometric on every event, and its mean and finite-population
     variance follow by law transport.
+28. `PGFUniqueness` proves that generating functions determine finite numeric
+    laws and bounded count-vector laws, using unique natural coefficients
+    and a constructive positional decoding section.
+29. `CategoricalProduct` constructs ordered independent categorical draws
+    using the existing product operation. Reading off their occupancy vector
+    gives the multinomial law on every Boolean event.
 -/
