@@ -363,6 +363,17 @@ theorem rationalIntegral_product (left : List (Ω × Nat)) (right : List (X × N
     QProb.equiv_symm (QProb.listSum_mul
       (left.map (fun atom => QProb.scale atom.2 (f atom.1))) (rationalIntegral right g))
 
+theorem rationalIntegral_mul_left (atoms : List (Ω × Nat)) (factor : QProb) (f : Ω → QProb) :
+    QProb.Equiv (rationalIntegral atoms (fun value => QProb.mul factor (f value)))
+      (QProb.mul factor (rationalIntegral atoms f)) := by
+  refine QProb.equiv_trans (QProb.listSum_map_congr atoms _
+    (fun atom => QProb.mul factor (QProb.scale atom.2 (f atom.1)))
+    (fun atom => ?_)) ?_
+  · simp only [QProb.Equiv, QProb.scale, QProb.mul]; ac_rfl
+  · simpa only [rationalIntegral, List.map_map, Function.comp_def] using
+      QProb.equiv_symm (QProb.mul_listSum factor
+        (atoms.map (fun atom => QProb.scale atom.2 (f atom.1))))
+
 namespace Distro
 
 /-- Finite expectation of a nonnegative rational observable. -/
@@ -387,6 +398,14 @@ theorem expectation_add (μ : Distro Ω) (f g : Ω → QProb) :
       μ.record.den_pos μ.record.den_pos)
     (QProb.div_add_same_denominator _ _ _ μ.record.den_pos)
 
+theorem expectation_scale (μ : Distro Ω) (factor : QProb) (f : Ω → QProb) :
+    QProb.Equiv (μ.expectation (fun value => QProb.mul factor (f value)))
+      (QProb.mul factor (μ.expectation f)) := by
+  refine QProb.equiv_trans (QProb.div_congr (rationalIntegral_mul_left _ factor f)
+    (QProb.equiv_refl _) μ.record.den_pos μ.record.den_pos) ?_
+  simp only [expectation, QProb.Equiv, QProb.div, QProb.mul]
+  ac_rfl
+
 theorem expectation_nat (μ : Distro Ω) (f : Ω → Nat) :
     QProb.Equiv (μ.expectation (fun value => QProb.ofNat (f value))) (μ.expectNat f) := by
   refine QProb.equiv_trans
@@ -394,6 +413,15 @@ theorem expectation_nat (μ : Distro Ω) (f : Ω → Nat) :
       μ.record.den_pos μ.record.den_pos) ?_
   simp only [expectNat, QProb.Equiv, QProb.div, QProb.ofNat,
     Nat.mul_one, Nat.one_mul]
+
+theorem expectation_constant (μ : Distro Ω) (value : QProb) :
+    QProb.Equiv (μ.expectation (fun _ => value)) value := by
+  have hunit : QProb.Equiv (μ.expectation (fun _ => QProb.one)) QProb.one :=
+    QProb.equiv_trans (expectation_nat μ (fun _ => 1)) (expectNat_constant μ 1)
+  refine QProb.equiv_trans (expectation_congr μ _ _
+    (fun _ => QProb.equiv_symm (QProb.mul_one value))) ?_
+  exact QProb.equiv_trans (expectation_scale μ value (fun _ => QProb.one))
+    (QProb.equiv_trans (QProb.mul_congr (QProb.equiv_refl _) hunit) (QProb.mul_one value))
 
 theorem expectation_product (μ : Distro Ω) (ν : Distro X)
     (f : Ω → QProb) (g : X → QProb) :

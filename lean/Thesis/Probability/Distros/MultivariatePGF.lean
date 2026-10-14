@@ -106,17 +106,6 @@ theorem rationalIntegral_weight_map (atoms : List (Ω × Nat)) (encode : Ω → 
           (atoms.map (fun atom => QProb.scale atom.2 (f (encode atom.1)))))
     · simp only [QProb.Equiv, QProb.mul, QProb.ofNat, QProb.scale, Nat.one_mul]
 
-theorem rationalIntegral_mul_left (atoms : List (Ω × Nat)) (factor : QProb) (f : Ω → QProb) :
-    QProb.Equiv (rationalIntegral atoms (fun value => QProb.mul factor (f value)))
-      (QProb.mul factor (rationalIntegral atoms f)) := by
-  refine QProb.equiv_trans (QProb.listSum_map_congr atoms _
-    (fun atom => QProb.mul factor (QProb.scale atom.2 (f atom.1)))
-    (fun atom => ?_)) ?_
-  · simp only [QProb.Equiv, QProb.scale, QProb.mul]; ac_rfl
-  · simpa only [rationalIntegral, List.map_map, Function.comp_def] using
-      QProb.equiv_symm (QProb.mul_listSum factor
-        (atoms.map (fun atom => QProb.scale atom.2 (f atom.1))))
-
 theorem multinomial_generating_integral (trials : Nat) (weights : List Nat) (args : List QProb)
     (dimension : args.length = weights.length) :
     QProb.Equiv (rationalIntegral (multinomialAtoms trials weights) (multivariateMonomial args))
