@@ -10,6 +10,8 @@ import Thesis.Probability.Distros.WaitingTime
 import Thesis.Probability.Distros.BernoulliWaiting
 import Thesis.Probability.Distros.BernoulliRace
 import Thesis.Probability.Distros.Moments
+import Thesis.Probability.Distros.Concentration
+import Thesis.Probability.Distros.LawEquivalence
 import Thesis.Probability.Distros.IndependentSums
 import Thesis.Probability.Distros.ChiSquared
 import Thesis.Probability.Distros.GaussianMoments
@@ -19,6 +21,7 @@ import Thesis.Probability.Distros.BinomialMoments
 import Thesis.Probability.Distros.BetaBinomialMoments
 import Thesis.Probability.Distros.GeometricMoments
 import Thesis.Probability.Distros.HypergeometricMoments
+import Thesis.Probability.Distros.FactorialMoments
 
 /-!
 Named finite distros.
@@ -78,6 +81,10 @@ Reading order:
     agree with both the truncated and censored NB laws on every event.
 12. `Moments` supplies natural and rational expectation, transport under maps,
     linearity, independent means and variances, and rational PGF factorisation.
+    `Concentration` connects cleared squared deviations to variance and proves
+    Chebyshev at positive rational radii.  `LawEquivalence` transports laws
+    through maps, products, positive conditioning, expectations, moments,
+    variance and PGFs, independently of atom presentations.
 13. `IndependentSums` regroups repeated independent sums as actual records
     and proves their moment scaling and PGF power laws.
 14. `ChiSquared` applies regrouping to the squared-coordinate construction:
@@ -100,4 +107,6 @@ Reading order:
 21. `HypergeometricMoments` derives the first and second factorial moments
     by absorption and Vandermonde, proves the finite-population mean and variance,
     and handles empty and one-cell urns explicitly.
+22. `FactorialMoments` generalizes the binomial, hypergeometric and beta-binomial
+    falling-factorial moments to every order, including orders above support.
 -/

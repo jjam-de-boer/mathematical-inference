@@ -294,9 +294,9 @@ def deviationDistro (μ : NatDistro Ω) : NatDistro Ω where
   distro := μ.distro
   embed := sqDev μ.embed (mean μ).num μ.distro.record.den
 
-/-- Chebyshev's inequality: a large squared deviation is Markov-controlled by
-the mean squared deviation.  This is the finite constructive stand-in for a
-CLT tail bound. -/
+/-- A large cleared squared deviation is Markov-controlled by its mean.
+`Concentration` connects this mean to variance and supplies Chebyshev at
+positive rational radii. -/
 theorem chebyshev (μ : NatDistro Ω) (t : Nat) (ht : 0 < t) :
     QProb.LE
       (QProb.scale t

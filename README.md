@@ -60,6 +60,13 @@ moments; general rational censored PGFs; and a multivariate multinomial PGF
 with matching occupancy dimensions. Beta-binomial normalization is the
 rising factorial `(α+β)↑trials`, and its success-count law agrees on every
 event with sequential finite Pólya urn draws and same-colour reinforcement.
+Law equivalence transports event agreement through maps, products, positive
+conditioning, expectations, moments, variance and PGFs, without requiring
+finite enumerations of outcome types. Chebyshev is connected to variance
+and holds at every positive rational radius. Falling-factorial moments of
+binomial, hypergeometric and beta-binomial laws are proved at every order,
+including orders above their finite support.
+
 Variance uses the existing witnessed `QProb.sub` operation, and boundary
 cases are covered by theorem statements and kernel-checked
 [`DistributionLaws`](lean/Thesis/Examples/DistributionLaws.lean) regressions.

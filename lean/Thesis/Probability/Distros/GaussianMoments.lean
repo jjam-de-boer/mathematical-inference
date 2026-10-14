@@ -1,3 +1,4 @@
+import Thesis.Probability.Distros.Concentration
 import Thesis.Probability.Distros.ChiSquared
 import Thesis.Probability.FiniteSignedMass
 
@@ -139,30 +140,6 @@ theorem discreteGaussian_signed_mean_zero (radius : Nat) (q : QProb)
   change FiniteProbRecord.signedAtomMass μ.distro.record.atoms
     (fun k => (k.val : Int) - (radius : Int)) = 0
   omega
-
-theorem natSqDiff_balance (k radius : Nat) :
-    k * k + radius * radius = natSqDiff k radius + 2 * k * radius := by
-  have poly (x d : Nat) : x * x + (x + d) * (x + d) = d * d + 2 * x * (x + d) := by
-    have twice (v : Nat) : 2 * v = v + v := by omega
-    simp only [Nat.mul_add, Nat.add_mul, twice]
-    ac_rfl
-  by_cases h : k ≤ radius
-  · have hx : k + (radius - k) = radius := Nat.add_sub_of_le h
-    have hs : natSqDiff k radius = (radius - k) * (radius - k) := by
-      simp only [natSqDiff, if_pos h]
-    rw [hs]
-    simpa only [hx] using poly k (radius - k)
-  · have hr : radius ≤ k := by omega
-    have hx : radius + (k - radius) = k := Nat.add_sub_of_le hr
-    have hs : natSqDiff k radius = (k - radius) * (k - radius) := by
-      simp only [natSqDiff, if_neg h]
-    rw [hs]
-    have hp := poly radius (k - radius)
-    rw [hx] at hp
-    calc
-      _ = radius * radius + k * k := Nat.add_comm _ _
-      _ = (k - radius) * (k - radius) + 2 * radius * k := hp
-      _ = _ := by ac_rfl
 
 theorem discreteGaussian_secondMoment_centered (radius : Nat) (q : QProb)
     (bounded : QProb.LE q QProb.one) :
