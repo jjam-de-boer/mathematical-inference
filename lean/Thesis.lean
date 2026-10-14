@@ -27,6 +27,7 @@ import Thesis.Examples.AlmostSureIntervention
 import Thesis.Examples.AlternativeFormulaSelection
 import Thesis.Examples.BackdoorAdjustmentSearch
 import Thesis.Examples.ConsistencyBounds
+import Thesis.Examples.BinaryBowBounds
 import Thesis.Examples.HiddenPathSearch
 import Thesis.Examples.HiddenDAGCollapse
 import Thesis.Examples.HiddenDAGSoundness
