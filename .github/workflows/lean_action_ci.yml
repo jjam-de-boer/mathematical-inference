@@ -72,6 +72,7 @@ jobs:
             lake build
             Thesis.Probability.FiniteProductAllocation
             Thesis.Probability.FiniteProductSplicing
+            Thesis.Probability.FourLabelTransportation
             Thesis.Causality.ObservationalSupport
             Thesis.Causality.ConditionalSupport
             Thesis.Causality.Admissibility
@@ -177,6 +178,7 @@ jobs:
             Thesis.Examples.ConsistencyBounds
             Thesis.Examples.BinaryBowBounds
             Thesis.Examples.BinaryInstrumentalRepresentation
+            Thesis.Examples.FourLabelTransportation
             Thesis.Examples.FiniteProductSplicing
             Thesis.Examples.HiddenPathSearch
             Thesis.Examples.HiddenDAGCollapse

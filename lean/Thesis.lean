@@ -30,6 +30,7 @@ import Thesis.Examples.ConsistencyBounds
 import Thesis.Examples.BinaryBowBounds
 import Thesis.Examples.BinaryInstrumentalRepresentation
 import Thesis.Examples.FiniteProductSplicing
+import Thesis.Examples.FourLabelTransportation
 import Thesis.Examples.HiddenPathSearch
 import Thesis.Examples.HiddenDAGCollapse
 import Thesis.Examples.HiddenDAGSoundness
