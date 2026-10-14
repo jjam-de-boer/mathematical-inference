@@ -60,6 +60,9 @@ moments; general rational censored PGFs; and a multivariate multinomial PGF
 with matching occupancy dimensions. Beta-binomial normalization is the
 rising factorial `(α+β)↑trials`, and its success-count law agrees on every
 event with sequential finite Pólya urn draws and same-colour reinforcement.
+Ordered Pólya words are exchangeable. Conditioning on a supported prefix
+updates the two urn counts by the observed colour counts, with the exact
+future law and both next-draw probabilities proved.
 Law equivalence transports event agreement through maps, products, positive
 conditioning, expectations, moments, variance and PGFs, without requiring
 finite enumerations of outcome types. Chebyshev is connected to variance

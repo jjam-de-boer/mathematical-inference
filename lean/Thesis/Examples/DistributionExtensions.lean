@@ -37,4 +37,21 @@ example : QProb.Equiv (factorialMoment (hypergeometricNatDistro 0 0 0 (by decide
 example : QProb.Equiv (factorialMoment (hypergeometricNatDistro 0 0 0 (by decide) (by decide)) 1)
     QProb.zero := by decide
 
+/-- Reinforcement depends on observed counts, including the order-free
+word probability and the actual conditioned next-draw record. -/
+example : QProb.Equiv
+    ((polyaPathRecord 3 2 3 (by decide)).probVal (FiniteProbRecord.singletonEvent [true, false, true]))
+    ⟨3, 35, by decide⟩ := by decide
+example : QProb.Equiv
+    ((polyaPathRecord 3 2 3 (by decide)).probVal (FiniteProbRecord.singletonEvent [false, true, true]))
+    ⟨3, 35, by decide⟩ := by decide
+example : QProb.Equiv
+    ((polyaContinuationDistro [true, true] 1 2 3 (by decide) (by decide)).record.probVal
+      (FiniteProbRecord.singletonEvent [true]))
+    ⟨4, 7, by decide⟩ := by decide
+example : QProb.Equiv
+    ((polyaContinuationDistro [false, false] 1 0 2 (by decide) (by decide)).record.probVal
+      (FiniteProbRecord.singletonEvent [true]))
+    QProb.zero := by decide
+
 end Thesis.Examples.DistributionExtensions

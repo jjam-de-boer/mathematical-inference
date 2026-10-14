@@ -22,6 +22,7 @@ import Thesis.Probability.Distros.BetaBinomialMoments
 import Thesis.Probability.Distros.GeometricMoments
 import Thesis.Probability.Distros.HypergeometricMoments
 import Thesis.Probability.Distros.FactorialMoments
+import Thesis.Probability.Distros.PolyaUpdates
 
 /-!
 Named finite distros.
@@ -109,4 +110,7 @@ Reading order:
     and handles empty and one-cell urns explicitly.
 22. `FactorialMoments` generalizes the binomial, hypergeometric and beta-binomial
     falling-factorial moments to every order, including orders above support.
+23. `PolyaUpdates` proves word permutation invariance and the exact
+    reinforced continuation law after conditioning on a supported prefix,
+    with both next-colour predictive probabilities.
 -/
