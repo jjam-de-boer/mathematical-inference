@@ -57,7 +57,9 @@ private theorem directed_matches : fullGraph.DirectedProjectionMatches := by
 
 def projection : FiniteLatentProjection signature := fullGraph.computedLatentProjection directed_matches
 
-theorem projected_iv_graph : HasIVProjection projection := by decide +kernel
+theorem projected_iv_graph : HasIVProjection projection := by
+  unfold HasIVProjection
+  decide +kernel
 
 def fairInstrument : FiniteProbRecord Bool := ⟨[(false, 1), (true, 1)], 2, by decide, rfl⟩
 def nullInstrument : FiniteProbRecord Bool := ⟨[(false, 1), (true, 0)], 1, by decide, rfl⟩
@@ -73,11 +75,11 @@ def constantLaw (instrument : FiniteProbRecord Bool) : FiniteProbRecord signatur
 
 theorem fair_constant_feasible (otherOutcome : Bool) :
     FeasibleResponses (constantLaw fairInstrument) (singletonResponse (fixedTreatment otherOutcome)) := by
-  cases otherOutcome <;> decide +kernel
+  cases otherOutcome <;> unfold FeasibleResponses <;> decide +kernel
 
 theorem null_constant_feasible (otherOutcome : Bool) :
     FeasibleResponses (constantLaw nullInstrument) (singletonResponse (fixedTreatment otherOutcome)) := by
-  cases otherOutcome <;> decide +kernel
+  cases otherOutcome <;> unfold FeasibleResponses <;> decide +kernel
 
 def constantRisks (otherOutcome : Bool) : Bool → QProb :=
   fun action => if action && otherOutcome then QProb.one else QProb.zero
@@ -111,7 +113,9 @@ def decreasingProfile : Profile := fun bit => decide (bit.val = 0 ∨ bit.val = 
 def decreasingResponses : FiniteProbRecord Profile := singletonResponse decreasingProfile
 def decreasingLaw : FiniteProbRecord signature.Assignment := observedRecord fairInstrument decreasingResponses
 
-theorem decreasing_feasible : FeasibleResponses decreasingLaw decreasingResponses := by decide +kernel
+theorem decreasing_feasible : FeasibleResponses decreasingLaw decreasingResponses := by
+  unfold FeasibleResponses
+  decide +kernel
 
 /-- `Y(1)=false,Y(0)=true` has ATE minus one, not a naturally truncated zero.
 The displayed exact signed numerator uses the original normalized record. -/
