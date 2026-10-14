@@ -73,6 +73,7 @@ jobs:
             Thesis.Probability.FiniteProductAllocation
             Thesis.Probability.FiniteProductSplicing
             Thesis.Probability.FourLabelTransportation
+            Thesis.Probability.FourLabelTransportationExtrema
             Thesis.Causality.ObservationalSupport
             Thesis.Causality.ConditionalSupport
             Thesis.Causality.Admissibility
@@ -179,6 +180,7 @@ jobs:
             Thesis.Examples.BinaryBowBounds
             Thesis.Examples.BinaryInstrumentalRepresentation
             Thesis.Examples.FourLabelTransportation
+            Thesis.Examples.FourLabelTransportationExtrema
             Thesis.Examples.FiniteProductSplicing
             Thesis.Examples.HiddenPathSearch
             Thesis.Examples.HiddenDAGCollapse

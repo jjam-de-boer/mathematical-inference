@@ -33,7 +33,9 @@ abbrev Cells := Fin 4 → Fin 4 → Nat
 
 def sum4 (masses : Masses) : Nat := masses 0 + masses 1 + masses 2 + masses 3
 
-private theorem label_cases : forall label : Fin 4,
+/-- The four explicit labels, used to check finite table identities without
+classical quantifier transformations or unbounded enumeration. -/
+theorem label_cases : forall label : Fin 4,
     label = 0 ∨ label = 1 ∨ label = 2 ∨ label = 3 := by decide +kernel
 
 private theorem forall_four (predicate : Fin 4 → Prop) :
