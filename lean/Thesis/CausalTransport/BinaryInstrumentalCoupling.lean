@@ -1,6 +1,6 @@
 import Thesis.Causality.BinaryInstrumentalCoupling
 import Thesis.CausalTransport.BinaryInstrumentalFeasibility
-import Thesis.Probability.FourLabelTransportationExtrema
+import Thesis.Probability.FourLabelTransportationJointExtrema
 
 namespace Thesis
 namespace Causality

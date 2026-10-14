@@ -74,6 +74,7 @@ jobs:
             Thesis.Probability.FiniteProductSplicing
             Thesis.Probability.FourLabelTransportation
             Thesis.Probability.FourLabelTransportationExtrema
+            Thesis.Probability.FourLabelTransportationJointExtrema
             Thesis.Causality.ObservationalSupport
             Thesis.Causality.ConditionalSupport
             Thesis.Causality.Admissibility

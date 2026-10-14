@@ -1,4 +1,4 @@
-import Thesis.Probability.FourLabelTransportationExtrema
+import Thesis.Probability.FourLabelTransportationJointExtrema
 
 namespace Thesis
 namespace Probability
@@ -60,6 +60,41 @@ theorem cut_excludes (table : Transportation cutRows cutColumns) : table.cells 0
   have bounded := cell_le_edgeCapacity 4 cutRows cutColumns cut_margins table selected selected_different
   rw [cut_capacity] at bounded
   exact Nat.eq_zero_of_le_zero bounded
+
+/-! ## A single asymmetric table attaining two complementary maxima -/
+
+def asymmetricRows : Masses := fun label => if label = 0 then 2 else 1
+def asymmetricColumns : Masses := fun label => if label = 1 then 2 else 1
+
+theorem asymmetric_margins : Margins 5 asymmetricRows asymmetricColumns := by
+  refine ⟨by decide +kernel, by decide +kernel, ?_⟩
+  decide +kernel
+
+def opposite : Fin 4 × Fin 4 := (3, 2)
+theorem opposite_different : opposite.1 ≠ opposite.2 := by decide +kernel
+
+theorem complementary_edges : ComplementaryEdges selected opposite := by
+  refine ⟨by decide +kernel, by decide +kernel, ?_⟩
+  decide +kernel
+
+theorem asymmetric_first_capacity : edgeCapacity 5 asymmetricRows asymmetricColumns selected = 2 := by decide +kernel
+theorem asymmetric_second_capacity : edgeCapacity 5 asymmetricRows asymmetricColumns opposite = 1 := by decide +kernel
+
+def asymmetricJoint : Transportation asymmetricRows asymmetricColumns :=
+  maximizeComplementary 5 asymmetricRows asymmetricColumns asymmetric_margins selected opposite
+    selected_different opposite_different complementary_edges
+
+/-- Both values belong to one table with the original margins.  Two
+separate existence proofs would not establish this assertion. -/
+theorem asymmetric_joint_attained : asymmetricJoint.cells 0 1 = 2 ∧ asymmetricJoint.cells 3 2 = 1 := by
+  have attained := maximizeComplementary_attains 5 asymmetricRows asymmetricColumns asymmetric_margins
+    selected opposite selected_different opposite_different complementary_edges
+  simpa only [asymmetric_first_capacity, asymmetric_second_capacity] using attained
+
+theorem asymmetric_sum_optimal (other : Transportation asymmetricRows asymmetricColumns) :
+    other.cells 0 1 + other.cells 3 2 ≤ asymmetricJoint.cells 0 1 + asymmetricJoint.cells 3 2 :=
+  maximizeComplementary_sum 5 asymmetricRows asymmetricColumns asymmetric_margins selected opposite
+    selected_different opposite_different complementary_edges other
 
 end FourLabelTransportationExtrema
 end Examples

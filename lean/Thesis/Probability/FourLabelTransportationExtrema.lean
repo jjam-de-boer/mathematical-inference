@@ -217,13 +217,13 @@ theorem addMassEdge_column_sum (cells : Cells) (edge : Fin 4 × Fin 4) (amount :
     simp only [if_neg same, Nat.add_zero]
     exact sum4_congr _ _ unchanged
 
-/-- Finish the remaining transport, then restore the actual reserved mass.
-No optimizer correctness assertion is supplied as a constructor field. -/
-def completeReservation (total : Nat) (rows columns : Masses)
-    (margins : Margins total rows columns) (edge : Fin 4 × Fin 4) (amount : Nat)
-    (reserved : Reservation total rows columns edge amount) : Transportation rows columns :=
-  let residual := transport (total - amount) (reserveMasses rows edge.1 amount) (reserveMasses columns edge.2 amount)
-    (reservation_margins total rows columns margins edge amount reserved)
+/-- Restore reserved mass to any supplied remaining table.  Keeping this
+operation separate from `transport` lets later joint optimizers constrain
+the remaining table before restoring the original margins. -/
+def restoreReservation (total : Nat) (rows columns : Masses) (edge : Fin 4 × Fin 4) (amount : Nat)
+    (reserved : Reservation total rows columns edge amount)
+    (residual : Transportation (reserveMasses rows edge.1 amount) (reserveMasses columns edge.2 amount)) :
+    Transportation rows columns :=
   { cells := addMassEdge residual.cells edge amount
     row_sum := by
       intro row
@@ -239,6 +239,37 @@ def completeReservation (total : Nat) (rows columns : Masses)
       · have awayColumn : label ≠ edge.2 := fun same => reserved.different (atRow.symm.trans same)
         simp only [addMassEdge, residual.diagonal_zero, if_pos atRow, if_neg awayColumn, Nat.add_zero]
       · simp only [addMassEdge, residual.diagonal_zero, if_neg atRow, Nat.add_zero] }
+
+theorem restoreReservation_selected_ge (total : Nat) (rows columns : Masses)
+    (edge : Fin 4 × Fin 4) (amount : Nat) (reserved : Reservation total rows columns edge amount)
+    (residual : Transportation (reserveMasses rows edge.1 amount) (reserveMasses columns edge.2 amount)) :
+    amount ≤ (restoreReservation total rows columns edge amount reserved residual).cells edge.1 edge.2 := by
+  change amount ≤ residual.cells edge.1 edge.2 +
+    (if edge.1 = edge.1 then (if edge.2 = edge.2 then amount else 0) else 0)
+  simp only [if_pos rfl]
+  exact Nat.le_add_left _ _
+
+theorem restoreReservation_unchanged_row (total : Nat) (rows columns : Masses)
+    (edge : Fin 4 × Fin 4) (amount : Nat) (reserved : Reservation total rows columns edge amount)
+    (residual : Transportation (reserveMasses rows edge.1 amount) (reserveMasses columns edge.2 amount))
+    (row column : Fin 4) (away : row ≠ edge.1) :
+    (restoreReservation total rows columns edge amount reserved residual).cells row column = residual.cells row column := by
+  simp only [restoreReservation, addMassEdge, if_neg away, Nat.add_zero]
+
+/-- Finish the remaining transport, then restore the actual reserved mass.
+No optimizer correctness assertion is supplied as a constructor field. -/
+def completeReservation (total : Nat) (rows columns : Masses)
+    (margins : Margins total rows columns) (edge : Fin 4 × Fin 4) (amount : Nat)
+    (reserved : Reservation total rows columns edge amount) : Transportation rows columns :=
+  restoreReservation total rows columns edge amount reserved
+    (transport (total - amount) (reserveMasses rows edge.1 amount) (reserveMasses columns edge.2 amount)
+      (reservation_margins total rows columns margins edge amount reserved))
+
+theorem completeReservation_selected_ge (total : Nat) (rows columns : Masses)
+    (margins : Margins total rows columns) (edge : Fin 4 × Fin 4) (amount : Nat)
+    (reserved : Reservation total rows columns edge amount) :
+    amount ≤ (completeReservation total rows columns margins edge amount reserved).cells edge.1 edge.2 :=
+  restoreReservation_selected_ge total rows columns edge amount reserved _
 
 /-- An actual table maximizing the requested cell throughout the complete
 transportation class with the supplied original margins. -/
