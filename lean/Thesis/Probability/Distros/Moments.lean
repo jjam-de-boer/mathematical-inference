@@ -255,6 +255,21 @@ theorem variance_eq_of_balance (μ : NatDistro Ω) (value : QProb)
   apply qprob_add_cancel_right _ _ (QProb.mul (mean μ) (mean μ))
   exact QProb.equiv_trans (variance_balance μ) (QProb.equiv_symm balance)
 
+theorem closedMoments_cauchy (μ : NatDistro Ω) (m s : QProb)
+    (hm : QProb.Equiv (mean μ) m) (hs : QProb.Equiv (secondMoment μ) s) :
+    QProb.LE (QProb.mul m m) s :=
+  QProb.le_congr (QProb.equiv_trans (meanSq_equiv_mul μ) (QProb.mul_congr hm hm))
+    (QProb.equiv_trans (secondMomentScaled_equiv μ) hs) (meanSq_le_secondMoment μ)
+
+/-- Closed moment formulas transport the original variance witness. -/
+theorem variance_closed_moments (μ : NatDistro Ω) (m s : QProb)
+    (hm : QProb.Equiv (mean μ) m) (hs : QProb.Equiv (secondMoment μ) s) :
+    QProb.Equiv (variance μ)
+      (QProb.sub s (QProb.mul m m) (closedMoments_cauchy μ m s hm hs)) :=
+  QProb.sub_congr (QProb.equiv_trans (secondMomentScaled_equiv μ) hs)
+    (QProb.equiv_trans (meanSq_equiv_mul μ) (QProb.mul_congr hm hm))
+    (meanSq_le_secondMoment μ) (closedMoments_cauchy μ m s hm hs)
+
 /-- Independent sums have additive variance, using the existing subtraction witness. -/
 theorem independentSum_variance (μ : NatDistro Ω) (ν : NatDistro X) :
     QProb.Equiv (variance (independentSum μ ν))

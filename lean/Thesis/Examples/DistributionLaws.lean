@@ -266,4 +266,31 @@ example : QProb.Equiv (variance (betaBinomialNatDistro 4 1 1 (by decide) (by dec
 example : QProb.Equiv (variance (betaBinomialNatDistro 0 2 3 (by decide) (by decide)))
     QProb.zero := by decide
 
+/-- Conditioning and censoring have different finite waiting-time moments. -/
+example : QProb.Equiv (mean (geometricNatDistro 2 2 3 (by decide)))
+    ⟨33, 49, by decide⟩ := by decide
+
+example : QProb.Equiv (variance (geometricNatDistro 2 2 3 (by decide)))
+    ⟨1410, 2401, by decide⟩ := by decide
+
+example : QProb.Equiv (geometricVarianceClosed 2 2 3 (by decide))
+    ⟨1410, 2401, by decide⟩ := by decide
+
+example : QProb.Equiv (mean (geometricCensoredNatDistro 2 2 3 (by decide)))
+    ⟨24, 25, by decide⟩ := by decide
+
+example : QProb.Equiv (variance (geometricCensoredNatDistro 2 2 3 (by decide)))
+    ⟨474, 625, by decide⟩ := by decide
+
+example : QProb.Equiv (geometricCensoredVarianceClosed 2 2 3 (by decide))
+    ⟨474, 625, by decide⟩ := by decide
+
+example : QProb.Equiv (geometricVarianceClosed 0 2 3 (by decide)) QProb.zero := by decide
+
+example : QProb.Equiv (geometricCensoredVarianceClosed 0 2 3 (by decide)) QProb.zero := by decide
+
+example : QProb.Equiv (geometricVarianceClosed 3 2 0 (by decide)) QProb.zero := by decide
+
+example : QProb.Equiv (geometricCensoredVarianceClosed 3 2 0 (by decide)) QProb.zero := by decide
+
 end Thesis.Examples.DistributionLaws

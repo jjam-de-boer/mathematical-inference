@@ -17,6 +17,7 @@ import Thesis.Probability.Distros.BetaBinomial
 import Thesis.Probability.Distros.MultivariatePGF
 import Thesis.Probability.Distros.BinomialMoments
 import Thesis.Probability.Distros.BetaBinomialMoments
+import Thesis.Probability.Distros.GeometricMoments
 
 /-!
 Named finite distros.
@@ -92,4 +93,7 @@ Reading order:
     variances, including zero trials and deterministic Bernoulli parameters.
 19. `BetaBinomialMoments` proves the second factorial moment and closed
     reinforced-urn variance, with zero trials included.
+20. `GeometricMoments` uses finite summation by parts to prove closed means,
+    second moments and witnessed variances for the corrected truncated and
+    censored waiting times.  All formulas include zero cap and zero failure weight.
 -/
