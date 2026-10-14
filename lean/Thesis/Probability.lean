@@ -10,6 +10,7 @@ import Thesis.Probability.FiniteRecordAlmostSure
 import Thesis.Probability.FiniteRecordConsistencyBounds
 import Thesis.Probability.AffineInterval
 import Thesis.Probability.FiniteProductReindex
+import Thesis.Probability.FiniteProductSplicing
 import Thesis.Probability.FiniteRecordSlicing
 import Thesis.Probability.FiniteRecordPerturbation
 import Thesis.Probability.FiniteLinearResponse
