@@ -139,6 +139,7 @@ jobs:
             Thesis.Causality.BinaryBowEndpoints
             Thesis.Causality.BinaryBowMixture
             Thesis.Causality.BinaryInstrumentalProfiles
+            Thesis.Causality.BinaryInstrumentalResponse
             Thesis.CausalTransport.HiddenDAGAlmostSureIntervention
             Thesis.CausalTransport.HiddenDAGConsistencyBounds
             Thesis.CausalTransport.BinaryBowBounds
