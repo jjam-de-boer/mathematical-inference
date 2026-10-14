@@ -28,6 +28,25 @@ is inserted into this unit-level statement.
 def outcomeEvent (action outcome : Bool) : Event Profile :=
   fun profile => decide (outcomeAt profile action = outcome)
 
+theorem outcomeEvent_true (profile : Profile) (action : Bool) :
+    outcomeEvent action true profile = outcomeAt profile action := by
+  unfold outcomeEvent
+  cases outcomeAt profile action <;> rfl
+
+theorem outcomeEvent_false (profile : Profile) (action : Bool) :
+    outcomeEvent action false profile = !(outcomeEvent action true profile) := by
+  unfold outcomeEvent
+  cases outcomeAt profile action <;> rfl
+
+theorem outcomeEvent_partition (responses : FiniteProbRecord Profile) (action : Bool) :
+    FiniteProbRecord.eventMass responses.atoms (outcomeEvent action true) +
+      FiniteProbRecord.eventMass responses.atoms (outcomeEvent action false) = responses.den := by
+  have complement : (fun profile => !(outcomeEvent action true profile)) = outcomeEvent action false :=
+    funext (fun profile => (outcomeEvent_false profile action).symm)
+  have partition := FiniteProbRecord.eventMass_add_complement responses.atoms (outcomeEvent action true)
+  rw [complement] at partition
+  exact partition.trans responses.total_mass
+
 def riskEdge (action outcome : Bool) : Fin 4 × Fin 4 :=
   (encodeCategory action outcome, encodeCategory action (!outcome))
 

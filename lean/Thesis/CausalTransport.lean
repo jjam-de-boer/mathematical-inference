@@ -60,6 +60,7 @@ import Thesis.CausalTransport.BinaryInstrumentalCoupling
 import Thesis.CausalTransport.BinaryInstrumentalTransportation
 import Thesis.CausalTransport.BinaryInstrumentalObservedMargins
 import Thesis.CausalTransport.BinaryInstrumentalNativeTransportation
+import Thesis.CausalTransport.BinaryInstrumentalRiskBounds
 import Thesis.CausalTransport.BinaryInstrumentalEffect
 import Thesis.CausalTransport.ObservationalFormulaSelection
 import Thesis.CausalTransport.BackdoorAdjustment
