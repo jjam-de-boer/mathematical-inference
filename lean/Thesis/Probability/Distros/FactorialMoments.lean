@@ -313,4 +313,34 @@ theorem hypergeometric_factorialMoment_above (marked total draws order : Nat)
     hyperIntegral_factorial_above order marked (total - marked) draws aboveDraws]
   simp only [Nat.zero_mul]
 
+theorem fallingFactorial_add (n first second : Nat) :
+    fallingFactorial n (first + second) =
+      fallingFactorial n first * fallingFactorial (n - first) second := by
+  induction first generalizing n with
+  | zero => simp only [Nat.zero_add, fallingFactorial, Nat.sub_zero, Nat.one_mul]
+  | succ first ih =>
+      have index : first + 1 + second = first + second + 1 := by omega
+      rw [index]
+      cases n with
+      | zero => simp only [fallingFactorial, Nat.zero_mul]
+      | succ n =>
+          rw [fallingFactorial_succ, fallingFactorial_succ, ih, Nat.succ_sub_succ]
+          ac_rfl
+
+theorem fallingFactorial_binom (n k : Nat) :
+    fallingFactorial n k = fallingFactorial k k * binom n k := by
+  have h := binom_falling_absorb n k k (Nat.le_refl k)
+  simpa only [Nat.sub_self, binom_zero_right, Nat.mul_one] using h.symm
+
+theorem binom_factorial_split (n k : Nat) (within : k ≤ n) :
+    binom n k * fallingFactorial k k * fallingFactorial (n - k) (n - k) = fallingFactorial n n := by
+  calc
+    _ = fallingFactorial n k * fallingFactorial (n - k) (n - k) := by
+      rw [fallingFactorial_binom n k]
+      ac_rfl
+    _ = _ := by
+      have h := fallingFactorial_add n k (n - k)
+      rw [Nat.add_sub_of_le within] at h
+      exact h.symm
+
 end Thesis.Probability.Distros

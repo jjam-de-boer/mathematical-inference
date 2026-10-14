@@ -28,6 +28,7 @@ import Thesis.Probability.Distros.PolyaUpdates
 import Thesis.Probability.Distros.Degenerate
 import Thesis.Probability.Distros.NegativeBinomialMoments
 import Thesis.Probability.Distros.CapConsistency
+import Thesis.Probability.Distros.HypergeometricUrn
 
 /-!
 Named finite distros.
@@ -129,4 +130,8 @@ Reading order:
 26. `FinCap` gives reusable finite-window conditioning and censoring laws.
     `CapConsistency` applies them to truncated and right-censored geometric
     and NB families, including zero success weight in the censored laws.
+27. `HypergeometricUrn` realizes sampling without replacement by sequential
+    Bernoulli colour draws and removal. Its marked-count pushforward agrees
+    with hypergeometric on every event, and its mean and finite-population
+    variance follow by law transport.
 -/

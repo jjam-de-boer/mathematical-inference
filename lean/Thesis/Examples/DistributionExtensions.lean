@@ -108,4 +108,20 @@ example : QProb.Equiv
       (negativeBinomial_cap_positive 3 0 5 2 3 (by decide) (by decide) (by decide))).pmf ⟨0, by decide⟩)
     QProb.one := by decide
 
+/-- The second same-colour draw uses a depleted urn, and reading off
+counts gives hypergeometric even at the population boundaries. -/
+example : QProb.Equiv
+    ((depletingPathRecord 2 2 3 (by decide)).probVal (FiniteProbRecord.singletonEvent [true, true]))
+    ⟨1, 10, by decide⟩ := by decide
+example : QProb.Equiv ((hypergeometricFromUrn 2 5 3 (by decide) (by decide)).pmf ⟨1, by decide⟩)
+    ⟨3, 5, by decide⟩ := by decide
+example : QProb.Equiv ((hypergeometricFromUrn 2 5 5 (by decide) (by decide)).pmf ⟨2, by decide⟩)
+    QProb.one := by decide
+example : QProb.Equiv ((hypergeometricFromUrn 0 3 2 (by decide) (by decide)).pmf ⟨0, by decide⟩)
+    QProb.one := by decide
+example : QProb.Equiv ((hypergeometricFromUrn 3 3 2 (by decide) (by decide)).pmf (Fin.last 2))
+    QProb.one := by decide
+example : QProb.Equiv ((hypergeometricFromUrn 0 0 0 (by decide) (by decide)).pmf ⟨0, by decide⟩)
+    QProb.one := by decide
+
 end Thesis.Examples.DistributionExtensions

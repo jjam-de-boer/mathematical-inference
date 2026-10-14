@@ -78,6 +78,10 @@ second moments and witnessed variances include the cap boundary terms and
 the censored zero-success-weight endpoint. Conditioning a larger truncated
 geometric or NB law on a smaller window recovers that smaller law; clipping
 a larger right-censored law gives the smaller censored law on every event.
+Hypergeometric is also realized by actual sequential two-colour urn draws
+without replacement: each Bernoulli colour draw removes one ball of that
+colour. Its count law agrees on every event, including empty and single-colour
+urns, and the mean and finite-population variance transport to that process.
 
 Variance uses the existing witnessed `QProb.sub` operation, and boundary
 cases are covered by theorem statements and kernel-checked
