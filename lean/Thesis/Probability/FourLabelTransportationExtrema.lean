@@ -246,7 +246,7 @@ theorem restoreReservation_selected_ge (total : Nat) (rows columns : Masses)
     amount ≤ (restoreReservation total rows columns edge amount reserved residual).cells edge.1 edge.2 := by
   change amount ≤ residual.cells edge.1 edge.2 +
     (if edge.1 = edge.1 then (if edge.2 = edge.2 then amount else 0) else 0)
-  simp only [if_pos rfl]
+  simp only
   exact Nat.le_add_left _ _
 
 theorem restoreReservation_unchanged_row (total : Nat) (rows columns : Masses)
@@ -282,11 +282,8 @@ theorem maximizeCell_attains (total : Nat) (rows columns : Masses) (margins : Ma
     (edge : Fin 4 × Fin 4) (different : edge.1 ≠ edge.2) :
     (maximizeCell total rows columns margins edge different).cells edge.1 edge.2 = edgeCapacity total rows columns edge := by
   have upper := cell_le_edgeCapacity total rows columns margins (maximizeCell total rows columns margins edge different) edge different
-  have lower : edgeCapacity total rows columns edge ≤ (maximizeCell total rows columns margins edge different).cells edge.1 edge.2 := by
-    change edgeCapacity total rows columns edge ≤ _ +
-      (if edge.1 = edge.1 then (if edge.2 = edge.2 then edgeCapacity total rows columns edge else 0) else 0)
-    simp only [if_pos rfl]
-    exact Nat.le_add_left _ _
+  have lower := completeReservation_selected_ge total rows columns margins edge
+    (edgeCapacity total rows columns edge) (edgeCapacity_reservation total rows columns margins edge different)
   exact Nat.le_antisymm upper lower
 
 end FourLabelTransportation
