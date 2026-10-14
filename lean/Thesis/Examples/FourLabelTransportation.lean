@@ -37,7 +37,8 @@ theorem concentrated_margins : Margins 2 (concentrated 0) (concentrated 1) := by
 theorem unit_margins : Margins 4 units units := by
   refine ⟨rfl, rfl, ?_⟩
   intro _
-  exact by decide
+  change 1 + 1 ≤ 4
+  decide +kernel
 
 def zeroTable : Transportation zeros zeros := transport 0 zeros zeros zero_margins
 def concentratedTable : Transportation (concentrated 0) (concentrated 1) :=
