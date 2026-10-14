@@ -156,4 +156,42 @@ example : QProb.Equiv
     ((negativeBinomialCensoredFromBernoulli 3 2 2 0 (by decide) (by decide)).pmf ⟨0, by decide⟩)
     QProb.one := by decide
 
+/-- Unequal independent parameters exercise the generic moment and PGF laws. -/
+example : QProb.Equiv
+    (mean (independentSum (bernoulliNatDistro 2 3 (by decide))
+      (bernoulliNatDistro 5 1 (by decide)))) ⟨37, 30, by decide⟩ := by decide
+
+example : QProb.Equiv
+    (variance (independentSum (bernoulliNatDistro 2 3 (by decide))
+      (bernoulliNatDistro 5 1 (by decide)))) ⟨341, 900, by decide⟩ := by decide
+
+example : QProb.Equiv
+    (pgf (independentSum (bernoulliNatDistro 2 3 (by decide))
+      (bernoulliNatDistro 5 1 (by decide))) ⟨1, 2, by decide⟩)
+    ⟨7, 15, by decide⟩ := by decide
+
+/-- Finite Gaussian moments differ from continuous Gaussian/χ² formulas. -/
+example : QProb.Equiv
+    (variance (discreteGaussianNatDistro 2 ⟨1, 2, by decide⟩ (by simp [QProb.LE, QProb.one])))
+    ⟨12, 17, by decide⟩ := by decide
+
+example : QProb.Equiv
+    (mean (chiSquaredDistro 2 2 ⟨1, 2, by decide⟩ (by simp [QProb.LE, QProb.one])))
+    ⟨24, 17, by decide⟩ := by decide
+
+example : QProb.Equiv
+    (variance (chiSquaredDistro 2 2 ⟨1, 2, by decide⟩ (by simp [QProb.LE, QProb.one])))
+    ⟨528, 289, by decide⟩ := by decide
+
+example : QProb.Equiv
+    (variance (chiSquaredDistro 0 2 ⟨1, 2, by decide⟩ (by simp [QProb.LE, QProb.one])))
+    QProb.zero := by decide
+
+example : QProb.Equiv
+    (variance (chiSquaredDistro 3 0 ⟨1, 2, by decide⟩ (by simp [QProb.LE, QProb.one])))
+    QProb.zero := by decide
+
+example : QProb.Equiv
+    (variance (chiSquaredDistro 2 2 QProb.zero (QProb.zero_le _))) QProb.zero := by decide
+
 end Thesis.Examples.DistributionLaws

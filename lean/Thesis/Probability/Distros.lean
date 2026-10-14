@@ -9,6 +9,10 @@ import Thesis.Probability.Distros.Gaussian
 import Thesis.Probability.Distros.WaitingTime
 import Thesis.Probability.Distros.BernoulliWaiting
 import Thesis.Probability.Distros.BernoulliRace
+import Thesis.Probability.Distros.Moments
+import Thesis.Probability.Distros.IndependentSums
+import Thesis.Probability.Distros.ChiSquared
+import Thesis.Probability.Distros.GaussianMoments
 
 /-!
 Named finite distros.
@@ -66,4 +70,12 @@ Reading order:
     or failure threshold.  Its ordinary and terminal occupancies give the
     corrected NB weights and tail, exhaust the fixed trial horizon, and
     agree with both the truncated and censored NB laws on every event.
+12. `Moments` supplies natural and rational expectation, transport under maps,
+    linearity, independent means and variances, and rational PGF factorisation.
+13. `IndependentSums` regroups repeated independent sums as actual records
+    and proves their moment scaling and PGF power laws.
+14. `ChiSquared` applies regrouping to the squared-coordinate construction:
+    equal radius and kernel give additivity of degrees of freedom on every event.
+15. `GaussianMoments` proves zero signed centred mean and exact finite kernel
+    sums for Gaussian variance and the second/fourth moments needed for χ².
 -/
