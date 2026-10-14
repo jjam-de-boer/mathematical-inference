@@ -248,6 +248,13 @@ theorem variance_balance (μ : NatDistro Ω) :
     (QProb.sub_add (secondMomentScaled μ) (meanSq μ) (meanSq_le_secondMoment μ))
     (secondMomentScaled_equiv μ)
 
+/-- A proposed variance is determined by the checked second-moment balance. -/
+theorem variance_eq_of_balance (μ : NatDistro Ω) (value : QProb)
+    (balance : QProb.Equiv (QProb.add value (QProb.mul (mean μ) (mean μ)))
+      (secondMoment μ)) : QProb.Equiv (variance μ) value := by
+  apply qprob_add_cancel_right _ _ (QProb.mul (mean μ) (mean μ))
+  exact QProb.equiv_trans (variance_balance μ) (QProb.equiv_symm balance)
+
 /-- Independent sums have additive variance, using the existing subtraction witness. -/
 theorem independentSum_variance (μ : NatDistro Ω) (ν : NatDistro X) :
     QProb.Equiv (variance (independentSum μ ν))

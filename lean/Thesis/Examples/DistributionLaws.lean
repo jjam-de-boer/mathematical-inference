@@ -239,4 +239,31 @@ example : QProb.Equiv
     (multivariatePGF (multinomialDistro 0 [2, 3, 1] (by decide))
       [QProb.zero, QProb.zero, QProb.zero]) QProb.one := by decide
 
+example : QProb.Equiv (variance (bernoulliNatDistro 2 3 (by decide)))
+    ⟨6, 25, by decide⟩ := by decide
+
+example : QProb.Equiv (variance (binomialNatDistro 4 2 3 (by decide)))
+    ⟨24, 25, by decide⟩ := by decide
+
+example : QProb.Equiv (variance (binomialNatDistro 5 0 3 (by decide)))
+    QProb.zero := by decide
+
+example : QProb.Equiv (variance (binomialNatDistro 5 2 0 (by decide)))
+    QProb.zero := by decide
+
+example : QProb.Equiv (variance (binomialNatDistro 0 2 3 (by decide)))
+    QProb.zero := by decide
+
+example : QProb.Equiv (secondMoment (betaBinomialNatDistro 3 2 3 (by decide) (by decide)))
+    ⟨12, 5, by decide⟩ := by decide
+
+example : QProb.Equiv (variance (betaBinomialNatDistro 3 2 3 (by decide) (by decide)))
+    ⟨24, 25, by decide⟩ := by decide
+
+example : QProb.Equiv (variance (betaBinomialNatDistro 4 1 1 (by decide) (by decide)))
+    (QProb.ofNat 2) := by decide
+
+example : QProb.Equiv (variance (betaBinomialNatDistro 0 2 3 (by decide) (by decide)))
+    QProb.zero := by decide
+
 end Thesis.Examples.DistributionLaws

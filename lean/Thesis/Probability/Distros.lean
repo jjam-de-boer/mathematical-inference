@@ -15,6 +15,8 @@ import Thesis.Probability.Distros.ChiSquared
 import Thesis.Probability.Distros.GaussianMoments
 import Thesis.Probability.Distros.BetaBinomial
 import Thesis.Probability.Distros.MultivariatePGF
+import Thesis.Probability.Distros.BinomialMoments
+import Thesis.Probability.Distros.BetaBinomialMoments
 
 /-!
 Named finite distros.
@@ -86,4 +88,8 @@ Reading order:
 17. `MultivariatePGF` proves occupancy dimensions and trial totals, the
     rational multivariate multinomial generating function, and its natural
     argument specialization via a reusable rational binomial theorem.
+18. `BinomialMoments` proves Bernoulli and binomial second moments and closed
+    variances, including zero trials and deterministic Bernoulli parameters.
+19. `BetaBinomialMoments` proves the second factorial moment and closed
+    reinforced-urn variance, with zero trials included.
 -/
