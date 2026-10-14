@@ -98,13 +98,15 @@ def model (law : FiniteProbRecord signature.Assignment) (offFactual : Bool) : Ex
 true for every supplied law and either off-factual outcome. -/
 theorem model_isCanonical (law : FiniteProbRecord signature.Assignment) (offFactual : Bool) :
     (model law offFactual).IsCanonicalSemiMarkovian := by
-  change latent.CanonicalSemiMarkovian
+  change forall (_source : Fin 1) (first second third : Fin 2),
+    true = true → true = true → true = true →
+      first = second ∨ first = third ∨ second = third
   decide +kernel
 
 theorem model_hasProjectedGraph (law : FiniteProbRecord signature.Assignment) (offFactual : Bool) :
     HasProjectedGraph (model law offFactual) graph := by
   intro first second
-  simp only [HasProjectedGraph, FiniteLatentSCM.observedGraph, model,
+  simp only [FiniteLatentSCM.observedGraph, model,
     LatentExtension.observedGraph, LatentExtension.projectedBidirected,
     latent, graph, finAny, Bool.and_self, Bool.false_or, Bool.and_true]
 
@@ -173,7 +175,7 @@ theorem eval_intervened_y (law : FiniteProbRecord signature.Assignment) (offFact
     (model law offFactual).evalUnder (intervention action).value unit y =
       if action = unit root x then unit root y else offFactual := by
   rw [eval_y, eval_x]
-  simp [intervention, x, y]
+  simp [intervention, x, y] <;> rfl
 
 end BinaryBow
 end Causality
