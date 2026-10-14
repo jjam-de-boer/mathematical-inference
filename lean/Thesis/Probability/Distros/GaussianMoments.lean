@@ -1,6 +1,6 @@
 import Thesis.Probability.Distros.Concentration
 import Thesis.Probability.Distros.ChiSquared
-import Thesis.Probability.FiniteSignedMass
+import Thesis.Probability.Distros.SignedMoments
 
 namespace Thesis.Probability.Distros
 
@@ -103,16 +103,6 @@ theorem chiSquared_variance_finite (df radius : Nat) (q : QProb)
       (QProb.scale df (gaussianSquareVariance radius q bounded)) :=
   QProb.equiv_trans (chiSquared_variance df radius q bounded)
     (QProb.scale_congr df (gaussianSquare_variance radius q bounded))
-
-theorem signedAtomMass_natIntegral (atoms : List (Ω × Nat)) (f : Ω → Nat) :
-    FiniteProbRecord.signedAtomMass atoms (fun value => (f value : Int)) =
-      (natIntegral atoms f : Int) := by
-  induction atoms with
-  | nil => rfl
-  | cons atom rest ih =>
-      simp only [FiniteProbRecord.signedAtomMass, List.map_cons, List.sum_cons,
-        natIntegral, Int.natCast_add, Int.natCast_mul] at ih ⊢
-      rw [ih]
 
 /-- The signed centred Gaussian coordinate has exactly zero mean. -/
 theorem discreteGaussian_signed_mean_zero (radius : Nat) (q : QProb)

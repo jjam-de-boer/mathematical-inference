@@ -137,4 +137,22 @@ example : QProb.Equiv
 example : QProb.Equiv
     ((categoricalOccupancyDistro 0 [0, 2] (by decide)).pmf [0, 0]) QProb.one := by decide
 
+/-- Merging categories permits empty destination categories. Coordinate
+marginals retain deterministic endpoints, and covariance is signed. -/
+example : aggregateCounts 3 [0, 1, 0] [2, 0, 1] = [3, 0, 0] := by decide
+example : QProb.Equiv
+    (((multinomialDistro 3 [2, 0, 1] (by decide)).map (aggregateCounts 3 [0, 1, 0])).pmf [3, 0, 0])
+    QProb.one := by decide
+example : QProb.Equiv (variance (multinomialCoordinate 3 [2, 0, 1] (by decide) 0))
+    ⟨2, 3, by decide⟩ := by decide
+example : QProb.Equiv (mean (multinomialCoordinate 3 [2, 0, 1] (by decide) 1)) QProb.zero := by decide
+example : SignedMoment.Equiv
+    ((multinomialDistro 3 [2, 0, 1] (by decide)).covariance
+      (fun counts => counts.getD 0 0) (fun counts => counts.getD 2 0))
+    ⟨-2, 3, by decide⟩ := by decide
+example : SignedMoment.Equiv
+    ((multinomialDistro 0 [2, 1] (by decide)).covariance
+      (fun counts => counts.getD 0 0) (fun counts => counts.getD 1 0))
+    ⟨0, 1, by decide⟩ := by decide
+
 end Thesis.Examples.DistributionExtensions

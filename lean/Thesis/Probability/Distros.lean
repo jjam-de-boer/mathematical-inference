@@ -21,6 +21,8 @@ import Thesis.Probability.Distros.BetaBinomial
 import Thesis.Probability.Distros.MultivariatePGF
 import Thesis.Probability.Distros.PGFUniqueness
 import Thesis.Probability.Distros.CategoricalProduct
+import Thesis.Probability.Distros.MultinomialAggregation
+import Thesis.Probability.Distros.MultinomialCovariance
 import Thesis.Probability.Distros.BinomialMoments
 import Thesis.Probability.Distros.BetaBinomialMoments
 import Thesis.Probability.Distros.GeometricMoments
@@ -142,4 +144,10 @@ Reading order:
 29. `CategoricalProduct` constructs ordered independent categorical draws
     using the existing product operation. Reading off their occupancy vector
     gives the multinomial law on every Boolean event.
+30. `MultinomialAggregation` proves arbitrary category coarsening, binomial
+    coordinate marginals, and their closed means and witnessed variances.
+31. `SignedMoments` gives covariance an integer numerator and identifies it
+    with the centered product integral and the existing diagonal variance.
+    `MultinomialCovariance` proves the distinct-coordinate cross moment and
+    negative covariance, including zero trials and zero-weight colours.
 -/

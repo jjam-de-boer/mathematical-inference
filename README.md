@@ -73,6 +73,11 @@ finite enumerations of outcome types. Chebyshev is connected to variance
 and holds at every positive rational radius. Finite generating functions determine numeric and bounded count-vector laws
 constructively. Independent draws from the categorical constructor produce
 the multinomial occupancy law on every event, including zero-weight colours.
+Arbitrary category partitions produce multinomial laws with summed weights;
+coordinate counts have binomial marginals, closed means and variances.
+Distinct-coordinate cross moments and negative covariances are proved with
+integer numerators over positive denominators. The generic covariance agrees
+with the centered product integral and with witnessed variance on its diagonal.
 Falling-factorial moments of
 binomial, hypergeometric and beta-binomial laws are proved at every order,
 including orders above their finite support. General negative-binomial
