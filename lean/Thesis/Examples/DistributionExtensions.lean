@@ -54,4 +54,24 @@ example : QProb.Equiv
       (FiniteProbRecord.singletonEvent [true]))
     QProb.zero := by decide
 
+/-- Zero success weight censors every path at the cap. -/
+example : QProb.Equiv ((geometricCensoredDistroOfTotal 4 0 2 (by decide)).pmf (Fin.last 4))
+    QProb.one := by decide
+example : QProb.Equiv (pgf (geometricCensoredNatDistroOfTotal 4 0 2 (by decide)) ⟨1, 2, by decide⟩)
+    ⟨1, 16, by decide⟩ := by decide
+example : QProb.Equiv ((negativeBinomialCensoredDistroOfTotal 3 4 0 2 (by decide) (by decide)).pmf (Fin.last 4))
+    QProb.one := by decide
+example : QProb.Equiv (variance (negativeBinomialCensoredNatDistroOfTotal 3 4 0 2 (by decide) (by decide)))
+    QProb.zero := by decide
+example : QProb.Equiv ((betaBinomialDistroOfTotal 5 0 3 (by decide)).pmf ⟨0, by decide⟩)
+    QProb.one := by decide
+example : QProb.Equiv ((betaBinomialDistroOfTotal 5 3 0 (by decide)).pmf (Fin.last 5))
+    QProb.one := by decide
+example : QProb.Equiv (mean (betaBinomialNatDistroOfTotal 5 3 0 (by decide)))
+    (QProb.ofNat 5) := by decide
+example : QProb.Equiv (factorialMoment (betaBinomialNatDistroOfTotal 5 3 0 (by decide)) 3)
+    (QProb.ofNat 60) := by decide
+example : QProb.Equiv (variance (betaBinomialNatDistroOfTotal 0 0 3 (by decide)))
+    QProb.zero := by decide
+
 end Thesis.Examples.DistributionExtensions

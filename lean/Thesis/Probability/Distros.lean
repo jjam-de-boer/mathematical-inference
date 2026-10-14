@@ -12,6 +12,7 @@ import Thesis.Probability.Distros.BernoulliRace
 import Thesis.Probability.Distros.Moments
 import Thesis.Probability.Distros.Concentration
 import Thesis.Probability.Distros.LawEquivalence
+import Thesis.Probability.Distros.PointMass
 import Thesis.Probability.Distros.IndependentSums
 import Thesis.Probability.Distros.ChiSquared
 import Thesis.Probability.Distros.GaussianMoments
@@ -23,6 +24,7 @@ import Thesis.Probability.Distros.GeometricMoments
 import Thesis.Probability.Distros.HypergeometricMoments
 import Thesis.Probability.Distros.FactorialMoments
 import Thesis.Probability.Distros.PolyaUpdates
+import Thesis.Probability.Distros.Degenerate
 
 /-!
 Named finite distros.
@@ -113,4 +115,8 @@ Reading order:
 23. `PolyaUpdates` proves word permutation invariance and the exact
     reinforced continuation law after conditioning on a supported prefix,
     with both next-colour predictive probabilities.
+24. `PointMass` recognizes one-cell laws and transports their mean, variance
+    and PGF. `Degenerate` supplies positive-total constructors for censored
+    waiting times and beta-binomial, including deterministic endpoints and
+    the general reinforced-urn correspondence.
 -/

@@ -62,7 +62,11 @@ rising factorial `(α+β)↑trials`, and its success-count law agrees on every
 event with sequential finite Pólya urn draws and same-colour reinforcement.
 Ordered Pólya words are exchangeable. Conditioning on a supported prefix
 updates the two urn counts by the observed colour counts, with the exact
-future law and both next-draw probabilities proved.
+future law and both next-draw probabilities proved. The `*DistroOfTotal`
+constructors permit zero success weight in censored waiting times and one
+zero beta-binomial colour count. Their deterministic point-mass laws are
+proved; beta-binomial moments and the urn correspondence include both
+endpoints. Existing strict constructors agree with these variants.
 Law equivalence transports event agreement through maps, products, positive
 conditioning, expectations, moments, variance and PGFs, without requiring
 finite enumerations of outcome types. Chebyshev is connected to variance
