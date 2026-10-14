@@ -50,7 +50,9 @@ def effectLower (total : Nat) (positive : 0 < total) (rows columns : Masses) : Q
 def effectUpper (total : Nat) (positive : 0 < total) (rows columns : Masses) : QProb :=
   ⟨effectUpperMass total rows columns, 2 * total, Nat.mul_pos (by decide) positive⟩
 
-private theorem responseEffectScore_numerator (responses : FiniteProbRecord Profile) :
+/-- The score's two raw components are treatment success and control failure
+on the same record.  This identity also serves the null-instrument branch. -/
+theorem responseEffectScore_numerator (responses : FiniteProbRecord Profile) :
     (responseEffectScore responses).num =
       FiniteProbRecord.eventMass responses.atoms (outcomeEvent true true) +
         FiniteProbRecord.eventMass responses.atoms (outcomeEvent false false) := by
@@ -66,7 +68,7 @@ private theorem responseEffectScore_numerator (responses : FiniteProbRecord Prof
 
 /-- Boolean normalization turns a bound on the complementary response into
 an upper bound on this response.  Both masses are from the same record. -/
-private theorem outcome_upper_mass (responses : FiniteProbRecord Profile) (total bound : Nat)
+theorem outcome_upper_mass_of_complement_lower (responses : FiniteProbRecord Profile) (total bound : Nat)
     (action outcome : Bool)
     (lowerComplement : bound * responses.den ≤
       FiniteProbRecord.eventMass responses.atoms (outcomeEvent action (!outcome)) * total) :
@@ -107,10 +109,10 @@ theorem native_effect_bounds (native : FiniteHiddenDAGSCM signature P) (graphMat
   have lowerControl : outcomeLowerMass total rows columns false false * responses.den ≤ controlFailure * total :=
     native_outcome_lower_mass native graphMatch law observed total positive rows columns margins arms falsePositive truePositive false false
   have upperTreated : treated * total ≤ (total - outcomeLowerMass total rows columns true false) * responses.den :=
-    outcome_upper_mass responses total (outcomeLowerMass total rows columns true false) true true
+    outcome_upper_mass_of_complement_lower responses total (outcomeLowerMass total rows columns true false) true true
       (native_outcome_lower_mass native graphMatch law observed total positive rows columns margins arms falsePositive truePositive true false)
   have upperControl : controlFailure * total ≤ (total - outcomeLowerMass total rows columns false true) * responses.den :=
-    outcome_upper_mass responses total (outcomeLowerMass total rows columns false true) false false
+    outcome_upper_mass_of_complement_lower responses total (outcomeLowerMass total rows columns false true) false false
       (native_outcome_lower_mass native graphMatch law observed total positive rows columns margins arms falsePositive truePositive false true)
   have scoreNumerator : (responseEffectScore responses).num = treated + controlFailure := by
     exact responseEffectScore_numerator responses

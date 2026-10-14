@@ -38,7 +38,7 @@ def factualOutcomeMass (law : FiniteProbRecord signature.Assignment) (action out
 unobserved opposite treatment outcome receives the selected fill value. -/
 def nullProfile (controlUpper treatedUpper : Bool) (sample : signature.Assignment) : Profile :=
   profileOfPair ((sample x, sample y), (sample x, sample y))
-    (if sample x then controlUpper else treatedUpper)
+    (if sample x = true then controlUpper else treatedUpper)
 
 def nullResponses (law : FiniteProbRecord signature.Assignment) (controlUpper treatedUpper : Bool) :
     FiniteProbRecord Profile := law.map (nullProfile controlUpper treatedUpper)
@@ -148,6 +148,7 @@ theorem nullResponses_feasible (law : FiniteProbRecord signature.Assignment) (ac
       apply QProb.equiv_trans (instrumentMarginal_probVal law instrument)
       change instrumentMass law instrument * 1 = 0 * law.den
       rw [opposite, missing]
+      simp only [Nat.zero_mul]
     have zeroCell : QProb.Equiv (law.probVal (observedCell instrument action outcome)) QProb.zero :=
       QProb.equiv_trans
         (law.probVal_congr_on_probability_one (instrumentEvent active) _ (fun _ => false)
