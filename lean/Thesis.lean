@@ -33,6 +33,7 @@ import Thesis.Examples.BinaryInstrumentalTransportation
 import Thesis.Examples.FiniteProductSplicing
 import Thesis.Examples.FourLabelTransportation
 import Thesis.Examples.FourLabelTransportationExtrema
+import Thesis.Examples.FourLabelTransportationAggregation
 import Thesis.Examples.HiddenPathSearch
 import Thesis.Examples.HiddenDAGCollapse
 import Thesis.Examples.HiddenDAGSoundness

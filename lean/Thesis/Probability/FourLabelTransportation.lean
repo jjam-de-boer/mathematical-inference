@@ -91,11 +91,14 @@ def candidateEdges : List (Fin 4 × Fin 4) :=
   [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3),
     (2, 0), (2, 1), (2, 2), (2, 3), (3, 0), (3, 1), (3, 2), (3, 3)]
 
-private theorem candidateEdges_complete (edge : Fin 4 × Fin 4) : edge ∈ candidateEdges := by
+/-- Every pair label occurs, regardless of whether it is a permitted cell. -/
+theorem candidateEdges_complete (edge : Fin 4 × Fin 4) : edge ∈ candidateEdges := by
   rcases edge with ⟨row, column⟩
   rcases label_cases row with same | same | same | same <;> subst row <;>
     rcases label_cases column with same | same | same | same <;> subst column <;>
     decide +kernel
+
+theorem candidateEdges_nodup : candidateEdges.Nodup := by decide +kernel
 
 /-- With the first row positive, at most one of the other three labels can
 be tight.  Such a tight label has a positive column, giving an eligible edge.

@@ -75,6 +75,26 @@ theorem probVal_equiv_listSum_fibres (record : FiniteProbRecord Ω)
   rw [covered, List.map_map] at additive
   exact additive
 
+/-- The same fibre decomposition holds at exact natural mass level.
+Only the record's positive total denominator is cancelled; individual
+fibres may be empty or have zero mass.  This avoids introducing conditionals
+when turning an arbitrary record into a finite transportation table. -/
+theorem eventMass_eq_listSum_fibres (record : FiniteProbRecord Ω)
+    (project : Ω -> A) (event : Event Ω) (values : List A)
+    (nodup : values.Nodup) (complete : forall value, value ∈ values) :
+    eventMass record.atoms event =
+      (values.map (fun value => eventMass record.atoms (fibreEvent project event value))).sum := by
+  have split := record.probVal_equiv_listSum_fibres project event values nodup complete
+  have presentation := QProb.listSum_mk_same_den record.den record.den_pos
+    (values.map (fun value => eventMass record.atoms (fibreEvent project event value)))
+  have combined : QProb.Equiv (record.probVal event)
+      ⟨(values.map (fun value => eventMass record.atoms (fibreEvent project event value))).sum,
+        record.den, record.den_pos⟩ :=
+    QProb.equiv_trans split (by simpa only [List.map_map, Function.comp_def, probVal] using presentation)
+  change eventMass record.atoms event * record.den =
+    (values.map (fun value => eventMass record.atoms (fibreEvent project event value))).sum * record.den at combined
+  exact Nat.eq_of_mul_eq_mul_right record.den_pos combined
+
 /-- Finite normalization as a sum of distinct singleton masses.  Repeated
 atoms in the record are allowed; only the supplied complete label enumeration
 must be duplicate-free.  The stored positive denominator, rather than a
