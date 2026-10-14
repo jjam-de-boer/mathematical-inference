@@ -112,6 +112,27 @@ theorem endpoint_outcome_mass (total : Nat) (positive : 0 < total) (rows columns
   rw [mass]
   exact overlap
 
+/-- The outcome whose overlap was maximized has exactly its lower mass.
+For a requested upper success risk this is the *failure* mass, which is
+also the component needed by the signed-effect score.  This raw equality
+keeps the constructor's common denominator available for joint objectives. -/
+theorem endpoint_selected_outcome_mass (total : Nat) (positive : 0 < total) (rows columns : Masses)
+    (margins : Margins total rows columns) (table : Transportation rows columns)
+    (controlUpper treatedUpper action : Bool)
+    (attained : table.cells (endpointEdge controlUpper treatedUpper action).1 (endpointEdge controlUpper treatedUpper action).2 =
+      edgeCapacity total rows columns (endpointEdge controlUpper treatedUpper action)) :
+    FiniteProbRecord.eventMass (endpointResponses total positive rows columns margins table controlUpper treatedUpper).atoms
+        (outcomeEvent action (!(endpointUpper controlUpper treatedUpper action))) =
+      outcomeLowerMass total rows columns action (!(endpointUpper controlUpper treatedUpper action)) := by
+  have exposed := endpoint_outcome_mass total positive rows columns margins table controlUpper treatedUpper action
+  rw [attained] at exposed
+  change _ + edgeCapacity total rows columns (riskEdge action (!(endpointUpper controlUpper treatedUpper action))) =
+    rows (riskEdge action (!(endpointUpper controlUpper treatedUpper action))).1 +
+      columns (riskEdge action (!(endpointUpper controlUpper treatedUpper action))).2 at exposed
+  clear attained
+  unfold outcomeLowerMass
+  omega
+
 def selectedRisk (total : Nat) (positive : 0 < total) (rows columns : Masses)
     (controlUpper treatedUpper action : Bool) : QProb :=
   if endpointUpper controlUpper treatedUpper action then riskUpper total positive rows columns action
@@ -199,6 +220,22 @@ theorem native_risk_endpoints_attainable (projection : FiniteLatentProjection si
   intro action
   exact endpoint_response_risk total positive rows columns margins table controlUpper treatedUpper action
     (endpointTable_attains total rows columns margins controlUpper treatedUpper action)
+
+/-- The application-facing corner theorem computes both margins from the
+whole observed law.  Four checked capacity inequalities suffice; neither a
+caller-supplied response table nor a preselected native model is required. -/
+theorem native_observed_risk_endpoints_attainable (projection : FiniteLatentProjection signature)
+    (graphMatch : HasIVProjection projection) (law : FiniteProbRecord signature.Assignment)
+    (falsePositive : 0 < instrumentMass law false) (truePositive : 0 < instrumentMass law true)
+    (capacities : forall label, observedRows law label + observedColumns law label ≤ observedTotal law)
+    (controlUpper treatedUpper : Bool) :
+    RisksAttainableAt projection law
+      (selectedRisk (observedTotal law) (observedTotal_positive law falsePositive truePositive)
+        (observedRows law) (observedColumns law) controlUpper treatedUpper) :=
+  native_risk_endpoints_attainable projection graphMatch law (observedTotal law)
+    (observedTotal_positive law falsePositive truePositive) (observedRows law) (observedColumns law)
+    ⟨observedRows_total law, observedColumns_total law, capacities⟩
+    (observedArmMarginals law falsePositive truePositive) controlUpper treatedUpper
 
 end BinaryInstrumental
 end Causality

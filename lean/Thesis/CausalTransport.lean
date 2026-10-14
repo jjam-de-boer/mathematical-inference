@@ -63,6 +63,7 @@ import Thesis.CausalTransport.BinaryInstrumentalNativeTransportation
 import Thesis.CausalTransport.BinaryInstrumentalRiskBounds
 import Thesis.CausalTransport.BinaryInstrumentalRiskEndpoints
 import Thesis.CausalTransport.BinaryInstrumentalEffect
+import Thesis.CausalTransport.BinaryInstrumentalEffectBounds
 import Thesis.CausalTransport.ObservationalFormulaSelection
 import Thesis.CausalTransport.BackdoorAdjustment
 import Thesis.CausalTransport.BackdoorAdjustmentSearch
