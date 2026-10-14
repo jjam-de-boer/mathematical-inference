@@ -51,6 +51,7 @@ import Thesis.Causality.BinaryBowMixture
 import Thesis.Causality.BinaryInstrumentalProfiles
 import Thesis.Causality.BinaryInstrumentalCoupling
 import Thesis.Causality.BinaryInstrumentalTransportation
+import Thesis.Causality.BinaryInstrumentalRiskEvents
 import Thesis.Causality.BinaryInstrumentalResponse
 import Thesis.Causality.BinaryInstrumentalModel
 import Thesis.Causality.Admissibility

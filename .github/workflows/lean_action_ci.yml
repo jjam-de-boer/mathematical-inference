@@ -78,6 +78,7 @@ jobs:
             Thesis.Probability.FourLabelTransportationRecord
             Thesis.Probability.FourLabelTransportationScaling
             Thesis.Probability.FourLabelTransportationAggregation
+            Thesis.Probability.FiniteRecordOverlap
             Thesis.Causality.ObservationalSupport
             Thesis.Causality.ConditionalSupport
             Thesis.Causality.Admissibility
@@ -147,6 +148,7 @@ jobs:
             Thesis.Causality.BinaryInstrumentalProfiles
             Thesis.Causality.BinaryInstrumentalCoupling
             Thesis.Causality.BinaryInstrumentalTransportation
+            Thesis.Causality.BinaryInstrumentalRiskEvents
             Thesis.Causality.BinaryInstrumentalResponse
             Thesis.Causality.BinaryInstrumentalModel
             Thesis.CausalTransport.HiddenDAGAlmostSureIntervention

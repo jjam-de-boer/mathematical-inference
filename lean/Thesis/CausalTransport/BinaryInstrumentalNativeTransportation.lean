@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.BinaryInstrumentalObservedMargins
+import Thesis.Causality.BinaryInstrumentalRiskEvents
 
 namespace Thesis
 namespace Causality
