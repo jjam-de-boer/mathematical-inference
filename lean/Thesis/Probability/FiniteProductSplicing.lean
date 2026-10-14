@@ -101,15 +101,30 @@ private theorem splicedRecord_rectangle
       ((factors index).probVal (events index)) := by
     cases allocated : allocation index with
     | false =>
-        simpa only [leftEvents, rightEvents, allocated, Bool.false_eq_true, if_false] using
-          (QProb.equiv_trans
-            (QProb.mul_congr (factors index).normalization (QProb.equiv_refl ((factors index).probVal (events index))))
-            (QProb.one_mul ((factors index).probVal (events index))))
+        -- These events are function-valued arguments of `probVal`.  Expose
+        -- each supplied value through congruence rather than relying on
+        -- simplification to eta-expand a partially applied event definition.
+        have leftNormalized : QProb.Equiv
+            ((factors index).probVal (leftEvents allocation events index)) QProb.one :=
+          QProb.equiv_trans
+            ((factors index).probVal_congr _ topEvent (fun value => by
+              simp only [leftEvents, allocated, Bool.false_eq_true, if_false, topEvent]))
+            (factors index).normalization
+        have rightOriginal := (factors index).probVal_congr
+          (rightEvents allocation events index) (events index) (fun value => by
+            simp only [rightEvents, allocated, Bool.false_eq_true, if_false])
+        exact QProb.equiv_trans (QProb.mul_congr leftNormalized rightOriginal) (QProb.one_mul _)
     | true =>
-        simpa only [leftEvents, rightEvents, allocated, if_true] using
-          (QProb.equiv_trans
-            (QProb.mul_congr (QProb.equiv_refl ((factors index).probVal (events index))) (factors index).normalization)
-            (QProb.mul_one ((factors index).probVal (events index))))
+        have leftOriginal := (factors index).probVal_congr
+          (leftEvents allocation events index) (events index) (fun value => by
+            simp only [leftEvents, allocated, if_true])
+        have rightNormalized : QProb.Equiv
+            ((factors index).probVal (rightEvents allocation events index)) QProb.one :=
+          QProb.equiv_trans
+            ((factors index).probVal_congr _ topEvent (fun value => by
+              simp only [rightEvents, allocated, if_true, topEvent]))
+            (factors index).normalization
+        exact QProb.equiv_trans (QProb.mul_congr leftOriginal rightNormalized) (QProb.mul_one _)
   exact QProb.equiv_trans paired
     (QProb.equiv_trans
       (QProb.mul_congr (independent (leftEvents allocation events)) (independent (rightEvents allocation events)))
