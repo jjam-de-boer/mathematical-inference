@@ -95,11 +95,11 @@ private theorem candidateEdges_complete (edge : Fin 4 × Fin 4) : edge ∈ candi
     rcases label_cases column with same | same | same | same <;> subst column <;>
     decide +kernel
 
+set_option maxHeartbeats 400000 in
 /-- The finite capacity argument is arithmetic on eight supplied masses.
 At most two labels can be tight, since both margin totals are `total`.
 Splitting only these decidable natural equalities keeps the contradiction
 check bounded; it does not use excluded middle on an arbitrary proposition. -/
-set_option maxHeartbeats 400000 in
 private theorem no_step_impossible (total : Nat) (rows columns : Masses)
     (margins : Margins total rows columns) (positive : 0 < total)
     (blocked : forall edge, ¬ Eligible total rows columns edge) : False := by
@@ -122,8 +122,7 @@ private theorem no_step_impossible (total : Nat) (rows columns : Masses)
   have blocked31 := blocked (3, 1)
   have blocked32 := blocked (3, 2)
   simp only [sum4] at rowsTotal columnsTotal
-  simp [Eligible, forall_four] at blocked01 blocked02 blocked03 blocked10 blocked12 blocked13
-    blocked20 blocked21 blocked23 blocked30 blocked31 blocked32
+  simp [Eligible, forall_four] at blocked01 blocked02 blocked03 blocked10 blocked12 blocked13 blocked20 blocked21 blocked23 blocked30 blocked31 blocked32
   by_cases tight0 : rows 0 + columns 0 = total <;>
     by_cases tight1 : rows 1 + columns 1 = total <;>
     by_cases tight2 : rows 2 + columns 2 = total <;>
@@ -136,7 +135,8 @@ def nextStep (total : Nat) (rows columns : Masses)
     (margins : Margins total rows columns) (positive : 0 < total) :
     {edge : Fin 4 × Fin 4 // Eligible total rows columns edge} :=
   match found : candidateEdges.find? (fun edge => decide (Eligible total rows columns edge)) with
-  | some edge => ⟨edge, of_decide_eq_true (List.find?_some found)⟩
+  | some edge => ⟨edge, of_decide_eq_true
+      (List.find?_some (p := fun candidate => decide (Eligible total rows columns candidate)) found)⟩
   | none => by
       have blocked : forall edge, ¬ Eligible total rows columns edge := by
         intro edge valid
@@ -152,7 +152,7 @@ theorem decrementAt_recover (masses : Masses) (selected : Fin 4) (positive : 0 <
     decrementAt masses selected label + (if label = selected then 1 else 0) = masses label := by
   by_cases same : label = selected
   · subst label
-    simp only [decrementAt, if_pos rfl]
+    simp only [decrementAt]
     exact Nat.sub_add_cancel positive
   · simp only [decrementAt, if_neg same, Nat.add_zero]
 
@@ -202,10 +202,12 @@ def addEdge (cells : Cells) (edge : Fin 4 × Fin 4) : Cells :=
 
 private theorem addEdge_row_sum (cells : Cells) (edge : Fin 4 × Fin 4) (row : Fin 4) :
     sum4 (addEdge cells edge row) = sum4 (cells row) + (if row = edge.1 then 1 else 0) := by
+  change sum4 (fun column => cells row column +
+    (if row = edge.1 then (if column = edge.2 then 1 else 0) else 0)) = _
   by_cases same : row = edge.1
-  · simp only [addEdge, if_pos same]
+  · simp only [if_pos same]
     exact sum4_addAt (cells row) edge.2
-  · simp only [addEdge, if_neg same, Nat.add_zero]
+  · simp only [if_neg same, Nat.add_zero]
 
 private theorem addEdge_column_sum (cells : Cells) (edge : Fin 4 × Fin 4) (column : Fin 4) :
     sum4 (fun row => addEdge cells edge row column) =
