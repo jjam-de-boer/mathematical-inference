@@ -98,10 +98,11 @@ def model (law : FiniteProbRecord signature.Assignment) (offFactual : Bool) : Ex
 true for every supplied law and either off-factual outcome. -/
 theorem model_isCanonical (law : FiniteProbRecord signature.Assignment) (offFactual : Bool) :
     (model law offFactual).IsCanonicalSemiMarkovian := by
-  change forall (_source : Fin 1) (first second third : Fin 2),
-    true = true → true = true → true = true →
-      first = second ∨ first = third ∨ second = third
-  decide +kernel
+  change latent.CanonicalSemiMarkovian
+  intro _source first second third _firstIncident _secondIncident _thirdIncident
+  rcases node_cases first with same | same <;> subst first <;>
+    rcases node_cases second with same | same <;> subst second <;>
+    rcases node_cases third with same | same <;> subst third <;> simp
 
 theorem model_hasProjectedGraph (law : FiniteProbRecord signature.Assignment) (offFactual : Bool) :
     HasProjectedGraph (model law offFactual) graph := by

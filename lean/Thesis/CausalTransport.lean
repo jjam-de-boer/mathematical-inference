@@ -52,6 +52,7 @@ import Thesis.CausalTransport.HiddenDAGSupportedDomain
 import Thesis.CausalTransport.HiddenDAGSupportedCorrespondence
 import Thesis.CausalTransport.HiddenDAGAlmostSureIntervention
 import Thesis.CausalTransport.HiddenDAGConsistencyBounds
+import Thesis.CausalTransport.BinaryBowBounds
 import Thesis.CausalTransport.ObservationalFormulaSelection
 import Thesis.CausalTransport.BackdoorAdjustment
 import Thesis.CausalTransport.BackdoorAdjustmentSearch
