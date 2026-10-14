@@ -45,6 +45,8 @@ import Thesis.Causality.SupportAwareTerms
 import Thesis.Causality.ObservationalSupport
 import Thesis.Causality.AlmostSureIntervention
 import Thesis.Causality.ConsistencyBounds
+import Thesis.Causality.BinaryBowModel
+import Thesis.Causality.BinaryBowEndpoints
 import Thesis.Causality.Admissibility
 import Thesis.Causality.UsedConditionalAdmissibility
 import Thesis.Causality.SupportAwareKernelAlgebra

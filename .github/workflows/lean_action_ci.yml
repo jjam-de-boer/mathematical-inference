@@ -133,6 +133,8 @@ jobs:
             Thesis.Probability.FiniteRecordConsistencyBounds
             Thesis.Causality.AlmostSureIntervention
             Thesis.Causality.ConsistencyBounds
+            Thesis.Causality.BinaryBowModel
+            Thesis.Causality.BinaryBowEndpoints
             Thesis.CausalTransport.HiddenDAGAlmostSureIntervention
             Thesis.CausalTransport.HiddenDAGConsistencyBounds
             Thesis.CausalTransport.ObservationalFormulaSelection
