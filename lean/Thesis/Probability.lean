@@ -7,6 +7,7 @@ import Thesis.Probability.Urn
 import Thesis.Probability.QualitativeUrn
 import Thesis.Probability.FiniteRecord
 import Thesis.Probability.FiniteRecordAlmostSure
+import Thesis.Probability.FiniteRecordConsistencyBounds
 import Thesis.Probability.FiniteProductReindex
 import Thesis.Probability.FiniteRecordSlicing
 import Thesis.Probability.FiniteRecordPerturbation

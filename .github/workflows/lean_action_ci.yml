@@ -130,8 +130,11 @@ jobs:
             Thesis.CausalTransport.HiddenDAGSupportedDomain
             Thesis.CausalTransport.HiddenDAGSupportedCorrespondence
             Thesis.Probability.FiniteRecordAlmostSure
+            Thesis.Probability.FiniteRecordConsistencyBounds
             Thesis.Causality.AlmostSureIntervention
+            Thesis.Causality.ConsistencyBounds
             Thesis.CausalTransport.HiddenDAGAlmostSureIntervention
+            Thesis.CausalTransport.HiddenDAGConsistencyBounds
             Thesis.CausalTransport.ObservationalFormulaSelection
             Thesis.CausalTransport.BackdoorAdjustment
             Thesis.CausalTransport.BackdoorAdjustmentSearch
@@ -156,6 +159,7 @@ jobs:
             Thesis.Examples.AlmostSureIntervention
             Thesis.Examples.AlternativeFormulaSelection
             Thesis.Examples.BackdoorAdjustmentSearch
+            Thesis.Examples.ConsistencyBounds
             Thesis.Examples.HiddenPathSearch
             Thesis.Examples.HiddenDAGCollapse
             Thesis.Examples.HiddenDAGSoundness
