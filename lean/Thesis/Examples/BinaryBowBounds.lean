@@ -74,12 +74,15 @@ theorem uniform_endpoints : QProb.Equiv (lower uniformLaw true) quarter ∧
 switch, and the resulting model lives on this actual original hidden DAG. -/
 theorem uniform_middle_attainable : AttainableAt projection uniformLaw true half := by
   apply (attainable_iff_bounds projection projected_bow_edge uniformLaw true half).mpr
+  unfold QProb.LE
   decide +kernel
 
 theorem uniform_one_not_attainable : ¬ AttainableAt projection uniformLaw true QProb.one := by
   intro purported
   have upperBound := ((attainable_iff_bounds projection projected_bow_edge uniformLaw true QProb.one).mp purported).2
-  have excluded : ¬ QProb.LE QProb.one (upper uniformLaw true) := by decide +kernel
+  have excluded : ¬ QProb.LE QProb.one (upper uniformLaw true) := by
+    unfold QProb.LE
+    decide +kernel
   exact excluded upperBound
 
 theorem uniform_not_identified (action : Bool) : ¬ IdentifiedAt projection uniformLaw action := by
@@ -103,6 +106,7 @@ theorem concentrated_true_identified : IdentifiedAt projection concentratedLaw t
 
 theorem concentrated_degenerate_attainable : AttainableAt projection concentratedLaw true half := by
   apply (attainable_iff_bounds projection projected_bow_edge concentratedLaw true half).mpr
+  unfold QProb.LE
   decide +kernel
 
 /-- The null observational treatment value is not assigned a conditional.
@@ -111,8 +115,10 @@ theorem concentrated_opposite_endpoints : AttainableAt projection concentratedLa
     AttainableAt projection concentratedLaw false QProb.one := by
   constructor
   · apply (attainable_iff_bounds projection projected_bow_edge concentratedLaw false QProb.zero).mpr
+    unfold QProb.LE
     decide +kernel
   · apply (attainable_iff_bounds projection projected_bow_edge concentratedLaw false QProb.one).mpr
+    unfold QProb.LE
     decide +kernel
 
 end BinaryBowBounds
