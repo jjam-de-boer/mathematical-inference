@@ -33,6 +33,7 @@ import Thesis.Examples.BinaryInstrumentalTransportation
 import Thesis.Examples.BinaryInstrumentalCompatibility
 import Thesis.Examples.BinaryInstrumentalRiskBounds
 import Thesis.Examples.BinaryInstrumentalEffectBounds
+import Thesis.Examples.BinaryInstrumentalNullBounds
 import Thesis.Examples.FiniteProductSplicing
 import Thesis.Examples.FourLabelTransportation
 import Thesis.Examples.FourLabelTransportationExtrema

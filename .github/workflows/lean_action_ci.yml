@@ -168,6 +168,7 @@ jobs:
             Thesis.CausalTransport.BinaryInstrumentalSharpBounds
             Thesis.CausalTransport.BinaryInstrumentalNullResponses
             Thesis.CausalTransport.BinaryInstrumentalNullBounds
+            Thesis.CausalTransport.BinaryInstrumentalComputedBounds
             Thesis.CausalTransport.ObservationalFormulaSelection
             Thesis.CausalTransport.BackdoorAdjustment
             Thesis.CausalTransport.BackdoorAdjustmentSearch
@@ -199,6 +200,7 @@ jobs:
             Thesis.Examples.BinaryInstrumentalCompatibility
             Thesis.Examples.BinaryInstrumentalRiskBounds
             Thesis.Examples.BinaryInstrumentalEffectBounds
+            Thesis.Examples.BinaryInstrumentalNullBounds
             Thesis.Examples.FourLabelTransportation
             Thesis.Examples.FourLabelTransportationExtrema
             Thesis.Examples.FourLabelTransportationAggregation
