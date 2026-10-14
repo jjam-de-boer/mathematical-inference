@@ -25,9 +25,10 @@ equations deliberately use joint cells, not division by instrument mass,
 and therefore remain meaningful at zero-probability instrument values.
 
 The forward data representation is not by itself a completeness theorem for
-native hidden DAGs.  Subsequent work must construct actual compatible SCMs
-and prove that every native model admits such an independent response-profile
-representation before an optimizer over these weights can claim sharpness.
+native hidden DAGs.  `BinaryInstrumentalResponse` and `BinaryInstrumentalModel`
+prove the intrinsic extraction and realization directions; the native transport
+modules extend them to the original hidden DAG and its exact fixed-law feasible
+set.  Sharp optimization over that set is a further, separate obligation.
 -/
 
 def signature : ObservedSignature where
