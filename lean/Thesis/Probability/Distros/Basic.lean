@@ -150,6 +150,10 @@ def ofFin (n : Nat) (record : FiniteProbRecord (Fin (n + 1))) :
   distro := ⟨record⟩
   embed := Fin.val
 
+/-- Clamp a natural count to the last cell of a finite window. -/
+def censorFailureCount (cap value : Nat) : Fin (cap + 1) :=
+  ⟨min value cap, Nat.lt_succ_of_le (Nat.min_le_right _ _)⟩
+
 /-- Relabel atoms by their numeric embedding. -/
 def natAtoms (μ : NatDistro Ω) : List (Nat × Nat) :=
   μ.distro.record.atoms.map fun atom => (μ.embed atom.1, atom.2)

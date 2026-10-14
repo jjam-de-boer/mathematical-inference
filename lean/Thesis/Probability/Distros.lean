@@ -13,6 +13,7 @@ import Thesis.Probability.Distros.Moments
 import Thesis.Probability.Distros.Concentration
 import Thesis.Probability.Distros.LawEquivalence
 import Thesis.Probability.Distros.PointMass
+import Thesis.Probability.Distros.FinCap
 import Thesis.Probability.Distros.IndependentSums
 import Thesis.Probability.Distros.ChiSquared
 import Thesis.Probability.Distros.GaussianMoments
@@ -26,6 +27,7 @@ import Thesis.Probability.Distros.FactorialMoments
 import Thesis.Probability.Distros.PolyaUpdates
 import Thesis.Probability.Distros.Degenerate
 import Thesis.Probability.Distros.NegativeBinomialMoments
+import Thesis.Probability.Distros.CapConsistency
 
 /-!
 Named finite distros.
@@ -124,4 +126,7 @@ Reading order:
     finite generating sums and closed means, second moments and witnessed
     variances for truncated and censored laws, including zero cap and the
     censored zero-success-weight endpoint.
+26. `FinCap` gives reusable finite-window conditioning and censoring laws.
+    `CapConsistency` applies them to truncated and right-censored geometric
+    and NB families, including zero success weight in the censored laws.
 -/

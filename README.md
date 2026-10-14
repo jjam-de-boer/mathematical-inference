@@ -75,7 +75,9 @@ binomial, hypergeometric and beta-binomial laws are proved at every order,
 including orders above their finite support. General negative-binomial
 factorial moments reduce to shifted finite generating sums; their means,
 second moments and witnessed variances include the cap boundary terms and
-the censored zero-success-weight endpoint.
+the censored zero-success-weight endpoint. Conditioning a larger truncated
+geometric or NB law on a smaller window recovers that smaller law; clipping
+a larger right-censored law gives the smaller censored law on every event.
 
 Variance uses the existing witnessed `QProb.sub` operation, and boundary
 cases are covered by theorem statements and kernel-checked

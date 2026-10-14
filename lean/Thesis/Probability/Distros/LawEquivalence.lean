@@ -327,4 +327,52 @@ theorem NatDistro.SameLaw.pgf {μ : NatDistro Ω} {ν : NatDistro X}
   rw [pgf_expectation, pgf_expectation]
   simpa only [Distro.expectation_map] using Distro.SameLaw.expectation h (fun n => qpow s n)
 
+theorem qprob_listSum_map_congr_on_mem (values : List Ω) (f g : Ω → QProb)
+    (agree : ∀ x ∈ values, QProb.Equiv (f x) (g x)) :
+    QProb.Equiv (QProb.listSum (values.map f)) (QProb.listSum (values.map g)) := by
+  induction values with
+  | nil => exact QProb.equiv_refl _
+  | cons x rest ih =>
+      simp only [List.map_cons, QProb.listSum]
+      exact QProb.add_congr (agree x (List.mem_cons_self ..))
+        (ih (fun y member => agree y (List.mem_cons_of_mem _ member)))
+
+theorem Distro.probVal_complement_balance (μ : Distro Ω) (event : Event Ω) :
+    QProb.Equiv
+      (QProb.add (μ.record.probVal event) (μ.record.probVal (fun x => !(event x)))) QProb.one := by
+  simp only [QProb.Equiv, QProb.add, FiniteProbRecord.probVal, QProb.one,
+    Nat.mul_one, Nat.one_mul]
+  rw [← Nat.add_mul, FiniteProbRecord.eventMass_add_complement, μ.record.total_mass]
+
+/-- Normalization determines the remaining singleton once every other
+singleton probability agrees. -/
+theorem Distro.sameLaw_of_singletons_except [DecidableEq Ω] (μ ν : Distro Ω)
+    (values : List Ω) (nodup : values.Nodup) (complete : ∀ x, x ∈ values) (exception : Ω)
+    (agree : ∀ x, x ≠ exception → QProb.Equiv (μ.pmf x) (ν.pmf x)) : μ.SameLaw ν := by
+  let event := fun x => !(FiniteProbRecord.singletonEvent exception x)
+  have complement : QProb.Equiv (μ.record.probVal event) (ν.record.probVal event) := by
+    refine QProb.equiv_trans
+      (μ.record.probVal_equiv_listSum_singletons values nodup complete event) ?_
+    refine QProb.equiv_trans
+      (qprob_listSum_map_congr_on_mem (values.filter event) _ _ (fun x member => ?_))
+      (QProb.equiv_symm (ν.record.probVal_equiv_listSum_singletons values nodup complete event))
+    apply agree x
+    intro eq
+    have selected := (List.mem_filter.mp member).2
+    have zero : event x = false := by
+      subst x
+      simp only [event, FiniteProbRecord.singletonEvent, decide_true, Bool.not_true]
+    rw [zero] at selected
+    exact Bool.false_ne_true selected
+  apply Distro.sameLaw_of_singletons μ ν values nodup complete
+  intro x
+  by_cases eq : x = exception
+  · subst x
+    apply qprob_add_cancel_right _ _ (ν.record.probVal event)
+    exact QProb.equiv_trans
+      (QProb.add_congr (QProb.equiv_refl _) (QProb.equiv_symm complement))
+      (QProb.equiv_trans (μ.probVal_complement_balance _)
+        (QProb.equiv_symm (ν.probVal_complement_balance _)))
+  · exact agree x eq
+
 end Thesis.Probability.Distros

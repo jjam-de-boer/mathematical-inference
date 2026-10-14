@@ -435,9 +435,6 @@ theorem negativeBinomialCensored_den_trials (r cap a b : Nat) (hr : 0 < r) (ha :
     (negativeBinomialCensoredDistro r cap a b hr ha).record.den = (a + b) ^ (cap + r) := by
   rw [negativeBinomialCensored_den, negativeBinomialCensored_exhaustion a b r cap hr]
 
-def censorFailureCount (cap value : Nat) : Fin (cap + 1) :=
-  ⟨min value cap, Nat.lt_succ_of_le (Nat.min_le_right _ _)⟩
-
 theorem eventMass_censor_last (source : List (Nat × Nat)) (cap : Nat)
     (support : forall value weight, (value, weight) ∈ source → value ≤ cap + 1) :
     FiniteProbRecord.eventMass source (fun value => decide (min value cap = cap)) =

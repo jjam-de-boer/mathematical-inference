@@ -91,4 +91,21 @@ example : QProb.Equiv (negativeBinomialCensoredMeanClosed 3 4 0 2 (by decide))
 example : QProb.Equiv (negativeBinomialCensoredVarianceClosed 3 4 0 2 (by decide) (by decide))
     QProb.zero := by decide
 
+/-- Restricting a larger conditional window recovers the smaller law;
+further censoring retains all mass in its last cell. -/
+example : QProb.Equiv
+    ((conditionFinCap (negativeBinomialDistro 3 5 2 3 (by decide) (by decide)) 2
+      (negativeBinomial_cap_positive 3 2 5 2 3 (by decide) (by decide) (by decide))).pmf (Fin.last 2))
+    ⟨27, 62, by decide⟩ := by decide
+example : QProb.Equiv
+    ((censorFinCap (negativeBinomialCensoredDistroOfTotal 3 5 2 3 (by decide) (by decide)) 2).pmf (Fin.last 2))
+    ⟨513, 625, by decide⟩ := by decide
+example : QProb.Equiv
+    ((censorFinCap (negativeBinomialCensoredDistroOfTotal 3 5 0 2 (by decide) (by decide)) 2).pmf (Fin.last 2))
+    QProb.one := by decide
+example : QProb.Equiv
+    ((conditionFinCap (negativeBinomialDistro 3 5 2 3 (by decide) (by decide)) 0
+      (negativeBinomial_cap_positive 3 0 5 2 3 (by decide) (by decide) (by decide))).pmf ⟨0, by decide⟩)
+    QProb.one := by decide
+
 end Thesis.Examples.DistributionExtensions
