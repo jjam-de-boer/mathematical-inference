@@ -59,12 +59,12 @@ private theorem splice_rectangle (allocation : Fin n → Bool)
     constructor
     · intro index
       cases allocated : allocation index with
-      | false => rfl
+      | false => simp only [leftEvents, allocated, Bool.false_eq_true, if_false]
       | true => simpa only [leftEvents, splice, allocated, if_true] using selected index
     · intro index
       cases allocated : allocation index with
       | false => simpa only [rightEvents, splice, allocated, Bool.false_eq_true, if_false] using selected index
-      | true => rfl
+      | true => simp only [rightEvents, allocated, if_true]
   · rintro ⟨leftSelected, rightSelected⟩ index
     cases allocated : allocation index with
     | false =>
@@ -101,13 +101,15 @@ private theorem splicedRecord_rectangle
       ((factors index).probVal (events index)) := by
     cases allocated : allocation index with
     | false =>
-        simp only [leftEvents, rightEvents, allocated, Bool.false_eq_true, if_false]
-        exact QProb.equiv_trans
-          (QProb.mul_congr (factors index).normalization (QProb.equiv_refl _)) (QProb.one_mul _)
+        simpa only [leftEvents, rightEvents, allocated, Bool.false_eq_true, if_false] using
+          (QProb.equiv_trans
+            (QProb.mul_congr (factors index).normalization (QProb.equiv_refl ((factors index).probVal (events index))))
+            (QProb.one_mul ((factors index).probVal (events index))))
     | true =>
-        simp only [leftEvents, rightEvents, allocated, if_true]
-        exact QProb.equiv_trans
-          (QProb.mul_congr (QProb.equiv_refl _) (factors index).normalization) (QProb.mul_one _)
+        simpa only [leftEvents, rightEvents, allocated, if_true] using
+          (QProb.equiv_trans
+            (QProb.mul_congr (QProb.equiv_refl ((factors index).probVal (events index))) (factors index).normalization)
+            (QProb.mul_one ((factors index).probVal (events index))))
   exact QProb.equiv_trans paired
     (QProb.equiv_trans
       (QProb.mul_congr (independent (leftEvents allocation events)) (independent (rightEvents allocation events)))
