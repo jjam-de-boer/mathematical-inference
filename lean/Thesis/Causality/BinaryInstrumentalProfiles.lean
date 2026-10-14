@@ -62,7 +62,8 @@ theorem profiles_complete (profile : Profile) : profile ∈ profiles :=
 
 theorem profiles_nodup : profiles.Nodup :=
   FiniteProduct.enumeration_nodup 4 (fun _ => Bool) (fun _ => [false, true])
-    (fun _ => inferInstance) (by intro _; decide)
+    (fun _ => inferInstance)
+    (by intro _; change ([false, true] : List Bool).Nodup; decide +kernel)
 
 /-- Only this small data catalogue is reduced to establish its literal size.
 No model, unknown probability parameter, or optimization problem is reduced. -/
