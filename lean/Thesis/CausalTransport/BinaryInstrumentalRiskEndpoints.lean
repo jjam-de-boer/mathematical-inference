@@ -103,7 +103,11 @@ theorem endpoint_outcome_mass (total : Nat) (positive : 0 < total) (rows columns
     FiniteProbRecord.eventMass (tableAtoms table.cells) (FiniteProbRecord.singletonEvent edge) =
       FiniteProbRecord.eventMass (tableAtoms table.cells) (rowEvent edge.1) +
       FiniteProbRecord.eventMass (tableAtoms table.cells) (columnEvent edge.2) at overlap
-  rw [tableAtoms_cell, tableAtoms_row, tableAtoms_column, table.row_sum, table.column_sum] at overlap
+  rw [tableAtoms_cell] at overlap
+  change FiniteProbRecord.eventMass (tableAtoms table.cells) exposed + table.cells edge.1 edge.2 =
+    FiniteProbRecord.eventMass (tableAtoms table.cells) (fun pair => decide (pair.1 = edge.1)) +
+      FiniteProbRecord.eventMass (tableAtoms table.cells) (fun pair => decide (pair.2 = edge.2)) at overlap
+  rw [tableAtoms_row, tableAtoms_column, table.row_sum, table.column_sum] at overlap
   change FiniteProbRecord.eventMass responses.atoms target + table.cells edge.1 edge.2 = rows edge.1 + columns edge.2
   rw [mass]
   exact overlap
@@ -133,22 +137,34 @@ theorem endpoint_response_risk (total : Nat) (positive : 0 < total) (rows column
   | false =>
       simp only [endpointEdge, chosen, Bool.not_false] at exposed
       have exactMass : FiniteProbRecord.eventMass responses.atoms (outcomeEvent action true) = outcomeLowerMass total rows columns action true := by
-        change _ + edgeCapacity total rows columns (riskEdge action true) = rows (riskEdge action true).1 + columns (riskEdge action true).2 at exposed
+        change FiniteProbRecord.eventMass responses.atoms (outcomeEvent action true) +
+          edgeCapacity total rows columns (riskEdge action true) = rows (riskEdge action true).1 + columns (riskEdge action true).2 at exposed
         unfold outcomeLowerMass
+        clear attained
         omega
-      simp only [selectedRisk, chosen, Bool.false_eq_true, if_false, riskLower, QProb.Equiv, FiniteProbRecord.probVal, exactMass]
+      simp only [selectedRisk, chosen, Bool.false_eq_true, if_false]
+      change QProb.Equiv (responses.probVal (outcomeEvent action true)) (riskLower total positive rows columns action)
+      change FiniteProbRecord.eventMass responses.atoms (outcomeEvent action true) * total =
+        outcomeLowerMass total rows columns action true * total
+      rw [exactMass]
   | true =>
       simp only [endpointEdge, chosen, Bool.not_true] at exposed
       have failure : FiniteProbRecord.eventMass responses.atoms (outcomeEvent action false) = outcomeLowerMass total rows columns action false := by
-        change _ + edgeCapacity total rows columns (riskEdge action false) = rows (riskEdge action false).1 + columns (riskEdge action false).2 at exposed
+        change FiniteProbRecord.eventMass responses.atoms (outcomeEvent action false) +
+          edgeCapacity total rows columns (riskEdge action false) = rows (riskEdge action false).1 + columns (riskEdge action false).2 at exposed
         unfold outcomeLowerMass
+        clear attained
         omega
       have partition := outcomeEvent_partition responses action
       rw [failure] at partition
       have exactMass : FiniteProbRecord.eventMass responses.atoms (outcomeEvent action true) = total - outcomeLowerMass total rows columns action false := by
         change _ + _ = total at partition
         omega
-      simp only [selectedRisk, chosen, if_true, riskUpper, QProb.Equiv, FiniteProbRecord.probVal, exactMass]
+      simp only [selectedRisk, chosen, if_true]
+      change QProb.Equiv (responses.probVal (outcomeEvent action true)) (riskUpper total positive rows columns action)
+      change FiniteProbRecord.eventMass responses.atoms (outcomeEvent action true) * total =
+        (total - outcomeLowerMass total rows columns action false) * total
+      rw [exactMass]
 
 def endpointTable (total : Nat) (rows columns : Masses) (margins : Margins total rows columns)
     (controlUpper treatedUpper : Bool) : Transportation rows columns :=
