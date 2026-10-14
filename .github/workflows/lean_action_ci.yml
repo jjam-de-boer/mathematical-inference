@@ -188,6 +188,7 @@ jobs:
             Thesis.Examples.BinaryBowBounds
             Thesis.Examples.BinaryInstrumentalRepresentation
             Thesis.Examples.BinaryInstrumentalTransportation
+            Thesis.Examples.BinaryInstrumentalCompatibility
             Thesis.Examples.FourLabelTransportation
             Thesis.Examples.FourLabelTransportationExtrema
             Thesis.Examples.FourLabelTransportationAggregation

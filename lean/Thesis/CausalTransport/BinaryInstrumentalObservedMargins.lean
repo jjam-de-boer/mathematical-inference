@@ -73,9 +73,15 @@ theorem flippedCategoryMasses_total (law : FiniteProbRecord signature.Assignment
     sum4 (flippedCategoryMasses law) = instrumentMass law true := by
   calc
     _ = sum4 (categoryMasses law true) := by
-      change _ + _ + _ + _ = _ + _ + _ + _
-      unfold flippedCategoryMasses categoryMasses
-      simp only [decodeCategory, sum4]
+      change
+        FiniteProbRecord.eventMass law.atoms (observedCell true false true) +
+          FiniteProbRecord.eventMass law.atoms (observedCell true false false) +
+          FiniteProbRecord.eventMass law.atoms (observedCell true true true) +
+          FiniteProbRecord.eventMass law.atoms (observedCell true true false) =
+        FiniteProbRecord.eventMass law.atoms (observedCell true false false) +
+          FiniteProbRecord.eventMass law.atoms (observedCell true false true) +
+          FiniteProbRecord.eventMass law.atoms (observedCell true true false) +
+          FiniteProbRecord.eventMass law.atoms (observedCell true true true)
       ac_rfl
     _ = _ := categoryMasses_total law true
 

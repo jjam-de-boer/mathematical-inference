@@ -30,6 +30,7 @@ import Thesis.Examples.ConsistencyBounds
 import Thesis.Examples.BinaryBowBounds
 import Thesis.Examples.BinaryInstrumentalRepresentation
 import Thesis.Examples.BinaryInstrumentalTransportation
+import Thesis.Examples.BinaryInstrumentalCompatibility
 import Thesis.Examples.FiniteProductSplicing
 import Thesis.Examples.FourLabelTransportation
 import Thesis.Examples.FourLabelTransportationExtrema
