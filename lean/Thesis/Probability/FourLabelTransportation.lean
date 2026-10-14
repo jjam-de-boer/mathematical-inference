@@ -95,11 +95,65 @@ private theorem candidateEdges_complete (edge : Fin 4 × Fin 4) : edge ∈ candi
     rcases label_cases column with same | same | same | same <;> subst column <;>
     decide +kernel
 
-set_option maxHeartbeats 400000 in
-/-- The finite capacity argument is arithmetic on eight supplied masses.
-At most two labels can be tight, since both margin totals are `total`.
-Splitting only these decidable natural equalities keeps the contradiction
-check bounded; it does not use excluded middle on an arbitrary proposition. -/
+/-- With the first row positive, at most one of the other three labels can
+be tight.  Such a tight label has a positive column, giving an eligible edge.
+If none is tight, blocking all three edges forces every other column to zero,
+contradicting the first-row capacity.  Each arithmetic subproof excludes the
+edge implications from its context, so it checks only a small linear fact. -/
+private theorem positive_row_contradiction (total r0 r1 r2 r3 c0 c1 c2 c3 : Nat)
+    (rowsTotal : r0 + r1 + r2 + r3 = total)
+    (columnsTotal : c0 + c1 + c2 + c3 = total)
+    (capacity0 : r0 + c0 ≤ total) (capacity1 : r1 + c1 ≤ total)
+    (capacity2 : r2 + c2 ≤ total) (capacity3 : r3 + c3 ≤ total)
+    (rowPositive : 0 < r0)
+    (blocked01 : 0 < r0 → 0 < c1 → r2 + c2 < total → total ≤ r3 + c3)
+    (blocked02 : 0 < r0 → 0 < c2 → r1 + c1 < total → total ≤ r3 + c3)
+    (blocked03 : 0 < r0 → 0 < c3 → r1 + c1 < total → total ≤ r2 + c2) : False := by
+  by_cases tight1 : r1 + c1 = total
+  · have columnPositive : 0 < c1 := by
+      clear blocked01 blocked02 blocked03
+      omega
+    have slack2 : r2 + c2 < total := by
+      clear blocked01 blocked02 blocked03
+      omega
+    have slack3 : r3 + c3 < total := by
+      clear blocked01 blocked02 blocked03
+      omega
+    exact Nat.not_le_of_gt slack3 (blocked01 rowPositive columnPositive slack2)
+  · have slack1 : r1 + c1 < total := by
+      clear blocked01 blocked02 blocked03
+      omega
+    by_cases tight2 : r2 + c2 = total
+    · have columnPositive : 0 < c2 := by
+        clear blocked01 blocked02 blocked03
+        omega
+      have slack3 : r3 + c3 < total := by
+        clear blocked01 blocked02 blocked03
+        omega
+      exact Nat.not_le_of_gt slack3 (blocked02 rowPositive columnPositive slack1)
+    · have slack2 : r2 + c2 < total := by
+        clear blocked01 blocked02 blocked03
+        omega
+      by_cases tight3 : r3 + c3 = total
+      · have columnPositive : 0 < c3 := by
+          clear blocked01 blocked02 blocked03
+          omega
+        exact Nat.not_le_of_gt slack2 (blocked03 rowPositive columnPositive slack1)
+      · have slack3 : r3 + c3 < total := by
+          clear blocked01 blocked02 blocked03
+          omega
+        have noColumn1 : ¬ 0 < c1 := fun positive =>
+          Nat.not_le_of_gt slack3 (blocked01 rowPositive positive slack2)
+        have noColumn2 : ¬ 0 < c2 := fun positive =>
+          Nat.not_le_of_gt slack3 (blocked02 rowPositive positive slack1)
+        have noColumn3 : ¬ 0 < c3 := fun positive =>
+          Nat.not_le_of_gt slack2 (blocked03 rowPositive positive slack1)
+        clear blocked01 blocked02 blocked03
+        omega
+
+/-- Normalize the twelve blocked edges, find a positive row constructively,
+then apply the same bounded argument with that row relabelled first.  The
+permutations change only the order of natural sums, never the model class. -/
 private theorem no_step_impossible (total : Nat) (rows columns : Masses)
     (margins : Margins total rows columns) (positive : 0 < total)
     (blocked : forall edge, ¬ Eligible total rows columns edge) : False := by
@@ -123,11 +177,40 @@ private theorem no_step_impossible (total : Nat) (rows columns : Masses)
   have blocked32 := blocked (3, 2)
   simp only [sum4] at rowsTotal columnsTotal
   simp [Eligible, forall_four] at blocked01 blocked02 blocked03 blocked10 blocked12 blocked13 blocked20 blocked21 blocked23 blocked30 blocked31 blocked32
-  by_cases tight0 : rows 0 + columns 0 = total <;>
-    by_cases tight1 : rows 1 + columns 1 = total <;>
-    by_cases tight2 : rows 2 + columns 2 = total <;>
-    by_cases tight3 : rows 3 + columns 3 = total <;>
+  have positiveRow : 0 < rows 0 ∨ 0 < rows 1 ∨ 0 < rows 2 ∨ 0 < rows 3 := by
+    clear blocked blocked01 blocked02 blocked03 blocked10 blocked12 blocked13 blocked20 blocked21 blocked23 blocked30 blocked31 blocked32
     omega
+  rcases positiveRow with rowPositive | rowPositive | rowPositive | rowPositive
+  · exact positive_row_contradiction total (rows 0) (rows 1) (rows 2) (rows 3)
+      (columns 0) (columns 1) (columns 2) (columns 3) rowsTotal columnsTotal
+      capacity0 capacity1 capacity2 capacity3 rowPositive blocked01 blocked02 blocked03
+  · apply positive_row_contradiction total (rows 1) (rows 0) (rows 2) (rows 3)
+      (columns 1) (columns 0) (columns 2) (columns 3) ?_ ?_
+      capacity1 capacity0 capacity2 capacity3 rowPositive blocked10 blocked12 blocked13
+    · calc
+        _ = rows 0 + rows 1 + rows 2 + rows 3 := by ac_rfl
+        _ = total := rowsTotal
+    · calc
+        _ = columns 0 + columns 1 + columns 2 + columns 3 := by ac_rfl
+        _ = total := columnsTotal
+  · apply positive_row_contradiction total (rows 2) (rows 0) (rows 1) (rows 3)
+      (columns 2) (columns 0) (columns 1) (columns 3) ?_ ?_
+      capacity2 capacity0 capacity1 capacity3 rowPositive blocked20 blocked21 blocked23
+    · calc
+        _ = rows 0 + rows 1 + rows 2 + rows 3 := by ac_rfl
+        _ = total := rowsTotal
+    · calc
+        _ = columns 0 + columns 1 + columns 2 + columns 3 := by ac_rfl
+        _ = total := columnsTotal
+  · apply positive_row_contradiction total (rows 3) (rows 0) (rows 1) (rows 2)
+      (columns 3) (columns 0) (columns 1) (columns 2) ?_ ?_
+      capacity3 capacity0 capacity1 capacity2 rowPositive blocked30 blocked31 blocked32
+    · calc
+        _ = rows 0 + rows 1 + rows 2 + rows 3 := by ac_rfl
+        _ = total := rowsTotal
+    · calc
+        _ = columns 0 + columns 1 + columns 2 + columns 3 := by ac_rfl
+        _ = total := columnsTotal
 
 /-- The first eligible edge is explicit finite data.  Failure is ruled out
 by the capacity lemma; it is not converted into a chosen existential witness. -/
