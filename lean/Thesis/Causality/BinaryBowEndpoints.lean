@@ -115,7 +115,19 @@ theorem outside_zero_iff_action_one (law : FiniteProbRecord signature.Assignment
     FiniteProbRecord.eventMass law.atoms (actionEvent action) = law.den
   change FiniteProbRecord.eventMass law.atoms (actionEvent action) +
     FiniteProbRecord.eventMass law.atoms (outsideEvent action) = law.den at partition
-  omega
+  -- Prove each implication by literal addition cancellation.  Asking an
+  -- arithmetic tactic to establish the whole iff can introduce a classical
+  -- propositional preprocessing lemma even though these Nat facts are
+  -- constructively decidable; the policy audit checks that distinction.
+  constructor
+  · intro zero
+    rw [zero, Nat.add_zero] at partition
+    exact partition
+  · intro full
+    rw [full] at partition
+    have cancel : law.den + FiniteProbRecord.eventMass law.atoms (outsideEvent action) =
+        law.den + 0 := by simpa only [Nat.add_zero] using partition
+    exact Nat.add_left_cancel cancel
 
 /-- Positive other-action mass gives a strict rational gap.  Both
 observational probabilities share the supplied record's denominator, and
