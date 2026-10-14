@@ -146,6 +146,59 @@ theorem native_effect_bounds (native : FiniteHiddenDAGSCM signature P) (graphMat
   exact ⟨QProb.le_congr (QProb.equiv_refl _) (QProb.equiv_symm semantics) lower,
     QProb.le_congr (QProb.equiv_symm semantics) (QProb.equiv_refl _) upper⟩
 
+/-- Subtracting the same cleared unit mass preserves an integer inequality.
+This is the signed decoding step; natural subtraction is deliberately absent. -/
+private theorem signed_order (left total right denominator : Nat)
+    (ordered : left * denominator ≤ right * total) :
+    ((left : Int) - (total : Int)) * (denominator : Int) ≤
+      ((right : Int) - (denominator : Int)) * (total : Int) := by
+  have cast : ((left * denominator : Nat) : Int) ≤ ((right * total : Nat) : Int) := by omega
+  simp only [Int.natCast_mul] at cast
+  rw [Int.sub_mul, Int.sub_mul, Int.mul_comm (total : Int) (denominator : Int)]
+  omega
+
+/-- Literal signed ATE bounds, with no affine notation left in the target.
+The response numerator is the actual potential-outcome change summed on
+one native model's extracted prior.  Dividing all three cross-products by
+the positive product of denominators gives the usual signed interval.
+Thus the score theorem is not merely a bound on an unrelated probability.
+-/
+theorem native_signed_effect_bounds (native : FiniteHiddenDAGSCM signature P) (graphMatch : HasIVProjection P)
+    (law : FiniteProbRecord signature.Assignment) (observed : HasObservedLaw native law)
+    (total : Nat) (positive : 0 < total) (rows columns : Masses)
+    (margins : Margins total rows columns) (arms : ArmMarginals law total positive rows columns)
+    (falsePositive : 0 < instrumentMass law false) (truePositive : 0 < instrumentMass law true) :
+    ((effectLowerMass total rows columns : Int) - (total : Int)) *
+          ((responseRepresentation native graphMatch).responses.den : Int) ≤
+        (responseRepresentation native graphMatch).responses.signedMass effectChange * (total : Int) ∧
+      (responseRepresentation native graphMatch).responses.signedMass effectChange * (total : Int) ≤
+        ((effectUpperMass total rows columns : Int) - (total : Int)) *
+          ((responseRepresentation native graphMatch).responses.den : Int) := by
+  let responses := (responseRepresentation native graphMatch).responses
+  have bounds := native_effect_bounds native graphMatch law observed total positive rows columns
+    margins arms falsePositive truePositive
+  have semantics := nativeEffectScore_response native graphMatch
+  have lower := QProb.le_congr (QProb.equiv_refl _) semantics bounds.1
+  have upper := QProb.le_congr semantics (QProb.equiv_refl _) bounds.2
+  change effectLowerMass total rows columns * (2 * responses.den) ≤
+    (responseEffectScore responses).num * (2 * total) at lower
+  change (responseEffectScore responses).num * (2 * total) ≤
+    effectUpperMass total rows columns * (2 * responses.den) at upper
+  have lowerTwice : (effectLowerMass total rows columns * responses.den) * 2 ≤
+      ((responseEffectScore responses).num * total) * 2 := by
+    simpa only [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using lower
+  have upperTwice : ((responseEffectScore responses).num * total) * 2 ≤
+      (effectUpperMass total rows columns * responses.den) * 2 := by
+    simpa only [Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using upper
+  have lowerSigned := signed_order (effectLowerMass total rows columns) total
+    (responseEffectScore responses).num responses.den
+    (Nat.le_of_mul_le_mul_right lowerTwice (by decide))
+  have upperSigned := signed_order (responseEffectScore responses).num responses.den
+    (effectUpperMass total rows columns) total
+    (Nat.le_of_mul_le_mul_right upperTwice (by decide))
+  rw [responseEffectScore_signed] at lowerSigned upperSigned
+  exact ⟨lowerSigned, upperSigned⟩
+
 private theorem lower_endpoint_score (total : Nat) (positive : 0 < total) (rows columns : Masses)
     (margins : Margins total rows columns) :
     QProb.Equiv
