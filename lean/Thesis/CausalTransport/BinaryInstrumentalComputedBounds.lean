@@ -141,7 +141,7 @@ theorem computedBounds_risk_corners (projection : FiniteLatentProjection signatu
   · by_cases trueZero : instrumentMass law true = 0
     · have selected : computedSelectedRisk law controlUpper treatedUpper = nullSelectedRisk law controlUpper treatedUpper := by
         funext action
-        simp only [computedSelectedRisk, computedBounds, falseZero, trueZero, dif_neg, dif_pos, nullSelectedRisk]
+        simp only [computedSelectedRisk, computedBounds, falseZero, trueZero, dite_false, dif_pos, nullSelectedRisk]
       rw [selected]
       exact nullInstrument_native_risk_endpoints_attainable projection graphMatch law false trueZero controlUpper treatedUpper
     · have capacityCheck : observedCapacityCheck law = true := by
@@ -151,7 +151,7 @@ theorem computedBounds_risk_corners (projection : FiniteLatentProjection signatu
             (observedTotal_positive law (Nat.pos_of_ne_zero falseZero) (Nat.pos_of_ne_zero trueZero))
             (observedRows law) (observedColumns law) controlUpper treatedUpper := by
         funext action
-        simp only [computedSelectedRisk, computedBounds, falseZero, trueZero, dif_neg, selectedRisk]
+        simp only [computedSelectedRisk, computedBounds, falseZero, trueZero, dite_false, selectedRisk]
       rw [selected]
       exact native_observed_risk_endpoints_attainable projection graphMatch law
           (Nat.pos_of_ne_zero falseZero) (Nat.pos_of_ne_zero trueZero)
