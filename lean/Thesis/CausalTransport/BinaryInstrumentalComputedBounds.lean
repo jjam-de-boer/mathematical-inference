@@ -85,15 +85,15 @@ theorem computedBounds_compatible_iff (projection : FiniteLatentProjection signa
     · intro _
       exact nullInstrument_native_exists projection graphMatch law true falseZero
     · intro _
-      rfl
+      exact True.intro
   · by_cases trueZero : instrumentMass law true = 0
-    · simp only [computedBounds, falseZero, trueZero, dif_neg, dif_pos]
+    · simp only [computedBounds, falseZero, trueZero, dif_pos]
       constructor
       · intro _
         exact nullInstrument_native_exists projection graphMatch law false trueZero
       · intro _
         rfl
-    · simp only [computedBounds, falseZero, trueZero, dif_neg]
+    · simp only [computedBounds, falseZero, trueZero]
       exact (observedCapacityCheck_iff law).trans
         (nativeModelExists_iff_observed_capacities projection graphMatch law
           (Nat.pos_of_ne_zero falseZero) (Nat.pos_of_ne_zero trueZero)).symm
@@ -133,15 +133,27 @@ theorem computedBounds_risk_corners (projection : FiniteLatentProjection signatu
     (checked : (computedBounds law).compatible = true) (controlUpper treatedUpper : Bool) :
     RisksAttainableAt projection law (computedSelectedRisk law controlUpper treatedUpper) := by
   by_cases falseZero : instrumentMass law false = 0
-  · simpa only [computedSelectedRisk, computedBounds, falseZero, dif_pos, nullSelectedRisk] using
-      nullInstrument_native_risk_endpoints_attainable projection graphMatch law true falseZero controlUpper treatedUpper
+  · have selected : computedSelectedRisk law controlUpper treatedUpper = nullSelectedRisk law controlUpper treatedUpper := by
+      funext action
+      simp only [computedSelectedRisk, computedBounds, falseZero, dif_pos, nullSelectedRisk]
+    rw [selected]
+    exact nullInstrument_native_risk_endpoints_attainable projection graphMatch law true falseZero controlUpper treatedUpper
   · by_cases trueZero : instrumentMass law true = 0
-    · simpa only [computedSelectedRisk, computedBounds, falseZero, trueZero, dif_neg, dif_pos, nullSelectedRisk] using
-        nullInstrument_native_risk_endpoints_attainable projection graphMatch law false trueZero controlUpper treatedUpper
+    · have selected : computedSelectedRisk law controlUpper treatedUpper = nullSelectedRisk law controlUpper treatedUpper := by
+        funext action
+        simp only [computedSelectedRisk, computedBounds, falseZero, trueZero, dif_neg, dif_pos, nullSelectedRisk]
+      rw [selected]
+      exact nullInstrument_native_risk_endpoints_attainable projection graphMatch law false trueZero controlUpper treatedUpper
     · have capacityCheck : observedCapacityCheck law = true := by
         simpa only [computedBounds, falseZero, trueZero, dif_neg] using checked
-      simpa only [computedSelectedRisk, computedBounds, falseZero, trueZero, dif_neg, selectedRisk] using
-        native_observed_risk_endpoints_attainable projection graphMatch law
+      have selected : computedSelectedRisk law controlUpper treatedUpper =
+          selectedRisk (observedTotal law)
+            (observedTotal_positive law (Nat.pos_of_ne_zero falseZero) (Nat.pos_of_ne_zero trueZero))
+            (observedRows law) (observedColumns law) controlUpper treatedUpper := by
+        funext action
+        simp only [computedSelectedRisk, computedBounds, falseZero, trueZero, dif_neg, selectedRisk]
+      rw [selected]
+      exact native_observed_risk_endpoints_attainable projection graphMatch law
           (Nat.pos_of_ne_zero falseZero) (Nat.pos_of_ne_zero trueZero)
           ((observedCapacityCheck_iff law).mp capacityCheck) controlUpper treatedUpper
 
