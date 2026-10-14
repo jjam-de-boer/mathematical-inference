@@ -218,4 +218,25 @@ example : QProb.Equiv
 example : QProb.Equiv
     ((polyaUrnDistro 3 0 2 (by decide)).pmf ⟨0, by decide⟩) QProb.one := by decide
 
+/-- Multiple variables, mixed denominators, and an argument above one. -/
+example : QProb.Equiv
+    (multivariatePGF (multinomialDistro 2 [2, 3, 1] (by decide))
+      [⟨1, 2, by decide⟩, QProb.ofNat 2, QProb.zero]) ⟨49, 36, by decide⟩ := by decide
+
+example : QProb.Equiv
+    (multivariatePGF (multinomialDistro 2 [2, 3, 1] (by decide))
+      [⟨2, 4, by decide⟩, QProb.ofNat 2, QProb.zero]) ⟨49, 36, by decide⟩ := by decide
+
+example : QProb.Equiv
+    (multivariatePGF (multinomialDistro 2 [2, 3, 1] (by decide))
+      ([1, 2, 3].map QProb.ofNat)) ⟨121, 36, by decide⟩ := by decide
+
+example : QProb.Equiv
+    (multivariatePGF (multinomialDistro 3 [0, 2] (by decide))
+      [⟨17, 3, by decide⟩, ⟨1, 2, by decide⟩]) ⟨1, 8, by decide⟩ := by decide
+
+example : QProb.Equiv
+    (multivariatePGF (multinomialDistro 0 [2, 3, 1] (by decide))
+      [QProb.zero, QProb.zero, QProb.zero]) QProb.one := by decide
+
 end Thesis.Examples.DistributionLaws

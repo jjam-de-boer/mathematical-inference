@@ -14,6 +14,7 @@ import Thesis.Probability.Distros.IndependentSums
 import Thesis.Probability.Distros.ChiSquared
 import Thesis.Probability.Distros.GaussianMoments
 import Thesis.Probability.Distros.BetaBinomial
+import Thesis.Probability.Distros.MultivariatePGF
 
 /-!
 Named finite distros.
@@ -82,4 +83,7 @@ Reading order:
 16. `BetaBinomial` proves rising-factorial Vandermonde and the closed denominator,
     constructs reinforced Pólya colour paths from sequential Bernoulli urn draws,
     identifies their success-count pushforward on every event, and gives the mean.
+17. `MultivariatePGF` proves occupancy dimensions and trial totals, the
+    rational multivariate multinomial generating function, and its natural
+    argument specialization via a reusable rational binomial theorem.
 -/
