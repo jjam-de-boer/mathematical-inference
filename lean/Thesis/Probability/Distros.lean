@@ -13,6 +13,7 @@ import Thesis.Probability.Distros.Moments
 import Thesis.Probability.Distros.IndependentSums
 import Thesis.Probability.Distros.ChiSquared
 import Thesis.Probability.Distros.GaussianMoments
+import Thesis.Probability.Distros.BetaBinomial
 
 /-!
 Named finite distros.
@@ -78,4 +79,7 @@ Reading order:
     equal radius and kernel give additivity of degrees of freedom on every event.
 15. `GaussianMoments` proves zero signed centred mean and exact finite kernel
     sums for Gaussian variance and the second/fourth moments needed for χ².
+16. `BetaBinomial` proves rising-factorial Vandermonde and the closed denominator,
+    constructs reinforced Pólya colour paths from sequential Bernoulli urn draws,
+    identifies their success-count pushforward on every event, and gives the mean.
 -/

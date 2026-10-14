@@ -194,4 +194,28 @@ example : QProb.Equiv
 example : QProb.Equiv
     (variance (chiSquaredDistro 2 2 QProb.zero (QProb.zero_le _))) QProb.zero := by decide
 
+/-- Reinforcement changes path weights; it does not give independent draws. -/
+example : QProb.Equiv
+    ((polyaPathRecord 3 2 3 (by decide)).probVal
+      (FiniteProbRecord.singletonEvent [true, false, true])) ⟨3, 35, by decide⟩ := by decide
+
+example : (betaBinomialDistro 3 2 3 (by decide) (by decide)).record.den = 210 := by decide
+
+example : QProb.Equiv
+    ((polyaUrnDistro 3 2 3 (by decide)).pmf ⟨2, by decide⟩)
+    ⟨9, 35, by decide⟩ := by decide
+
+example : QProb.Equiv
+    ((betaBinomialDistro 3 2 3 (by decide) (by decide)).pmf ⟨2, by decide⟩)
+    ⟨9, 35, by decide⟩ := by decide
+
+example : QProb.Equiv (mean (betaBinomialNatDistro 3 2 3 (by decide) (by decide)))
+    ⟨6, 5, by decide⟩ := by decide
+
+example : QProb.Equiv
+    ((polyaUrnDistro 0 2 3 (by decide)).pmf ⟨0, by decide⟩) QProb.one := by decide
+
+example : QProb.Equiv
+    ((polyaUrnDistro 3 0 2 (by decide)).pmf ⟨0, by decide⟩) QProb.one := by decide
+
 end Thesis.Examples.DistributionLaws
