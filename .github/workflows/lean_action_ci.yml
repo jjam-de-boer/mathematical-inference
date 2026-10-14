@@ -166,6 +166,7 @@ jobs:
             Thesis.CausalTransport.BinaryInstrumentalEffect
             Thesis.CausalTransport.BinaryInstrumentalEffectBounds
             Thesis.CausalTransport.BinaryInstrumentalSharpBounds
+            Thesis.CausalTransport.BinaryInstrumentalNullResponses
             Thesis.CausalTransport.ObservationalFormulaSelection
             Thesis.CausalTransport.BackdoorAdjustment
             Thesis.CausalTransport.BackdoorAdjustmentSearch
