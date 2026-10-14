@@ -72,7 +72,10 @@ conditioning, expectations, moments, variance and PGFs, without requiring
 finite enumerations of outcome types. Chebyshev is connected to variance
 and holds at every positive rational radius. Falling-factorial moments of
 binomial, hypergeometric and beta-binomial laws are proved at every order,
-including orders above their finite support.
+including orders above their finite support. General negative-binomial
+factorial moments reduce to shifted finite generating sums; their means,
+second moments and witnessed variances include the cap boundary terms and
+the censored zero-success-weight endpoint.
 
 Variance uses the existing witnessed `QProb.sub` operation, and boundary
 cases are covered by theorem statements and kernel-checked

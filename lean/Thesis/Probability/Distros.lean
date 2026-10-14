@@ -25,6 +25,7 @@ import Thesis.Probability.Distros.HypergeometricMoments
 import Thesis.Probability.Distros.FactorialMoments
 import Thesis.Probability.Distros.PolyaUpdates
 import Thesis.Probability.Distros.Degenerate
+import Thesis.Probability.Distros.NegativeBinomialMoments
 
 /-!
 Named finite distros.
@@ -119,4 +120,8 @@ Reading order:
     and PGF. `Degenerate` supplies positive-total constructors for censored
     waiting times and beta-binomial, including deterministic endpoints and
     the general reinforced-urn correspondence.
+25. `NegativeBinomialMoments` gives all-order factorial moments as shifted
+    finite generating sums and closed means, second moments and witnessed
+    variances for truncated and censored laws, including zero cap and the
+    censored zero-success-weight endpoint.
 -/

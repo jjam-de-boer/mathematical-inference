@@ -74,4 +74,21 @@ example : QProb.Equiv (factorialMoment (betaBinomialNatDistroOfTotal 5 3 0 (by d
 example : QProb.Equiv (variance (betaBinomialNatDistroOfTotal 0 0 3 (by decide)))
     QProb.zero := by decide
 
+/-- Several-success waiting times have finite-cap moments, distinct from
+uncapped textbook formulas. -/
+example : QProb.Equiv (negativeBinomialMeanClosed 3 4 2 3 (by decide))
+    ⟨2547, 1133, by decide⟩ := by decide
+example : QProb.Equiv (negativeBinomialVarianceClosed 3 4 2 3 (by decide) (by decide))
+    ⟨2149650, 1283689, by decide⟩ := by decide
+example : QProb.Equiv (negativeBinomialCensoredMeanClosed 3 4 2 3 (by decide))
+    ⟨9324, 3125, by decide⟩ := by decide
+example : QProb.Equiv (negativeBinomialCensoredVarianceClosed 3 4 2 3 (by decide) (by decide))
+    ⟨16788024, 9765625, by decide⟩ := by decide
+example : QProb.Equiv (negativeBinomialFactorialClosed 3 0 2 3 1 (by decide)) QProb.zero := by decide
+example : QProb.Equiv (negativeBinomialFactorialClosed 3 2 2 3 3 (by decide)) QProb.zero := by decide
+example : QProb.Equiv (negativeBinomialCensoredMeanClosed 3 4 0 2 (by decide))
+    (QProb.ofNat 4) := by decide
+example : QProb.Equiv (negativeBinomialCensoredVarianceClosed 3 4 0 2 (by decide) (by decide))
+    QProb.zero := by decide
+
 end Thesis.Examples.DistributionExtensions

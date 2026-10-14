@@ -54,6 +54,17 @@ theorem factorialMoment_zero (μ : NatDistro Ω) :
 theorem factorialMoment_one (μ : NatDistro Ω) : factorialMoment μ 1 = mean μ := by
   simp only [factorialMoment, fallingFactorial, Nat.mul_one, mean_expectNat]
 
+theorem secondMoment_factorialMoment (μ : NatDistro Ω) :
+    QProb.Equiv (secondMoment μ) (QProb.add (factorialMoment μ 2) (mean μ)) := by
+  have point (k : Nat) : k ^ 2 = fallingFactorial k 2 + k := by
+    simp only [fallingFactorial, Nat.mul_one]
+    simpa only [Nat.pow_succ, Nat.pow_zero, Nat.one_mul] using (nat_falling_square k).symm
+  rw [secondMoment, rawMoment_expectNat]
+  rw [Distro.expectNat_congr_on_support μ.distro _
+    (fun x => fallingFactorial (μ.embed x) 2 + μ.embed x) (fun atom _ => point (μ.embed atom.1))]
+  rw [mean_expectNat]
+  exact μ.distro.expectNat_add (fun x => fallingFactorial (μ.embed x) 2) μ.embed
+
 theorem binomTerm_factorial_moment (order n a b : Nat) :
     natSum (n + 1) (fun k => fallingFactorial k order * binomTerm n a b k) =
       fallingFactorial n order * a ^ order * (a + b) ^ (n - order) := by
