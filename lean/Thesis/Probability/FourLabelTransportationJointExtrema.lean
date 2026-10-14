@@ -92,14 +92,26 @@ theorem maximizeComplementary_attains (total : Nat) (rows columns : Masses) (mar
       (maximizeComplementary total rows columns margins first second firstDifferent secondDifferent complementary).cells second.1 second.2 =
         edgeCapacity total rows columns second := by
   let table := maximizeComplementary total rows columns margins first second firstDifferent secondDifferent complementary
+  let firstAmount := edgeCapacity total rows columns first
+  let secondAmount := edgeCapacity total rows columns second
+  let firstReserved := edgeCapacity_reservation total rows columns margins first firstDifferent
+  let secondReserved := edgeCapacity_reservation total rows columns margins second secondDifferent
+  let remaining := reservation_margins total rows columns margins first firstAmount firstReserved
+  let secondAfter := reservation_after_complementary total rows columns first second firstAmount secondAmount
+    complementary firstReserved secondReserved
+  let restoredSecond := completeReservation (total - firstAmount)
+    (reserveMasses rows first.1 firstAmount) (reserveMasses columns first.2 firstAmount)
+    remaining second secondAmount secondAfter
   have firstLower : edgeCapacity total rows columns first ≤ table.cells first.1 first.2 :=
-    restoreReservation_selected_ge total rows columns first _ _ _
+    restoreReservation_selected_ge total rows columns first firstAmount firstReserved restoredSecond
   have secondLower : edgeCapacity total rows columns second ≤ table.cells second.1 second.2 := by
     have away : second.1 ≠ first.1 := fun same => complementary.rows_different same.symm
-    change edgeCapacity total rows columns second ≤
-      (restoreReservation total rows columns first _ _ _).cells second.1 second.2
-    rw [restoreReservation_unchanged_row _ _ _ _ _ _ _ _ _ away]
-    exact completeReservation_selected_ge _ _ _ _ second _ _
+    change secondAmount ≤
+      (restoreReservation total rows columns first firstAmount firstReserved restoredSecond).cells second.1 second.2
+    rw [restoreReservation_unchanged_row total rows columns first firstAmount firstReserved restoredSecond second.1 second.2 away]
+    exact completeReservation_selected_ge (total - firstAmount)
+      (reserveMasses rows first.1 firstAmount) (reserveMasses columns first.2 firstAmount)
+      remaining second secondAmount secondAfter
   exact ⟨Nat.le_antisymm (cell_le_edgeCapacity total rows columns margins table first firstDifferent) firstLower,
     Nat.le_antisymm (cell_le_edgeCapacity total rows columns margins table second secondDifferent) secondLower⟩
 
