@@ -83,8 +83,8 @@ Sharp endpoint attainment alone would not state that every rational interior
 value is attained. The additional IV mixture theorems now prove that claim:
 they mix feasible response records while keeping the instrument independent,
 then realize a native model on the original DAG. They do not assume arbitrary
-independent-source model classes are convex. Native all-source compression and
-polynomial certificates remain separate work items; there is no claimed
+independent-source model classes are convex. Polynomial certificates remain
+a separate work item; there is no claimed
 complete arbitrary-graph fixed-law optimizer.
 
 ## Constructive probability-record and independent-source compression
@@ -107,13 +107,40 @@ and the entire unchanged background. Responses are computed by integrating the
 background, not by conditioning on the source, so zero source probabilities
 introduce no division or support premise.
 
-These are constructed replacements, not an external compression assumption.
-They do **not yet** prove an adapter for every coordinate of a native hidden-DAG
-model, nor successive replacement preserving all requested native do-query
-probabilities. The native adapter must justify the prior split and unchanged
-structural readouts; iteration must retain independence and previously obtained
-source bounds. Nor do these results alone compress hidden endogenous alphabets,
-enumerate all mechanisms, or supply a complete rational feasibility optimizer.
+`FiniteProductSourceCompression.compress` iterates coordinate replacement over
+an explicitly finite independent family. It retains each earlier support bound
+and positivity proof, constructs the full product law after every update, and
+preserves every requested event. The original prior need only satisfy its
+product law; it need not literally be a canonical product record. Whole-event
+extensionality justifies reinserting the old factor and rebuilding a canonical
+prior without accumulating unused overwritten coordinate copies.
+
+`FiniteHiddenDAGSCM.compressSources`, in `HiddenDAGSourceCompression`, constructs
+a native `SourceCompression.model` on the unchanged original hidden DAG. For
+`m` supplied `NativeProbabilityQuery` values, every source has at most `m + 1`
+positive atom occurrences, all sources remain independent, and every specified
+observational/interventional event probability is preserved. The theorem
+`withSourceLaw_evalObserved` proves unchanged structural readouts for every
+noise assignment and every hard intervention. There is no observational-cell
+positivity premise. An empty hard intervention specifies an observational
+query; preserving a conditional additionally requires its joint and conditioner
+probabilities and the original positive denominator, not a value at zero mass.
+`SourceCompression.query_positive_iff` transports that support exactly, and
+`quotient_preserved` proves equality of the corresponding supported ratios.
+
+For fixed-observation applications, `compressSourcesPreservingObservation` in
+`HiddenDAGObservationalCompression` automatically adds every observational
+singleton query. Its `ObservationalSourceCompression.observational` field proves
+equality of **every** observed event, in addition to all supplied target queries.
+Each source then has at most `number of observed assignments + number of target
+queries + 1` positive atom occurrences. This sufficient bound is not asserted
+to be minimal; users need not remember to supply the factual table themselves.
+
+These are constructed replacements, not external compression assumptions.
+The bounds concern actual positive atom occurrences; the original ambient
+noise types, node value types and structural mechanisms remain unchanged.
+They do not themselves compress hidden endogenous alphabets, enumerate all
+mechanisms, or supply a complete rational feasibility optimizer.
 
 ## Construction, execution, and proof verification
 

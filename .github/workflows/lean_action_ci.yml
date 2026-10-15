@@ -163,6 +163,11 @@ jobs:
             Thesis.Probability.FiniteRationalMoment
             Thesis.Probability.FiniteRationalCompression
             Thesis.Probability.FiniteSourceCompression
+            Thesis.Probability.FiniteProductExtensional
+            Thesis.Probability.FiniteProductReplacement
+            Thesis.Probability.FiniteProductSourceCompression
+            Thesis.CausalTransport.HiddenDAGSourceCompression
+            Thesis.CausalTransport.HiddenDAGObservationalCompression
             Thesis.Causality.AlmostSureIntervention
             Thesis.Causality.ConsistencyBounds
             Thesis.Causality.BinaryBowModel
@@ -243,6 +248,9 @@ jobs:
             Thesis.Examples.FiniteIntegerCompression
             Thesis.Examples.FiniteRationalCompression
             Thesis.Examples.FiniteSourceCompression
+            Thesis.Examples.FiniteProductReplacement
+            Thesis.Examples.FiniteProductSourceCompression
+            Thesis.Examples.HiddenDAGSourceCompression
             Thesis.Examples.FourLabelTransportationAggregation
             Thesis.Examples.FiniteProductSplicing
             Thesis.Examples.HiddenPathSearch

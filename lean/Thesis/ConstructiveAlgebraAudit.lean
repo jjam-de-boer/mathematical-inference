@@ -6,6 +6,8 @@ import Thesis.Examples.AffineSupportReduction
 import Thesis.Examples.FiniteIntegerCompression
 import Thesis.Examples.FiniteRationalCompression
 import Thesis.Examples.FiniteSourceCompression
+import Thesis.Examples.FiniteProductReplacement
+import Thesis.Examples.FiniteProductSourceCompression
 import Lean.Elab.Command
 import Lean.Util.CollectAxioms
 
