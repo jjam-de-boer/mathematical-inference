@@ -37,7 +37,7 @@ theorem extendNumerator_castSucc {size : Nat} (initial : Fin size → Int) (last
 
 theorem extendNumerator_last {size : Nat} (initial : Fin size → Int) (last : Int) :
     extendNumerator initial last (Fin.last size) = last := by
-  simp only [extendNumerator, Fin.val_last, Nat.lt_irrefl, dif_neg]
+  simp only [extendNumerator, Fin.val_last, dif_neg (Nat.lt_irrefl size)]
 
 def clear : {size : Nat} → (values : Fin size → SignedRatio) → Cleared values
   | 0, _ => ⟨1, by decide, fun index => Fin.elim0 index, fun index => Fin.elim0 index⟩
