@@ -277,4 +277,23 @@ example : ((dirichletMultinomialDistro 4 [2, 0, 3] (by decide)).covariance
     (fun counts => counts.getD 0 0) (fun counts => counts.getD 1 0)).Equiv
     (SignedMoment.ofInt 0) := by decide
 
+/-- Conditioning on counts sums over all possible observed orders. -/
+example : (reinforcedCountsContinuation 2 2 [1, 2, 1] [1, 0, 1] 2 (by decide) (by decide)
+    (by decide)).SameLaw (reinforcedUrnDistro 2 [3, 2, 3] 2 (by decide)) :=
+  reinforcedCountsContinuation_updated 2 2 [1, 2, 1] [1, 0, 1] 2 (by decide) (by decide) (by decide)
+example : QProb.Equiv ((reinforcedCountsContinuation 2 2 [1, 2, 1] [1, 0, 1] 2 (by decide) (by decide)
+    (by decide)).pmf [0, 0]) ⟨3, 16, by decide⟩ := by decide
+example : QProb.Equiv ((reinforcedCountsContinuation 2 1 [1, 2, 1] [1, 0, 1] 2 (by decide) (by decide)
+    (by decide)).pmf [1]) ⟨1, 4, by decide⟩ := by decide
+example : QProb.Equiv ((reinforcedUrnDistro 3 [1, 2, 1] 2 (by decide)).pmf [0, 1, 2])
+    ((reinforcedUrnDistro 3 [1, 2, 1] 2 (by decide)).pmf [2, 0, 1]) := by decide
+example : QProb.Equiv ((reinforcedCountsContinuation 2 1 [0, 2, 0] [0, 2, 0] 3 (by decide) (by decide)
+    (by decide)).pmf [1]) QProb.one := by decide
+
+example : (reinforcedPrefixContinuation [0, 2] 2 [1, 2, 1] 2 (by decide) (by decide)).SameLaw
+    (reinforcedCountsContinuation 2 2 [1, 2, 1] [1, 0, 1] 2 (by decide) (by decide) (by decide)) :=
+  reinforcedPrefix_counts_sufficient [0, 2] 2 [1, 2, 1] 2 (by decide) (by decide)
+example : QProb.Equiv ((reinforcedPrefixContinuation [0, 2] 1 [1, 2, 1] 2 (by decide) (by decide)).pmf [0])
+    ⟨3, 8, by decide⟩ := by decide
+
 end Thesis.Examples.DistributionExtensions

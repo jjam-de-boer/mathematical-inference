@@ -122,6 +122,12 @@ coordinate has its beta-binomial marginal, closed mean and variance, with
 zero-weight and single-colour endpoints included. Joint factorial moments
 also give the individual factorial moments, means and distinct-coordinate
 cross moments and signed covariances for every reinforcement increment.
+Ordered reinforced words are exchangeable: equal colour counts give equal
+word probabilities. Conditioning the actual path record on observed counts
+and dropping the observed draws gives exactly the urn with parameters
+increased by the increment times those counts. Counts are therefore
+sufficient for every future event; the next-colour probability is
+`(alpha[i] + d * count[i]) / (sum alpha + d * observed draws)`.
 
 Variance uses the existing witnessed `QProb.sub` operation, and boundary
 cases are covered by theorem statements and kernel-checked

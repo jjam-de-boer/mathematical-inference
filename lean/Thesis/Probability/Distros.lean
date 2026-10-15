@@ -42,6 +42,8 @@ import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.JointFactorialMoments
 import Thesis.Probability.Distros.ReinforcedAggregation
 import Thesis.Probability.Distros.ReinforcedMoments
+import Thesis.Probability.Distros.ReinforcedUpdates
+import Thesis.Probability.Distros.ReinforcedPrefix
 
 /-!
 Named finite distros.
@@ -190,4 +192,14 @@ Reading order:
 39. `ReinforcedMoments` extracts individual factorial moments, means,
     cross moments and nonpositive signed covariances from the mixed-order
     formula, including arbitrary increments and zero selected parameters.
+40. `ReinforcedHistory` identifies the updated state from counts and
+    splits actual sequential paths. `ReinforcedExchangeability` proves
+    word probabilities and permutation invariance for arbitrary colours.
+41. `ReinforcedConditioning` conditions the actual path record on observed
+    counts and proves its future law is exactly the updated urn, making
+    counts sufficient. `ReinforcedUpdates` gives count support and the
+    closed next-colour predictive probability at every increment.
+42. `ReinforcedPrefix` proves ordered-prefix conditioning, its predictive
+    probability, and direct equality in law with conditioning only on the
+    observed counts, including supported deterministic prefixes.
 -/
