@@ -39,6 +39,7 @@ import Thesis.Probability.Distros.KernelInvariance
 import Thesis.Probability.Distros.SignedCovariance
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
+import Thesis.Probability.Distros.JointFactorialMoments
 
 /-!
 Named finite distros.
@@ -175,4 +176,9 @@ Reading order:
     nonnegative rational Pólya parameters. Its count law, parameter
     representation invariance and agreement with the natural-parameter
     constructors are proved, including zero individual parameters.
+37. `FactorialConvolution` gives all-order coefficient absorption and
+    generalized rising-factorial Vandermonde. `JointFactorialMoments`
+    proves every mixed falling-factorial moment for multinomial,
+    Dirichlet-multinomial and arbitrary reinforcement, with zero colours,
+    orders above finite support and rational parameters included.
 -/

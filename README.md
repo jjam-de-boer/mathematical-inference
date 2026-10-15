@@ -111,6 +111,11 @@ Arbitrary nonnegative rational Pólya parameters are implemented by clearing
 one common denominator and adding that denominator after each draw. The
 ordered and occupancy laws are invariant under equivalent rational
 presentations and recover the original natural-parameter constructors.
+Every joint falling-factorial moment is proved for multinomial,
+Dirichlet-multinomial and arbitrary reinforcement. The formula is the total
+falling trial factor times the product of coordinate rising factors, divided
+by the rising total; at zero reinforcement these become weight powers.
+The identities include zero colours and orders above the trial count.
 
 Variance uses the existing witnessed `QProb.sub` operation, and boundary
 cases are covered by theorem statements and kernel-checked

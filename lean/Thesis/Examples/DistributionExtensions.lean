@@ -235,4 +235,20 @@ example : (rationalPolyaDistro 2 [⟨1, 2, by decide⟩, ⟨3, 2, by decide⟩] 
         | zero => decide
         | succ index => simp only [List.getD_cons_succ, List.getD_nil]; exact QProb.equiv_refl _
 
+/-- Joint orders involve several coordinates and need not lie below the
+trial count. All family formulas include zero-weight coordinates. -/
+example : QProb.Equiv (jointFactorialMoment (multinomialDistro 5 [2, 1, 3] (by decide)) [2, 1, 0])
+    ⟨10, 9, by decide⟩ := by decide
+example : QProb.Equiv (jointFactorialMoment (dirichletMultinomialDistro 5 [2, 1, 3] (by decide)) [2, 1, 0])
+    ⟨15, 14, by decide⟩ := by decide
+example : QProb.Equiv (jointFactorialMoment (reinforcedCountDistro 5 [2, 1, 3] 2 (by decide)) [2, 1, 0])
+    QProb.one := by decide
+example : QProb.Equiv (jointFactorialMoment (dirichletMultinomialDistro 5 [2, 1, 3] (by decide)) [2, 2, 2])
+    QProb.zero := by decide
+example : QProb.Equiv (jointFactorialMoment (dirichletMultinomialDistro 5 [0, 2, 1] (by decide)) [1, 1, 0])
+    QProb.zero := by decide
+example : QProb.Equiv (jointFactorialMoment
+    (rationalDirichletMultinomialDistro 3 [⟨1, 2, by decide⟩, ⟨3, 2, by decide⟩] (by decide)) [1, 1])
+    ⟨3, 4, by decide⟩ := by decide
+
 end Thesis.Examples.DistributionExtensions
