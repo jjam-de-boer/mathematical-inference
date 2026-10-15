@@ -62,11 +62,9 @@ theorem withSourceLaw_evalNode (model : FiniteHiddenDAGSCM S projection)
   intro current
   simp only [evalFull, withSourceLaw_interventionValueAt]
   dsimp only [withSourceLaw]
-  change model.evalNode intervention noise current =
-    match model.interventionValueAt intervention current with
-    | some value => value
-    | none => model.mechanism current (fun parent _edge => model.evalNode intervention noise parent) (noise current)
-  rw [evalNode]
+  -- Split the optional intervention so both dependent match motives compute
+  -- in the very same branch, rather than identifying their presentations.
+  rw [evalNode] <;> cases model.interventionValueAt intervention current <;> rfl
 
 theorem withSourceLaw_evalObserved (model : FiniteHiddenDAGSCM S projection)
     (law : FiniteProduct.IndependentLaw model.Noise) (intervention : HardIntervention S) (noise : model.NoiseAssignment) :
