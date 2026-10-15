@@ -79,6 +79,10 @@ theorem checkProbabilityLower_withSourceLaw (model : FiniteHiddenDAGSCM S projec
     (model.withSourceLaw law).checkProbabilityLower query bound certificate = model.checkProbabilityLower query bound certificate := by
   unfold checkProbabilityLower FiniteProbabilityPolynomial.Compiled.checkLower FiniteProbabilityPolynomial.Compiled.checkNonnegative
   rw [probabilityProgram_polynomial_withSourceLaw]
+  -- Normalization is built solely from the unchanged finite noise types and
+  -- enumerations. After rewriting the readout, these constraint fields agree
+  -- by computation; no equivalence of arbitrary source laws is assumed.
+  rfl
 
 theorem checkProbabilityUpper_withSourceLaw (model : FiniteHiddenDAGSCM S projection)
     (law : FiniteProduct.IndependentLaw model.Noise) (query : NativeProbabilityQuery S) (bound : SignedRatio)
@@ -86,6 +90,7 @@ theorem checkProbabilityUpper_withSourceLaw (model : FiniteHiddenDAGSCM S projec
     (model.withSourceLaw law).checkProbabilityUpper query bound certificate = model.checkProbabilityUpper query bound certificate := by
   unfold checkProbabilityUpper FiniteProbabilityPolynomial.Compiled.checkUpper FiniteProbabilityPolynomial.Compiled.checkNonnegative
   rw [probabilityProgram_polynomial_withSourceLaw]
+  rfl
 
 theorem checkProbabilityLower_sound_forSourceLaw (model : FiniteHiddenDAGSCM S projection) (query : NativeProbabilityQuery S)
     (bound : SignedRatio) (certificate : model.ProbabilityBoundCertificate query) (accepted : model.checkProbabilityLower query bound certificate = true)
