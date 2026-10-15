@@ -54,8 +54,12 @@ theorem le_congr {left left' right right' : SignedRatio} (first : Equiv left lef
     LE left right ↔ LE left' right' := nonnegative_congr (add_congr second (neg_congr first))
 
 theorem toSignedRatio_le_iff (left right : QProb) : LE left.toSignedRatio right.toSignedRatio ↔ QProb.LE left right := by
-  simp only [LE, Nonnegative, sub, add, neg, QProb.toSignedRatio, Int.neg_mul, ← Int.natCast_mul, QProb.LE]
-  omega
+  change 0 ≤ (right.num : Int) * (left.den : Int) + -(left.num : Int) * (right.den : Int) ↔
+    left.num * right.den ≤ right.num * left.den
+  rw [Int.neg_mul]
+  change 0 ≤ (right.num : Int) * (left.den : Int) - (left.num : Int) * (right.den : Int) ↔
+    left.num * right.den ≤ right.num * left.den
+  rw [Int.sub_nonneg, ← Int.natCast_mul, ← Int.natCast_mul, Int.ofNat_le]
 
 end SignedRatio
 end Probability

@@ -77,7 +77,9 @@ theorem sub_equiv_zero_iff (left right : SignedRatio) : Equiv (sub left right) z
   change left.num * (right.den : Int) + -right.num * (left.den : Int) = 0 ↔
     left.num * (right.den : Int) = right.num * (left.den : Int)
   rw [Int.neg_mul]
-  omega
+  -- Use integer subtraction cancellation directly.  This proof does not
+  -- need a general arithmetic preprocessing decision on the equivalence.
+  exact Int.sub_eq_zero
 
 theorem listSum_append (left right : List SignedRatio) :
     Equiv (listSum (left ++ right)) (add (listSum left) (listSum right)) := by

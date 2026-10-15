@@ -18,7 +18,7 @@ cancellation exercises unreduced coefficients and the zero-variable boundary.
 The invalid sum-of-squares replacement is explicitly rejected.  All Boolean
 decisions below are reduced by the kernel.  Universal identities then follow
 from `equalityCheck_sound` for every signed rational parameter assignment,
-including negative values and zero denominators nowhere being permitted.
+including negative values.  Denominators remain strictly positive throughout.
 -/
 
 def x : Polynomial 2 := coordinate 0
