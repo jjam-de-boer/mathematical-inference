@@ -151,7 +151,7 @@ Reading order:
 31. `SignedMoments` gives covariance an integer numerator and identifies it
     with the centered product integral and the existing diagonal variance.
     `MultinomialCovariance` proves the distinct-coordinate cross moment and
-    negative covariance, including zero trials and zero-weight colours.
+    nonpositive covariance, including zero trials and zero-weight colours.
 32. `Reweight` transports positive natural likelihood reweighting through
     equality of laws and maps. `MulticolourPolya` constructs sequential
     categorical reinforcement and the Dirichlet-multinomial count law,

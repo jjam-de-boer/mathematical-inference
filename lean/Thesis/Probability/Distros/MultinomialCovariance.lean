@@ -125,8 +125,9 @@ theorem multinomial_crossMoment (trials : Nat) (weights : List Nat) (positive : 
   rw [categoricalWord_den]
   exact categoricalWord_cross_integral weights positive trials i j hi hj different
 
-/-- Off-diagonal covariance is negative, with integer numerator and a
-positive denominator. Zero trials and zero-weight colours are included. -/
+/-- Off-diagonal covariance is nonpositive, with an integer numerator and
+a positive denominator. It is strictly negative when the trial count and
+both coordinate weights are positive; otherwise it is zero. -/
 theorem multinomial_covariance (trials : Nat) (weights : List Nat) (positive : 0 < weights.sum)
     (i j : Nat) (hi : i < weights.length) (hj : j < weights.length) (different : i ≠ j) :
     SignedMoment.Equiv ((multinomialDistro trials weights positive).covariance
