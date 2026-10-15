@@ -83,9 +83,37 @@ Sharp endpoint attainment alone would not state that every rational interior
 value is attained. The additional IV mixture theorems now prove that claim:
 they mix feasible response records while keeping the instrument independent,
 then realize a native model on the original DAG. They do not assume arbitrary
-independent-source model classes are convex. General source compression and
+independent-source model classes are convex. Native all-source compression and
 polynomial certificates remain separate work items; there is no claimed
 complete arbitrary-graph fixed-law optimizer.
+
+## Constructive probability-record and independent-source compression
+
+`FiniteIntegerCompression.compress` constructs a normalized finite probability
+record preserving a supplied family of integer-valued expectations.
+`FiniteRationalCompression.compress` extends this to arbitrary signed rational
+responses by explicit finite denominator clearing. For `m` supplied responses,
+the output contains at most `m + 1` positive atom occurrences, uses only original
+labels, and preserves every normalized response expectation. Repeated labels,
+zero input weights, negative response values and an empty response family are
+allowed. Probability weights remain natural, never signed. The ambient sample
+type need not itself have an enumeration or decidable equality.
+
+`FiniteSourceCompression.compress` applies that theorem to one source paired
+with an unchanged independent background. Its `Replacement.preserved` field
+proves equality of each requested joint-event probability for the actual new
+product record; `Replacement.independent` proves independence of the new source
+and the entire unchanged background. Responses are computed by integrating the
+background, not by conditioning on the source, so zero source probabilities
+introduce no division or support premise.
+
+These are constructed replacements, not an external compression assumption.
+They do **not yet** prove an adapter for every coordinate of a native hidden-DAG
+model, nor successive replacement preserving all requested native do-query
+probabilities. The native adapter must justify the prior split and unchanged
+structural readouts; iteration must retain independence and previously obtained
+source bounds. Nor do these results alone compress hidden endogenous alphabets,
+enumerate all mechanisms, or supply a complete rational feasibility optimizer.
 
 ## Construction, execution, and proof verification
 
