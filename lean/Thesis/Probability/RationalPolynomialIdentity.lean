@@ -90,7 +90,6 @@ def zeroCheck (polynomial : Polynomial variables) : Bool :=
 termination_by polynomial.length
 decreasing_by
   have bounded := withoutMonomial_length_le term.powers rest
-  simp only [List.length_cons]
   omega
 
 theorem zeroCheck_sound (polynomial : Polynomial variables) (accepted : zeroCheck polynomial = true)
@@ -110,7 +109,6 @@ theorem zeroCheck_sound (polynomial : Polynomial variables) (accepted : zeroChec
 termination_by polynomial.length
 decreasing_by
   have bounded := withoutMonomial_length_le term.powers rest
-  simp only [List.length_cons]
   omega
 
 def equalityCheck (left right : Polynomial variables) : Bool := zeroCheck (sub left right)
