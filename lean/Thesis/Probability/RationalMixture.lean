@@ -103,6 +103,7 @@ theorem exists_weightedPair_equiv (lower upper value : QProb)
     refine ⟨1, 0, by decide, ?_⟩
     have leftOnly : Equiv (weightedPair 1 0 (by decide) lower upper) lower := by
       simp only [Equiv, weightedPair, Nat.one_mul, Nat.zero_mul, Nat.add_zero]
+      ac_rfl
     exact equiv_trans leftOnly (equiv_of_le_of_le lowerBound reverse)
   · let gap := top - base
     have gapPositive : 0 < gap := by dsimp [gap]; omega
@@ -148,8 +149,11 @@ def mixture (left right : FiniteProbRecord Ω) (leftWeight rightWeight : Nat)
   den := (leftWeight + rightWeight) * left.den * right.den
   den_pos := Nat.mul_pos (Nat.mul_pos positive left.den_pos) right.den_pos
   total_mass := by
-    rw [totalMass_append, totalMass_map_weight _ id, totalMass_map_weight _ id,
-      left.total_mass, right.total_mass]
+    have leftTotal : totalMass (left.atoms.map (fun atom => (atom.1, (leftWeight * right.den) * atom.2))) =
+        (leftWeight * right.den) * totalMass left.atoms := totalMass_map_weight left.atoms (fun value => value) _
+    have rightTotal : totalMass (right.atoms.map (fun atom => (atom.1, (rightWeight * left.den) * atom.2))) =
+        (rightWeight * left.den) * totalMass right.atoms := totalMass_map_weight right.atoms (fun value => value) _
+    rw [totalMass_append, leftTotal, rightTotal, left.total_mass, right.total_mass]
     simp only [Nat.add_mul]
     ac_rfl
 
@@ -158,8 +162,8 @@ theorem mixture_eventMass (left right : FiniteProbRecord Ω) (leftWeight rightWe
     eventMass (mixture left right leftWeight rightWeight positive).atoms event =
       (leftWeight * right.den) * eventMass left.atoms event +
         (rightWeight * left.den) * eventMass right.atoms event := by
-  exact (eventMass_append _ _ event).trans
-    (congrArg₂ Nat.add (eventMass_scale left.atoms _ event) (eventMass_scale right.atoms _ event))
+  change eventMass (_ ++ _) event = _
+  rw [eventMass_append, eventMass_scale, eventMass_scale]
 
 /-- Every event, not just singleton labels, has exactly its normalized
 weighted value.  This is the whole-law linearity used by causal clients. -/
