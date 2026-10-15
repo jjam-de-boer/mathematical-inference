@@ -167,6 +167,7 @@ jobs:
             Thesis.Probability.FiniteProductReplacement
             Thesis.Probability.FiniteProductSourceCompression
             Thesis.CausalTransport.HiddenDAGSourceCompression
+            Thesis.CausalTransport.HiddenDAGObservationalCompression
             Thesis.Causality.AlmostSureIntervention
             Thesis.Causality.ConsistencyBounds
             Thesis.Causality.BinaryBowModel

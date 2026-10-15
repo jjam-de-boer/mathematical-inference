@@ -1,4 +1,4 @@
-import Thesis.CausalTransport.HiddenDAGSourceCompression
+import Thesis.CausalTransport.HiddenDAGObservationalCompression
 import Thesis.Examples.HiddenDAGCollapse
 
 namespace Thesis
@@ -53,6 +53,21 @@ theorem every_structural_readout_unchanged (intervention : HardIntervention sign
 theorem all_sources_still_independent (events : (node : Fin fullGraph.count) → Bool → Bool) :
     QProb.Equiv (compressed.model.prior.probVal (FiniteProduct.rectangularEvent 5 (fun _ => Bool) events))
       (FiniteProduct.qProduct 5 (fun node => (compressed.model.factor node).probVal (events node))) := compressed.model.product_law events
+
+/-! The fixed-law adapter retains every observed event automatically, not
+only the factual event that happened to appear in the earlier query pair. -/
+
+def target : NativeProbabilityQuery signature := ⟨forceXFalse, fun assignment => assignment y⟩
+def withObservation := original.compressSourcesPreservingObservation [target]
+theorem entire_observed_law_preserved (event : Event signature.Assignment) :
+    QProb.Equiv (withObservation.model.observationalValue event) (original.observationalValue event) :=
+  withObservation.observational event
+theorem selected_effect_preserved : QProb.Equiv
+    (withObservation.model.interventionalValue target.intervention target.event)
+    (original.interventionalValue target.intervention target.event) :=
+  withObservation.preserved target (List.mem_cons.mpr (Or.inl rfl))
+theorem observed_law_source_bound (node : Fin fullGraph.count) :
+    (withObservation.model.factor node).atoms.length ≤ signature.assignmentEnumeration.length + 1 + 1 := withObservation.bounded node
 
 end HiddenDAGSourceCompression
 end Examples

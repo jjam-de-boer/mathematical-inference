@@ -55,6 +55,16 @@ def normalizedOnly := compress finiteLaw enumeration complete (fun _ => inferIns
 theorem no_queries_first : (normalizedOnly.law.factor first).atoms.length = 1 := by decide +kernel
 theorem no_queries_second : (normalizedOnly.law.factor second).atoms.length = 1 := by decide +kernel
 
+/-! No coordinate needs an arbitrary inhabitant in the empty product. -/
+
+def emptyFactors : (index : Fin 0) → FiniteProbRecord Bool := fun index => Fin.elim0 index
+def emptyLaw : IndependentLaw (fun _ : Fin 0 => Bool) :=
+  ⟨emptyFactors, record 0 (fun _ => Bool) emptyFactors, record_rectangular_probVal 0 (fun _ => Bool) emptyFactors⟩
+def emptyEvents : Fin 1 → Event (Assignment 0 (fun _ => Bool)) := fun _ => topEvent
+def emptyReduced := compress emptyLaw (fun _ => [false, true]) (by intro _ value; cases value <;> simp)
+  (fun _ => inferInstance) emptyEvents
+theorem empty_product_query : QProb.Equiv (emptyReduced.law.prior.probVal topEvent) QProb.one := by decide +kernel
+
 end FiniteProductSourceCompression
 end Examples
 end Probability

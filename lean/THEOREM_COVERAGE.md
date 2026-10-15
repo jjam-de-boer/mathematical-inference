@@ -128,6 +128,14 @@ probabilities and the original positive denominator, not a value at zero mass.
 `SourceCompression.query_positive_iff` transports that support exactly, and
 `quotient_preserved` proves equality of the corresponding supported ratios.
 
+For fixed-observation applications, `compressSourcesPreservingObservation` in
+`HiddenDAGObservationalCompression` automatically adds every observational
+singleton query. Its `ObservationalSourceCompression.observational` field proves
+equality of **every** observed event, in addition to all supplied target queries.
+Each source then has at most `number of observed assignments + number of target
+queries + 1` positive atom occurrences. This sufficient bound is not asserted
+to be minimal; users need not remember to supply the factual table themselves.
+
 These are constructed replacements, not external compression assumptions.
 The bounds concern actual positive atom occurrences; the original ambient
 noise types, node value types and structural mechanisms remain unchanged.

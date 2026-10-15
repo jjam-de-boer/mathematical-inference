@@ -61,6 +61,7 @@ theorem withSourceLaw_evalNode (model : FiniteHiddenDAGSCM S projection)
   apply (model.withSourceLaw law).evalNode_eq_of_solution intervention noise (model.evalFull intervention noise)
   intro current
   simp only [evalFull, withSourceLaw_interventionValueAt]
+  dsimp only [withSourceLaw]
   change model.evalNode intervention noise current =
     match model.interventionValueAt intervention current with
     | some value => value
