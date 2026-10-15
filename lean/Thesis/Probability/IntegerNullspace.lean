@@ -58,13 +58,17 @@ theorem dot_succ {size : Nat} (left right : Vector (size + 1)) :
     List.map_cons, List.map_nil, sum_append, sum_singleton, Function.comp_def]
 
 def extendVector {size : Nat} (initial : Vector size) (last : Int) : Vector (size + 1) :=
-  Fin.lastCases last initial
+  fun index => if beforeLast : index.val < size then initial ⟨index.val, beforeLast⟩ else last
 
 theorem extendVector_castSucc {size : Nat} (initial : Vector size) (last : Int) (index : Fin size) :
-    extendVector initial last index.castSucc = initial index := Fin.lastCases_castSucc index
+    extendVector initial last index.castSucc = initial index := by
+  unfold extendVector
+  rw [dif_pos index.isLt]
 
 theorem extendVector_last {size : Nat} (initial : Vector size) (last : Int) :
-    extendVector initial last (Fin.last size) = last := Fin.lastCases_last
+    extendVector initial last (Fin.last size) = last := by
+  unfold extendVector
+  rw [dif_neg (Nat.lt_irrefl size)]
 
 theorem dot_extendVector {size : Nat} (row : Vector (size + 1)) (initial : Vector size) (last : Int) :
     dot row (extendVector initial last) = dot (fun index => row index.castSucc) initial + row (Fin.last size) * last := by
