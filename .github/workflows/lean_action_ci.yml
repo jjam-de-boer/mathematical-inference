@@ -165,6 +165,7 @@ jobs:
             Thesis.Probability.FiniteSourceCompression
             Thesis.Probability.FiniteProductExtensional
             Thesis.Probability.FiniteProductReplacement
+            Thesis.Probability.FiniteProductSourceCompression
             Thesis.Causality.AlmostSureIntervention
             Thesis.Causality.ConsistencyBounds
             Thesis.Causality.BinaryBowModel
@@ -246,6 +247,7 @@ jobs:
             Thesis.Examples.FiniteRationalCompression
             Thesis.Examples.FiniteSourceCompression
             Thesis.Examples.FiniteProductReplacement
+            Thesis.Examples.FiniteProductSourceCompression
             Thesis.Examples.FourLabelTransportationAggregation
             Thesis.Examples.FiniteProductSplicing
             Thesis.Examples.HiddenPathSearch
