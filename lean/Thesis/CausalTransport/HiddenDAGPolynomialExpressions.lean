@@ -102,9 +102,11 @@ theorem expressionPolynomial_withSourceLaw (model : FiniteHiddenDAGSCM S project
   | probability query => exact model.probabilityProgram_polynomial_withSourceLaw law query
   | add left right leftSame rightSame =>
       simp only [expressionPolynomial, leftSame, rightSame]
+      rfl
   | neg expression expressionSame => exact congrArg RationalPolynomial.neg expressionSame
   | mul left right leftSame rightSame =>
       simp only [expressionPolynomial, leftSame, rightSame]
+      rfl
 
 end FiniteHiddenDAGSCM
 end Causality
