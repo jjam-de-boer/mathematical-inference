@@ -62,13 +62,15 @@ private theorem minimum4_attained (masses : Masses) :
   unfold minimum4
   by_cases first : masses 0 ≤ Nat.min (masses 1) (Nat.min (masses 2) (masses 3))
   · exact ⟨0, Nat.min_eq_left first⟩
-  · rw [Nat.min_eq_right (by omega : Nat.min (masses 1) (Nat.min (masses 2) (masses 3)) ≤ masses 0)]
+  · have discardFirst : Nat.min (masses 0) (Nat.min (masses 1) (Nat.min (masses 2) (masses 3))) =
+        Nat.min (masses 1) (Nat.min (masses 2) (masses 3)) := Nat.min_eq_right (by omega)
     by_cases second : masses 1 ≤ Nat.min (masses 2) (masses 3)
-    · exact ⟨1, Nat.min_eq_left second⟩
-    · rw [Nat.min_eq_right (by omega : Nat.min (masses 2) (masses 3) ≤ masses 1)]
+    · exact ⟨1, discardFirst.trans (Nat.min_eq_left second)⟩
+    · have discardSecond : Nat.min (masses 1) (Nat.min (masses 2) (masses 3)) =
+          Nat.min (masses 2) (masses 3) := Nat.min_eq_right (by omega)
       by_cases third : masses 2 ≤ masses 3
-      · exact ⟨2, Nat.min_eq_left third⟩
-      · exact ⟨3, Nat.min_eq_right (by omega)⟩
+      · exact ⟨2, discardFirst.trans (discardSecond.trans (Nat.min_eq_left third))⟩
+      · exact ⟨3, discardFirst.trans (discardSecond.trans (Nat.min_eq_right (by omega)))⟩
 
 /-- Each maximal batch reaches a real boundary: a selected margin is
 exhausted, or an untouched capacity becomes tight in the residual problem.
