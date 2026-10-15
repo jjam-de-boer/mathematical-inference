@@ -36,7 +36,8 @@ theorem original_replacement_every_event (event : Event (Fin 2 → Bool)) :
 
 def certain : FiniteProbRecord Bool := ⟨[(false, 0), (true, 1)], 1, by decide, rfl⟩
 def updated := law.replace first certain
-theorem other_factor_unchanged : updated.factor second = law.factor second := replaceFactor_other _ _ _ _ (by decide)
+theorem other_factor_unchanged : updated.factor second = law.factor second :=
+  replaceFactor_other law.factor first certain second (by decide)
 theorem updated_xor : QProb.Equiv (updated.prior.probVal (fun unit => Bool.xor (unit first) (unit second)))
     ⟨3, 4, by decide⟩ := by decide +kernel
 

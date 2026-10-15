@@ -44,7 +44,8 @@ def compressAt (original : IndependentLaw Value)
     (values : (index : Fin n) → List (Value index)) (complete : forall index value, value ∈ values index)
     (decEq : (index : Fin n) → DecidableEq (Value index)) (chosen : Fin n)
     (events : Fin count → Event (Assignment n Value)) : CompressedAt original chosen events := by
-  let pulled := fun index pair => events index (replaceCoordinate chosen pair.1 pair.2)
+  let pulled : Fin count → Event (Value chosen × Assignment n Value) :=
+    fun index pair => events index (replaceCoordinate chosen pair.1 pair.2)
   let made := FiniteSourceCompression.compress (original.factor chosen) original.prior pulled
   let raw := original.replace chosen made.factor
   refine ⟨raw.canonical, ?_, ?_, ?_, ?_⟩
@@ -84,8 +85,14 @@ def compressOn (original : IndependentLaw Value)
     (decEq : (index : Fin n) → DecidableEq (Value index))
     (coordinates : List (Fin n)) (events : Fin count → Event (Assignment n Value)) : CompressedOn original coordinates events :=
   match coordinates with
-  | [] => ⟨original, by intro _ member; cases member, by intro _ member; cases member,
-      by intro _ _; rfl, fun _ => QProb.equiv_refl _⟩
+  | [] => by
+      refine ⟨original, ?_, ?_, ?_, fun _ => QProb.equiv_refl _⟩
+      · intro _ member
+        cases member
+      · intro _ member
+        cases member
+      · intro _ _
+        rfl
   | chosen :: rest => by
       let made := compressAt original values complete decEq chosen events
       let solved := compressOn made.law values complete decEq rest events
