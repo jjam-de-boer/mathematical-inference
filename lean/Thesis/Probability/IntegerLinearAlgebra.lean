@@ -11,7 +11,8 @@ This is constructive auxiliary linear algebra, not a new probability space.
 After clearing finitely many positive denominators, rational constraints can
 be handled by integer matrices.  The denominator-clearing bridge is a separate
 obligation; this module proves the exact integer row-operation identities.
-Vectors and matrices have explicit finite dimensions and integer entries.  Finite sums reuse the development's additive-carrier fold and its
+Vectors and matrices have explicit finite dimensions and integer entries.
+Finite sums reuse the development's additive-carrier fold and its
 constructive permutation theorem rather than introducing unordered sums.
 
 The elimination operation is fraction-free: multiply a row by the supplied

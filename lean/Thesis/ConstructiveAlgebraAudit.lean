@@ -1,5 +1,6 @@
 import Thesis.Examples.RationalValues
 import Thesis.Examples.IntegerLinearAlgebra
+import Thesis.Examples.IntegerNullspace
 import Lean.Elab.Command
 import Lean.Util.CollectAxioms
 
