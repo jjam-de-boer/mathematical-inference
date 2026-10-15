@@ -23,12 +23,12 @@ theorem zero_add (value : SignedRatio) : Equiv (add zero value) value :=
 
 theorem add_left_comm (first second third : SignedRatio) :
     Equiv (add first (add second third)) (add second (add first third)) := by
-  simp only [Equiv, add, Int.natCast_mul, Int.add_mul, Int.mul_add]
+  simp only [Equiv, add, Int.natCast_mul, Int.add_mul]
   ac_rfl
 
 theorem add_interchange (first second third fourth : SignedRatio) :
     Equiv (add (add first second) (add third fourth)) (add (add first third) (add second fourth)) := by
-  simp only [Equiv, add, Int.natCast_mul, Int.add_mul, Int.mul_add]
+  simp only [Equiv, add, Int.natCast_mul, Int.add_mul]
   ac_rfl
 
 theorem mul_comm (left right : SignedRatio) : Equiv (mul left right) (mul right left) := by
@@ -41,7 +41,7 @@ theorem mul_assoc (first second third : SignedRatio) :
   ac_rfl
 
 theorem mul_one (value : SignedRatio) : Equiv (mul value one) value := by
-  simp only [Equiv, mul, one, Int.natCast_one, Int.mul_one]
+  simp only [Equiv, mul, one, Nat.mul_one, Int.mul_one]
 
 theorem one_mul (value : SignedRatio) : Equiv (mul one value) value :=
   equiv_trans (mul_comm one value) (mul_one value)
@@ -54,7 +54,7 @@ theorem zero_mul (value : SignedRatio) : Equiv (mul zero value) zero :=
 
 theorem add_mul (left right factor : SignedRatio) :
     Equiv (mul (add left right) factor) (add (mul left factor) (mul right factor)) := by
-  simp only [Equiv, mul, add, Int.natCast_mul, Int.add_mul, Int.mul_add]
+  simp only [Equiv, mul, add, Int.natCast_mul, Int.add_mul]
   ac_rfl
 
 theorem mul_interchange (first second third fourth : SignedRatio) :

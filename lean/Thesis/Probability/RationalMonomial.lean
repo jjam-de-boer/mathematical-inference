@@ -28,6 +28,7 @@ instance (variables : Nat) : DecidableEq (Powers variables) :=
 
 def unit (variables : Nat) : Powers variables := fun _ => 0
 def combine {variables : Nat} (left right : Powers variables) : Powers variables := fun index => left index + right index
+def variable {variables : Nat} (chosen : Fin variables) : Powers variables := fun index => if index = chosen then 1 else 0
 
 def power (value : SignedRatio) : Nat → SignedRatio
   | 0 => one
@@ -68,6 +69,25 @@ theorem product_pointwise_mul (variables : Nat) (left right : Fin variables → 
       exact equiv_trans (mul_congr (equiv_refl _) (inductionHypothesis (fun index => left index.castSucc) (fun index => right index.castSucc)))
         (mul_interchange (left (Fin.last variables)) (right (Fin.last variables)) _ _)
 
+theorem product_singleton (variables : Nat) (chosen : Fin variables) (selected : SignedRatio) :
+    Equiv (product variables (fun index => if index = chosen then selected else one)) selected := by
+  induction variables with
+  | zero => exact Fin.elim0 chosen
+  | succ variables inductionHypothesis =>
+      refine Fin.lastCases ?_ (fun earlier => ?_) chosen
+      · have initial : (fun index : Fin variables => if index.castSucc = Fin.last variables then selected else one) =
+            (fun _ => one) := by
+          funext index
+          rw [if_neg (FiniteProduct.castSucc_ne_last index)]
+        rw [product, if_pos rfl, initial]
+        exact equiv_trans (mul_congr (equiv_refl selected) (product_one variables)) (mul_one selected)
+      · have initial : (fun index : Fin variables => if index.castSucc = earlier.castSucc then selected else one) =
+            (fun index => if index = earlier then selected else one) := by
+          funext index
+          simp only [Fin.ext_iff, Fin.val_castSucc]
+        rw [product, if_neg (FiniteProduct.last_ne_castSucc earlier), initial]
+        exact equiv_trans (mul_congr (equiv_refl one) (inductionHypothesis earlier)) (one_mul selected)
+
 def evaluate {variables : Nat} (powers : Powers variables) (values : Fin variables → SignedRatio) : SignedRatio :=
   product variables (fun index => power (values index) (powers index))
 
@@ -78,6 +98,17 @@ theorem evaluate_combine {variables : Nat} (left right : Powers variables) (valu
     Equiv (evaluate (combine left right) values) (mul (evaluate left values) (evaluate right values)) :=
   equiv_trans (product_congr variables _ _ (fun index => power_add (values index) (left index) (right index)))
     (product_pointwise_mul variables _ _)
+
+theorem evaluate_variable {variables : Nat} (chosen : Fin variables) (values : Fin variables → SignedRatio) :
+    Equiv (evaluate (variable chosen) values) (values chosen) := by
+  refine equiv_trans (product_congr variables _ (fun index => if index = chosen then values chosen else one) (fun index => ?_))
+    (product_singleton variables chosen (values chosen))
+  by_cases same : index = chosen
+  · subst index
+    rw [variable, if_pos rfl]
+    exact mul_one (values chosen)
+  · rw [variable, if_neg same, if_neg same]
+    exact equiv_refl one
 
 end RationalMonomial
 end Probability
