@@ -41,6 +41,7 @@ import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.JointFactorialMoments
 import Thesis.Probability.Distros.ReinforcedAggregation
+import Thesis.Probability.Distros.ReinforcedMoments
 
 /-!
 Named finite distros.
@@ -186,4 +187,7 @@ Reading order:
     merging for actual reinforced paths and their count laws at every
     increment. Dirichlet-multinomial coordinates have beta-binomial
     marginals and the corresponding closed means and variances.
+39. `ReinforcedMoments` extracts individual factorial moments, means,
+    cross moments and nonpositive signed covariances from the mixed-order
+    formula, including arbitrary increments and zero selected parameters.
 -/

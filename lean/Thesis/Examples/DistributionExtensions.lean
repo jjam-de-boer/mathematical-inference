@@ -266,4 +266,15 @@ example : (dirichletMultinomialCoordinate 4 [0, 2, 0] (by decide) 1).SameLaw
     (betaBinomialNatDistroOfTotal 4 2 0 (by decide)) :=
   dirichletMultinomial_coordinate_betaBinomial 4 [0, 2, 0] (by decide) 1 (by decide)
 
+/-- Reinforcement increases the magnitude of off-diagonal count covariance. -/
+example : ((reinforcedCountDistro 4 [2, 0, 3] 2 (by decide)).covariance
+    (fun counts => counts.getD 0 0) (fun counts => counts.getD 2 0)).Equiv
+    ⟨-312, 175, by decide⟩ := by decide
+example : ((dirichletMultinomialDistro 4 [2, 0, 3] (by decide)).covariance
+    (fun counts => counts.getD 0 0) (fun counts => counts.getD 2 0)).Equiv
+    ⟨-36, 25, by decide⟩ := by decide
+example : ((dirichletMultinomialDistro 4 [2, 0, 3] (by decide)).covariance
+    (fun counts => counts.getD 0 0) (fun counts => counts.getD 1 0)).Equiv
+    (SignedMoment.ofInt 0) := by decide
+
 end Thesis.Examples.DistributionExtensions
