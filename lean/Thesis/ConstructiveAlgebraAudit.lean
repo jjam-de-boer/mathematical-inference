@@ -1,5 +1,7 @@
 import Thesis.Examples.RationalValues
 import Thesis.Examples.IntegerLinearAlgebra
+import Thesis.Examples.IntegerNullspace
+import Thesis.Examples.FiniteRatioMinimum
 import Lean.Elab.Command
 import Lean.Util.CollectAxioms
 
@@ -23,6 +25,7 @@ open Lean Elab Command
 run_cmd do
   let env ← getEnv
   let mut checked := 0
+  let mut violations : Array (Name × Array Name) := #[]
   for (declName, _) in env.constants do
     let some moduleIdx := env.getModuleIdxFor? declName | continue
     let moduleName := env.header.moduleNames[moduleIdx.toNat]!
@@ -32,5 +35,7 @@ run_cmd do
     let forbidden := axioms.filter fun axiomName =>
       axiomName != `propext && axiomName != `Quot.sound
     unless forbidden.isEmpty do
-      throwError m!"constructive algebra declaration {declName} depends on forbidden axioms: {forbidden.toList}"
+      violations := violations.push (declName, forbidden)
+  unless violations.isEmpty do
+    throwError m!"constructive algebra declarations depend on forbidden axioms: {violations.toList}"
   logInfo m!"early algebra axiom policy checked {checked} imported Thesis declarations"
