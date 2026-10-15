@@ -37,7 +37,7 @@ def fractionalSum : Polynomial 0 := add (constant ⟨1, 2, by decide⟩) (consta
 theorem fractional_coefficients_checked : equalityCheck fractionalSum (constant ⟨5, 6, by decide⟩) = true := by decide +kernel
 def unreducedCancellation : Polynomial 0 := add (constant ⟨1, 2, by decide⟩) (constant ⟨-2, 4, by decide⟩)
 theorem unreduced_zero_checked : zeroCheck unreducedCancellation = true := by decide +kernel
-theorem empty_polynomial_checked : zeroCheck (zero 0) = true := rfl
+theorem empty_polynomial_checked : zeroCheck (zero 0) = true := by decide +kernel
 
 def signedValues : Fin 2 → SignedRatio := fun index =>
   if index.val = 0 then ⟨-1, 2, by decide⟩ else ⟨2, 3, by decide⟩

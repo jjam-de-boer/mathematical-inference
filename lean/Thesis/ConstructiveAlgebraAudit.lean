@@ -12,6 +12,7 @@ import Thesis.Examples.RationalMonomial
 import Thesis.Examples.RationalPolynomialIdentity
 import Thesis.Examples.PolynomialBoundCertificate
 import Thesis.Examples.FiniteProbabilityPolynomial
+import Thesis.Examples.FiniteProbabilityPolynomialEncoding
 import Lean.Elab.Command
 import Lean.Util.CollectAxioms
 
