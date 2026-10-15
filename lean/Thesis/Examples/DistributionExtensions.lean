@@ -189,4 +189,21 @@ example : (discreteGaussianDistro 0 ⟨0, 7, by decide⟩ (by change 0 ≤ 7; de
     (discreteGaussianDistro 0 QProb.zero (QProb.zero_le _)) :=
   discreteGaussian_sameLaw_kernel 0 _ _ (by change 0 ≤ 7; decide) (QProb.zero_le _) (by decide)
 
+/-- Signed coordinates, dependent cancellation and independent products
+use the same finite probability records and retain exact negative values. -/
+example : (SignedMoment.ofInt (-1)).Equiv
+    ((bernoulliDistro 1 1 (by decide)).signedCovariance
+      (fun bit : Bool => if bit then 1 else -1) (fun bit : Bool => if bit then -1 else 1)) := by decide
+example : QProb.Equiv ((bernoulliDistro 1 1 (by decide)).varianceInt
+    (fun bit : Bool => if bit then 1 else -1)) QProb.one := by decide
+example : QProb.Equiv ((bernoulliDistro 1 1 (by decide)).varianceInt
+    (fun bit : Bool => (if bit then 1 else -1) + (if bit then -1 else 1))) QProb.zero := by decide
+example : ((bernoulliDistro 1 1 (by decide)).covariance
+    (fun bit : Bool => if bit then 1 else 0) (fun bit : Bool => if bit then 0 else 1)).Equiv
+    ⟨-1, 4, by decide⟩ := by decide
+example : (((bernoulliDistro 1 2 (by decide)).product (bernoulliDistro 3 1 (by decide))).signedCovariance
+    (fun pair => if pair.1 then 2 else -3) (fun pair => if pair.2 then -4 else 1)).Equiv
+    (SignedMoment.ofInt 0) :=
+  Distro.signedCovariance_independent _ _ (fun bit : Bool => if bit then 2 else -3) (fun bit : Bool => if bit then -4 else 1)
+
 end Thesis.Examples.DistributionExtensions

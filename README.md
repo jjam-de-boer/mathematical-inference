@@ -79,6 +79,10 @@ coordinate counts have binomial marginals, closed means and variances.
 Distinct-coordinate cross moments and nonpositive covariances are proved with
 integer numerators over positive denominators. The generic covariance agrees
 with the centered product integral and with witnessed variance on its diagonal.
+The signed-observable API extends this to integer coordinates, with symmetry,
+bilinearity, law/map transport, zero covariance under independence, and the
+covariance term in dependent-sum variance. Integer-observable variance is
+proved nonnegative and agrees with the existing witnessed natural variance.
 Falling-factorial moments of binomial, hypergeometric and beta-binomial laws
 are proved at every order,
 including orders above their finite support. General negative-binomial

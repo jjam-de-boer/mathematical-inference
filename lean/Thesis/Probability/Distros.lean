@@ -36,6 +36,7 @@ import Thesis.Probability.Distros.HypergeometricUrn
 import Thesis.Probability.Distros.Reweight
 import Thesis.Probability.Distros.MulticolourPolya
 import Thesis.Probability.Distros.KernelInvariance
+import Thesis.Probability.Distros.SignedCovariance
 
 /-!
 Named finite distros.
@@ -160,4 +161,8 @@ Reading order:
     recovers beta-binomial for two colours, including zero-colour endpoints.
 33. `KernelInvariance` proves that equivalent rational Gaussian kernel
     presentations give the same law, and transports this to finite χ².
+34. `SignedCovariance` supplies signed expectation, symmetric bilinear
+    covariance, law/map transport, independence and the dependent-sum
+    variance law. Integer observables have nonnegative rational variance,
+    with a proof of agreement with the existing witnessed Nat variance.
 -/
