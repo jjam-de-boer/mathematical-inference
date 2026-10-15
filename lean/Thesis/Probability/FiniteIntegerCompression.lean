@@ -35,7 +35,9 @@ def moment (record : FiniteProbRecord Ω) (integrand : Ω → Int) : SignedRatio
 
 theorem moment_trimZeros (record : FiniteProbRecord Ω) (integrand : Ω → Int) :
     moment record.trimZeros integrand = moment record integrand := by
-  simp only [moment, trimZeros_signedMass, trimZeros]
+  change SignedRatio.mk (record.trimZeros.signedMass integrand) record.den record.den_pos =
+    SignedRatio.mk (record.signedMass integrand) record.den record.den_pos
+  rw [trimZeros_signedMass]
 
 def indexed {size : Nat} (labels : Fin size → Ω) (weights : Fin size → Nat) : List (Ω × Nat) :=
   (List.finRange size).map (fun index => (labels index, weights index))
@@ -83,6 +85,7 @@ theorem original_mass_dot (record : FiniteProbRecord Ω) :
 theorem positiveAtoms_indexed_length {size : Nat} (labels : Fin size → Ω) (weights : Fin size → Nat) :
     (positiveAtoms (indexed labels weights)).length = AffineSupportReduction.positiveCount weights := by
   simp only [positiveAtoms, indexed, List.filter_map, List.length_map, AffineSupportReduction.positiveCount]
+  rfl
 
 structure RecordStep (record : FiniteProbRecord Ω) (integrands : Fin count → Ω → Int) where
   reduced : FiniteProbRecord Ω
