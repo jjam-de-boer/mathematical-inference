@@ -21,8 +21,8 @@ from `equalityCheck_sound` for every signed rational parameter assignment,
 including negative values and zero denominators nowhere being permitted.
 -/
 
-def x : Polynomial 2 := variable 0
-def y : Polynomial 2 := variable 1
+def x : Polynomial 2 := coordinate 0
+def y : Polynomial 2 := coordinate 1
 def differenceProduct := mul (add x y) (sub x y)
 def differenceSquares := sub (mul x x) (mul y y)
 

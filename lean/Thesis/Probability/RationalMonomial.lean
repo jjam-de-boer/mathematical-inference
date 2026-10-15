@@ -28,7 +28,7 @@ instance (variables : Nat) : DecidableEq (Powers variables) :=
 
 def unit (variables : Nat) : Powers variables := fun _ => 0
 def combine {variables : Nat} (left right : Powers variables) : Powers variables := fun index => left index + right index
-def variable {variables : Nat} (chosen : Fin variables) : Powers variables := fun index => if index = chosen then 1 else 0
+def coordinate {variables : Nat} (chosen : Fin variables) : Powers variables := fun index => if index = chosen then 1 else 0
 
 def power (value : SignedRatio) : Nat → SignedRatio
   | 0 => one
@@ -37,7 +37,7 @@ def power (value : SignedRatio) : Nat → SignedRatio
 theorem power_add (value : SignedRatio) (first second : Nat) :
     Equiv (power value (first + second)) (mul (power value first) (power value second)) := by
   induction first with
-  | zero => exact equiv_symm (one_mul _)
+  | zero => simpa only [Nat.zero_add, power] using equiv_symm (one_mul (power value second))
   | succ first inductionHypothesis =>
       simpa only [Nat.succ_add, power] using
         equiv_trans (mul_congr (equiv_refl value) inductionHypothesis)
@@ -99,16 +99,14 @@ theorem evaluate_combine {variables : Nat} (left right : Powers variables) (valu
   equiv_trans (product_congr variables _ _ (fun index => power_add (values index) (left index) (right index)))
     (product_pointwise_mul variables _ _)
 
-theorem evaluate_variable {variables : Nat} (chosen : Fin variables) (values : Fin variables → SignedRatio) :
-    Equiv (evaluate (variable chosen) values) (values chosen) := by
+theorem evaluate_coordinate {variables : Nat} (chosen : Fin variables) (values : Fin variables → SignedRatio) :
+    Equiv (evaluate (coordinate chosen) values) (values chosen) := by
   refine equiv_trans (product_congr variables _ (fun index => if index = chosen then values chosen else one) (fun index => ?_))
     (product_singleton variables chosen (values chosen))
   by_cases same : index = chosen
   · subst index
-    rw [variable, if_pos rfl]
-    exact mul_one (values chosen)
-  · rw [variable, if_neg same, if_neg same]
-    exact equiv_refl one
+    simpa only [coordinate, if_true, power] using mul_one (values chosen)
+  · simpa only [coordinate, if_neg same, power] using equiv_refl one
 
 end RationalMonomial
 end Probability

@@ -38,7 +38,7 @@ def evaluate (polynomial : Polynomial variables) (values : Fin variables → Sig
 
 def zero (variables : Nat) : Polynomial variables := []
 def constant (value : SignedRatio) : Polynomial variables := [⟨value, RationalMonomial.unit variables⟩]
-def variable (chosen : Fin variables) : Polynomial variables := [⟨SignedRatio.one, RationalMonomial.variable chosen⟩]
+def coordinate (chosen : Fin variables) : Polynomial variables := [⟨SignedRatio.one, RationalMonomial.coordinate chosen⟩]
 def add (left right : Polynomial variables) : Polynomial variables := left ++ right
 def neg (polynomial : Polynomial variables) : Polynomial variables :=
   polynomial.map (fun term => ⟨SignedRatio.neg term.coefficient, term.powers⟩)
@@ -55,10 +55,10 @@ theorem evaluate_constant (value : SignedRatio) (values : Fin variables → Sign
     (SignedRatio.equiv_trans (SignedRatio.mul_congr (SignedRatio.equiv_refl value) (RationalMonomial.evaluate_unit variables values))
       (SignedRatio.mul_one value))
 
-theorem evaluate_variable (chosen : Fin variables) (values : Fin variables → SignedRatio) :
-    SignedRatio.Equiv (evaluate (variable chosen) values) (values chosen) :=
+theorem evaluate_coordinate (chosen : Fin variables) (values : Fin variables → SignedRatio) :
+    SignedRatio.Equiv (evaluate (coordinate chosen) values) (values chosen) :=
   SignedRatio.equiv_trans (evaluate_singleton _ values)
-    (SignedRatio.equiv_trans (SignedRatio.mul_congr (SignedRatio.equiv_refl SignedRatio.one) (RationalMonomial.evaluate_variable chosen values))
+    (SignedRatio.equiv_trans (SignedRatio.mul_congr (SignedRatio.equiv_refl SignedRatio.one) (RationalMonomial.evaluate_coordinate chosen values))
       (SignedRatio.one_mul _))
 
 theorem evaluate_add (left right : Polynomial variables) (values : Fin variables → SignedRatio) :
