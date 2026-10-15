@@ -49,7 +49,8 @@ one-success negative binomial equals geometric.
 
 The lattice Gaussian uses the rational kernel `q^(x²)` on `x ∈ [-radius, radius]`,
 with `0 ≤ q ≤ 1`. Zero gives a point mass and one gives the discrete uniform
-law. Its signed mean is zero and its variance is the exact finite second
+law. Equivalent rational presentations of the kernel give the same Gaussian
+and finite χ² laws on every event. Its signed mean is zero and its variance is the exact finite second
 centred moment. The finite χ² law sums independent squared coordinates:
 equal radius and kernel give additivity in the degrees of freedom, mean
 `df · m₂`, and variance `df · (m₄ − m₂²)`.

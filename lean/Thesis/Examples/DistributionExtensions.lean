@@ -177,4 +177,16 @@ example : (dirichletMultinomialCoordinate 3 [0, 2] (by decide) 0).SameLaw
     (betaBinomialNatDistroOfTotal 3 0 2 (by decide)) :=
   dirichletMultinomial_two_coordinate 3 0 2 (by decide)
 
+/-- Rational kernel presentations may change all integer weights while
+retaining the full Gaussian and squared-coordinate laws. -/
+example : (discreteGaussianDistro 2 ⟨1, 2, by decide⟩ (by change 1 ≤ 2; decide)).SameLaw
+    (discreteGaussianDistro 2 ⟨2, 4, by decide⟩ (by change 2 ≤ 4; decide)) :=
+  discreteGaussian_sameLaw_kernel 2 _ _ (by change 1 ≤ 2; decide) (by change 2 ≤ 4; decide) (by decide)
+example : (chiSquaredDistro 3 2 ⟨1, 2, by decide⟩ (by change 1 ≤ 2; decide)).SameLaw
+    (chiSquaredDistro 3 2 ⟨2, 4, by decide⟩ (by change 2 ≤ 4; decide)) :=
+  chiSquared_sameLaw_kernel 3 2 _ _ (by change 1 ≤ 2; decide) (by change 2 ≤ 4; decide) (by decide)
+example : (discreteGaussianDistro 0 ⟨0, 7, by decide⟩ (by change 0 ≤ 7; decide)).SameLaw
+    (discreteGaussianDistro 0 QProb.zero (QProb.zero_le _)) :=
+  discreteGaussian_sameLaw_kernel 0 _ _ (by change 0 ≤ 7; decide) (QProb.zero_le _) (by decide)
+
 end Thesis.Examples.DistributionExtensions

@@ -35,6 +35,7 @@ import Thesis.Probability.Distros.CapConsistency
 import Thesis.Probability.Distros.HypergeometricUrn
 import Thesis.Probability.Distros.Reweight
 import Thesis.Probability.Distros.MulticolourPolya
+import Thesis.Probability.Distros.KernelInvariance
 
 /-!
 Named finite distros.
@@ -157,4 +158,6 @@ Reading order:
     categorical reinforcement and the Dirichlet-multinomial count law,
     proves their event correspondence and rising-total normalization, and
     recovers beta-binomial for two colours, including zero-colour endpoints.
+33. `KernelInvariance` proves that equivalent rational Gaussian kernel
+    presentations give the same law, and transports this to finite χ².
 -/
