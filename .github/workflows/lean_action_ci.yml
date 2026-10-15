@@ -173,6 +173,7 @@ jobs:
             Thesis.CausalTransport.BinaryInstrumentalComputedBounds
             Thesis.CausalTransport.BinaryInstrumentalIdentification
             Thesis.CausalTransport.ObservationalFormulaSelection
+            Thesis.CausalTransport.ObservationalFormulaDiagnostics
             Thesis.CausalTransport.BackdoorAdjustment
             Thesis.CausalTransport.BackdoorAdjustmentSearch
             Thesis.CausalTransport.GuardedHiddenDAGBoundary
@@ -195,6 +196,7 @@ jobs:
             Thesis.Examples.HiddenDAGSupportedCorrespondence
             Thesis.Examples.AlmostSureIntervention
             Thesis.Examples.AlternativeFormulaSelection
+            Thesis.Examples.ObservationalFormulaDiagnostics
             Thesis.Examples.BackdoorAdjustmentSearch
             Thesis.Examples.ConsistencyBounds
             Thesis.Examples.BinaryBowBounds

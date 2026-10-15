@@ -39,6 +39,7 @@ import Thesis.Examples.FourLabelTransportation
 import Thesis.Examples.FourLabelTransportationExtrema
 import Thesis.Examples.FourLabelTransportationBatched
 import Thesis.Examples.BinaryInstrumentalIdentification
+import Thesis.Examples.ObservationalFormulaDiagnostics
 import Thesis.Examples.FourLabelTransportationAggregation
 import Thesis.Examples.HiddenPathSearch
 import Thesis.Examples.HiddenDAGCollapse

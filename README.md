@@ -23,8 +23,8 @@ Its public entry points are:
 - `Thesis.Probability` — finite constructive probability;
 - `Thesis.Causality` — finite structural causal models, interventions, modal
   edits, and counterfactual semantics; and
-- `Thesis.CausalTransport` — finite-source correspondence and explicit
-  interfaces to externally established causal results.
+- `Thesis.CausalTransport` — finite-source correspondence, constructive
+  ID/IDC theorems, and support-aware applications of causal formulas.
 
 The complete development also includes a tenure-track example that combines
 these components.
@@ -38,6 +38,11 @@ flowchart LR
 ```
 
 ### Verification
+
+See the [theorem-coverage guide](lean/THEOREM_COVERAGE.md) for the public
+soundness/completeness results, fixed-law extensions, and application support
+boundaries. [Resource-capped local checks](lean/LOCAL_CHECKS.md) document the
+conservative local pilot; full verification currently remains remote.
 
 The project uses Lean `v4.30.0-rc2` and has no third-party Lake dependencies.
 To build the development:
