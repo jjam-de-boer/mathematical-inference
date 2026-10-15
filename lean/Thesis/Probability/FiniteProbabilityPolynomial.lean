@@ -103,6 +103,7 @@ theorem singleton_product_law (law : IndependentLaw Value) (decEq : (index : Fin
     QProb.Equiv (law.prior.probVal (@FiniteProbRecord.singletonEvent _ (assignmentDecidableEq sources Value decEq) assignment))
       (qProduct sources (fun index => cellProbability law decEq index (assignment index))) := by
   have rectangular := law.product_law (fun index => @FiniteProbRecord.singletonEvent _ (decEq index) (assignment index))
+  simp only [FiniteProbRecord.singletonEvent] at rectangular
   rw [rectangularEvent_assignment_singleton decEq assignment] at rectangular
   exact rectangular
 
