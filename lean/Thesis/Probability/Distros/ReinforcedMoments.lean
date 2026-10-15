@@ -212,8 +212,6 @@ theorem reinforcedCount_covariance (n increment : Nat) (alphas : List Nat) (posi
       congr 1
       ac_rfl
 
-/-- Distinct Dirichlet-multinomial coordinates have negative covariance
-when the trial count and both selected parameters are positive. -/
 theorem dirichletMultinomial_crossMoment (n : Nat) (alphas : List Nat) (positive : 0 < alphas.sum)
     (i j : Nat) (hi : i < alphas.length) (hj : j < alphas.length) (different : i ≠ j) :
     QProb.Equiv ((dirichletMultinomialDistro n alphas positive).expectNat
@@ -222,6 +220,8 @@ theorem dirichletMultinomial_crossMoment (n : Nat) (alphas : List Nat) (positive
         Nat.mul_pos positive (Nat.succ_pos _)⟩ := by
   simpa only [reinforcedCount_one] using reinforcedCount_crossMoment n 1 alphas positive i j hi hj different
 
+/-- Distinct Dirichlet-multinomial coordinates have negative covariance
+when the trial count and both selected parameters are positive. -/
 theorem dirichletMultinomial_covariance (n : Nat) (alphas : List Nat) (positive : 0 < alphas.sum)
     (i j : Nat) (hi : i < alphas.length) (hj : j < alphas.length) (different : i ≠ j) :
     SignedMoment.Equiv ((dirichletMultinomialDistro n alphas positive).covariance
