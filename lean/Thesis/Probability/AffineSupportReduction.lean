@@ -1,5 +1,6 @@
 import Thesis.Probability.IntegerNullspace
 import Thesis.Probability.FiniteRatioMinimum
+import Thesis.Probability.ConstructiveInteger
 
 namespace Thesis
 namespace Probability
@@ -88,7 +89,8 @@ theorem positiveCandidates_complete {rows columns : Nat} {matrix : Matrix rows c
 
 def ratio {rows columns : Nat} {matrix : Matrix rows columns} (movement : Direction matrix)
     (weights : Weights columns) (candidate : {index : Fin columns // 0 < movement.vector index}) : QProb :=
-  ⟨weights candidate.val, (movement.vector candidate.val).toNat, Int.pos_iff_toNat_pos.mp candidate.property⟩
+  ⟨weights candidate.val, (movement.vector candidate.val).toNat,
+    ConstructiveInteger.toNat_positive _ candidate.property⟩
 
 /-- Every candidate carries its positive coefficient as data.  Mapping
 nonpositive coordinates to the anchor permits a simple complete finite list,
@@ -108,8 +110,8 @@ theorem chosen_minimal {rows columns : Nat} {matrix : Matrix rows columns}
       weights index * (movement.vector (chosen movement weights).val).toNat := bound
   have cast : ((weights (chosen movement weights).val * (movement.vector index).toNat : Nat) : Int) ≤
       ((weights index * (movement.vector (chosen movement weights).val).toNat : Nat) : Int) := by omega
-  simp only [Int.natCast_mul, Int.toNat_of_nonneg (Int.le_of_lt positive),
-    Int.toNat_of_nonneg (Int.le_of_lt (chosen movement weights).property)] at cast
+  simp only [Int.natCast_mul, ConstructiveInteger.toNat_cast _ (Int.le_of_lt positive),
+    ConstructiveInteger.toNat_cast _ (Int.le_of_lt (chosen movement weights).property)] at cast
   exact cast
 
 def rawWeight {rows columns : Nat} {matrix : Matrix rows columns} (movement : Direction matrix)
@@ -140,7 +142,7 @@ def updated {rows columns : Nat} {matrix : Matrix rows columns} (movement : Dire
 theorem updated_cast {rows columns : Nat} {matrix : Matrix rows columns}
     (movement : Direction matrix) (weights : Weights columns) (index : Fin columns) :
     (updated movement weights index : Int) = rawWeight movement weights index :=
-  Int.toNat_of_nonneg (rawWeight_nonnegative movement weights index)
+  ConstructiveInteger.toNat_cast _ (rawWeight_nonnegative movement weights index)
 
 theorem updated_chosen_zero {rows columns : Nat} {matrix : Matrix rows columns}
     (movement : Direction matrix) (weights : Weights columns) : updated movement weights (chosen movement weights).val = 0 := by
@@ -267,8 +269,8 @@ def step {rows columns : Nat} (matrix : Matrix rows columns) (weights : Weights 
   let movement := direction matrix larger
   let selected := chosen movement weights
   let factor := (movement.vector selected.val).toNat
-  have factorPositive : 0 < factor := Int.pos_iff_toNat_pos.mp selected.property
-  have factorCast : (factor : Int) = movement.vector selected.val := Int.toNat_of_nonneg (Int.le_of_lt selected.property)
+  have factorPositive : 0 < factor := ConstructiveInteger.toNat_positive _ selected.property
+  have factorCast : (factor : Int) = movement.vector selected.val := ConstructiveInteger.toNat_cast _ (Int.le_of_lt selected.property)
   refine ⟨updated movement weights, factor, factorPositive, positive, selected.val, positive selected.val,
     updated_chosen_zero movement weights, ?_, ?_, ?_⟩
   · rw [factorCast]

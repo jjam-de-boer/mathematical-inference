@@ -155,6 +155,7 @@ jobs:
             Thesis.Probability.IntegerNullspace
             Thesis.Probability.FiniteRatioMinimum
             Thesis.Probability.AffineSupportReduction
+            Thesis.Probability.ConstructiveInteger
             Thesis.Causality.AlmostSureIntervention
             Thesis.Causality.ConsistencyBounds
             Thesis.Causality.BinaryBowModel
