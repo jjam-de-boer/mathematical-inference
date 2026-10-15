@@ -166,6 +166,17 @@ jobs:
             Thesis.Probability.FiniteProductExtensional
             Thesis.Probability.FiniteProductReplacement
             Thesis.Probability.FiniteProductSourceCompression
+            Thesis.Probability.SignedRatioAlgebra
+            Thesis.Probability.RationalMonomial
+            Thesis.Probability.RationalPolynomial
+            Thesis.Probability.RationalPolynomialIdentity
+            Thesis.Probability.SignedRatioOrder
+            Thesis.Probability.RationalPolynomialFinite
+            Thesis.Probability.PolynomialBoundCertificate
+            Thesis.Probability.FiniteProbabilityPolynomial
+            Thesis.Probability.FiniteProbabilityPolynomialEncoding
+            Thesis.Probability.FiniteProbabilityPolynomialCertificates
+            Thesis.CausalTransport.HiddenDAGPolynomial
             Thesis.CausalTransport.HiddenDAGSourceCompression
             Thesis.CausalTransport.HiddenDAGObservationalCompression
             Thesis.Causality.AlmostSureIntervention
@@ -250,6 +261,13 @@ jobs:
             Thesis.Examples.FiniteSourceCompression
             Thesis.Examples.FiniteProductReplacement
             Thesis.Examples.FiniteProductSourceCompression
+            Thesis.Examples.RationalMonomial
+            Thesis.Examples.RationalPolynomialIdentity
+            Thesis.Examples.PolynomialBoundCertificate
+            Thesis.Examples.FiniteProbabilityPolynomial
+            Thesis.Examples.FiniteProbabilityPolynomialEncoding
+            Thesis.Examples.FiniteProbabilityPolynomialCertificates
+            Thesis.Examples.HiddenDAGPolynomial
             Thesis.Examples.HiddenDAGSourceCompression
             Thesis.Examples.FourLabelTransportationAggregation
             Thesis.Examples.FiniteProductSplicing

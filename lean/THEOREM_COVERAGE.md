@@ -83,9 +83,9 @@ Sharp endpoint attainment alone would not state that every rational interior
 value is attained. The additional IV mixture theorems now prove that claim:
 they mix feasible response records while keeping the instrument independent,
 then realize a native model on the original DAG. They do not assume arbitrary
-independent-source model classes are convex. Polynomial certificates remain
-a separate work item; there is no claimed
-complete arbitrary-graph fixed-law optimizer.
+independent-source model classes are convex. The separate polynomial layer
+described below checks supplied certificates for explicit finite source
+presentations; there is no claimed complete arbitrary-graph fixed-law optimizer.
 
 ## Constructive probability-record and independent-source compression
 
@@ -141,6 +141,57 @@ The bounds concern actual positive atom occurrences; the original ambient
 noise types, node value types and structural mechanisms remain unchanged.
 They do not themselves compress hidden endogenous alphabets, enumerate all
 mechanisms, or supply a complete rational feasibility optimizer.
+
+## Exact probability polynomials and supplied bound certificates
+
+`RationalPolynomial` represents finite sparse polynomials with signed rational
+coefficients and natural exponent vectors. `equalityCheck_sound` in
+`RationalPolynomialIdentity` proves that an accepted identity holds for every
+signed rational parameter assignment, not just numerical test points. Repeated
+monomials, reordered products and unreduced coefficient fractions are allowed.
+
+`PolynomialBoundCertificate.check_sound` checks an exact decomposition into
+nonnegative rational weights times polynomial squares times products of listed
+nonnegative constraints, plus arbitrary polynomial multiples of listed zero
+constraints. It checks both the coefficient signs and the polynomial identity.
+The theorem proves nonnegativity throughout the supplied constraint domain.
+It does not trust an optimizer's reported bound or assume the identity printed
+by a producer. Rejection does not establish that a bound is false.
+
+`FiniteProbabilityPolynomial.compile_sound` connects the constructed event
+polynomial to an actual finite independent law, using explicit complete source
+enumerations and singleton-probability variables. The supplied prior need only
+satisfy its product law, rather than literally be a canonical product record.
+Zero source cells, repeated record atoms and duplicate enumeration labels are
+handled; joint states are deduplicated before summation. This is unconditional
+finite probability compilation, not a definition of an undefined conditional.
+
+`FiniteProbabilityPolynomialEncoding` constructs a two-sided finite encoding
+of coordinate/state pairs and their actual probability parameters. Its
+`sourceParameters_nonnegative` and `normalization_sound` prove the basic source
+constraints. `compileEncoded` in `FiniteProbabilityPolynomialCertificates`
+packages that binding and those constraints with the compiled event.
+`Compiled.checkLower_sound` and `checkUpper_sound` turn accepted supplied
+certificates into inequalities about the original event probability, with no
+external polynomial-likelihood correspondence or source-normalization premise.
+
+`FiniteHiddenDAGSCM.probabilityProgram_sound` in `HiddenDAGPolynomial` applies
+that construction to the noise event computed by an actual native structural
+model under a hard intervention. Its `checkProbabilityLower_sound` and
+`checkProbabilityUpper_sound` conclude bounds on that model's interventional
+event value. The `*_sound_forSourceLaw` variants reuse the same checked
+certificate for every independent law on the unchanged finite structural
+template. The polynomial and basic constraints are invariant under that
+replacement; source probabilities are parameters, not frozen coefficients.
+
+The current compiled-bound API concerns explicit finite source presentations
+and fixed structural templates. Automatically assembled observational-law
+constraints remain separate assembly work. Nor does source-atom compression
+alone prove that one fixed choice of hidden endogenous alphabets and structural
+mechanisms covers every model on a graph. No complete optimizer, general
+certificate search, real-to-rational feasibility transfer, or universal
+arbitrary-graph fixed-law decision procedure is asserted. Conditional bounds
+additionally require justified cross-multiplication at a positive denominator.
 
 ## Construction, execution, and proof verification
 
