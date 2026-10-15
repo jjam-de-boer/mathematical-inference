@@ -22,7 +22,7 @@ law or source independence theorem is asserted by these weight-level tests.
 
 def moments : Matrix 1 3 := fun _ column => (column.val : Int)
 def weights : Weights 3 := fun _ => 1
-def reduction := step moments weights (fun _ => by decide) (by decide)
+def reduction := step moments weights (fun _ => by change 0 < (1 : Nat); decide) (by decide)
 
 theorem original_support : positiveCount weights = 3 := by decide +kernel
 theorem strict_support_drop : positiveCount reduction.newWeights < positiveCount weights := reduction.positive_count_decreases
