@@ -148,11 +148,12 @@ def liftKernelVector {rows columns : Nat} (matrix : Matrix (rows + 1) (columns +
   · apply (kernel_eliminateMatrix_iff matrix (Fin.last rows) (Fin.last columns) pivotNonzero lifted).mp
     intro row
     refine Fin.lastCases ?_ (fun index => ?_) row
-    · simp only [eliminateMatrix, if_pos rfl]
+    · simp only [eliminateMatrix]
       change dot _ (extendVector _ _) = 0
       rw [dot_extendVector, dot_scale_right]
       change pivot * pivotDot + pivot * (-pivotDot) = 0
-      rw [Int.mul_neg, Int.add_neg_cancel]
+      rw [Int.mul_neg]
+      omega
     · have away : index.castSucc ≠ Fin.last rows := by
         intro same
         have impossible : index.val = rows := congrArg Fin.val same
