@@ -154,6 +154,7 @@ jobs:
             Thesis.Probability.IntegerLinearAlgebra
             Thesis.Probability.IntegerNullspace
             Thesis.Probability.FiniteRatioMinimum
+            Thesis.Probability.AffineSupportReduction
             Thesis.Causality.AlmostSureIntervention
             Thesis.Causality.ConsistencyBounds
             Thesis.Causality.BinaryBowModel
@@ -230,6 +231,7 @@ jobs:
             Thesis.Examples.IntegerLinearAlgebra
             Thesis.Examples.IntegerNullspace
             Thesis.Examples.FiniteRatioMinimum
+            Thesis.Examples.AffineSupportReduction
             Thesis.Examples.FourLabelTransportationAggregation
             Thesis.Examples.FiniteProductSplicing
             Thesis.Examples.HiddenPathSearch

@@ -2,6 +2,7 @@ import Thesis.Examples.RationalValues
 import Thesis.Examples.IntegerLinearAlgebra
 import Thesis.Examples.IntegerNullspace
 import Thesis.Examples.FiniteRatioMinimum
+import Thesis.Examples.AffineSupportReduction
 import Lean.Elab.Command
 import Lean.Util.CollectAxioms
 
