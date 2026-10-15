@@ -57,17 +57,17 @@ theorem dot_succ {size : Nat} (left right : Vector (size + 1)) :
   simp only [dot, List.finRange_succ_last, List.map_append, List.map_map,
     List.map_cons, List.map_nil, sum_append, sum_singleton, Function.comp_def]
 
-def extendVector {size : Nat} (prefix : Vector size) (last : Int) : Vector (size + 1) :=
-  Fin.lastCases last prefix
+def extendVector {size : Nat} (initial : Vector size) (last : Int) : Vector (size + 1) :=
+  Fin.lastCases last initial
 
-theorem extendVector_castSucc {size : Nat} (prefix : Vector size) (last : Int) (index : Fin size) :
-    extendVector prefix last index.castSucc = prefix index := Fin.lastCases_castSucc index
+theorem extendVector_castSucc {size : Nat} (initial : Vector size) (last : Int) (index : Fin size) :
+    extendVector initial last index.castSucc = initial index := Fin.lastCases_castSucc index
 
-theorem extendVector_last {size : Nat} (prefix : Vector size) (last : Int) :
-    extendVector prefix last (Fin.last size) = last := Fin.lastCases_last
+theorem extendVector_last {size : Nat} (initial : Vector size) (last : Int) :
+    extendVector initial last (Fin.last size) = last := Fin.lastCases_last
 
-theorem dot_extendVector {size : Nat} (row : Vector (size + 1)) (prefix : Vector size) (last : Int) :
-    dot row (extendVector prefix last) = dot (fun index => row index.castSucc) prefix + row (Fin.last size) * last := by
+theorem dot_extendVector {size : Nat} (row : Vector (size + 1)) (initial : Vector size) (last : Int) :
+    dot row (extendVector initial last) = dot (fun index => row index.castSucc) initial + row (Fin.last size) * last := by
   rw [dot_succ]
   simp only [extendVector_castSucc, extendVector_last]
 
@@ -76,12 +76,12 @@ def swapIndex {size : Nat} (first second index : Fin size) : Fin size :=
   if index = first then second else if index = second then first else index
 
 theorem swapIndex_first {size : Nat} (first second : Fin size) : swapIndex first second first = second := by
-  simp only [swapIndex, if_pos rfl]
+  simp [swapIndex]
 
 theorem swapIndex_second {size : Nat} (first second : Fin size) : swapIndex first second second = first := by
   by_cases same : second = first
   · subst second; exact swapIndex_first _ _
-  · simp only [swapIndex, if_neg same, if_pos rfl]
+  · simp [swapIndex, same]
 
 theorem swapIndex_involutive {size : Nat} (first second index : Fin size) :
     swapIndex first second (swapIndex first second index) = index := by
@@ -129,7 +129,7 @@ def unswapKernelVector {rows columns : Nat} (matrix : Matrix rows columns) (firs
 def reducedMatrix {rows columns : Nat} (matrix : Matrix (rows + 1) (columns + 1)) : Matrix rows columns :=
   fun row column => eliminateRow (matrix (Fin.last rows)) (matrix row.castSucc) (Fin.last columns) column.castSucc
 
-/-- Recover the omitted pivot equation without division.  The prefix is
+/-- Recover the omitted pivot equation without division.  The initial is
 scaled by the nonzero pivot; the last coefficient cancels its original dot
 product.  Nonzeroness survives at the recursive witness coordinate. -/
 def liftKernelVector {rows columns : Nat} (matrix : Matrix (rows + 1) (columns + 1))
@@ -170,7 +170,7 @@ def findNonzero {columns : Nat} (row : Vector columns) : Option (Fin columns) :=
 
 theorem findNonzero_some {columns : Nat} (row : Vector columns) (column : Fin columns)
     (found : findNonzero row = some column) : row column ≠ 0 :=
-  of_decide_eq_true (List.find?_some found)
+  of_decide_eq_true (List.find?_some (p := fun candidate => decide (row candidate ≠ 0)) found)
 
 theorem findNonzero_none {columns : Nat} (row : Vector columns)
     (missing : findNonzero row = none) : forall column, row column = 0 := by
@@ -186,7 +186,7 @@ bound on coefficient sizes, denominators, or possible hidden-state counts. -/
 def nonzeroKernel (rows columns : Nat) (matrix : Matrix rows columns) (larger : rows < columns) : KernelVector matrix := by
   induction rows generalizing columns with
   | zero =>
-      exact ⟨fun _ => 1, ⟨0, larger⟩, by decide +kernel, fun row => Fin.elim0 row⟩
+      exact ⟨fun _ => 1, ⟨0, larger⟩, by change (1 : Int) ≠ 0; decide +kernel, fun row => Fin.elim0 row⟩
   | succ rows inductionHypothesis =>
       cases columns with
       | zero => exact False.elim (Nat.not_lt_zero _ larger)
