@@ -37,6 +37,8 @@ import Thesis.Probability.Distros.Reweight
 import Thesis.Probability.Distros.MulticolourPolya
 import Thesis.Probability.Distros.KernelInvariance
 import Thesis.Probability.Distros.SignedCovariance
+import Thesis.Probability.Distros.ReinforcedUrn
+import Thesis.Probability.Distros.RationalPolya
 
 /-!
 Named finite distros.
@@ -165,4 +167,12 @@ Reading order:
     covariance, law/map transport, independence and the dependent-sum
     variance law. Integer observables have nonnegative rational variance,
     with a proof of agreement with the existing witnessed Nat variance.
+35. `StepRising` and `ReinforcedUrn` allow any natural reinforcement increment,
+    with exact sequential categorical semantics, count law and closed
+    normalizer. Zero increment recovers multinomial and one recovers Pólya.
+    Scaling initial counts and increment together preserves every event law.
+36. `RationalPolya` clears a common denominator to implement arbitrary
+    nonnegative rational Pólya parameters. Its count law, parameter
+    representation invariance and agreement with the natural-parameter
+    constructors are proved, including zero individual parameters.
 -/

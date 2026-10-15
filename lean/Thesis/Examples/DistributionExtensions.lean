@@ -206,4 +206,33 @@ example : (((bernoulliDistro 1 2 (by decide)).product (bernoulliDistro 3 1 (by d
     (SignedMoment.ofInt 0) :=
   Distro.signedCovariance_independent _ _ (fun bit : Bool => if bit then 2 else -3) (fun bit : Bool => if bit then -4 else 1)
 
+/-- The reinforcement increment changes the actual path and occupancy law. -/
+example : QProb.Equiv ((reinforcedUrnDistro 3 [1, 2] 2 (by decide)).pmf [0, 0, 1])
+    ⟨2, 35, by decide⟩ := by decide
+example : QProb.Equiv ((reinforcedCountDistro 3 [1, 2] 2 (by decide)).pmf [2, 1])
+    ⟨6, 35, by decide⟩ := by decide
+example : (reinforcedCountDistro 3 [1, 2] 0 (by decide)).SameLaw
+    (multinomialDistro 3 [1, 2] (by decide)) := reinforcedCount_zero 3 [1, 2] (by decide)
+example : QProb.Equiv ((reinforcedCountDistro 3 [0, 2, 0] 4 (by decide)).pmf [0, 3, 0])
+    QProb.one := by decide
+/-- Clearing rational parameters also scales reinforcement, retaining unit
+reinforcement in parameter units rather than rounding the initial ratios. -/
+example : QProb.Equiv
+    ((rationalPolyaDistro 2 [⟨1, 2, by decide⟩, ⟨3, 2, by decide⟩] (by decide)).pmf [0, 0])
+    ⟨1, 8, by decide⟩ := by decide
+example : QProb.Equiv
+    ((rationalDirichletMultinomialDistro 2 [⟨1, 2, by decide⟩, ⟨3, 2, by decide⟩] (by decide)).pmf [1, 1])
+    ⟨1, 4, by decide⟩ := by decide
+example : (rationalPolyaDistro 2 [⟨1, 2, by decide⟩, ⟨3, 2, by decide⟩] (by decide)).SameLaw
+    (rationalPolyaDistro 2 [⟨2, 4, by decide⟩, ⟨6, 4, by decide⟩] (by decide)) := by
+  apply rationalPolya_sameLaw_parameters
+  constructor
+  · rfl
+  · intro index
+    cases index with
+    | zero => decide
+    | succ index => cases index with
+        | zero => decide
+        | succ index => simp only [List.getD_cons_succ, List.getD_nil]; exact QProb.equiv_refl _
+
 end Thesis.Examples.DistributionExtensions

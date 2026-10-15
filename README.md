@@ -103,6 +103,14 @@ multinomial coefficients times rising-factorial factors and normalizer
 correspondence, support and PMF are proved, with zero individual parameters
 permitted. Two colours recover the positive-total beta-binomial numeric law.
 Natural likelihood reweighting transports through law equivalence and maps.
+A general urn can add any natural number of balls after each draw. Its
+rising-factorial normalizer and count law recover multinomial at increment
+zero and the existing Pólya / Dirichlet-multinomial at increment one.
+Scaling initial counts and reinforcement together preserves the law.
+Arbitrary nonnegative rational Pólya parameters are implemented by clearing
+one common denominator and adding that denominator after each draw. The
+ordered and occupancy laws are invariant under equivalent rational
+presentations and recover the original natural-parameter constructors.
 
 Variance uses the existing witnessed `QProb.sub` operation, and boundary
 cases are covered by theorem statements and kernel-checked
