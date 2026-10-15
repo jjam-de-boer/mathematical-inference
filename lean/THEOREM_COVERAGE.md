@@ -200,6 +200,12 @@ replacement law itself, not just the model used to build the polynomial.
 `satisfies_observationalEquations_iff` proves that satisfying this catalogue is
 exactly equality of every observed event probability. Observed zeros are allowed.
 
+Acceptance is a universal implication for fitted candidates, not a witness
+that the data are compatible or that the proposed endpoint is attained.
+An infeasible catalogue has no fitted models. General sharpness and point
+identification therefore need separate feasibility and attainment theorems;
+the IV results above establish those extra obligations for their own class.
+
 The current compiled-bound API concerns explicit finite source presentations
 and fixed structural templates. Source-atom compression alone does not prove
 that one fixed choice of hidden endogenous alphabets and structural mechanisms

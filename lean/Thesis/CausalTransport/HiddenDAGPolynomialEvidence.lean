@@ -23,6 +23,12 @@ structural template that fits the catalogue. It does not silently reuse the
 original model's fitted data for a new, incompatible law. Additional catalogue
 queries under hard interventions are allowed, with the corresponding explicit
 data-fit premise. No constraint is trusted merely because a producer lists it.
+
+Acceptance proves a universal implication for fitted laws. It does not
+construct such a law, prove the data compatible, or assert that the bound is
+attained. An infeasible catalogue has no fitted candidates; compatibility and
+sharpness require additional witnesses, rather than conclusions from this
+checker alone.
 -/
 
 structure NativeProbabilityEquation (S : ObservedSignature) where

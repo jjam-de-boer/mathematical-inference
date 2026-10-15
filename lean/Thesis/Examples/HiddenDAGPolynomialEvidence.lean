@@ -40,6 +40,12 @@ theorem original_fits : model.SatisfiesProbabilityEquations equations := by deci
 theorem lower_checked : model.checkExpressionLower equations target half.toSignedRatio lowerCertificate = true := by decide +kernel
 theorem upper_checked : model.checkExpressionUpper equations target half.toSignedRatio upperCertificate = true := by decide +kernel
 
+/-- Reusing the fitted-half certificate cannot certify a different bound:
+the target expression and reference constant are part of the checked identity,
+not ignored metadata attached to an otherwise accepted data constraint. -/
+theorem incorrect_bound_rejected : model.checkExpressionLower equations target ⟨3, 4, by decide⟩ lowerCertificate = false := by
+  decide +kernel
+
 theorem original_bounds : SignedRatio.LE half.toSignedRatio (model.expressionValue target) ∧
     SignedRatio.LE (model.expressionValue target) half.toSignedRatio :=
   ⟨model.checkExpressionLower_sound equations target _ lowerCertificate lower_checked original_fits,
