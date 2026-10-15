@@ -7,6 +7,8 @@ namespace FiniteSourceCompression
 
 open FiniteProbRecord
 
+variable {count : Nat}
+
 /-!
 # Replace one independent source while preserving requested probabilities
 
