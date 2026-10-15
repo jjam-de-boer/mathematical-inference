@@ -37,6 +37,7 @@ import Thesis.Examples.BinaryInstrumentalNullBounds
 import Thesis.Examples.FiniteProductSplicing
 import Thesis.Examples.FourLabelTransportation
 import Thesis.Examples.FourLabelTransportationExtrema
+import Thesis.Examples.FourLabelTransportationBatched
 import Thesis.Examples.FourLabelTransportationAggregation
 import Thesis.Examples.HiddenPathSearch
 import Thesis.Examples.HiddenDAGCollapse

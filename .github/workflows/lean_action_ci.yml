@@ -73,6 +73,8 @@ jobs:
             Thesis.Probability.FiniteProductAllocation
             Thesis.Probability.FiniteProductSplicing
             Thesis.Probability.FourLabelTransportation
+            Thesis.Probability.FourLabelTransportationReservation
+            Thesis.Probability.FourLabelTransportationBatched
             Thesis.Probability.FourLabelTransportationExtrema
             Thesis.Probability.FourLabelTransportationJointExtrema
             Thesis.Probability.FourLabelTransportationRecord
@@ -203,6 +205,7 @@ jobs:
             Thesis.Examples.BinaryInstrumentalNullBounds
             Thesis.Examples.FourLabelTransportation
             Thesis.Examples.FourLabelTransportationExtrema
+            Thesis.Examples.FourLabelTransportationBatched
             Thesis.Examples.FourLabelTransportationAggregation
             Thesis.Examples.FiniteProductSplicing
             Thesis.Examples.HiddenPathSearch

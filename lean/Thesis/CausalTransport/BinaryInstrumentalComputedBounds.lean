@@ -26,8 +26,8 @@ numeric expressions are not advertised as sharp bounds for a nonempty class.
 
 Calculating bounds uses just observed masses and the four finite capacity
 checks.  Constructing endpoint witnesses is separate: the existing exact
-transportation constructor is terminating but can take time proportional to
-its integer total.  Theorems do not evaluate a large native noise product or
+transportation constructor now fills each selected cell by a whole maximal
+batch rather than one unit of its integer total.  Theorems do not evaluate a large native noise product or
 enumerate denominators, and this API does not claim efficient execution of
 those expanded model witnesses at large observed totals.
 -/

@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.BinaryInstrumentalObservedMargins
 import Thesis.Causality.BinaryInstrumentalRiskEvents
+import Thesis.Probability.FourLabelTransportationBatched
 
 namespace Thesis
 namespace Causality
@@ -166,7 +167,7 @@ theorem nativeModelExists_iff_observed_capacities (projection : FiniteLatentProj
   · intro capacity
     let margins : Margins (observedTotal law) (observedRows law) (observedColumns law) :=
       ⟨observedRows_total law, observedColumns_total law, capacity⟩
-    let table := transport (observedTotal law) (observedRows law) (observedColumns law) margins
+    let table := transportBatched (observedTotal law) (observedRows law) (observedColumns law) margins
     exact ⟨transportationNativeModel projection graphMatch law (observedTotal law)
         (observedTotal_positive law falsePositive truePositive) (observedRows law) (observedColumns law) margins table (fun _ => false),
       transportationNativeModel_hasObservedLaw projection graphMatch law (observedTotal law)
