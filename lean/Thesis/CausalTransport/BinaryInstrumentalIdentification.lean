@@ -119,14 +119,14 @@ theorem riskIdentificationCheck_iff (projection : FiniteLatentProjection signatu
     (graphMatch : HasIVProjection projection) (law : FiniteProbRecord signature.Assignment)
     (checked : (computedBounds law).compatible = true) (action : Bool) :
     riskIdentificationCheck law action = true ↔ RiskIdentifiedAt projection law action := by
-  exact (decide_eq_true_iff _).trans
+  simpa only [riskIdentificationCheck, decide_eq_true_eq] using
     (riskIdentifiedAt_iff_bounds_equiv projection graphMatch law checked action).symm
 
 theorem effectIdentificationCheck_iff (projection : FiniteLatentProjection signature)
     (graphMatch : HasIVProjection projection) (law : FiniteProbRecord signature.Assignment)
     (checked : (computedBounds law).compatible = true) :
     effectIdentificationCheck law = true ↔ EffectIdentifiedAt projection law := by
-  exact (decide_eq_true_iff _).trans
+  simpa only [effectIdentificationCheck, decide_eq_true_eq] using
     (effectIdentifiedAt_iff_bounds_equiv projection graphMatch law checked).symm
 
 end BinaryInstrumental
