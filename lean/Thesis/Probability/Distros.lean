@@ -40,6 +40,7 @@ import Thesis.Probability.Distros.SignedCovariance
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.JointFactorialMoments
+import Thesis.Probability.Distros.ReinforcedAggregation
 
 /-!
 Named finite distros.
@@ -181,4 +182,8 @@ Reading order:
     proves every mixed falling-factorial moment for multinomial,
     Dirichlet-multinomial and arbitrary reinforcement, with zero colours,
     orders above finite support and rational parameters included.
+38. `CategoricalAggregation` and `ReinforcedAggregation` prove category
+    merging for actual reinforced paths and their count laws at every
+    increment. Dirichlet-multinomial coordinates have beta-binomial
+    marginals and the corresponding closed means and variances.
 -/

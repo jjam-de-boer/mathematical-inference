@@ -116,6 +116,10 @@ Dirichlet-multinomial and arbitrary reinforcement. The formula is the total
 falling trial factor times the product of coordinate rising factors, divided
 by the rising total; at zero reinforcement these become weight powers.
 The identities include zero colours and orders above the trial count.
+Merging any categories in a reinforced path or count law sums their initial
+weights and retains their reinforcement increment. Every Dirichlet-multinomial
+coordinate has its beta-binomial marginal, closed mean and variance, with
+zero-weight and single-colour endpoints included.
 
 Variance uses the existing witnessed `QProb.sub` operation, and boundary
 cases are covered by theorem statements and kernel-checked

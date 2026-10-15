@@ -251,4 +251,19 @@ example : QProb.Equiv (jointFactorialMoment
     (rationalDirichletMultinomialDistro 3 [⟨1, 2, by decide⟩, ⟨3, 2, by decide⟩] (by decide)) [1, 1])
     ⟨3, 4, by decide⟩ := by decide
 
+/-- Coarsening retains reinforcement, empty groups and deterministic colours. -/
+example : QProb.Equiv
+    (((dirichletMultinomialDistro 3 [1, 2, 3] (by decide)).map (aggregateCounts 3 [0, 1, 0])).pmf [2, 1, 0])
+    ⟨5, 14, by decide⟩ := by decide
+example : (dirichletMultinomialCoordinate 4 [2, 0, 3] (by decide) 2).SameLaw
+    (betaBinomialNatDistroOfTotal 4 3 2 (by decide)) :=
+  dirichletMultinomial_coordinate_betaBinomial 4 [2, 0, 3] (by decide) 2 (by decide)
+example : QProb.Equiv (mean (dirichletMultinomialCoordinate 4 [2, 0, 3] (by decide) 2))
+    ⟨12, 5, by decide⟩ := by decide
+example : QProb.Equiv (variance (dirichletMultinomialCoordinate 4 [2, 0, 3] (by decide) 2))
+    ⟨36, 25, by decide⟩ := by decide
+example : (dirichletMultinomialCoordinate 4 [0, 2, 0] (by decide) 1).SameLaw
+    (betaBinomialNatDistroOfTotal 4 2 0 (by decide)) :=
+  dirichletMultinomial_coordinate_betaBinomial 4 [0, 2, 0] (by decide) 1 (by decide)
+
 end Thesis.Examples.DistributionExtensions
