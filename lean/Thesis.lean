@@ -43,6 +43,7 @@ import Thesis.Examples.RationalValues
 import Thesis.Examples.IntegerLinearAlgebra
 import Thesis.Examples.IntegerNullspace
 import Thesis.Examples.FiniteRatioMinimum
+import Thesis.Examples.AffineSupportReduction
 import Thesis.Examples.BinaryInstrumentalIdentification
 import Thesis.Examples.BinaryInstrumentalAttainable
 import Thesis.Examples.ObservationalFormulaDiagnostics
