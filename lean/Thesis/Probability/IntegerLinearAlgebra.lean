@@ -54,7 +54,7 @@ theorem sum_map_add (values : List α) (left right : α → Int) :
       change (left head + right head) + sum (tail.map (fun value => left value + right value)) =
         (left head + sum (tail.map left)) + (right head + sum (tail.map right))
       rw [inductionHypothesis]
-      simp only [Int.add_assoc, Int.add_comm, Int.add_left_comm]
+      simp only [Int.add_assoc, Int.add_left_comm]
 
 theorem sum_map_sub (values : List α) (left right : α → Int) :
     sum (values.map (fun value => left value - right value)) =
@@ -65,7 +65,7 @@ theorem sum_map_sub (values : List α) (left right : α → Int) :
       change (left head - right head) + sum (tail.map (fun value => left value - right value)) =
         (left head + sum (tail.map left)) - (right head + sum (tail.map right))
       rw [inductionHypothesis]
-      simp only [Int.sub_eq_add_neg, Int.neg_add, Int.add_assoc, Int.add_comm, Int.add_left_comm]
+      simp only [Int.sub_eq_add_neg, Int.neg_add, Int.add_assoc, Int.add_left_comm]
 
 theorem sum_map_mul_left (values : List α) (factor : Int) (entry : α → Int) :
     sum (values.map (fun value => factor * entry value)) = factor * sum (values.map entry) := by

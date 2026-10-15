@@ -63,7 +63,7 @@ theorem equiv_zero_iff (value : SignedRatio) : Equiv value zero ↔ value.num = 
 
 theorem add_assoc (first second third : SignedRatio) :
     Equiv (add (add first second) third) (add first (add second third)) := by
-  simp only [Equiv, add, Int.natCast_mul, Int.add_mul, Int.mul_add]
+  simp only [Equiv, add, Int.natCast_mul, Int.add_mul]
   ac_rfl
 
 theorem add_comm (left right : SignedRatio) : Equiv (add left right) (add right left) := by
@@ -71,7 +71,7 @@ theorem add_comm (left right : SignedRatio) : Equiv (add left right) (add right 
   ac_rfl
 
 theorem add_zero (value : SignedRatio) : Equiv (add value zero) value := by
-  simp only [Equiv, add, zero, Int.natCast_mul, Int.natCast_one, Int.mul_one, Int.zero_mul, Int.add_zero, Nat.mul_one]
+  simp only [Equiv, add, zero, Int.natCast_one, Int.mul_one, Int.zero_mul, Int.add_zero, Nat.mul_one]
 
 theorem mul_add (factor left right : SignedRatio) :
     Equiv (mul factor (add left right)) (add (mul factor left) (mul factor right)) := by
