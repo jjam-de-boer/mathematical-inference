@@ -13,6 +13,7 @@ import Thesis.Probability.RationalMixture
 import Thesis.Probability.FiniteProductReindex
 import Thesis.Probability.FiniteProductSplicing
 import Thesis.Probability.FiniteProductSourceCompression
+import Thesis.Probability.FiniteProbabilityPolynomialCertificates
 import Thesis.Probability.FiniteRecordSlicing
 import Thesis.Probability.FiniteRecordPerturbation
 import Thesis.Probability.FiniteLinearResponse
@@ -62,6 +63,12 @@ records while preserving a supplied finite family of mixed-event probabilities
 and full independence.  Its rational-moment bridge clears denominators
 explicitly; no normalized-rational representative or external source
 replacement axiom is used.  Native structural adapters live in causal transport.
+
+`FiniteProbabilityPolynomialCertificates` compiles actual independent-source
+event probabilities, constructs their finite variable encoding and source
+constraints, and proves soundness of supplied exact rational bound certificates.
+The underlying polynomial identity checker is proved sound for all signed
+rational assignments. No optimizer or complete certificate search is assumed.
 
 Reading order:
 

@@ -152,6 +152,24 @@ theorem checkExpressionNonnegative_sound_forSourceLaw (model : FiniteHiddenDAGSC
     exact accepted
   · exact fits
 
+/-- Lower-bound convenience form of the uniform fitted-source theorem. A
+signed effect is allowed, and the reference bound need not be nonnegative. -/
+theorem checkExpressionLower_sound_forSourceLaw (model : FiniteHiddenDAGSCM S projection)
+    (equations : Fin equationCount → NativeProbabilityEquation S) (expression : NativePolynomialExpression S) (bound : SignedRatio)
+    (certificate : model.ExpressionBoundCertificate equationCount) (accepted : model.checkExpressionLower equations expression bound certificate = true)
+    (law : FiniteProduct.IndependentLaw model.Noise) (fits : (model.withSourceLaw law).SatisfiesProbabilityEquations equations) :
+    SignedRatio.LE bound ((model.withSourceLaw law).expressionValue expression) :=
+  model.checkExpressionNonnegative_sound_forSourceLaw equations (expression.sub (.constant bound)) certificate accepted law fits
+
+/-- Upper-bound convenience form, with the same mandatory replacement-model
+data-fit premise. The original model need not fit the supplied reference. -/
+theorem checkExpressionUpper_sound_forSourceLaw (model : FiniteHiddenDAGSCM S projection)
+    (equations : Fin equationCount → NativeProbabilityEquation S) (expression : NativePolynomialExpression S) (bound : SignedRatio)
+    (certificate : model.ExpressionBoundCertificate equationCount) (accepted : model.checkExpressionUpper equations expression bound certificate = true)
+    (law : FiniteProduct.IndependentLaw model.Noise) (fits : (model.withSourceLaw law).SatisfiesProbabilityEquations equations) :
+    SignedRatio.LE ((model.withSourceLaw law).expressionValue expression) bound :=
+  model.checkExpressionNonnegative_sound_forSourceLaw equations ((.constant bound : NativePolynomialExpression S).sub expression) certificate accepted law fits
+
 /-- The full observed table is assembled automatically, not left as a
 producer's claim that its selected equations happen to cover every cell. -/
 def observationalEquations (S : ObservedSignature) (reference : FiniteProbRecord S.Assignment)

@@ -51,10 +51,8 @@ theorem every_fitted_source_law_bounds (law : FiniteProduct.IndependentLaw model
     (fits : (model.withSourceLaw law).SatisfiesProbabilityEquations equations) :
     SignedRatio.LE half.toSignedRatio ((model.withSourceLaw law).expressionValue target) ∧
       SignedRatio.LE ((model.withSourceLaw law).expressionValue target) half.toSignedRatio :=
-  ⟨model.checkExpressionNonnegative_sound_forSourceLaw equations (target.sub (.constant half.toSignedRatio))
-      lowerCertificate lower_checked law fits,
-    model.checkExpressionNonnegative_sound_forSourceLaw equations ((.constant half.toSignedRatio : NativePolynomialExpression signature).sub target)
-      upperCertificate upper_checked law fits⟩
+  ⟨model.checkExpressionLower_sound_forSourceLaw equations target half.toSignedRatio lowerCertificate lower_checked law fits,
+    model.checkExpressionUpper_sound_forSourceLaw equations target half.toSignedRatio upperCertificate upper_checked law fits⟩
 
 /-- Negative expression values are auxiliary signed rationals, not negative
 source weights. This certificate exercises multiplication by a signed constant. -/
