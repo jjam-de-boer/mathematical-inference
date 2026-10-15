@@ -10,6 +10,7 @@ import Thesis.Examples.FiniteProductReplacement
 import Thesis.Examples.FiniteProductSourceCompression
 import Thesis.Examples.RationalMonomial
 import Thesis.Examples.RationalPolynomialIdentity
+import Thesis.Examples.PolynomialBoundCertificate
 import Lean.Elab.Command
 import Lean.Util.CollectAxioms
 

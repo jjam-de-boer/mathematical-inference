@@ -95,7 +95,7 @@ decreasing_by
 
 theorem zeroCheck_sound (polynomial : Polynomial variables) (accepted : zeroCheck polynomial = true)
     (values : Fin variables → SignedRatio) : SignedRatio.Equiv (evaluate polynomial values) SignedRatio.zero := by
-  cases polynomial with
+  cases shape : polynomial with
   | nil => exact SignedRatio.equiv_refl SignedRatio.zero
   | cons term rest =>
       rw [zeroCheck] at accepted
@@ -110,6 +110,8 @@ theorem zeroCheck_sound (polynomial : Polynomial variables) (accepted : zeroChec
 termination_by polynomial.length
 decreasing_by
   have bounded := withoutMonomial_length_le term.powers rest
+  have originalLength := congrArg List.length shape
+  simp only [List.length_cons] at originalLength
   omega
 
 def equalityCheck (left right : Polynomial variables) : Bool := zeroCheck (sub left right)

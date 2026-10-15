@@ -123,6 +123,17 @@ theorem listSum_map_neg (values : List SignedRatio) : Equiv (listSum (values.map
   | cons value rest inductionHypothesis =>
       exact equiv_trans (add_congr (equiv_refl _) inductionHypothesis) (equiv_symm (neg_add value (listSum rest)))
 
+def listProduct : List SignedRatio → SignedRatio
+  | [] => one
+  | value :: rest => mul value (listProduct rest)
+
+theorem listProduct_map_congr (values : List α) (left right : α → SignedRatio)
+    (same : forall value, Equiv (left value) (right value)) :
+    Equiv (listProduct (values.map left)) (listProduct (values.map right)) := by
+  induction values with
+  | nil => exact equiv_refl one
+  | cons value rest inductionHypothesis => exact mul_congr (same value) inductionHypothesis
+
 end SignedRatio
 end Probability
 end Thesis
