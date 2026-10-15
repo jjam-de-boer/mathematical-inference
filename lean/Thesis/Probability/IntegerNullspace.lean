@@ -62,13 +62,11 @@ def extendVector {size : Nat} (initial : Vector size) (last : Int) : Vector (siz
 
 theorem extendVector_castSucc {size : Nat} (initial : Vector size) (last : Int) (index : Fin size) :
     extendVector initial last index.castSucc = initial index := by
-  unfold extendVector
-  rw [dif_pos index.isLt]
+  simp only [extendVector, Fin.val_castSucc, dif_pos index.isLt]
 
 theorem extendVector_last {size : Nat} (initial : Vector size) (last : Int) :
     extendVector initial last (Fin.last size) = last := by
-  unfold extendVector
-  rw [dif_neg (Nat.lt_irrefl size)]
+  simp only [extendVector, Fin.val_last, dif_neg (Nat.lt_irrefl size)]
 
 theorem dot_extendVector {size : Nat} (row : Vector (size + 1)) (initial : Vector size) (last : Int) :
     dot row (extendVector initial last) = dot (fun index => row index.castSucc) initial + row (Fin.last size) * last := by
