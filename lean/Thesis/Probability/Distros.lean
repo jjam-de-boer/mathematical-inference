@@ -33,6 +33,8 @@ import Thesis.Probability.Distros.Degenerate
 import Thesis.Probability.Distros.NegativeBinomialMoments
 import Thesis.Probability.Distros.CapConsistency
 import Thesis.Probability.Distros.HypergeometricUrn
+import Thesis.Probability.Distros.Reweight
+import Thesis.Probability.Distros.MulticolourPolya
 
 /-!
 Named finite distros.
@@ -150,4 +152,9 @@ Reading order:
     with the centered product integral and the existing diagonal variance.
     `MultinomialCovariance` proves the distinct-coordinate cross moment and
     negative covariance, including zero trials and zero-weight colours.
+32. `Reweight` transports positive natural likelihood reweighting through
+    equality of laws and maps. `MulticolourPolya` constructs sequential
+    categorical reinforcement and the Dirichlet-multinomial count law,
+    proves their event correspondence and rising-total normalization, and
+    recovers beta-binomial for two colours, including zero-colour endpoints.
 -/

@@ -70,16 +70,16 @@ endpoints. Existing strict constructors agree with these variants.
 Law equivalence transports event agreement through maps, products, positive
 conditioning, expectations, moments, variance and PGFs, without requiring
 finite enumerations of outcome types. Chebyshev is connected to variance
-and holds at every positive rational radius. Finite generating functions determine numeric and bounded count-vector laws
-constructively. Independent draws from the categorical constructor produce
+and holds at every positive rational radius. Finite generating functions
+determine numeric and bounded count-vector laws constructively. Independent draws from the categorical constructor produce
 the multinomial occupancy law on every event, including zero-weight colours.
 Arbitrary category partitions produce multinomial laws with summed weights;
 coordinate counts have binomial marginals, closed means and variances.
 Distinct-coordinate cross moments and negative covariances are proved with
 integer numerators over positive denominators. The generic covariance agrees
 with the centered product integral and with witnessed variance on its diagonal.
-Falling-factorial moments of
-binomial, hypergeometric and beta-binomial laws are proved at every order,
+Falling-factorial moments of binomial, hypergeometric and beta-binomial laws
+are proved at every order,
 including orders above their finite support. General negative-binomial
 factorial moments reduce to shifted finite generating sums; their means,
 second moments and witnessed variances include the cap boundary terms and
@@ -91,9 +91,18 @@ without replacement: each Bernoulli colour draw removes one ball of that
 colour. Its count law agrees on every event, including empty and single-colour
 urns, and the mean and finite-population variance transport to that process.
 
+Multicolour Pólya paths draw from the current categorical weights and add one
+to the chosen colour. Their occupancy law is Dirichlet-multinomial, with
+multinomial coefficients times rising-factorial factors and normalizer
+`(sum α)↑trials`. The categorical first-step semantics, every-event count
+correspondence, support and PMF are proved, with zero individual parameters
+permitted. Two colours recover the positive-total beta-binomial numeric law.
+Natural likelihood reweighting transports through law equivalence and maps.
+
 Variance uses the existing witnessed `QProb.sub` operation, and boundary
 cases are covered by theorem statements and kernel-checked
-[`DistributionLaws`](lean/Thesis/Examples/DistributionLaws.lean) regressions.
+[`DistributionLaws`](lean/Thesis/Examples/DistributionLaws.lean) and
+[`DistributionExtensions`](lean/Thesis/Examples/DistributionExtensions.lean) regressions.
 
 ### Verification
 

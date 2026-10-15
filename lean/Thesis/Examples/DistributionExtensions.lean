@@ -155,4 +155,26 @@ example : SignedMoment.Equiv
       (fun counts => counts.getD 0 0) (fun counts => counts.getD 1 0))
     ⟨0, 1, by decide⟩ := by decide
 
+/-- Multicolour reinforcement, its occupancy coefficient, zero colours and
+empty sampling are checked on the actual finite records. -/
+example : QProb.Equiv ((multicolourPolyaDistro 2 [1, 1, 0] (by decide)).pmf [0, 0])
+    ⟨1, 3, by decide⟩ := by decide
+example : QProb.Equiv ((multicolourPolyaDistro 3 [1, 2, 0] (by decide)).pmf [0, 1, 1])
+    ⟨1, 10, by decide⟩ := by decide
+example : QProb.Equiv ((multicolourPolyaDistro 3 [1, 2, 0] (by decide)).pmf [1, 0, 1])
+    ⟨1, 10, by decide⟩ := by decide
+example : QProb.Equiv ((dirichletMultinomialDistro 3 [1, 2, 0] (by decide)).pmf [1, 2, 0])
+    ⟨3, 10, by decide⟩ := by decide
+example : QProb.Equiv ((dirichletMultinomialDistro 3 [0, 2, 0] (by decide)).pmf [0, 3, 0])
+    QProb.one := by decide
+example : QProb.Equiv ((dirichletMultinomialDistro 3 [0, 2, 0] (by decide)).pmf [1, 2, 0])
+    QProb.zero := by decide
+example : QProb.Equiv ((dirichletMultinomialDistro 0 [1] (by decide)).pmf [0])
+    QProb.one := by decide
+example : QProb.Equiv ((dirichletMultinomialDistro 0 [1] (by decide)).pmf [])
+    QProb.zero := by decide
+example : (dirichletMultinomialCoordinate 3 [0, 2] (by decide) 0).SameLaw
+    (betaBinomialNatDistroOfTotal 3 0 2 (by decide)) :=
+  dirichletMultinomial_two_coordinate 3 0 2 (by decide)
+
 end Thesis.Examples.DistributionExtensions

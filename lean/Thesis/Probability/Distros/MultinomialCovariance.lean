@@ -3,18 +3,6 @@ import Thesis.Probability.Distros.SignedMoments
 namespace Thesis.Probability.Distros
 open Combinatorics
 
-theorem getD_modify_add (values : List Nat) (index query increment : Nat) (within : query < values.length) :
-    (values.modify index (fun old => old + increment)).getD query 0 =
-      values.getD query 0 + if index = query then increment else 0 := by
-  induction values generalizing index query with
-  | nil => simp only [List.length_nil] at within; omega
-  | cons value values ih =>
-      cases index <;> cases query
-      · simp only [List.modify_zero_cons, List.getD_cons_zero, if_true]
-      · simp only [List.modify_zero_cons, List.getD_cons_succ, Nat.zero_ne_add_one, if_false, Nat.add_zero]
-      · simp only [List.modify_succ_cons, List.getD_cons_zero, Nat.add_one_ne_zero, if_false, Nat.add_zero]
-      · simp only [List.modify_succ_cons, List.getD_cons_succ, Nat.add_left_inj]
-        exact ih _ _ (by simpa only [List.length_cons, Nat.succ_lt_succ_iff] using within)
 
 def colourIndicator (index colour : Nat) : Nat := if colour = index then 1 else 0
 
