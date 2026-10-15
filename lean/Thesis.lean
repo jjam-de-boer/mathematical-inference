@@ -38,6 +38,7 @@ import Thesis.Examples.FiniteProductSplicing
 import Thesis.Examples.FourLabelTransportation
 import Thesis.Examples.FourLabelTransportationExtrema
 import Thesis.Examples.FourLabelTransportationBatched
+import Thesis.Examples.BinaryInstrumentalIdentification
 import Thesis.Examples.FourLabelTransportationAggregation
 import Thesis.Examples.HiddenPathSearch
 import Thesis.Examples.HiddenDAGCollapse

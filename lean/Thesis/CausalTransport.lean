@@ -68,6 +68,7 @@ import Thesis.CausalTransport.BinaryInstrumentalSharpBounds
 import Thesis.CausalTransport.BinaryInstrumentalNullResponses
 import Thesis.CausalTransport.BinaryInstrumentalNullBounds
 import Thesis.CausalTransport.BinaryInstrumentalComputedBounds
+import Thesis.CausalTransport.BinaryInstrumentalIdentification
 import Thesis.CausalTransport.ObservationalFormulaSelection
 import Thesis.CausalTransport.BackdoorAdjustment
 import Thesis.CausalTransport.BackdoorAdjustmentSearch
