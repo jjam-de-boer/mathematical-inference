@@ -8,6 +8,7 @@ import Thesis.Examples.FiniteRationalCompression
 import Thesis.Examples.FiniteSourceCompression
 import Thesis.Examples.FiniteProductReplacement
 import Thesis.Examples.FiniteProductSourceCompression
+import Thesis.Examples.RationalMonomial
 import Lean.Elab.Command
 import Lean.Util.CollectAxioms
 

@@ -166,6 +166,8 @@ jobs:
             Thesis.Probability.FiniteProductExtensional
             Thesis.Probability.FiniteProductReplacement
             Thesis.Probability.FiniteProductSourceCompression
+            Thesis.Probability.SignedRatioAlgebra
+            Thesis.Probability.RationalMonomial
             Thesis.CausalTransport.HiddenDAGSourceCompression
             Thesis.CausalTransport.HiddenDAGObservationalCompression
             Thesis.Causality.AlmostSureIntervention
@@ -250,6 +252,7 @@ jobs:
             Thesis.Examples.FiniteSourceCompression
             Thesis.Examples.FiniteProductReplacement
             Thesis.Examples.FiniteProductSourceCompression
+            Thesis.Examples.RationalMonomial
             Thesis.Examples.HiddenDAGSourceCompression
             Thesis.Examples.FourLabelTransportationAggregation
             Thesis.Examples.FiniteProductSplicing

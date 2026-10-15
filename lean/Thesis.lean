@@ -50,6 +50,7 @@ import Thesis.Examples.FiniteSourceCompression
 import Thesis.Examples.FiniteProductReplacement
 import Thesis.Examples.FiniteProductSourceCompression
 import Thesis.Examples.HiddenDAGSourceCompression
+import Thesis.Examples.RationalMonomial
 import Thesis.Examples.BinaryInstrumentalIdentification
 import Thesis.Examples.BinaryInstrumentalAttainable
 import Thesis.Examples.ObservationalFormulaDiagnostics
