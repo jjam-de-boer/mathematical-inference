@@ -173,6 +173,7 @@ jobs:
             Thesis.Probability.SignedRatioOrder
             Thesis.Probability.RationalPolynomialFinite
             Thesis.Probability.PolynomialBoundCertificate
+            Thesis.Probability.FiniteProbabilityPolynomial
             Thesis.CausalTransport.HiddenDAGSourceCompression
             Thesis.CausalTransport.HiddenDAGObservationalCompression
             Thesis.Causality.AlmostSureIntervention
@@ -260,6 +261,7 @@ jobs:
             Thesis.Examples.RationalMonomial
             Thesis.Examples.RationalPolynomialIdentity
             Thesis.Examples.PolynomialBoundCertificate
+            Thesis.Examples.FiniteProbabilityPolynomial
             Thesis.Examples.HiddenDAGSourceCompression
             Thesis.Examples.FourLabelTransportationAggregation
             Thesis.Examples.FiniteProductSplicing

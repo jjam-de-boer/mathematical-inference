@@ -98,7 +98,7 @@ theorem zeroCheck_sound (polynomial : Polynomial variables) (accepted : zeroChec
   cases shape : polynomial with
   | nil => exact SignedRatio.equiv_refl SignedRatio.zero
   | cons term rest =>
-      rw [zeroCheck] at accepted
+      rw [zeroCheck.eq_def] at accepted
       have parts := Bool.and_eq_true_iff.mp accepted
       have vanished : SignedRatio.Equiv (coefficientAt term.powers (term :: rest)) SignedRatio.zero := of_decide_eq_true parts.1
       have remaining := zeroCheck_sound (withoutMonomial term.powers rest) parts.2 values

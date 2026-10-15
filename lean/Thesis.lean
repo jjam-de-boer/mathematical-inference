@@ -53,6 +53,7 @@ import Thesis.Examples.HiddenDAGSourceCompression
 import Thesis.Examples.RationalMonomial
 import Thesis.Examples.RationalPolynomialIdentity
 import Thesis.Examples.PolynomialBoundCertificate
+import Thesis.Examples.FiniteProbabilityPolynomial
 import Thesis.Examples.BinaryInstrumentalIdentification
 import Thesis.Examples.BinaryInstrumentalAttainable
 import Thesis.Examples.ObservationalFormulaDiagnostics
