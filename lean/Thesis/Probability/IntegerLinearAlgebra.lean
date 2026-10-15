@@ -5,11 +5,13 @@ namespace Thesis
 namespace Probability
 
 /-!
-# Exact finite rational row operations
+# Fraction-free integer elimination for rational compression
 
 This is constructive auxiliary linear algebra, not a new probability space.
-Vectors and matrices have explicit finite dimensions and concrete rational
-entries.  Finite sums reuse the development's additive-carrier fold and its
+After clearing finitely many positive denominators, rational constraints can
+be handled by integer matrices.  The denominator-clearing bridge is a separate
+obligation; this module proves the exact integer row-operation identities.
+Vectors and matrices have explicit finite dimensions and integer entries.  Finite sums reuse the development's additive-carrier fold and its
 constructive permutation theorem rather than introducing unordered sums.
 
 The elimination operation is fraction-free: multiply a row by the supplied
@@ -24,7 +26,7 @@ independent causal sources are subsequent obligations, not constructor fields
 or consequences silently assumed by this module.
 -/
 
-def AdditiveCarrier.rat : AdditiveCarrier Rat where
+def AdditiveCarrier.int : AdditiveCarrier Int where
   Equiv := Eq
   equiv_refl := fun _ => rfl
   equiv_symm := fun same => same.symm
@@ -32,65 +34,65 @@ def AdditiveCarrier.rat : AdditiveCarrier Rat where
   add := (· + ·)
   zero := 0
   add_congr := by intro _ _ _ _ first second; rw [first, second]
-  add_assoc := Rat.add_assoc
-  add_comm := Rat.add_comm
-  add_zero := Rat.add_zero
+  add_assoc := Int.add_assoc
+  add_comm := Int.add_comm
+  add_zero := Int.add_zero
 
-namespace RationalLinearAlgebra
+namespace IntegerLinearAlgebra
 
-abbrev Vector (size : Nat) := Fin size → Rat
+abbrev Vector (size : Nat) := Fin size → Int
 abbrev Matrix (rows columns : Nat) := Fin rows → Vector columns
 
-def sum (values : List Rat) : Rat := AdditiveCarrier.rat.listSum values
+def sum (values : List Int) : Int := AdditiveCarrier.int.listSum values
 
-theorem sum_map_add (values : List α) (left right : α → Rat) :
+theorem sum_map_add (values : List α) (left right : α → Int) :
     sum (values.map (fun value => left value + right value)) =
       sum (values.map left) + sum (values.map right) := by
   induction values with
-  | nil => exact (Rat.zero_add 0).symm
+  | nil => exact (Int.zero_add 0).symm
   | cons head tail inductionHypothesis =>
       change (left head + right head) + sum (tail.map (fun value => left value + right value)) =
         (left head + sum (tail.map left)) + (right head + sum (tail.map right))
       rw [inductionHypothesis]
-      simp only [Rat.add_assoc, Rat.add_comm, Rat.add_left_comm]
+      simp only [Int.add_assoc, Int.add_comm, Int.add_left_comm]
 
-theorem sum_map_sub (values : List α) (left right : α → Rat) :
+theorem sum_map_sub (values : List α) (left right : α → Int) :
     sum (values.map (fun value => left value - right value)) =
       sum (values.map left) - sum (values.map right) := by
   induction values with
-  | nil => exact Rat.sub_self.symm
+  | nil => exact (Int.sub_self 0).symm
   | cons head tail inductionHypothesis =>
       change (left head - right head) + sum (tail.map (fun value => left value - right value)) =
         (left head + sum (tail.map left)) - (right head + sum (tail.map right))
       rw [inductionHypothesis]
-      simp only [Rat.sub_eq_add_neg, Rat.neg_add, Rat.add_assoc, Rat.add_comm, Rat.add_left_comm]
+      simp only [Int.sub_eq_add_neg, Int.neg_add, Int.add_assoc, Int.add_comm, Int.add_left_comm]
 
-theorem sum_map_mul_left (values : List α) (factor : Rat) (entry : α → Rat) :
+theorem sum_map_mul_left (values : List α) (factor : Int) (entry : α → Int) :
     sum (values.map (fun value => factor * entry value)) = factor * sum (values.map entry) := by
   induction values with
-  | nil => exact (Rat.mul_zero factor).symm
+  | nil => exact (Int.mul_zero factor).symm
   | cons head tail inductionHypothesis =>
       change factor * entry head + sum (tail.map (fun value => factor * entry value)) =
         factor * (entry head + sum (tail.map entry))
-      rw [inductionHypothesis, Rat.mul_add]
+      rw [inductionHypothesis, Int.mul_add]
 
-def dot {size : Nat} (left right : Vector size) : Rat :=
+def dot {size : Nat} (left right : Vector size) : Int :=
   sum ((List.finRange size).map (fun index => left index * right index))
 
 theorem dot_add_left {size : Nat} (first second vector : Vector size) :
     dot (fun index => first index + second index) vector = dot first vector + dot second vector := by
-  simp only [dot, Rat.add_mul]
+  simp only [dot, Int.add_mul]
   exact sum_map_add _ _ _
 
 theorem dot_sub_left {size : Nat} (first second vector : Vector size) :
     dot (fun index => first index - second index) vector = dot first vector - dot second vector := by
-  simp only [dot, Rat.sub_eq_add_neg, Rat.add_mul, Rat.neg_mul]
-  simpa only [Rat.sub_eq_add_neg] using
+  simp only [dot, Int.sub_eq_add_neg, Int.add_mul, Int.neg_mul]
+  simpa only [Int.sub_eq_add_neg] using
     (sum_map_sub (List.finRange size) (fun index => first index * vector index) (fun index => second index * vector index))
 
-theorem dot_scale_left {size : Nat} (factor : Rat) (row vector : Vector size) :
+theorem dot_scale_left {size : Nat} (factor : Int) (row vector : Vector size) :
     dot (fun index => factor * row index) vector = factor * dot row vector := by
-  simp only [dot, Rat.mul_assoc]
+  simp only [dot, Int.mul_assoc]
   exact sum_map_mul_left _ _ _
 
 def eliminateRow {size : Nat} (pivotRow row : Vector size) (pivot : Fin size) : Vector size :=
@@ -101,8 +103,8 @@ later kernel-equivalence theorem needs a nonzero pivot. -/
 theorem eliminateRow_pivot {size : Nat} (pivotRow row : Vector size) (pivot : Fin size) :
     eliminateRow pivotRow row pivot pivot = 0 := by
   unfold eliminateRow
-  rw [Rat.mul_comm (pivotRow pivot) (row pivot)]
-  exact Rat.sub_self
+  rw [Int.mul_comm (pivotRow pivot) (row pivot)]
+  exact Int.sub_self _
 
 theorem eliminateRow_dot {size : Nat} (pivotRow row vector : Vector size) (pivot : Fin size) :
     dot (eliminateRow pivotRow row pivot) vector =
@@ -115,15 +117,15 @@ row's zero equation in both directions.  The nonzero premise is essential. -/
 theorem eliminateRow_kernel_iff {size : Nat} (pivotRow row vector : Vector size) (pivot : Fin size)
     (nonzero : pivotRow pivot ≠ 0) (pivotKernel : dot pivotRow vector = 0) :
     dot (eliminateRow pivotRow row pivot) vector = 0 ↔ dot row vector = 0 := by
-  rw [eliminateRow_dot, pivotKernel, Rat.mul_zero]
-  simp only [Rat.sub_eq_add_neg, Rat.neg_zero, Rat.add_zero]
+  rw [eliminateRow_dot, pivotKernel, Int.mul_zero]
+  simp only [Int.sub_eq_add_neg, Int.neg_zero, Int.add_zero]
   constructor
   · intro vanished
-    rcases Rat.mul_eq_zero.mp vanished with impossible | wanted
+    rcases Int.mul_eq_zero.mp vanished with impossible | wanted
     · exact False.elim (nonzero impossible)
     · exact wanted
   · intro vanished
-    rw [vanished, Rat.mul_zero]
+    rw [vanished, Int.mul_zero]
 
 def Kernel {rows columns : Nat} (matrix : Matrix rows columns) (vector : Vector columns) : Prop :=
   forall row, dot (matrix row) vector = 0
@@ -154,6 +156,6 @@ theorem kernel_eliminateMatrix_iff {rows columns : Nat} (matrix : Matrix rows co
     · simpa only [eliminateMatrix, if_neg selected] using
         (eliminateRow_kernel_iff _ _ _ pivotColumn nonzero (original pivotRow)).mpr (original row)
 
-end RationalLinearAlgebra
+end IntegerLinearAlgebra
 end Probability
 end Thesis

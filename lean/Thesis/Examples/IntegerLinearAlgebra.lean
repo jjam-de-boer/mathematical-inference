@@ -1,11 +1,11 @@
-import Thesis.Probability.RationalLinearAlgebra
+import Thesis.Probability.IntegerLinearAlgebra
 
 namespace Thesis
 namespace Probability
 namespace Examples
-namespace RationalLinearAlgebra
+namespace IntegerLinearAlgebra
 
-open Probability.RationalLinearAlgebra
+open Probability.IntegerLinearAlgebra
 
 /-!
 # A dependent-row matrix and its actual nonzero kernel vector
@@ -17,7 +17,7 @@ small kernel-only decisions independently check this concrete arithmetic.
 This fixture does not assume a general nullspace-existence theorem.
 -/
 
-def matrix : Matrix 2 3 := fun row column => (((row.val + 1) * (column.val + 1) : Nat) : Rat)
+def matrix : Matrix 2 3 := fun row column => (((row.val + 1) * (column.val + 1) : Nat) : Int)
 def vector : Vector 3 := fun column => if column.val = 0 then -2 else if column.val = 1 then 1 else 0
 
 theorem pivot_nonzero : matrix 0 0 ≠ 0 := by decide +kernel
@@ -35,7 +35,7 @@ theorem second_row_vanishes : forall column, eliminateMatrix matrix 0 0 1 column
 theorem eliminated_pivot_coordinate : eliminateRow (matrix 0) (matrix 1) 0 0 = 0 :=
   eliminateRow_pivot _ _ _
 
-end RationalLinearAlgebra
+end IntegerLinearAlgebra
 end Examples
 end Probability
 end Thesis

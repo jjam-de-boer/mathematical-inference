@@ -40,7 +40,7 @@ import Thesis.Examples.FourLabelTransportationExtrema
 import Thesis.Examples.FourLabelTransportationBatched
 import Thesis.Examples.RationalMixture
 import Thesis.Examples.RationalValues
-import Thesis.Examples.RationalLinearAlgebra
+import Thesis.Examples.IntegerLinearAlgebra
 import Thesis.Examples.BinaryInstrumentalIdentification
 import Thesis.Examples.BinaryInstrumentalAttainable
 import Thesis.Examples.ObservationalFormulaDiagnostics
