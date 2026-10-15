@@ -37,6 +37,103 @@ flowchart LR
   T --> E
 ```
 
+### Finite distributions
+
+[`Thesis.Probability.Distros`](lean/Thesis/Probability/Distros.lean) exposes
+the named finite laws and their checked interpretations. Geometric and
+negative-binomial outcomes count Bernoulli failures before the requested
+successes. Truncation conditions on success within the finite window;
+censoring clips the failure count to the cap and retains the entire tail.
+Both laws are derived from actual finite Bernoulli products, and the
+one-success negative binomial equals geometric.
+
+The lattice Gaussian uses the rational kernel `q^(x²)` on `x ∈ [-radius, radius]`,
+with `0 ≤ q ≤ 1`. Zero gives a point mass and one gives the discrete uniform
+law. Equivalent rational presentations of the kernel give the same Gaussian
+and finite χ² laws on every event. Its signed mean is zero and its variance is the exact finite second
+centred moment. The finite χ² law sums independent squared coordinates:
+equal radius and kernel give additivity in the degrees of freedom, mean
+`df · m₂`, and variance `df · (m₄ − m₂²)`.
+
+The library includes reusable expectation, map, independent-sum and PGF laws;
+closed Bernoulli, binomial, geometric, hypergeometric and beta-binomial
+moments; general rational censored PGFs; and a multivariate multinomial PGF
+with matching occupancy dimensions. Beta-binomial normalization is the
+rising factorial `(α+β)↑trials`, and its success-count law agrees on every
+event with sequential finite Pólya urn draws and same-colour reinforcement.
+Ordered Pólya words are exchangeable. Conditioning on a supported prefix
+updates the two urn counts by the observed colour counts, with the exact
+future law and both next-draw probabilities proved. The `*DistroOfTotal`
+constructors permit zero success weight in censored waiting times and one
+zero beta-binomial colour count. Their deterministic point-mass laws are
+proved; beta-binomial moments and the urn correspondence include both
+endpoints. Existing strict constructors agree with these variants.
+Law equivalence transports event agreement through maps, products, positive
+conditioning, expectations, moments, variance and PGFs, without requiring
+finite enumerations of outcome types. Chebyshev is connected to variance
+and holds at every positive rational radius. Finite generating functions
+determine numeric and bounded count-vector laws constructively. Independent draws from the categorical constructor produce
+the multinomial occupancy law on every event, including zero-weight colours.
+Arbitrary category partitions produce multinomial laws with summed weights;
+coordinate counts have binomial marginals, closed means and variances.
+Distinct-coordinate cross moments and nonpositive covariances are proved with
+integer numerators over positive denominators. The generic covariance agrees
+with the centered product integral and with witnessed variance on its diagonal.
+The signed-observable API extends this to integer coordinates, with symmetry,
+bilinearity, law/map transport, zero covariance under independence, and the
+covariance term in dependent-sum variance. Integer-observable variance is
+proved nonnegative and agrees with the existing witnessed natural variance.
+Falling-factorial moments of binomial, hypergeometric and beta-binomial laws
+are proved at every order,
+including orders above their finite support. General negative-binomial
+factorial moments reduce to shifted finite generating sums; their means,
+second moments and witnessed variances include the cap boundary terms and
+the censored zero-success-weight endpoint. Conditioning a larger truncated
+geometric or NB law on a smaller window recovers that smaller law; clipping
+a larger right-censored law gives the smaller censored law on every event.
+Hypergeometric is also realized by actual sequential two-colour urn draws
+without replacement: each Bernoulli colour draw removes one ball of that
+colour. Its count law agrees on every event, including empty and single-colour
+urns, and the mean and finite-population variance transport to that process.
+
+Multicolour Pólya paths draw from the current categorical weights and add one
+to the chosen colour. Their occupancy law is Dirichlet-multinomial, with
+multinomial coefficients times rising-factorial factors and normalizer
+`(sum α)↑trials`. The categorical first-step semantics, every-event count
+correspondence, support and PMF are proved, with zero individual parameters
+permitted. Two colours recover the positive-total beta-binomial numeric law.
+Natural likelihood reweighting transports through law equivalence and maps.
+A general urn can add any natural number of balls after each draw. Its
+rising-factorial normalizer and count law recover multinomial at increment
+zero and the existing Pólya / Dirichlet-multinomial at increment one.
+Scaling initial counts and reinforcement together preserves the law.
+Arbitrary nonnegative rational Pólya parameters are implemented by clearing
+one common denominator and adding that denominator after each draw. The
+ordered and occupancy laws are invariant under equivalent rational
+presentations and recover the original natural-parameter constructors.
+Every joint falling-factorial moment is proved for multinomial,
+Dirichlet-multinomial and arbitrary reinforcement. The formula is the total
+falling trial factor times the product of coordinate rising factors, divided
+by the rising total; at zero reinforcement these become weight powers.
+The identities include zero colours and orders above the trial count.
+Merging any categories in a reinforced path or count law sums their initial
+weights and retains their reinforcement increment. Every Dirichlet-multinomial
+coordinate has its beta-binomial marginal, closed mean and variance, with
+zero-weight and single-colour endpoints included. Joint factorial moments
+also give the individual factorial moments, means and distinct-coordinate
+cross moments and signed covariances for every reinforcement increment.
+Ordered reinforced words are exchangeable: equal colour counts give equal
+word probabilities. Conditioning the actual path record on observed counts
+and dropping the observed draws gives exactly the urn with parameters
+increased by the increment times those counts. Counts are therefore
+sufficient for every future event; the next-colour probability is
+`(alpha[i] + d * count[i]) / (sum alpha + d * observed draws)`.
+
+Variance uses the existing witnessed `QProb.sub` operation, and boundary
+cases are covered by theorem statements and kernel-checked
+[`DistributionLaws`](lean/Thesis/Examples/DistributionLaws.lean) and
+[`DistributionExtensions`](lean/Thesis/Examples/DistributionExtensions.lean) regressions.
+
 ### Verification
 
 See the [theorem-coverage guide](lean/THEOREM_COVERAGE.md) for the public

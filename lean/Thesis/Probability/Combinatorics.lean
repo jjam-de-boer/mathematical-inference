@@ -526,6 +526,57 @@ is the `d = 1` case. -/
 def geomSumHomog (r d len : Nat) : Nat :=
   natSum (len + 1) (fun k => r ^ k * d ^ (len - k))
 
+theorem geomSumHomog_succ (r d len : Nat) :
+    geomSumHomog r d (len + 1) = d * geomSumHomog r d len + r ^ (len + 1) := by
+  unfold geomSumHomog
+  rw [natSum_succ]
+  have hp : natSum (len + 1) (fun k => r ^ k * d ^ (len + 1 - k)) =
+      natSum (len + 1) (fun k => d * (r ^ k * d ^ (len - k))) := by
+    apply natSum_congr
+    intro k hk
+    have hs : len + 1 - k = (len - k) + 1 := by omega
+    rw [hs, Nat.pow_succ]
+    ac_rfl
+  rw [hp, natSum_mul_left]
+  simp
+
+theorem geomSumHomog_pos (r d len : Nat) (hd : 0 < d) :
+    0 < geomSumHomog r d len := by
+  unfold geomSumHomog
+  apply natSum_pos_of_term (i := 0) (Nat.succ_pos _)
+  simpa using Nat.pow_pos (n := len) hd
+
+theorem geomSumHomog_head (r d len : Nat) :
+    geomSumHomog r d (len + 1) = r * geomSumHomog r d len + d ^ (len + 1) := by
+  unfold geomSumHomog
+  rw [natSum_head (len + 1) (fun k => r ^ k * d ^ (len + 1 - k))]
+  simp only [Nat.pow_zero, Nat.one_mul, Nat.sub_zero]
+  have hp : natSum (len + 1) (fun k => r ^ (k + 1) * d ^ (len + 1 - (k + 1))) =
+      natSum (len + 1) (fun k => r * (r ^ k * d ^ (len - k))) := by
+    apply natSum_congr
+    intro k _
+    rw [Nat.add_sub_add_right, Nat.pow_succ]
+    ac_rfl
+  rw [hp, natSum_mul_left]
+  exact Nat.add_comm _ _
+
+/-- Exhaustion of a bounded Bernoulli waiting window: either success
+occurs by the last trial or every trial fails. -/
+theorem geomSumHomog_bernoulli (a b cap : Nat) :
+    a * geomSumHomog b (a + b) cap + b ^ (cap + 1) = (a + b) ^ (cap + 1) := by
+  induction cap with
+  | zero => simp [geomSumHomog, natSum]
+  | succ cap ih =>
+    rw [geomSumHomog_succ, Nat.mul_add, Nat.pow_succ b (cap + 1)]
+    calc
+      a * ((a + b) * geomSumHomog b (a + b) cap) + a * b ^ (cap + 1) +
+          b ^ (cap + 1) * b =
+          (a + b) * (a * geomSumHomog b (a + b) cap + b ^ (cap + 1)) := by
+        simp [Nat.mul_add, Nat.add_mul]
+        ac_rfl
+      _ = (a + b) ^ (cap + 1) * (a + b) := by rw [ih]; ac_rfl
+      _ = (a + b) ^ (cap + 1 + 1) := (Nat.pow_succ _ _).symm
+
 theorem geomSumHomog_one (r len : Nat) :
     geomSumHomog r 1 len = geomSum r (len + 1) := by
   unfold geomSumHomog geomSum
@@ -570,6 +621,49 @@ theorem nbSum_pos (r x n : Nat) (hr : 0 < r) (hn : 0 < n) :
 def nbSumHomog (r x d len : Nat) : Nat :=
   natSum (len + 1) (fun k =>
     binom (k + r - 1) k * x ^ k * d ^ (len - k))
+
+theorem nbSumHomog_pos (r x d len : Nat) (hd : 0 < d) :
+    0 < nbSumHomog r x d len := by
+  unfold nbSumHomog
+  apply natSum_pos_of_term (i := 0) (Nat.succ_pos _)
+  simpa using Nat.pow_pos (n := len) hd
+
+theorem nbSumHomog_one_success (x d len : Nat) :
+    nbSumHomog 1 x d len = geomSumHomog x d len := by
+  unfold nbSumHomog geomSumHomog
+  apply natSum_congr
+  intro k _
+  simp [binom_self]
+
+/-- Pascal splits a negative-binomial generating row into the preceding
+success row and a shifted copy of the same row. -/
+theorem nbSumHomog_pascal (r x d len : Nat) :
+    nbSumHomog (r + 2) x d (len + 1) =
+      nbSumHomog (r + 1) x d (len + 1) + x * nbSumHomog (r + 2) x d len := by
+  unfold nbSumHomog
+  rw [natSum_head (len + 1)
+      (fun k => binom (k + (r + 2) - 1) k * x ^ k * d ^ (len + 1 - k)),
+    natSum_head (len + 1)
+      (fun k => binom (k + (r + 1) - 1) k * x ^ k * d ^ (len + 1 - k))]
+  simp only [binom_zero_right, Nat.pow_zero, Nat.one_mul, Nat.sub_zero]
+  have hsum :
+      natSum (len + 1) (fun k =>
+        binom (k + 1 + (r + 2) - 1) (k + 1) * x ^ (k + 1) *
+          d ^ (len + 1 - (k + 1))) =
+        natSum (len + 1) (fun k =>
+          binom (k + 1 + (r + 1) - 1) (k + 1) * x ^ (k + 1) *
+              d ^ (len + 1 - (k + 1)) +
+            x * (binom (k + (r + 2) - 1) k * x ^ k * d ^ (len - k))) := by
+    apply natSum_congr
+    intro k _
+    have hfirst : k + 1 + (r + 2) - 1 = (k + r + 1) + 1 := by omega
+    have hsecond : k + 1 + (r + 1) - 1 = k + r + 1 := by omega
+    have hthird : k + (r + 2) - 1 = k + r + 1 := by omega
+    rw [hfirst, hsecond, hthird, Nat.add_sub_add_right, binom_succ_succ, Nat.pow_succ]
+    simp only [Nat.add_mul]
+    ac_rfl
+  rw [hsum, natSum_add, natSum_mul_left]
+  exact (Nat.add_assoc _ _ _).symm
 
 theorem nbSumHomog_one (r x len : Nat) :
     nbSumHomog r x 1 len = nbSum r x (len + 1) := by
@@ -859,6 +953,16 @@ def natSqDiff (left right : Nat) : Nat :=
 theorem natSqDiff_self (n : Nat) :
     natSqDiff n n = 0 := by
   simp [natSqDiff]
+
+theorem natSqDiff_eq_zero_iff (left right : Nat) :
+    natSqDiff left right = 0 ↔ left = right := by
+  unfold natSqDiff
+  by_cases hle : left ≤ right
+  · simp only [if_pos hle, Nat.mul_eq_zero, or_self, Nat.sub_eq_zero_iff_le]
+    exact ⟨fun h => Nat.le_antisymm hle h, fun h => h ▸ Nat.le_refl right⟩
+  · have hge : right ≤ left := Nat.le_of_not_le hle
+    simp only [if_neg hle, Nat.mul_eq_zero, or_self, Nat.sub_eq_zero_iff_le]
+    exact ⟨fun h => Nat.le_antisymm h hge, fun h => h ▸ Nat.le_refl right⟩
 
 theorem natSqDiff_comm (left right : Nat) :
     natSqDiff left right = natSqDiff right left := by

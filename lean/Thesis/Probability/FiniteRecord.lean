@@ -142,6 +142,19 @@ theorem eventMass_top (atoms : List (Ω × Nat)) :
       rcases atom with ⟨ω, weight⟩
       simp [eventMass, totalMass, topEvent, ih]
 
+/-- A Boolean event and its complement partition the complete finite mass.
+Repeated labels and zero atom weights are allowed. -/
+theorem eventMass_add_complement (atoms : List (Ω × Nat)) (event : Event Ω) :
+    eventMass atoms event + eventMass atoms (fun value => !(event value)) =
+      totalMass atoms := by
+  induction atoms with
+  | nil => rfl
+  | cons atom atoms inductionHypothesis =>
+      rcases atom with ⟨value, weight⟩
+      cases selected : event value <;>
+        simp only [eventMass, totalMass, selected, Bool.not_false, Bool.not_true,
+          Bool.false_eq_true, ↓reduceIte] <;> omega
+
 /-- An event cannot carry more mass than the complete weighted support. -/
 theorem eventMass_le_totalMass (atoms : List (Ω × Nat)) (E : Event Ω) :
     eventMass atoms E ≤ totalMass atoms := by

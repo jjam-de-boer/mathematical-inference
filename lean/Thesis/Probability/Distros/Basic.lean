@@ -150,6 +150,10 @@ def ofFin (n : Nat) (record : FiniteProbRecord (Fin (n + 1))) :
   distro := ⟨record⟩
   embed := Fin.val
 
+/-- Clamp a natural count to the last cell of a finite window. -/
+def censorFailureCount (cap value : Nat) : Fin (cap + 1) :=
+  ⟨min value cap, Nat.lt_succ_of_le (Nat.min_le_right _ _)⟩
+
 /-- Relabel atoms by their numeric embedding. -/
 def natAtoms (μ : NatDistro Ω) : List (Nat × Nat) :=
   μ.distro.record.atoms.map fun atom => (μ.embed atom.1, atom.2)
@@ -294,9 +298,9 @@ def deviationDistro (μ : NatDistro Ω) : NatDistro Ω where
   distro := μ.distro
   embed := sqDev μ.embed (mean μ).num μ.distro.record.den
 
-/-- Chebyshev's inequality: a large squared deviation is Markov-controlled by
-the mean squared deviation.  This is the finite constructive stand-in for a
-CLT tail bound. -/
+/-- A large cleared squared deviation is Markov-controlled by its mean.
+`Concentration` connects this mean to variance and supplies Chebyshev at
+positive rational radii. -/
 theorem chebyshev (μ : NatDistro Ω) (t : Nat) (ht : 0 < t) :
     QProb.LE
       (QProb.scale t
@@ -881,6 +885,12 @@ theorem qpow_den (s : QProb) :
       simp [qpow, QProb.mul, qpow_den s k, Nat.pow_succ]
       ac_rfl
 
+/-- Rational powers depend on the value, not its unreduced presentation. -/
+theorem qpow_congr {p q : QProb} (h : QProb.Equiv p q) (n : Nat) :
+    QProb.Equiv (qpow p n) (qpow q n) := by
+  simp only [QProb.Equiv, qpow_num, qpow_den]
+  rw [← Nat.mul_pow, ← Nat.mul_pow, h]
+
 /-- Scaling a rational power, rewritten on the common denominator `s.den^len`. -/
 theorem scale_qpow_homogenize (s : QProb) (len k w : Nat) (hk : k ≤ len) :
     QProb.Equiv
@@ -1157,6 +1167,25 @@ theorem listSum_scale_qpow_finWeighted_qprob (len : Nat)
   rw [hmap]
   refine QProb.equiv_trans (QProb.listSum_mk_same_den D hD _) ?_
   simp [QProb.Equiv, list_sum_finWeighted_homog, D]
+
+/-- A finite natural-weight PGF evaluated at an arbitrary nonnegative
+rational, with a single denominator power for the entire support. -/
+theorem ofFinWeights_pgf (len : Nat) (w : Fin (len + 1) → Nat)
+    (positive : 0 < natSum (len + 1) (finWeight w)) (s : QProb) :
+    QProb.Equiv (pgf (ofFin len (ofFinWeights (len + 1) w positive)) s)
+      ⟨natSum (len + 1) (fun k => finWeight w k * s.num ^ k * s.den ^ (len - k)),
+        s.den ^ len * natSum (len + 1) (finWeight w),
+        Nat.mul_pos (Nat.pow_pos s.den_pos) positive⟩ := by
+  have hnum := listSum_scale_qpow_finWeighted_qprob len w s
+  have hden :
+      QProb.Equiv (QProb.ofNat (FiniteProbRecord.totalMass (finWeighted (len + 1) w)))
+        (QProb.ofNat (natSum (len + 1) (finWeight w))) := by
+    simp [totalMass_finWeighted, QProb.Equiv, QProb.ofNat]
+  have hp : 0 < FiniteProbRecord.totalMass (finWeighted (len + 1) w) := by
+    simpa [totalMass_finWeighted] using positive
+  have hd := QProb.div_congr hnum hden hp positive
+  refine QProb.equiv_trans (by simpa [pgf, ofFin, ofFinWeights] using hd) ?_
+  simp [QProb.div, QProb.ofNat, QProb.Equiv]
 
 end Distros
 end Probability

@@ -13,13 +13,13 @@ convolution of binomial coefficients.  Event probabilities, not merely
 singleton PMFs, are the selected-weight sums against that Vandermonde
 total.  The univariate PGF of the marked count is the homogenised
 Vandermonde generating polynomial.  The truncated geometric distro is the
-waiting time for a Bernoulli true outcome, restricted to a finite window so
-the record remains a finite urn.  Its whole-number PGF is the ratio of
-geometric sums after substituting `falseWeight * s`.  The same closed form
-holds at a general nonnegative rational after homogenising the generating
-sum against `s.den`.  The right-censored sibling keeps the ordinary
-waiting-time weights on `{0, …, cap - 1}` and places the leftover
-`falseWeight^{cap+1}` (together with the mass at `cap`) on the last cell.
+waiting time for a Bernoulli true outcome, conditioned on success in a
+finite window.  Every terminal path is padded to the same horizon by the
+Bernoulli total `trueWeight + falseWeight`.  Its generating sums therefore
+retain that total when substituting the PGF argument.  Both the truncated
+and right-censored laws have PGFs at general nonnegative rational arguments.
+The censored sibling puts the all-failure path on the last cell and has
+denominator `(trueWeight + falseWeight)^(cap + 1)`.
 -/
 
 open Combinatorics
@@ -211,40 +211,37 @@ theorem hypergeometric_pgf (marked total draws : Nat)
       positive
   simpa [pgf] using hdiv
 
-/-- Truncated geometric weights: `k` false outcomes then a true outcome,
-for `k ≤ cap`. -/
+/-- Bernoulli waiting-time weights on `{0, ..., cap}`, cleared to
+the common trial denominator `(trueWeight + falseWeight)^(cap + 1)`. -/
 def geometricWeight (cap trueWeight falseWeight : Nat)
     (k : Fin (cap + 1)) : Nat :=
-  trueWeight * falseWeight ^ k.val
+  trueWeight * falseWeight ^ k.val *
+    (trueWeight + falseWeight) ^ (cap - k.val)
 
 theorem geometricWeight_sum (cap trueWeight falseWeight : Nat) :
     natSum (cap + 1) (finWeight (geometricWeight cap trueWeight falseWeight)) =
-      trueWeight * geomSum falseWeight (cap + 1) := by
+      trueWeight * geomSumHomog falseWeight (trueWeight + falseWeight) cap := by
   have hcongr :
       natSum (cap + 1)
           (finWeight (geometricWeight cap trueWeight falseWeight)) =
-        natSum (cap + 1) (fun k => trueWeight * falseWeight ^ k) := by
+        natSum (cap + 1) (fun k =>
+          trueWeight * (falseWeight ^ k *
+            (trueWeight + falseWeight) ^ (cap - k))) := by
     apply natSum_congr
     intro k hk
-    simp [finWeight, geometricWeight, hk]
-  rw [hcongr]
-  simp [geomSum, natSum_mul_left]
+    simp [finWeight, geometricWeight, hk, Nat.mul_assoc]
+  rw [hcongr, natSum_mul_left]
+  rfl
 
-/-- Truncated geometric distro on `{0, ..., cap}`. -/
+/-- The waiting time conditioned on success within the finite window. -/
 def geometricDistro (cap trueWeight falseWeight : Nat)
     (positive : 0 < trueWeight) : Distro (Fin (cap + 1)) where
   record :=
-    have hsum := geometricWeight_sum cap trueWeight falseWeight
     have hpos : 0 < natSum (cap + 1)
         (finWeight (geometricWeight cap trueWeight falseWeight)) := by
-      have hgeom : 0 < geomSum falseWeight (cap + 1) := by
-        unfold geomSum
-        rw [natSum_head]
-        simp [Nat.pow_zero]
-        exact Nat.add_pos_left (Nat.succ_pos 0) _
-      have : 0 < trueWeight * geomSum falseWeight (cap + 1) :=
-        Nat.mul_pos positive hgeom
-      simpa [hsum] using this
+      rw [geometricWeight_sum]
+      exact Nat.mul_pos positive
+        (geomSumHomog_pos _ _ _ (Nat.add_pos_left positive _))
     ofFinWeights (cap + 1) (geometricWeight cap trueWeight falseWeight) hpos
 
 def geometricNatDistro (cap trueWeight falseWeight : Nat)
@@ -254,9 +251,8 @@ def geometricNatDistro (cap trueWeight falseWeight : Nat)
 theorem geometric_den (cap trueWeight falseWeight : Nat)
     (positive : 0 < trueWeight) :
     (geometricDistro cap trueWeight falseWeight positive).record.den =
-      trueWeight * geomSum falseWeight (cap + 1) := by
-  simp [geometricDistro, ofFinWeights, totalMass_finWeighted,
-    geometricWeight_sum]
+      trueWeight * geomSumHomog falseWeight (trueWeight + falseWeight) cap := by
+  simp [geometricDistro, ofFinWeights, totalMass_finWeighted, geometricWeight_sum]
 
 theorem geometric_pmf (cap trueWeight falseWeight : Nat)
     (positive : 0 < trueWeight) (k : Fin (cap + 1)) :
@@ -264,228 +260,124 @@ theorem geometric_pmf (cap trueWeight falseWeight : Nat)
       ((geometricDistro cap trueWeight falseWeight positive).pmf k)
       ⟨geometricWeight cap trueWeight falseWeight k,
         (geometricDistro cap trueWeight falseWeight positive).record.den,
-        (geometricDistro cap trueWeight falseWeight positive).record.den_pos⟩ :=
-  by
-  simp [Distro.pmf, geometricDistro, ofFinWeights, FiniteProbRecord.probVal,
-    QProb.Equiv, eventMass_finWeighted_singleton]
+        (geometricDistro cap trueWeight falseWeight positive).record.den_pos⟩ := by
+  simp [Distro.pmf, geometricDistro, ofFinWeights,
+    FiniteProbRecord.probVal, QProb.Equiv, eventMass_finWeighted_singleton]
 
-/-- Scaling the waiting-time weight by `s^k` substitutes `falseWeight * s`
-for the failure weight. -/
+/-- Generating substitution keeps the original Bernoulli total fixed. -/
 theorem geometricWeight_scale_pow (cap trueWeight falseWeight s : Nat)
     (k : Fin (cap + 1)) :
     geometricWeight cap trueWeight falseWeight k * s ^ k.val =
-      geometricWeight cap trueWeight (falseWeight * s) k := by
+      trueWeight * (falseWeight * s) ^ k.val *
+        (trueWeight + falseWeight) ^ (cap - k.val) := by
   simp [geometricWeight, Nat.mul_pow]
   ac_rfl
 
-/-- The truncated geometric PGF, evaluated at a whole number `s`, is the
-ratio of geometric sums after substituting `falseWeight * s`. -/
-theorem geometric_pgf_ofNat (cap trueWeight falseWeight s : Nat)
-    (positive : 0 < trueWeight) :
-    QProb.Equiv
-      (pgf (geometricNatDistro cap trueWeight falseWeight positive)
-        (QProb.ofNat s))
-      ⟨trueWeight * geomSum (falseWeight * s) (cap + 1),
-        trueWeight * geomSum falseWeight (cap + 1),
-        Nat.mul_pos positive (geomSum_pos falseWeight (cap + 1) (Nat.succ_pos cap))⟩ := by
-  have hatoms :
-      (geometricNatDistro cap trueWeight falseWeight positive).distro.record.atoms =
-        finWeighted (cap + 1)
-          (geometricWeight cap trueWeight falseWeight) := by
-    simp [geometricNatDistro, ofFin, geometricDistro, ofFinWeights]
-  have hnum :
-      QProb.Equiv
-        (QProb.listSum
-          ((geometricNatDistro cap trueWeight falseWeight
-              positive).distro.record.atoms.map fun atom =>
-            QProb.scale atom.2
-              (qpow (QProb.ofNat s)
-                ((geometricNatDistro cap trueWeight falseWeight
-                    positive).embed atom.1))))
-        (QProb.ofNat (trueWeight * geomSum (falseWeight * s) (cap + 1))) := by
-    rw [hatoms]
-    have hsum :=
-      listSum_scale_qpow_finWeighted (cap + 1)
-        (geometricWeight cap trueWeight falseWeight) s
-    have hterm :
-        natSum (cap + 1) (fun i =>
-            finWeight (geometricWeight cap trueWeight falseWeight) i * s ^ i) =
-          trueWeight * geomSum (falseWeight * s) (cap + 1) := by
-      have hcongr :
-          natSum (cap + 1) (fun i =>
-              finWeight (geometricWeight cap trueWeight falseWeight) i * s ^ i) =
-            natSum (cap + 1) (fun i =>
-              finWeight (geometricWeight cap trueWeight (falseWeight * s)) i) := by
-        apply natSum_congr
-        intro i hi
-        simp only [finWeight, hi]
-        exact geometricWeight_scale_pow cap trueWeight falseWeight s ⟨i, hi⟩
-      rw [hcongr, geometricWeight_sum]
-    exact QProb.equiv_trans hsum (by
-      simp [QProb.Equiv, QProb.ofNat]
-      exact hterm)
-  have hden :
-      QProb.Equiv
-        (QProb.ofNat
-          (geometricNatDistro cap trueWeight falseWeight
-            positive).distro.record.den)
-        (QProb.ofNat (trueWeight * geomSum falseWeight (cap + 1))) := by
-    simp [QProb.Equiv, QProb.ofNat]
-    exact geometric_den cap trueWeight falseWeight positive
-  have hdiv :=
-    QProb.div_congr hnum hden
-      (geometricNatDistro cap trueWeight falseWeight positive).distro.record.den_pos
-      (Nat.mul_pos positive (geomSum_pos falseWeight (cap + 1) (Nat.succ_pos cap)))
-  refine QProb.equiv_trans (by simpa [pgf] using hdiv) ?_
-  simp [QProb.div, QProb.ofNat, QProb.Equiv]
-
-/-- Homogenising a truncated geometric weight against a common denominator
-power substitutes `falseWeight * num` in the generating base. -/
 theorem geometricWeight_homogenize
-    (cap trueWeight falseWeight num den : Nat)
-    (k : Fin (cap + 1)) :
+    (cap trueWeight falseWeight num den : Nat) (k : Fin (cap + 1)) :
     geometricWeight cap trueWeight falseWeight k * num ^ k.val *
         den ^ (cap - k.val) =
-      trueWeight * (falseWeight * num) ^ k.val * den ^ (cap - k.val) := by
+      trueWeight * (falseWeight * num) ^ k.val *
+        ((trueWeight + falseWeight) * den) ^ (cap - k.val) := by
   simp [geometricWeight, Nat.mul_pow]
   ac_rfl
 
-/-- The truncated geometric PGF at a nonnegative rational `s` is the ratio
-of a homogenised geometric sum to the ordinary geometric normaliser. -/
+theorem geometricWeight_homog_sum
+    (cap trueWeight falseWeight num den : Nat) :
+    natSum (cap + 1) (fun k =>
+        finWeight (geometricWeight cap trueWeight falseWeight) k *
+          num ^ k * den ^ (cap - k)) =
+      trueWeight * geomSumHomog (falseWeight * num)
+        ((trueWeight + falseWeight) * den) cap := by
+  have hcongr :
+      natSum (cap + 1) (fun k =>
+          finWeight (geometricWeight cap trueWeight falseWeight) k *
+            num ^ k * den ^ (cap - k)) =
+        natSum (cap + 1) (fun k =>
+          trueWeight * ((falseWeight * num) ^ k *
+            ((trueWeight + falseWeight) * den) ^ (cap - k))) := by
+    apply natSum_congr
+    intro k hk
+    simpa [finWeight, hk, Nat.mul_assoc] using
+      geometricWeight_homogenize cap trueWeight falseWeight num den ⟨k, hk⟩
+  rw [hcongr, natSum_mul_left]
+  rfl
+
+/-- The finite conditional PGF retains the Bernoulli trial denominator. -/
 theorem geometric_pgf (cap trueWeight falseWeight : Nat) (s : QProb)
     (positive : 0 < trueWeight) :
     QProb.Equiv
       (pgf (geometricNatDistro cap trueWeight falseWeight positive) s)
-      (QProb.div
-        ⟨trueWeight *
-            geomSumHomog (falseWeight * s.num) s.den cap,
-          s.den ^ cap,
-          Nat.pow_pos s.den_pos⟩
-        (QProb.ofNat (trueWeight * geomSum falseWeight (cap + 1)))
-        (Nat.mul_pos positive
-          (geomSum_pos falseWeight (cap + 1) (Nat.succ_pos cap)))) := by
-  have hatoms :
-      (geometricNatDistro cap trueWeight falseWeight positive).distro.record.atoms =
-        finWeighted (cap + 1)
-          (geometricWeight cap trueWeight falseWeight) := by
-    simp [geometricNatDistro, ofFin, geometricDistro, ofFinWeights]
-  have hnum :
-      QProb.Equiv
-        (QProb.listSum
-          ((geometricNatDistro cap trueWeight falseWeight
-              positive).distro.record.atoms.map fun atom =>
-            QProb.scale atom.2
-              (qpow s
-                ((geometricNatDistro cap trueWeight falseWeight
-                    positive).embed atom.1))))
-        ⟨trueWeight *
-            geomSumHomog (falseWeight * s.num) s.den cap,
-          s.den ^ cap,
-          Nat.pow_pos s.den_pos⟩ := by
-    rw [hatoms]
-    have hsum :=
-      listSum_scale_qpow_finWeighted_qprob cap
-        (geometricWeight cap trueWeight falseWeight) s
-    have hterm :
-        natSum (cap + 1) (fun i =>
-            finWeight (geometricWeight cap trueWeight falseWeight) i *
-              s.num ^ i * s.den ^ (cap - i)) =
-          trueWeight *
-            geomSumHomog (falseWeight * s.num) s.den cap := by
-      have hcongr :
-          natSum (cap + 1) (fun i =>
-              finWeight (geometricWeight cap trueWeight falseWeight) i *
-                s.num ^ i * s.den ^ (cap - i)) =
-            natSum (cap + 1) (fun i =>
-              trueWeight * (falseWeight * s.num) ^ i *
-                s.den ^ (cap - i)) := by
-        apply natSum_congr
-        intro i hi
-        simp only [finWeight, hi]
-        exact geometricWeight_homogenize cap trueWeight falseWeight
-          s.num s.den ⟨i, hi⟩
-      rw [hcongr]
-      have hfactor :
-          natSum (cap + 1) (fun i =>
-            trueWeight * (falseWeight * s.num) ^ i * s.den ^ (cap - i)) =
-          natSum (cap + 1) (fun i =>
-            trueWeight *
-              ((falseWeight * s.num) ^ i * s.den ^ (cap - i))) := by
-        apply natSum_congr
-        intro i _
-        exact Nat.mul_assoc _ _ _
-      rw [hfactor, natSum_mul_left]
-      rfl
-    refine QProb.equiv_trans hsum ?_
-    simp [QProb.Equiv, hterm]
-  have hden :
-      QProb.Equiv
-        (QProb.ofNat
-          (geometricNatDistro cap trueWeight falseWeight
-            positive).distro.record.den)
-        (QProb.ofNat (trueWeight * geomSum falseWeight (cap + 1))) := by
-    simp [QProb.Equiv, QProb.ofNat]
-    exact geometric_den cap trueWeight falseWeight positive
-  have hdiv :=
-    QProb.div_congr hnum hden
-      (geometricNatDistro cap trueWeight falseWeight positive).distro.record.den_pos
-      (Nat.mul_pos positive
-        (geomSum_pos falseWeight (cap + 1) (Nat.succ_pos cap)))
-  simpa [pgf] using hdiv
+      ⟨trueWeight * geomSumHomog (falseWeight * s.num)
+          ((trueWeight + falseWeight) * s.den) cap,
+        s.den ^ cap *
+          (trueWeight * geomSumHomog falseWeight (trueWeight + falseWeight) cap),
+        Nat.mul_pos (Nat.pow_pos s.den_pos)
+          (Nat.mul_pos positive
+            (geomSumHomog_pos _ _ _ (Nat.add_pos_left positive _)))⟩ := by
+  have hpos : 0 < natSum (cap + 1)
+      (finWeight (geometricWeight cap trueWeight falseWeight)) := by
+    rw [geometricWeight_sum]
+    exact Nat.mul_pos positive
+      (geomSumHomog_pos _ _ _ (Nat.add_pos_left positive _))
+  have h := ofFinWeights_pgf cap (geometricWeight cap trueWeight falseWeight) hpos s
+  refine QProb.equiv_trans (by simpa [geometricNatDistro, geometricDistro] using h) ?_
+  simp [QProb.Equiv, geometricWeight_homog_sum, geometricWeight_sum]
 
-/-- Right-censored geometric weights: ordinary waiting-time mass on
-`{0, …, cap - 1}`, and on the last cell the mass at `cap` together with
-the leftover `falseWeight^{cap+1}` of paths that never succeed in the
-window. -/
+theorem geometric_pgf_ofNat (cap trueWeight falseWeight s : Nat)
+    (positive : 0 < trueWeight) :
+    QProb.Equiv
+      (pgf (geometricNatDistro cap trueWeight falseWeight positive) (QProb.ofNat s))
+      ⟨trueWeight * geomSumHomog (falseWeight * s) (trueWeight + falseWeight) cap,
+        trueWeight * geomSumHomog falseWeight (trueWeight + falseWeight) cap,
+        Nat.mul_pos positive
+          (geomSumHomog_pos _ _ _ (Nat.add_pos_left positive _))⟩ := by
+  simpa [QProb.ofNat] using geometric_pgf cap trueWeight falseWeight (QProb.ofNat s) positive
+
+/-- Censor the failure count at `cap`.  The last cell includes success
+at `cap` failures and the all-failure path in `cap + 1` trials. -/
 def geometricCensoredWeight (cap trueWeight falseWeight : Nat)
     (k : Fin (cap + 1)) : Nat :=
   if k.val < cap then
-    trueWeight * falseWeight ^ k.val
+    geometricWeight cap trueWeight falseWeight k
   else
-    trueWeight * falseWeight ^ cap + falseWeight ^ (cap + 1)
+    geometricWeight cap trueWeight falseWeight k + falseWeight ^ (cap + 1)
 
 theorem geometricCensoredWeight_sum (cap trueWeight falseWeight : Nat) :
     natSum (cap + 1)
         (finWeight (geometricCensoredWeight cap trueWeight falseWeight)) =
-      trueWeight * geomSum falseWeight (cap + 1) +
-        falseWeight ^ (cap + 1) := by
-  have hprefix :
-      natSum cap
+      (trueWeight + falseWeight) ^ (cap + 1) := by
+  have hcongr :
+      natSum (cap + 1)
           (finWeight (geometricCensoredWeight cap trueWeight falseWeight)) =
-        trueWeight * geomSum falseWeight cap := by
-    have hcongr :
-        natSum cap
-            (finWeight (geometricCensoredWeight cap trueWeight falseWeight)) =
-          natSum cap (fun i => trueWeight * falseWeight ^ i) := by
+        natSum (cap + 1)
+          (finWeight (geometricWeight cap trueWeight falseWeight)) +
+            falseWeight ^ (cap + 1) := by
+    rw [natSum_succ, natSum_succ (n := cap)
+      (finWeight (geometricWeight cap trueWeight falseWeight))]
+    have hp :
+        natSum cap (finWeight (geometricCensoredWeight cap trueWeight falseWeight)) =
+          natSum cap (finWeight (geometricWeight cap trueWeight falseWeight)) := by
       apply natSum_congr
-      intro i hi
-      have hfin : i < cap + 1 := Nat.lt_succ_of_lt hi
-      simp [finWeight, geometricCensoredWeight, hfin, hi]
-    rw [hcongr]
-    simp [geomSum, natSum_mul_left]
-  have hlast :
-      finWeight (geometricCensoredWeight cap trueWeight falseWeight) cap =
-        trueWeight * falseWeight ^ cap + falseWeight ^ (cap + 1) := by
-    have hfin : cap < cap + 1 := Nat.lt_succ_self cap
-    have hnlt : ¬ cap < cap := Nat.lt_irrefl cap
-    simp [finWeight, geometricCensoredWeight, hfin, hnlt]
-  rw [natSum_succ, hprefix, hlast, geomSum_succ, Nat.mul_add]
-  ac_rfl
+      intro k hk
+      simp [finWeight, geometricCensoredWeight, hk, Nat.lt_succ_of_lt hk]
+    have hl :
+        finWeight (geometricCensoredWeight cap trueWeight falseWeight) cap =
+          finWeight (geometricWeight cap trueWeight falseWeight) cap +
+            falseWeight ^ (cap + 1) := by
+      simp [finWeight, geometricCensoredWeight]
+    rw [hp, hl]
+    ac_rfl
+  rw [hcongr, geometricWeight_sum, geomSumHomog_bernoulli]
 
-/-- Right-censored geometric distro on `{0, ..., cap}`. -/
 def geometricCensoredDistro (cap trueWeight falseWeight : Nat)
     (positive : 0 < trueWeight) : Distro (Fin (cap + 1)) where
   record :=
-    have hsum := geometricCensoredWeight_sum cap trueWeight falseWeight
     have hpos : 0 < natSum (cap + 1)
         (finWeight (geometricCensoredWeight cap trueWeight falseWeight)) := by
-      have hgeom : 0 < geomSum falseWeight (cap + 1) :=
-        geomSum_pos falseWeight (cap + 1) (Nat.succ_pos cap)
-      rw [hsum]
-      exact Nat.lt_of_lt_of_le (Nat.mul_pos positive hgeom)
-        (Nat.le_add_right _ _)
-    ofFinWeights (cap + 1)
-      (geometricCensoredWeight cap trueWeight falseWeight) hpos
+      rw [geometricCensoredWeight_sum]
+      exact Nat.pow_pos (Nat.add_pos_left positive _)
+    ofFinWeights (cap + 1) (geometricCensoredWeight cap trueWeight falseWeight) hpos
 
 def geometricCensoredNatDistro (cap trueWeight falseWeight : Nat)
     (positive : 0 < trueWeight) : NatDistro (Fin (cap + 1)) :=
@@ -494,8 +386,7 @@ def geometricCensoredNatDistro (cap trueWeight falseWeight : Nat)
 theorem geometricCensored_den (cap trueWeight falseWeight : Nat)
     (positive : 0 < trueWeight) :
     (geometricCensoredDistro cap trueWeight falseWeight positive).record.den =
-      trueWeight * geomSum falseWeight (cap + 1) +
-        falseWeight ^ (cap + 1) := by
+      (trueWeight + falseWeight) ^ (cap + 1) := by
   simp [geometricCensoredDistro, ofFinWeights, totalMass_finWeighted,
     geometricCensoredWeight_sum]
 
@@ -504,12 +395,74 @@ theorem geometricCensored_pmf (cap trueWeight falseWeight : Nat)
     QProb.Equiv
       ((geometricCensoredDistro cap trueWeight falseWeight positive).pmf k)
       ⟨geometricCensoredWeight cap trueWeight falseWeight k,
-        (geometricCensoredDistro cap trueWeight falseWeight
-          positive).record.den,
-        (geometricCensoredDistro cap trueWeight falseWeight
-          positive).record.den_pos⟩ := by
+        (geometricCensoredDistro cap trueWeight falseWeight positive).record.den,
+        (geometricCensoredDistro cap trueWeight falseWeight positive).record.den_pos⟩ := by
   simp [Distro.pmf, geometricCensoredDistro, ofFinWeights,
     FiniteProbRecord.probVal, QProb.Equiv, eventMass_finWeighted_singleton]
+
+theorem geometricCensoredWeight_homog_sum
+    (cap trueWeight falseWeight num den : Nat) :
+    natSum (cap + 1) (fun k =>
+        finWeight (geometricCensoredWeight cap trueWeight falseWeight) k *
+          num ^ k * den ^ (cap - k)) =
+      trueWeight * geomSumHomog (falseWeight * num)
+          ((trueWeight + falseWeight) * den) cap +
+        falseWeight ^ (cap + 1) * num ^ cap := by
+  have hp :
+      natSum cap (fun k =>
+          finWeight (geometricCensoredWeight cap trueWeight falseWeight) k *
+            num ^ k * den ^ (cap - k)) =
+        natSum cap (fun k =>
+          finWeight (geometricWeight cap trueWeight falseWeight) k *
+            num ^ k * den ^ (cap - k)) := by
+    apply natSum_congr
+    intro k hk
+    simp [finWeight, geometricCensoredWeight, hk, Nat.lt_succ_of_lt hk]
+  have hsum :
+      natSum (cap + 1) (fun k =>
+          finWeight (geometricCensoredWeight cap trueWeight falseWeight) k *
+            num ^ k * den ^ (cap - k)) =
+        natSum (cap + 1) (fun k =>
+          finWeight (geometricWeight cap trueWeight falseWeight) k *
+            num ^ k * den ^ (cap - k)) +
+          falseWeight ^ (cap + 1) * num ^ cap := by
+    rw [natSum_succ, natSum_succ (n := cap)
+      (fun k => finWeight (geometricWeight cap trueWeight falseWeight) k *
+        num ^ k * den ^ (cap - k))]
+    rw [hp]
+    simp [finWeight, geometricCensoredWeight, Nat.add_mul, Nat.add_assoc]
+  rw [hsum, geometricWeight_homog_sum]
+
+theorem geometricCensored_pgf (cap trueWeight falseWeight : Nat) (s : QProb)
+    (positive : 0 < trueWeight) :
+    QProb.Equiv
+      (pgf (geometricCensoredNatDistro cap trueWeight falseWeight positive) s)
+      ⟨trueWeight * geomSumHomog (falseWeight * s.num)
+          ((trueWeight + falseWeight) * s.den) cap +
+          falseWeight ^ (cap + 1) * s.num ^ cap,
+        s.den ^ cap * (trueWeight + falseWeight) ^ (cap + 1),
+        Nat.mul_pos (Nat.pow_pos s.den_pos)
+          (Nat.pow_pos (Nat.add_pos_left positive _))⟩ := by
+  have hpos : 0 < natSum (cap + 1)
+      (finWeight (geometricCensoredWeight cap trueWeight falseWeight)) := by
+    rw [geometricCensoredWeight_sum]
+    exact Nat.pow_pos (Nat.add_pos_left positive _)
+  have h := ofFinWeights_pgf cap
+    (geometricCensoredWeight cap trueWeight falseWeight) hpos s
+  refine QProb.equiv_trans
+    (by simpa [geometricCensoredNatDistro, geometricCensoredDistro] using h) ?_
+  simp [QProb.Equiv, geometricCensoredWeight_homog_sum, geometricCensoredWeight_sum]
+
+theorem geometricCensored_pgf_ofNat (cap trueWeight falseWeight s : Nat)
+    (positive : 0 < trueWeight) :
+    QProb.Equiv
+      (pgf (geometricCensoredNatDistro cap trueWeight falseWeight positive) (QProb.ofNat s))
+      ⟨trueWeight * geomSumHomog (falseWeight * s) (trueWeight + falseWeight) cap +
+          falseWeight ^ (cap + 1) * s ^ cap,
+        (trueWeight + falseWeight) ^ (cap + 1),
+        Nat.pow_pos (Nat.add_pos_left positive _)⟩ := by
+  simpa [QProb.ofNat] using
+    geometricCensored_pgf cap trueWeight falseWeight (QProb.ofNat s) positive
 
 end Distros
 end Probability
