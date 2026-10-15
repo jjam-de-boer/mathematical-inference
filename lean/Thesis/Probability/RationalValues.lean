@@ -39,7 +39,7 @@ theorem toRat_nonnegative (value : QProb) : 0 ≤ toRat value := by
   exact Rat.divInt_nonneg (Int.natCast_nonneg _) (Int.natCast_nonneg _)
 
 theorem toRat_zero : toRat zero = 0 := by simp [toRat, zero]
-theorem toRat_one : toRat one = 1 := by simp [toRat, one]
+theorem toRat_one : toRat one = 1 := by decide +kernel
 
 /-- Normalized rational addition agrees with the original unreduced
 cross-denominator operation; no probability representative is discarded. -/
