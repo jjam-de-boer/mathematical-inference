@@ -43,6 +43,10 @@ theorem observational_query_preserved : QProb.Equiv
 theorem interventional_query_preserved : QProb.Equiv
     (compressed.model.interventionalValue forceXFalse (fun assignment => assignment y))
     (original.interventionalValue forceXFalse (fun assignment => assignment y)) := compressed.preserved 1
+theorem support_preserved (index : Fin 2) :
+    0 < (compressed.model.interventionalValue (queries index).intervention (queries index).event).num ↔
+      0 < (original.interventionalValue (queries index).intervention (queries index).event).num :=
+  compressed.query_positive_iff index
 theorem every_structural_readout_unchanged (intervention : HardIntervention signature) (noise : original.NoiseAssignment) :
     compressed.model.evalObserved intervention noise = original.evalObserved intervention noise :=
   original.withSourceLaw_evalObserved compressed.law intervention noise

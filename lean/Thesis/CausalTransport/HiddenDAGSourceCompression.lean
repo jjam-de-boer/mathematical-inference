@@ -49,12 +49,18 @@ def withSourceLaw (model : FiniteHiddenDAGSCM S projection) (law : FiniteProduct
     FiniteHiddenDAGSCM S projection :=
   { model with factor := law.factor, prior := law.prior, product_law := law.product_law }
 
+theorem withSourceLaw_interventionValueAt (model : FiniteHiddenDAGSCM S projection)
+    (law : FiniteProduct.IndependentLaw model.Noise) (intervention : HardIntervention S) (node : Fin projection.hiddenDAG.count) :
+    (model.withSourceLaw law).interventionValueAt intervention node = model.interventionValueAt intervention node := by
+  rfl
+
 theorem withSourceLaw_evalNode (model : FiniteHiddenDAGSCM S projection)
     (law : FiniteProduct.IndependentLaw model.Noise) (intervention : HardIntervention S)
     (noise : model.NoiseAssignment) (node : Fin projection.hiddenDAG.count) :
     (model.withSourceLaw law).evalNode intervention noise node = model.evalNode intervention noise node := by
   apply (model.withSourceLaw law).evalNode_eq_of_solution intervention noise (model.evalFull intervention noise)
   intro current
+  simp only [evalFull, withSourceLaw_interventionValueAt]
   change model.evalNode intervention noise current =
     match model.interventionValueAt intervention current with
     | some value => value
@@ -68,6 +74,7 @@ theorem withSourceLaw_evalObserved (model : FiniteHiddenDAGSCM S projection)
   change (model.observedEquiv index).forward
       ((model.withSourceLaw law).evalNode intervention noise (projection.hiddenDAG.observedNode index)) = _
   rw [withSourceLaw_evalNode]
+  rfl
 
 theorem withSourceLaw_interventionalValue (model : FiniteHiddenDAGSCM S projection)
     (law : FiniteProduct.IndependentLaw model.Noise) (query : NativeProbabilityQuery S) :
@@ -88,6 +95,33 @@ structure SourceCompression (original : FiniteHiddenDAGSCM S projection) (querie
 def SourceCompression.model {original : FiniteHiddenDAGSCM S projection} {queries : Fin count → NativeProbabilityQuery S}
     (compressed : SourceCompression original queries) : FiniteHiddenDAGSCM S projection :=
   original.withSourceLaw compressed.law
+
+/-- A preserved query retains its support exactly, not merely its value when
+both models happen to be positive.  This transports the original support
+witness needed by a requested conditional denominator. -/
+theorem SourceCompression.query_positive_iff {original : FiniteHiddenDAGSCM S projection}
+    {queries : Fin count → NativeProbabilityQuery S} (compressed : SourceCompression original queries) (index : Fin count) :
+    0 < (compressed.model.interventionalValue (queries index).intervention (queries index).event).num ↔
+      0 < (original.interventionalValue (queries index).intervention (queries index).event).num :=
+  QProb.equiv_num_pos_iff (compressed.preserved index)
+
+/-- Ratios of retained probabilities are retained wherever the original
+denominator is positive.  For a conditional application the numerator query
+is its joint event and the denominator query its conditioner under the same
+intervention.  The positive witness in the new model is constructed here;
+no completion of an undefined conditional is asserted. -/
+theorem SourceCompression.quotient_preserved {original : FiniteHiddenDAGSCM S projection}
+    {queries : Fin count → NativeProbabilityQuery S} (compressed : SourceCompression original queries)
+    (numerator denominator : Fin count)
+    (positive : 0 < (original.interventionalValue (queries denominator).intervention (queries denominator).event).num) :
+    QProb.Equiv
+      (QProb.div (compressed.model.interventionalValue (queries numerator).intervention (queries numerator).event)
+        (compressed.model.interventionalValue (queries denominator).intervention (queries denominator).event)
+        ((compressed.query_positive_iff denominator).mpr positive))
+      (QProb.div (original.interventionalValue (queries numerator).intervention (queries numerator).event)
+        (original.interventionalValue (queries denominator).intervention (queries denominator).event) positive) :=
+  QProb.div_congr (compressed.preserved numerator) (compressed.preserved denominator)
+    ((compressed.query_positive_iff denominator).mpr positive) positive
 
 /-- Compress all private sources successively, using the unchanged native
 readout as the finite family of noise events.  Every intermediate independent

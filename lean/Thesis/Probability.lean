@@ -12,6 +12,7 @@ import Thesis.Probability.AffineInterval
 import Thesis.Probability.RationalMixture
 import Thesis.Probability.FiniteProductReindex
 import Thesis.Probability.FiniteProductSplicing
+import Thesis.Probability.FiniteProductSourceCompression
 import Thesis.Probability.FiniteRecordSlicing
 import Thesis.Probability.FiniteRecordPerturbation
 import Thesis.Probability.FiniteLinearResponse
@@ -55,6 +56,12 @@ is split by responsibility.
 `FiniteProductAllocation` proves the law of one optionally allocated random
 channel, with deterministic absence elsewhere and normalization of unused
 channels.  Neither result requires positive event probabilities or division.
+
+`FiniteProductSourceCompression` constructs bounded positive-atom source
+records while preserving a supplied finite family of mixed-event probabilities
+and full independence.  Its rational-moment bridge clears denominators
+explicitly; no normalized-rational representative or external source
+replacement axiom is used.  Native structural adapters live in causal transport.
 
 Reading order:
 

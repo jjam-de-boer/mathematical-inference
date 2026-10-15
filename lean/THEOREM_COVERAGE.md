@@ -125,6 +125,8 @@ noise assignment and every hard intervention. There is no observational-cell
 positivity premise. An empty hard intervention specifies an observational
 query; preserving a conditional additionally requires its joint and conditioner
 probabilities and the original positive denominator, not a value at zero mass.
+`SourceCompression.query_positive_iff` transports that support exactly, and
+`quotient_preserved` proves equality of the corresponding supported ratios.
 
 These are constructed replacements, not external compression assumptions.
 The bounds concern actual positive atom occurrences; the original ambient

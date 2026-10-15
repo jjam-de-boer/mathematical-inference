@@ -128,6 +128,7 @@ import Thesis.CausalTransport.ConditionalCounterexampleNormalization
 import Thesis.CausalTransport.HedgeConditionalReadout
 import Thesis.CausalTransport.Counterfactual
 import Thesis.CausalTransport.HiddenDAGModel
+import Thesis.CausalTransport.HiddenDAGSourceCompression
 import Thesis.CausalTransport.HiddenDAG
 import Thesis.CausalTransport.HiddenDAGFullFamily
 import Thesis.CausalTransport.HiddenDAGCollapse
