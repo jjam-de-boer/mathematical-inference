@@ -177,6 +177,8 @@ jobs:
             Thesis.Probability.FiniteProbabilityPolynomialEncoding
             Thesis.Probability.FiniteProbabilityPolynomialCertificates
             Thesis.CausalTransport.HiddenDAGPolynomial
+            Thesis.CausalTransport.HiddenDAGPolynomialExpressions
+            Thesis.CausalTransport.HiddenDAGPolynomialEvidence
             Thesis.CausalTransport.HiddenDAGSourceCompression
             Thesis.CausalTransport.HiddenDAGObservationalCompression
             Thesis.Causality.AlmostSureIntervention
@@ -268,6 +270,7 @@ jobs:
             Thesis.Examples.FiniteProbabilityPolynomialEncoding
             Thesis.Examples.FiniteProbabilityPolynomialCertificates
             Thesis.Examples.HiddenDAGPolynomial
+            Thesis.Examples.HiddenDAGPolynomialEvidence
             Thesis.Examples.HiddenDAGSourceCompression
             Thesis.Examples.FourLabelTransportationAggregation
             Thesis.Examples.FiniteProductSplicing

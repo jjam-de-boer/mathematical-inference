@@ -184,14 +184,29 @@ certificate for every independent law on the unchanged finite structural
 template. The polynomial and basic constraints are invariant under that
 replacement; source probabilities are parameters, not frozen coefficients.
 
+`HiddenDAGPolynomialExpressions` compiles signed constants, primitive native
+queries, sums, negatives and products using a shared source-variable encoding.
+`expressionPolynomial_sound` preserves their actual signed rational semantics;
+an effect difference is not forced into the type of nonnegative probabilities.
+
+`HiddenDAGPolynomialEvidence` constructs additional zero constraints directly
+from a finite catalogue of native query/reference pairs. Its
+`checkExpressionNonnegative_sound`, `checkExpressionLower_sound` and
+`checkExpressionUpper_sound` require that the candidate model fits that data.
+The `*_sound_forSourceLaw` theorem reuses one checked certificate for every
+fitted independent law on the same template. The fit premise concerns the
+replacement law itself, not just the model used to build the polynomial.
+`observationalEquations` automatically lists the full observed table, and
+`satisfies_observationalEquations_iff` proves that satisfying this catalogue is
+exactly equality of every observed event probability. Observed zeros are allowed.
+
 The current compiled-bound API concerns explicit finite source presentations
-and fixed structural templates. Automatically assembled observational-law
-constraints remain separate assembly work. Nor does source-atom compression
-alone prove that one fixed choice of hidden endogenous alphabets and structural
-mechanisms covers every model on a graph. No complete optimizer, general
-certificate search, real-to-rational feasibility transfer, or universal
-arbitrary-graph fixed-law decision procedure is asserted. Conditional bounds
-additionally require justified cross-multiplication at a positive denominator.
+and fixed structural templates. Source-atom compression alone does not prove
+that one fixed choice of hidden endogenous alphabets and structural mechanisms
+covers every model on a graph. No complete optimizer, general certificate
+search, real-to-rational feasibility transfer, or universal arbitrary-graph
+fixed-law decision procedure is asserted. Conditional bounds additionally
+require justified cross-multiplication at a positive denominator.
 
 ## Construction, execution, and proof verification
 
