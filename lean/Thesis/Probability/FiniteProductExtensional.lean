@@ -21,7 +21,7 @@ Repeated coordinate labels are removed by the existing constructive list
 deduplication.  Zero probabilities and an empty coordinate family are allowed.
 -/
 
-theorem rectangularEvent_singleton (decEq : (index : Fin n) → DecidableEq (Value index))
+theorem rectangularEvent_assignment_singleton (decEq : (index : Fin n) → DecidableEq (Value index))
     (reference : Assignment n Value) :
     rectangularEvent n Value (fun index value => @decide (value = reference index) (decEq index _ _)) =
       @FiniteProbRecord.singletonEvent _ (assignmentDecidableEq n Value decEq) reference := by
@@ -46,7 +46,7 @@ theorem probVal_extensional_of_rectangles
   apply FiniteProbRecord.probVal_extensional_of_singletons left right labels (deduplicate_nodup _)
     (fun assignment => (mem_deduplicate _ _).mpr (enumeration_complete n Value values complete assignment))
     (fun reference => ?_) event
-  rw [← rectangularEvent_singleton decEq reference]
+  rw [← rectangularEvent_assignment_singleton decEq reference]
   exact rectangles _
 
 end FiniteProduct

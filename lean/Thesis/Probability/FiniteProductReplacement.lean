@@ -136,6 +136,19 @@ theorem replace_original_probVal (original : IndependentLaw Value)
   rw [replaceFactor_self] at updated
   exact QProb.equiv_trans updated (QProb.equiv_symm (original.product_law events))
 
+/-- Rebuild the same law from its factors after a replacement.  This removes
+the overwritten, unused coordinate copies from the literal prior record;
+successive compression need not accumulate their old atom lists. -/
+def IndependentLaw.canonical (original : IndependentLaw Value) : IndependentLaw Value :=
+  ⟨original.factor, record n Value original.factor, record_rectangular_probVal n Value original.factor⟩
+
+theorem canonical_probVal (original : IndependentLaw Value)
+    (values : (index : Fin n) → List (Value index)) (complete : forall index value, value ∈ values index)
+    (decEq : (index : Fin n) → DecidableEq (Value index)) (event : Event (Assignment n Value)) :
+    QProb.Equiv (original.canonical.prior.probVal event) (original.prior.probVal event) := by
+  exact probVal_extensional_of_rectangles _ _ values complete decEq
+    (fun events => QProb.equiv_trans (original.canonical.product_law events) (QProb.equiv_symm (original.product_law events))) event
+
 end FiniteProduct
 end Probability
 end Thesis
