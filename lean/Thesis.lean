@@ -55,6 +55,8 @@ import Thesis.Examples.RationalPolynomialIdentity
 import Thesis.Examples.PolynomialBoundCertificate
 import Thesis.Examples.FiniteProbabilityPolynomial
 import Thesis.Examples.FiniteProbabilityPolynomialEncoding
+import Thesis.Examples.FiniteProbabilityPolynomialCertificates
+import Thesis.Examples.HiddenDAGPolynomial
 import Thesis.Examples.BinaryInstrumentalIdentification
 import Thesis.Examples.BinaryInstrumentalAttainable
 import Thesis.Examples.ObservationalFormulaDiagnostics
