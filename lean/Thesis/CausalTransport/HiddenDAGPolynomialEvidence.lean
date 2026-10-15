@@ -116,7 +116,13 @@ theorem polynomialEvidenceEquations_withSourceLaw (model : FiniteHiddenDAGSCM S 
   unfold polynomialEvidenceEquations
   split
   · rfl
-  · rw [expressionPolynomial_withSourceLaw]
+  · rename_i isData
+    let selected : Fin equationCount := ⟨index.val - projection.hiddenDAG.count, by have bounded := index.isLt; omega⟩
+    -- Name the dependent data index before transporting its query. This
+    -- keeps the two finite-index proofs computational, rather than asking
+    -- rewriting to search underneath different dependent let bindings.
+    exact congrArg (fun polynomial => RationalPolynomial.sub polynomial (RationalPolynomial.constant (equations selected).reference.toSignedRatio))
+      (model.expressionPolynomial_withSourceLaw law (.probability (equations selected).query))
 
 theorem checkExpressionNonnegative_withSourceLaw (model : FiniteHiddenDAGSCM S projection)
     (law : FiniteProduct.IndependentLaw model.Noise) (equations : Fin equationCount → NativeProbabilityEquation S)
@@ -124,6 +130,7 @@ theorem checkExpressionNonnegative_withSourceLaw (model : FiniteHiddenDAGSCM S p
     (model.withSourceLaw law).checkExpressionNonnegative equations expression certificate = model.checkExpressionNonnegative equations expression certificate := by
   unfold checkExpressionNonnegative
   rw [polynomialEvidenceEquations_withSourceLaw, expressionPolynomial_withSourceLaw]
+  rfl
 
 /-- Uniform validity over every fitted independent source law on this
 template. The data-fit premise refers to the replacement model itself. -/
