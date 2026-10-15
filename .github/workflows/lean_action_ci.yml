@@ -66,6 +66,12 @@ jobs:
       # These are the same targeted build, complete build and policy gates
       # previously run by the composite action.  No verification is replaced
       # by the runtime cache, and the optional test/lint detection is retained.
+      # Detect forbidden dependencies in new arithmetic foundations before
+      # rebuilding downstream causal modules.  The complete axiom gate below
+      # remains unchanged and mandatory after the full build.
+      - name: Check constructive arithmetic prerequisites
+        working-directory: lean
+        run: lake build Thesis.ConstructiveAlgebraAudit
       - name: Build load-bearing Lean modules
         working-directory: lean
         run: >-
@@ -143,6 +149,9 @@ jobs:
             Thesis.Probability.FiniteRecordConsistencyBounds
             Thesis.Probability.AffineInterval
             Thesis.Probability.RationalMixture
+            Thesis.Probability.RationalValues
+            Thesis.Probability.SignedRatio
+            Thesis.Probability.IntegerLinearAlgebra
             Thesis.Causality.AlmostSureIntervention
             Thesis.Causality.ConsistencyBounds
             Thesis.Causality.BinaryBowModel
@@ -215,6 +224,8 @@ jobs:
             Thesis.Examples.FourLabelTransportationExtrema
             Thesis.Examples.FourLabelTransportationBatched
             Thesis.Examples.RationalMixture
+            Thesis.Examples.RationalValues
+            Thesis.Examples.IntegerLinearAlgebra
             Thesis.Examples.FourLabelTransportationAggregation
             Thesis.Examples.FiniteProductSplicing
             Thesis.Examples.HiddenPathSearch
