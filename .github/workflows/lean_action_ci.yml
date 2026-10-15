@@ -143,6 +143,7 @@ jobs:
             Thesis.Probability.FiniteRecordConsistencyBounds
             Thesis.Probability.AffineInterval
             Thesis.Probability.RationalMixture
+            Thesis.Probability.RationalValues
             Thesis.Causality.AlmostSureIntervention
             Thesis.Causality.ConsistencyBounds
             Thesis.Causality.BinaryBowModel
@@ -215,6 +216,7 @@ jobs:
             Thesis.Examples.FourLabelTransportationExtrema
             Thesis.Examples.FourLabelTransportationBatched
             Thesis.Examples.RationalMixture
+            Thesis.Examples.RationalValues
             Thesis.Examples.FourLabelTransportationAggregation
             Thesis.Examples.FiniteProductSplicing
             Thesis.Examples.HiddenPathSearch
