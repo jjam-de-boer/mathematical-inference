@@ -70,6 +70,7 @@ identification formulas or every generalized adjustment criterion.
 | Binary IV compatibility | `BinaryInstrumental.computedBounds_compatible_iff` | The executable flag is equivalent to existence of an original-DAG native model with the entire law. |
 | Binary IV sharp risks and ATE | `BinaryInstrumental.computedBounds_sharp` | Universal bounds, all four simultaneous risk corners, and native ATE endpoints; includes either null instrument arm. |
 | Binary IV point identification | `riskIdentifiedAt_iff_bounds_equiv`, `effectIdentifiedAt_iff_bounds_equiv` in `BinaryInstrumentalIdentification` | Complete fixed-law classification for compatible observations, by coincident exact rational bounds. |
+| Binary IV attainable sets | `risksAttainableAt_iff_computed_bounds`, `effectScoreAttainableAt_iff_computed_bounds` in `BinaryInstrumentalAttainable` | Exactly the rational risk rectangle and affine ATE-score interval when compatible; empty when incompatible. Every included pair has one native whole-law witness. |
 
 IV has observed binary `Z -> X -> Y` and only the `X <-> Y` bidirected edge.
 There is no monotonicity assumption. `lowerEffect` and `upperEffect` contain
@@ -78,10 +79,13 @@ Negative effects are not truncated natural subtractions. `EffectIdentifiedAt`
 compares these injective scores for all models with the given whole law.
 Compatibility is required to exclude vacuous identification on an empty class.
 
-Sharp endpoint attainment does not by itself state that every rational
-interior value is attained. That additional IV mixture theorem is a separate
-work item, as are general source compression and polynomial certificates.
-There is no claimed complete arbitrary-graph fixed-law optimizer.
+Sharp endpoint attainment alone would not state that every rational interior
+value is attained. The additional IV mixture theorems now prove that claim:
+they mix feasible response records while keeping the instrument independent,
+then realize a native model on the original DAG. They do not assume arbitrary
+independent-source model classes are convex. General source compression and
+polynomial certificates remain separate work items; there is no claimed
+complete arbitrary-graph fixed-law optimizer.
 
 ## Construction, execution, and proof verification
 

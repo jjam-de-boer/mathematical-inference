@@ -7,6 +7,10 @@ namespace RationalMixture
 
 open FiniteProbRecord
 
+private instance probabilityOrderDecidable (left right : QProb) : Decidable (QProb.LE left right) := by
+  unfold QProb.LE
+  infer_instance
+
 /-!
 # Exact mixtures with unrelated denominators and zero endpoints
 
