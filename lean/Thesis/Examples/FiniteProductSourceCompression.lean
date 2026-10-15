@@ -10,8 +10,8 @@ open FiniteProduct Probability.FiniteProductSourceCompression
 /-!
 # Iterated source compression preserves a genuinely mixed event
 
-Two independent natural-valued coordinates have unequal denominators and
-listed zero atoms.  The event's probability is five ninths and depends on
+Two independent three-valued coordinates have listed zero atoms.  The
+event's probability is five ninths and depends on
 both coordinates.  Compression bounds every factor by two positive atom
 occurrences while retaining that probability and the full product law.
 
@@ -23,17 +23,6 @@ value other than normalization is then requested for preservation.
 
 def first : Fin 2 := ⟨0, by decide⟩
 def second : Fin 2 := ⟨1, by decide⟩
-def leading : FiniteProbRecord Nat := ⟨[(0, 0), (0, 1), (1, 1), (2, 1)], 3, by decide, rfl⟩
-def trailing : FiniteProbRecord Nat := ⟨[(0, 1), (1, 2), (9, 0)], 3, by decide, rfl⟩
-def factors (index : Fin 2) : FiniteProbRecord Nat := if index = first then leading else trailing
-def law : IndependentLaw (fun _ : Fin 2 => Nat) :=
-  ⟨factors, record 2 (fun _ => Nat) factors, record_rectangular_probVal 2 (fun _ => Nat) factors⟩
-def values (_ : Fin 2) : List Nat := []
-
-/-- The original ambient type Nat is deliberately not finitely enumerated.
-To use whole-law coordinate extensionality we instead supply a finite domain
-for the actual fixture below.  Arbitrary ambient-type record compression is
-covered separately by the lower-level rational-response examples. -/
 def finiteValue (_ : Fin 2) := Fin 3
 def finiteLeading : FiniteProbRecord (Fin 3) :=
   ⟨[(0, 0), (0, 1), (1, 1), (2, 1)], 3, by decide, rfl⟩

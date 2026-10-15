@@ -35,7 +35,8 @@ def replaceCoordinate (chosen : Fin n) (value : Value chosen) (background : Assi
 
 theorem replaceCoordinate_chosen (chosen : Fin n) (value : Value chosen) (background : Assignment n Value) :
     replaceCoordinate chosen value background chosen = value := by
-  simp only [replaceCoordinate, dif_pos rfl]
+  unfold replaceCoordinate
+  rw [dif_pos rfl]
 
 theorem replaceCoordinate_other (chosen : Fin n) (value : Value chosen) (background : Assignment n Value)
     (index : Fin n) (different : index ≠ chosen) :
@@ -48,7 +49,8 @@ def replaceFactor (factors : (index : Fin n) → FiniteProbRecord (Value index))
 
 theorem replaceFactor_chosen (factors : (index : Fin n) → FiniteProbRecord (Value index)) (chosen : Fin n)
     (replacement : FiniteProbRecord (Value chosen)) : replaceFactor factors chosen replacement chosen = replacement := by
-  simp only [replaceFactor, dif_pos rfl]
+  unfold replaceFactor
+  rw [dif_pos rfl]
 
 theorem replaceFactor_other (factors : (index : Fin n) → FiniteProbRecord (Value index)) (chosen : Fin n)
     (replacement : FiniteProbRecord (Value chosen)) (index : Fin n) (different : index ≠ chosen) :
@@ -110,9 +112,9 @@ theorem replaceRecord_product_law (original : IndependentLaw Value) (chosen : Fi
     intro index
     by_cases same : index = chosen
     · subst index
-      simp only [if_pos rfl]
+      simp only [if_true]
       exact QProb.equiv_trans ((original.factor chosen).probVal_congr _ topEvent (fun value => by
-        simp only [eventsWithout, if_pos rfl, topEvent])) (original.factor chosen).normalization
+        simp only [eventsWithout, if_true, topEvent])) (original.factor chosen).normalization
     · simp only [if_neg same, replaceFactor_other original.factor chosen replacement index same]
       exact (original.factor index).probVal_congr _ _ (fun value => by simp only [eventsWithout, if_neg same])
   have isolated := qProduct_coordinate n chosen
