@@ -38,6 +38,14 @@ def SatisfiesProbabilityEquations (model : FiniteHiddenDAGSCM S projection)
   forall index, QProb.Equiv (model.interventionalValue (equations index).query.intervention (equations index).query.event)
     (equations index).reference
 
+/-- Fitting a finite catalogue of explicit rational equalities is decidable.
+This instance examines only the supplied finite indices and natural-number
+cross products; it supplies no decision procedure for arbitrary propositions. -/
+instance (model : FiniteHiddenDAGSCM S projection) (equations : Fin equationCount → NativeProbabilityEquation S) :
+    Decidable (model.SatisfiesProbabilityEquations equations) := by
+  unfold SatisfiesProbabilityEquations
+  infer_instance
+
 /-- Source normalization occupies the first block of indices. The second
 block is built from the stated data queries. The split is a natural-number
 decision, not a choice of proof or a decision for arbitrary propositions. -/

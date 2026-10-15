@@ -208,6 +208,40 @@ search, real-to-rational feasibility transfer, or universal arbitrary-graph
 fixed-law decision procedure is asserted. Conditional bounds additionally
 require justified cross-multiplication at a positive denominator.
 
+### Graph-wide coverage: assessed route, not a proved theorem
+
+For a **fixed full hidden DAG** with fixed observed domains, there is a
+plausible finite constructive route beyond the current fixed-template checker.
+Retain all observed singleton queries and the finitely many primitive queries
+appearing in the requested target. Existing source compression gives a bound
+`K = number of retained queries + 1` for each source's positive atom occurrences.
+It does not yet change those sources' ambient types to a common finite alphabet.
+
+The missing representation steps would be:
+
+1. Relabel each compressed source by at most `K` atom positions, preserving
+   independence and every retained intervention probability. Padding unused
+   positions with zero mass must be justified, not identified with positive cells.
+2. Enumerate the hidden values reached under the retained interventions and
+   relabel them too. With `N` native nodes and `I` listed interventions, a
+   crude candidate bound is `I * K^N` values per hidden node. Mechanisms on
+   unreachable parent inputs need explicit defaults, while evaluator simulation
+   must prove those defaults cannot change a retained trajectory.
+3. Enumerate finite mechanism tables on those bounded domains, then prove that
+   every original model has a representative in this family with the same
+   observed law and target values. Only that coverage theorem would justify
+   checking one certificate per template to establish a graph-wide bound.
+
+These are proposed proof obligations, not existing formal cardinality or
+coverage results. The finite search can also be enormous; mathematical
+finiteness is not an efficiency guarantee. If only an observed projection is
+fixed while the number and arrangement of hidden nodes vary, another graph
+representation theorem is needed as well. Even successful finite-template
+coverage would leave infinitely many rational source-weight assignments;
+it would not, by itself, prove complete certificate search, optimization or
+rational feasibility decision. No excluded-middle, choice or real-to-rational
+transfer principle is silently added at any of these boundaries.
+
 ## Construction, execution, and proof verification
 
 `FourLabelTransportation.transportBatched` reserves complete eligible-cell
