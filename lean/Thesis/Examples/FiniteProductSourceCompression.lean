@@ -23,7 +23,7 @@ value other than normalization is then requested for preservation.
 
 def first : Fin 2 := ⟨0, by decide⟩
 def second : Fin 2 := ⟨1, by decide⟩
-def finiteValue (_ : Fin 2) := Fin 3
+abbrev finiteValue (_ : Fin 2) := Fin 3
 def finiteLeading : FiniteProbRecord (Fin 3) :=
   ⟨[(0, 0), (0, 1), (1, 1), (2, 1)], 3, by decide, rfl⟩
 def finiteTrailing : FiniteProbRecord (Fin 3) :=
