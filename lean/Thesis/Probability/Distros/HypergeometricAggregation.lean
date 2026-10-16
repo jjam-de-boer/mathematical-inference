@@ -122,12 +122,15 @@ theorem hypergeometricIntegral_mergeHead (n stock : Nat) (stocks : List Nat) (in
           apply natSum_congr
           intro used _
           apply congrArg (fun value => binom other used * value)
-          exact ih stocks (n - used) (fun counts => f (used :: counts)) (by simpa only [List.length_cons, Nat.succ_lt_succ_iff] using within)
+          exact ih (n := n - used) (stocks := stocks) (f := fun counts => f (used :: counts))
+            (within := by simpa only [List.length_cons, Nat.succ_lt_succ_iff] using within)
 
 private theorem hypergeometricIntegral_nil (n : Nat) (f : List Nat → Nat) :
     hypergeometricIntegral n [] f = if n = 0 then f [] else 0 := by
   by_cases zero : n = 0
-  · subst n; rfl
+  · subst n
+    change 1 * f [] + 0 = f []
+    rw [Nat.one_mul, Nat.add_zero]
   · simp only [hypergeometricIntegral, multivariateHypergeometricAtoms, if_neg zero, natIntegral]
 
 private theorem hypergeometricIntegral_zeroHead (n : Nat) (stocks : List Nat) (f : List Nat → Nat) :
@@ -160,7 +163,11 @@ theorem hypergeometricIntegral_aggregation (n groups : Nat) (stocks labels : Lis
       hypergeometricIntegral n (aggregateCounts groups labels stocks) f := by
   induction stocks generalizing labels n f with
   | nil => cases labels with
-      | nil => rw [hypergeometricIntegral_nil, aggregateCounts, hypergeometricIntegral_zeroStocks]; rfl
+      | nil =>
+          rw [hypergeometricIntegral_nil]
+          change (if n = 0 then f (List.replicate groups 0) else 0) =
+            hypergeometricIntegral n (List.replicate groups 0) f
+          exact (hypergeometricIntegral_zeroStocks n groups f).symm
       | cons label labels => have dim := dimension; simp only [List.length_nil, List.length_cons] at dim; exact False.elim (by omega)
   | cons stock stocks ih => cases labels with
       | nil => have dim := dimension; simp only [List.length_nil, List.length_cons] at dim; exact False.elim (by omega)
@@ -177,8 +184,10 @@ theorem hypergeometricIntegral_aggregation (n groups : Nat) (stocks labels : Lis
             apply natSum_congr
             intro used _
             apply congrArg (fun value => binom stock used * value)
-            exact ih labels (n - used) (fun counts => f (counts.modify label (fun old => old + used)))
-              (Nat.succ.inj dimension) (fun other member => within other (List.mem_cons_of_mem _ member))
+            exact ih (n := n - used) (labels := labels)
+              (dimension := Nat.succ.inj dimension)
+              (within := fun other member => within other (List.mem_cons_of_mem _ member))
+              (f := fun counts => f (counts.modify label (fun old => old + used)))
           rw [tails]
           have merged := hypergeometricIntegral_mergeHead n stock grouped label f labelWithin
           rw [hypergeometricIntegral_cons] at merged
@@ -201,7 +210,8 @@ theorem multivariateHypergeometric_aggregation (n groups : Nat) (stocks labels :
   change hypergeometricIntegral n stocks (fun counts => if event (aggregateCounts groups labels counts) then 1 else 0) *
       binom (aggregateCounts groups labels stocks).sum n =
     hypergeometricIntegral n (aggregateCounts groups labels stocks) (fun counts => if event counts then 1 else 0) * binom stocks.sum n
-  rw [hypergeometricIntegral_aggregation n groups stocks labels dimension within,
+  rw [hypergeometricIntegral_aggregation n groups stocks labels dimension within
+      (fun counts => if event counts then 1 else 0),
     aggregateCounts_sum groups labels stocks dimension within]
 
 end Thesis.Probability.Distros
