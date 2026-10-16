@@ -349,3 +349,11 @@ example : QProb.LE
   decide +kernel
 
 end Thesis.Probability.Distros
+
+namespace Thesis.Probability.Distros
+
+example : SignedRatio.Equiv ((bernoulliDistro 1 1 (by decide)).rationalVariance
+    (fun bit => (⟨if bit then 1 else -1, 2, by decide⟩ : SignedRatio)))
+    (⟨1, 4, by decide⟩ : SignedRatio) := by decide +kernel
+
+end Thesis.Probability.Distros

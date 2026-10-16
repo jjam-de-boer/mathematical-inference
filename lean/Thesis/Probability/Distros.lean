@@ -39,6 +39,7 @@ import Thesis.Probability.Distros.MulticolourPolya
 import Thesis.Probability.Distros.KernelInvariance
 import Thesis.Probability.Distros.SignedCovariance
 import Thesis.Probability.Distros.SignedCauchy
+import Thesis.Probability.Distros.RationalMoments
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.RationalBetaBinomial
@@ -207,4 +208,20 @@ Reading order:
 42. `ReinforcedPrefix` proves ordered-prefix conditioning, its predictive
     probability, and direct equality in law with conditioning only on the
     observed counts, including supported deterministic prefixes.
+43. `RationalParameters` identifies every positive-reinforcement integer urn
+    with rational parameters divided by that reinforcement. `RationalAggregation`,
+    `RationalBetaBinomial` and `RationalUpdates` expose rational category sums,
+    coordinate beta-binomial marginals, and actual count-conditioned future
+    path and count laws with parameters increased by the observed counts.
+44. `ReinforcedVariance` gives the closed coordinate variance at every natural
+    reinforcement, including zero trials, zero weights and zero reinforcement.
+45. `SignedConcentration` and `SignedCauchy` prove rational-radius Chebyshev
+    for integer observables, zero variance exactly for almost-sure constants,
+    and covariance Cauchy–Schwarz including the zero-variance cases.
+46. `FactorialPGF` expands a bounded numeric PGF about one using its factorial
+    moments divided by factorials. Matching moments through a common finite
+    support bound reconstructs every event probability and every rational PGF.
+47. `RationalMoments` provides signed rational-observable expectation,
+    covariance and variance, with linearity and integer-expectation agreement.
+    These are the observable types needed for conditional moment decompositions.
 -/
