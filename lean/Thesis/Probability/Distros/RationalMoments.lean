@@ -56,8 +56,8 @@ theorem rationalAtomSum_mul_left (atoms : List (Ω × Nat)) (factor : SignedRati
       (SignedRatio.mul factor (FiniteProbRecord.rationalAtomSum atoms f)) := by
   refine SignedRatio.equiv_trans (SignedRatio.listSum_map_congr atoms _ _
     (fun atom => scaleNat_mul atom.2 factor (f atom.1))) ?_
-  exact SignedRatio.equiv_symm (by simpa only [List.map_map, Function.comp_def] using
-    SignedRatio.mul_listSum factor (atoms.map (fun atom => SignedRatio.scaleNat atom.2 (f atom.1))))
+  have result := SignedRatio.mul_listSum factor (atoms.map (fun atom => SignedRatio.scaleNat atom.2 (f atom.1)))
+  simpa only [FiniteProbRecord.rationalAtomSum, List.map_map, Function.comp_def] using SignedRatio.equiv_symm result
 
 theorem Distro.rationalExpectation_congr (μ : Distro Ω) (f g : Ω → SignedRatio)
     (same : ∀ x, SignedRatio.Equiv (f x) (g x)) :
@@ -71,14 +71,14 @@ theorem Distro.rationalExpectation_map (μ : Distro Ω) (encode : Ω → X) (f :
 theorem Distro.rationalExpectation_add (μ : Distro Ω) (f g : Ω → SignedRatio) :
     SignedRatio.Equiv (μ.rationalExpectation (fun x => SignedRatio.add (f x) (g x)))
       (SignedRatio.add (μ.rationalExpectation f) (μ.rationalExpectation g)) :=
-  SignedRatio.equiv_trans (SignedRatio.divideNat_congr (rationalAtomSum_add _ _ _) _ _)
-    (divideNat_add _ _ _ _)
+  SignedRatio.equiv_trans (SignedRatio.divideNat_congr (rationalAtomSum_add _ _ _) μ.record.den μ.record.den_pos)
+    (divideNat_add _ _ μ.record.den μ.record.den_pos)
 
 theorem Distro.rationalExpectation_mul_left (μ : Distro Ω) (factor : SignedRatio) (f : Ω → SignedRatio) :
     SignedRatio.Equiv (μ.rationalExpectation (fun x => SignedRatio.mul factor (f x)))
       (SignedRatio.mul factor (μ.rationalExpectation f)) :=
-  SignedRatio.equiv_trans (SignedRatio.divideNat_congr (rationalAtomSum_mul_left _ _ _) _ _)
-    (divideNat_mul _ _ _ _)
+  SignedRatio.equiv_trans (SignedRatio.divideNat_congr (rationalAtomSum_mul_left _ _ _) μ.record.den μ.record.den_pos)
+    (divideNat_mul _ _ μ.record.den μ.record.den_pos)
 
 theorem Distro.rationalExpectation_constant (μ : Distro Ω) (value : SignedRatio) :
     SignedRatio.Equiv (μ.rationalExpectation (fun _ => value)) value := by
@@ -95,5 +95,35 @@ theorem Distro.rationalExpectation_int (μ : Distro Ω) (f : Ω → Int) :
   refine SignedRatio.equiv_trans (μ.record.rationalMean_cleared _ f 1 (Nat.zero_lt_one)
     (fun _ => SignedRatio.equiv_refl _)) ?_
   simp only [SignedRatio.Equiv, SignedRatio.divideNat, SignedMoment.toRatio, signedExpectation, Nat.mul_one]
+
+private theorem negativeOne_mul (value : SignedRatio) :
+    SignedRatio.Equiv (SignedRatio.mul ⟨-1, 1, Nat.zero_lt_one⟩ value) (SignedRatio.neg value) := by
+  simp only [SignedRatio.Equiv, SignedRatio.mul, SignedRatio.neg, Nat.one_mul,
+    Int.natCast_one, Int.neg_mul, Int.one_mul]
+
+theorem Distro.rationalExpectation_neg (μ : Distro Ω) (f : Ω → SignedRatio) :
+    SignedRatio.Equiv (μ.rationalExpectation (fun x => SignedRatio.neg (f x)))
+      (SignedRatio.neg (μ.rationalExpectation f)) :=
+  SignedRatio.equiv_trans (μ.rationalExpectation_congr _ _ (fun x => SignedRatio.equiv_symm (negativeOne_mul (f x))))
+    (SignedRatio.equiv_trans (μ.rationalExpectation_mul_left _ _) (negativeOne_mul _))
+
+theorem Distro.rationalExpectation_sub (μ : Distro Ω) (f g : Ω → SignedRatio) :
+    SignedRatio.Equiv (μ.rationalExpectation (fun x => SignedRatio.sub (f x) (g x)))
+      (SignedRatio.sub (μ.rationalExpectation f) (μ.rationalExpectation g)) :=
+  SignedRatio.equiv_trans (μ.rationalExpectation_add _ _)
+    (SignedRatio.add_congr (SignedRatio.equiv_refl _) (μ.rationalExpectation_neg g))
+
+theorem ratio_sub_congr {a b c d : SignedRatio} (first : SignedRatio.Equiv a b) (second : SignedRatio.Equiv c d) :
+    SignedRatio.Equiv (SignedRatio.sub a c) (SignedRatio.sub b d) :=
+  SignedRatio.add_congr first (SignedRatio.neg_congr second)
+
+theorem Distro.rationalExpectation_listSum (μ : Distro Ω) (values : List X) (f : X → Ω → SignedRatio) :
+    SignedRatio.Equiv (μ.rationalExpectation (fun x => SignedRatio.listSum (values.map (fun i => f i x))))
+      (SignedRatio.listSum (values.map (fun i => μ.rationalExpectation (f i)))) := by
+  induction values with
+  | nil => exact μ.rationalExpectation_constant SignedRatio.zero
+  | cons value values ih =>
+      exact SignedRatio.equiv_trans (μ.rationalExpectation_add _ _)
+        (SignedRatio.add_congr (SignedRatio.equiv_refl _) ih)
 
 end Thesis.Probability.Distros
