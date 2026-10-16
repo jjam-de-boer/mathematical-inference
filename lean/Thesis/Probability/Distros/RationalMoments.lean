@@ -99,7 +99,7 @@ theorem Distro.rationalExpectation_int (μ : Distro Ω) (f : Ω → Int) :
 private theorem negativeOne_mul (value : SignedRatio) :
     SignedRatio.Equiv (SignedRatio.mul ⟨-1, 1, Nat.zero_lt_one⟩ value) (SignedRatio.neg value) := by
   simp only [SignedRatio.Equiv, SignedRatio.mul, SignedRatio.neg, Nat.one_mul,
-    Int.natCast_one, Int.neg_mul, Int.one_mul]
+    Int.neg_mul, Int.one_mul]
 
 theorem Distro.rationalExpectation_neg (μ : Distro Ω) (f : Ω → SignedRatio) :
     SignedRatio.Equiv (μ.rationalExpectation (fun x => SignedRatio.neg (f x)))

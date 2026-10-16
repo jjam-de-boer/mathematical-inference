@@ -74,8 +74,10 @@ theorem conditionalBlockMean_conditionOn (μ : Distro Ω) (event : Event Ω)
       (μ.record.conditionOn event positive).rationalMean f := by
   have massPositive : 0 < FiniteProbRecord.totalMass (μ.record.atoms.filter (fun atom => event atom.1)) := by
     rw [FiniteProbRecord.totalMass_filter_event]; exact positive
-  simp only [conditionalBlockMean, dif_pos massPositive, FiniteProbRecord.rationalMean,
-    FiniteProbRecord.conditionOn, FiniteProbRecord.totalMass_filter_event]
+  unfold conditionalBlockMean
+  rw [dif_pos massPositive]
+  simp only [FiniteProbRecord.rationalMean, FiniteProbRecord.conditionOn,
+    FiniteProbRecord.totalMass_filter_event]
 
 private theorem rationalAtomSum_zero_mass (atoms : List (Ω × Nat)) (zero : FiniteProbRecord.totalMass atoms = 0)
     (f : Ω → SignedRatio) : SignedRatio.Equiv (FiniteProbRecord.rationalAtomSum atoms f) SignedRatio.zero := by
@@ -132,6 +134,7 @@ theorem AtomPartition.total_expectation {μ : Distro Ω} (partition : AtomPartit
     SignedRatio.Equiv (partition.distro.rationalExpectation (fun cell => conditionalBlockMean cell f))
       (μ.rationalExpectation f) := by
   apply SignedRatio.divideNat_congr
+  simp only [AtomPartition.distro, FiniteProbRecord.rationalAtomSum, List.map_map, Function.comp_def]
   change SignedRatio.Equiv
     (SignedRatio.listSum (partition.cells.map (fun cell =>
       SignedRatio.scaleNat (FiniteProbRecord.totalMass cell) (conditionalBlockMean cell f))))
