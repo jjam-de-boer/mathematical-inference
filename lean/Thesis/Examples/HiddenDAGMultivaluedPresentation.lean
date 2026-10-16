@@ -254,6 +254,6 @@ theorem do_y_null_probability_one :
   apply QProb.equiv_trans (model.prior.map_probVal _ _)
   exact QProb.equiv_trans (model.prior.probVal_congr _ (fun _ => true) (fun noise => by
     rw [eval_y_forced_null noise, read_null]
-    decide)) model.prior.normalization
+    rfl)) model.prior.normalization
 
 end Thesis.Causality.Examples.HiddenDAGMultivaluedPresentation
