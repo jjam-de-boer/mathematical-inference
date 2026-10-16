@@ -320,7 +320,7 @@ namespace Thesis.Probability.Distros
 
 /-- Fractional parameters use unit reinforcement in rational units. -/
 example : QProb.Equiv
-    ((rationalBetaBinomialNatDistro 2 ⟨1, 2, by decide⟩ ⟨3, 2, by decide⟩ (by decide)).distro.probVal
+    ((rationalBetaBinomialNatDistro 2 ⟨1, 2, by decide⟩ ⟨3, 2, by decide⟩ (by decide)).distro.record.probVal
       (fun counts => decide (counts.getD 0 0 = 2)))
     (⟨1, 8, by decide⟩ : QProb) := by decide +kernel
 

@@ -64,6 +64,10 @@ zero-weight colours rather than assuming every possible vector is supported. -/
 def rationalCountsSupported (m : Nat) (alphas : List QProb) (counts : List Nat) : Prop :=
   reinforcedCountsSupported m (rationalUrnWeights alphas) (QProb.listSum alphas).den counts
 
+instance (m : Nat) (alphas : List QProb) (counts : List Nat) :
+    Decidable (rationalCountsSupported m alphas counts) :=
+  inferInstanceAs (Decidable (reinforcedCountsSupported m (rationalUrnWeights alphas) (QProb.listSum alphas).den counts))
+
 theorem rationalCountsSupported_shape (m : Nat) (alphas : List QProb) (counts : List Nat)
     (supported : rationalCountsSupported m alphas counts) : counts.length = alphas.length ∧ counts.sum = m := by
   have shape := reinforcedCountsSupported_shape m (rationalUrnWeights alphas) counts (QProb.listSum alphas).den supported
