@@ -37,6 +37,7 @@ import Thesis.Probability.Distros.HypergeometricUrn
 import Thesis.Probability.Distros.MultivariateHypergeometric
 import Thesis.Probability.Distros.HypergeometricFactorialMoments
 import Thesis.Probability.Distros.HypergeometricMarginals
+import Thesis.Probability.Distros.HypergeometricAggregation
 import Thesis.Probability.Distros.Reweight
 import Thesis.Probability.Distros.MulticolourPolya
 import Thesis.Probability.Distros.KernelInvariance
@@ -232,4 +233,10 @@ Reading order:
     from the actual atom records, retaining unsupported cells with explicit
     zero conditional values. `ConditionalMoments` proves total expectation,
     variance and covariance for signed rational observables and conditional means.
+    Integer and natural-observable variance agree with the existing interfaces.
+49. `MultivariateHypergeometric` constructs multicolour sampling without
+    replacement and proves its Vandermonde normalization. Its factorial-moment
+    modules give all joint moments, including vanishing orders, and reconstruct
+    the hypergeometric law of each coordinate. `HypergeometricAggregation`
+    proves arbitrary category coarsening with summed stocks and empty groups.
 -/

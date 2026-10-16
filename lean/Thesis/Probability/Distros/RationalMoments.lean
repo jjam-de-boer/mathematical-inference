@@ -126,4 +126,31 @@ theorem Distro.rationalExpectation_listSum (μ : Distro Ω) (values : List X) (f
       exact SignedRatio.equiv_trans (μ.rationalExpectation_add _ _)
         (SignedRatio.add_congr (SignedRatio.equiv_refl _) ih)
 
+theorem SignedMoment.toRatio_congr {a b : SignedMoment} (same : a.Equiv b) :
+    SignedRatio.Equiv a.toRatio b.toRatio := same
+
+/-- Rational covariance extends the existing integer-observable covariance. -/
+theorem Distro.rationalCovariance_int (μ : Distro Ω) (f g : Ω → Int) :
+    SignedRatio.Equiv
+      (μ.rationalCovariance (fun x => ⟨f x, 1, Nat.zero_lt_one⟩) (fun x => ⟨g x, 1, Nat.zero_lt_one⟩))
+      (μ.signedCovariance f g).toRatio := by
+  have expression := ratio_sub_congr (μ.rationalExpectation_int (fun x => f x * g x))
+    (SignedRatio.mul_congr (μ.rationalExpectation_int f) (μ.rationalExpectation_int g))
+  exact SignedRatio.equiv_trans expression
+    (SignedRatio.equiv_symm (SignedMoment.toRatio_congr (μ.signedCovariance_expectations f g)))
+
+/-- Conditional variance decompositions use the same variance as the
+existing nonnegative integer-observable interface. -/
+theorem Distro.rationalVariance_int (μ : Distro Ω) (f : Ω → Int) :
+    SignedRatio.Equiv (μ.rationalVariance (fun x => ⟨f x, 1, Nat.zero_lt_one⟩))
+      (SignedMoment.ofQProb (μ.varianceInt f)).toRatio :=
+  SignedRatio.equiv_trans (μ.rationalCovariance_int f f)
+    (SignedRatio.equiv_symm (SignedMoment.toRatio_congr (μ.varianceInt_signed f)))
+
+theorem Distro.rationalVariance_nat (μ : Distro Ω) (f : Ω → Nat) :
+    SignedRatio.Equiv (μ.rationalVariance (fun x => ⟨(f x : Int), 1, Nat.zero_lt_one⟩))
+      (SignedMoment.ofQProb (variance (⟨μ, f⟩ : NatDistro Ω))).toRatio :=
+  SignedRatio.equiv_trans (μ.rationalVariance_int (fun x => (f x : Int)))
+    (SignedMoment.toRatio_congr (SignedMoment.ofQProb_congr (μ.varianceInt_nat f)))
+
 end Thesis.Probability.Distros

@@ -383,3 +383,19 @@ example : SignedRatio.Equiv (partitionMomentFixture.rationalVariance partitionMo
     (⟨5, 4, by decide⟩ : SignedRatio) := by decide +kernel
 
 end Thesis.Examples.DistributionExtensions
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+example : QProb.Equiv (jointFactorialMoment (multivariateHypergeometricDistro 2 [2, 0, 1] (by decide)) [1, 0, 1])
+    (⟨2, 3, by decide⟩ : QProb) := by decide +kernel
+
+example : QProb.Equiv (jointFactorialMoment (multivariateHypergeometricDistro 2 [2, 0, 1] (by decide)) [4, 0, 0])
+    QProb.zero := by decide +kernel
+
+example : QProb.Equiv (((multivariateHypergeometricDistro 2 [2, 0, 1] (by decide)).map
+    (aggregateCounts 3 [1, 0, 1])).pmf [0, 2, 0]) QProb.one := by decide +kernel
+
+example : QProb.Equiv ((multivariateHypergeometricDistro 0 [] (by decide)).pmf []) QProb.one := by decide +kernel
+
+end Thesis.Examples.DistributionExtensions
