@@ -20,7 +20,8 @@ theorem factorialPGFCoefficient_binom (μ : NatDistro Ω) (order : Nat) :
   unfold factorialPGFCoefficient
   rw [falling]
   refine QProb.equiv_trans (QProb.div_congr (μ.distro.expectNat_scale _ _)
-    (QProb.equiv_refl _) _ _) ?_
+    (QProb.equiv_refl _) (fallingFactorial_pos order order (Nat.le_refl _))
+    (fallingFactorial_pos order order (Nat.le_refl _))) ?_
   simp only [QProb.Equiv, QProb.div, QProb.scale, QProb.ofNat]
   ac_rfl
 
@@ -37,7 +38,10 @@ private theorem qprob_range_extend (n bound : Nat) (within : n ≤ bound) (f : N
     (zero : ∀ k, n ≤ k → k < bound → QProb.Equiv (f k) QProb.zero) :
     QProb.Equiv (QProb.listSum ((List.range bound).map f)) (QProb.listSum ((List.range n).map f)) := by
   induction bound generalizing n with
-  | zero => have eq : n = 0 := by omega; subst n; exact QProb.equiv_refl _
+  | zero =>
+      have equal : n = 0 := by omega
+      subst n
+      exact QProb.equiv_refl _
   | succ bound ih =>
       by_cases equal : n = bound + 1
       · subst n; exact QProb.equiv_refl _
@@ -75,7 +79,10 @@ theorem pgf_factorial_expansion (μ : NatDistro Ω) (bound : Nat)
     QProb.Equiv (pgf μ (QProb.add t QProb.one))
       (QProb.listSum ((List.range (bound + 1)).map (fun r =>
         QProb.mul (factorialPGFCoefficient μ r) (qpow t r)))) := by
-  refine QProb.equiv_trans (μ.distro.expectation_congr_on_support _ _
+  refine QProb.equiv_trans (pgf_expectation μ (QProb.add t QProb.one)) ?_
+  refine QProb.equiv_trans (μ.distro.expectation_congr_on_support
+    (fun x => qpow (QProb.add t QProb.one) (μ.embed x))
+    (fun x => QProb.listSum ((List.range (bound + 1)).map (fun r => QProb.scale (binom (μ.embed x) r) (qpow t r))))
     (fun atom member => qpow_add_one_bounded _ bound (support atom member) t)) ?_
   refine QProb.equiv_trans (μ.distro.expectation_listSum (List.range (bound + 1))
     (fun r x => QProb.scale (binom (μ.embed x) r) (qpow t r))) ?_
@@ -99,7 +106,7 @@ theorem NatDistro.sameLaw_of_factorialMoments (μ : NatDistro Ω) (ν : NatDistr
   let base := μ.distro.record.den * ν.distro.record.den
   let t := QProb.ofNat base
   have arguments : QProb.Equiv (QProb.add t QProb.one) (QProb.ofNat (base + 1)) := by
-    simp only [QProb.Equiv, QProb.add, QProb.ofNat, QProb.one, Nat.mul_one]
+    simp only [t, QProb.Equiv, QProb.add, QProb.ofNat, QProb.one, Nat.mul_one, Nat.one_mul]
   have expansion := qprob_listSum_map_congr_on_mem (List.range (bound + 1))
     (fun r => QProb.mul (factorialPGFCoefficient μ r) (qpow t r))
     (fun r => QProb.mul (factorialPGFCoefficient ν r) (qpow t r)) (fun r member =>

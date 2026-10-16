@@ -344,6 +344,8 @@ example : QProb.Equiv ((bernoulliDistro 0 1 (by decide)).varianceInt
 example : QProb.LE
     (SignedMoment.square ((bernoulliDistro 1 1 (by decide)).signedCovariance
       (fun bit => if bit then (1 : Int) else -1)
-      (fun bit => if bit then (-1 : Int) else 1))) QProb.one := by decide +kernel
+      (fun bit => if bit then (-1 : Int) else 1))) QProb.one := by
+  unfold QProb.LE
+  decide +kernel
 
 end Thesis.Probability.Distros
