@@ -23,7 +23,10 @@ theorem Distro.signedCovariance_zero_of_varianceInt_zero (μ : Distro Ω) (f g :
   have product : μ.record.signedMass (fun x => f x * g x) = c * μ.record.signedMass g := by
     change FiniteProbRecord.signedAtomMass μ.record.atoms _ = _
     rw [signedAtomMass_congr_positive _ (fun x => f x * g x) (fun x => c * g x)
-      (fun atom member weight => by rw [constant atom member weight]), FiniteProbRecord.signedAtomMass_mul_left]
+      (fun atom member weight => by
+        change f atom.1 * g atom.1 = c * g atom.1
+        rw [constant atom member weight]), FiniteProbRecord.signedAtomMass_mul_left]
+    rfl
   change (μ.record.den : Int) * μ.record.signedMass (fun x => f x * g x) -
     μ.record.signedMass f * μ.record.signedMass g = 0
   rw [mean, product, ← Int.mul_assoc, Int.sub_self]
@@ -47,7 +50,7 @@ theorem Distro.signedCovariance_cauchy_num (μ : Distro Ω) (f g : Ω → Int) :
     rw [μ.signedCovariance_symm g f] at cross
     change C = 0 at cross
     change C * C ≤ A * B
-    simp only [cross, zero, Int.zero_mul, Int.mul_zero, Int.le_refl]
+    simp only [cross, zero, Int.mul_zero, Int.le_refl]
   · have positive : 0 < B := by omega
     have quadratic := μ.signedCovariance_self_nonnegative (fun x => B * f x + (-C) * g x)
     rw [μ.signedCovariance_linear_self_num] at quadratic

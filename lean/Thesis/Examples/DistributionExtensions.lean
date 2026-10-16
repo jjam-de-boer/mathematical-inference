@@ -330,3 +330,20 @@ example : QProb.Equiv
     (⟨3, 8, by decide⟩ : QProb) := by decide +kernel
 
 end Thesis.Probability.Distros
+
+namespace Thesis.Probability.Distros
+
+/-- The signed extension handles a negative value without changing the
+nonnegative probability record. -/
+example : QProb.Equiv ((bernoulliDistro 1 1 (by decide)).varianceInt
+    (fun bit => if bit then (1 : Int) else -1)) QProb.one := by decide +kernel
+
+example : QProb.Equiv ((bernoulliDistro 0 1 (by decide)).varianceInt
+    (fun bit => if bit then (7 : Int) else -3)) QProb.zero := by decide +kernel
+
+example : QProb.LE
+    (SignedMoment.square ((bernoulliDistro 1 1 (by decide)).signedCovariance
+      (fun bit => if bit then (1 : Int) else -1)
+      (fun bit => if bit then (-1 : Int) else 1))) QProb.one := by decide +kernel
+
+end Thesis.Probability.Distros
