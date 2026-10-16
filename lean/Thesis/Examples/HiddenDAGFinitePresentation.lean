@@ -169,7 +169,15 @@ def rule3Application : DoRuleApplication projection.observedGraph
     (FourWayDisjoint.emptyAction _ _ NodeSet.empty
       (NodeSet.disjoint_singletons_of_ne (by decide))
       (NodeSet.disjoint_empty_right _) (NodeSet.disjoint_empty_right _))
-    (by decide +kernel)
+    (by
+      change projection.observedGraph.dSeparated
+        { removeIncoming := NodeSet.union NodeSet.empty
+            (projection.observedGraph.nonAncestorsOf (.bar NodeSet.empty)
+              (NodeSet.singleton x) NodeSet.empty),
+          removeOutgoing := NodeSet.empty }
+        (NodeSet.singleton y) (NodeSet.singleton x)
+        (NodeSet.union NodeSet.empty NodeSet.empty) = true
+      decide +kernel)
 
 /-- This applies the checked native soundness theorem to each constructed
 model. Both unconditional endpoints have support even at null action values. -/
