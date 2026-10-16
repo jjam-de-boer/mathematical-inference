@@ -28,6 +28,7 @@ import Thesis.Probability.Distros.BetaBinomialMoments
 import Thesis.Probability.Distros.GeometricMoments
 import Thesis.Probability.Distros.HypergeometricMoments
 import Thesis.Probability.Distros.FactorialMoments
+import Thesis.Probability.Distros.FactorialPGF
 import Thesis.Probability.Distros.PolyaUpdates
 import Thesis.Probability.Distros.Degenerate
 import Thesis.Probability.Distros.NegativeBinomialMoments
