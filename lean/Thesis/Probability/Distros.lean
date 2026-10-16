@@ -34,6 +34,7 @@ import Thesis.Probability.Distros.Degenerate
 import Thesis.Probability.Distros.NegativeBinomialMoments
 import Thesis.Probability.Distros.CapConsistency
 import Thesis.Probability.Distros.HypergeometricUrn
+import Thesis.Probability.Distros.MultivariateHypergeometric
 import Thesis.Probability.Distros.Reweight
 import Thesis.Probability.Distros.MulticolourPolya
 import Thesis.Probability.Distros.KernelInvariance
