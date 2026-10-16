@@ -73,6 +73,8 @@ import Thesis.CausalTransport.BinaryInstrumentalMixtures
 import Thesis.CausalTransport.BinaryInstrumentalAttainable
 import Thesis.CausalTransport.ObservationalFormulaSelection
 import Thesis.CausalTransport.ObservationalFormulaDiagnostics
+import Thesis.CausalTransport.ObservationalFormulaSupport
+import Thesis.CausalTransport.FormulaSupportCatalogue
 import Thesis.CausalTransport.BackdoorAdjustment
 import Thesis.CausalTransport.BackdoorAdjustmentSearch
 import Thesis.CausalTransport.GuardedHiddenDAGBoundary

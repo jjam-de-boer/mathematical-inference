@@ -88,6 +88,15 @@ jobs:
           Thesis.Causality.IdentificationRank
           Thesis.CausalTransport.KernelIdentification
           Thesis.CausalTransport.KernelSeparation
+      - name: Check exact expression support analysis
+        working-directory: lean
+        run: >-
+          lake build
+          Thesis.Causality.ProbabilityStatus
+          Thesis.Probability.FiniteRecordSupport
+          Thesis.CausalTransport.ObservationalFormulaSupport
+          Thesis.CausalTransport.FormulaSupportCatalogue
+          Thesis.Examples.ObservationalFormulaSupport
       - name: Check finite-presentation adapters
         working-directory: lean
         run: >-

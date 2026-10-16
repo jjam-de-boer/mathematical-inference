@@ -64,6 +64,7 @@ import Thesis.Examples.HiddenDAGPolynomialEvidence
 import Thesis.Examples.BinaryInstrumentalIdentification
 import Thesis.Examples.BinaryInstrumentalAttainable
 import Thesis.Examples.ObservationalFormulaDiagnostics
+import Thesis.Examples.ObservationalFormulaSupport
 import Thesis.Examples.FourLabelTransportationAggregation
 import Thesis.Examples.HiddenPathSearch
 import Thesis.Examples.HiddenDAGCollapse
