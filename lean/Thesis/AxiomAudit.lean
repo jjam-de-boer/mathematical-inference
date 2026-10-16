@@ -1,6 +1,8 @@
 import Thesis
 import Thesis.Examples.ConditionalReadoutFailure
 import Thesis.Examples.ConditionalReadoutPaths
+import Thesis.Examples.DistributionLaws
+import Thesis.Examples.DistributionExtensions
 import Lean.Elab.Command
 import Lean.Util.CollectAxioms
 
