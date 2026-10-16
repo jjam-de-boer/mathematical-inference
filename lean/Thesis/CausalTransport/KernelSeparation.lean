@@ -1,4 +1,5 @@
 import Thesis.Causality.ComponentConnectivity
+import Thesis.CausalTransport.DSeparationCorrectness
 
 namespace Thesis
 namespace Causality

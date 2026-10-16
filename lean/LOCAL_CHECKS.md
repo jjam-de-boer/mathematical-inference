@@ -162,7 +162,8 @@ remote check; importing the old transport module would defeat the boundary.
 
 The component/rank extraction retains 579 original lines, with unchanged theorem
 statements and proof bodies, apart from moving their enclosing module and
-documenting the new dependency boundary. `Completeness` imports the new
+documenting the new dependency boundary. The additional generic-walk extraction
+retains 823 original lines on the same basis. `Completeness` imports the new
 layer, so its existing consumers still see the same public names. Forest
 constructors and historical trace inductions remain in their original module.
 
@@ -172,10 +173,13 @@ comparison (target included; Lean/Std modules excluded):
 | Client | Before extraction | After extraction |
 | --- | --- | --- |
 | `CausalTransport.KernelIdentification` | 26 | 20 |
-| `CausalTransport.KernelSeparation` | 25 | 18 |
+| `CausalTransport.KernelSeparation` | 25 | 20 |
 
 Both clients lose the direct dependency on the approximately 42k-line module
-and its legacy trace imports. Two source-graph regression tests protect this
+and its legacy trace imports. The separation client still explicitly imports
+`DSeparationCorrectness`: its ancestry and moral-path arguments genuinely need
+that graph-specific theorem layer, not just bidirected connectivity. Two
+source-graph regression tests protect this
 boundary and ensure the intrinsic layers do not import causal transport.
 CI checks the extracted modules and both clients early, then still runs the
 complete project and the unchanged transitive axiom gate.
