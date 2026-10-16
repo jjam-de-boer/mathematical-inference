@@ -35,7 +35,9 @@ theorem multicolourDepletingAtoms_prefix_mass (m n : Nat) (stocks : List Nat) (e
             rw [depletingUpdate_counts]
             rw [total] at conserved
             omega
-          rw [remaining]
+          change front.2 * FiniteProbRecord.eventMass
+            (multicolourDepletingAtoms n (depletingUpdate stocks front.1)) topEvent = _
+          rw [FiniteProbRecord.eventMass_top, multicolourDepletingAtoms_totalMass, remaining]
   rw [rows]
   exact eventMass_factor_sum _ event _
 
@@ -92,8 +94,7 @@ theorem multicolourDepleting_blocks (m n : Nat) (stocks counts : List Nat)
           (multicolourDepletingDistro (m + n) stocks within).record.den
     rw [depletingCountsEvent_mass]
     dsimp only [before, after]
-    rw [multicolourDepleting_den, multicolourDepleting_den, multicolourDepleting_den, remaining, fallingFactorial_add]
-    ac_rfl
+    rw [multicolourDepleting_den, multicolourDepleting_den, multicolourDepleting_den, remaining, fallingFactorial_add] <;> ac_rfl
   have first := QProb.equiv_trans (QProb.equiv_symm (before.map_probVal (colourCounts stocks.length)
     (FiniteProbRecord.singletonEvent counts)))
     (multicolourDepleting_hypergeometric m stocks (by omega) (FiniteProbRecord.singletonEvent counts))
