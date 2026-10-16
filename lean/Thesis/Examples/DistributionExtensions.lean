@@ -469,6 +469,7 @@ example : SignedRatio.Equiv
       (⟨(threeEvidenceCells x).val, 2, by decide⟩ : SignedRatio)
       (SignedRatio.sub (partitionMomentObservable x)
         (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable x))))
-    SignedRatio.zero := Distro.conditionalExpectation_orthogonal _ threeEvidenceCells partitionMomentObservable _
+    SignedRatio.zero := Distro.conditionalExpectation_orthogonal partitionMomentFixture threeEvidenceCells partitionMomentObservable
+      (fun label => (⟨label.val, 2, by decide⟩ : SignedRatio))
 
 end Thesis.Examples.DistributionExtensions
