@@ -79,7 +79,7 @@ theorem pgf_factorial_expansion (μ : NatDistro Ω) (bound : Nat)
     QProb.Equiv (pgf μ (QProb.add t QProb.one))
       (QProb.listSum ((List.range (bound + 1)).map (fun r =>
         QProb.mul (factorialPGFCoefficient μ r) (qpow t r)))) := by
-  refine QProb.equiv_trans (pgf_expectation μ (QProb.add t QProb.one)) ?_
+  rw [pgf_expectation]
   refine QProb.equiv_trans (μ.distro.expectation_congr_on_support
     (fun x => qpow (QProb.add t QProb.one) (μ.embed x))
     (fun x => QProb.listSum ((List.range (bound + 1)).map (fun r => QProb.scale (binom (μ.embed x) r) (qpow t r))))
@@ -106,17 +106,21 @@ theorem NatDistro.sameLaw_of_factorialMoments (μ : NatDistro Ω) (ν : NatDistr
   let base := μ.distro.record.den * ν.distro.record.den
   let t := QProb.ofNat base
   have arguments : QProb.Equiv (QProb.add t QProb.one) (QProb.ofNat (base + 1)) := by
-    simp only [t, QProb.Equiv, QProb.add, QProb.ofNat, QProb.one, Nat.mul_one, Nat.one_mul]
+    simp only [t, QProb.Equiv, QProb.add, QProb.ofNat, QProb.one, Nat.mul_one]
   have expansion := qprob_listSum_map_congr_on_mem (List.range (bound + 1))
     (fun r => QProb.mul (factorialPGFCoefficient μ r) (qpow t r))
     (fun r => QProb.mul (factorialPGFCoefficient ν r) (qpow t r)) (fun r member =>
       QProb.mul_congr (QProb.div_congr (same r (by have h := List.mem_range.mp member; omega))
         (QProb.equiv_refl _) _ _) (QProb.equiv_refl _))
+  have left := pgf_factorial_expansion μ bound hμ t
+  have right := pgf_factorial_expansion ν bound hν t
+  rw [pgf_expectation] at left right
   apply NatDistro.sameLaw_of_pgf_largeNat μ ν
+  rw [pgf_expectation, pgf_expectation]
   exact QProb.equiv_trans
     (μ.distro.expectation_congr _ _ (fun x => qpow_congr (QProb.equiv_symm arguments) (μ.embed x)))
-    (QProb.equiv_trans (pgf_factorial_expansion μ bound hμ t)
-      (QProb.equiv_trans expansion (QProb.equiv_trans (QProb.equiv_symm (pgf_factorial_expansion ν bound hν t))
+    (QProb.equiv_trans left
+      (QProb.equiv_trans expansion (QProb.equiv_trans (QProb.equiv_symm right)
         (ν.distro.expectation_congr _ _ (fun x => qpow_congr arguments (ν.embed x))))))
 
 /-- All factorial moments characterize every finite numeric law. -/
