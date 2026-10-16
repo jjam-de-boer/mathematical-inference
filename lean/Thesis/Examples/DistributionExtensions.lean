@@ -357,3 +357,29 @@ example : SignedRatio.Equiv ((bernoulliDistro 1 1 (by decide)).rationalVariance
     (⟨1, 4, by decide⟩ : SignedRatio) := by decide +kernel
 
 end Thesis.Probability.Distros
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- A zero-weight outlier and an empty event cell do not change the
+nonintegral conditional means of the four equally likely values. -/
+def partitionMomentFixture : Distro Nat :=
+  ⟨⟨[(0, 1), (1, 1), (2, 1), (3, 1), (99, 0)], 4, by decide, rfl⟩⟩
+
+def partitionMomentCells : AtomPartition partitionMomentFixture :=
+  AtomPartition.ofEvents partitionMomentFixture [fun x => decide (x < 2), fun _ => false]
+
+def partitionMomentObservable (x : Nat) : SignedRatio := ⟨x, 1, by decide⟩
+
+example : SignedRatio.Equiv
+    (partitionMomentCells.distro.rationalExpectation (fun cell => conditionalBlockVariance cell partitionMomentObservable))
+    (⟨1, 4, by decide⟩ : SignedRatio) := by decide +kernel
+
+example : SignedRatio.Equiv
+    (partitionMomentCells.distro.rationalVariance (fun cell => conditionalBlockMean cell partitionMomentObservable))
+    SignedRatio.one := by decide +kernel
+
+example : SignedRatio.Equiv (partitionMomentFixture.rationalVariance partitionMomentObservable)
+    (⟨5, 4, by decide⟩ : SignedRatio) := by decide +kernel
+
+end Thesis.Examples.DistributionExtensions

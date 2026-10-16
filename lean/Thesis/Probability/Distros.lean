@@ -40,6 +40,7 @@ import Thesis.Probability.Distros.KernelInvariance
 import Thesis.Probability.Distros.SignedCovariance
 import Thesis.Probability.Distros.SignedCauchy
 import Thesis.Probability.Distros.RationalMoments
+import Thesis.Probability.Distros.ConditionalMoments
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.RationalBetaBinomial
@@ -224,4 +225,8 @@ Reading order:
 47. `RationalMoments` provides signed rational-observable expectation,
     covariance and variance, with linearity and integer-expectation agreement.
     These are the observable types needed for conditional moment decompositions.
+48. `ConditionalPartitions` constructs exhaustive finite evidence partitions
+    from the actual atom records, retaining unsupported cells with explicit
+    zero conditional values. `ConditionalMoments` proves total expectation,
+    variance and covariance for signed rational observables and conditional means.
 -/
