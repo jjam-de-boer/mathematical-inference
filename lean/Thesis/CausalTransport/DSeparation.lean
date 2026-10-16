@@ -171,5 +171,46 @@ def PathDoCalculusDerivation.compile (correct : DSeparationCorrectness G) :
     (target := executableRuleSeparation G)
     (PathDoRuleApplication.compile correct)
 
+/-! ## Empty-conditioner rule-3 side graphs
+
+These graph identities are shared by historical and current compilers.
+They need neither a completeness theorem nor a soundness assumption. -/
+
+/--
+Rule 3 with empty given-set: the incoming cut is `G_{\overline{X ∪ Z}}`
+because `Z(∅) = Z`.  Deleting `Z` from `P(Y | do(X ∪ Z))` is therefore
+ordinary bar-graph d-separation of `Y` from `Z` given `X`.
+-/
+theorem rule3_empty_w_mutilation (G : ObservedGraph S)
+    (kept removed : NodeSet S) :
+    { removeIncoming :=
+        NodeSet.union kept
+          (G.nonAncestorsOf (GraphMutilation.bar kept) removed
+            NodeSet.empty),
+      removeOutgoing := NodeSet.empty } =
+      GraphMutilation.bar (NodeSet.union kept removed) := by
+  rw [ObservedGraph.nonAncestorsOf_empty_targets]
+  rfl
+
+/--
+Rule 3's empty-`W` side graph is `G_{\overline{X ∪ Z}}` with conditioner
+`X`.  The `let`-binders of `DoRuleApplication.rule3` are this equality.
+-/
+theorem pathDSeparated_rule3_empty_w
+    (G : ObservedGraph S) (kept y removed : NodeSet S)
+    (separated :
+      PathSpecification.PathDSeparated G
+        (GraphMutilation.bar (NodeSet.union kept removed)) y removed kept) :
+    let base := GraphMutilation.bar kept
+    let removable := G.nonAncestorsOf base removed NodeSet.empty
+    PathSpecification.PathDSeparated G
+      { removeIncoming := NodeSet.union kept removable,
+        removeOutgoing := NodeSet.empty }
+      y removed (NodeSet.union kept NodeSet.empty) := by
+  dsimp
+  have hm := (rule3_empty_w_mutilation G kept removed).symm
+  have hw := (NodeSet.union_empty_right kept).symm
+  exact hm ▸ hw ▸ separated
+
 end Causality
 end Thesis
