@@ -473,3 +473,41 @@ example : SignedRatio.Equiv
       (fun label => (⟨label.val, 2, by decide⟩ : SignedRatio))
 
 end Thesis.Examples.DistributionExtensions
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Ordered removal distinguishes word probabilities from occupancy probabilities. -/
+example : QProb.Equiv ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [0, 2])
+    ⟨1, 3, by decide⟩ := by decide +kernel
+
+example : QProb.Equiv (((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).map (colourCounts 3)).pmf [1, 0, 1])
+    ⟨2, 3, by decide⟩ := by decide +kernel
+
+example : QProb.Equiv ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [1, 0])
+    QProb.zero := by decide +kernel
+
+example : ¬ depletingCountsSupported 1 [2, 0, 1] [0, 1, 0] := by decide +kernel
+
+example : QProb.Equiv ((multicolourDepletingDistro 0 [] (by decide)).pmf []) QProb.one := by decide +kernel
+
+example : depletingState [2, 0, 1] [1, 0, 1] = [1, 0, 0] := by decide
+
+example : QProb.Equiv ((depletingCountsContinuation 1 1 [2, 0, 1] [1, 0, 0] (by decide) (by decide +kernel)).pmf [2])
+    ⟨1, 2, by decide⟩ := by decide +kernel
+
+example : QProb.Equiv ((depletingPrefixContinuation [0, 0] 1 [2, 0, 1] (by decide) (by decide +kernel)).pmf [2])
+    QProb.one := by decide +kernel
+
+example : (depletingPrefixContinuation [0] 2 [2, 0, 1] (by decide) (by decide +kernel)).SameLaw
+    (depletingCountsContinuation 1 2 [2, 0, 1] [1, 0, 0] (by decide) (by decide +kernel)) :=
+  depletingPrefix_counts_sufficient [0] 2 [2, 0, 1] (by decide) (by decide +kernel)
+
+example : QProb.Equiv ((depletingCountsContinuation 3 0 [2, 0, 1] [2, 0, 1] (by decide) (by decide +kernel)).pmf [])
+    QProb.one := by decide +kernel
+
+example : QProb.Equiv ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).record.probVal (fun word =>
+    depletingCountsEvent 1 3 [1, 0, 0] word && decide (colourCounts 3 (word.drop 1) = [0, 0, 1])))
+    ⟨1, 3, by decide⟩ := by decide +kernel
+
+end Thesis.Examples.DistributionExtensions

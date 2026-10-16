@@ -74,16 +74,13 @@ def depletingCountsWithin : List Nat → List Nat → Prop
   | count :: counts, stock :: stocks => count ≤ stock ∧ depletingCountsWithin counts stocks
   | _, _ => False
 
-instance (counts stocks : List Nat) : Decidable (depletingCountsWithin counts stocks) := by
-  induction counts generalizing stocks with
-  | nil => cases stocks with
-      | nil => exact inferInstanceAs (Decidable True)
-      | cons stock stocks => exact inferInstanceAs (Decidable False)
-  | cons count counts ih => cases stocks with
-      | nil => exact inferInstanceAs (Decidable False)
-      | cons stock stocks =>
-          letI : Decidable (depletingCountsWithin counts stocks) := ih stocks
-          exact inferInstanceAs (Decidable (count ≤ stock ∧ depletingCountsWithin counts stocks))
+instance depletingCountsWithin_decidable : (counts stocks : List Nat) → Decidable (depletingCountsWithin counts stocks)
+  | [], [] => inferInstanceAs (Decidable True)
+  | [], _ :: _ => inferInstanceAs (Decidable False)
+  | _ :: _, [] => inferInstanceAs (Decidable False)
+  | count :: counts, stock :: stocks =>
+      letI : Decidable (depletingCountsWithin counts stocks) := depletingCountsWithin_decidable counts stocks
+      inferInstanceAs (Decidable (count ≤ stock ∧ depletingCountsWithin counts stocks))
 
 /-- Positive falling-kernel weight rules out every overdrawn colour. -/
 theorem jointFalling_positive_within (counts stocks : List Nat) (positive : 0 < jointFalling counts stocks) :
