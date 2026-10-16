@@ -258,4 +258,8 @@ retained rather than silently excluded as nonpositive support.
     almost-sure zero-variance characterization, respecting unreduced values.
     `RationalMarkov` and `RationalChebyshev` handle rational observables and
     thresholds, with genuine centered-square variance and exact deviation events.
+51. `ConditionalObservable` partitions actual atoms by finite-valued observables,
+    defines their conditional-mean observables and proves residual orthogonality.
+    `ConditionalTower` gives explicit refinement and tower laws, including
+    unsupported fibres, and actual-record equality for nested supported evidence.
 -/

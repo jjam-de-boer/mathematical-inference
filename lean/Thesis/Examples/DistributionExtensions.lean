@@ -432,3 +432,43 @@ example : ∃ c : SignedRatio, (bernoulliDistro 0 1 (by decide)).AlmostSurely
   (Distro.rationalVariance_zero_iff_constant _ _).mp (by decide +kernel)
 
 end Thesis.Examples.DistributionExtensions
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+def residueFour (x : Nat) : Fin 4 := ⟨x % 4, Nat.mod_lt _ (by decide)⟩
+def mergePairs (value : Fin 4) : Fin 2 := ⟨value.val / 2, by omega⟩
+def threeEvidenceCells (x : Nat) : Fin 3 := if x < 2 then 0 else if x < 4 then 1 else 2
+
+/-- Refinement uses actual rational conditional means, with a nontrivial
+coarse cell and the retained zero-weight outlier. -/
+example : SignedRatio.Equiv
+    (partitionMomentFixture.conditionalExpectation (fun x => mergePairs (residueFour x))
+      (partitionMomentFixture.conditionalExpectation residueFour partitionMomentObservable) 2)
+    ⟨5, 2, by decide⟩ := by decide +kernel
+
+example (x : Nat) : SignedRatio.Equiv
+    (partitionMomentFixture.conditionalExpectation (fun y => mergePairs (residueFour y))
+      (partitionMomentFixture.conditionalExpectation residueFour partitionMomentObservable) x)
+    (partitionMomentFixture.conditionalExpectation (fun y => mergePairs (residueFour y)) partitionMomentObservable x) :=
+  Distro.conditionalExpectation_tower _ residueFour mergePairs partitionMomentObservable x
+
+example : SignedRatio.Equiv
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable 99)
+    SignedRatio.zero := by decide +kernel
+
+example : SignedRatio.Equiv
+    (partitionMomentFixture.rationalExpectation (fun x => SignedRatio.mul
+      (⟨(threeEvidenceCells x).val, 2, by decide⟩ : SignedRatio)
+      (SignedRatio.sub (partitionMomentObservable x)
+        (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable x))))
+    SignedRatio.zero := by decide +kernel
+
+example : SignedRatio.Equiv
+    (partitionMomentFixture.rationalExpectation (fun x => SignedRatio.mul
+      (⟨(threeEvidenceCells x).val, 2, by decide⟩ : SignedRatio)
+      (SignedRatio.sub (partitionMomentObservable x)
+        (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable x))))
+    SignedRatio.zero := Distro.conditionalExpectation_orthogonal _ threeEvidenceCells partitionMomentObservable _
+
+end Thesis.Examples.DistributionExtensions

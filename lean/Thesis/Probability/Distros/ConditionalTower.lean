@@ -1,4 +1,5 @@
 import Thesis.Probability.Distros.ConditionalObservable
+import Thesis.Probability.Distros.Reweight
 
 namespace Thesis.Probability.Distros
 
