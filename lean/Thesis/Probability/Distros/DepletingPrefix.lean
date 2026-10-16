@@ -107,7 +107,7 @@ theorem depletingPrefix_counts_sufficient (history : List Nat) (n : Nat) (stocks
       (depletingCountsContinuation history.length n stocks (colourCounts stocks.length history) within
         (depletingHistorySupported_counts stocks history supported)) := by
   have ordered := depletingPrefixContinuation_updated history n stocks within supported
-  rw [depletingUpdate_counts] at ordered
+  simp only [depletingUpdate_counts] at ordered
   exact ordered.trans (depletingCountsContinuation_updated history.length n stocks
     (colourCounts stocks.length history) within (depletingHistorySupported_counts stocks history supported)).symm
 
