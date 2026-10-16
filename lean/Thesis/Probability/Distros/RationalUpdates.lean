@@ -21,9 +21,9 @@ theorem updateRationalParameters_congr {alphas betas : List QProb}
   induction alphas generalizing betas counts with
   | nil => cases betas with
       | nil => exact .refl []
-      | cons beta betas => have dim := same.1; simp only [List.length_nil, List.length_cons] at dim; omega
+      | cons beta betas => have dim := same.1; simp only [List.length_nil, List.length_cons] at dim; exact False.elim (by omega)
   | cons alpha alphas ih => cases betas with
-      | nil => have dim := same.1; simp only [List.length_nil, List.length_cons] at dim; omega
+      | nil => have dim := same.1; simp only [List.length_nil, List.length_cons] at dim; exact False.elim (by omega)
       | cons beta betas => cases counts with
           | nil => exact same
           | cons count counts =>

@@ -1,7 +1,4 @@
-import Thesis.Probability.Distros.RationalBetaBinomial
-import Thesis.Probability.Distros.RationalUpdates
-import Thesis.Probability.Distros.ReinforcedVariance
-import Thesis.Probability.Distros.SignedCauchy
+import Thesis.Probability.Distros
 import Lean.Elab.Command
 import Lean.Util.CollectAxioms
 

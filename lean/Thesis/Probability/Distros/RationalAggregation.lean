@@ -12,9 +12,9 @@ theorem modify_add {alphas betas : List QProb} (same : RationalParametersEquiv a
   induction alphas generalizing betas index with
   | nil => cases betas with
       | nil => simpa only [List.modify_nil] using refl []
-      | cons beta betas => have dim := same.1; simp only [List.length_nil, List.length_cons] at dim; omega
+      | cons beta betas => have dim := same.1; simp only [List.length_nil, List.length_cons] at dim; exact False.elim (by omega)
   | cons alpha alphas ih => cases betas with
-      | nil => have dim := same.1; simp only [List.length_nil, List.length_cons] at dim; omega
+      | nil => have dim := same.1; simp only [List.length_nil, List.length_cons] at dim; exact False.elim (by omega)
       | cons beta betas =>
           have tail : RationalParametersEquiv alphas betas := ⟨Nat.succ.inj same.1, fun i => same.2 (i + 1)⟩
           cases index with
@@ -46,9 +46,9 @@ theorem aggregateRationalParameters_congr (groups : Nat) (labels : List Nat) {al
   | cons label labels ih => cases alphas with
       | nil => cases betas with
           | nil => exact .refl _
-          | cons beta betas => have dim := same.1; simp only [List.length_nil, List.length_cons] at dim; omega
+          | cons beta betas => have dim := same.1; simp only [List.length_nil, List.length_cons] at dim; exact False.elim (by omega)
       | cons alpha alphas => cases betas with
-          | nil => have dim := same.1; simp only [List.length_nil, List.length_cons] at dim; omega
+          | nil => have dim := same.1; simp only [List.length_nil, List.length_cons] at dim; exact False.elim (by omega)
           | cons beta betas =>
               exact (ih ⟨Nat.succ.inj same.1, fun i => same.2 (i + 1)⟩).modify_add (same.2 0) label
 
