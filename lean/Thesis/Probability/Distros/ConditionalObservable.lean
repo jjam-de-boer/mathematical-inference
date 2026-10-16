@@ -30,8 +30,7 @@ theorem fibreCells_perm [DecidableEq A] (labels : List A) (key : Ω → A) (atom
         apply List.filter_congr
         intro atom _
         by_cases selected : key atom.1 = other
-        · have absent : key atom.1 ≠ label := fun same => different (selected.symm.trans same)
-          simp only [selected, absent, decide_true, decide_false, Bool.not_false, Bool.true_and]
+        · simp only [selected, different, decide_true, decide_false, Bool.not_false, Bool.true_and]
         · simp only [selected, decide_false, Bool.false_and]
       have tail := ih rest (List.nodup_cons.mp distinct).2 (by
         intro atom member

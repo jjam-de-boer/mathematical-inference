@@ -50,6 +50,7 @@ import Thesis.Probability.Distros.RationalMarkov
 import Thesis.Probability.Distros.RationalChebyshev
 import Thesis.Probability.Distros.ConditionalMoments
 import Thesis.Probability.Distros.ConditionalObservable
+import Thesis.Probability.Distros.ConditionalTower
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.RationalBetaBinomial
