@@ -28,7 +28,7 @@ theorem multivariateHypergeometric_coordinate_factorialMoment (n : Nat) (stocks 
       rw [jointFalling_product]
       have equality := coordinateProduct_single fallingFactorial (fun _ => rfl) atom.1 index order (by omega)
       simpa only [dimension] using equality.symm)
-  change QProb.Equiv (μ.expectNat _) _
+  change QProb.Equiv (μ.expectNat (fun counts => fallingFactorial (counts.getD index 0) order)) _
   rw [observable]
   simpa only [jointFactorialMoment, factors, orderSum] using joint
 
