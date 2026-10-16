@@ -130,6 +130,7 @@ import Thesis.CausalTransport.Counterfactual
 import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.CausalTransport.HiddenDAGSourceCompression
 import Thesis.CausalTransport.HiddenDAGObservationalCompression
+import Thesis.CausalTransport.HiddenDAGPolynomialEvidence
 import Thesis.CausalTransport.HiddenDAG
 import Thesis.CausalTransport.HiddenDAGFullFamily
 import Thesis.CausalTransport.HiddenDAGCollapse
@@ -269,6 +270,17 @@ or an external theorem-family parameter.
 proves preservation into the intrinsic semantics, and exposes source-level
 adapters.  `DSeparationCorrectness` connects the finite ancestry and moral
 reachability searches to active-path separation.
+
+`HiddenDAGSourceCompression` and `HiddenDAGObservationalCompression` construct
+bounded independent sources on an unchanged native template, retaining chosen
+effects and, for the latter, the complete observed law. `HiddenDAGPolynomial`
+compiles native causal probabilities with a proved binding to source-cell
+variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
+sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied
+bound certificates against internally proved source constraints and compiled
+data-fit equations. Its uniform theorems range over every fitted independent
+source law on the same finite template, not over all mechanisms or hidden
+alphabets on the graph. No complete optimizer is inferred from this checker.
 
 `HiddenDAGFullFamily` indexes all finite SCM records over a full hidden DAG,
 with arbitrary finite hidden and private-noise domains.  `HiddenDAGCollapse`

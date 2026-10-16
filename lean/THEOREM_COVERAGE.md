@@ -184,14 +184,79 @@ certificate for every independent law on the unchanged finite structural
 template. The polynomial and basic constraints are invariant under that
 replacement; source probabilities are parameters, not frozen coefficients.
 
+`HiddenDAGPolynomialExpressions` compiles signed constants, primitive native
+queries, sums, negatives and products using a shared source-variable encoding.
+`expressionPolynomial_sound` preserves their actual signed rational semantics;
+an effect difference is not forced into the type of nonnegative probabilities.
+
+`HiddenDAGPolynomialEvidence` constructs additional zero constraints directly
+from a finite catalogue of native query/reference pairs. Its
+`checkExpressionNonnegative_sound`, `checkExpressionLower_sound` and
+`checkExpressionUpper_sound` require that the candidate model fits that data.
+The `*_sound_forSourceLaw` theorem reuses one checked certificate for every
+fitted independent law on the same template. The fit premise concerns the
+replacement law itself, not just the model used to build the polynomial.
+`observationalEquations` automatically lists the full observed table, and
+`satisfies_observationalEquations_iff` proves that satisfying this catalogue is
+exactly equality of every observed event probability. Observed zeros are allowed.
+
+Acceptance is a universal implication for fitted candidates, not a witness
+that the data are compatible or that the proposed endpoint is attained.
+An infeasible catalogue has no fitted models. General sharpness and point
+identification therefore need separate feasibility and attainment theorems;
+the IV results above establish those extra obligations for their own class.
+
 The current compiled-bound API concerns explicit finite source presentations
-and fixed structural templates. Automatically assembled observational-law
-constraints remain separate assembly work. Nor does source-atom compression
-alone prove that one fixed choice of hidden endogenous alphabets and structural
-mechanisms covers every model on a graph. No complete optimizer, general
-certificate search, real-to-rational feasibility transfer, or universal
-arbitrary-graph fixed-law decision procedure is asserted. Conditional bounds
-additionally require justified cross-multiplication at a positive denominator.
+and fixed structural templates. Source-atom compression alone does not prove
+that one fixed choice of hidden endogenous alphabets and structural mechanisms
+covers every model on a graph. No complete optimizer, general certificate
+search, real-to-rational feasibility transfer, or universal arbitrary-graph
+fixed-law decision procedure is asserted. Conditional bounds additionally
+require justified cross-multiplication at a positive denominator.
+
+### Graph-wide coverage: assessed route, not a proved theorem
+
+For a **fixed full hidden DAG** with fixed observed domains, there is a
+plausible finite constructive route beyond the current fixed-template checker.
+Retain all observed singleton queries and the finitely many primitive queries
+appearing in the requested target. Existing source compression gives a bound
+`K = number of retained queries + 1` for each source's positive atom occurrences.
+It does not yet change those sources' ambient types to a common finite alphabet.
+
+The missing representation steps would be:
+
+1. Relabel each compressed source by at most `K` atom positions, preserving
+   independence and every retained intervention probability. Padding unused
+   positions with zero mass must be justified, not identified with positive cells.
+2. Enumerate the hidden values reached under the retained interventions and
+   relabel them too. With `N` native nodes and `I` listed interventions, a
+   crude candidate bound is `I * K^N` values per hidden node. Mechanisms on
+   unreachable parent inputs need explicit defaults, while evaluator simulation
+   must prove those defaults cannot change a retained trajectory.
+3. Enumerate finite mechanism tables on those bounded domains, then prove that
+   every original model has a representative in this family with the same
+   observed law and target values. Only that coverage theorem would justify
+   checking one certificate per template to establish a graph-wide bound.
+
+These are proposed proof obligations, not existing formal cardinality or
+coverage results. The finite search can also be enormous; mathematical
+finiteness is not an efficiency guarantee. If only an observed projection is
+fixed while the number and arrangement of hidden nodes vary, another graph
+representation theorem is needed as well. A potentially better route for that
+class starts with the existing intervention-preserving `HiddenDAGCollapse`:
+group independent roots by their observed-child incidence set, prove the
+grouped product law and readout preservation, then compress and relabel those
+groups. There are at most `2^(number of observed nodes)` such incidence sets,
+but the grouping and coverage theorems are not implemented. Roots with three
+or more children must remain allowed; replacing them by independent pairwise
+causes would not be justified by the current collapse theorem. This route
+might avoid directly relabelling every internal hidden-node alphabet, and
+should be compared with the unchanged-full-DAG route before implementation.
+Even successful finite-template
+coverage would leave infinitely many rational source-weight assignments;
+it would not, by itself, prove complete certificate search, optimization or
+rational feasibility decision. No excluded-middle, choice or real-to-rational
+transfer principle is silently added at any of these boundaries.
 
 ## Construction, execution, and proof verification
 
