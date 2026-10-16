@@ -46,7 +46,12 @@ import Thesis.Probability.Distros.SignedCovariance
 import Thesis.Probability.Distros.SignedCauchy
 import Thesis.Probability.Distros.RationalMoments
 import Thesis.Probability.Distros.RationalClearing
+import Thesis.Probability.Distros.RationalConcentration
+import Thesis.Probability.Distros.RationalMarkov
+import Thesis.Probability.Distros.RationalChebyshev
 import Thesis.Probability.Distros.ConditionalMoments
+import Thesis.Probability.Distros.ConditionalObservable
+import Thesis.Probability.Distros.ConditionalTower
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.RationalBetaBinomial
@@ -247,4 +252,14 @@ retained rather than silently excluded as nonpositive support.
     modules give all joint moments, including vanishing orders, and reconstruct
     the hypergeometric law of each coordinate. `HypergeometricAggregation`
     proves arbitrary category coarsening with summed stocks and empty groups.
+50. `RationalClearing` transports signed rational moments through laws and maps
+    and proves variance nonnegativity by finite-support denominator clearing.
+    `RationalConcentration` gives rational covariance Cauchy–Schwarz and the
+    almost-sure zero-variance characterization, respecting unreduced values.
+    `RationalMarkov` and `RationalChebyshev` handle rational observables and
+    thresholds, with genuine centered-square variance and exact deviation events.
+51. `ConditionalObservable` partitions actual atoms by finite-valued observables,
+    defines their conditional-mean observables and proves residual orthogonality.
+    `ConditionalTower` gives explicit refinement and tower laws, including
+    unsupported fibres, and actual-record equality for nested supported evidence.
 -/
