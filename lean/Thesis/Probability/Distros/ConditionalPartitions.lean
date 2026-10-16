@@ -133,7 +133,7 @@ signed rational observables and including unsupported cells. -/
 theorem AtomPartition.total_expectation {μ : Distro Ω} (partition : AtomPartition μ) (f : Ω → SignedRatio) :
     SignedRatio.Equiv (partition.distro.rationalExpectation (fun cell => conditionalBlockMean cell f))
       (μ.rationalExpectation f) := by
-  apply SignedRatio.divideNat_congr
+  apply SignedRatio.divideNat_congr (denominator := μ.record.den) (positive := μ.record.den_pos)
   simp only [AtomPartition.distro, FiniteProbRecord.rationalAtomSum, List.map_map, Function.comp_def]
   change SignedRatio.Equiv
     (SignedRatio.listSum (partition.cells.map (fun cell =>

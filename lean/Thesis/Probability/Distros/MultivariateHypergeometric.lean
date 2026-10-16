@@ -17,9 +17,12 @@ def multivariateHypergeometricAtoms (draws : Nat) : List Nat → List (List Nat 
 theorem multivariateHypergeometric_totalMass (stocks : List Nat) (draws : Nat) :
     FiniteProbRecord.totalMass (multivariateHypergeometricAtoms draws stocks) = binom stocks.sum draws := by
   induction stocks generalizing draws with
-  | nil => cases draws <;> simp only [multivariateHypergeometricAtoms, List.sum_nil,
-      if_pos rfl, FiniteProbRecord.totalMass, Nat.add_zero, binom_zero_right,
-      Nat.zero_ne_add_one, if_false, binom_zero_succ]
+  | nil =>
+      cases draws with
+      | zero => rfl
+      | succ draws =>
+          simp only [multivariateHypergeometricAtoms, if_neg (Nat.ne_of_gt (Nat.succ_pos draws)),
+            FiniteProbRecord.totalMass, List.sum_nil, binom_zero_succ]
   | cons stock stocks ih =>
       rw [multivariateHypergeometricAtoms, totalMass_range]
       have rows : natSum (draws + 1) (fun used =>
@@ -43,15 +46,18 @@ theorem multivariateHypergeometric_support (draws : Nat) (stocks : List Nat) (at
   induction stocks generalizing draws atom with
   | nil =>
       by_cases zero : draws = 0
-      · simp only [multivariateHypergeometricAtoms, zero, if_pos rfl, List.mem_singleton] at member
-        cases member
-        exact ⟨rfl, zero.symm⟩
-      · simp only [multivariateHypergeometricAtoms, if_neg zero, List.not_mem_nil] at member
+      · subst draws
+        change atom ∈ [([], 1)] at member
+        have same := List.mem_singleton.mp member
+        cases same
+        exact ⟨rfl, rfl⟩
+      · rw [multivariateHypergeometricAtoms, if_neg zero] at member
+        exact False.elim (List.not_mem_nil member)
   | cons stock stocks ih =>
-      rcases List.mem_flatMap.mp member with ⟨used, within, member⟩
-      rcases List.mem_map.mp member with ⟨tail, member, same⟩
+      rcases List.mem_flatMap.mp member with ⟨used, within, rowMember⟩
+      rcases List.mem_map.mp rowMember with ⟨tail, tailMember, same⟩
       cases same
-      have shape := ih (draws - used) tail member
+      have shape := ih (draws - used) tail tailMember
       have upper := List.mem_range.mp within
       refine ⟨by simp only [List.length_cons, shape.1], ?_⟩
       simp only [List.sum_cons, shape.2]
@@ -63,6 +69,6 @@ theorem multivariateHypergeometric_coordinate_bound (draws : Nat) (stocks : List
     (atom : List Nat × Nat) (member : atom ∈ multivariateHypergeometricAtoms draws stocks) (index : Nat) :
     atom.1.getD index 0 ≤ draws := by
   have shape := multivariateHypergeometric_support draws stocks atom member
-  exact (list_getD_le_sum atom.1 index).trans (Nat.le_of_eq shape.2)
+  exact Nat.le_trans (list_getD_le_sum atom.1 index) (Nat.le_of_eq shape.2)
 
 end Thesis.Probability.Distros
