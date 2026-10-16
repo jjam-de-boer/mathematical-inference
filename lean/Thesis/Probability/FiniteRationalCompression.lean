@@ -38,8 +38,8 @@ def originalLabel (record : FiniteProbRecord Ω) (index : Fin record.atoms.lengt
   record.atoms[index.val].1
 
 /-- Sampling original atom positions keeps multiplicities and zero atoms
-explicitly.  Its total-mass proof uses the already checked integer identity,
-and no supported representative of an ambient label is chosen. -/
+explicitly. The shared weighted presentation proves literal decoded record
+recovery, and no supported representative of an ambient label is chosen. -/
 def indexedRecord (original : FiniteProbRecord Ω) : FiniteProbRecord (Fin original.atoms.length) :=
   original.atomIndexRecord
 

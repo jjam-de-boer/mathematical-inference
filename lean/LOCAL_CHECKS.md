@@ -83,6 +83,55 @@ The helper safety regressions can be run without invoking Lean:
 python3 -B -m unittest discover -s lean/tools -p 'test_*.py'
 ```
 
+## Import narrowing and the proof-module split decision
+
+`Causality.Model` now imports `Probability.Construction`, not the complete
+`Probability` facade. Consumers that need further probability theorems import
+their owning modules directly; finite-function regression decisions declare
+their own constructive equality instances. This preserves the public theorem
+names without making basic causal models import every named distribution.
+
+For the source graph at checkpoint `8a976d0`, the following counts include
+the target and its transitive `Thesis` dependencies, not Lean/Std modules.
+The comparison restores only Model's former facade import in that same graph;
+it is a reproducible dependency comparison, not a historical runtime benchmark.
+
+| Target | Former facade edge | Narrow imports |
+| --- | --- | --- |
+| `Causality.Model` | 149 | 8 |
+| `CausalTransport.HiddenDAGModel` | 156 | 15 |
+| `CausalTransport.HiddenDAGSoundness` | 169 | 29 |
+| `CausalTransport.HiddenDAGCorrespondence` | 313 | 195 |
+| `CausalTransport.HiddenDAGPolynomialEvidence` | 160 | 51 |
+
+Each inspected path loses 72 distribution modules. These counts do not imply
+the same reduction in compiled memory or elapsed build time.
+
+All 191 example modules at that checkpoint are reachable from the full
+`Thesis.AxiomAudit` import closure, including the three formerly orphaned
+regressions. `tools/test_example_coverage.py` guards this source-level coverage
+in CI without launching Lean. It does not replace actual elaboration or the
+transitive axiom audit.
+
+No broad soundness/completeness split is performed in this stage. Their source
+files remain large (roughly 20k and 42k lines), but the approved local pilot
+stops much earlier in the small `FiniteRecord` prerequisite. Splitting later
+files therefore has no demonstrated ability to make that pilot pass. The
+remote cold/import-change build recorded completeness at 37 seconds; the
+18-second soundness attempt failed on a missing import, so it is not a valid
+successful-build timing. Once cached dependencies were available, checkpoint
+`733b5f3` completed its full-build step in 7 seconds and its separate axiom
+gate in 25 seconds. These are CI wall times, not local peak-memory measurements.
+
+A future targeted extraction could separate graph-only c-component geometry
+and recursion-rank lemmas from `Completeness`, then retarget current-kernel
+clients to the small module while retaining the old public facade. Probability
+algebra in `Soundness` is another candidate. Either needs its own dependency
+and resource measurements, private-helper review, complete build and axiom
+audit. Neither is needed to repair a mathematical theorem or justified as a
+local-memory cure by the present measurements. Keeping this conditional work
+deferred avoids a high-churn reorganization unsupported by the pilot.
+
 ## Fresh-closure pilot
 
 For an explicitly small source closure, an opt-in pilot is available:
