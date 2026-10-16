@@ -13,10 +13,10 @@ jobs:
       - uses: actions/checkout@v5
       - name: Verify committed Lean dependency manifest
         run: test -f lean/lake-manifest.json
-      # These inexpensive safety tests use temporary fixtures and fake child
-      # processes. They never run a local/project Lean build or weaken either
-      # of the actual remote proof and axiom-policy gates below.
-      - name: Check resource-capped helper safety
+      # These inexpensive tests inspect example import coverage and exercise
+      # helper safety with temporary fixtures and fake child processes. They
+      # never run Lean or weaken the actual proof and axiom-policy gates below.
+      - name: Check regression coverage and resource-capped helper safety
         run: python3 -B -m unittest discover -s lean/tools -p 'test_*.py'
       # The composite lean action reinstalls Elan unconditionally through a
       # floating latest-download URL.  Reuse only a toolchain installation
