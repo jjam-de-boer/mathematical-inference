@@ -21,6 +21,7 @@ theorem ratioObservable_cleared (atoms : List (Ω × Nat)) (f : Ω → SignedRat
       ⟨ratioObservableNumerator (ratioObservableDenominator atoms f) f atom.1,
         ratioObservableDenominator atoms f, ratioObservableDenominator_pos atoms f⟩ := by
   have dvd := observableDenominator_dvd atoms (fun x => (⟨0, (f x).den, (f x).den_pos⟩ : QProb)) atom member
+  change (f atom.1).den ∣ ratioObservableDenominator atoms f at dvd
   change (f atom.1).num * (ratioObservableDenominator atoms f : Int) =
     ((f atom.1).num * ((ratioObservableDenominator atoms f / (f atom.1).den : Nat) : Int)) * (f atom.1).den
   rw [Int.mul_assoc, ← Int.natCast_mul, Nat.div_mul_cancel dvd]
