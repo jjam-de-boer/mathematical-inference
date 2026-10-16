@@ -61,6 +61,14 @@ allocation range, that a full build fits the laptop, or that splitting the
 large soundness/completeness files would solve this much earlier boundary.
 There was no further limit increase or unrestricted local build.
 
+The separate `Thesis.Examples.LocalCheckBaseline` fixture then passed at the
+original 384 MB setting: 1.40 seconds and approximately 579.6 MiB child peak.
+It only imports the same validated core and applies probability reflexivity;
+it does not decide a finite quantified proposition or check transportation.
+This is a genuine small local success, but must not be reported as a successful
+transportation check. Similar process RSS does not imply identical Lean
+allocation behaviour or proof-checking demands.
+
 The helper safety regressions can be run without invoking Lean:
 
 ```sh

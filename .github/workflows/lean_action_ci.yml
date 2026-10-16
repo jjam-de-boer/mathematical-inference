@@ -77,6 +77,13 @@ jobs:
       - name: Check constructive arithmetic prerequisites
         working-directory: lean
         run: lake build Thesis.ConstructiveAlgebraAudit
+      - name: Check finite-presentation adapters
+        working-directory: lean
+        run: >-
+          lake build
+          Thesis.Probability.FiniteRecordPresentation
+          Thesis.Examples.FiniteRecordPresentation
+          Thesis.Examples.LocalCheckBaseline
       - name: Check distribution axiom prerequisites
         working-directory: lean
         run: lake build Thesis.DistroAxiomAudit

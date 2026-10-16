@@ -1,4 +1,5 @@
 import Thesis.Probability.Distros.Basic
+import Thesis.Probability.Distros.FinitePresentation
 import Thesis.Probability.Distros.Bernoulli
 import Thesis.Probability.Distros.Categorical
 import Thesis.Probability.Distros.Binomial
@@ -60,6 +61,12 @@ import Thesis.Probability.Distros.ReinforcedPrefix
 Named finite distros.
 
 Reading order:
+
+`FinitePresentation` supplies weighted finite sampling codes and a separate
+duplicate-free declared-domain adapter. Its decoding theorems preserve all
+events and supported conditionals without a unit-cell denominator expansion.
+Sampling codes do not redefine observed values, and declared null values are
+retained rather than silently excluded as nonpositive support.
 
 1. `Basic` defines `Distro` / `NatDistro`, outcome relabelling (including
    composition, sections, and the identity map), moments, PGF, Markov,

@@ -6,6 +6,7 @@ import Thesis.Examples.DistributionExtensions
 import Thesis.Examples.BooleanChannelExpansion
 import Thesis.Examples.FiniteProductBalance
 import Thesis.Examples.PairRootChannels
+import Thesis.Examples.LocalCheckBaseline
 import Lean.Elab.Command
 import Lean.Util.CollectAxioms
 
