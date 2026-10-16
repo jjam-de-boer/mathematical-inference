@@ -83,6 +83,7 @@ jobs:
           lake build
           Thesis.Probability.FiniteRecordPresentation
           Thesis.Examples.FiniteRecordPresentation
+          Thesis.Examples.HiddenDAGFinitePresentation
           Thesis.Examples.LocalCheckBaseline
       - name: Check distribution axiom prerequisites
         working-directory: lean

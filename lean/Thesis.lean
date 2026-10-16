@@ -47,6 +47,7 @@ import Thesis.Examples.AffineSupportReduction
 import Thesis.Examples.FiniteIntegerCompression
 import Thesis.Examples.FiniteRationalCompression
 import Thesis.Examples.FiniteRecordPresentation
+import Thesis.Examples.HiddenDAGFinitePresentation
 import Thesis.Examples.FiniteSourceCompression
 import Thesis.Examples.FiniteProductReplacement
 import Thesis.Examples.FiniteProductSourceCompression
