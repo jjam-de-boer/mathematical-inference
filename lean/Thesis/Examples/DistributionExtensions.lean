@@ -297,3 +297,21 @@ example : QProb.Equiv ((reinforcedPrefixContinuation [0, 2] 1 [1, 2, 1] 2 (by de
     ⟨3, 8, by decide⟩ := by decide
 
 end Thesis.Examples.DistributionExtensions
+
+namespace Thesis.Probability.Distros
+
+/-- A zero-weight colour is retained while the reinforced variance can
+exceed the binomial variance. These computations check the actual records. -/
+example : QProb.Equiv (variance (reinforcedCountCoordinate 3 [2, 0, 1] 2 (by decide) 0))
+    (⟨6, 5, by decide⟩ : QProb) := by decide +kernel
+
+example : QProb.Equiv (variance (reinforcedCountCoordinate 3 [2, 0, 1] 0 (by decide) 0))
+    (⟨2, 3, by decide⟩ : QProb) := by decide +kernel
+
+example : QProb.Equiv (variance (reinforcedCountCoordinate 0 [2, 0, 1] 2 (by decide) 0))
+    QProb.zero := by decide +kernel
+
+example : QProb.Equiv (variance (reinforcedCountCoordinate 3 [2, 0, 1] 2 (by decide) 1))
+    QProb.zero := by decide +kernel
+
+end Thesis.Probability.Distros

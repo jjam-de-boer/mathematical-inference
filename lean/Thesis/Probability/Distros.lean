@@ -42,6 +42,7 @@ import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.JointFactorialMoments
 import Thesis.Probability.Distros.ReinforcedAggregation
 import Thesis.Probability.Distros.ReinforcedMoments
+import Thesis.Probability.Distros.ReinforcedVariance
 import Thesis.Probability.Distros.ReinforcedUpdates
 import Thesis.Probability.Distros.ReinforcedPrefix
 
