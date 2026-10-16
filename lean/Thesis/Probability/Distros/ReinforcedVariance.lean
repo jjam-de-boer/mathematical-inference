@@ -44,7 +44,7 @@ theorem reinforced_variance_numerator (n a b increment : Nat) :
       ac_rfl
     _ = _ := by
       rw [nat_falling_square]
-      simp only [Nat.mul_add, Nat.add_mul]
+      simp only [Nat.mul_add]
       ac_rfl
 
 /-- Var(Kᵢ) = n aᵢ (S-aᵢ) (S+d n) / (S² (S+d)).

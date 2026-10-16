@@ -11,7 +11,7 @@ theorem modify_add {alphas betas : List QProb} (same : RationalParametersEquiv a
       (betas.modify index (fun old => QProb.add old b)) := by
   induction alphas generalizing betas index with
   | nil => cases betas with
-      | nil => exact refl []
+      | nil => simpa only [List.modify_nil] using refl []
       | cons beta betas => have dim := same.1; simp only [List.length_nil, List.length_cons] at dim; omega
   | cons alpha alphas ih => cases betas with
       | nil => have dim := same.1; simp only [List.length_nil, List.length_cons] at dim; omega
@@ -66,7 +66,9 @@ theorem urnRatioParameters_modify_add (weights : List Nat) (denominator : Nat) (
       ((urnRatioParameters weights denominator positive).modify index
         (fun old => QProb.add old ⟨amount, denominator, positive⟩)) := by
   induction weights generalizing index with
-  | nil => exact .refl []
+  | nil =>
+      simp only [List.modify_nil, urnRatioParameters, List.map_nil]
+      exact .refl []
   | cons weight weights ih => cases index with
       | zero => exact .cons (QProb.equiv_symm (QProb.add_mk_same_den denominator positive weight amount)) (.refl _)
       | succ index => exact .cons (QProb.equiv_refl _) (ih index)
