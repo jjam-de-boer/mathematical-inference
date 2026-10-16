@@ -37,6 +37,7 @@ import Thesis.Probability.Distros.Reweight
 import Thesis.Probability.Distros.MulticolourPolya
 import Thesis.Probability.Distros.KernelInvariance
 import Thesis.Probability.Distros.SignedCovariance
+import Thesis.Probability.Distros.SignedCauchy
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.RationalBetaBinomial
