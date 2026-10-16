@@ -1,5 +1,5 @@
 import Thesis.Causality.IdentificationKernel
-import Thesis.CausalTransport.Completeness
+import Thesis.Causality.IdentificationRank
 
 namespace Thesis
 namespace Causality
@@ -19,7 +19,8 @@ A product call keeps the host and selects one free c-component; it never
 increases free size and consumes the product bonus.  This gives one uniform
 argument for arbitrary nesting, without enumerating branch-name stacks.
 
-Only general graph and finite-list facts are reused from `Completeness`.
+Only general graph and finite-list facts are reused from `IdentificationRank`
+and `ComponentConnectivity`, independently of the large `Completeness` module.
 No soundness theorem, completeness package, or semantic assumption is used
 to establish progress of the corrected program.
 -/

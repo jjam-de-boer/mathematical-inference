@@ -77,6 +77,16 @@ jobs:
       - name: Check constructive arithmetic prerequisites
         working-directory: lean
         run: lake build Thesis.ConstructiveAlgebraAudit
+      # Diagnose graph-layer extraction errors before rebuilding the larger
+      # native causal clients. The complete build and axiom gate still follow.
+      - name: Check graph-only identification layers
+        working-directory: lean
+        run: >-
+          lake build
+          Thesis.Causality.ComponentConnectivity
+          Thesis.Causality.IdentificationRank
+          Thesis.CausalTransport.KernelIdentification
+          Thesis.CausalTransport.KernelSeparation
       - name: Check finite-presentation adapters
         working-directory: lean
         run: >-

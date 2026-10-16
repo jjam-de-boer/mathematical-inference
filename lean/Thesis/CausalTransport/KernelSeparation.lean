@@ -1,4 +1,4 @@
-import Thesis.CausalTransport.Completeness
+import Thesis.Causality.ComponentConnectivity
 
 namespace Thesis
 namespace Causality

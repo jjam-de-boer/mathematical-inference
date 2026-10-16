@@ -149,24 +149,45 @@ regressions. `tools/test_example_coverage.py` guards this source-level coverage
 in CI without launching Lean. It does not replace actual elaboration or the
 transitive axiom audit.
 
-No broad soundness/completeness split is performed in this stage. Their source
-files remain large (roughly 20k and 42k lines), but the approved local pilot
-stops much earlier in the small `FiniteRecord` prerequisite. Splitting later
-files therefore has no demonstrated ability to make that pilot pass. The
+### Targeted graph extraction, not a local-memory claim
+
+`Causality.ComponentConnectivity` now contains the shared connectivity and
+partition facts; `Causality.IdentificationRank` contains the shared structural
+rank. The extraction retains 579 original lines, with unchanged theorem
+statements and proof bodies, apart from moving their enclosing module and
+documenting the new dependency boundary. `Completeness` imports the new
+layer, so its existing consumers still see the same public names. Forest
+constructors and historical trace inductions remain in their original module.
+
+Retargeting the two current-engine clients gives the following source-graph
+comparison (target included; Lean/Std modules excluded):
+
+| Client | Before extraction | After extraction |
+| --- | --- | --- |
+| `CausalTransport.KernelIdentification` | 26 | 19 |
+| `CausalTransport.KernelSeparation` | 25 | 17 |
+
+Both clients lose the direct dependency on the approximately 42k-line module
+and its legacy trace imports. Two source-graph regression tests protect this
+boundary and ensure the intrinsic layers do not import causal transport.
+CI checks the extracted modules and both clients early, then still runs the
+complete project and the unchanged transitive axiom gate.
+
+No broad soundness/completeness split is performed. The approved local pilot
+stops much earlier in the small `FiniteRecord` prerequisite, and even a tiny
+new definition after the cached core reaches the allocation boundary. This
+targeted dependency improvement has no demonstrated ability to cure that
+earlier limit. The
 remote cold/import-change build recorded completeness at 37 seconds; the
 18-second soundness attempt failed on a missing import, so it is not a valid
 successful-build timing. Once cached dependencies were available, checkpoint
 `733b5f3` completed its full-build step in 7 seconds and its separate axiom
 gate in 25 seconds. These are CI wall times, not local peak-memory measurements.
 
-A future targeted extraction could separate graph-only c-component geometry
-and recursion-rank lemmas from `Completeness`, then retarget current-kernel
-clients to the small module while retaining the old public facade. Probability
-algebra in `Soundness` is another candidate. Either needs its own dependency
-and resource measurements, private-helper review, complete build and axiom
-audit. Neither is needed to repair a mathematical theorem or justified as a
-local-memory cure by the present measurements. Keeping this conditional work
-deferred avoids a high-churn reorganization unsupported by the pilot.
+Probability algebra in `Soundness` remains a possible later extraction. It
+would need separate dependency/resource measurements, private-helper review,
+a complete build and axiom audit. Neither that work nor the graph extraction
+is a repair to the mathematical theorem or an established local-memory cure.
 
 ## Fresh-closure pilot
 
