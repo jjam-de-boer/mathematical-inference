@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.BinaryInstrumentalRepresentation
+import Thesis.Probability.FiniteProductReindex
 
 namespace Thesis
 namespace Causality

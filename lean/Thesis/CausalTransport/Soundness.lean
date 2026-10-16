@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.FiniteSource
 import Thesis.CausalTransport.DSeparationCorrectness
+import Thesis.Probability.Reindexing
 
 namespace Thesis
 namespace Causality

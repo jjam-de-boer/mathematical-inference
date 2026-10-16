@@ -1,4 +1,5 @@
 import Thesis.Causality.BinaryInstrumentalProfiles
+import Thesis.Probability.FiniteRecordAlmostSure
 
 namespace Thesis
 namespace Causality
