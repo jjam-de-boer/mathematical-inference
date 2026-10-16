@@ -104,14 +104,14 @@ theorem conditionalBlockMean_weighted (atoms : List (Ω × Nat)) (f : Ω → Sig
     refine SignedRatio.equiv_trans ?_ (SignedRatio.equiv_symm (rationalAtomSum_zero_mass atoms zero f))
     simp only [SignedRatio.Equiv, SignedRatio.scaleNat, zero, SignedRatio.zero, Int.natCast_zero, Int.zero_mul]
 
-private theorem rationalAtomSum_append (left right : List (Ω × Nat)) (f : Ω → SignedRatio) :
+theorem rationalAtomSum_append (left right : List (Ω × Nat)) (f : Ω → SignedRatio) :
     SignedRatio.Equiv (FiniteProbRecord.rationalAtomSum (left ++ right) f)
       (SignedRatio.add (FiniteProbRecord.rationalAtomSum left f) (FiniteProbRecord.rationalAtomSum right f)) := by
   have result := SignedRatio.listSum_append (left.map (fun atom => SignedRatio.scaleNat atom.2 (f atom.1)))
     (right.map (fun atom => SignedRatio.scaleNat atom.2 (f atom.1)))
   simpa only [FiniteProbRecord.rationalAtomSum, List.map_append] using result
 
-private theorem rationalAtomSum_flatten (cells : List (List (Ω × Nat))) (f : Ω → SignedRatio) :
+theorem rationalAtomSum_flatten (cells : List (List (Ω × Nat))) (f : Ω → SignedRatio) :
     SignedRatio.Equiv (FiniteProbRecord.rationalAtomSum cells.flatten f)
       (SignedRatio.listSum (cells.map (fun cell => FiniteProbRecord.rationalAtomSum cell f))) := by
   induction cells with
@@ -120,7 +120,7 @@ private theorem rationalAtomSum_flatten (cells : List (List (Ω × Nat))) (f : �
       exact SignedRatio.equiv_trans (rationalAtomSum_append _ _ f)
         (SignedRatio.add_congr (SignedRatio.equiv_refl _) ih)
 
-private theorem rationalAtomSum_perm {left right : List (Ω × Nat)} (same : left.Perm right) (f : Ω → SignedRatio) :
+theorem rationalAtomSum_perm {left right : List (Ω × Nat)} (same : left.Perm right) (f : Ω → SignedRatio) :
     SignedRatio.Equiv (FiniteProbRecord.rationalAtomSum left f) (FiniteProbRecord.rationalAtomSum right f) := by
   induction same with
   | nil => exact SignedRatio.equiv_refl _

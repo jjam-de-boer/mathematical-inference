@@ -10,7 +10,7 @@ def squaredRatio (value : SignedRatio) : QProb :=
 theorem squaredRatio_spec (value : SignedRatio) :
     SignedRatio.Equiv (squaredRatio value).toSignedRatio (SignedRatio.mul value value) := by
   simp only [SignedRatio.Equiv, squaredRatio, QProb.toSignedRatio, SignedRatio.mul,
-    Int.natCast_mul, Int.natAbs_mul_self]
+    Int.natCast_mul, Int.natAbs_mul_self']
 
 theorem rationalAtomSum_toSignedRatio (atoms : List (Ω × Nat)) (f : Ω → QProb) :
     SignedRatio.Equiv (FiniteProbRecord.rationalAtomSum atoms (fun x => (f x).toSignedRatio))
@@ -42,15 +42,15 @@ private theorem ratio_square_sub_expand (x m : SignedRatio) :
       (SignedRatio.add (SignedRatio.sub (SignedRatio.sub (SignedRatio.mul x x) (SignedRatio.mul m x))
         (SignedRatio.mul m x)) (SignedRatio.mul m m)) := by
   simp only [SignedRatio.Equiv, SignedRatio.mul, SignedRatio.sub, SignedRatio.add, SignedRatio.neg,
-    Int.natCast_mul, Int.mul_add, Int.add_mul, Int.neg_add, Int.neg_mul, Int.mul_neg,
+    Int.natCast_mul, Int.mul_add, Int.mul_neg,
     Int.neg_neg, Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
   omega
 
 private theorem ratio_sub_sub_add (a b : SignedRatio) :
     SignedRatio.Equiv (SignedRatio.add (SignedRatio.sub (SignedRatio.sub a b) b) b) (SignedRatio.sub a b) := by
   simp only [SignedRatio.Equiv, SignedRatio.sub, SignedRatio.add, SignedRatio.neg,
-    Int.natCast_mul, Int.mul_add, Int.add_mul, Int.neg_add, Int.neg_mul, Int.mul_neg,
-    Int.neg_neg, Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
+    Int.natCast_mul, Int.mul_add, Int.mul_neg,
+    Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
   omega
 
 /-- The rational variance is the expectation of the genuine centered square. -/
