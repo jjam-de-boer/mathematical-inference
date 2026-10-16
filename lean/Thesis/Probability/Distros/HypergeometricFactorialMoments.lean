@@ -165,6 +165,22 @@ theorem multivariateHypergeometric_jointFactorialMoment_scaled (n : Nat) (stocks
   · rw [fallingFactorial_eq_zero n orders.sum (by omega)]
     simp only [Nat.zero_mul, Nat.mul_zero]
 
+/-- Mixed moments above the sample size are actually zero, not merely
+annihilated by a zero population falling factorial in the scaled identity. -/
+theorem multivariateHypergeometric_jointFactorialMoment_above (n : Nat) (stocks orders : List Nat)
+    (positive : 0 < binom stocks.sum n) (above : n < orders.sum) :
+    QProb.Equiv (jointFactorialMoment (multivariateHypergeometricDistro n stocks positive) orders) QProb.zero := by
+  let μ := multivariateHypergeometricDistro n stocks positive
+  have zero : μ.expectNat (jointFalling orders) = μ.expectNat (fun _ => 0) := by
+    apply μ.expectNat_congr_on_support
+    intro atom member
+    apply jointFalling_above_sum
+    have total := (multivariateHypergeometric_support n stocks atom member).2
+    omega
+  change QProb.Equiv (μ.expectNat (jointFalling orders)) QProb.zero
+  rw [zero]
+  exact μ.expectNat_constant 0
+
 /-- The familiar closed ratio whenever its population denominator is positive. -/
 theorem multivariateHypergeometric_jointFactorialMoment (n : Nat) (stocks orders : List Nat)
     (positive : 0 < binom stocks.sum n) (dimension : orders.length = stocks.length) (within : orders.sum ≤ stocks.sum) :
