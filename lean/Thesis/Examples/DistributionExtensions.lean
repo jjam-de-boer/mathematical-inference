@@ -315,3 +315,18 @@ example : QProb.Equiv (variance (reinforcedCountCoordinate 3 [2, 0, 1] 2 (by dec
     QProb.zero := by decide +kernel
 
 end Thesis.Probability.Distros
+
+namespace Thesis.Probability.Distros
+
+/-- Fractional parameters use unit reinforcement in rational units. -/
+example : QProb.Equiv
+    ((rationalBetaBinomialNatDistro 2 ⟨1, 2, by decide⟩ ⟨3, 2, by decide⟩ (by decide)).distro.probVal
+      (fun counts => decide (counts.getD 0 0 = 2)))
+    (⟨1, 8, by decide⟩ : QProb) := by decide +kernel
+
+example : QProb.Equiv
+    ((rationalCountsContinuation 2 1 [⟨1, 2, by decide⟩, QProb.zero, ⟨3, 2, by decide⟩] [1, 0, 1]
+      (by decide) (by decide +kernel)).pmf [0])
+    (⟨3, 8, by decide⟩ : QProb) := by decide +kernel
+
+end Thesis.Probability.Distros

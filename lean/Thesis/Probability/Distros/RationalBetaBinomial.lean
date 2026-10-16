@@ -55,7 +55,8 @@ theorem rationalDirichletMultinomial_coordinate_betaBinomial (n : Nat) (alphas :
   let μ := rationalDirichletMultinomialDistro n alphas positive
   have grouped := rationalDirichletMultinomial_aggregation n 2 alphas labels positive
     (coordinateArguments_length _ _ _) (coordinateLabels_within _ _)
-  have beta := rationalDirichletMultinomial_sameLaw_parameters n _ _ _
+  have beta := rationalDirichletMultinomial_sameLaw_parameters n _ _
+    (aggregateRationalParameters_positive 2 labels alphas positive (coordinateArguments_length _ _ _) (coordinateLabels_within _ _))
     (rationalCoordinate_parameters_positive alphas positive index within)
     (aggregateRationalParameters_coordinate alphas index within)
   apply (NatDistro.sameLaw_iff_events _ _).mpr
