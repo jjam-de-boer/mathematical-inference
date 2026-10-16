@@ -1,6 +1,8 @@
 import Thesis.Causality.Reductions
 import Thesis.Causality.ModalCounterfactual
 import Thesis.CausalTransport.ModalCounterfactual
+import Thesis.Probability.Distros.Binomial
+import Thesis.Probability.Distros.Bernoulli
 
 namespace Thesis
 namespace Causality

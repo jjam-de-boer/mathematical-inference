@@ -55,7 +55,8 @@ theorem supported_condition_preserved :
           (by decide +kernel))).probVal (fun code => decide (repeated.finitePresentation.decode code = 9)))
       ((repeated.record.conditionOn (fun value => decide (value = 7)) (by decide +kernel)).probVal
         (fun value => decide (value = 9))) :=
-  repeated.finitePresentation.conditionOn_probVal _ _ (by decide +kernel)
+  repeated.finitePresentation.conditionOn_probVal
+    (fun value => decide (value = 7)) (fun value => decide (value = 9)) (by decide +kernel)
 
 /-- Arbitrary rational urn parameters retain the complete ordered-path law
 after finite-code sampling, including categories of initial weight zero. -/

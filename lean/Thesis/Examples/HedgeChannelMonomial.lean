@@ -71,6 +71,12 @@ theorem factual_channel_expansion :
 private def target (child : Fin signature.count) : Option Bool := if child.val = 0 then some false else none
 private def remainingChoice (child : Fin signature.count) : Option (Fin 2) := if child.val = 0 then none else some 0
 
+/-- Decide equality of the actual finite row-choice functions explicitly.
+This fixture must not depend on a generic instance imported by an unrelated
+probability facade; the declaration also keeps kernel decisions closed. -/
+private instance choiceDecidableEq : DecidableEq (Fin signature.count → Option (Fin 2)) :=
+  FiniteProduct.assignmentDecidableEq signature.count (fun _ => Option (Fin 2)) (fun _ => inferInstance)
+
 /-- The remaining selected term belongs to the intervention's actual
 choice list.  The forced action row has no channel choices at all. -/
 theorem remaining_choice_listed :

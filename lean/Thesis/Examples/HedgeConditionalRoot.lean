@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.HedgeConditionalRoot
 import Thesis.Examples.HedgeReadoutPullback
+import Thesis.Probability.FiniteRecordPerturbation
 
 namespace Thesis
 namespace Causality

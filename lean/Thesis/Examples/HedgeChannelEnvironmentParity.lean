@@ -34,6 +34,12 @@ This verifies a nonempty instance of the graph-facing parity obligation.
 It does not infer arbitrary terminal-path coverage from this one-edge case.
 -/
 
+/-- Cube membership is a finite function comparison, supplied here rather
+than inherited indirectly from the complete probability facade. -/
+private instance cubeDecidableEq : DecidableEq (Cube graph) :=
+  FiniteProduct.assignmentDecidableEq (pairRootCount graph.binary + signature.count)
+    (fun _ => Bool) (fun _ => inferInstance)
+
 /-- Only the small row at `R` reads its genuine incident `U <-> R` bit. -/
 def smallData : LinearSignal graph where
   parentMask := fun _ _ => false

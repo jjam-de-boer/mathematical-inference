@@ -69,6 +69,14 @@ This is a genuine small local success, but must not be reported as a successful
 transportation check. Similar process RSS does not imply identical Lean
 allocation behaviour or proof-checking demands.
 
+A subsequent sequential attempt to check the new presentation adapter could
+reuse the cached core, permutation, finite-cell-product and urn dependencies
+(about 0.37 seconds and 53.8 MiB). It stopped in the first selected prerequisite,
+`FiniteRecord`, at the unchanged 384 MB allocation cap: 1.47 seconds and
+approximately 592.1 MiB child peak. Neither `Construction` nor the new adapter
+was reached. This is a resource-limit result, not an adapter proof result;
+those proofs are checked remotely. No further 512 MB trial was made.
+
 The helper safety regressions can be run without invoking Lean:
 
 ```sh
