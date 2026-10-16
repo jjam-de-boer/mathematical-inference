@@ -41,6 +41,7 @@ import Thesis.Probability.Distros.HypergeometricMarginals
 import Thesis.Probability.Distros.HypergeometricAggregation
 import Thesis.Probability.Distros.DepletingUrn
 import Thesis.Probability.Distros.DepletingHistory
+import Thesis.Probability.Distros.DepletingWord
 import Thesis.Probability.Distros.Reweight
 import Thesis.Probability.Distros.MulticolourPolya
 import Thesis.Probability.Distros.KernelInvariance
