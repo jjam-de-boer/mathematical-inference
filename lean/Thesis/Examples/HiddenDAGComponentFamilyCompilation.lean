@@ -24,11 +24,13 @@ data.  The general adapter constructs the complete native host tree, which
 the existing native soundness theorem interprets in this original DAG.
 -/
 
+/-- Supply this concrete finite comparison explicitly instead of inheriting
+an unrelated probability-module instance. A declaration, rather than a local
+let, also keeps the kernel-generated decision lemma closed over constants. -/
+private instance componentDecidableEq : DecidableEq (NodeSet signature) :=
+  FiniteProduct.assignmentDecidableEq signature.count (fun _ => Bool) (fun _ => inferInstance)
+
 private theorem partition_eq : projection.observedGraph.cComponents NodeSet.full = [NodeSet.full] := by
-  -- This finite function comparison is supplied explicitly rather than
-  -- arriving accidentally through an unrelated probability-module instance.
-  letI : DecidableEq (NodeSet signature) :=
-    FiniteProduct.assignmentDecidableEq signature.count (fun _ => Bool) (fun _ => inferInstance)
   decide +kernel
 
 /-- The computed lookup is the full component extensionally.  It need not
