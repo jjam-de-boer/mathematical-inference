@@ -62,7 +62,9 @@ theorem multicolourDepletingCountAtoms_selection (n : Nat) (stocks : List Nat) :
 
 private theorem multicolourDepletingCount_totalMass (n : Nat) (stocks : List Nat) :
     FiniteProbRecord.totalMass (multicolourDepletingCountAtoms n stocks) = fallingFactorial stocks.sum n := by
-  rw [multicolourDepletingCountAtoms_selection, FiniteProbRecord.totalMass_map_weight, multivariateHypergeometric_totalMass]
+  rw [multicolourDepletingCountAtoms_selection,
+    FiniteProbRecord.totalMass_map_weight (multivariateHypergeometricAtoms n stocks) (fun counts : List Nat => counts) (fallingFactorial n n),
+    multivariateHypergeometric_totalMass]
   exact (fallingFactorial_binom stocks.sum n).symm
 
 def multicolourDepletingCountDistro (n : Nat) (stocks : List Nat) (positive : 0 < binom stocks.sum n) : Distro (List Nat) :=
@@ -170,6 +172,6 @@ theorem multivariateHypergeometric_jointFactorialMoment (n : Nat) (stocks orders
       ⟨fallingFactorial n orders.sum * jointFalling orders stocks, fallingFactorial stocks.sum orders.sum,
         fallingFactorial_pos _ _ within⟩ := by
   have scaled := multivariateHypergeometric_jointFactorialMoment_scaled n stocks orders positive dimension
-  simpa only [QProb.Equiv, QProb.scale, QProb.ofNat, Nat.mul_one, Nat.mul_comm] using scaled
+  simpa only [QProb.Equiv, QProb.scale, QProb.ofNat, Nat.mul_one, Nat.one_mul, Nat.mul_comm] using scaled
 
 end Thesis.Probability.Distros

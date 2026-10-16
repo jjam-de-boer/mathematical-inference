@@ -5,7 +5,7 @@ namespace Thesis.Probability.Distros
 private theorem ratio_sub_add_sub (a b c : SignedRatio) :
     SignedRatio.Equiv (SignedRatio.add (SignedRatio.sub a b) (SignedRatio.sub b c)) (SignedRatio.sub a c) := by
   simp only [SignedRatio.Equiv, SignedRatio.sub, SignedRatio.add, SignedRatio.neg,
-    Int.natCast_mul, Int.add_mul, Int.mul_add, Int.neg_mul, Int.mul_neg, Int.neg_neg,
+    Int.natCast_mul, Int.mul_add, Int.mul_neg,
     Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
   omega
 
