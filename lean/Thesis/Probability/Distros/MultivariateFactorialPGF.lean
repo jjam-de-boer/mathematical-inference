@@ -49,7 +49,9 @@ theorem jointFalling_choose (orders counts : List Nat) :
   | cons order orders ih => cases counts with
       | nil => simp only [jointFalling, jointChoose, Nat.zero_mul]
       | cons count counts =>
-          simp only [jointFalling, jointChoose, orderFactorial, fallingFactorial_binom, ih]
+          change fallingFactorial count order * jointFalling orders counts =
+            (binom count order * jointChoose orders counts) * (fallingFactorial order order * orderFactorial orders)
+          rw [ih, fallingFactorial_binom count order]
           ac_rfl
 
 /-- The mixed factorial moment divided by the product of order factorials. -/
@@ -119,8 +121,11 @@ theorem multivariatePGF_factorial_expansion (μ : Distro (List Nat)) (args : Lis
     QProb.Equiv (multivariatePGF μ (args.map (fun t => QProb.add t QProb.one)))
       (QProb.listSum ((factorialBox args.length bound).map (fun orders =>
         QProb.mul (multivariateFactorialCoefficient μ orders) (multivariateMonomial args orders)))) := by
-  refine QProb.equiv_trans (μ.expectation_congr_on_support _ _ (fun atom member =>
-    multivariateMonomial_add_one args atom.1 bound (support atom member).1 (support atom member).2)) ?_
+  refine QProb.equiv_trans (μ.expectation_congr_on_support
+    (multivariateMonomial (args.map (fun t => QProb.add t QProb.one)))
+    (fun counts => QProb.listSum ((factorialBox args.length bound).map (fun orders =>
+      QProb.scale (jointChoose orders counts) (multivariateMonomial args orders))))
+    (fun atom member => multivariateMonomial_add_one args atom.1 bound (support atom member).1 (support atom member).2)) ?_
   refine QProb.equiv_trans (μ.expectation_listSum (factorialBox args.length bound)
     (fun orders counts => QProb.scale (jointChoose orders counts) (multivariateMonomial args orders))) ?_
   apply QProb.listSum_map_congr
