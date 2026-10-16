@@ -60,7 +60,7 @@ theorem multicolourDepletingCountAtoms_selection (n : Nat) (stocks : List Nat) :
               binom stock used * atom.2 := by ac_rfl
           _ = _ := by rw [binom_factorial_split n used (by have h := List.mem_range.mp member; omega)]; ac_rfl
 
-private theorem multicolourDepletingCount_totalMass (n : Nat) (stocks : List Nat) :
+theorem multicolourDepletingCount_totalMass (n : Nat) (stocks : List Nat) :
     FiniteProbRecord.totalMass (multicolourDepletingCountAtoms n stocks) = fallingFactorial stocks.sum n := by
   rw [multicolourDepletingCountAtoms_selection,
     FiniteProbRecord.totalMass_map_weight (multivariateHypergeometricAtoms n stocks) (fun counts : List Nat => counts) (fallingFactorial n n),
