@@ -242,7 +242,17 @@ These are proposed proof obligations, not existing formal cardinality or
 coverage results. The finite search can also be enormous; mathematical
 finiteness is not an efficiency guarantee. If only an observed projection is
 fixed while the number and arrangement of hidden nodes vary, another graph
-representation theorem is needed as well. Even successful finite-template
+representation theorem is needed as well. A potentially better route for that
+class starts with the existing intervention-preserving `HiddenDAGCollapse`:
+group independent roots by their observed-child incidence set, prove the
+grouped product law and readout preservation, then compress and relabel those
+groups. There are at most `2^(number of observed nodes)` such incidence sets,
+but the grouping and coverage theorems are not implemented. Roots with three
+or more children must remain allowed; replacing them by independent pairwise
+causes would not be justified by the current collapse theorem. This route
+might avoid directly relabelling every internal hidden-node alphabet, and
+should be compared with the unchanged-full-DAG route before implementation.
+Even successful finite-template
 coverage would leave infinitely many rational source-weight assignments;
 it would not, by itself, prove complete certificate search, optimization or
 rational feasibility decision. No excluded-middle, choice or real-to-rational
