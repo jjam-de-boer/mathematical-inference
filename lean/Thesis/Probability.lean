@@ -6,6 +6,7 @@ import Thesis.Probability.FiniteCellProduct
 import Thesis.Probability.Urn
 import Thesis.Probability.QualitativeUrn
 import Thesis.Probability.FiniteRecord
+import Thesis.Probability.FiniteRecordPresentation
 import Thesis.Probability.FiniteRecordAlmostSure
 import Thesis.Probability.FiniteRecordConsistencyBounds
 import Thesis.Probability.AffineInterval

@@ -3,6 +3,10 @@ import Thesis.Examples.ConditionalReadoutFailure
 import Thesis.Examples.ConditionalReadoutPaths
 import Thesis.Examples.DistributionLaws
 import Thesis.Examples.DistributionExtensions
+import Thesis.Examples.BooleanChannelExpansion
+import Thesis.Examples.FiniteProductBalance
+import Thesis.Examples.PairRootChannels
+import Thesis.Examples.LocalCheckBaseline
 import Lean.Elab.Command
 import Lean.Util.CollectAxioms
 
@@ -24,6 +28,12 @@ than by the ordinary smoke facade.  Their expanded-graph decision proofs can
 need more kernel memory than a capped local module check.  The full CI policy
 gate therefore checks their compilation and transitive axioms as well, without
 making lightweight semantic clients import those expensive computations.
+
+The standalone channel-expansion, product-balance and pair-root regressions
+are also policy-gate imports. Their underlying library lemmas already belong
+to the public facade, but that alone does not elaborate these separate test
+files. Importing the tests here checks both their exact computations and
+their transitive axioms without enlarging ordinary library clients.
 -/
 
 open Lean Elab Command

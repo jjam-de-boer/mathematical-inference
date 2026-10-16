@@ -1,5 +1,5 @@
 import Thesis.Causality.Graph
-import Thesis.Probability
+import Thesis.Probability.Construction
 
 namespace Thesis
 namespace Causality
@@ -14,6 +14,13 @@ different value types, and the acyclic directed parent graph.  A model adds a
 finite family of latent roots, a product probability law for those roots, and
 structural mechanisms typed only over declared parent and incident-latent
 inputs.  Bidirected edges are derived by hiding shared latent roots.
+
+Only the finite record and dependent-product construction layer is needed
+here. Keeping that dependency explicit prevents unrelated named distributions,
+moment identities and polynomial-certificate extensions from becoming imports
+of every structural model. Clients of those additional probability results
+must import their defining modules rather than relying on this model layer
+to re-export the complete probability facade.
 -/
 
 namespace ObservedSignature

@@ -29,6 +29,12 @@ separate from the finite graph checks also keeps local verification capped.
 This closes this genuine overlap instance, not the universal conditional leaf.
 -/
 
+/-- Decide equality of this fixture's finite cube directly. No ambient
+propositional decision principle is needed for its finite mask membership. -/
+private instance cubeDecidableEq : DecidableEq (Cube graph) :=
+  FiniteProduct.assignmentDecidableEq (pairRootCount graph.binary + signature.count)
+    (fun _ => Bool) (fun _ => inferInstance)
+
 /-- `C` reads its declared parent `Y`; `Z` reads its declared parent `C`.
 The row at `P` still contributes its own bit.  All original reserved roots
 remain in the environment, although this particular parity uses none. -/

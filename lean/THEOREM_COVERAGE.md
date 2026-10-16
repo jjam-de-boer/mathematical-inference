@@ -260,6 +260,20 @@ transfer principle is silently added at any of these boundaries.
 
 ## Construction, execution, and proof verification
 
+Finite distribution records can be used as private causal noise without
+expanding their natural weights into unit cells. `FiniteRecordPresentation`
+proves literal decoded record recovery, all-event probability preservation,
+support equivalence and supported-conditional preservation. Its occurrence
+codes may repeat an observable label. The separate declared-domain adapter
+is bijective on the whole supplied finite subtype, retaining permitted null
+values; it does not assert that an infinite ambient label type is finite.
+`HiddenDAGFinitePresentation` converts an explicit `FiniteWitness` into the
+native model's two-sided observed-value adapter. The corresponding native
+example uses rational urn and multivariate hypergeometric laws as actual
+independent private noise and checks intervention marginals and do-rule
+soundness. This is integration with the existing causal theorems, not a new
+or stronger completeness claim.
+
 `FourLabelTransportation.transportBatched` reserves complete eligible-cell
 capacities. Its positivity, saturation, residual feasibility, termination and
 exact table guarantees justify the unchanged extremal interfaces. The older

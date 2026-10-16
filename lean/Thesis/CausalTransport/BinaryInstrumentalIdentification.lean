@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.BinaryInstrumentalComputedBounds
+import Thesis.Probability.AffineInterval
 
 namespace Thesis
 namespace Causality

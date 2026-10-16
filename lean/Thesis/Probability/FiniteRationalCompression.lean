@@ -1,6 +1,7 @@
 import Thesis.Probability.FiniteIntegerCompression
 import Thesis.Probability.FiniteDenominatorClearing
 import Thesis.Probability.FiniteRationalMoment
+import Thesis.Probability.FiniteRecordPresentation
 
 namespace Thesis
 namespace Probability
@@ -39,22 +40,15 @@ def originalLabel (record : FiniteProbRecord Ω) (index : Fin record.atoms.lengt
 /-- Sampling original atom positions keeps multiplicities and zero atoms
 explicitly.  Its total-mass proof uses the already checked integer identity,
 and no supported representative of an ambient label is chosen. -/
-def indexedRecord (original : FiniteProbRecord Ω) : FiniteProbRecord (Fin original.atoms.length) where
-  atoms := FiniteIntegerCompression.indexed (fun index => index) (fun index => original.atoms[index.val].2)
-  den := original.den
-  den_pos := original.den_pos
-  total_mass := Int.ofNat.inj
-    ((FiniteIntegerCompression.indexed_totalMass (fun index : Fin original.atoms.length => index)
-      (fun index => original.atoms[index.val].2)).trans (FiniteIntegerCompression.original_mass_dot original))
+def indexedRecord (original : FiniteProbRecord Ω) : FiniteProbRecord (Fin original.atoms.length) :=
+  original.atomIndexRecord
 
 theorem rationalMean_indexed (original : FiniteProbRecord Ω) (response : Ω → SignedRatio) :
     (indexedRecord original).rationalMean (fun index => response (originalLabel original index)) =
       original.rationalMean response := by
-  have sameAtoms := FiniteIntegerCompression.reconstruct_atoms original.atoms
-  have integrated := congrArg
-    (fun atoms => SignedRatio.divideNat (rationalAtomSum atoms response) original.den original.den_pos) sameAtoms
-  simpa only [rationalMean, rationalAtomSum, indexedRecord, originalLabel,
-    FiniteIntegerCompression.indexed, List.map_map, Function.comp_def] using integrated
+  have integrated := rationalMean_map original.atomIndexRecord original.atomIndexLabel response
+  rw [original.atomIndexRecord_map] at integrated
+  exact integrated.symm
 
 structure Compressed (original : FiniteProbRecord Ω) (responses : Fin count → Ω → SignedRatio) where
   record : FiniteProbRecord Ω
