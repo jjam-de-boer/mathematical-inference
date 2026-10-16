@@ -399,3 +399,36 @@ example : QProb.Equiv (((multivariateHypergeometricDistro 2 [2, 0, 1] (by decide
 example : QProb.Equiv ((multivariateHypergeometricDistro 0 [] (by decide)).pmf []) QProb.one := by decide +kernel
 
 end Thesis.Examples.DistributionExtensions
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Rational observables keep exact boundary events, signed covariance,
+and equivalence of unreduced constant values. -/
+def halfSignedBit (bit : Bool) : SignedRatio := ⟨if bit then 1 else -1, 2, by decide⟩
+
+example : QProb.Equiv ((bernoulliDistro 1 1 (by decide)).varianceRational halfSignedBit)
+    ⟨1, 4, by decide⟩ := by decide +kernel
+
+example : QProb.Equiv ((bernoulliDistro 1 1 (by decide)).record.probVal
+    ((bernoulliDistro 1 1 (by decide)).rationalDeviationEvent halfSignedBit ⟨1, 2, by decide⟩))
+    QProb.one := by decide +kernel
+
+example : QProb.LE ((bernoulliDistro 1 1 (by decide)).record.probVal
+    ((bernoulliDistro 1 1 (by decide)).rationalDeviationEvent halfSignedBit ⟨1, 2, by decide⟩))
+    (QProb.div ((bernoulliDistro 1 1 (by decide)).varianceRational halfSignedBit)
+      (QProb.mul ⟨1, 2, by decide⟩ ⟨1, 2, by decide⟩) (by decide)) :=
+  Distro.chebyshev_rationalObservable _ halfSignedBit ⟨1, 2, by decide⟩ (by decide)
+
+example : SignedRatio.Equiv ((bernoulliDistro 1 1 (by decide)).rationalCovariance
+    halfSignedBit (fun bit => SignedRatio.neg (halfSignedBit bit))) ⟨-1, 4, by decide⟩ := by decide +kernel
+
+example : ∃ c : SignedRatio, (bernoulliDistro 1 1 (by decide)).AlmostSurely
+    (fun bit => SignedRatio.Equiv (if bit then (⟨1, 2, by decide⟩ : SignedRatio) else ⟨2, 4, by decide⟩) c) :=
+  (Distro.rationalVariance_zero_iff_constant _ _).mp (by decide +kernel)
+
+example : ∃ c : SignedRatio, (bernoulliDistro 0 1 (by decide)).AlmostSurely
+    (fun bit => SignedRatio.Equiv (if bit then (⟨17, 3, by decide⟩ : SignedRatio) else ⟨-3, 2, by decide⟩) c) :=
+  (Distro.rationalVariance_zero_iff_constant _ _).mp (by decide +kernel)
+
+end Thesis.Examples.DistributionExtensions
