@@ -30,6 +30,8 @@ import Thesis.Probability.Distros.GeometricMoments
 import Thesis.Probability.Distros.HypergeometricMoments
 import Thesis.Probability.Distros.FactorialMoments
 import Thesis.Probability.Distros.FactorialPGF
+import Thesis.Probability.Distros.MultivariateFactorialPGF
+import Thesis.Probability.Distros.MultivariateReconstruction
 import Thesis.Probability.Distros.PolyaUpdates
 import Thesis.Probability.Distros.Degenerate
 import Thesis.Probability.Distros.NegativeBinomialMoments
@@ -275,4 +277,8 @@ retained rather than silently excluded as nonpositive support.
     and recover the remaining-stock law, with counts sufficient for prediction.
     `DepletingConsistency` gives horizon consistency and the joint law of
     successive count blocks, including empty samples and exhausted stocks.
+53. `MultivariateFactorialPGF` expands bounded count-vector PGFs about one
+    using all mixed factorial moments. `MultivariateReconstruction` proves
+    that a finite rectangle of those moments determines the entire joint
+    event law; the all-orders characterization obtains its bound from support.
 -/

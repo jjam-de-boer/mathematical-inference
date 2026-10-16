@@ -284,6 +284,19 @@ theorem encodedNatArguments_length (base value length : Nat) :
   | zero => rfl
   | succ length ih => simp only [encodedNatArguments, List.length_cons, ih]
 
+/-- Positional PGF encodings use only positive arguments when their
+initial value is positive. Zero arguments are unnecessary for uniqueness. -/
+theorem encodedNatArguments_positive (base value length : Nat) (positive : 0 < value) :
+    ∀ arg ∈ encodedNatArguments base value length, 0 < arg := by
+  induction length generalizing value with
+  | zero => intro arg member; cases member
+  | succ length ih =>
+      intro arg member
+      change arg ∈ value :: encodedNatArguments base (value ^ base) length at member
+      rcases List.mem_cons.mp member with same | member
+      · subst arg; exact positive
+      · exact ih (value ^ base) (Nat.pow_pos positive) arg member
+
 theorem natMonomial_encoded (counts : List Nat) (base value : Nat) :
     natMonomial (encodedNatArguments base value counts.length) counts = value ^ encodeCounts base counts := by
   induction counts generalizing value with
@@ -292,13 +305,13 @@ theorem natMonomial_encoded (counts : List Nat) (base value : Nat) :
       simp only [encodedNatArguments, natMonomial, encodeCounts]
       rw [ih, ← Nat.pow_mul, Nat.pow_add]
 
-/-- Whole-number multivariate arguments already determine the complete
-finite count law.  The resulting equality transports all rational PGFs. -/
-theorem Distro.sameLaw_of_multivariatePGF_nat (μ ν : Distro (List Nat)) (length base : Nat)
+/-- Positive whole-number multivariate arguments already determine the
+complete finite count law, including all events and rational PGFs. -/
+theorem Distro.sameLaw_of_multivariatePGF_positive_nat (μ ν : Distro (List Nat)) (length base : Nat)
     (positive : 0 < base)
     (hμ : ∀ atom ∈ μ.record.atoms, atom.1.length = length ∧ ∀ count ∈ atom.1, count < base)
     (hν : ∀ atom ∈ ν.record.atoms, atom.1.length = length ∧ ∀ count ∈ atom.1, count < base)
-    (same : ∀ args : List Nat, args.length = length →
+    (same : ∀ args : List Nat, args.length = length → (∀ arg ∈ args, 0 < arg) →
       QProb.Equiv (multivariatePGF μ (args.map QProb.ofNat)) (multivariatePGF ν (args.map QProb.ofNat))) :
     μ.SameLaw ν := by
   let numericμ : NatDistro (List Nat) := ⟨μ, encodeCounts base⟩
@@ -332,6 +345,19 @@ theorem Distro.sameLaw_of_multivariatePGF_nat (μ ν : Distro (List Nat)) (lengt
   apply Distro.sameLaw_of_encodedCounts μ ν length base positive hμ hν
   apply NatDistro.sameLaw_of_pgf_largeNat numericμ numericν
   exact QProb.equiv_trans (QProb.equiv_symm left)
-    (QProb.equiv_trans (same args (encodedNatArguments_length base value length)) right)
+    (QProb.equiv_trans (same args (encodedNatArguments_length base value length)
+      (encodedNatArguments_positive base value length (Nat.succ_pos _))) right)
+
+/-- Whole-number multivariate arguments determine the complete finite count
+law. This interface also allows zero arguments. -/
+theorem Distro.sameLaw_of_multivariatePGF_nat (μ ν : Distro (List Nat)) (length base : Nat)
+    (positive : 0 < base)
+    (hμ : ∀ atom ∈ μ.record.atoms, atom.1.length = length ∧ ∀ count ∈ atom.1, count < base)
+    (hν : ∀ atom ∈ ν.record.atoms, atom.1.length = length ∧ ∀ count ∈ atom.1, count < base)
+    (same : ∀ args : List Nat, args.length = length →
+      QProb.Equiv (multivariatePGF μ (args.map QProb.ofNat)) (multivariatePGF ν (args.map QProb.ofNat))) :
+    μ.SameLaw ν :=
+  Distro.sameLaw_of_multivariatePGF_positive_nat μ ν length base positive hμ hν
+    (fun args dimension _ => same args dimension)
 
 end Thesis.Probability.Distros
