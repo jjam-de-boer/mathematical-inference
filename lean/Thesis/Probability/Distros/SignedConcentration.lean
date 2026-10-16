@@ -19,9 +19,10 @@ theorem natIntegral_eq_zero_iff (atoms : List (Ω × Nat)) (f : Ω → Nat) :
         have tail : natIntegral atoms f = 0 := by change _ + _ = 0 at total; omega
         rcases List.mem_cons.mp member with same | member
         · subst other
-          by_contra nonzero
-          have pos := Nat.mul_pos weight (Nat.pos_of_ne_zero nonzero)
-          omega
+          by_cases zero : f atom.1 = 0
+          · exact zero
+          · have pos := Nat.mul_pos weight (Nat.pos_of_ne_zero zero)
+            omega
         · exact ih.mp tail other member weight
       · intro zero
         have tail := ih.mpr (fun other member => zero other (List.mem_cons_of_mem _ member))
@@ -37,7 +38,8 @@ theorem signedAtomMass_congr_positive (atoms : List (Ω × Nat)) (f g : Ω → I
   induction atoms with
   | nil => rfl
   | cons atom atoms ih =>
-      simp only [FiniteProbRecord.signedAtomMass, List.map_cons, List.sum_cons]
+      change (atom.2 : Int) * f atom.1 + FiniteProbRecord.signedAtomMass atoms f =
+        (atom.2 : Int) * g atom.1 + FiniteProbRecord.signedAtomMass atoms g
       rw [ih (fun other member => same other (List.mem_cons_of_mem _ member))]
       by_cases weight : atom.2 = 0
       · simp only [weight, Int.natCast_zero, Int.zero_mul]
@@ -147,8 +149,9 @@ theorem Distro.varianceInt_zero_iff_constant (μ : Distro Ω) (f : Ω → Int) :
     rcases totalMass_positive_witness μ.record.atoms (by rw [μ.record.total_mass]; exact μ.record.den_pos) with
       ⟨chosen, member, weight⟩
     refine ⟨f chosen.1, fun atom belongs positive => ?_⟩
-    apply Int.eq_of_mul_eq_mul_left (by have positive := Int.natCast_pos.mpr μ.record.den_pos; omega)
-    exact (centered atom belongs positive).trans (centered chosen member weight).symm
+    have equality : (μ.record.den : Int) * f atom.1 = (μ.record.den : Int) * f chosen.1 :=
+      (centered atom belongs positive).trans (centered chosen member weight).symm
+    exact Int.eq_of_mul_eq_mul_left (by have nonzero := Int.natCast_pos.mpr μ.record.den_pos; omega) equality
   · rintro ⟨c, constant⟩
     apply (μ.varianceInt_zero_iff_centered f).mpr
     have integral : μ.record.signedMass f = (μ.record.den : Int) * c := by
