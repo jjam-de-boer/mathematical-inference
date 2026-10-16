@@ -72,6 +72,14 @@ jobs:
       - name: Check constructive arithmetic prerequisites
         working-directory: lean
         run: lake build Thesis.ConstructiveAlgebraAudit
+      - name: Build distribution extensions
+        working-directory: lean
+        run: >-
+          lake build
+          Thesis.Probability.Distros.ReinforcedVariance
+          Thesis.Probability.Distros.RationalBetaBinomial
+          Thesis.Probability.Distros.RationalUpdates
+          Thesis.Examples.DistributionExtensions
       - name: Build load-bearing Lean modules
         working-directory: lean
         run: >-

@@ -39,6 +39,8 @@ import Thesis.Probability.Distros.KernelInvariance
 import Thesis.Probability.Distros.SignedCovariance
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
+import Thesis.Probability.Distros.RationalBetaBinomial
+import Thesis.Probability.Distros.RationalUpdates
 import Thesis.Probability.Distros.JointFactorialMoments
 import Thesis.Probability.Distros.ReinforcedAggregation
 import Thesis.Probability.Distros.ReinforcedMoments
