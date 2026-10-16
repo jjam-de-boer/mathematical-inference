@@ -45,6 +45,7 @@ import Thesis.Probability.Distros.SignedCovariance
 import Thesis.Probability.Distros.SignedCauchy
 import Thesis.Probability.Distros.RationalMoments
 import Thesis.Probability.Distros.RationalClearing
+import Thesis.Probability.Distros.RationalConcentration
 import Thesis.Probability.Distros.ConditionalMoments
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
