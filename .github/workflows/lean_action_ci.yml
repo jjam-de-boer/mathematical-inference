@@ -95,6 +95,7 @@ jobs:
           Thesis.Probability.FiniteRecordPresentation
           Thesis.Examples.FiniteRecordPresentation
           Thesis.Examples.HiddenDAGFinitePresentation
+          Thesis.Examples.HiddenDAGMultivaluedPresentation
           Thesis.Examples.LocalCheckBaseline
           Thesis.Examples.LocalCheckImports
           Thesis.Examples.LocalCheckCoreImports

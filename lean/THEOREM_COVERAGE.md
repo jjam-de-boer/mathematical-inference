@@ -274,6 +274,16 @@ independent private noise and checks intervention marginals and do-rule
 soundness. This is integration with the existing causal theorems, not a new
 or stronger completeness claim.
 
+`Examples.HiddenDAGMultivaluedPresentation` additionally exercises genuinely
+three-valued native observed nodes. Its hypergeometric count law permits the
+declared value two while assigning it zero factual probability. The native
+subtype-to-code conversion preserves every marginal event and each supported
+conditional. Intervening on the other node at that null value preserves the
+count law, both by direct evaluation and the actual native rule-3 theorem.
+Forcing the count node itself to two instead gives two with probability one;
+this final structural-model calculation is not a claim that unsupported
+effects are identifiable from observations.
+
 `FourLabelTransportation.transportBatched` reserves complete eligible-cell
 capacities. Its positivity, saturation, residual feasibility, termination and
 exact table guarantees justify the unchanged extremal interfaces. The older
