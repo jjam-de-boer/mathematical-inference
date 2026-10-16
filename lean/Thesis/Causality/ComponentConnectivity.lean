@@ -1,4 +1,5 @@
 import Thesis.Causality.IdentificationSearch
+import Thesis.Causality.ReachabilityCorrectness
 
 namespace Thesis
 namespace Causality
@@ -20,7 +21,9 @@ are retained. In particular, the historically named missing-host impossibility
 lemma has a graph-only type: it takes no unfinished trace or semantic premise.
 
 The forest constructors and historical trace inductions stay in Completeness;
-this module imports only the intrinsic finite search and its existing proofs.
+this module imports only the intrinsic finite search and generic finite-walk
+correctness. The latter is shared with the d-separation development without
+importing that graph-specific transport layer.
 -/
 
 /-! ## Executable c-components agree with inductive bidirected connectivity -/

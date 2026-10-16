@@ -153,7 +153,14 @@ transitive axiom audit.
 
 `Causality.ComponentConnectivity` now contains the shared connectivity and
 partition facts; `Causality.IdentificationRank` contains the shared structural
-rank. The extraction retains 579 original lines, with unchanged theorem
+rank. Their shared finite-walk foundation has also moved from the start of
+`DSeparationCorrectness` into intrinsic `Causality.ReachabilityCorrectness`.
+The generic relation-list predicate retains its historical
+`PathSpecification.Consecutive` name, without importing the graph-specific
+active-path layer. This extra prerequisite was exposed by the first targeted
+remote check; importing the old transport module would defeat the boundary.
+
+The component/rank extraction retains 579 original lines, with unchanged theorem
 statements and proof bodies, apart from moving their enclosing module and
 documenting the new dependency boundary. `Completeness` imports the new
 layer, so its existing consumers still see the same public names. Forest
@@ -164,8 +171,8 @@ comparison (target included; Lean/Std modules excluded):
 
 | Client | Before extraction | After extraction |
 | --- | --- | --- |
-| `CausalTransport.KernelIdentification` | 26 | 19 |
-| `CausalTransport.KernelSeparation` | 25 | 17 |
+| `CausalTransport.KernelIdentification` | 26 | 20 |
+| `CausalTransport.KernelSeparation` | 25 | 18 |
 
 Both clients lose the direct dependency on the approximately 42k-line module
 and its legacy trace imports. Two source-graph regression tests protect this

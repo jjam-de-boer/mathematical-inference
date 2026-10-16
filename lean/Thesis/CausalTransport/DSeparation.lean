@@ -1,4 +1,5 @@
 import Thesis.Causality.Derivation
+import Thesis.Causality.ReachabilityCorrectness
 
 namespace Thesis
 namespace Causality
@@ -19,12 +20,6 @@ def Adjacent (G : ObservedGraph S) (mutilation : GraphMutilation S)
     (left right : SeparationNode S) : Prop :=
   G.expandedMutilatedEdge mutilation left right = true \/
     G.expandedMutilatedEdge mutilation right left = true
-
-def Consecutive {X : Type u} (relation : X -> X -> Prop) : List X -> Prop
-  | [] => True
-  | [_] => True
-  | left :: right :: rest =>
-      relation left right /\ Consecutive relation (right :: rest)
 
 def IsCollider (G : ObservedGraph S) (mutilation : GraphMutilation S)
     (previous middle next : SeparationNode S) : Prop :=

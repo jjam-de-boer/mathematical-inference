@@ -83,6 +83,7 @@ jobs:
         working-directory: lean
         run: >-
           lake build
+          Thesis.Causality.ReachabilityCorrectness
           Thesis.Causality.ComponentConnectivity
           Thesis.Causality.IdentificationRank
           Thesis.CausalTransport.KernelIdentification

@@ -20,7 +20,8 @@ class IdentificationLayerTests(unittest.TestCase):
                      for source in (root / "Thesis").rglob("*.lean")}
 
     def test_intrinsic_layers_do_not_import_transport_or_legacy(self):
-        for module in ("Thesis.Causality.ComponentConnectivity", "Thesis.Causality.IdentificationRank"):
+        for module in ("Thesis.Causality.ReachabilityCorrectness", "Thesis.Causality.ComponentConnectivity",
+                       "Thesis.Causality.IdentificationRank"):
             with self.subTest(module=module):
                 dependencies = reachable(self.graph, module)
                 forbidden = sorted(name for name in dependencies if
