@@ -25,6 +25,10 @@ the existing native soundness theorem interprets in this original DAG.
 -/
 
 private theorem partition_eq : projection.observedGraph.cComponents NodeSet.full = [NodeSet.full] := by
+  -- This finite function comparison is supplied explicitly rather than
+  -- arriving accidentally through an unrelated probability-module instance.
+  letI : DecidableEq (NodeSet signature) :=
+    FiniteProduct.assignmentDecidableEq signature.count (fun _ => Bool) (fun _ => inferInstance)
   decide +kernel
 
 /-- The computed lookup is the full component extensionally.  It need not

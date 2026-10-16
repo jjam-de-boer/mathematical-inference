@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.BinaryInstrumentalFeasibility
+import Thesis.Probability.BooleanNoise
 
 namespace Thesis
 namespace Causality
