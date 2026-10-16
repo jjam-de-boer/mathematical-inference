@@ -44,6 +44,8 @@ private def indexedAtoms (atoms : List (Ω × Nat)) : List (Fin atoms.length × 
 
 private theorem indexedAtoms_decode (atoms : List (Ω × Nat)) :
     (indexedAtoms atoms).map (fun atom => (atoms[atom.1.val].1, atom.2)) = atoms := by
+  unfold indexedAtoms
+  rw [List.map_map]
   change (List.finRange atoms.length).map (fun index => atoms[index.val]) = atoms
   rw [List.finRange, List.map_ofFn]
   exact List.ofFn_getElem
@@ -55,9 +57,9 @@ def atomIndexRecord (record : FiniteProbRecord Ω) : FiniteProbRecord (Fin recor
   den := record.den
   den_pos := record.den_pos
   total_mass := by
-    have recovered := congrArg totalMass (indexedAtoms_decode record.atoms)
-    rw [totalMass_map_labels] at recovered
-    exact recovered.trans record.total_mass
+    exact (totalMass_map_labels (indexedAtoms record.atoms)
+      (fun index : Fin record.atoms.length => record.atoms[index.val].1)).symm.trans
+      ((congrArg totalMass (indexedAtoms_decode record.atoms)).trans record.total_mass)
 
 /-- Decoding reconstructs the literal record, including order, multiplicity
 and zero weights, not just its normalized event probabilities. -/
@@ -144,9 +146,9 @@ def onDomain (record : FiniteProbRecord Ω) (domain : List Ω)
   den := record.den
   den_pos := record.den_pos
   total_mass := by
-    have recovered := congrArg totalMass (domainAtoms_decode record domain covered)
-    rw [totalMass_map_labels] at recovered
-    exact recovered.trans record.total_mass
+    exact (totalMass_map_labels (domainAtoms record domain covered)
+      (Subtype.val : {value : Ω // value ∈ domain} → Ω)).symm.trans
+      ((congrArg totalMass (domainAtoms_decode record domain covered)).trans record.total_mass)
 
 theorem onDomain_map (record : FiniteProbRecord Ω) (domain : List Ω)
     (covered : forall atom, atom ∈ record.atoms → atom.1 ∈ domain) :
