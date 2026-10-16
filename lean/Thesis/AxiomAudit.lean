@@ -7,6 +7,10 @@ import Thesis.Examples.BooleanChannelExpansion
 import Thesis.Examples.FiniteProductBalance
 import Thesis.Examples.PairRootChannels
 import Thesis.Examples.LocalCheckBaseline
+import Thesis.Examples.LocalCheckImports
+import Thesis.Examples.LocalCheckCoreImports
+import Thesis.Examples.LocalCheckDefinition
+import Thesis.Examples.LocalCheckFiniteDecision
 import Lean.Elab.Command
 import Lean.Util.CollectAxioms
 
@@ -28,6 +32,11 @@ than by the ordinary smoke facade.  Their expanded-graph decision proofs can
 need more kernel memory than a capped local module check.  The full CI policy
 gate therefore checks their compilation and transitive axioms as well, without
 making lightweight semantic clients import those expensive computations.
+
+The small local-check fixtures intentionally separate imports, a reused
+reflexivity proof, a recursive definition and a finite kernel decision. They
+are resource diagnostics, but any declarations they add still belong inside
+this same transitive axiom policy rather than outside the verification gate.
 
 The standalone channel-expansion, product-balance and pair-root regressions
 are also policy-gate imports. Their underlying library lemmas already belong

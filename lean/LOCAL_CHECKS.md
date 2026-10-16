@@ -83,6 +83,42 @@ The helper safety regressions can be run without invoking Lean:
 python3 -B -m unittest discover -s lean/tools -p 'test_*.py'
 ```
 
+### Separating import cost from new kernel work
+
+Five small fixtures were checked sequentially on 2026-10-16 under the
+unchanged one-thread, 384 MB allocation, 768 MiB sampled-RSS and 30-second
+limits. Each core-based check first validated its copied dependency trace;
+no prerequisite was rebuilt and all trial outputs remained disposable.
+
+| Fixture | New work after imports | Selected wall time | Child peak | Result |
+| --- | --- | --- | --- | --- |
+| `LocalCheckImports` | None, `Std` only | 1.51 s | 572.6 MiB | Passed |
+| `LocalCheckCoreImports` | None, cached probability core | 0.55 s | 573.3 MiB | Passed |
+| `LocalCheckBaseline` | Apply the existing reflexivity theorem | 0.44 s | 580.4 MiB | Passed |
+| `LocalCheckDefinition` | A tiny natural-number recursive definition | 0.44 s | 575.9 MiB | Kernel allocation limit |
+| `LocalCheckFiniteDecision` | Exhaustive proof on `Fin 4` | 0.44 s | 574.7 MiB | Kernel allocation limit |
+
+The core cache checks took 0.19--0.45 seconds and about 52 MiB child peak.
+The table's peaks are the helper's cumulative child-peak measurements within
+each invocation; sampled RSS is a distinct measurement. No sampled-RSS or
+wall-time stop occurred, no children overlapped, and no limit was increased.
+
+These results distinguish importing from checking new terms: the imported
+environment is loadable, and a reused proof term can pass, while ordinary
+small new definitions or finite kernel decisions already fail. The installed
+compiler source confirms that the forwarded `-M` argument sets its internal
+runtime memory threshold in units of 1024 squared bytes. It is not an OS RSS
+reservation or a separate fresh allowance for each declaration. Similar RSS
+figures alone do not identify the kernel's precise allocation accounting.
+
+Thus neither module source size nor finite proof-search size explains the
+whole observed boundary. A targeted graph extraction can still reduce
+dependency scope, but is not established as a way past this earlier limit.
+Import-only and reused-proof checks are feasible at these settings; larger
+new proof work and the full project remain remote. The fixtures themselves
+are included in CI and the full axiom gate so a local resource refusal never
+stands in for mathematical verification.
+
 ## Import narrowing and the proof-module split decision
 
 `Causality.Model` now imports `Probability.Construction`, not the complete

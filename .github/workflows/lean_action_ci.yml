@@ -85,6 +85,10 @@ jobs:
           Thesis.Examples.FiniteRecordPresentation
           Thesis.Examples.HiddenDAGFinitePresentation
           Thesis.Examples.LocalCheckBaseline
+          Thesis.Examples.LocalCheckImports
+          Thesis.Examples.LocalCheckCoreImports
+          Thesis.Examples.LocalCheckDefinition
+          Thesis.Examples.LocalCheckFiniteDecision
       - name: Check distribution axiom prerequisites
         working-directory: lean
         run: lake build Thesis.DistroAxiomAudit
