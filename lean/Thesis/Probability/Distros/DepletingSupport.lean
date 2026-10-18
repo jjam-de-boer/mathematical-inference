@@ -24,10 +24,27 @@ theorem depletingCountsWithin_iff_coordinates (counts stocks : List Nat) :
       ∀ index, index < stocks.length → counts.getD index 0 ≤ stocks.getD index 0 := by
   induction counts generalizing stocks with
   | nil => cases stocks with
-      | nil => simp [depletingCountsWithin]
-      | cons stock stocks => simp [depletingCountsWithin]
+      | nil =>
+          constructor
+          · intro _
+            exact ⟨rfl, fun index impossible => False.elim (Nat.not_lt_zero index impossible)⟩
+          · intro _
+            exact True.intro
+      | cons stock stocks =>
+          constructor
+          · intro impossible
+            exact False.elim impossible
+          · intro data
+            have impossible : (0 : Nat) = stocks.length + 1 := data.1
+            omega
   | cons count counts ih => cases stocks with
-      | nil => simp [depletingCountsWithin]
+      | nil =>
+          constructor
+          · intro impossible
+            exact False.elim impossible
+          · intro data
+            have impossible : counts.length + 1 = 0 := data.1
+            omega
       | cons stock stocks =>
           constructor
           · intro within

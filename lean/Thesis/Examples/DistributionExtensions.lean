@@ -823,3 +823,18 @@ example : positiveNumericOutlierFixture.SameLaw positiveNumericCleanFixture := b
   rcases cases with rfl | rfl <;> decide +kernel
 
 end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Highest-order extraction includes zero trials with retained zero-weight colours. -/
+example : QProb.Equiv ((multinomialDistro 0 [0, 1] (by decide)).pmf [0, 0]) QProb.one :=
+  QProb.equiv_trans (multinomial_pmf_highestOrder 0 [0, 1] [0, 0] (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+example : QProb.Equiv ((reinforcedCountDistro 0 [0, 1] 2 (by decide)).pmf [0, 0]) QProb.one :=
+  QProb.equiv_trans (reinforcedCount_pmf_highestOrder 0 2 [0, 1] [0, 0] (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+end Thesis.Examples.DistributionExtensions
