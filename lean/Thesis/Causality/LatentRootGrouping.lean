@@ -35,6 +35,7 @@ namespace FiniteLatentSCM
 variable (model : FiniteLatentSCM.{u, v} S) (graph : ObservedGraph S)
 variable (projected : ∀ left right, model.latent.projectedBidirected left right = graph.bidirected left right)
 
+include projected in
 theorem rootChildMask_isClique (root : Fin model.latent.count) : graph.IsClique (model.latent.incident root) := by
   intro left right leftIncident rightIncident different
   rw [← projected left right]
