@@ -54,6 +54,7 @@ import Thesis.Probability.Distros.DepletingConditioning
 import Thesis.Probability.Distros.DepletingPrefix
 import Thesis.Probability.Distros.DepletingConsistency
 import Thesis.Probability.Distros.DepletingSupport
+import Thesis.Probability.Distros.DepletingAggregation
 import Thesis.Probability.Distros.Reweight
 import Thesis.Probability.Distros.MulticolourPolya
 import Thesis.Probability.Distros.KernelInvariance
