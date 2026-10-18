@@ -84,11 +84,15 @@ theorem hidden_iff_root (node : Fin (rootCount + S.count)) :
   · exact ⟨fun _ => ⟨root, rfl⟩, fun _ => graph_root_hidden S rootCount incident root⟩
   · constructor
     · intro hidden
-      have absent := (graph S rootCount incident).observed_not_hidden observed
+      change (graph S rootCount incident).hidden (observedNode S rootCount observed) = true at hidden
+      have absent : (graph S rootCount incident).hidden (observedNode S rootCount observed) = false :=
+        (graph S rootCount incident).observed_not_hidden observed
       rw [absent] at hidden
       cases hidden
     · rintro ⟨root, same⟩
       have decoded := congrArg (decodeNode S rootCount) same
+      change decodeNode S rootCount (rootNode S rootCount root) =
+        decodeNode S rootCount (observedNode S rootCount observed) at decoded
       simp only [decodeNode_root, decodeNode_observed] at decoded
       cases decoded
 
@@ -107,8 +111,8 @@ theorem hiddenInternalPath_iff_edge (source target : Fin (rootCount + S.count)) 
   · intro path
     cases path with
     | direct edge => exact edge
-    | tail prefix hidden _edge =>
-        have impossible := prefix.rank_lt
+    | tail earlierPath hidden _edge =>
+        have impossible := earlierPath.rank_lt
         rw [rank_of_hidden S rootCount incident _ hidden] at impossible
         exact False.elim (Nat.not_lt_zero _ impossible)
   · exact FiniteHiddenDAG.HiddenInternalPath.direct
@@ -137,9 +141,11 @@ theorem projectedBidirected_iff (left right : Fin S.count) :
   · rintro ⟨different, root, leftIncident, rightIncident⟩
     refine ⟨different, rootNode S rootCount root, graph_root_hidden S rootCount incident root, ?_, ?_⟩
     · apply (hiddenInternalPath_iff_edge S rootCount incident _ _).mpr
+      change (graph S rootCount incident).edge (rootNode S rootCount root) (observedNode S rootCount left) = true
       rw [graph_root_observed_edge]
       exact leftIncident
     · apply (hiddenInternalPath_iff_edge S rootCount incident _ _).mpr
+      change (graph S rootCount incident).edge (rootNode S rootCount root) (observedNode S rootCount right) = true
       rw [graph_root_observed_edge]
       exact rightIncident
 
