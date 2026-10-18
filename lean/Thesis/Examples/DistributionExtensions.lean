@@ -838,3 +838,61 @@ example : QProb.Equiv ((reinforcedCountDistro 0 [0, 1] 2 (by decide)).pmf [0, 0]
     (by decide +kernel)
 
 end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Equivalent unreduced responses may differ arbitrarily at a retained null atom. -/
+def equivalentPredictionResponse (x : Nat) : SignedRatio :=
+  if x = 0 then ⟨-6, 4, by decide⟩ else if x = 1 then ⟨1, 2, by decide⟩ else ⟨-100, 1, by decide⟩
+
+example : SignedRatio.Equiv (rationalAlgebraFixture.rationalSquaredError rationalAlgebraFirst equivalentPredictionResponse)
+    SignedRatio.zero :=
+  (Distro.rationalSquaredError_zero_iff _ _ _).mpr (by decide +kernel)
+
+example : rationalAlgebraFixture.AlmostSurely (fun x => SignedRatio.Equiv
+    (rationalAlgebraFirst x) (equivalentPredictionResponse x)) :=
+  (Distro.rationalSquaredError_zero_iff _ _ _).mp (by decide +kernel)
+
+example : ¬ SignedRatio.Equiv (rationalAlgebraFixture.rationalSquaredError rationalAlgebraFirst (fun _ => SignedRatio.zero))
+    SignedRatio.zero := by decide +kernel
+
+/-- An optimal predictor can take a different value on an unsupported label. -/
+example : SignedRatio.Equiv (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+    (fun x => conditionalPrediction (threeEvidenceCells x)))
+    (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+      (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable)) :=
+  (Distro.conditionalExpectation_optimal_iff _ _ _ _).mpr (by decide +kernel)
+
+example : SignedRatio.LE (rationalAlgebraFixture.rationalSquaredError
+    (rationalAlgebraFixture.conditionalExpectation threeEvidenceCells rationalAlgebraFirst)
+    (rationalAlgebraFixture.conditionalExpectation threeEvidenceCells rationalAlgebraSecond))
+    (rationalAlgebraFixture.rationalSquaredError rationalAlgebraFirst rationalAlgebraSecond) :=
+  Distro.conditionalExpectation_squaredError_contraction _ _ _ _
+
+example : SignedRatio.Equiv (rationalAlgebraFixture.rationalSquaredError
+    (rationalAlgebraFixture.conditionalExpectation threeEvidenceCells rationalAlgebraFirst)
+    (rationalAlgebraFixture.conditionalExpectation threeEvidenceCells rationalAlgebraSecond)) ⟨4, 9, by decide⟩ := by decide +kernel
+
+/-- Fine and coarse labels deliberately fail to refine at the null outcome 99. -/
+def predictionFine (x : Nat) : Fin 4 := ⟨x % 4, Nat.mod_lt _ (by decide)⟩
+def predictionCoarse (x : Nat) : Fin 2 := if x = 99 then 0 else if x < 2 then 0 else 1
+def predictionMerge (label : Fin 4) : Fin 2 := if label.val < 2 then 0 else 1
+
+example : predictionCoarse 99 ≠ predictionMerge (predictionFine 99) := by decide +kernel
+
+example : SignedRatio.LE (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+    (partitionMomentFixture.conditionalExpectation predictionFine partitionMomentObservable))
+    (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+      (partitionMomentFixture.conditionalExpectation predictionCoarse partitionMomentObservable)) :=
+  Distro.conditionalExpectation_error_refinement_almostSurely _ predictionFine predictionCoarse predictionMerge
+    (by decide +kernel) partitionMomentObservable
+
+example : SignedRatio.Equiv (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+    (partitionMomentFixture.conditionalExpectation predictionFine partitionMomentObservable)) SignedRatio.zero := by decide +kernel
+
+example : SignedRatio.Equiv (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+    (partitionMomentFixture.conditionalExpectation predictionCoarse partitionMomentObservable)) ⟨1, 4, by decide⟩ := by decide +kernel
+
+end Thesis.Examples.DistributionExtensions
