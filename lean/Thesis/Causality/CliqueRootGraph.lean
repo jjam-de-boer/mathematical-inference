@@ -23,10 +23,11 @@ bidirected edges, and the two-node mask of every existing bidirected edge
 supplies the converse. There are at most `2^n` roots and hence at most
 `n + 2^n` full-DAG nodes, independently of any original hidden topology.
 
-This is not yet a probability-preserving model transformation. Grouping old
-roots into these slots and proving their whole independent law and evaluator
-simulation are separate next stages. Unused slots may later have deterministic
-laws, but their graphical arrows must still be justified by clique validity.
+This graph-only module does not itself transform probability models. The
+separate `LatentRootGrouping` and downstream `CliqueRootNative` constructions
+now group old roots into these slots and prove their whole independent law
+and evaluator simulation. Unused slots have deterministic laws, while their
+graphical arrows are still justified by clique validity.
 -/
 
 namespace ObservedGraph

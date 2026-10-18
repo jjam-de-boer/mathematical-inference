@@ -47,6 +47,7 @@ import Thesis.Examples.AffineSupportReduction
 import Thesis.Examples.FiniteIntegerCompression
 import Thesis.Examples.FiniteRationalCompression
 import Thesis.Examples.FiniteRecordPresentation
+import Thesis.Examples.FiniteRecordCatalogue
 import Thesis.Examples.FiniteProductPresentation
 import Thesis.Examples.FiniteProductGrouping
 import Thesis.Examples.FiniteFunctionTables

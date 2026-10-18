@@ -20,6 +20,7 @@ import Thesis.Probability.FiniteProductSplicing
 import Thesis.Probability.FiniteProductSourceCompression
 import Thesis.Probability.FiniteProbabilityPolynomialCertificates
 import Thesis.Probability.FiniteRecordSlicing
+import Thesis.Probability.FiniteRecordCatalogue
 import Thesis.Probability.FiniteRecordPerturbation
 import Thesis.Probability.FiniteLinearResponse
 import Thesis.Probability.FiniteSignedMass
@@ -74,6 +75,12 @@ explicit partition of the old source coordinates. Its proof-indexed blocks
 need no defaults at absent coordinates. The inverse assignment maps and full
 decoded event-law theorem justify grouping many sources at one owner while
 retaining independence across owners, including empty blocks and null cells.
+
+`FiniteRecordCatalogue` enumerates normalized laws on a declared finite code
+alphabet below an explicit denominator bound. Singleton-mass aggregation
+covers records with repeated labels and zero weights without expanding unit
+cells, preserving their original denominator and every event probability.
+This bounded rational family is not an unrestricted feasibility procedure.
 
 `FiniteProductSourceCompression` constructs bounded positive-atom source
 records while preserving a supplied finite family of mixed-event probabilities

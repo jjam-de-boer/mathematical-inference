@@ -23,8 +23,9 @@ including zero cells, without observational positivity or a canonical-root
 premise. Empty/private masks remain available as in the graph construction.
 
 This produces a latent-root SCM with a graph-fixed number of roots. Realizing
-it as a `FiniteHiddenDAGSCM` on `cliqueRootProjection`, then applying the proved
-bounded native-template representation, remains a separate final adapter.
+it as a `FiniteHiddenDAGSCM` on `cliqueRootProjection` is proved separately in
+the downstream `CliqueRootNative` adapter. `ProjectionTemplateRepresentation`
+then applies bounded native-template coverage to that actual realization.
 -/
 
 universe u v
