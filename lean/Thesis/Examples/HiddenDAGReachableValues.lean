@@ -58,11 +58,11 @@ open HiddenDAGMultivaluedPresentation
 
 /-- Count two is permitted even though it has zero factual mass. Membership
 uses the full observed domain, independently of the extra intervention list. -/
-theorem permitted_null_value_retained (requested : List (HardIntervention signature)) :
+theorem permitted_null_value_retained (requested : List (HardIntervention HiddenDAGMultivaluedPresentation.signature)) :
     nullValue ∈ model.retainedNodeValues requested (projection.hiddenDAG.observedNode y) :=
   model.observedValue_mem_retainedNodeValues requested y nullValue
 
-theorem null_value_round_trip (requested : List (HardIntervention signature)) :
+theorem null_value_round_trip (requested : List (HardIntervention HiddenDAGMultivaluedPresentation.signature)) :
     model.decodeValue requested (projection.hiddenDAG.observedNode y)
         (model.encodeValue requested (projection.hiddenDAG.observedNode y) nullValue) = nullValue :=
   model.decodeValue_encodeValue requested _ nullValue (permitted_null_value_retained requested)

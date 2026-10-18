@@ -47,6 +47,30 @@ def retainedObservedEquiv (model : FiniteHiddenDAGSCM S P) (actions : List (Hard
     rw [(model.observedEquiv index).backward_forward]
     exact model.encodeValue_decodeValue actions _ code
 
+/-- Internal observed codes have exactly the public declared cardinality,
+not a size depending on repetitions in the old native enumeration. The
+explicit two-sided conversion supplies a constructive permutation proof. -/
+theorem retainedObservedEquiv_card (model : FiniteHiddenDAGSCM S P) (actions : List (HardIntervention S))
+    (index : Fin S.count) :
+    (model.valueWitness actions (P.hiddenDAG.observedNode index)).card = (S.valueEnumeration index).length := by
+  let conversion := model.retainedObservedEquiv actions index
+  let values := (List.finRange (model.valueWitness actions (P.hiddenDAG.observedNode index)).card).map conversion.forward
+  have distinct : values.Nodup :=
+    ConstructivePermutation.nodup_map_of_injective_on conversion.forward _
+      (fun left _ right _ equal => by
+        have decoded := congrArg conversion.backward equal
+        rw [conversion.backward_forward, conversion.backward_forward] at decoded
+        exact decoded)
+      (finRange_nodup _)
+  have sameMembers (value : S.Value index) : value ∈ values ↔ value ∈ S.valueEnumeration index := by
+    constructor
+    · intro _; exact S.value_complete index value
+    · intro _
+      exact List.mem_map.mpr ⟨conversion.backward value, List.mem_finRange _, conversion.forward_backward value⟩
+  have lengths := (ConstructivePermutation.perm_of_nodup_mem_iff values (S.valueEnumeration index)
+    distinct (S.value_nodup index) sameMembers).length_eq
+  simpa only [values, List.length_map, List.length_finRange] using lengths
+
 /-- Actual bounded finite endogenous types, with the same full graph and
 the same independent private-source law. The public observed types do not
 change; their native internal presentation is transported bijectively. -/
@@ -76,22 +100,17 @@ theorem retainedValueModel_interventionValueAt (model : FiniteHiddenDAGSCM S P) 
     (intervention : HardIntervention S) (node : Fin P.hiddenDAG.count) :
     (model.retainedValueModel actions).interventionValueAt intervention node =
       (model.interventionValueAt intervention node).map (model.encodeValue actions node) := by
-  unfold interventionValueAt
-  change (match selected : model.observedIndex node with
-    | none => none
-    | some index => match intervention.value index with
-      | none => none
-      | some value => some (model.observedIndex_sound node index selected ▸
-          (model.retainedObservedEquiv actions index).backward value)) = _
   cases selected : model.observedIndex node with
-  | none => rfl
+  | none =>
+      rw [(model.retainedValueModel actions).interventionValueAt_eq_none intervention node selected,
+        model.interventionValueAt_eq_none intervention node selected]
+      rfl
   | some index =>
-      cases forced : intervention.value index with
-      | none => rfl
-      | some value =>
-          have same := model.observedIndex_sound node index selected
-          cases same
-          rfl
+      have same := model.observedIndex_sound node index selected
+      subst node
+      rw [(model.retainedValueModel actions).interventionValueAt_observed_eq_map,
+        model.interventionValueAt_observed_eq_map]
+      cases intervention.value index <;> rfl
 
 /-- The new evaluator computes the encoded old trajectory. The supplied
 action membership justifies every inverse-decoding step, including hidden
@@ -170,8 +189,17 @@ theorem retainedValueModel_conditionOn_probVal (model : FiniteHiddenDAGSCM S P) 
       ((((model.retainedValueModel actions).interventionalDist intervention).conditionOn evidence
         ((model.retainedValueModel_eventPositive_iff actions intervention listed evidence).mpr supported)).probVal event)
       (((model.interventionalDist intervention).conditionOn evidence supported).probVal event) := by
-  rw [model.retainedValueModel_interventionalDist actions intervention listed]
-  exact QProb.equiv_refl _
+  let supportedNew := (model.retainedValueModel_eventPositive_iff actions intervention listed evidence).mpr supported
+  have preserved (target : Event S.Assignment) :
+      QProb.Equiv ((model.retainedValueModel actions).interventionalValue intervention target)
+        (model.interventionalValue intervention target) := by
+    rw [model.retainedValueModel_interventionalValue actions intervention listed]
+    exact QProb.equiv_refl _
+  exact QProb.equiv_trans
+    (((model.retainedValueModel actions).interventionalDist intervention).conditionOn_probVal evidence event supportedNew)
+    (QProb.equiv_trans
+      (QProb.div_congr (preserved (fun value => evidence value && event value)) (preserved evidence) supportedNew supported)
+      (QProb.equiv_symm ((model.interventionalDist intervention).conditionOn_probVal evidence event supported)))
 
 end FiniteHiddenDAGSCM
 end Thesis.Causality

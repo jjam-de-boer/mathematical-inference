@@ -108,6 +108,7 @@ jobs:
           Thesis.CausalTransport.HiddenDAGReachableValues
           Thesis.CausalTransport.HiddenDAGValuePresentation
           Thesis.Examples.HiddenDAGReachableValues
+          Thesis.Examples.HiddenDAGValuePresentation
           Thesis.Examples.HiddenDAGSourcePresentation
           Thesis.Examples.HiddenDAGCompactSources
           Thesis.Examples.FiniteRecordPresentation
