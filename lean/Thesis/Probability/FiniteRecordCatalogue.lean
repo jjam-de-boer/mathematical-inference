@@ -1,5 +1,6 @@
 import Thesis.Probability.FiniteRecordSlicing
 import Thesis.Probability.FiniteProductSupport
+import Thesis.Probability.FiniteProductExtensional
 
 namespace Thesis.Probability.FiniteRecordCatalogue
 
@@ -89,9 +90,9 @@ theorem mem_catalogue_den_le (record : FiniteProbRecord (Fin card)) (bound : Nat
     rcases List.mem_cons.mp admitted with same | impossible
     · subst record
       exact valid.2
-    · exact False.elim (List.not_mem_nil _ impossible)
+    · exact False.elim (List.not_mem_nil impossible)
   · rw [admitWeights, dif_neg valid] at admitted
-    exact False.elim (List.not_mem_nil _ admitted)
+    exact False.elim (List.not_mem_nil admitted)
 
 def cellMasses (original : FiniteProbRecord (Fin card)) : Fin card → Nat :=
   fun value => eventMass original.atoms (singletonEvent value)
@@ -151,5 +152,21 @@ theorem factorCatalogue_den_le (count : Nat) (cards : Fin count → Nat)
     (factors source).den ≤ bound :=
   mem_catalogue_den_le (factors source) bound
     (FiniteProduct.enumeration_coordinate_mem _ _ _ _ listed source)
+
+/-- Replacing every factor by its aggregated canonical record preserves the
+whole independent product law, not just the individual source marginals. -/
+theorem canonicalProduct_probVal (count : Nat) (cards : Fin count → Nat)
+    (factors : (source : Fin count) → FiniteProbRecord (Fin (cards source)))
+    (event : Event ((source : Fin count) → Fin (cards source))) :
+    QProb.Equiv
+      ((FiniteProduct.record count _ (fun source => canonical (factors source))).probVal event)
+      ((FiniteProduct.record count _ factors).probVal event) := by
+  apply FiniteProduct.probVal_extensional_of_rectangles _ _
+    (fun source => List.finRange (cards source)) (fun _ value => List.mem_finRange value)
+    (fun _ => inferInstance) (fun events => ?_) event
+  exact QProb.equiv_trans (FiniteProduct.record_rectangular_probVal _ _ _ events)
+    (QProb.equiv_trans (FiniteProduct.qProduct_congr count
+      (fun source => canonical_probVal (factors source) (events source)))
+      (QProb.equiv_symm (FiniteProduct.record_rectangular_probVal _ _ _ events)))
 
 end Thesis.Probability.FiniteRecordCatalogue
