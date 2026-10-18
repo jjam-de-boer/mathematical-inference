@@ -105,6 +105,8 @@ jobs:
           Thesis.CausalTransport.LatentRootNativeModel
           Thesis.CausalTransport.LatentRootNativeEvaluation
           Thesis.CausalTransport.CliqueRootNative
+          Thesis.CausalTransport.ProjectedHiddenDAGModels
+          Thesis.CausalTransport.ProjectionTemplateRepresentation
       - name: Check exact expression support analysis
         working-directory: lean
         run: >-

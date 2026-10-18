@@ -51,7 +51,9 @@ variable (projected : ∀ left right, original.latent.projectedBidirected left r
 
 theorem cliqueGroupedLatent_rootProjection :
     (original.cliqueGroupedLatent graph projected).rootProjection = graph.cliqueRootProjection := by
-  apply FiniteLatentProjection.eq_of_graph_data rfl
+  apply FiniteLatentProjection.eq_of_graph_data
+    (left := (original.cliqueGroupedLatent graph projected).rootProjection)
+    (right := graph.cliqueRootProjection) rfl
   funext left right
   exact graph.cliqueRootIncident_projected left right
 
