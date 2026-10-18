@@ -135,6 +135,9 @@ import Thesis.CausalTransport.HiddenDAGSourcePresentation
 import Thesis.CausalTransport.HiddenDAGSourceCompression
 import Thesis.CausalTransport.HiddenDAGObservationalCompression
 import Thesis.CausalTransport.HiddenDAGCompactSources
+import Thesis.CausalTransport.HiddenDAGReachableValues
+import Thesis.CausalTransport.HiddenDAGValuePresentation
+import Thesis.CausalTransport.HiddenDAGFiniteRepresentation
 import Thesis.CausalTransport.HiddenDAGPolynomialEvidence
 import Thesis.CausalTransport.HiddenDAG
 import Thesis.CausalTransport.HiddenDAGFullFamily
@@ -284,6 +287,16 @@ intervention laws when recoding private noise. `HiddenDAGCompactSources`
 combines this with compression to give actual bounded `Fin` noise alphabets
 while retaining precisely the compression's selected probabilities. Neither
 module compresses endogenous hidden-node values or enumerates mechanisms.
+`HiddenDAGReachableValues` and `HiddenDAGValuePresentation` separately give
+bounded hidden-value codes on a fixed full DAG, with explicit defaults and
+proved simulation of retained trajectories. They preserve every declared
+observed value, including null intervention targets. Finite mechanism-table
+enumeration and its catalogue-coverage theorem remain separate obligations.
+`HiddenDAGFiniteRepresentation.boundedRepresentation` combines the source and
+value constructions into an actual bounded native representative of every
+input model for its full observed law and finitely requested targets. Its
+source and hidden-value bounds depend only on that list and the fixed graph
+and public signature, not the old hidden alphabets or source denominators.
 `HiddenDAGPolynomial` compiles native causal probabilities with a proved
 binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied
