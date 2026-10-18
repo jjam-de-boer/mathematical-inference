@@ -112,7 +112,7 @@ theorem cliqueGroupedModel_evalNodeUnder (target : (child : Fin S.count) → Opt
           (fun parent (_ : S.directed parent child = true) =>
             model.evalNodeUnder target (model.decodeCliqueGroups graph projected blocks) parent) := by
         funext parent edge
-        exact model.cliqueGroupedModel_evalNodeUnder graph projected target blocks parent
+        exact cliqueGroupedModel_evalNodeUnder target blocks parent
       rw [parentsAgree]
 termination_by child.val
 decreasing_by exact S.directed_earlier edge

@@ -19,7 +19,7 @@ an external method; it does not extend the probability framework.
 | 3. Multivalued native example | Three declared observed values, an actual rational distribution, null intervention targets and supported conditionals checked through the native model. | The standalone-template regression now exercises the same boundary as well. |
 | 4. Support-pattern applicability | Exact undefined/zero/positive analysis and exhaustive comparison within supplied finite formula catalogues. | This does not enumerate every possible certified formula. |
 | 5. Universal alternative-formula coverage | Bounded research assessment completed; the missing syntax and termination obligations are stated below. | A decidable bounded derivation language first; no universal coverage or impossibility theorem yet. |
-| 6. Finite structural representation | Constructive standalone-template coverage of every model on a fixed full hidden DAG, preserving the whole observational law and finitely requested targets. | Separately assess varying hidden topology at fixed observed projection; rational weight assignments remain infinite. |
+| 6. Finite structural representation | Fixed-full-DAG standalone-template coverage; a fixed clique-root graph and law-preserving latent-root grouping for varying original hidden topology. | Realize the grouped model natively on the fixed graph and assemble projection-wide template coverage; rational weight assignments remain infinite. |
 | 7. Fixed-observed-law procedures | Restricted results retained; bounded-model and unrestricted rational problems assessed separately. | No unrestricted feasibility-and-uniqueness procedure is inferred from the finite structural catalogue. |
 
 ## Graph-level ID/IDC
@@ -412,6 +412,44 @@ distinct guarantees. This is a finite **structural** family with infinitely
 many rational source-weight assignments, not a finite feasibility search or
 an optimizer-completeness theorem. It does not vary the full hidden topology.
 
+### Fixed projection graph and independent root grouping
+
+`LatentRootDAG.graph` constructs a full hidden DAG from any finite root
+incidence table, with no two-child restriction. Its hidden-internal paths are
+single edges because roots have rank zero and no incoming arrows. The proved
+directed and bidirected projection theorems retain precisely the observed
+arrows and shared-root incidences.
+
+`ObservedGraph.cliqueRootProjection`, in `CliqueRootGraph`, fixes one root for
+every bidirected clique mask. Empty masks, singletons and larger shared-child
+sets are retained. Its exact projection adds no forbidden bidirected edge;
+two-node masks recover every required edge. `cliqueRootCount_le_pow` and
+`cliqueRootHiddenDAG_count_le` prove at most `2^n` roots and `n + 2^n` total
+nodes, independently of an original model's hidden topology.
+
+`FiniteProductGrouping` separately constructs independent block factors from
+an explicit ownership map. Proof-indexed slots eliminate unowned coordinates
+without chosen defaults. `decode_encode` and `encode_decode` give a total
+two-sided assignment conversion. `decoded_probVal` proves complete decoded-law
+agreement with every original independent prior, not only its one-coordinate
+marginals. Repeated labels, zero-weight atoms and empty blocks are included.
+
+`FiniteLatentSCM.cliqueGroupedModel`, in `LatentRootGrouping`, computes each
+old root's owner from its exact observed-child mask. Projected-graph agreement
+proves that mask is a listed clique; no canonical two-child premise is used.
+`cliqueGroupedModel_evalUnder` and `cliqueGroupedModel_interventionalValue`
+preserve every hard-intervention event probability, while the grouped model's
+root count and incidences depend only on the observed graph. Graph, block-law
+and original hidden-relay regressions exercise empty/private slots, zero cells
+and a shared cause that still has three children after grouping.
+
+This is not yet the full projection-wide native-template coverage theorem.
+The remaining bridge must realize the grouped root model as a native
+`FiniteHiddenDAGSCM` on `cliqueRootProjection`, prove its full law preservation,
+explicitly quantify over original full DAGs with the same observed graph, and
+compose with the fixed-DAG template theorem. The root grouping theorems do not
+make rational parameter assignments finite or decide their feasibility.
+
 ## Exact probability polynomials and supplied bound certificates
 
 `RationalPolynomial` represents finite sparse polynomials with signed rational
@@ -518,7 +556,8 @@ class starts with the existing intervention-preserving `HiddenDAGCollapse`:
 group independent roots by their observed-child incidence set, prove the
 grouped product law and readout preservation, then compress and relabel those
 groups. There are at most `2^(number of observed nodes)` such incidence sets,
-but the grouping and coverage theorems are not implemented. Roots with three
+and the fixed clique graph and grouped-root law are now implemented above.
+Native realization and projection-wide template coverage remain. Roots with three
 or more children must remain allowed; replacing them by independent pairwise
 causes would not be justified by the current collapse theorem. This route
 might avoid directly relabelling every internal hidden-node alphabet, and
@@ -566,9 +605,11 @@ For a fixed observed projection with varying hidden topology,
 starting point. Group its
 independent roots by identical observed-child incidence, keeping all child
 sets, including sets of size greater than two. There are at most `2^n`
-incidence masks for `n` observed nodes. The missing proofs are grouped-law
-independence, local decoder/evaluator simulation and exact projection
-preservation, followed by compression and finite mechanism enumeration.
+incidence masks for `n` observed nodes. Grouped-law independence, local
+decoder/evaluator simulation and exact projected-root graph preservation are
+now proved by the modules above. The remaining step realizes that grouped
+model on the fixed full clique-root DAG, before invoking the existing native
+compression and finite mechanism enumeration.
 Dummy constant sources cannot simply be given arbitrary children: their
 arrows still add graphical bidirected edges. Omit unused masks, give them no
 arrows, or justify that their arrows add no edge outside the required graph.
@@ -580,8 +621,8 @@ with that exact mask; use a unit-valued source when a clique has no original
 root. These dummy clique arrows add no forbidden edge, and including the
 two-vertex masks recovers every required bidirected edge. The number of
 roots is still at most `2^n`. This avoids a model-dependent incidence table,
-but the probability/evaluator grouping and converse native-graph realization
-still need proofs. It retains multi-child causes rather than wrongly
+and the probability/evaluator grouping is now proved. Native-graph realization
+and assembled coverage still need proofs. It retains multi-child causes rather than wrongly
 reducing to pairwise roots. This route changes the full hidden DAG and must
 not be confused with the fixed-full-DAG representation above.
 The current native APIs are indexed by a projection object that also fixes
@@ -595,19 +636,22 @@ That is supporting literature, not a Lean assumption or an automatic
 rational/constructive transfer. The repository's existing compression proof
 is the rational foundation. The user selected the fixed-full-DAG route first;
 source and hidden-value coding, finite structural enumeration and standalone
-native-law coverage are now implemented. The next checkpoint is a separate
-bounded assessment of the projection-wide root-grouping route, before any
-substantial new representation infrastructure. No projection-wide coverage
-is inferred from the fixed-full-DAG result.
+native-law coverage are now implemented. Following the bounded reassessment,
+the user approved staged projection-wide implementation. The fixed clique
+graph, independent block law and grouped causal root model are now proved.
+The next checkpoint is native realization and its assembled model-class
+coverage. No projection-wide template coverage is inferred merely from the
+fixed-full-DAG result or from grouping root values.
 
 ### Bounded reassessment after fixed-full-DAG coverage
 
-This is an implementation assessment, not a new projection-wide Lean theorem.
-The completed fixed-DAG constructor now supplies the final compression and
-enumeration step of a possible projection-wide proof. Re-reading the existing
-collapse and reverse-realization APIs identifies the following concrete order:
+The bounded assessment below was reviewed and the user approved staged
+implementation. Its first graph and grouping stages are now proved as
+described above; the complete projection-wide theorem is still outstanding.
+The completed fixed-DAG constructor supplies its final compression and
+enumeration step. The reviewed order and remaining boundaries are:
 
-1. **A fixed clique-root graph.** Enumerate the Boolean observed-child masks
+1. **A fixed clique-root graph (implemented).** Enumerate the Boolean observed-child masks
    whose distinct members are pairwise bidirected-adjacent. Include singleton
    and empty masks. Construct one hidden root per listed mask, with its mask
    incidences and the signature's unchanged observed directed edges. Prove
@@ -615,7 +659,7 @@ collapse and reverse-realization APIs identifies the following concrete order:
    masks recovers every required bidirected edge; larger clique masks add no
    forbidden edge. Graph compatibility permits an unused root's mechanism to
    be constant, so unused clique slots need not be deleted model-dependently.
-2. **An independent-law grouping adapter.** Collapse an arbitrary original
+2. **An independent-law grouping adapter (implemented).** Collapse an arbitrary original
    model using `toLatentRootSCM`, then assign each root to its exact child mask.
    Each such mask is a clique by projected-graph agreement. A grouped value can
    be a proof-indexed product `source -> owner source = mask -> Value source`.
@@ -623,9 +667,11 @@ collapse and reverse-realization APIs identifies the following concrete order:
    absent coordinates without choosing values from unused alphabets. Construct
    the actual block factors and prove that decoding their independent product
    gives the whole old joint law, not only its one-source marginals. Finite
-   product exchange and singleton/rectangle extensionality provide reusable
-   proof ingredients; the disjoint-block law itself is still missing.
-3. **Multi-child native realization.** Install those block values as the
+   product exchange and singleton/rectangle extensionality prove the complete
+   disjoint-block law in `FiniteProductGrouping`.
+3. **Multi-child native realization (remaining).** The grouped root SCM now
+   has a proved intervention-preserving evaluator in `LatentRootGrouping`.
+   Install those block values as the
    hidden roots' values/private sources in the fixed clique-root graph, with
    deterministic observed-node private noise. Prove equation simulation and
    all-hard-intervention event preservation. The existing
@@ -652,8 +698,9 @@ not a wiring change or a result already supplied by the reverse canonical
 countermodel lift. It can be staged at the graph construction and grouped-law
 boundaries. Even success would leave infinitely many rational weights and
 would not settle unrestricted rational feasibility or goal 5's formula-search
-termination question. Substantial implementation follows a separate review
-of this bounded assessment.
+termination question. The approved implementation is staged at the graph,
+grouped-law and native-realization boundaries; it does not authorize an
+open-ended feasibility/search implementation afterward.
 
 ## Research checkpoint 7: fixed-observed-law procedures
 
