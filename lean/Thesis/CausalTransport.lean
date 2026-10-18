@@ -133,6 +133,7 @@ import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.CausalTransport.HiddenDAGFinitePresentation
 import Thesis.CausalTransport.HiddenDAGSourceCompression
 import Thesis.CausalTransport.HiddenDAGSourcePresentation
+import Thesis.CausalTransport.HiddenDAGCompactSources
 import Thesis.CausalTransport.HiddenDAGObservationalCompression
 import Thesis.CausalTransport.HiddenDAGPolynomialEvidence
 import Thesis.CausalTransport.HiddenDAG
@@ -277,8 +278,13 @@ reachability searches to active-path separation.
 
 `HiddenDAGSourceCompression` and `HiddenDAGObservationalCompression` construct
 bounded independent sources on an unchanged native template, retaining chosen
-effects and, for the latter, the complete observed law. `HiddenDAGPolynomial`
-compiles native causal probabilities with a proved binding to source-cell
+effects and, for the latter, the complete observed law.
+`HiddenDAGSourcePresentation` proves full decoder simulation and preserves all
+intervention laws when recoding private noise. `HiddenDAGCompactSources`
+combines this with compression to give actual bounded `Fin` noise alphabets
+while retaining precisely the compression's selected probabilities. Neither
+module compresses endogenous hidden-node values or enumerates mechanisms.
+`HiddenDAGPolynomial` compiles native causal probabilities with a proved binding to source-cell
 variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied
 bound certificates against internally proved source constraints and compiled

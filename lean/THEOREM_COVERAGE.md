@@ -231,6 +231,42 @@ noise types, node value types and structural mechanisms remain unchanged.
 They do not themselves compress hidden endogenous alphabets, enumerate all
 mechanisms, or supply a complete rational feasibility optimizer.
 
+### Actual finite source alphabets
+
+`HiddenDAGSourcePresentation` now replaces native private sources with finite
+sampling codes on the unchanged original hidden DAG. `presentSources_evalNode`
+and `presentSources_evalObserved` prove unit-level decoder simulation;
+`presentSources_interventionalValue` proves every hard-intervention event
+probability preserved, not only marginal source events. The generic
+`FiniteProduct.presentation_probVal` establishes full decoded joint-law
+agreement even when the original prior is not literally a canonical product.
+`presentSources_eventPositive_iff` and `presentSources_conditionOn_probVal`
+retain zero/support distinctions and all actually supported conditionals.
+
+`HiddenDAGCompactSources` connects that adapter to both compression interfaces.
+`SourceCompression.codeModel` has actual private types `Fin (codeCard node)`
+with `codeCard_bound <= number of retained queries + 1`.
+`ObservationalSourceCompression.codeModel` has the corresponding bound
+`number of observed assignments + number of target queries + 1`, preserves
+the entire observed law, and preserves every listed target. Both interfaces
+also prove their finite noise-enumeration lengths equal those code sizes.
+Their `codeModel_quotient_preserved` theorems require the original positive
+denominator. The observational interface's `codeModel_conditionOn_probVal`
+specifically requires retaining both the joint event and evidence under the
+same intervention. Observation preservation alone does not supply those
+interventional probabilities.
+
+Source presentation alone preserves all intervention laws of its input
+model. After **compression**, only the compression's retained probabilities
+are asserted equal to the original uncompressed model. Unit-level equation
+simulation at decoded assignments does not imply that all those probabilities
+are unchanged after the prior law changes. Endogenous hidden-node types,
+mechanism tables and the original observed domain are not compressed here.
+The multivalued regression reduces a private alphabet from three values to
+two sampling codes while retaining the observed null value two as a valid
+intervention target. A five-node hidden-relay fixture also checks the adapter
+without imposing pairwise-only latent causes.
+
 ## Exact probability polynomials and supplied bound certificates
 
 `RationalPolynomial` represents finite sparse polynomials with signed rational
@@ -310,19 +346,19 @@ plausible finite constructive route beyond the current fixed-template checker.
 Retain all observed singleton queries and the finitely many primitive queries
 appearing in the requested target. Existing source compression gives a bound
 `K = number of retained queries + 1` for each source's positive atom occurrences.
-It does not yet change those sources' ambient types to a common finite alphabet.
+`HiddenDAGCompactSources` now relabels them by actual `Fin k_j` sources with
+`k_j <= K`, retaining the selected probabilities and the whole observed law
+when requested. Uniform zero-padding to a common `Fin K` is not needed by
+this compact adapter and is not asserted implemented.
 
-The missing representation steps would be:
+The remaining representation steps would be:
 
-1. Relabel each compressed source by at most `K` atom positions, preserving
-   independence and every retained intervention probability. Padding unused
-   positions with zero mass must be justified, not identified with positive cells.
-2. Enumerate the hidden values reached under the retained interventions and
+1. Enumerate the hidden values reached under the retained interventions and
    relabel them too. With `N` native nodes and `I` listed interventions, a
    crude candidate bound is `I * K^N` values per hidden node. Mechanisms on
    unreachable parent inputs need explicit defaults, while evaluator simulation
    must prove those defaults cannot change a retained trajectory.
-3. Enumerate finite mechanism tables on those bounded domains, then prove that
+2. Enumerate finite mechanism tables on those bounded domains, then prove that
    every original model has a representative in this family with the same
    observed law and target values. Only that coverage theorem would justify
    checking one certificate per template to establish a graph-wide bound.
@@ -349,19 +385,14 @@ transfer principle is silently added at any of these boundaries.
 
 ### Research checkpoint 6: representation adapters
 
-The first step has a direct constructive implementation strategy using
-existing interfaces. Apply `FiniteProbRecord.atomPresentation` to each
-compressed factor; its code size is that factor's actual atom count, already
-bounded by `K`. Give the new native model the canonical product of these
-finite code records and compose each mechanism with its coordinate decoder.
-Use the original complete noise enumerations and
-`FiniteProduct.probVal_extensional_of_rectangles` to prove that decoding the
-new prior recovers every original noise-event probability. An evaluator
-simulation through the native equations then transports every retained
-intervention, the whole observed law and supported target ratios. The
-decoder need not be a bijection of the old ambient noise type. Compact
-`Fin k_j` sources avoid padding; a common `Fin K` presentation can be added
-separately with zero-weight positions and an explicit decoded default.
+The compact source-alphabet step is now implemented by the product/native
+presentation and compact-source theorems described above. They apply
+`FiniteProbRecord.atomPresentation` to compressed factors, use their actual
+independent product prior, and prove complete decoded-law equality through
+`FiniteProduct.probVal_extensional_of_rectangles`. The decoder need not be a
+bijection of the old ambient noise type. A common `Fin K` presentation can
+still be added separately with zero-weight positions and an explicit decoded
+default; the compact `Fin k_j` construction avoids that unnecessary padding.
 
 For a fixed full DAG, the proposed hidden-value bound can be made precise
 as follows: enumerate all coded noise assignments and each retained hard
@@ -414,8 +445,8 @@ Finite source bounds are also established for discrete independent-source
 networks by [Rosset, Gisin and Wolfe](https://arxiv.org/abs/1709.00707).
 That is supporting literature, not a Lean assumption or an automatic
 rational/constructive transfer. The repository's existing compression proof
-is the proposed rational foundation. Review checkpoint: implement the
-compact source adapter first; choose fixed-full-DAG versus projection-wide
+is the rational foundation. Review checkpoint: the compact source adapter
+is implemented; choose fixed-full-DAG versus projection-wide
 coverage before undertaking hidden-table or root-grouping infrastructure.
 
 ## Research checkpoint 7: fixed-observed-law procedures
