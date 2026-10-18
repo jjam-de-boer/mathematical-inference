@@ -108,7 +108,27 @@ theorem probVal_one_iff_complement_not_positive (record : FiniteProbRecord Ω) (
       ¬record.EventPositive (fun value => !(event value)) := by
   have partition := eventMass_add_complement record.atoms event
   rw [record.total_mass] at partition
-  simp only [QProb.Equiv, probVal, QProb.one, Nat.mul_one, Nat.one_mul, EventPositive]
-  omega
+  -- Keep the negated positivity premise explicit. A whole-goal arithmetic
+  -- refutation can introduce a classical dependency here even though every
+  -- mass is a natural number; cancellation and a natural equality test suffice.
+  constructor
+  · intro full positive
+    have fullMass : eventMass record.atoms event = record.den := by
+      change eventMass record.atoms event * 1 = 1 * record.den at full
+      simpa only [Nat.mul_one, Nat.one_mul] using full
+    rw [fullMass] at partition
+    have complementZero : eventMass record.atoms (fun value => !(event value)) = 0 :=
+      Nat.add_left_cancel (partition.trans (Nat.add_zero record.den).symm)
+    change 0 < eventMass record.atoms (fun value => !(event value)) at positive
+    rw [complementZero] at positive
+    exact Nat.lt_irrefl 0 positive
+  · intro unsupported
+    have complementZero : eventMass record.atoms (fun value => !(event value)) = 0 := by
+      by_cases zero : eventMass record.atoms (fun value => !(event value)) = 0
+      · exact zero
+      · exact False.elim (unsupported (Nat.pos_of_ne_zero zero))
+    change eventMass record.atoms event * 1 = 1 * record.den
+    rw [Nat.mul_one, Nat.one_mul]
+    simpa only [complementZero, Nat.add_zero] using partition
 
 end Thesis.Probability.FiniteProbRecord

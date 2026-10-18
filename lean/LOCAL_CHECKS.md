@@ -166,6 +166,10 @@ documenting the new dependency boundary. The additional generic-walk extraction
 retains 823 original lines on the same basis. `Completeness` imports the new
 layer, so its existing consumers still see the same public names. Forest
 constructors and historical trace inductions remain in their original module.
+Two further shared empty-conditioner rule-3 graph identities (36 original
+lines) now live with the path specification in `DSeparation`, not in the
+historical completeness development. Their statements and proof bodies are
+unchanged as well; a downstream current-recursion client exposed that need.
 
 Retargeting the two current-engine clients gives the following source-graph
 comparison (target included; Lean/Std modules excluded):

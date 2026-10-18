@@ -61,6 +61,44 @@ certified catalogue. `BackdoorAdjustmentSearch.covariates_member_iff` and
 two-do-rule adjustment criterion. Neither theorem ranges over all possible
 identification formulas or every generalized adjustment criterion.
 
+## Exact support-pattern applicability
+
+`ProbabilityTerm.supportStatus_exact`, in `ObservationalFormulaSupport`,
+proves an exact three-state evaluator: undefined, defined zero, or positive.
+Its input is only the positive-support bits of complete observed assignments.
+It covers every current term constructor, including finite marginalization,
+fixed-reference evaluation and asymmetric zero-weighted multiplication.
+Strict multiplication still propagates undefined values beside a zero;
+division by a zero denominator remains undefined. Fractions need not be
+reduced, and records may repeat labels or contain zero-weight atoms.
+
+`ObservationalFormulaGuard.checkSupport_exact` also handles both current
+guards. A probability-one action holds exactly when its complement contains
+no supported assignment. `availableOnSupport_exact` therefore agrees with
+the existing actual plan evaluator, and `available_eq_of_support_eq` proves
+availability invariant under arbitrary positive reweighting on the same
+support. Numerical formula values are **not** invariant; the one-variable
+regression checks a fair and biased record with equal support and unequal
+event probabilities. Signed cancellation or future numerical threshold
+guards are outside this abstraction unless separately proved compatible.
+
+`FormulaSupportCatalogue` enumerates Boolean support patterns and excludes
+the impossible empty support. `coverageIncluded_iff` specifies its exhaustive
+comparison of supplied catalogues over those patterns and all references;
+`coverageIncluded_transfer` applies a passing comparison to every actual
+normalized observed record. `sameCoverage` tests mutual inclusion, useful for
+checking a proposed deletion. `mem_uncoveredPatterns_iff` specifies the
+reported uncovered patterns. These are opt-in small-instance computations:
+there are exponentially many patterns in the number of observed assignments.
+Nonempty patterns may still be incompatible with the causal graph, so a
+failed comparison is not automatically a native causal counterexample.
+
+None of this certifies arbitrary input plans or discovers every valid
+formula. The finite pattern space removes numerical weights from the
+applicability question; it does not bound the length of a certificate that
+might cover a previously uncovered pattern. Original conditional-target
+support also remains a separate causal premise.
+
 ## Fixed-law results beyond graph-level completeness
 
 | Graph/target | Public theorem | Scope |
