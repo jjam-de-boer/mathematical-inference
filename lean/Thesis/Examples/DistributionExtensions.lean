@@ -666,3 +666,41 @@ example : SignedRatio.LE (partitionMomentFixture.rationalExpectation (fun x => S
   Distro.conditionalExpectation_square_contraction _ threeEvidenceCells partitionMomentObservable
 
 end Thesis.Examples.DistributionExtensions
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- The fixed total and dimension hold almost surely despite a retained
+zero-weight empty vector with a different dimension and total. -/
+def highestMomentFixture : Distro (List Nat) := ofWeightedAtoms [([0, 2], 1), ([1, 1], 1), ([], 0)] (by decide)
+
+example : QProb.Equiv (highestMomentFixture.pmf [0, 2])
+    (QProb.div (jointFactorialMoment highestMomentFixture [0, 2])
+      (QProb.ofNat (orderFactorial [0, 2])) (orderFactorial_pos _)) :=
+  Distro.pmf_of_highestFactorialMoment _ 2 _ (by decide +kernel) (by decide)
+
+example : highestMomentFixture.SameLaw (highestMomentFixture.rescaleWeights 3 (by decide)) :=
+  Distro.sameLaw_of_highestFactorialMoments _ _ 2 2 (by decide +kernel) (by decide +kernel)
+    (fun orders _ _ => (highestMomentFixture.rescaleWeights_sameLaw 3 (by decide)).symm.jointFactorialMoment orders)
+
+example : QProb.Equiv ((multinomialDistro 3 [1, 0, 2] (by decide)).pmf [1, 0, 2]) ⟨4, 9, by decide⟩ :=
+  QProb.equiv_trans (multinomial_pmf_highestOrder 3 [1, 0, 2] [1, 0, 2] (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+example : QProb.Equiv ((multinomialDistro 3 [1, 0, 2] (by decide)).pmf [1, 1, 1]) QProb.zero :=
+  QProb.equiv_trans (multinomial_pmf_highestOrder 3 [1, 0, 2] [1, 1, 1] (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+example : QProb.Equiv ((reinforcedCountDistro 3 [1, 0, 2] 2 (by decide)).pmf [1, 0, 2]) ⟨8, 35, by decide⟩ :=
+  QProb.equiv_trans (reinforcedCount_pmf_highestOrder 3 2 [1, 0, 2] [1, 0, 2] (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+example : QProb.Equiv ((multivariateHypergeometricDistro 3 [2, 0, 3] (by decide)).pmf [1, 0, 2]) ⟨3, 5, by decide⟩ :=
+  QProb.equiv_trans (multivariateHypergeometric_pmf_highestOrder 3 [2, 0, 3] [1, 0, 2] (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+example : QProb.Equiv ((multivariateHypergeometricDistro 0 [] (by decide)).pmf []) QProb.one :=
+  QProb.equiv_trans (multivariateHypergeometric_pmf_highestOrder 0 [] [] (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+end Thesis.Examples.DistributionExtensions

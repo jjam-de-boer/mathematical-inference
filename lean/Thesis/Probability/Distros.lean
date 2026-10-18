@@ -32,6 +32,8 @@ import Thesis.Probability.Distros.FactorialMoments
 import Thesis.Probability.Distros.FactorialPGF
 import Thesis.Probability.Distros.MultivariateFactorialPGF
 import Thesis.Probability.Distros.MultivariateReconstruction
+import Thesis.Probability.Distros.PositiveSupport
+import Thesis.Probability.Distros.HighestFactorialMoments
 import Thesis.Probability.Distros.PolyaUpdates
 import Thesis.Probability.Distros.Degenerate
 import Thesis.Probability.Distros.NegativeBinomialMoments
@@ -291,4 +293,8 @@ retained rather than silently excluded as nonpositive support.
     almost-sure uniqueness from fibre integrals. `ConditionalProjection`
     proves the squared-error decomposition, least-squares optimality and
     squared-norm contraction, retaining zero values on unsupported fibres.
+56. `HighestFactorialMoments` extracts PMFs and full fixed-total joint laws
+    from the top total order alone, with multinomial, reinforced and
+    hypergeometric formulas. `PositiveSupport` supplies weighted congruence
+    and finite-record singleton extensionality without shrinking domains.
 -/
