@@ -149,7 +149,7 @@ theorem valueWitness_card_bound (model : FiniteHiddenDAGSCM S P) (actions : List
     _ = (actions.length + 1) * FiniteProduct.natProduct P.hiddenDAG.count
         (fun index => (model.noiseEnumeration index).length) := by
       change (if P.hiddenDAG.hidden node then model.reachableValues actions node else model.nodeEnumeration node).length = _
-      rw [hidden, if_true, model.reachableValues_length actions node]
+      rw [if_pos hidden, model.reachableValues_length actions node]
 
 theorem valueWitness_card_bound_of_noise_bound (model : FiniteHiddenDAGSCM S P) (actions : List (HardIntervention S))
     (bound : Nat) (bounded : ∀ node, (model.noiseEnumeration node).length ≤ bound)
