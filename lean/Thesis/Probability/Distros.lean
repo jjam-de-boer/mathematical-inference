@@ -63,6 +63,7 @@ import Thesis.Probability.Distros.RationalMoments
 import Thesis.Probability.Distros.RationalClearing
 import Thesis.Probability.Distros.RationalCovarianceAlgebra
 import Thesis.Probability.Distros.FiniteCovariance
+import Thesis.Probability.Distros.OccupancyCovariance
 import Thesis.Probability.Distros.RationalConcentration
 import Thesis.Probability.Distros.RationalMarkov
 import Thesis.Probability.Distros.RationalChebyshev
@@ -318,4 +319,9 @@ retained rather than silently excluded as nonpositive support.
     `FactorialInversion` and `MultivariateFactorialInversion` recover explicit
     numeric and joint PMFs by finite alternating sums of factorial moments,
     under almost-sure bounds and dimensions, with varying totals permitted.
+61. `FiniteCovariance` identifies weighted-sum variance with the covariance
+    quadratic form and proves positive semidefiniteness and its null directions.
+    `OccupancyCovariance` specializes this to multinomial, reinforced and
+    hypergeometric laws, including the fixed-total null direction and complete
+    zero rows for zero-weight or zero-stock coordinates.
 -/
