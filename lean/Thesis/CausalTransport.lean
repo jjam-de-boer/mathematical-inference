@@ -130,6 +130,11 @@ import Thesis.CausalTransport.ConditionalCounterexampleNormalization
 import Thesis.CausalTransport.HedgeConditionalReadout
 import Thesis.CausalTransport.Counterfactual
 import Thesis.CausalTransport.HiddenDAGModel
+import Thesis.CausalTransport.LatentRootNativeModel
+import Thesis.CausalTransport.LatentRootNativeEvaluation
+import Thesis.CausalTransport.CliqueRootNative
+import Thesis.CausalTransport.ProjectedHiddenDAGModels
+import Thesis.CausalTransport.ProjectionTemplateRepresentation
 import Thesis.CausalTransport.HiddenDAGFinitePresentation
 import Thesis.CausalTransport.HiddenDAGSourcePresentation
 import Thesis.CausalTransport.HiddenDAGSourceCompression

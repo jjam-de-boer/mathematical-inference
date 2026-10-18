@@ -39,6 +39,7 @@ import Thesis.Causality.LatentTableBlockResponse
 import Thesis.Causality.LatentTableCounterexample
 import Thesis.Causality.CompactHiddenDAG
 import Thesis.Causality.LatentRootDAG
+import Thesis.Causality.LatentRootProjection
 import Thesis.Causality.CliqueRootGraph
 import Thesis.Causality.LatentRootGrouping
 import Thesis.Causality.PairRoot
