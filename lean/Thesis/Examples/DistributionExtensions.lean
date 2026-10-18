@@ -592,3 +592,34 @@ example : QProb.Equiv (multivariatePGF (Distro.pointMass ([] : List Nat)) [])
         (multivariateMonomial [] orders)))) := by decide +kernel
 
 end Thesis.Examples.DistributionExtensions
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Negative values, unreduced fractions and an irrelevant zero-weight
+outlier exercise the signed rational algebra on an actual finite record. -/
+def rationalAlgebraFixture : Distro Nat := ofWeightedAtoms [(0, 1), (1, 1), (99, 0)] (by decide)
+def rationalAlgebraFirst (x : Nat) : SignedRatio :=
+  if x = 0 then ⟨-3, 2, by decide⟩ else if x = 1 then ⟨2, 4, by decide⟩ else ⟨17, 3, by decide⟩
+def rationalAlgebraSecond (x : Nat) : SignedRatio :=
+  if x = 0 then ⟨4, 6, by decide⟩ else if x = 1 then ⟨-1, 3, by decide⟩ else ⟨-47, 5, by decide⟩
+
+example : SignedRatio.Equiv (rationalAlgebraFixture.rationalCovariance rationalAlgebraFirst rationalAlgebraSecond)
+    ⟨-1, 2, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv (rationalAlgebraFixture.rationalCovariance
+    (fun x => SignedRatio.mul ⟨-4, 6, by decide⟩ (rationalAlgebraFirst x)) rationalAlgebraSecond)
+    ⟨1, 3, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv (rationalAlgebraFixture.rationalVariance
+    (fun x => SignedRatio.add (rationalAlgebraFirst x) (rationalAlgebraSecond x)))
+    ⟨1, 4, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv (rationalAlgebraFixture.rationalVariance
+    (fun x => SignedRatio.mul ⟨-4, 6, by decide⟩ (rationalAlgebraFirst x)))
+    ⟨4, 9, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv ((rationalAlgebraFixture.product rationalAlgebraFixture).rationalExpectation
+    (fun pair => SignedRatio.mul (rationalAlgebraFirst pair.1) (rationalAlgebraSecond pair.2)))
+    ⟨-1, 12, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv ((rationalAlgebraFixture.product rationalAlgebraFixture).rationalCovariance
+    (fun pair => rationalAlgebraFirst pair.1) (fun pair => rationalAlgebraSecond pair.2)) SignedRatio.zero :=
+  Distro.rationalCovariance_independent _ _ rationalAlgebraFirst rationalAlgebraSecond
+
+end Thesis.Examples.DistributionExtensions

@@ -54,6 +54,7 @@ import Thesis.Probability.Distros.SignedCovariance
 import Thesis.Probability.Distros.SignedCauchy
 import Thesis.Probability.Distros.RationalMoments
 import Thesis.Probability.Distros.RationalClearing
+import Thesis.Probability.Distros.RationalCovarianceAlgebra
 import Thesis.Probability.Distros.RationalConcentration
 import Thesis.Probability.Distros.RationalMarkov
 import Thesis.Probability.Distros.RationalChebyshev
@@ -281,4 +282,7 @@ retained rather than silently excluded as nonpositive support.
     using all mixed factorial moments. `MultivariateReconstruction` proves
     that a finite rectangle of those moments determines the entire joint
     event law; the all-orders characterization obtains its bound from support.
+54. `RationalCovarianceAlgebra` supplies signed rational product factorization,
+    symmetric bilinear covariance, rational scaling, independence, and the
+    dependent-sum variance formula, on the original finite records.
 -/
