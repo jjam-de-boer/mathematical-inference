@@ -44,15 +44,19 @@ theorem rationalAtomSum_product (left : List (Ω × Nat)) (right : List (X × Na
       (SignedRatio.mul (SignedRatio.scaleNat a.2 (f a.1)) (FiniteProbRecord.rationalAtomSum right g)) := by
     refine SignedRatio.equiv_trans (SignedRatio.listSum_map_congr right _ _
       (fun b => SignedRatio.scaleNat_mul_product a.2 b.2 (f a.1) (g b.1))) ?_
-    exact SignedRatio.equiv_symm (by simpa only [FiniteProbRecord.rationalAtomSum, List.map_map, Function.comp_def] using
-      SignedRatio.mul_listSum (SignedRatio.scaleNat a.2 (f a.1)) (right.map (fun b => SignedRatio.scaleNat b.2 (g b.1))))
+    exact SignedRatio.equiv_symm (by
+      simpa only [FiniteProbRecord.rationalAtomSum, List.map_map, Function.comp_def] using
+        (SignedRatio.mul_listSum (SignedRatio.scaleNat a.2 (f a.1))
+          (right.map (fun b => SignedRatio.scaleNat b.2 (g b.1)))))
   have grouped := SignedRatio.listSum_flatMap left
     (fun a => right.map (fun b => SignedRatio.scaleNat (a.2 * b.2) (SignedRatio.mul (f a.1) (g b.1))))
   refine SignedRatio.equiv_trans (by
     simpa only [FiniteProbRecord.rationalAtomSum, List.map_flatMap, List.map_map, Function.comp_def] using grouped) ?_
   refine SignedRatio.equiv_trans (SignedRatio.listSum_map_congr left _ _ row) ?_
-  exact SignedRatio.equiv_symm (by simpa only [FiniteProbRecord.rationalAtomSum, List.map_map, Function.comp_def] using
-    SignedRatio.listSum_mul (left.map (fun a => SignedRatio.scaleNat a.2 (f a.1))) (FiniteProbRecord.rationalAtomSum right g))
+  exact SignedRatio.equiv_symm (by
+    simpa only [FiniteProbRecord.rationalAtomSum, List.map_map, Function.comp_def] using
+      (SignedRatio.listSum_mul (left.map (fun a => SignedRatio.scaleNat a.2 (f a.1)))
+        (FiniteProbRecord.rationalAtomSum right g)))
 
 /-- Independent-product factorization for arbitrary signed rational responses. -/
 theorem Distro.rationalExpectation_product (μ : Distro Ω) (ν : Distro X)
