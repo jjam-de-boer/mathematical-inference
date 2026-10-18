@@ -49,6 +49,7 @@ import Thesis.Examples.FiniteRationalCompression
 import Thesis.Examples.FiniteRecordPresentation
 import Thesis.Examples.FiniteProductPresentation
 import Thesis.Examples.FiniteFunctionTables
+import Thesis.Examples.FiniteValueEquivalenceCatalogue
 import Thesis.Examples.HiddenDAGFinitePresentation
 import Thesis.Examples.HiddenDAGMultivaluedPresentation
 import Thesis.Examples.FiniteSourceCompression

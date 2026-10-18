@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.HiddenDAG
+import Thesis.Causality.HiddenDAGObservedIndex
 
 namespace Thesis
 namespace Causality
@@ -33,45 +34,6 @@ or assert individual-model equivalence to independent pairwise hidden roots.
 -/
 
 namespace FiniteHiddenDAG
-
-/-! ## Finite observed-index lookup without choosing an inverse -/
-
-/-- Scan the explicit finite observed-node enumeration for an embedded node.
-The input graph's injectivity makes any found index the unique correct one. -/
-def observedIndex (H : FiniteHiddenDAG S) (node : Fin H.count) :
-    Option (Fin S.count) :=
-  (List.finRange S.count).find? (fun index => decide (H.observedNode index = node))
-
-/-- A successful lookup has the declared observed embedding. -/
-theorem observedIndex_sound (H : FiniteHiddenDAG S) (node : Fin H.count)
-    (index : Fin S.count) (found : H.observedIndex node = some index) :
-    H.observedNode index = node :=
-  of_decide_eq_true
-    (List.find?_some (p := fun candidate => decide (H.observedNode candidate = node)) found)
-
-/-- Every embedded observed node is found, with its original index.  The
-missing case contradicts the explicitly listed index; the successful case
-uses injectivity.  Neither case selects a witness from an existential. -/
-theorem observedIndex_observed (H : FiniteHiddenDAG S) (index : Fin S.count) :
-    H.observedIndex (H.observedNode index) = some index := by
-  cases result : H.observedIndex (H.observedNode index) with
-  | none =>
-      have missing := (List.find?_eq_none.mp result) index (List.mem_finRange index)
-      exact False.elim (missing (decide_eq_true rfl))
-  | some found =>
-      have same : found = index :=
-        H.observedNode_injective (H.observedIndex_sound _ found result)
-      exact congrArg some same
-
-/-- A hidden node cannot be returned as an observed node. -/
-theorem observedIndex_hidden (H : FiniteHiddenDAG S) (node : Fin H.count)
-    (hidden : H.hidden node = true) : H.observedIndex node = none := by
-  cases result : H.observedIndex node with
-  | none => rfl
-  | some index =>
-      have embedding := H.observedIndex_sound node index result
-      have notHidden : H.hidden node = false := embedding ▸ H.observed_not_hidden index
-      exact False.elim (Bool.false_ne_true (notHidden.symm.trans hidden))
 
 /-! ## A finite default presentation for the nonempty-family witness -/
 
