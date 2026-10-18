@@ -473,3 +473,122 @@ example : SignedRatio.Equiv
       (fun label => (⟨label.val, 2, by decide⟩ : SignedRatio))
 
 end Thesis.Examples.DistributionExtensions
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Ordered removal distinguishes word probabilities from occupancy probabilities. -/
+example : QProb.Equiv ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [0, 2])
+    ⟨1, 3, by decide⟩ := by decide +kernel
+
+example : QProb.Equiv (((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).map (colourCounts 3)).pmf [1, 0, 1])
+    ⟨2, 3, by decide⟩ := by decide +kernel
+
+example : QProb.Equiv ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [1, 0])
+    QProb.zero := by decide +kernel
+
+example : ¬ depletingCountsSupported 1 [2, 0, 1] [0, 1, 0] := by decide +kernel
+
+example : QProb.Equiv ((multicolourDepletingDistro 0 [] (by decide)).pmf []) QProb.one := by decide +kernel
+
+example : depletingState [2, 0, 1] [1, 0, 1] = [1, 0, 0] := by decide
+
+example : QProb.Equiv ((depletingCountsContinuation 1 1 [2, 0, 1] [1, 0, 0] (by decide) (by decide +kernel)).pmf [2])
+    ⟨1, 2, by decide⟩ := by decide +kernel
+
+example : QProb.Equiv ((depletingPrefixContinuation [0, 0] 1 [2, 0, 1] (by decide) (by decide +kernel)).pmf [2])
+    QProb.one := by decide +kernel
+
+example : (depletingPrefixContinuation [0] 2 [2, 0, 1] (by decide) (by decide +kernel)).SameLaw
+    (depletingCountsContinuation 1 2 [2, 0, 1] [1, 0, 0] (by decide) (by decide +kernel)) :=
+  depletingPrefix_counts_sufficient [0] 2 [2, 0, 1] (by decide) (by decide +kernel)
+
+example : QProb.Equiv ((depletingCountsContinuation 3 0 [2, 0, 1] [2, 0, 1] (by decide) (by decide +kernel)).pmf [])
+    QProb.one := by decide +kernel
+
+example : QProb.Equiv ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).record.probVal (fun word =>
+    depletingCountsEvent 1 3 [1, 0, 0] word && decide (colourCounts 3 (word.drop 1) = [0, 0, 1])))
+    ⟨1, 3, by decide⟩ := by decide +kernel
+
+end Thesis.Examples.DistributionExtensions
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Correlation is retained while duplicate and zero-weight presentations
+are allowed to differ. Every count vector has dimension two and bound one. -/
+def jointMomentFixture : Distro (List Nat) :=
+  ofWeightedAtoms [([0, 0], 1), ([1, 1], 1), ([0, 1], 0)] (by decide)
+
+def jointMomentDuplicateFixture : Distro (List Nat) :=
+  ofWeightedAtoms [([1, 1], 2), ([0, 0], 1), ([0, 0], 1)] (by decide)
+
+def jointMomentAntiFixture : Distro (List Nat) :=
+  ofWeightedAtoms [([0, 1], 1), ([1, 0], 1)] (by decide)
+
+example : QProb.Equiv (jointFactorialMoment jointMomentFixture [1, 1]) ⟨1, 2, by decide⟩ := by decide +kernel
+example : QProb.Equiv (jointFactorialMoment jointMomentAntiFixture [1, 1]) QProb.zero := by decide +kernel
+example : QProb.Equiv (jointMomentFixture.expectNat (fun counts => counts.getD 0 0))
+    (jointMomentAntiFixture.expectNat (fun counts => counts.getD 0 0)) := by decide +kernel
+example : QProb.Equiv (jointMomentFixture.expectNat (fun counts => counts.getD 1 0))
+    (jointMomentAntiFixture.expectNat (fun counts => counts.getD 1 0)) := by decide +kernel
+
+/-- A nonintegral offset and a value greater than one test the full
+nonnegative-rational expansion; the mixed coefficient contributes. -/
+example : QProb.Equiv (multivariatePGF jointMomentFixture
+    ([⟨1, 2, by decide⟩, QProb.ofNat 2].map (fun t => QProb.add t QProb.one)))
+    ⟨11, 4, by decide⟩ := by decide +kernel
+
+example : QProb.Equiv (QProb.listSum ((factorialBox 2 1).map (fun orders =>
+    QProb.mul (multivariateFactorialCoefficient jointMomentFixture orders)
+      (multivariateMonomial [⟨1, 2, by decide⟩, QProb.ofNat 2] orders))))
+    ⟨11, 4, by decide⟩ := by decide +kernel
+
+example (args : List QProb) (dimension : args.length = 2) :
+    QProb.Equiv (multivariatePGF jointMomentFixture (args.map (fun t => QProb.add t QProb.one)))
+      (QProb.listSum ((factorialBox args.length 1).map (fun orders =>
+        QProb.mul (multivariateFactorialCoefficient jointMomentFixture orders) (multivariateMonomial args orders)))) := by
+  apply multivariatePGF_factorial_expansion
+  intro atom member
+  change atom ∈ [([0, 0], 1), ([1, 1], 1), ([0, 1], 0)] at member
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+  rcases member with rfl | rfl | rfl
+  all_goals exact ⟨dimension.symm, by decide +kernel⟩
+
+/-- Matching the complete finite rectangle reconstructs every joint event,
+even with reordered atoms, duplicates, a zero weight, and changed denominator. -/
+example : jointMomentFixture.SameLaw jointMomentDuplicateFixture := by
+  apply Distro.sameLaw_of_jointFactorialMoments _ _ 2 1
+  · intro atom member
+    change atom ∈ [([0, 0], 1), ([1, 1], 1), ([0, 1], 0)] at member
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+    rcases member with rfl | rfl | rfl
+    all_goals decide +kernel
+  · intro atom member
+    change atom ∈ [([1, 1], 2), ([0, 0], 1), ([0, 0], 1)] at member
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+    rcases member with rfl | rfl | rfl
+    all_goals decide +kernel
+  · intro orders dimension bounded
+    cases orders with
+    | nil => simp only [List.length_nil] at dimension; omega
+    | cons first rest => cases rest with
+        | nil => simp only [List.length_cons, List.length_nil] at dimension; omega
+        | cons second rest =>
+            have empty : rest = [] := List.length_eq_zero_iff.mp (by
+              simp only [List.length_cons] at dimension
+              omega)
+            subst rest
+            have firstBound := bounded first (List.mem_cons_self ..)
+            have secondBound := bounded second (List.mem_cons_of_mem _ (List.mem_cons_self ..))
+            have firstCases : first = 0 ∨ first = 1 := by omega
+            have secondCases : second = 0 ∨ second = 1 := by omega
+            rcases firstCases with rfl | rfl <;> rcases secondCases with rfl | rfl <;> decide +kernel
+
+/-- Zero dimensions and a zero bound retain the single empty monomial. -/
+example : QProb.Equiv (multivariatePGF (Distro.pointMass ([] : List Nat)) [])
+    (QProb.listSum ((factorialBox 0 0).map (fun orders =>
+      QProb.mul (multivariateFactorialCoefficient (Distro.pointMass ([] : List Nat)) orders)
+        (multivariateMonomial [] orders)))) := by decide +kernel
+
+end Thesis.Examples.DistributionExtensions

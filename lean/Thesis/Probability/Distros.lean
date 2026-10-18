@@ -30,6 +30,8 @@ import Thesis.Probability.Distros.GeometricMoments
 import Thesis.Probability.Distros.HypergeometricMoments
 import Thesis.Probability.Distros.FactorialMoments
 import Thesis.Probability.Distros.FactorialPGF
+import Thesis.Probability.Distros.MultivariateFactorialPGF
+import Thesis.Probability.Distros.MultivariateReconstruction
 import Thesis.Probability.Distros.PolyaUpdates
 import Thesis.Probability.Distros.Degenerate
 import Thesis.Probability.Distros.NegativeBinomialMoments
@@ -39,6 +41,12 @@ import Thesis.Probability.Distros.MultivariateHypergeometric
 import Thesis.Probability.Distros.HypergeometricFactorialMoments
 import Thesis.Probability.Distros.HypergeometricMarginals
 import Thesis.Probability.Distros.HypergeometricAggregation
+import Thesis.Probability.Distros.DepletingUrn
+import Thesis.Probability.Distros.DepletingHistory
+import Thesis.Probability.Distros.DepletingWord
+import Thesis.Probability.Distros.DepletingConditioning
+import Thesis.Probability.Distros.DepletingPrefix
+import Thesis.Probability.Distros.DepletingConsistency
 import Thesis.Probability.Distros.Reweight
 import Thesis.Probability.Distros.MulticolourPolya
 import Thesis.Probability.Distros.KernelInvariance
@@ -262,4 +270,15 @@ retained rather than silently excluded as nonpositive support.
     defines their conditional-mean observables and proves residual orthogonality.
     `ConditionalTower` gives explicit refinement and tower laws, including
     unsupported fibres, and actual-record equality for nested supported evidence.
+52. `DepletingUrn` constructs actual categorical removal paths and identifies
+    their occupancy law with multivariate hypergeometric sampling. Its history
+    and word modules prove no-overdraw bounds and stock conservation.
+    `DepletingConditioning` and `DepletingPrefix` condition actual path records
+    and recover the remaining-stock law, with counts sufficient for prediction.
+    `DepletingConsistency` gives horizon consistency and the joint law of
+    successive count blocks, including empty samples and exhausted stocks.
+53. `MultivariateFactorialPGF` expands bounded count-vector PGFs about one
+    using all mixed factorial moments. `MultivariateReconstruction` proves
+    that a finite rectangle of those moments determines the entire joint
+    event law; the all-orders characterization obtains its bound from support.
 -/
