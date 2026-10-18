@@ -20,7 +20,7 @@ theorem jointInverseBinomial_ratio_kernel (counts target : List Nat) (bound : Na
       (if counts = target then SignedRatio.one else SignedRatio.zero) := by
   induction counts generalizing target with
   | nil => cases target with
-      | nil => decide +kernel
+      | nil => rfl
       | cons value target => simp only [List.length_cons, List.length_nil] at dimension; omega
   | cons count counts ih => cases target with
       | nil => simp only [List.length_cons, List.length_nil] at dimension; omega
