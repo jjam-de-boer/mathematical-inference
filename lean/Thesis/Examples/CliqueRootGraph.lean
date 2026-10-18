@@ -76,10 +76,15 @@ def sparseGraph : ObservedGraph signature where
     intro node
     apply Bool.eq_false_iff.mpr
     intro edge
-    rcases Bool.or_eq_true.mp edge with selected | selected <;>
-      rcases Bool.and_eq_true_iff.mp selected with first second <;>
-      have firstValue := of_decide_eq_true first <;>
-      have secondValue := of_decide_eq_true second <;> omega
+    rcases Bool.or_eq_true_iff.mp edge with forward | backward
+    · have bits := Bool.and_eq_true_iff.mp forward
+      have atZero := of_decide_eq_true bits.1
+      have atOne := of_decide_eq_true bits.2
+      omega
+    · have bits := Bool.and_eq_true_iff.mp backward
+      have atOne := of_decide_eq_true bits.1
+      have atZero := of_decide_eq_true bits.2
+      omega
 
 theorem sparse_has_only_five_masks : sparseGraph.cliqueRootCount = 5 := by decide +kernel
 
