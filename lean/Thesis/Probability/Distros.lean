@@ -32,6 +32,7 @@ import Thesis.Probability.Distros.FactorialMoments
 import Thesis.Probability.Distros.FactorialPGF
 import Thesis.Probability.Distros.BinomialInversion
 import Thesis.Probability.Distros.FactorialInversion
+import Thesis.Probability.Distros.MultivariateFactorialInversion
 import Thesis.Probability.Distros.MultivariateFactorialPGF
 import Thesis.Probability.Distros.MultivariateReconstruction
 import Thesis.Probability.Distros.PositiveSupport
@@ -312,4 +313,8 @@ retained rather than silently excluded as nonpositive support.
 59. `ProjectionEquality` characterizes zero squared error and all optimal
     label predictors up to almost-sure equivalence, proves distance contraction,
     and proves decreasing optimal error under almost-sure label refinement.
+60. `BinomialInversion` supplies constructive signed inverse Pascal coefficients.
+    `FactorialInversion` and `MultivariateFactorialInversion` recover explicit
+    numeric and joint PMFs by finite alternating sums of factorial moments,
+    under almost-sure bounds and dimensions, with varying totals permitted.
 -/

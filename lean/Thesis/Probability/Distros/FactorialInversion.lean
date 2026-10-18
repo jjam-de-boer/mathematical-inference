@@ -15,7 +15,7 @@ theorem signedRatio_intRangeSum (n : Nat) (f : Nat → Int) :
       rw [List.range_succ, List.map_append]
       refine SignedRatio.equiv_trans (SignedRatio.listSum_append _ _) ?_
       refine SignedRatio.equiv_trans (SignedRatio.add_congr ih (SignedRatio.add_zero _)) ?_
-      simp only [SignedRatio.Equiv, SignedRatio.add, intRangeSum, Int.natCast_one, Int.mul_one]
+      simp only [SignedRatio.Equiv, SignedRatio.add, intRangeSum, Nat.mul_one, Int.natCast_one, Int.mul_one]
 
 /-- Natural observables agree with their nonnegative signed-rational embedding. -/
 theorem Distro.rationalExpectation_ofNat (μ : Distro Ω) (f : Ω → Nat) :

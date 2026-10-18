@@ -921,3 +921,26 @@ example : SignedRatio.Equiv
   NatDistro.pmf_factorial_inversion _ 0 0 (by decide +kernel)
 
 end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+def varyingTotalJoint : Distro (List Nat) :=
+  ofWeightedAtoms [([0, 0], 1), ([1, 0], 1), ([0, 2], 2), ([], 0), ([99, 88, 77], 0)] (by decide)
+
+example : SignedRatio.Equiv (varyingTotalJoint.pmf [0, 0]).toSignedRatio
+    (inverseJointFactorialPMF varyingTotalJoint 2 [0, 0]) :=
+  Distro.pmf_jointFactorial_inversion _ _ _ (by decide +kernel)
+
+example : SignedRatio.Equiv (inverseJointFactorialPMF varyingTotalJoint 2 [0, 0]) ⟨1, 4, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv (inverseJointFactorialPMF varyingTotalJoint 2 [1, 0]) ⟨1, 4, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv (inverseJointFactorialPMF varyingTotalJoint 2 [0, 2]) ⟨1, 2, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv (inverseJointFactorialPMF varyingTotalJoint 2 [1, 1]) SignedRatio.zero := by decide +kernel
+example : SignedRatio.Equiv (inverseJointFactorialPMF varyingTotalJoint 2 [3, 0]) SignedRatio.zero := by decide +kernel
+
+example : SignedRatio.Equiv (emptyPositiveOutlierFixture.pmf []).toSignedRatio
+    (inverseJointFactorialPMF emptyPositiveOutlierFixture 0 []) :=
+  Distro.pmf_jointFactorial_inversion _ _ _ (by decide +kernel)
+
+end Thesis.Examples.DistributionExtensions
