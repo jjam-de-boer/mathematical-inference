@@ -186,5 +186,30 @@ def cliqueRootProjection (graph : ObservedGraph S) : FiniteLatentProjection S wh
 theorem cliqueRootProjection_observedGraph (graph : ObservedGraph S) (left right : Fin S.count) :
     graph.cliqueRootProjection.observedGraph.bidirected left right = graph.bidirected left right := rfl
 
+/-- The same exact projection in the Boolean incidence format used by
+latent-root SCMs. This permits multi-child model grouping without asserting
+the canonical two-child compatibility condition. -/
+theorem cliqueRootIncident_projected (graph : ObservedGraph S) (left right : Fin S.count) :
+    (!(Nat.beq left.val right.val) && finAny graph.cliqueRootCount
+      (fun root => graph.cliqueRootMask root left && graph.cliqueRootMask root right)) = graph.bidirected left right := by
+  apply Bool.eq_iff_iff.mpr
+  rw [Bool.and_eq_true_iff, finAny_eq_true_iff]
+  constructor
+  · rintro ⟨different, root, incidents⟩
+    exact graph.cliqueRootMask_valid root left right
+      (Bool.and_eq_true_iff.mp incidents).1 (Bool.and_eq_true_iff.mp incidents).2 (by
+        intro same
+        subst right
+        rw [natBeq_refl] at different
+        cases different)
+  · intro edge
+    rcases (LatentRootDAG.projectedBidirected_iff S graph.cliqueRootCount graph.cliqueRootMask left right).mp
+      ((graph.cliqueRootHiddenDAG_projectedBidirected left right).mpr edge) with
+      ⟨different, root, leftIncident, rightIncident⟩
+    refine ⟨?_, root, Bool.and_eq_true_iff.mpr ⟨leftIncident, rightIncident⟩⟩
+    cases tested : Nat.beq left.val right.val with
+    | false => rfl
+    | true => exact False.elim (different (Fin.ext (Nat.eq_of_beq_eq_true tested)))
+
 end ObservedGraph
 end Thesis.Causality

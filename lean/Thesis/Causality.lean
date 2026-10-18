@@ -40,6 +40,7 @@ import Thesis.Causality.LatentTableCounterexample
 import Thesis.Causality.CompactHiddenDAG
 import Thesis.Causality.LatentRootDAG
 import Thesis.Causality.CliqueRootGraph
+import Thesis.Causality.LatentRootGrouping
 import Thesis.Causality.PairRoot
 import Thesis.Causality.PairRootUniqueness
 import Thesis.Causality.PairRootChannels
