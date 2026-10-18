@@ -104,17 +104,21 @@ theorem rank_of_hidden (node : Fin (rootCount + S.count))
 
 /-- No hidden relay exists in a root graph. This concerns hidden-internal
 paths only: ordinary observed directed paths can of course have many edges. -/
+private theorem edge_of_path_with_zero_hidden_rank {T : ObservedSignature} (H : FiniteHiddenDAG T)
+    (hiddenRank : ∀ node, H.hidden node = true → H.rank node = 0)
+    {source target : Fin H.count} (path : H.HiddenInternalPath source target) : H.edge source target = true := by
+  cases path with
+  | direct edge => exact edge
+  | tail earlierPath hidden _edge =>
+      have impossible := earlierPath.rank_lt
+      rw [hiddenRank _ hidden] at impossible
+      exact False.elim (Nat.not_lt_zero _ impossible)
+
 theorem hiddenInternalPath_iff_edge (source target : Fin (rootCount + S.count)) :
     (graph S rootCount incident).HiddenInternalPath source target ↔
       (graph S rootCount incident).edge source target = true := by
   constructor
-  · intro path
-    cases path with
-    | direct edge => exact edge
-    | tail earlierPath hidden _edge =>
-        have impossible := earlierPath.rank_lt
-        rw [rank_of_hidden S rootCount incident _ hidden] at impossible
-        exact False.elim (Nat.not_lt_zero _ impossible)
+  · exact edge_of_path_with_zero_hidden_rank (graph S rootCount incident) (rank_of_hidden S rootCount incident)
   · exact FiniteHiddenDAG.HiddenInternalPath.direct
 
 theorem projectedDirected_iff (left right : Fin S.count) :

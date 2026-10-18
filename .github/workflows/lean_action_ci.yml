@@ -79,6 +79,9 @@ jobs:
         run: lake build Thesis.ConstructiveAlgebraAudit
       # Diagnose graph-layer extraction errors before rebuilding the larger
       # native causal clients. The complete build and axiom gate still follow.
+      - name: Check independent source grouping
+        working-directory: lean
+        run: lake build Thesis.Probability.FiniteProductGrouping
       - name: Check graph-only identification layers
         working-directory: lean
         run: >-

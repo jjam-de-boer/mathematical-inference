@@ -49,6 +49,7 @@ import Thesis.Probability.ColliderRealization
 import Thesis.Probability.Construction
 import Thesis.Probability.FiniteProductResponse
 import Thesis.Probability.FiniteProductAllocation
+import Thesis.Probability.FiniteProductGrouping
 import Thesis.Probability.FiniteProductBalance
 import Thesis.Probability.Distros
 
@@ -67,6 +68,12 @@ rows or invoking general function equality, choice or excluded middle.
 `FiniteProductAllocation` proves the law of one optionally allocated random
 channel, with deterministic absence elsewhere and normalization of unused
 channels.  Neither result requires positive event probabilities or division.
+
+`FiniteProductGrouping` constructs actual independent block factors for an
+explicit partition of the old source coordinates. Its proof-indexed blocks
+need no defaults at absent coordinates. The inverse assignment maps and full
+decoded event-law theorem justify grouping many sources at one owner while
+retaining independence across owners, including empty blocks and null cells.
 
 `FiniteProductSourceCompression` constructs bounded positive-atom source
 records while preserving a supplied finite family of mixed-event probabilities
