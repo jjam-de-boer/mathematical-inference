@@ -67,6 +67,7 @@ import Thesis.Probability.Distros.ConditionalObservable
 import Thesis.Probability.Distros.ConditionalTower
 import Thesis.Probability.Distros.ConditionalAlgebra
 import Thesis.Probability.Distros.ConditionalProjection
+import Thesis.Probability.Distros.ProjectionEquality
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.RationalBetaBinomial
@@ -306,4 +307,7 @@ retained rather than silently excluded as nonpositive support.
     require dimensions and bounds only almost surely, so null outliers do not
     obstruct expansion or reconstruction. Original records and declared
     domains, and all existing stronger interfaces, are retained.
+59. `ProjectionEquality` characterizes zero squared error and all optimal
+    label predictors up to almost-sure equivalence, proves distance contraction,
+    and proves decreasing optimal error under almost-sure label refinement.
 -/
