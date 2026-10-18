@@ -731,16 +731,16 @@ example : ¬ depletingCountsSupported 0 [0, 0] [] := by
 
 example : QProb.Equiv ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [0, 2])
     ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [2, 0]) :=
-  multicolourDepleting_exchangeable _ _ _ (by decide) (List.Perm.swap ..)
+  multicolourDepleting_exchangeable [2, 0, 1] [0, 2] [2, 0] (by decide) (List.Perm.swap ..)
 
 /-- Both an exhausted colour and an invalid colour retain the exchangeability law. -/
 example : QProb.Equiv ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [1, 0])
     ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [0, 1]) :=
-  multicolourDepleting_exchangeable _ _ _ (by decide) (List.Perm.swap ..)
+  multicolourDepleting_exchangeable [2, 0, 1] [1, 0] [0, 1] (by decide) (List.Perm.swap ..)
 
 example : QProb.Equiv ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [7, 0])
     ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [0, 7]) :=
-  multicolourDepleting_exchangeable _ _ _ (by decide) (List.Perm.swap ..)
+  multicolourDepleting_exchangeable [2, 0, 1] [7, 0] [0, 7] (by decide) (List.Perm.swap ..)
 
 example : QProb.Equiv ((depletingCountsContinuationOfBounds 1 1 [1, 1, 1] [1, 0, 0]
     (by decide) (by decide) (by decide) (by decide +kernel)).pmf [1]) ⟨1, 2, by decide⟩ :=
@@ -796,7 +796,7 @@ example : positiveOutlierFixture.SameLaw jointMomentFixture :=
   Distro.sameLaw_of_multivariatePGF_positiveSupport _ _ 2 2 (by decide)
     (fun atom member weight => ⟨(positiveOutlier_shape atom member weight).1,
       fun count within => Nat.lt_succ_of_le ((positiveOutlier_shape atom member weight).2 count within)⟩)
-    (by decide +kernel) (fun args _ => positiveOutlier_sameLaw.multivariatePGF args)
+    (by decide +kernel) (fun args _ => positiveOutlier_sameLaw.expectation (multivariateMonomial args))
 
 def emptyPositiveOutlierFixture : Distro (List Nat) := ofWeightedAtoms [([], 2), ([9, 10], 0)] (by decide)
 

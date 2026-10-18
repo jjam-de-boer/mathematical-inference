@@ -3,6 +3,12 @@ import Thesis.Probability.Construction
 
 namespace Thesis.Probability.Distros
 
+/-- Almost-sure decidable predicates are checked on the finite atom list;
+there is no decision procedure or finiteness assumption for the ambient type. -/
+instance (μ : Distro Ω) (predicate : Ω → Prop) [DecidablePred predicate] :
+    Decidable (μ.AlmostSurely predicate) :=
+  inferInstanceAs (Decidable (∀ atom ∈ μ.record.atoms, 0 < atom.2 → predicate atom.1))
+
 /-- Zero-weight occurrences impose no comparison obligation. This changes
 integration lemmas, without removing atoms or changing any declared domain. -/
 theorem natIntegral_congr_positive (atoms : List (Ω × Nat)) (f g : Ω → Nat)
