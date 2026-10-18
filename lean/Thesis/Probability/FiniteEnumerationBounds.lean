@@ -18,10 +18,12 @@ theorem deduplicate_length_le [DecidableEq X] (values : List X) :
   induction values with
   | nil => exact Nat.le_refl 0
   | cons head tail inductionHypothesis =>
-      unfold deduplicate
-      split
-      · exact Nat.le_trans inductionHypothesis (Nat.le_succ _)
-      · exact Nat.succ_le_succ inductionHypothesis
+      simp only [deduplicate]
+      by_cases repeated : head ∈ deduplicate tail
+      · rw [if_pos repeated]
+        exact Nat.le_trans inductionHypothesis (Nat.le_succ _)
+      · rw [if_neg repeated]
+        exact Nat.succ_le_succ inductionHypothesis
 
 /-- A rectangular list of evaluations has its literal product length,
 even when the entries themselves repeat. -/
@@ -29,7 +31,7 @@ theorem length_flatMap_of_length (values : List X) (family : X → List Y)
     (width : Nat) (same : ∀ value, (family value).length = width) :
     (values.flatMap family).length = values.length * width := by
   induction values with
-  | nil => rfl
+  | nil => simp only [List.flatMap_nil, List.length_nil, Nat.zero_mul]
   | cons head tail inductionHypothesis =>
       change (family head ++ tail.flatMap family).length = (tail.length + 1) * width
       rw [List.length_append, same head, inductionHypothesis, Nat.succ_mul, Nat.add_comm]
