@@ -8,6 +8,7 @@ import Thesis.Probability.QualitativeUrn
 import Thesis.Probability.FiniteRecord
 import Thesis.Probability.FiniteRecordSupport
 import Thesis.Probability.FiniteRecordPresentation
+import Thesis.Probability.FiniteProductPresentation
 import Thesis.Probability.FiniteRecordAlmostSure
 import Thesis.Probability.FiniteRecordConsistencyBounds
 import Thesis.Probability.AffineInterval

@@ -102,7 +102,9 @@ jobs:
         run: >-
           lake build
           Thesis.Probability.FiniteRecordPresentation
+          Thesis.Probability.FiniteProductPresentation
           Thesis.Examples.FiniteRecordPresentation
+          Thesis.Examples.FiniteProductPresentation
           Thesis.Examples.HiddenDAGFinitePresentation
           Thesis.Examples.HiddenDAGMultivaluedPresentation
           Thesis.Examples.LocalCheckBaseline
