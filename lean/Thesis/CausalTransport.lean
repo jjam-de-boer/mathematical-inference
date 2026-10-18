@@ -140,6 +140,7 @@ import Thesis.CausalTransport.HiddenDAGValuePresentation
 import Thesis.CausalTransport.HiddenDAGFiniteRepresentation
 import Thesis.CausalTransport.HiddenDAGMechanismTables
 import Thesis.CausalTransport.HiddenDAGMechanismTableModels
+import Thesis.CausalTransport.HiddenDAGMechanismCatalogue
 import Thesis.CausalTransport.HiddenDAGPolynomialEvidence
 import Thesis.CausalTransport.HiddenDAG
 import Thesis.CausalTransport.HiddenDAGFullFamily

@@ -60,6 +60,7 @@ import Thesis.Examples.HiddenDAGCompactSources
 import Thesis.Examples.HiddenDAGReachableValues
 import Thesis.Examples.HiddenDAGValuePresentation
 import Thesis.Examples.HiddenDAGFiniteRepresentation
+import Thesis.Examples.HiddenDAGMechanismTables
 import Thesis.Examples.RationalMonomial
 import Thesis.Examples.RationalPolynomialIdentity
 import Thesis.Examples.PolynomialBoundCertificate

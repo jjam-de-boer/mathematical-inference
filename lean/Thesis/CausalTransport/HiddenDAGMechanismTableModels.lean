@@ -67,7 +67,8 @@ theorem ownCodeTables_mem :
 /-- Only the mechanism field is replaced. In particular, this is not an
 unproved identification of all source laws on the same graph. -/
 def withCodeTables (tables : P.hiddenDAG.CodeMechanismTables nodeCard sourceCard) : FiniteHiddenDAGSCM S P :=
-  { model with mechanism := model.mechanismFromCodes nodeCard sourceCard nodeCodes sourceCodes
+  { model with
+    mechanism := model.mechanismFromCodes nodeCard sourceCard nodeCodes sourceCodes
       (P.hiddenDAG.lookupCodeMechanisms nodeCard sourceCard tables) }
 
 theorem withCodeTables_ownCodeTables :
