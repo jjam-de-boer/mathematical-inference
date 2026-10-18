@@ -19,7 +19,7 @@ an external method; it does not extend the probability framework.
 | 3. Multivalued native example | Three declared observed values, an actual rational distribution, null intervention targets and supported conditionals checked through the native model. | The standalone-template regression now exercises the same boundary as well. |
 | 4. Support-pattern applicability | Exact undefined/zero/positive analysis and exhaustive comparison within supplied finite formula catalogues. | This does not enumerate every possible certified formula. |
 | 5. Universal alternative-formula coverage | Bounded research assessment completed; the missing syntax and termination obligations are stated below. | A decidable bounded derivation language first; no universal coverage or impossibility theorem yet. |
-| 6. Finite structural representation | Fixed-full-DAG standalone-template coverage; a fixed clique-root graph and law-preserving latent-root grouping for varying original hidden topology. | Realize the grouped model natively on the fixed graph and assemble projection-wide template coverage; rational weight assignments remain infinite. |
+| 6. Finite structural representation | Constructed standalone-template coverage both for a fixed full hidden DAG and across all finite hidden DAGs with a fixed observed projection. | Rational weight assignments remain infinite; compatibility, sharpness and complete search are separate obligations. |
 | 7. Fixed-observed-law procedures | Restricted results retained; bounded-model and unrestricted rational problems assessed separately. | No unrestricted feasibility-and-uniqueness procedure is inferred from the finite structural catalogue. |
 
 ## Graph-level ID/IDC
@@ -412,7 +412,7 @@ distinct guarantees. This is a finite **structural** family with infinitely
 many rational source-weight assignments, not a finite feasibility search or
 an optimizer-completeness theorem. It does not vary the full hidden topology.
 
-### Fixed projection graph and independent root grouping
+### Projection-wide native realization and finite structural coverage
 
 `LatentRootDAG.graph` constructs a full hidden DAG from any finite root
 incidence table, with no two-child restriction. Its hidden-internal paths are
@@ -443,12 +443,43 @@ root count and incidences depend only on the observed graph. Graph, block-law
 and original hidden-relay regressions exercise empty/private slots, zero cells
 and a shared cause that still has three children after grouping.
 
-This is not yet the full projection-wide native-template coverage theorem.
-The remaining bridge must realize the grouped root model as a native
-`FiniteHiddenDAGSCM` on `cliqueRootProjection`, prove its full law preservation,
-explicitly quantify over original full DAGs with the same observed graph, and
-compose with the fixed-DAG template theorem. The root grouping theorems do not
-make rational parameter assignments finite or decide their feasibility.
+`LatentRootNativeModel` constructs an actual `FiniteHiddenDAGSCM` for any
+finite latent-root model, including shared causes with more than two children.
+Root nodes copy their private blocks; observed mechanisms read exactly their
+old observed parents and incident roots. `LatentRootNativeEvaluation` proves
+unitwise evaluation preservation under every hard intervention by observed
+topological induction, then transports the entire independent law, support
+and actual supported conditioned records. No extra semantic transfer premise
+or positive-trajectory assumption is requested.
+
+`FiniteHiddenDAGSCM.toCliqueRootSCM`, in `CliqueRootNative`, composes full-DAG
+collapse, independent grouping and native realization. It preserves every
+interventional event and the whole observational law. Its target is the same
+`graph.cliqueRootProjection` for every original full graph in the projection
+class. Projection reindexing uses proved equality of the graph data; it does
+not assume a correspondence theorem.
+
+`ProjectedHiddenDAGModel graph` explicitly ranges over original full hidden
+DAGs and their actual native records, requiring only agreement with the fixed
+observed projection. Hidden topology, hidden alphabets and source alphabets
+may vary without a supplied common bound. In the universe-zero public
+signature used by the finite-template APIs,
+`ProjectedHiddenDAGModel.projectionTemplateRepresentation` constructs an
+actual member of the graph-fixed finite structural catalogue and its actual
+independent rational factors. It preserves every observational event and
+each requested causal probability. `asProjectedModel` supplies the converse
+membership boundary: the instantiated representative is itself a legitimate
+original full-DAG model with that observed projection.
+
+The structural bounds depend only on the observed graph, its public signature
+and target-list length, not the original hidden-node count or denominators.
+`conditionOn_probVal` preserves supported conditional targets when the joint
+and evidence queries are retained and the original causal evidence is positive.
+The projection-wide regression checks hidden relays, three-child shared
+causes, factual zeros, multivalued count laws and null intervention targets.
+Unlike the uncompressed clique representative, the final compressed template
+need not preserve unlisted interventions. Neither construction makes rational
+parameter assignments finite or decides their feasibility.
 
 ## Exact probability polynomials and supplied bound certificates
 
@@ -522,7 +553,7 @@ search, real-to-rational feasibility transfer, or universal arbitrary-graph
 fixed-law decision procedure is asserted. Conditional bounds additionally
 require justified cross-multiplication at a positive denominator.
 
-### Fixed-full-DAG coverage and the projection-wide boundary
+### Fixed-full-DAG and projection-wide coverage boundaries
 
 For a **fixed full hidden DAG** with fixed observed domains, the constructive
 finite structural coverage theorem is implemented above.
@@ -548,25 +579,20 @@ polynomial-bound API has not yet been wrapped as an automatic catalogue-wide
 checker. Neither representation nor a supplied bound certificate establishes
 feasibility, sharpness or completeness of certificate search.
 
-The finite search can also be enormous; mathematical
-finiteness is not an efficiency guarantee. If only an observed projection is
-fixed while the number and arrangement of hidden nodes vary, another graph
-representation theorem is needed as well. A potentially better route for that
-class starts with the existing intervention-preserving `HiddenDAGCollapse`:
-group independent roots by their observed-child incidence set, prove the
-grouped product law and readout preservation, then compress and relabel those
-groups. There are at most `2^(number of observed nodes)` such incidence sets,
-and the fixed clique graph and grouped-root law are now implemented above.
-Native realization and projection-wide template coverage remain. Roots with three
-or more children must remain allowed; replacing them by independent pairwise
-causes would not be justified by the current collapse theorem. This route
-might avoid directly relabelling every internal hidden-node alphabet, and
-should be compared with the unchanged-full-DAG route before implementation.
-Even successful finite-template
-coverage would leave infinitely many rational source-weight assignments;
-it would not, by itself, prove complete certificate search, optimization or
-rational feasibility decision. No excluded-middle, choice or real-to-rational
-transfer principle is silently added at any of these boundaries.
+The finite search can also be enormous; mathematical finiteness is not an
+efficiency guarantee. When only the observed projection is fixed, the separate
+projection-wide construction above now handles varying hidden topologies:
+collapse, group by child masks, realize the fixed clique graph natively, then
+apply the fixed-DAG coverage theorem. There are at most
+`2^(number of observed nodes)` roots in that intermediate graph. Roots with
+three or more children remain allowed; they are not replaced by independent
+pairwise causes. This route avoids bounding the original internal hidden-node
+alphabets individually.
+
+Both finite-template coverage results leave infinitely many rational
+source-weight assignments. Neither proves complete certificate search,
+optimization, sharpness or rational feasibility decision. No excluded-middle,
+choice or real-to-rational transfer principle is added at these boundaries.
 
 ### Research checkpoint 6: representation adapters
 
@@ -638,18 +664,18 @@ is the rational foundation. The user selected the fixed-full-DAG route first;
 source and hidden-value coding, finite structural enumeration and standalone
 native-law coverage are now implemented. Following the bounded reassessment,
 the user approved staged projection-wide implementation. The fixed clique
-graph, independent block law and grouped causal root model are now proved.
-The next checkpoint is native realization and its assembled model-class
-coverage. No projection-wide template coverage is inferred merely from the
-fixed-full-DAG result or from grouping root values.
+graph, independent block law, grouped causal root model, native realization
+and assembled projection-wide model-class coverage are now constructed and
+proved. The last step uses those actual bridges, rather than inferring
+projection-wide coverage merely from fixed-DAG compression or root grouping.
 
 ### Bounded reassessment after fixed-full-DAG coverage
 
 The bounded assessment below was reviewed and the user approved staged
-implementation. Its first graph and grouping stages are now proved as
-described above; the complete projection-wide theorem is still outstanding.
-The completed fixed-DAG constructor supplies its final compression and
-enumeration step. The reviewed order and remaining boundaries are:
+implementation. Its graph, grouping, native-realization and projection-wide
+coverage stages are now implemented as described above. The completed
+fixed-DAG constructor supplies the final compression and enumeration step.
+The reviewed order and the construction used at each boundary are:
 
 1. **A fixed clique-root graph (implemented).** Enumerate the Boolean observed-child masks
    whose distinct members are pairwise bidirected-adjacent. Include singleton
@@ -669,38 +695,34 @@ enumeration step. The reviewed order and remaining boundaries are:
    gives the whole old joint law, not only its one-source marginals. Finite
    product exchange and singleton/rectangle extensionality prove the complete
    disjoint-block law in `FiniteProductGrouping`.
-3. **Multi-child native realization (remaining).** The grouped root SCM now
-   has a proved intervention-preserving evaluator in `LatentRootGrouping`.
-   Install those block values as the
-   hidden roots' values/private sources in the fixed clique-root graph, with
-   deterministic observed-node private noise. Prove equation simulation and
-   all-hard-intervention event preservation. The existing
+3. **Multi-child native realization (implemented).** `LatentRootNativeModel`
+   installs the actual blocks as hidden-root values/private sources, with
+   vacuous observed-node noise. `LatentRootNativeEvaluation` proves equation
+   simulation and all-hard-intervention event preservation. The older
    `HiddenDAGRootPlacement.sharedInput` data can describe arbitrary child
    families, but `hiddenDAGRootPlacements` and `toHiddenDAGSCM` currently require
    `Compatible`, which includes **at most two children per root**. They cannot
-   be applied directly to the grouped multi-child model. Prefer a narrow
-   clique-root constructor or an explicitly generalized placement API; do not
-   disguise this premise as projected-graph agreement alone.
-4. **Representation coverage with the right quantifiers.** Explicitly define
-   the family ranging over full hidden DAGs with the same observed projection.
-   Prove its models map into the fixed clique-root graph with their laws and
-   targets preserved. Conversely, that graph is itself a member of this
-   family. Only then compose with `nativeTemplateRepresentation`, obtaining
-   structural bounds independent of the original hidden-node count.
-5. **Regression and review.** Include empty graphs/masks, unused clique slots,
-   zero-weight cells, an internal hidden relay and a root with three children.
-   Check supported conditionals by retaining their joint/evidence queries.
-   Review this coverage checkpoint before adding feasibility/search machinery.
+   be applied directly to the grouped multi-child model. The new constructor
+   avoids that restricted API without weakening or disguising its premise.
+4. **Representation coverage with the right quantifiers (implemented).**
+   `ProjectedHiddenDAGModel` explicitly ranges over full original hidden DAGs
+   with the same observed projection. `toCliqueRootSCM` preserves all their
+   interventions on the fixed graph, which is itself a valid original graph
+   in the class. Composing with `nativeTemplateRepresentation` yields a listed
+   standalone template with structural bounds independent of the original
+   hidden-node count and with the requested probabilities preserved.
+5. **Regression and review.** Graph and grouping examples cover empty
+   graphs/masks, unused slots and zero-weight cells. The projection-wide
+   examples check an internal relay, a three-child shared cause, supported
+   conditionals through retained joint/evidence queries, a multivalued law
+   and intervention at a factual null value. Review the verified coverage
+   checkpoint before adding substantial feasibility/search infrastructure.
 
-There is a clear constructive strategy, with no identified mathematical
-obstruction, but this is substantial probability-and-model infrastructure,
-not a wiring change or a result already supplied by the reverse canonical
-countermodel lift. It can be staged at the graph construction and grouped-law
-boundaries. Even success would leave infinitely many rational weights and
-would not settle unrestricted rational feasibility or goal 5's formula-search
-termination question. The approved implementation is staged at the graph,
-grouped-law and native-realization boundaries; it does not authorize an
-open-ended feasibility/search implementation afterward.
+The staged implementation closes this representation boundary, not the
+unrestricted feasibility problem. Infinitely many rational weights remain,
+and goal 5's formula-search termination question is independent. The approved
+projection-wide stages do not authorize an open-ended feasibility/search
+implementation afterward.
 
 ## Research checkpoint 7: fixed-observed-law procedures
 
