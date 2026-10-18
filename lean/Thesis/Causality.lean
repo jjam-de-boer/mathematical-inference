@@ -94,8 +94,9 @@ with exact projection. `CliqueRootGraph` fixes one root per bidirected clique
 mask, including empty and private masks and shared multi-child masks, with at
 most `2^n` roots. `LatentRootGrouping` uses the independent block-law adapter
 to construct a projected root model on those fixed incidences and preserve all
-hard-intervention event probabilities. Native full-DAG realization and its
-bounded-template coverage remain separate downstream obligations.
+hard-intervention event probabilities. The downstream causal-transport
+modules now construct its native full-DAG realization and projection-wide
+bounded-template coverage; rational source parameters are not made finite.
 
 `PairRootUniqueness` proves that the original ordered-pair enumeration has
 no repetitions, and equality of stored pairs identifies their reserved input

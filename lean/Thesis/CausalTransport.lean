@@ -175,6 +175,7 @@ import Thesis.CausalTransport.HiddenDAGCorrespondence
 import Thesis.CausalTransport.Construction
 import Thesis.CausalTransport.Modal
 import Thesis.CausalTransport.ModalRealization
+import Thesis.CausalTransport.PositiveModal
 import Thesis.CausalTransport.ConservativeLearningTransport
 import Thesis.CausalTransport.ModalCounterfactual
 import Thesis.CausalTransport.HedgeInterventionalSupport
@@ -321,6 +322,17 @@ simulation for the two-sided encoding. `HiddenDAGNativeTemplateRepresentation`
 assembles coverage of every original fixed-full-DAG model for its entire
 observational law and finitely requested targets. This makes the structural
 family finite, not its rational source parameters or varying hidden topologies.
+`LatentRootNativeModel` and `LatentRootNativeEvaluation` construct arbitrary
+multi-child root models natively and prove all-intervention law preservation.
+`CliqueRootNative` composes full-DAG collapse and independent root grouping
+with that realization. `ProjectedHiddenDAGModels` explicitly ranges over all
+original full hidden DAGs with a fixed observed projection, and
+`ProjectionTemplateRepresentation` now constructs a listed standalone template
+for every such member, preserving its whole observed law and requested
+targets. This projection-wide structural catalogue is finite; its rational
+weights remain unbounded, and exact feasibility or complete search is not
+inferred. Supported conditional targets retain joint/evidence queries and
+the original positive causal conditioner.
 `HiddenDAGPolynomial` compiles native causal probabilities with a proved
 binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied
