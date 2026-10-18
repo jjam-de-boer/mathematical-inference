@@ -300,6 +300,27 @@ intervention laws of its own input model; it does not undo that distinction.
 Neither trajectory coding nor its cardinality theorem yet enumerates all
 mechanisms or proves a finite mechanism-catalogue coverage theorem.
 
+`HiddenDAGFiniteRepresentation` composes both steps.
+`FiniteHiddenDAGSCM.boundedRepresentation original targets` constructs a
+`BoundedRepresentation` on the same full hidden DAG and observed signature.
+For `t = targets.length`, `A = S.assignmentEnumeration.length` and `N` full
+nodes, its private types are actual `Fin k_j` with `k_j <= A + t + 1`, and
+its endogenous types are actual finite codes with hidden sizes at most
+`(t + 1) * (A + t + 1)^N`. Observed code sizes equal the original public
+domain sizes. The package contains the actual independent native model and
+proved full-observation/target preservation; it does not ask the caller to
+supply those correspondences. Arbitrary rational denominators are retained.
+
+The underlying `finiteModel_observational`, `finiteModel_preserved`,
+`finiteModel_hidden_bound`, and `finiteModel_observed_card` expose these
+properties for any constructed observational source compression.
+`finiteModel_conditionOn_probVal` transports supported conditionals when
+their joint-event and evidence queries were both retained. Only retained
+probabilities agree with the original uncompressed model; the whole
+intervention-law equality in the value step is with its compressed input.
+An explicit finite catalogue of all possible code cardinalities and
+mechanism tables, with its membership/coverage proof, remains to be built.
+
 ## Exact probability polynomials and supplied bound certificates
 
 `RationalPolynomial` represents finite sparse polynomials with signed rational
