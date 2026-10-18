@@ -130,7 +130,8 @@ theorem decodeValue_encodeValue (model : FiniteHiddenDAGSCM S P) (actions : List
 theorem encodeValue_decodeValue (model : FiniteHiddenDAGSCM S P) (actions : List (HardIntervention S))
     (node : Fin P.hiddenDAG.count) (code : model.ValueCode actions node) :
     model.encodeValue actions node (model.decodeValue actions node code) = code := by
-  have listed := ((model.valueWitness actions node).decode code).property
+  have listed : model.decodeValue actions node code ∈ model.retainedNodeValues actions node :=
+    ((model.valueWitness actions node).decode code).property
   rw [encodeValue, dif_pos listed]
   exact (model.valueWitness actions node).encode_decode code
 
@@ -143,8 +144,12 @@ theorem valueWitness_card_bound (model : FiniteHiddenDAGSCM S P) (actions : List
   have bound := deduplicate_length_le (model.retainedNodeValues actions node).attach
   rw [List.length_attach] at bound
   change (model.valueWitness actions node).card ≤ (model.retainedNodeValues actions node).length at bound
-  rw [retainedNodeValues, hidden, if_true, model.reachableValues_length actions node] at bound
-  exact bound
+  calc
+    (model.valueWitness actions node).card ≤ (model.retainedNodeValues actions node).length := bound
+    _ = (actions.length + 1) * FiniteProduct.natProduct P.hiddenDAG.count
+        (fun index => (model.noiseEnumeration index).length) := by
+      change (if P.hiddenDAG.hidden node then model.reachableValues actions node else model.nodeEnumeration node).length = _
+      rw [hidden, if_true, model.reachableValues_length actions node]
 
 theorem valueWitness_card_bound_of_noise_bound (model : FiniteHiddenDAGSCM S P) (actions : List (HardIntervention S))
     (bound : Nat) (bounded : ∀ node, (model.noiseEnumeration node).length ≤ bound)
