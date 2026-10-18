@@ -20,6 +20,9 @@ the vacuous function and uses only the supplied condition decision.
 
 namespace FiniteWitness
 
+def fin (card : Nat) : FiniteWitness (Fin card) :=
+  ⟨card, id, id, fun _ => rfl, fun _ => rfl⟩
+
 /-- Decide equality by the supplied injective finite codes, without adding a
 global function-equality instance or selecting representatives by choice. -/
 def decidableEq (witness : FiniteWitness X) : DecidableEq X := fun left right =>
@@ -114,6 +117,17 @@ theorem tabulation_mem_enumeration (domain : FiniteWitness X) (values : List Y)
     (complete : ∀ value, value ∈ values) (function : X → Y) :
     tabulate domain function ∈ enumeration domain values :=
   enumeration_complete domain values complete _
+
+/-- Decode all enumerated vectors to actual functions on the declared
+input domain. The witness supplies an inverse, not just a surjection. -/
+def functionEnumeration (domain : FiniteWitness X) (values : List Y) : List (X → Y) :=
+  (enumeration domain values).map (lookup domain)
+
+theorem functionEnumeration_complete (domain : FiniteWitness X) (values : List Y)
+    (complete : ∀ value, value ∈ values) (function : X → Y) :
+    function ∈ functionEnumeration domain values :=
+  List.mem_map.mpr ⟨tabulate domain function, tabulation_mem_enumeration domain values complete function,
+    lookup_tabulate domain function⟩
 
 end FiniteFunctionTable
 end Thesis.Probability
