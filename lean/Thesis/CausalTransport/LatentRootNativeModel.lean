@@ -89,8 +89,14 @@ theorem node_complete (node : Node original) (value : NodeValue original node) :
 
 def nodeDecidableEq : (node : Node original) → DecidableEq (NodeValue original node) :=
   Fin.addCases
-    (fun root => by rw [nodeValue_root]; exact noiseDecidableEq original _)
-    (fun observed => by rw [nodeValue_observed]; exact S.valueDecidableEq observed)
+    (fun root => by
+      change DecidableEq (NodeValue original (rootNode original root))
+      rw [nodeValue_root]
+      exact noiseDecidableEq original _)
+    (fun observed => by
+      change DecidableEq (NodeValue original (observedNode original observed))
+      rw [nodeValue_observed]
+      exact S.valueDecidableEq observed)
 
 /-- Root incidence is retained, not replaced by a pair-root approximation. -/
 def root_edge (root : Fin original.latent.count) (child : Fin S.count)

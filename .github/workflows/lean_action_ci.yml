@@ -99,7 +99,11 @@ jobs:
         run: lake build Thesis.Causality.LatentRootGrouping Thesis.Examples.LatentRootGrouping
       - name: Check native root realization
         working-directory: lean
-        run: lake build Thesis.Causality.LatentRootProjection Thesis.CausalTransport.LatentRootNativeModel
+        run: >-
+          lake build
+          Thesis.Causality.LatentRootProjection
+          Thesis.CausalTransport.LatentRootNativeModel
+          Thesis.CausalTransport.LatentRootNativeEvaluation
       - name: Check exact expression support analysis
         working-directory: lean
         run: >-
