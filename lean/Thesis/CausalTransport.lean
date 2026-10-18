@@ -135,6 +135,7 @@ import Thesis.CausalTransport.HiddenDAGSourcePresentation
 import Thesis.CausalTransport.HiddenDAGSourceCompression
 import Thesis.CausalTransport.HiddenDAGObservationalCompression
 import Thesis.CausalTransport.HiddenDAGCompactSources
+import Thesis.CausalTransport.HiddenDAGReachableValues
 import Thesis.CausalTransport.HiddenDAGPolynomialEvidence
 import Thesis.CausalTransport.HiddenDAG
 import Thesis.CausalTransport.HiddenDAGFullFamily

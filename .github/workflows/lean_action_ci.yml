@@ -105,6 +105,7 @@ jobs:
           Thesis.Probability.FiniteProductPresentation
           Thesis.CausalTransport.HiddenDAGSourcePresentation
           Thesis.CausalTransport.HiddenDAGCompactSources
+          Thesis.CausalTransport.HiddenDAGReachableValues
           Thesis.Examples.HiddenDAGSourcePresentation
           Thesis.Examples.HiddenDAGCompactSources
           Thesis.Examples.FiniteRecordPresentation
