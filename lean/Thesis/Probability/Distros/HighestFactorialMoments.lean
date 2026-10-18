@@ -21,6 +21,7 @@ theorem depletingCountsWithin_eq_of_sum (counts stocks : List Nat) (within : dep
       | nil => exact False.elim within
       | cons stock stocks =>
           have tailBound := depletingCountsWithin_sum_le counts stocks within.2
+          have headBound : count ≤ stock := within.1
           have head : count = stock := by simp only [List.sum_cons] at total; omega
           have tail : counts.sum = stocks.sum := by simp only [List.sum_cons, head] at total; omega
           rw [head, ih stocks within.2 tail]
@@ -36,7 +37,7 @@ theorem jointFalling_same_total (orders counts : List Nat) (total : orders.sum =
     jointFalling orders counts = if counts = orders then orderFactorial orders else 0 := by
   by_cases same : counts = orders
   · subst counts
-    simp only [if_pos rfl, jointFalling_self]
+    simp [jointFalling_self]
   · rw [if_neg same]
     by_cases zero : jointFalling orders counts = 0
     · exact zero
@@ -51,6 +52,8 @@ theorem Distro.jointFactorialMoment_highest (μ : Distro (List Nat)) (total : Na
   have integral := μ.expectNat_congr_positive (jointFalling orders)
     (fun counts => (if FiniteProbRecord.singletonEvent orders counts then 1 else 0) * orderFactorial orders)
     (fun atom member weight => by
+      change jointFalling orders atom.1 =
+        (if FiniteProbRecord.singletonEvent orders atom.1 then 1 else 0) * orderFactorial orders
       rw [jointFalling_same_total orders atom.1 (orderTotal.trans (fixed atom member weight).symm)]
       by_cases same : atom.1 = orders
       · simp only [same, if_pos rfl, FiniteProbRecord.singletonEvent, decide_true, Nat.one_mul]
@@ -69,7 +72,7 @@ theorem Distro.pmf_of_highestFactorialMoment (μ : Distro (List Nat)) (total : N
       (QProb.div (jointFactorialMoment μ orders) (QProb.ofNat (orderFactorial orders)) (orderFactorial_pos orders)) := by
   apply QProb.equiv_symm
   refine QProb.equiv_trans (QProb.div_congr (μ.jointFactorialMoment_highest total orders fixed orderTotal)
-    (QProb.equiv_refl _) _ _) ?_
+    (QProb.equiv_refl _) (orderFactorial_pos orders) (orderFactorial_pos orders)) ?_
   simp only [QProb.Equiv, QProb.div, QProb.scale, QProb.ofNat]
   ac_rfl
 

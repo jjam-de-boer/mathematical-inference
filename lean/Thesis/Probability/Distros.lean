@@ -49,6 +49,7 @@ import Thesis.Probability.Distros.DepletingWord
 import Thesis.Probability.Distros.DepletingConditioning
 import Thesis.Probability.Distros.DepletingPrefix
 import Thesis.Probability.Distros.DepletingConsistency
+import Thesis.Probability.Distros.DepletingSupport
 import Thesis.Probability.Distros.Reweight
 import Thesis.Probability.Distros.MulticolourPolya
 import Thesis.Probability.Distros.KernelInvariance
@@ -297,4 +298,7 @@ retained rather than silently excluded as nonpositive support.
     from the top total order alone, with multinomial, reinforced and
     hypergeometric formulas. `PositiveSupport` supplies weighted congruence
     and finite-record singleton extensionality without shrinking domains.
+57. `DepletingSupport` characterizes supported count observations by dimension,
+    total draws and stock bounds, proves word permutation invariance even for
+    null words, and provides conditioning from explicit feasible-count data.
 -/

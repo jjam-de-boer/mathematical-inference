@@ -704,3 +704,49 @@ example : QProb.Equiv ((multivariateHypergeometricDistro 0 [] (by decide)).pmf [
     (by decide +kernel)
 
 end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Feasible counts suffice, including an exhausted population and zero stocks. -/
+example : depletingCountsSupported 3 [2, 0, 1] [2, 0, 1] :=
+  (depletingCountsSupported_iff_coordinates _ _ _).mpr (by decide +kernel)
+
+example : depletingCountsSupported 0 [] [] :=
+  (depletingCountsSupported_iff_coordinates _ _ _).mpr (by decide +kernel)
+
+example : ¬ depletingCountsSupported 1 [2, 0, 1] [0, 1, 0] := by
+  intro supported
+  have data := (depletingCountsSupported_iff_coordinates _ _ _).mp supported
+  have impossible := data.2.2 1 (by decide)
+  change 1 ≤ 0 at impossible
+  omega
+
+example : ¬ depletingCountsSupported 0 [0, 0] [] := by
+  intro supported
+  have data := (depletingCountsSupported_iff _ _ _).mp supported
+  have impossible : (0 : Nat) = 2 := data.1
+  omega
+
+example : QProb.Equiv ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [0, 2])
+    ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [2, 0]) :=
+  multicolourDepleting_exchangeable _ _ _ (by decide) (List.Perm.swap ..)
+
+/-- Both an exhausted colour and an invalid colour retain the exchangeability law. -/
+example : QProb.Equiv ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [1, 0])
+    ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [0, 1]) :=
+  multicolourDepleting_exchangeable _ _ _ (by decide) (List.Perm.swap ..)
+
+example : QProb.Equiv ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [7, 0])
+    ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [0, 7]) :=
+  multicolourDepleting_exchangeable _ _ _ (by decide) (List.Perm.swap ..)
+
+example : QProb.Equiv ((depletingCountsContinuationOfBounds 1 1 [1, 1, 1] [1, 0, 0]
+    (by decide) (by decide) (by decide) (by decide +kernel)).pmf [1]) ⟨1, 2, by decide⟩ :=
+  depleting_next_after_counts_of_bounds _ _ _ (by decide) (by decide) (by decide) (by decide +kernel) _ (by decide)
+
+example : QProb.Equiv ((depletingCountsContinuationOfBounds 3 0 [2, 0, 1] [2, 0, 1]
+    (by decide) (by decide) (by decide) (by decide +kernel)).pmf []) QProb.one := by decide +kernel
+
+end Thesis.Examples.DistributionExtensions
