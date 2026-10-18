@@ -685,10 +685,15 @@ typed finite mechanism tables. Filter by exact equality of every observed
 singleton probability. An empty list means incompatible **within that bounded
 class**; otherwise compare the actual target values, returning either a
 common value or a pair of disagreeing native models. Constructing results
-from this list needs no choice. Completeness requires the representation
-normalization/padding theorem, and conditional targets need an explicit
-policy for compatible models with null target conditioners. Increasing
-`D` does not itself give a terminating unrestricted procedure.
+from this list needs no choice. The structural catalogue is now available;
+the remaining finite weight-vector coverage proof must aggregate repeated
+factor labels while preserving their probabilities and declared denominator.
+Enumerating bounded cardinality shapes avoids a separate zero-padding step.
+The denominator bound restricts the model class; source compression is not
+asserted to preserve that bound for arbitrary original models. Conditional
+targets also need an explicit policy for compatible models with null target
+conditioners. Increasing `D` does not itself give a terminating unrestricted
+procedure.
 
 **Unrestricted rational models.** Representation bounds control alphabet and
 table sizes, not the infinitely many rational source weights. The remaining
