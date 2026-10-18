@@ -59,7 +59,10 @@ theorem inverseBinomial_above (order value : Nat) (above : order < value) : inve
 theorem inverseBinomial_closed (order value : Nat) (within : value ≤ order) :
     inverseBinomial order value = alternatingSign (order - value) * (binom order value : Int) := by
   induction order generalizing value with
-  | zero => have zero : value = 0 := by omega; subst value; rfl
+  | zero =>
+      have zero : value = 0 := by omega
+      subst value
+      rfl
   | succ order ih => cases value with
       | zero =>
           simp only [inverseBinomial, ih 0 (Nat.zero_le _), Nat.sub_zero,
@@ -118,7 +121,11 @@ theorem inverseBinomial_kernel (n value : Nat) :
               inverseBinomial (order + 1) 0 * (binom n order : Int) + inverseBinomial order 0 * (binom n order : Int)) = 0 := by
             have same := intRangeSum_congr (n + 1)
               (fun order => inverseBinomial (order + 1) 0 * (binom n order : Int) + inverseBinomial order 0 * (binom n order : Int))
-              (fun _ => 0) (fun order _ => by rw [inverseBinomial, Int.neg_mul]; omega)
+              (fun _ => 0) (fun order _ => by
+                change inverseBinomial (order + 1) 0 * (binom n order : Int) +
+                  inverseBinomial order 0 * (binom n order : Int) = 0
+                rw [inverseBinomial, Int.neg_mul]
+                omega)
             exact same.trans (intRangeSum_zero _)
           rw [zero, if_neg (Nat.succ_ne_zero _)]
       | succ value =>
@@ -126,7 +133,11 @@ theorem inverseBinomial_kernel (n value : Nat) :
             (fun order => inverseBinomial (order + 1) (value + 1) * (binom n order : Int) +
               inverseBinomial order (value + 1) * (binom n order : Int))
             (fun order => inverseBinomial order value * (binom n order : Int))
-            (fun order _ => by rw [← Int.add_mul, inverseBinomial, Int.sub_add_cancel])
+            (fun order _ => by
+              change inverseBinomial (order + 1) (value + 1) * (binom n order : Int) +
+                inverseBinomial order (value + 1) * (binom n order : Int) =
+                inverseBinomial order value * (binom n order : Int)
+              rw [← Int.add_mul, inverseBinomial, Int.sub_add_cancel])
           rw [same, ih]
           simp only [Nat.succ.injEq]
 
@@ -136,7 +147,10 @@ theorem inverseBinomial_kernel_bounded (n value bound : Nat) (within : n ≤ bou
     intRangeSum (bound + 1) (fun order => inverseBinomial order value * (binom n order : Int)) =
       if n = value then 1 else 0 := by
   induction bound generalizing n with
-  | zero => have zero : n = 0 := by omega; subst n; exact inverseBinomial_kernel 0 value
+  | zero =>
+      have zero : n = 0 := by omega
+      subst n
+      exact inverseBinomial_kernel 0 value
   | succ bound ih =>
       by_cases edge : n = bound + 1
       · subst n; exact inverseBinomial_kernel _ value
