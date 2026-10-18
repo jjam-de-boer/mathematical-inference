@@ -109,6 +109,8 @@ jobs:
           Thesis.CausalTransport.HiddenDAGValuePresentation
           Thesis.CausalTransport.HiddenDAGFiniteRepresentation
           Thesis.CausalTransport.HiddenDAGMechanismTables
+          Thesis.CausalTransport.HiddenDAGMechanismTableModels
+          Thesis.Examples.FiniteFunctionTables
           Thesis.Examples.HiddenDAGReachableValues
           Thesis.Examples.HiddenDAGValuePresentation
           Thesis.Examples.HiddenDAGFiniteRepresentation
