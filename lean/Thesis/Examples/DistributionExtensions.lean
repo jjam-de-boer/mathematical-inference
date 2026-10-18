@@ -918,7 +918,7 @@ example : SignedRatio.Equiv (inverseFactorialPMF varyingTotalNumeric 2 3) Signed
 example : SignedRatio.Equiv
     ((Distro.pointMass (0 : Nat)).record.probVal (fun x => decide (x = 0))).toSignedRatio
     (inverseFactorialPMF (⟨Distro.pointMass (0 : Nat), id⟩ : NatDistro Nat) 0 0) :=
-  NatDistro.pmf_factorial_inversion _ 0 0 (by decide +kernel)
+  NatDistro.pmf_factorial_inversion (⟨Distro.pointMass (0 : Nat), id⟩ : NatDistro Nat) 0 0 (by decide +kernel)
 
 end Thesis.Examples.DistributionExtensions
 
