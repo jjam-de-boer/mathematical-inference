@@ -99,6 +99,54 @@ applicability question; it does not bound the length of a certificate that
 might cover a previously uncovered pattern. Original conditional-target
 support also remains a separate causal premise.
 
+### Research checkpoint 5: alternative-formula coverage
+
+This is a bounded assessment, not an additional Lean completeness theorem.
+The natural first scope fixes the observed signature, the original finite
+hidden DAG/projection and a joint query. Candidates are the current
+`GuardedObservationalFormula` objects: current `ProbabilityTerm` syntax,
+action-free output, either existing guard, and the native interpretation
+proof. Maximal catalogue coverage would mean: for **every native model and
+reference**, whenever **any such certified candidate** is available, some
+member of one constructed finite catalogue is available. This is not merely
+coverage of ID's chosen expression, nor fixed-law point identification.
+A conditional-query version must retain its original source-support premise.
+
+There are finitely many support/reference pairs, but that does not yet give
+an algorithm for choosing a candidate for every coverable pair. In particular,
+the current `interpret` field is an arbitrary native semantic proof, not a
+serialized proof language with a decidable certificate checker. Bounding
+expression depth alone therefore does not decide which expressions can be
+certified by that interface.
+
+A complete **bounded derivation search** has a concrete route: canonically
+enumerate kernels, node selections, fixed assignments and terms up to an
+explicit height; enumerate derivation trees up to a separate size bound;
+check graphical leaves; reconstruct accepted derivations; then compile only
+those whose intermediate support obligations have been discharged. The
+`eqCongr` constructor requires extensional finite-function normalization,
+not equality of arbitrary function implementations. All intermediate terms,
+not only the final printed expression, must respect the declared bounds.
+The bounded theorem would cover this specified proof grammar, not every
+arbitrary semantic proof inhabiting `interpret`.
+
+Intermediate support is a real additional obligation. Endpoint availability
+alone is not a support witness for every intervened intermediate kernel.
+The two current guards (`always`, `actionOne`) cannot express an arbitrary
+extra support condition; generic support-certificate syntax or a richer
+proved guard language may be needed. Enumerating terms and applying existing
+soundness without addressing this step would be incomplete.
+
+The universal stopping argument remains unresolved. Finitely many support
+cells bound the number of *coverage gains*, not the delay until the next
+gain: even one new cell can first appear after an arbitrarily long initial
+plateau. Neither a plateau nor bounded-search exhaustion certifies universal
+exhaustion. A proof-length bound, finite complete rewrite/derivation basis,
+or another complete coverability decision is still needed. This refutes
+that proposed stopping shortcut; it is not an impossibility proof for a
+universal selector. Review checkpoint: specify the proof/guard grammar before
+building generic search infrastructure.
+
 ## Fixed-law results beyond graph-level completeness
 
 | Graph/target | Public theorem | Scope |
@@ -295,6 +343,145 @@ coverage would leave infinitely many rational source-weight assignments;
 it would not, by itself, prove complete certificate search, optimization or
 rational feasibility decision. No excluded-middle, choice or real-to-rational
 transfer principle is silently added at any of these boundaries.
+
+### Research checkpoint 6: representation adapters
+
+The first step has a direct constructive implementation strategy using
+existing interfaces. Apply `FiniteProbRecord.atomPresentation` to each
+compressed factor; its code size is that factor's actual atom count, already
+bounded by `K`. Give the new native model the canonical product of these
+finite code records and compose each mechanism with its coordinate decoder.
+Use the original complete noise enumerations and
+`FiniteProduct.probVal_extensional_of_rectangles` to prove that decoding the
+new prior recovers every original noise-event probability. An evaluator
+simulation through the native equations then transports every retained
+intervention, the whole observed law and supported target ratios. The
+decoder need not be a bijection of the old ambient noise type. Compact
+`Fin k_j` sources avoid padding; a common `Fin K` presentation can be added
+separately with zero-weight positions and an explicit decoded default.
+
+For a fixed full DAG, the proposed hidden-value bound can be made precise
+as follows: enumerate all coded noise assignments and each retained hard
+intervention, evaluate each hidden vertex, and deduplicate its resulting
+values. With `N` native nodes this gives at most `I * product_j k_j`, hence
+at most `I * K^N`, values per hidden vertex. Defaults on other parent-table
+rows must be proved unreachable on every retained trajectory by rank
+induction. Normalize observed native values using their supplied two-sided
+observed-value equivalences rather than discarding permitted null values.
+This simulation and finite-table completeness are not implemented yet.
+
+Preserving **all** hard-intervention distributions is still a finite target:
+if coordinate `i` has `d_i` declared values, enumerate
+`I = product_i (1 + d_i)` interventions and all `A` observed singleton
+events for each. Source compression on that `I * A` query family gives the
+candidate bound `K = I * A + 1`. This is an assessed sufficient route, not
+a proved cardinality theorem or practical enumeration recommendation.
+
+For a fixed observed projection with varying hidden topology,
+`FiniteHiddenDAGSCM.toLatentRootSCM` in `HiddenDAGCollapse` is the useful
+starting point. Group its
+independent roots by identical observed-child incidence, keeping all child
+sets, including sets of size greater than two. There are at most `2^n`
+incidence masks for `n` observed nodes. The missing proofs are grouped-law
+independence, local decoder/evaluator simulation and exact projection
+preservation, followed by compression and finite mechanism enumeration.
+Dummy constant sources cannot simply be given arbitrary children: their
+arrows still add graphical bidirected edges. Omit unused masks, give them no
+arrows, or justify that their arrows add no edge outside the required graph.
+
+A cleaner fixed-template candidate is one root for **every bidirected
+clique mask**, including singleton masks and optionally the empty mask.
+Every original collapsed root's child set is such a clique. Group roots
+with that exact mask; use a unit-valued source when a clique has no original
+root. These dummy clique arrows add no forbidden edge, and including the
+two-vertex masks recovers every required bidirected edge. The number of
+roots is still at most `2^n`. This avoids a model-dependent incidence table,
+but the probability/evaluator grouping and converse native-graph realization
+still need proofs. It retains multi-child causes rather than wrongly
+reducing to pairwise roots. This route changes the full hidden DAG and must
+not be confused with the fixed-full-DAG representation above.
+The current native APIs are indexed by a projection object that also fixes
+its full hidden DAG. A projection-only search would need an explicit union
+over full hidden DAGs with the same observed graph, rather than silently
+changing the model class of an existing theorem.
+
+Finite source bounds are also established for discrete independent-source
+networks by [Rosset, Gisin and Wolfe](https://arxiv.org/abs/1709.00707).
+That is supporting literature, not a Lean assumption or an automatic
+rational/constructive transfer. The repository's existing compression proof
+is the proposed rational foundation. Review checkpoint: implement the
+compact source adapter first; choose fixed-full-DAG versus projection-wide
+coverage before undertaking hidden-table or root-grouping infrastructure.
+
+## Research checkpoint 7: fixed-observed-law procedures
+
+This assessment separates three possible extensions. None is currently a
+new unrestricted rational identification theorem.
+
+**A further linearizable class.** A finite categorical confounded pair
+(`X -> Y`, `X <-> Y`) has a direct constructive route beyond the existing
+binary bow and binary IV results. For a fixed treatment `x`, let
+`p_xy = P(X=x,Y=y)` and let `q_y` be the proposed intervention marginal.
+The candidate attainable-set characterization is
+`q_y >= p_xy` for every outcome, with nonnegative rational `q_y` summing to
+one. The residual total is exactly `1 - P(X=x)`. At positive residual mass,
+allocate its normalized categorical distribution to units factually outside
+the requested action; at zero residual use the factual law without division.
+A shared finite root carrying the factual pair and the residual outcome
+gives the proposed native witness. Generic consistency bounds supply the
+other inclusion, and the two-node canonical realization machinery provides
+the original-DAG route. With at least two permitted outcome values, the
+proposed full-marginal identification criterion is `P(X=x)=1`. A single
+event needs its own qualification: the empty/full outcome events are trivial
+even without action overlap. These are assessed statements and construction
+steps, not yet formalized categorical-bow theorems.
+
+**Explicitly bounded models.** For a fixed full graph, fixed finite node/source
+alphabets and a supplied upper bound `D` on each source denominator, enumerate
+all nonnegative weight vectors with positive total at most `D`, and all
+typed finite mechanism tables. Filter by exact equality of every observed
+singleton probability. An empty list means incompatible **within that bounded
+class**; otherwise compare the actual target values, returning either a
+common value or a pair of disagreeing native models. Constructing results
+from this list needs no choice. Completeness requires the representation
+normalization/padding theorem, and conditional targets need an explicit
+policy for compatible models with null target conditioners. Increasing
+`D` does not itself give a terminating unrestricted procedure.
+
+**Unrestricted rational models.** Representation bounds control alphabet and
+table sizes, not the infinitely many rational source weights. The remaining
+constraints can be polynomial rather than linear. [Duarte et al.](https://arxiv.org/html/2109.13471v1)
+develop polynomial causal optimization with successively refined inner/outer
+bounds and an epsilon-sharp stopping criterion. Those results do not by
+themselves provide a terminating exact rational-only feasibility/uniqueness
+checker in this library. In particular, real feasibility must not be silently
+treated as rational feasibility.
+
+A concrete fixed-template obstruction makes that last warning substantive.
+Take three independent binary sources with probabilities `u`, `v`, `f`.
+Use the fixed observed mechanisms
+`V = A && B` and `O = if F then A else !B`. Require the observed joint
+table of `(O,V)` to be uniform. Its equations include
+`P(V=1)=u*v=1/2`, `P(O=1,V=1)=f*u*v=1/4` and
+`P(O=1)=f*u+(1-f)*(1-v)=1/2`. Hence `f=1/2`, `u=v` and
+`2*u^2=1`. A real solution exists in the unit interval, but no rational one:
+writing `u=a/b` in lowest terms gives `2*a^2=b^2`, forcing both `a` and `b`
+even. Conversely, the positive real root with `f=1/2` makes all four observed
+cells `1/4`. Exact truth-table polynomial expansion was checked during this
+assessment; this argument is not yet a Lean theorem and adds no real-valued
+probability implementation.
+
+This obstruction concerns the **fixed mechanisms**, not the graph-wide
+class: on the same parent graph, the different mechanisms `V=A`, `O=F`
+with rational fair sources realize the uniform table. It therefore disproves
+an automatic real-to-rational template transfer, not the existence of a
+general rational causal decision procedure. No reduction proving that
+general procedure impossible has been established here. Exact rational
+feasibility/uniqueness or a genuinely applicable impossibility reduction
+remains unresolved. Review checkpoint: the categorical bow or the explicitly
+bounded-model checker is a credible next implementation; do not launch an
+open-ended arbitrary-graph optimizer on the strength of finite representation
+alone.
 
 ## Construction, execution, and proof verification
 
