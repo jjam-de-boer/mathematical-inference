@@ -31,6 +31,7 @@ import Thesis.Probability.Distros.HypergeometricMoments
 import Thesis.Probability.Distros.FactorialMoments
 import Thesis.Probability.Distros.FactorialPGF
 import Thesis.Probability.Distros.BinomialInversion
+import Thesis.Probability.Distros.FactorialInversion
 import Thesis.Probability.Distros.MultivariateFactorialPGF
 import Thesis.Probability.Distros.MultivariateReconstruction
 import Thesis.Probability.Distros.PositiveSupport

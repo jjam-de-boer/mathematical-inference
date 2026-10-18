@@ -896,3 +896,28 @@ example : SignedRatio.Equiv (partitionMomentFixture.rationalSquaredError partiti
     (partitionMomentFixture.conditionalExpectation predictionCoarse partitionMomentObservable)) ⟨1, 4, by decide⟩ := by decide +kernel
 
 end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+def varyingTotalNumeric : NatDistro Nat :=
+  ⟨ofWeightedAtoms [(0, 1), (1, 2), (2, 1), (99, 0)] (by decide), id⟩
+
+example (value : Nat) : SignedRatio.Equiv
+    (varyingTotalNumeric.distro.record.probVal (fun x => decide (x = value))).toSignedRatio
+    (inverseFactorialPMF varyingTotalNumeric 2 value) :=
+  NatDistro.pmf_factorial_inversion _ 2 value (by decide +kernel)
+
+/-- Actual cancellation is required: the zero-cell mass is 1 - 1 + 1/4. -/
+example : SignedRatio.Equiv (inverseFactorialPMF varyingTotalNumeric 2 0) ⟨1, 4, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv (inverseFactorialPMF varyingTotalNumeric 2 1) ⟨1, 2, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv (inverseFactorialPMF varyingTotalNumeric 2 2) ⟨1, 4, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv (inverseFactorialPMF varyingTotalNumeric 2 3) SignedRatio.zero := by decide +kernel
+
+example : SignedRatio.Equiv
+    ((Distro.pointMass (0 : Nat)).record.probVal (fun x => decide (x = 0))).toSignedRatio
+    (inverseFactorialPMF (⟨Distro.pointMass (0 : Nat), id⟩ : NatDistro Nat) 0 0) :=
+  NatDistro.pmf_factorial_inversion _ 0 0 (by decide +kernel)
+
+end Thesis.Examples.DistributionExtensions
