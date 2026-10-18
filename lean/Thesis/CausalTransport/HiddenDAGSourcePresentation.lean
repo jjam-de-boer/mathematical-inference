@@ -101,7 +101,8 @@ theorem presentSources_interventionalValue (model : FiniteHiddenDAGSCM S P)
   apply QProb.equiv_trans ((model.presentSources presentations).prior.map_probVal _ _)
   apply QProb.equiv_trans ((model.presentSources presentations).prior.probVal_congr _ _
     (fun codes => congrArg event (model.presentSources_evalObserved presentations intervention codes)))
-  exact QProb.equiv_trans (model.presentSources_prior_probVal presentations _)
+  exact QProb.equiv_trans (model.presentSources_prior_probVal presentations
+      (fun noise => event (model.evalObserved intervention noise)))
     (QProb.equiv_symm (model.prior.map_probVal _ _))
 
 theorem presentSources_observationalValue (model : FiniteHiddenDAGSCM S P)
@@ -136,6 +137,23 @@ theorem presentSources_conditionOn_probVal (model : FiniteHiddenDAGSCM S P)
       (QProb.div_congr (model.presentSources_interventionalValue presentations intervention (fun value => evidence value && event value))
         (model.presentSources_interventionalValue presentations intervention evidence) supportedNew supported)
       (QProb.equiv_symm ((model.interventionalDist intervention).conditionOn_probVal evidence event supported)))
+
+/-! ## The default occurrence-indexed source model -/
+
+theorem atomSourceModel_evalObserved (model : FiniteHiddenDAGSCM S P)
+    (intervention : HardIntervention S) (codes : model.atomSourceModel.NoiseAssignment) :
+    model.atomSourceModel.evalObserved intervention codes = model.evalObserved intervention
+      (FiniteProduct.decodePresentation (fun node => (model.factor node).atomPresentation) codes) :=
+  model.presentSources_evalObserved (fun node => (model.factor node).atomPresentation) intervention codes
+
+theorem atomSourceModel_interventionalValue (model : FiniteHiddenDAGSCM S P)
+    (intervention : HardIntervention S) (event : Event S.Assignment) :
+    QProb.Equiv (model.atomSourceModel.interventionalValue intervention event) (model.interventionalValue intervention event) :=
+  model.presentSources_interventionalValue (fun node => (model.factor node).atomPresentation) intervention event
+
+theorem atomSourceModel_observationalValue (model : FiniteHiddenDAGSCM S P) (event : Event S.Assignment) :
+    QProb.Equiv (model.atomSourceModel.observationalValue event) (model.observationalValue event) :=
+  model.presentSources_observationalValue (fun node => (model.factor node).atomPresentation) event
 
 end FiniteHiddenDAGSCM
 end Thesis.Causality
