@@ -77,6 +77,11 @@ jobs:
       - name: Check constructive arithmetic prerequisites
         working-directory: lean
         run: lake build Thesis.ConstructiveAlgebraAudit
+      # Exercise the class-indexed modal bridge before the broad regression
+      # rebuild.  The full build and transitive axiom audit remain mandatory.
+      - name: Check positive modal completeness and executed endpoints
+        working-directory: lean
+        run: lake build Thesis.CausalTransport.PositiveModal Thesis.Examples.PositiveModal
       # Diagnose graph-layer extraction errors before rebuilding the larger
       # native causal clients. The complete build and axiom gate still follow.
       - name: Check independent source grouping

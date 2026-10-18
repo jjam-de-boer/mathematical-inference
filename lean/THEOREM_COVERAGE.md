@@ -43,6 +43,24 @@ with an unrelated source condition guarantees all used conditionals exist.
 
 ## Applying a successful certificate
 
+### Positive-class modal connection
+
+`PositiveModal` connects the inhabited positive joint/conditional completeness
+package to the modal wrappers. `ObservedGraph.positive_joint_modal_iff` and
+`positive_conditional_modal_iff` retain `GraphModelClass.positive`, without an
+external completeness argument. `ModeIndexedJointDerivationIn` and its
+conditional counterpart retain actual membership of the mode's stored model;
+`realizeAt` constructs the kernel execution and every modal do-rule leaf.
+The older unrestricted wrapper signatures remain available with their explicit
+external completeness premise; they are not silently inhabited by this result.
+
+The concrete front-door regression reads one half and three quarters from
+executed intervention/observation records and also checks the atomic endpoint.
+These executions start from the stored model's initial prior, not an arbitrary
+updated belief. This stage does not yet supply the native support-aware modal
+bridge for observed zeros; the existing native admissible certificates remain
+the mathematical boundary for that separate connection.
+
 `GuardedAdmissibleCertificates` constructs inspectable successful derivations.
 The joint certificate's `intrinsic_soundAt` needs the printed formula's
 `UsedConditionalsAdmissibleAt` tests. The conditional version also needs
