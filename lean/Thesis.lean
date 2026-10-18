@@ -63,6 +63,7 @@ import Thesis.Examples.HiddenDAGValuePresentation
 import Thesis.Examples.HiddenDAGFiniteRepresentation
 import Thesis.Examples.HiddenDAGMechanismTables
 import Thesis.Examples.HiddenDAGNativeTemplates
+import Thesis.Examples.CliqueRootGraph
 import Thesis.Examples.RationalMonomial
 import Thesis.Examples.RationalPolynomialIdentity
 import Thesis.Examples.PolynomialBoundCertificate

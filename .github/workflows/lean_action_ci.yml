@@ -86,6 +86,9 @@ jobs:
           Thesis.Causality.ReachabilityCorrectness
           Thesis.Causality.ComponentConnectivity
           Thesis.Causality.IdentificationRank
+          Thesis.Causality.LatentRootDAG
+          Thesis.Causality.CliqueRootGraph
+          Thesis.Examples.CliqueRootGraph
           Thesis.CausalTransport.KernelIdentification
           Thesis.CausalTransport.KernelSeparation
       - name: Check exact expression support analysis
