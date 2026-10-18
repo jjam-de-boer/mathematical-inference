@@ -27,6 +27,7 @@ theorem noise_is_actual_code_type (node : Fin fullGraph.count) :
 
 theorem actual_alphabet_bounded (node : Fin fullGraph.count) :
     (queryModel.noiseEnumeration node).length ≤ 3 := by
+  change (compressed.codeModel.noiseEnumeration node).length ≤ 3
   rw [compressed.codeModel_noiseEnumeration_length]
   exact compressed.codeCard_bound node
 
@@ -67,7 +68,12 @@ def conditionalTargets (intervention : HardIntervention signature) (evidence eve
     List (NativeProbabilityQuery signature) :=
   [⟨intervention, fun value => evidence value && event value⟩, ⟨intervention, evidence⟩]
 
-def conditionalCompression (intervention : HardIntervention signature) (evidence event : Event signature.Assignment) :=
+/-- Keep elaboration of the interface regression from unfolding the actual
+five-source compression algorithm. This remains an executable definition with
+its checked constructor body; the test uses the proved compression interface,
+not a larger computation/heartbeat allowance or a replacement assumption. -/
+@[irreducible] def conditionalCompression (intervention : HardIntervention signature) (evidence event : Event signature.Assignment) :
+    FiniteHiddenDAGSCM.ObservationalSourceCompression original (conditionalTargets intervention evidence event) :=
   original.compressSourcesPreservingObservation (conditionalTargets intervention evidence event)
 
 theorem arbitrary_supported_conditional (intervention : HardIntervention signature) (evidence event : Event signature.Assignment)
