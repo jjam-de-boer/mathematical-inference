@@ -53,7 +53,7 @@ theorem codeCard_bound (compressed : SourceCompression original queries) (node :
     compressed.codeCard node ≤ count + 1 := compressed.bounded node
 
 theorem codeModel_noiseEnumeration_length (compressed : SourceCompression original queries) (node : Fin P.hiddenDAG.count) :
-    (compressed.codeModel.noiseEnumeration node).length = compressed.codeCard node := List.length_finRange _
+    (compressed.codeModel.noiseEnumeration node).length = compressed.codeCard node := List.length_finRange
 
 /-- Decoding reads the original equations. Only the law, not the graph or
 unit-level mechanism, was changed by compression. -/
@@ -109,7 +109,7 @@ theorem codeCard_bound (compressed : ObservationalSourceCompression original tar
     compressed.codeCard node ≤ S.assignmentEnumeration.length + targets.length + 1 := compressed.bounded node
 
 theorem codeModel_noiseEnumeration_length (compressed : ObservationalSourceCompression original targets) (node : Fin P.hiddenDAG.count) :
-    (compressed.codeModel.noiseEnumeration node).length = compressed.codeCard node := List.length_finRange _
+    (compressed.codeModel.noiseEnumeration node).length = compressed.codeCard node := List.length_finRange
 
 theorem codeModel_evalObserved (compressed : ObservationalSourceCompression original targets)
     (intervention : HardIntervention S) (codes : compressed.codeModel.NoiseAssignment) :

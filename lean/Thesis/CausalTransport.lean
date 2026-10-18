@@ -131,10 +131,10 @@ import Thesis.CausalTransport.HedgeConditionalReadout
 import Thesis.CausalTransport.Counterfactual
 import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.CausalTransport.HiddenDAGFinitePresentation
-import Thesis.CausalTransport.HiddenDAGSourceCompression
 import Thesis.CausalTransport.HiddenDAGSourcePresentation
-import Thesis.CausalTransport.HiddenDAGCompactSources
+import Thesis.CausalTransport.HiddenDAGSourceCompression
 import Thesis.CausalTransport.HiddenDAGObservationalCompression
+import Thesis.CausalTransport.HiddenDAGCompactSources
 import Thesis.CausalTransport.HiddenDAGPolynomialEvidence
 import Thesis.CausalTransport.HiddenDAG
 import Thesis.CausalTransport.HiddenDAGFullFamily
@@ -284,8 +284,8 @@ intervention laws when recoding private noise. `HiddenDAGCompactSources`
 combines this with compression to give actual bounded `Fin` noise alphabets
 while retaining precisely the compression's selected probabilities. Neither
 module compresses endogenous hidden-node values or enumerates mechanisms.
-`HiddenDAGPolynomial` compiles native causal probabilities with a proved binding to source-cell
-variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
+`HiddenDAGPolynomial` compiles native causal probabilities with a proved
+binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied
 bound certificates against internally proved source constraints and compiled
 data-fit equations. Its uniform theorems range over every fitted independent
