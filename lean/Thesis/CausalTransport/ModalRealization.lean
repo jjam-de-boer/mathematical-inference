@@ -70,14 +70,18 @@ structure OperationRealizedConditionalCertificate
         (fun certificate => certificate.toGeneric)
 
 def OperationRealizedJointCertificate.toGeneric
-    {C : GraphModelClass G} (certificate : OperationRealizedJointCertificate sound query C) :
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {sound : PublishedSoundness S G} {query : JointKernelQuery S}
+    (certificate : OperationRealizedJointCertificate sound query C) :
     OperationRealizedCertificate sound query.sourceTerm query.operationKernel C where
   certificate := certificate.certificate.toGeneric
   trace := certificate.trace
   realized := certificate.realized
 
 def OperationRealizedConditionalCertificate.toGeneric
-    {C : GraphModelClass G} (certificate : OperationRealizedConditionalCertificate sound query C) :
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {sound : PublishedSoundness S G} {query : ConditionalKernelQuery S}
+    (certificate : OperationRealizedConditionalCertificate sound query C) :
     OperationRealizedCertificate sound query.sourceTerm query.operationKernel C where
   certificate := certificate.certificate.toGeneric
   trace := certificate.trace
@@ -201,6 +205,7 @@ namespace ModalEncodedJointDerivation
 
 noncomputable def toOperationRealized
     {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {query : JointKernelQuery S}
     (sound : PublishedSoundness S G)
     (encoded : ModalEncodedJointDerivation G query C) :
     OperationRealizedJointCertificate sound query C where
@@ -223,6 +228,7 @@ namespace ModalEncodedConditionalDerivation
 
 noncomputable def toOperationRealized
     {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {query : ConditionalKernelQuery S}
     (sound : PublishedSoundness S G)
     (encoded : ModalEncodedConditionalDerivation G query C) :
     OperationRealizedConditionalCertificate sound query C where
@@ -277,7 +283,8 @@ equals the model prior.
 
 noncomputable def ModeIndexedJointDerivationIn.realizeAt
     {S : ObservedSignature} {G : ObservedGraph S}
-    {C : GraphModelClass G} (sound : PublishedSoundness S G)
+    {C : GraphModelClass G} {mode : CausalMode S} {query : JointKernelQuery S}
+    (sound : PublishedSoundness S G)
     (indexed : ModeIndexedJointDerivationIn mode C query)
     (assignment : S.Assignment)
     (sourceSupported : query.sourceTerm.SupportedAt mode.record.model assignment) :
@@ -291,7 +298,8 @@ noncomputable def ModeIndexedJointDerivationIn.realizeAt
 
 noncomputable def ModeIndexedConditionalDerivationIn.realizeAt
     {S : ObservedSignature} {G : ObservedGraph S}
-    {C : GraphModelClass G} (sound : PublishedSoundness S G)
+    {C : GraphModelClass G} {mode : CausalMode S} {query : ConditionalKernelQuery S}
+    (sound : PublishedSoundness S G)
     (indexed : ModeIndexedConditionalDerivationIn mode C query)
     (assignment : S.Assignment)
     (sourceSupported : query.sourceTerm.SupportedAt mode.record.model assignment) :

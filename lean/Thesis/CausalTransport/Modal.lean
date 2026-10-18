@@ -43,17 +43,20 @@ def EncodedConditionalDerivation.toModal
   trace := encoded.certificate.derivation.toModalTrace
 
 def ModalEncodedJointDerivation.erase
-    {C : GraphModelClass G} (encoded : ModalEncodedJointDerivation G query C) :
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {query : JointKernelQuery S} (encoded : ModalEncodedJointDerivation G query C) :
     EncodedJointDerivation C query where
   certificate := encoded.certificate
 
 def ModalEncodedConditionalDerivation.erase
-    {C : GraphModelClass G} (encoded : ModalEncodedConditionalDerivation G query C) :
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {query : ConditionalKernelQuery S} (encoded : ModalEncodedConditionalDerivation G query C) :
     EncodedConditionalDerivation C query where
   certificate := encoded.certificate
 
 theorem ModalEncodedJointDerivation.identifiable
     {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {query : JointKernelQuery S}
     (sound : PublishedSoundness S G)
     (encoded : ModalEncodedJointDerivation G query C) :
     C.identifiable query :=
@@ -61,6 +64,7 @@ theorem ModalEncodedJointDerivation.identifiable
 
 theorem ModalEncodedConditionalDerivation.identifiable
     {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {query : ConditionalKernelQuery S}
     (sound : PublishedSoundness S G)
     (encoded : ModalEncodedConditionalDerivation G query C) :
     C.conditionalIdentifiable query :=
@@ -86,12 +90,16 @@ structure ModeIndexedConditionalDerivationIn (mode : CausalMode S)
 
 /-- Class membership supplies the weaker graphical compatibility premise. -/
 theorem ModeIndexedJointDerivationIn.compatible
-    {C : GraphModelClass G} (indexed : ModeIndexedJointDerivationIn mode C query) :
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {mode : CausalMode S} {query : JointKernelQuery S}
+    (indexed : ModeIndexedJointDerivationIn mode C query) :
     Compatible mode.record.model G :=
   C.mem_compatible mode.record.model indexed.member
 
 theorem ModeIndexedConditionalDerivationIn.compatible
-    {C : GraphModelClass G} (indexed : ModeIndexedConditionalDerivationIn mode C query) :
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {mode : CausalMode S} {query : ConditionalKernelQuery S}
+    (indexed : ModeIndexedConditionalDerivationIn mode C query) :
     Compatible mode.record.model G :=
   C.mem_compatible mode.record.model indexed.member
 
