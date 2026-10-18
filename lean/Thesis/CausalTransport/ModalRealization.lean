@@ -200,7 +200,7 @@ end ModeIndexedOperationRealizedConditionalCertificate
 namespace ModalEncodedJointDerivation
 
 noncomputable def toOperationRealized
-    {C : GraphModelClass G}
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
     (sound : PublishedSoundness S G)
     (encoded : ModalEncodedJointDerivation G query C) :
     OperationRealizedJointCertificate sound query C where
@@ -222,7 +222,7 @@ end ModalEncodedJointDerivation
 namespace ModalEncodedConditionalDerivation
 
 noncomputable def toOperationRealized
-    {C : GraphModelClass G}
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
     (sound : PublishedSoundness S G)
     (encoded : ModalEncodedConditionalDerivation G query C) :
     OperationRealizedConditionalCertificate sound query C where
@@ -276,6 +276,7 @@ equals the model prior.
 -/
 
 noncomputable def ModeIndexedJointDerivationIn.realizeAt
+    {S : ObservedSignature} {G : ObservedGraph S}
     {C : GraphModelClass G} (sound : PublishedSoundness S G)
     (indexed : ModeIndexedJointDerivationIn mode C query)
     (assignment : S.Assignment)
@@ -289,6 +290,7 @@ noncomputable def ModeIndexedJointDerivationIn.realizeAt
     mode.record.model indexed.member assignment sourceSupported
 
 noncomputable def ModeIndexedConditionalDerivationIn.realizeAt
+    {S : ObservedSignature} {G : ObservedGraph S}
     {C : GraphModelClass G} (sound : PublishedSoundness S G)
     (indexed : ModeIndexedConditionalDerivationIn mode C query)
     (assignment : S.Assignment)

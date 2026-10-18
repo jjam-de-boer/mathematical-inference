@@ -53,14 +53,14 @@ def ModalEncodedConditionalDerivation.erase
   certificate := encoded.certificate
 
 theorem ModalEncodedJointDerivation.identifiable
-    {C : GraphModelClass G}
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
     (sound : PublishedSoundness S G)
     (encoded : ModalEncodedJointDerivation G query C) :
     C.identifiable query :=
   transport_joint_soundness sound query encoded.erase
 
 theorem ModalEncodedConditionalDerivation.identifiable
-    {C : GraphModelClass G}
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
     (sound : PublishedSoundness S G)
     (encoded : ModalEncodedConditionalDerivation G query C) :
     C.conditionalIdentifiable query :=
