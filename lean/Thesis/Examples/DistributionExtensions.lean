@@ -944,3 +944,47 @@ example : SignedRatio.Equiv (emptyPositiveOutlierFixture.pmf []).toSignedRatio
   Distro.pmf_jointFactorial_inversion _ _ _ (by decide +kernel)
 
 end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+def occupancyTestCoefficients (i : Nat) : SignedRatio :=
+  if i = 0 then ⟨-1, 2, by decide⟩ else if i = 1 then ⟨2, 3, by decide⟩ else SignedRatio.one
+
+example : SignedRatio.Equiv (rationalAlgebraFixture.rationalVariance
+    (rationalLinearCombination [0, 1, 0] occupancyTestCoefficients
+      (fun i => if i = 0 then rationalAlgebraFirst else rationalAlgebraSecond)))
+    (rationalAlgebraFixture.rationalCovarianceForm [0, 1, 0]
+      (fun i => if i = 0 then rationalAlgebraFirst else rationalAlgebraSecond) occupancyTestCoefficients) :=
+  Distro.rationalVariance_linearCombination _ _ _ _
+
+example : SignedRatio.Nonnegative ((multinomialDistro 2 [1, 0, 2] (by decide)).occupancyCovarianceForm 3 occupancyTestCoefficients) :=
+  multinomial_covarianceForm_nonnegative _ _ _ _
+example : SignedRatio.Nonnegative ((reinforcedCountDistro 2 [1, 0, 2] 2 (by decide)).occupancyCovarianceForm 3 occupancyTestCoefficients) :=
+  reinforcedCount_covarianceForm_nonnegative _ _ _ _ _
+example : SignedRatio.Nonnegative ((multivariateHypergeometricDistro 2 [1, 0, 2] (by decide)).occupancyCovarianceForm 3 occupancyTestCoefficients) :=
+  multivariateHypergeometric_covarianceForm_nonnegative _ _ _ _
+
+example : SignedRatio.Equiv ((multinomialDistro 2 [1, 0, 2] (by decide)).occupancyCovarianceForm 3 (fun _ => SignedRatio.one)) SignedRatio.zero :=
+  multinomial_covarianceForm_ones_zero _ _ _
+example : SignedRatio.Equiv ((reinforcedCountDistro 2 [1, 0, 2] 2 (by decide)).occupancyCovarianceForm 3 (fun _ => SignedRatio.one)) SignedRatio.zero :=
+  reinforcedCount_covarianceForm_ones_zero _ _ _ _
+example : SignedRatio.Equiv ((multivariateHypergeometricDistro 2 [1, 0, 2] (by decide)).occupancyCovarianceForm 3 (fun _ => SignedRatio.one)) SignedRatio.zero :=
+  multivariateHypergeometric_covarianceForm_ones_zero _ _ _
+
+example : SignedRatio.Equiv ((multinomialDistro 2 [1, 0, 2] (by decide)).rationalCovariance (countResponse 1) (countResponse 0)) SignedRatio.zero :=
+  multinomial_covariance_zero_weight _ _ _ _ _ (by decide) (by decide)
+example : SignedRatio.Equiv ((reinforcedCountDistro 2 [1, 0, 2] 2 (by decide)).rationalCovariance (countResponse 1) (countResponse 0)) SignedRatio.zero :=
+  reinforcedCount_covariance_zero_weight _ _ _ _ _ _ (by decide) (by decide)
+example : SignedRatio.Equiv ((multivariateHypergeometricDistro 2 [1, 0, 2] (by decide)).rationalCovariance (countResponse 1) (countResponse 0)) SignedRatio.zero :=
+  multivariateHypergeometric_covariance_zero_stock _ _ _ _ _ (by decide) (by decide)
+
+/-- No total-minus-one denominator is required for empty or one-ball populations. -/
+example : SignedRatio.Equiv ((multivariateHypergeometricDistro 0 [0, 0] (by decide)).rationalCovariance (countResponse 0) (countResponse 1)) SignedRatio.zero :=
+  multivariateHypergeometric_covariance_zero_stock _ _ _ _ _ (by decide) (by decide)
+example : SignedRatio.Equiv ((multivariateHypergeometricDistro 1 [1] (by decide)).occupancyCovarianceForm 1 occupancyTestCoefficients) SignedRatio.zero := by decide +kernel
+example : SignedRatio.Equiv ((multinomialDistro 0 [1, 0, 2] (by decide)).occupancyCovarianceForm 3 occupancyTestCoefficients) SignedRatio.zero := by decide +kernel
+example : SignedRatio.Equiv ((multivariateHypergeometricDistro 3 [1, 0, 2] (by decide)).occupancyCovarianceForm 3 occupancyTestCoefficients) SignedRatio.zero := by decide +kernel
+
+end Thesis.Examples.DistributionExtensions
