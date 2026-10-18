@@ -83,7 +83,7 @@ theorem arbitrary_supported_conditional (intervention : HardIntervention signatu
       List.mem_cons_of_mem _ List.mem_cons_self
     QProb.Equiv
       (((retained.codeModel.interventionalDist intervention).conditionOn evidence
-        ((retained.codeModel_query_positive_iff ⟨intervention, evidence⟩ evidenceListed).mpr supported)).probVal event)
+        ((retained.codeModel_eventPositive_iff ⟨intervention, evidence⟩ evidenceListed).mpr supported)).probVal event)
       (((original.interventionalDist intervention).conditionOn evidence supported).probVal event) := by
   dsimp only
   exact (conditionalCompression intervention evidence event).codeModel_conditionOn_probVal intervention evidence event

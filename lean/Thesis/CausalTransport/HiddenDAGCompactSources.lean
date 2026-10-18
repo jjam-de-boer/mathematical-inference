@@ -77,6 +77,14 @@ theorem codeModel_query_positive_iff (compressed : SourceCompression original qu
       0 < (original.interventionalValue (queries index).intervention (queries index).event).num :=
   QProb.equiv_num_pos_iff (compressed.codeModel_preserved index)
 
+/-- The record-level support interface matches `conditionOn` directly.
+Keeping this statement separate also avoids unfolding a concrete model's
+entire event-mass computation just to convert equivalent positivity types. -/
+theorem codeModel_eventPositive_iff (compressed : SourceCompression original queries) (index : Fin count) :
+    (compressed.codeModel.interventionalDist (queries index).intervention).EventPositive (queries index).event ↔
+      (original.interventionalDist (queries index).intervention).EventPositive (queries index).event :=
+  compressed.codeModel_query_positive_iff index
+
 /-- Include the joint event and evidence as retained queries when using this
 for a conditional. The original positive denominator is still required. -/
 theorem codeModel_quotient_preserved (compressed : SourceCompression original queries) (numerator denominator : Fin count)
@@ -138,6 +146,14 @@ theorem codeModel_query_positive_iff (compressed : ObservationalSourceCompressio
       0 < (original.interventionalValue query.intervention query.event).num :=
   QProb.equiv_num_pos_iff (compressed.codeModel_preserved query listed)
 
+/-- Preserve actual record support, in the form required by `conditionOn`.
+No numerical reduction of a concrete compressed prior is needed at use sites. -/
+theorem codeModel_eventPositive_iff (compressed : ObservationalSourceCompression original targets)
+    (query : NativeProbabilityQuery S) (listed : query ∈ targets) :
+    (compressed.codeModel.interventionalDist query.intervention).EventPositive query.event ↔
+      (original.interventionalDist query.intervention).EventPositive query.event :=
+  compressed.codeModel_query_positive_iff query listed
+
 theorem codeModel_quotient_preserved (compressed : ObservationalSourceCompression original targets)
     (numerator denominator : NativeProbabilityQuery S) (numeratorListed : numerator ∈ targets) (denominatorListed : denominator ∈ targets)
     (positive : 0 < (original.interventionalValue denominator.intervention denominator.event).num) :
@@ -161,9 +177,9 @@ theorem codeModel_conditionOn_probVal (compressed : ObservationalSourceCompressi
     (supported : (original.interventionalDist intervention).EventPositive evidence) :
     QProb.Equiv
       (((compressed.codeModel.interventionalDist intervention).conditionOn evidence
-        ((compressed.codeModel_query_positive_iff ⟨intervention, evidence⟩ evidenceListed).mpr supported)).probVal event)
+        ((compressed.codeModel_eventPositive_iff ⟨intervention, evidence⟩ evidenceListed).mpr supported)).probVal event)
       (((original.interventionalDist intervention).conditionOn evidence supported).probVal event) := by
-  let supportedNew := (compressed.codeModel_query_positive_iff ⟨intervention, evidence⟩ evidenceListed).mpr supported
+  let supportedNew := (compressed.codeModel_eventPositive_iff ⟨intervention, evidence⟩ evidenceListed).mpr supported
   exact QProb.equiv_trans
     ((compressed.codeModel.interventionalDist intervention).conditionOn_probVal evidence event supportedNew)
     (QProb.equiv_trans
