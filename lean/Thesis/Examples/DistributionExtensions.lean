@@ -750,3 +750,76 @@ example : QProb.Equiv ((depletingCountsContinuationOfBounds 3 0 [2, 0, 1] [2, 0,
     (by decide) (by decide) (by decide) (by decide +kernel)).pmf []) QProb.one := by decide +kernel
 
 end Thesis.Examples.DistributionExtensions
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Three retained null outliers violate dimension, coordinate bounds, or both. -/
+def positiveOutlierFixture : Distro (List Nat) :=
+  ofWeightedAtoms [([0, 0], 1), ([1, 1], 1), ([], 0), ([200, 0], 0), ([300, 400, 500], 0)] (by decide)
+
+theorem positiveOutlier_shape : positiveOutlierFixture.AlmostSurely
+    (fun counts => counts.length = 2 ∧ ∀ count ∈ counts, count ≤ 1) := by decide +kernel
+
+example : positiveOutlierFixture.record.atoms =
+    [([0, 0], 1), ([1, 1], 1), ([], 0), ([200, 0], 0), ([300, 400, 500], 0)] := rfl
+
+example : ¬ ∀ atom ∈ positiveOutlierFixture.record.atoms, atom.1.length = 2 := by decide +kernel
+example : ¬ ∀ atom ∈ positiveOutlierFixture.record.atoms, ∀ count ∈ atom.1, count ≤ 1 := by decide +kernel
+
+/-- Null outliers do not affect any order, including orders outside the rectangle. -/
+theorem positiveOutlier_moments (orders : List Nat) :
+    QProb.Equiv (jointFactorialMoment positiveOutlierFixture orders) (jointFactorialMoment jointMomentFixture orders) := by
+  simp only [jointFactorialMoment, Distro.expectNat, positiveOutlierFixture, jointMomentFixture,
+    ofWeightedAtoms, natIntegral, FiniteProbRecord.totalMass, QProb.Equiv,
+    Nat.zero_mul, Nat.one_mul, Nat.add_zero]
+
+/-- The new bounded interface applies with bound one despite recorded values 500. -/
+theorem positiveOutlier_sameLaw : positiveOutlierFixture.SameLaw jointMomentFixture :=
+  Distro.sameLaw_of_jointFactorialMoments_positiveSupport _ _ 2 1 positiveOutlier_shape
+    (by decide +kernel) (fun orders _ _ => positiveOutlier_moments orders)
+
+example : positiveOutlierFixture.SameLaw jointMomentFixture :=
+  (Distro.sameLaw_iff_jointFactorialMoments_positiveSupport _ _ 2
+    (fun atom member weight => (positiveOutlier_shape atom member weight).1) (by decide +kernel)).mpr
+      (fun orders _ => positiveOutlier_moments orders)
+
+example (args : List QProb) (dimension : args.length = 2) :
+    QProb.Equiv (multivariatePGF positiveOutlierFixture (args.map (fun t => QProb.add t QProb.one)))
+      (QProb.listSum ((factorialBox args.length 1).map (fun orders =>
+        QProb.mul (multivariateFactorialCoefficient positiveOutlierFixture orders) (multivariateMonomial args orders)))) :=
+  multivariatePGF_factorial_expansion_positiveSupport _ args 1 (fun atom member weight =>
+    ⟨(positiveOutlier_shape atom member weight).1.trans dimension.symm, (positiveOutlier_shape atom member weight).2⟩)
+
+/-- Positional PGF uniqueness also accepts the same wrong-shaped null atoms. -/
+example : positiveOutlierFixture.SameLaw jointMomentFixture :=
+  Distro.sameLaw_of_multivariatePGF_positiveSupport _ _ 2 2 (by decide)
+    (fun atom member weight => ⟨(positiveOutlier_shape atom member weight).1,
+      fun count within => Nat.lt_succ_of_le ((positiveOutlier_shape atom member weight).2 count within)⟩)
+    (by decide +kernel) (fun args _ => positiveOutlier_sameLaw.multivariatePGF args)
+
+def emptyPositiveOutlierFixture : Distro (List Nat) := ofWeightedAtoms [([], 2), ([9, 10], 0)] (by decide)
+
+example : emptyPositiveOutlierFixture.SameLaw (Distro.pointMass ([] : List Nat)) := by
+  apply Distro.sameLaw_of_jointFactorialMoments_positiveSupport _ _ 0 0 (by decide +kernel) (by decide +kernel)
+  intro orders dimension _
+  have empty : orders = [] := List.length_eq_zero_iff.mp dimension
+  subst orders
+  decide +kernel
+
+/-- Numeric expansion and reconstruction also ignore a retained out-of-bound null value. -/
+def positiveNumericOutlierFixture : NatDistro Nat := ⟨rationalAlgebraFixture, id⟩
+def positiveNumericCleanFixture : NatDistro Nat := ⟨ofWeightedAtoms [(0, 1), (1, 1)] (by decide), id⟩
+
+example (t : QProb) : QProb.Equiv (pgf positiveNumericOutlierFixture (QProb.add t QProb.one))
+    (QProb.listSum ((List.range 2).map (fun order =>
+      QProb.mul (factorialPGFCoefficient positiveNumericOutlierFixture order) (qpow t order)))) :=
+  pgf_factorial_expansion_positiveSupport _ 1 (by decide +kernel) t
+
+example : positiveNumericOutlierFixture.SameLaw positiveNumericCleanFixture := by
+  apply NatDistro.sameLaw_of_factorialMoments_positiveSupport _ _ 1 (by decide +kernel) (by decide +kernel)
+  intro order bound
+  have cases : order = 0 ∨ order = 1 := by omega
+  rcases cases with rfl | rfl <;> decide +kernel
+
+end Thesis.Examples.DistributionExtensions

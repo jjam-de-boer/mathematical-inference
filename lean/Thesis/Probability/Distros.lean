@@ -34,6 +34,7 @@ import Thesis.Probability.Distros.MultivariateFactorialPGF
 import Thesis.Probability.Distros.MultivariateReconstruction
 import Thesis.Probability.Distros.PositiveSupport
 import Thesis.Probability.Distros.HighestFactorialMoments
+import Thesis.Probability.Distros.PositiveReconstruction
 import Thesis.Probability.Distros.PolyaUpdates
 import Thesis.Probability.Distros.Degenerate
 import Thesis.Probability.Distros.NegativeBinomialMoments
@@ -301,4 +302,8 @@ retained rather than silently excluded as nonpositive support.
 57. `DepletingSupport` characterizes supported count observations by dimension,
     total draws and stock bounds, proves word permutation invariance even for
     null words, and provides conditioning from explicit feasible-count data.
+58. `PositiveFactorialPGF`, `PositivePGFUniqueness` and `PositiveReconstruction`
+    require dimensions and bounds only almost surely, so null outliers do not
+    obstruct expansion or reconstruction. Original records and declared
+    domains, and all existing stronger interfaces, are retained.
 -/

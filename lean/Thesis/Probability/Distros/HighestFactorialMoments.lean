@@ -56,8 +56,8 @@ theorem Distro.jointFactorialMoment_highest (μ : Distro (List Nat)) (total : Na
         (if FiniteProbRecord.singletonEvent orders atom.1 then 1 else 0) * orderFactorial orders
       rw [jointFalling_same_total orders atom.1 (orderTotal.trans (fixed atom member weight).symm)]
       by_cases same : atom.1 = orders
-      · simp only [same, if_pos rfl, FiniteProbRecord.singletonEvent, decide_true, Nat.one_mul]
-      · simp only [same, if_false, FiniteProbRecord.singletonEvent, decide_false, Nat.zero_mul])
+      · simp [same, FiniteProbRecord.singletonEvent]
+      · simp [same, FiniteProbRecord.singletonEvent])
   unfold jointFactorialMoment
   rw [integral]
   refine QProb.equiv_trans (μ.expectNat_scale _ _) (QProb.scale_congr _ ?_)
