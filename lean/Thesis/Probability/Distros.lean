@@ -62,6 +62,7 @@ import Thesis.Probability.Distros.SignedCauchy
 import Thesis.Probability.Distros.RationalMoments
 import Thesis.Probability.Distros.RationalClearing
 import Thesis.Probability.Distros.RationalCovarianceAlgebra
+import Thesis.Probability.Distros.FiniteCovariance
 import Thesis.Probability.Distros.RationalConcentration
 import Thesis.Probability.Distros.RationalMarkov
 import Thesis.Probability.Distros.RationalChebyshev
