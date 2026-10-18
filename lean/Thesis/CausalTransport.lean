@@ -307,8 +307,15 @@ and public signature, not the old hidden alphabets or source denominators.
 equations on any cardinality shape. `HiddenDAGMechanismTableModels` proves
 exact native reconstruction, and `HiddenDAGMechanismCatalogue` covers all
 bounded shapes by a list fixed by the graph, signature and target count.
-The replay adapter still retains the base model's observed conversions and
-source law; it is not yet a standalone native-template certificate family.
+That intermediate replay retains the base model's observed conversions and
+source law. `FiniteValueEquivalenceCatalogue` checks and enumerates the remaining
+conversions; `HiddenDAGNativeTemplates` constructs standalone native models from
+listed structural entries and independent rational factors, without a base model.
+`HiddenDAGNativeTemplateCoverage` proves evaluator and complete native-law
+simulation for the two-sided encoding. `HiddenDAGNativeTemplateRepresentation`
+assembles coverage of every original fixed-full-DAG model for its entire
+observational law and finitely requested targets. This makes the structural
+family finite, not its rational source parameters or varying hidden topologies.
 `HiddenDAGPolynomial` compiles native causal probabilities with a proved
 binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied

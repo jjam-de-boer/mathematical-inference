@@ -19,10 +19,11 @@ For every original model, the existing constructive bounded representation
 provides an explicit entry in this list. The native table adapter reconstructs
 that representative exactly, so its original observational and selected-target
 preservation proofs still apply. This is finite coverage of alphabet shapes
-and graph-compatible equations, not yet an exhaustive native-template checker:
-the adapter still retains the base model's observed conversions and source law.
-Enumerating/normalizing the finite observed conversions and connecting source
-laws to independent rational-weight parameters are subsequent obligations.
+and graph-compatible equations. This intermediate adapter retains the base
+model's observed conversions and source law. `HiddenDAGNativeTemplates` and
+`HiddenDAGNativeTemplateRepresentation` separately complete the checked finite
+observed conversions, standalone rational-factor constructor and native-law
+coverage; they are not imported backwards into this raw catalogue module.
 
 The catalogue may include shapes with no compatible observed conversion or
 normalized source law. Such extra raw entries do not invalidate coverage;

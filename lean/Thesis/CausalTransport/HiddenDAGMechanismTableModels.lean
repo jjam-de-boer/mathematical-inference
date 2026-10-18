@@ -22,9 +22,11 @@ Applying it to the existing bounded representation gives an explicitly listed
 mechanism table for every original model's bounded representative. The code
 catalogue depends on the graph/cardinality vectors, not that representative's
 equations or source weights. `HiddenDAGMechanismCatalogue` combines finitely
-many bounded shapes; normalizing the remaining observed-conversion data is
-a separate native-template coverage step. Likewise,
-infinitely many rational source-weight assignments are not enumerated here.
+many bounded shapes. The later `HiddenDAGNativeTemplates` and
+`HiddenDAGNativeTemplateRepresentation` modules complete the observed-conversion
+and standalone native-law coverage steps without retaining a base model in the
+final constructor. Infinitely many rational source-weight assignments are not
+enumerated here or by that finite structural catalogue.
 -/
 
 namespace FiniteHiddenDAGSCM

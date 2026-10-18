@@ -10,6 +10,18 @@ Research checkpoints below are labelled assessments, not additional Lean
 theorems. The real-to-rational comparison only explains a limit of importing
 an external method; it does not extend the probability framework.
 
+## Seven-point work-plan checkpoint
+
+| Point | Current result | Next boundary |
+| --- | --- | --- |
+| 1. Safe local builds | Measured import/proof costs and cache-aware checks under explicit resource caps; see `LOCAL_CHECKS.md`. | A safe full local build is not established; heavy checks remain remote. |
+| 2. Shared graph infrastructure | Connectivity, reachability and rank infrastructure extracted without changing public theorem names; current-engine dependency guards pass. | Further splitting is optional and is not claimed to cure compiler memory use. |
+| 3. Multivalued native example | Three declared observed values, an actual rational distribution, null intervention targets and supported conditionals checked through the native model. | The standalone-template regression now exercises the same boundary as well. |
+| 4. Support-pattern applicability | Exact undefined/zero/positive analysis and exhaustive comparison within supplied finite formula catalogues. | This does not enumerate every possible certified formula. |
+| 5. Universal alternative-formula coverage | Bounded research assessment completed; the missing syntax and termination obligations are stated below. | A decidable bounded derivation language first; no universal coverage or impossibility theorem yet. |
+| 6. Finite structural representation | Constructive standalone-template coverage of every model on a fixed full hidden DAG, preserving the whole observational law and finitely requested targets. | Separately assess varying hidden topology at fixed observed projection; rational weight assignments remain infinite. |
+| 7. Fixed-observed-law procedures | Restricted results retained; bounded-model and unrestricted rational problems assessed separately. | No unrestricted feasibility-and-uniqueness procedure is inferred from the finite structural catalogue. |
+
 ## Graph-level ID/IDC
 
 | Question | Public implementation | Essential boundary |
@@ -352,14 +364,53 @@ model's explicitly constructed representative has an entry in this **same**
 finite list, fixed only by the full graph, signature and target count. No
 equation from that original model is used to generate the list.
 
-This is finite coverage of code alphabets and equations, not yet a complete
-standalone native-template certificate family. Native replay still retains
-the base model's observed conversions and independent source law. Packaging
-the finite observed conversions and rational-weight family into a constructor
-from catalogue entries, with native-law coverage, remains to be done. Raw
-catalogue entries may include incompatible observed cardinalities or source
-alphabets with no normalized law; their presence cannot be mistaken for
-actual native models. Infinitely many rational weight assignments remain.
+This intermediate code-table replay retains the base model's observed
+conversions and independent source law. The standalone construction below
+removes that dependency. Raw mechanism entries can still include incompatible
+observed cardinalities or source alphabets with no normalized law; a raw table
+alone is not a native model.
+
+### Standalone native templates and full fixed-DAG coverage
+
+`FiniteValueEquivalenceCatalogue` enumerates forward/backward maps on the
+declared finite domains, checks both inverse laws, and constructs actual
+`ValueEquivalence` records only after acceptance. `catalogue_complete` includes
+every supplied two-sided conversion, including conversions of null observed
+values. No support restriction substitutes for the declared domain.
+
+`HiddenDAGNativeTemplates.nativeTemplateCatalogue` combines the bounded
+mechanism entries with all checked observed conversions. A
+`FiniteHiddenDAG.CodeNativeTemplate.model` takes only that standalone entry
+and actual normalized rational source-factor records, not a base model or an
+external semantic-preservation premise. Its prior is the independent product
+of those factors. Zero-weight source cells are permitted. A zero-sized source
+alphabet cannot silently acquire a normalized law.
+
+`HiddenDAGNativeTemplateCoverage.nativeTemplateModel_evalNode` and
+`nativeTemplateModel_evalObserved` prove explicit evaluator simulation under
+the two-sided value/noise encodings. `nativeTemplateModel_interventionalValue`
+preserves every event under every hard intervention of the encoded input
+model; `nativeTemplateModel_conditionOn_probVal` preserves actual conditionals
+with positive causal evidence. The decoded product-law proof uses the mapped
+factor records, rather than assuming the old prior is literally a canonical
+product record.
+
+Finally, `HiddenDAGNativeTemplateRepresentation.nativeTemplateRepresentation`
+constructs a listed standalone template and its rational factors for **every**
+original model on the fixed full hidden DAG. The finite list depends only on
+the graph, public signature and target count. Its proved `observational` and
+`preserved` fields retain the complete observational law and each listed
+target. `NativeTemplateRepresentation.conditionOn_probVal` combines retained
+joint/evidence queries for supported conditional targets. These fields are
+constructed theorems, not an uninhabited transfer interface.
+
+The compression stage retains only the requested causal probabilities; its
+representative need not preserve unlisted interventions of the original
+model. The later two-sided encoding preserves all interventions of that
+representative. Hidden-relay and three-valued native regressions check these
+distinct guarantees. This is a finite **structural** family with infinitely
+many rational source-weight assignments, not a finite feasibility search or
+an optimizer-completeness theorem. It does not vary the full hidden topology.
 
 ## Exact probability polynomials and supplied bound certificates
 
@@ -433,10 +484,10 @@ search, real-to-rational feasibility transfer, or universal arbitrary-graph
 fixed-law decision procedure is asserted. Conditional bounds additionally
 require justified cross-multiplication at a positive denominator.
 
-### Graph-wide native-template coverage: remaining boundary
+### Fixed-full-DAG coverage and the projection-wide boundary
 
-For a **fixed full hidden DAG** with fixed observed domains, there is a
-plausible finite constructive route beyond the current fixed-template checker.
+For a **fixed full hidden DAG** with fixed observed domains, the constructive
+finite structural coverage theorem is implemented above.
 Retain all observed singleton queries and the finitely many primitive queries
 appearing in the requested target. Existing source compression gives a bound
 `K = number of retained queries + 1` for each source's positive atom occurrences.
@@ -450,12 +501,14 @@ simulation on a fixed full DAG are now implemented as described above. The
 factual intervention is always included, so the bound uses `actions.length + 1`
 positions. Bounded cardinality-shape and code-mechanism enumeration, their
 complete membership proofs, and exact native table replay are implemented.
-The replay adapter still keeps a base model's observed-value conversions and
-independent source law. A standalone constructor from catalogue entries,
-finite observed-conversion data and rational source parameters, together with
-its native-law coverage theorem, remains the next boundary. Only after that
-connection may checking one certificate per complete structural template be
-used to establish a bound over the full fixed-DAG family.
+Checked finite observed conversions, independent rational source parameters,
+the standalone constructor and its native-law coverage theorem now close the
+fixed-full-DAG representation boundary. They provide the transfer needed to
+extend a uniformly valid target bound from all listed templates and their
+source parameters to the original full fixed-DAG family. The existing
+polynomial-bound API has not yet been wrapped as an automatic catalogue-wide
+checker. Neither representation nor a supplied bound certificate establishes
+feasibility, sharpness or completeness of certificate search.
 
 The finite search can also be enormous; mathematical
 finiteness is not an efficiency guarantee. If only an observed projection is
@@ -493,9 +546,11 @@ simulation. Their bound is `I * product_j k_j`, hence at most `I * K^N`,
 where `I = actions.length + 1` counts the included factual action. The existing
 acyclic evaluator-uniqueness theorem proves simulation of the explicit
 retained trajectories; observed values are converted two-sidedly rather than
-restricted to positive support. Code-mechanism completeness and bounded-shape
-catalogue membership are implemented by the modules above. Standalone native
-template construction and full observed-conversion/source-law coverage remain.
+restricted to positive support. Code-mechanism completeness, bounded-shape
+catalogue membership, checked observed conversions and standalone native-law
+coverage are implemented by the modules above. The assembled
+`nativeTemplateRepresentation` constructs the final finite structural entry
+and its source parameters for every original fixed-DAG model.
 
 Preserving **all** hard-intervention distributions is still a finite target:
 if coordinate `i` has `d_i` declared values, enumerate
@@ -539,11 +594,11 @@ networks by [Rosset, Gisin and Wolfe](https://arxiv.org/abs/1709.00707).
 That is supporting literature, not a Lean assumption or an automatic
 rational/constructive transfer. The repository's existing compression proof
 is the rational foundation. The user selected the fixed-full-DAG route first;
-source and hidden-value coding, code-mechanism enumeration and bounded-shape
-coverage are implemented. Completing the standalone native-template boundary
-comes next, before a separate assessment of the
-projection-wide root-grouping route. No projection-wide coverage is inferred
-from the fixed-full-DAG result.
+source and hidden-value coding, finite structural enumeration and standalone
+native-law coverage are now implemented. The next checkpoint is a separate
+bounded assessment of the projection-wide root-grouping route, before any
+substantial new representation infrastructure. No projection-wide coverage
+is inferred from the fixed-full-DAG result.
 
 ## Research checkpoint 7: fixed-observed-law procedures
 
