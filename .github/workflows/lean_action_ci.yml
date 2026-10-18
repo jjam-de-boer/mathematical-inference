@@ -82,6 +82,9 @@ jobs:
       - name: Check positive modal completeness and executed endpoints
         working-directory: lean
         run: lake build Thesis.CausalTransport.PositiveModal Thesis.Examples.PositiveModal
+      - name: Check supported-zero modal completeness and executed endpoints
+        working-directory: lean
+        run: lake build Thesis.CausalTransport.SupportedModal Thesis.Examples.SupportedModal
       # Diagnose graph-layer extraction errors before rebuilding the larger
       # native causal clients. The complete build and axiom gate still follow.
       - name: Check independent source grouping
