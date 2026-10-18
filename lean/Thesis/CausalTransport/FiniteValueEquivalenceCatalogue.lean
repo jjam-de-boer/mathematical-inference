@@ -54,13 +54,13 @@ def checkedEquivalence [DecidableEq Value] (values : List Value) (complete : ∀
   forward := raw.forward
   backward := raw.backward
   forward_backward := fun value => of_decide_eq_true
-    ((List.all_eq_true.mp (Bool.and_eq_true.mp accepted).2) value (complete value))
+    ((List.all_eq_true.mp (Bool.and_eq_true_iff.mp accepted).2) value (complete value))
   backward_forward := fun code => of_decide_eq_true
-    ((List.all_eq_true.mp (Bool.and_eq_true.mp accepted).1) code (List.mem_finRange code))
+    ((List.all_eq_true.mp (Bool.and_eq_true_iff.mp accepted).1) code (List.mem_finRange code))
 
 theorem check_complete [DecidableEq Value] (values : List Value) (conversion : ValueEquivalence (Fin card) Value) :
     check values ⟨conversion.forward, conversion.backward⟩ = true := by
-  apply Bool.and_eq_true.mpr
+  apply Bool.and_eq_true_iff.mpr
   constructor
   · exact List.all_eq_true.mpr (fun code _ => decide_eq_true (conversion.backward_forward code))
   · exact List.all_eq_true.mpr (fun value _ => decide_eq_true (conversion.forward_backward value))
