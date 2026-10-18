@@ -132,6 +132,7 @@ import Thesis.CausalTransport.Counterfactual
 import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.CausalTransport.LatentRootNativeModel
 import Thesis.CausalTransport.LatentRootNativeEvaluation
+import Thesis.CausalTransport.CliqueRootNative
 import Thesis.CausalTransport.HiddenDAGFinitePresentation
 import Thesis.CausalTransport.HiddenDAGSourcePresentation
 import Thesis.CausalTransport.HiddenDAGSourceCompression

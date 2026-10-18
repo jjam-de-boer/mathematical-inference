@@ -7,11 +7,11 @@ open Probability
 /-!
 # Unitwise and probabilistic preservation of the native root realization
 
-An explicit candidate assignment copies each root's actual private block and
-evaluates every observed node with the original structural model at decoded
-noise. Show that assignment solves every intervened native equation, including
-forced observed values. The existing acyclic evaluator uniqueness theorem
-then gives exact observed evaluation at every noise unit and intervention.
+A native hidden root copies its actual private block. At observed nodes,
+induction on the unchanged public topological order reconstructs the original
+mechanism's observed parents and incident roots at decoded noise. Forced
+observed values are retained rather than evaluated through their old equation.
+This gives exact observed evaluation at every noise unit and intervention.
 
 The complete decoded independent-law theorem supplies the probability step.
 No separate semantic transfer premise, observational positivity, chosen noise
@@ -22,25 +22,6 @@ unsupported evidence is never assigned a conditional probability.
 
 universe u
 variable {S : ObservedSignature.{u}} (original : ExactModel S)
-
-def expectedValues (intervention : HardIntervention S) (noise : (model original).NoiseAssignment) : (model original).NodeAssignment :=
-  Fin.addCases
-    (fun root => (rootEquivalence original root).backward (noise (rootNode original root)))
-    (fun observed => (observedEquivalence original observed).backward
-      (original.evalNodeUnder intervention.value (decodeNoise original noise) observed))
-
-theorem expectedValues_root (intervention : HardIntervention S) (noise : (model original).NoiseAssignment)
-    (root : Fin original.latent.count) :
-    expectedValues original intervention noise (rootNode original root) =
-      (rootEquivalence original root).backward (noise (rootNode original root)) := by
-  simp only [expectedValues, rootNode, LatentRootDAG.rootNode, Fin.addCases_left]
-
-theorem expectedValues_observed (intervention : HardIntervention S) (noise : (model original).NoiseAssignment)
-    (observed : Fin S.count) :
-    expectedValues original intervention noise (observedNode original observed) =
-      (observedEquivalence original observed).backward
-        (original.evalNodeUnder intervention.value (decodeNoise original noise) observed) := by
-  simp only [expectedValues, observedNode, LatentRootDAG.observedNode, Fin.addCases_right]
 
 theorem interventionValueAt_root (intervention : HardIntervention S) (root : Fin original.latent.count) :
     (model original).interventionValueAt intervention (rootNode original root) = none :=
@@ -67,11 +48,24 @@ theorem mechanism_observed (observed : Fin S.count)
   change mechanism original (observedNode original observed) parents noise = _
   simp only [mechanism, observedNode, LatentRootDAG.observedNode, Fin.addCases_right]
 
-/-- Every permitted parent and latent input is the original model's input
-at decoded noise. Readout conversions are inverted on the whole domain. -/
-theorem observedMechanism_expected (intervention : HardIntervention S) (noise : (model original).NoiseAssignment)
-    (child : Fin S.count) :
-    observedMechanism original child (fun parent _ => expectedValues original intervention noise parent) =
+/-- A root is never intervened on through the observed intervention API.
+Its native endogenous value is its own whole private block. -/
+theorem evalNode_root (intervention : HardIntervention S) (noise : (model original).NoiseAssignment)
+    (root : Fin original.latent.count) :
+    (model original).evalNode intervention noise (rootNode original root) =
+      (rootEquivalence original root).backward (noise (rootNode original root)) := by
+  rw [FiniteHiddenDAGSCM.evalNode, interventionValueAt_root, mechanism_root]
+
+/-- Given the earlier observed-parent comparisons, the native mechanism
+reads exactly the original inputs at decoded noise. Root inputs use their
+separately proved evaluator equation, not a positive-trajectory assumption. -/
+theorem observedMechanism_eval (intervention : HardIntervention S) (noise : (model original).NoiseAssignment)
+    (child : Fin S.count)
+    (parentAgreement : ∀ parent, S.directed parent child = true →
+      (model original).evalNode intervention noise (observedNode original parent) =
+        (observedEquivalence original parent).backward
+          (original.evalNodeUnder intervention.value (decodeNoise original noise) parent)) :
+    observedMechanism original child (fun parent _ => (model original).evalNode intervention noise parent) =
       (observedEquivalence original child).backward
         (original.mechanism child
           (fun parent _ => original.evalNodeUnder intervention.value (decodeNoise original noise) parent)
@@ -79,65 +73,54 @@ theorem observedMechanism_expected (intervention : HardIntervention S) (noise : 
   unfold observedMechanism
   have parentsAgree :
       (fun parent (_ : S.directed parent child = true) => (observedEquivalence original parent).forward
-        (expectedValues original intervention noise (observedNode original parent))) =
+        ((model original).evalNode intervention noise (observedNode original parent))) =
       (fun parent (_ : S.directed parent child = true) =>
         original.evalNodeUnder intervention.value (decodeNoise original noise) parent) := by
     funext parent edge
-    rw [expectedValues_observed, (observedEquivalence original parent).forward_backward]
+    rw [parentAgreement parent edge, (observedEquivalence original parent).forward_backward]
   have rootsAgree :
       (fun root (_ : original.latent.incident root child = true) => ((rootEquivalence original root).forward
-        (expectedValues original intervention noise (rootNode original root))) root rfl) =
+        ((model original).evalNode intervention noise (rootNode original root))) root rfl) =
       (fun root (_ : original.latent.incident root child = true) => decodeNoise original noise root) := by
     funext root incident
-    rw [expectedValues_root, (rootEquivalence original root).forward_backward]
+    rw [evalNode_root, (rootEquivalence original root).forward_backward]
     rfl
   rw [parentsAgree, rootsAgree]
 
-theorem expectedValues_solution (intervention : HardIntervention S) (noise : (model original).NoiseAssignment)
-    (node : Node original) :
-    expectedValues original intervention noise node =
-      match (model original).interventionValueAt intervention node with
-      | some value => value
-      | none => (model original).mechanism node (fun parent _ => expectedValues original intervention noise parent) (noise node) := by
-  refine Fin.addCases (fun root => ?_) (fun observed => ?_) node
-  · change expectedValues original intervention noise (rootNode original root) =
-      match (model original).interventionValueAt intervention (rootNode original root) with
-      | some value => value
-      | none => (model original).mechanism (rootNode original root)
-          (fun parent _ => expectedValues original intervention noise parent) (noise (rootNode original root))
-    rw [expectedValues_root, interventionValueAt_root, mechanism_root]
-  · change expectedValues original intervention noise (observedNode original observed) =
-      match (model original).interventionValueAt intervention (observedNode original observed) with
-      | some value => value
-      | none => (model original).mechanism (observedNode original observed)
-          (fun parent _ => expectedValues original intervention noise parent) (noise (observedNode original observed))
-    rw [expectedValues_observed, interventionValueAt_observed]
-    cases forced : intervention.value observed with
-    | some value =>
-        simp only [Option.map_some]
-        have oldForced := original.evalUnder_effectiveness intervention.value (decodeNoise original noise) observed value forced
-        change original.evalNodeUnder intervention.value (decodeNoise original noise) observed = value at oldForced
-        rw [oldForced]
-    | none =>
-        simp only [Option.map_none]
-        rw [mechanism_observed, observedMechanism_expected]
-        apply congrArg (observedEquivalence original observed).backward
-        rw [FiniteLatentSCM.evalNodeUnder]
-        simp only [FiniteLatentSCM.equationUnder, forced]
-
-/-- Native evaluator uniqueness applies to the explicit solution above;
-there is no extra global-Markov, graph-transfer or semantic-equality premise. -/
-theorem evalNode (intervention : HardIntervention S) (noise : (model original).NoiseAssignment) (node : Node original) :
-    (model original).evalNode intervention noise node = expectedValues original intervention noise node :=
-  (model original).evalNode_eq_of_solution intervention noise (expectedValues original intervention noise)
-    (fun current => expectedValues_solution original intervention noise current) node
+theorem evalNode_observed (intervention : HardIntervention S) (noise : (model original).NoiseAssignment)
+    (observed : Fin S.count) :
+    (model original).evalNode intervention noise (observedNode original observed) =
+      (observedEquivalence original observed).backward
+        (original.evalNodeUnder intervention.value (decodeNoise original noise) observed) := by
+  rw [FiniteHiddenDAGSCM.evalNode, interventionValueAt_observed]
+  cases forced : intervention.value observed with
+  | some value =>
+      simp only [Option.map_some]
+      have oldForced := original.evalUnder_effectiveness intervention.value (decodeNoise original noise) observed value forced
+      change original.evalNodeUnder intervention.value (decodeNoise original noise) observed = value at oldForced
+      rw [oldForced]
+  | none =>
+      simp only [Option.map_none]
+      rw [mechanism_observed]
+      have parentsAgree : ∀ parent, S.directed parent observed = true →
+          (model original).evalNode intervention noise (observedNode original parent) =
+            (observedEquivalence original parent).backward
+              (original.evalNodeUnder intervention.value (decodeNoise original noise) parent) := by
+        intro parent edge
+        exact evalNode_observed intervention noise parent
+      rw [observedMechanism_eval original intervention noise observed parentsAgree]
+      apply congrArg (observedEquivalence original observed).backward
+      rw [FiniteLatentSCM.evalNodeUnder]
+      simp only [FiniteLatentSCM.equationUnder, forced]
+termination_by observed.val
+decreasing_by exact S.directed_earlier edge
 
 theorem evalObserved (intervention : HardIntervention S) (noise : (model original).NoiseAssignment) :
     (model original).evalObserved intervention noise = original.evalUnder intervention.value (decodeNoise original noise) := by
   funext observed
   change (observedEquivalence original observed).forward
     ((model original).evalNode intervention noise (observedNode original observed)) = _
-  rw [evalNode, expectedValues_observed, (observedEquivalence original observed).forward_backward]
+  rw [evalNode_observed, (observedEquivalence original observed).forward_backward]
   rfl
 
 theorem prior_probVal (event : Event original.latent.Assignment) :

@@ -104,6 +104,7 @@ jobs:
           Thesis.Causality.LatentRootProjection
           Thesis.CausalTransport.LatentRootNativeModel
           Thesis.CausalTransport.LatentRootNativeEvaluation
+          Thesis.CausalTransport.CliqueRootNative
       - name: Check exact expression support analysis
         working-directory: lean
         run: >-
