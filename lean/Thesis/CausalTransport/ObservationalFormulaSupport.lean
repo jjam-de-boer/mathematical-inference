@@ -49,11 +49,11 @@ theorem eventStatus_record (record : FiniteProbRecord S.Assignment) (event : Eve
 positivity alone. Actionful leaves remain rejected, exactly as before. -/
 def supportStatus (pattern : S.Assignment → Bool) : ProbabilityTerm S → S.Assignment → ProbabilityResult.Status
   | .zero, _ => .zero
-  | .kernel kernel, reference =>
-      if kernel.hasAction then .undefined else
+  | .kernel queryKernel, reference =>
+      if queryKernel.hasAction then .undefined else
         ProbabilityResult.Status.divide
-          (eventStatus pattern (kernel.numeratorEvent reference))
-          (eventStatus pattern (kernel.conditionEvent reference))
+          (eventStatus pattern (queryKernel.numeratorEvent reference))
+          (eventStatus pattern (queryKernel.conditionEvent reference))
   | .marginalize nodes inner, reference =>
       ProbabilityResult.Status.sum ((marginalAssignments S nodes reference).map
         (fun variant => inner.supportStatus pattern variant))
@@ -74,8 +74,8 @@ theorem supportStatus_exact (term : ProbabilityTerm S) (record : FiniteProbRecor
     term.supportStatus record.support reference = ProbabilityResult.status (term.observationalDenote record reference) := by
   induction term generalizing reference with
   | zero => rfl
-  | kernel kernel =>
-      cases active : kernel.hasAction with
+  | kernel queryKernel =>
+      cases active : queryKernel.hasAction with
       | true => simp only [supportStatus, observationalDenote, active, if_true, ProbabilityResult.status]
       | false =>
           simp only [supportStatus, observationalDenote, active, Bool.false_eq_true, if_false,
@@ -156,8 +156,8 @@ def coversSupport (plans : List (ObservationalFormulaPlan S)) (pattern : S.Assig
 theorem coversSupport_exact (plans : List (ObservationalFormulaPlan S)) (record : FiniteProbRecord S.Assignment)
     (reference : S.Assignment) :
     coversSupport plans record.support reference = plans.any (fun plan => plan.available record reference) := by
-  apply List.any_congr
-  intro plan _listed
+  apply List.any_congr rfl
+  intro plan
   exact availableOnSupport_exact plan record reference
 
 end ObservationalFormulaPlan
