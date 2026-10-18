@@ -122,8 +122,9 @@ namespace FiniteHiddenDAGSCM
 The model contains its actual independent rational source law. The executable
 constructor below proves the preservation fields; callers are not asked for
 an external semantic-transfer assumption or an observed-positivity premise.
-Finite mechanism-catalogue membership is deliberately not included until
-that separate enumeration and coverage theorem have been proved. -/
+Membership in the exhaustive code-mechanism catalogue is exposed by the
+separate `HiddenDAGMechanismCatalogue` adapter, keeping this construction
+independent of the later enumeration machinery. -/
 structure BoundedRepresentation (original : FiniteHiddenDAGSCM S P) (targets : List (NativeProbabilityQuery S)) where
   model : FiniteHiddenDAGSCM S P
   sourceCard : Fin P.hiddenDAG.count → Nat

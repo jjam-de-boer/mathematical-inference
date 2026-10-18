@@ -138,6 +138,9 @@ import Thesis.CausalTransport.HiddenDAGCompactSources
 import Thesis.CausalTransport.HiddenDAGReachableValues
 import Thesis.CausalTransport.HiddenDAGValuePresentation
 import Thesis.CausalTransport.HiddenDAGFiniteRepresentation
+import Thesis.CausalTransport.HiddenDAGMechanismTables
+import Thesis.CausalTransport.HiddenDAGMechanismTableModels
+import Thesis.CausalTransport.HiddenDAGMechanismCatalogue
 import Thesis.CausalTransport.HiddenDAGPolynomialEvidence
 import Thesis.CausalTransport.HiddenDAG
 import Thesis.CausalTransport.HiddenDAGFullFamily
@@ -290,13 +293,18 @@ module compresses endogenous hidden-node values or enumerates mechanisms.
 `HiddenDAGReachableValues` and `HiddenDAGValuePresentation` separately give
 bounded hidden-value codes on a fixed full DAG, with explicit defaults and
 proved simulation of retained trajectories. They preserve every declared
-observed value, including null intervention targets. Finite mechanism-table
-enumeration and its catalogue-coverage theorem remain separate obligations.
+observed value, including null intervention targets.
 `HiddenDAGFiniteRepresentation.boundedRepresentation` combines the source and
 value constructions into an actual bounded native representative of every
 input model for its full observed law and finitely requested targets. Its
 source and hidden-value bounds depend only on that list and the fixed graph
 and public signature, not the old hidden alphabets or source denominators.
+`HiddenDAGMechanismTables` exhaustively enumerates graph-compatible code
+equations on any cardinality shape. `HiddenDAGMechanismTableModels` proves
+exact native reconstruction, and `HiddenDAGMechanismCatalogue` covers all
+bounded shapes by a list fixed by the graph, signature and target count.
+The replay adapter still retains the base model's observed conversions and
+source law; it is not yet a standalone native-template certificate family.
 `HiddenDAGPolynomial` compiles native causal probabilities with a proved
 binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied
