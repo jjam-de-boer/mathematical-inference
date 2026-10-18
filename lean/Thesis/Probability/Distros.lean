@@ -61,6 +61,8 @@ import Thesis.Probability.Distros.RationalChebyshev
 import Thesis.Probability.Distros.ConditionalMoments
 import Thesis.Probability.Distros.ConditionalObservable
 import Thesis.Probability.Distros.ConditionalTower
+import Thesis.Probability.Distros.ConditionalAlgebra
+import Thesis.Probability.Distros.ConditionalProjection
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.RationalBetaBinomial
@@ -285,4 +287,8 @@ retained rather than silently excluded as nonpositive support.
 54. `RationalCovarianceAlgebra` supplies signed rational product factorization,
     symmetric bilinear covariance, rational scaling, independence, and the
     dependent-sum variance formula, on the original finite records.
+55. `ConditionalAlgebra` gives rational linearity, pull-out, idempotence and
+    almost-sure uniqueness from fibre integrals. `ConditionalProjection`
+    proves the squared-error decomposition, least-squares optimality and
+    squared-norm contraction, retaining zero values on unsupported fibres.
 -/

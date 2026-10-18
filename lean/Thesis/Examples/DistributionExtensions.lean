@@ -623,3 +623,46 @@ example : SignedRatio.Equiv ((rationalAlgebraFixture.product rationalAlgebraFixt
   Distro.rationalCovariance_independent _ _ rationalAlgebraFirst rationalAlgebraSecond
 
 end Thesis.Examples.DistributionExtensions
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Correct supported fibre means coexist with an arbitrary value on the
+retained null fibre. Uniqueness is consequently almost sure. -/
+def conditionalPrediction (label : Fin 3) : SignedRatio :=
+  if label.val = 0 then ⟨1, 2, by decide⟩ else if label.val = 1 then ⟨5, 2, by decide⟩ else ⟨-97, 3, by decide⟩
+
+example : partitionMomentFixture.AlmostSurely (fun x => SignedRatio.Equiv
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable x)
+    (conditionalPrediction (threeEvidenceCells x))) :=
+  Distro.conditionalExpectation_unique _ threeEvidenceCells partitionMomentObservable conditionalPrediction (by decide +kernel)
+
+example : ¬ SignedRatio.Equiv
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable 99)
+    (conditionalPrediction (threeEvidenceCells 99)) := by decide +kernel
+
+example : SignedRatio.Equiv (partitionMomentFixture.conditionalExpectation threeEvidenceCells
+    (fun x => SignedRatio.mul (conditionalPrediction (threeEvidenceCells x)) (partitionMomentObservable x)) 99)
+    SignedRatio.zero := by decide +kernel
+
+example : SignedRatio.Equiv (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable))
+    ⟨1, 4, by decide⟩ := by decide +kernel
+
+example : SignedRatio.Equiv (partitionMomentFixture.rationalExpectation (fun x => SignedRatio.mul
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable x)
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable x)))
+    ⟨13, 4, by decide⟩ := by decide +kernel
+
+example : SignedRatio.LE (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable))
+    (partitionMomentFixture.rationalSquaredError partitionMomentObservable (fun _ => SignedRatio.zero)) :=
+  Distro.conditionalExpectation_least_squares _ threeEvidenceCells partitionMomentObservable (fun _ => SignedRatio.zero)
+
+example : SignedRatio.LE (partitionMomentFixture.rationalExpectation (fun x => SignedRatio.mul
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable x)
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable x)))
+    (partitionMomentFixture.rationalExpectation (fun x => SignedRatio.mul (partitionMomentObservable x) (partitionMomentObservable x))) :=
+  Distro.conditionalExpectation_square_contraction _ threeEvidenceCells partitionMomentObservable
+
+end Thesis.Examples.DistributionExtensions
