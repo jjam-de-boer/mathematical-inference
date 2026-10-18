@@ -78,8 +78,9 @@ theorem supportStatus_exact (term : ProbabilityTerm S) (record : FiniteProbRecor
       cases active : queryKernel.hasAction with
       | true => simp only [supportStatus, observationalDenote, active, if_true, ProbabilityResult.status]
       | false =>
-          simp only [supportStatus, observationalDenote, active, Bool.false_eq_true, if_false,
-            ProbabilityResult.status_divide, ProbabilityResult.status, eventStatus_record]
+          simp only [supportStatus, observationalDenote, active, Bool.false_eq_true, if_false]
+          rw [ProbabilityResult.status_divide]
+          simp only [ProbabilityResult.status, eventStatus_record]
   | marginalize nodes inner ih =>
       simp only [supportStatus, observationalDenote, ProbabilityResult.status_sum, List.map_map]
       apply congrArg ProbabilityResult.Status.sum
