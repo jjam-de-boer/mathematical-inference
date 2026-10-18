@@ -113,6 +113,7 @@ jobs:
           Thesis.CausalTransport.HiddenDAGMechanismCatalogue
           Thesis.CausalTransport.FiniteValueEquivalenceCatalogue
           Thesis.CausalTransport.HiddenDAGNativeTemplates
+          Thesis.CausalTransport.HiddenDAGNativeTemplateCoverage
           Thesis.Examples.FiniteValueEquivalenceCatalogue
           Thesis.Causality.HiddenDAGObservedIndex
           Thesis.Examples.FiniteFunctionTables
