@@ -103,6 +103,8 @@ jobs:
           lake build
           Thesis.Probability.FiniteRecordPresentation
           Thesis.Probability.FiniteProductPresentation
+          Thesis.CausalTransport.HiddenDAGSourcePresentation
+          Thesis.Examples.HiddenDAGSourcePresentation
           Thesis.Examples.FiniteRecordPresentation
           Thesis.Examples.FiniteProductPresentation
           Thesis.Examples.HiddenDAGFinitePresentation

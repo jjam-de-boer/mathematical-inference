@@ -21,8 +21,8 @@ def presentations (index : Fin 2) := (factors index).atomPresentation
 
 theorem first_card : (presentations 0).card = 3 := rfl
 theorem second_card : (presentations 1).card = 2 := rfl
-theorem null_position_retained : (presentations 0).decode 0 = false := rfl
-theorem repeated_label : (presentations 0).decode 1 = (presentations 0).decode 2 := rfl
+theorem null_position_retained : (presentations 0).decode ⟨0, by decide⟩ = false := rfl
+theorem repeated_label : (presentations 0).decode ⟨1, by decide⟩ = (presentations 0).decode ⟨2, by decide⟩ := rfl
 
 theorem every_joint_event (event : Event (FiniteProduct.Assignment 2 (fun _ => Bool))) :
     QProb.Equiv ((FiniteProduct.presentationRecord presentations).probVal
