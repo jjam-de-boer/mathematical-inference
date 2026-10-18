@@ -11,7 +11,7 @@ theorem sub_split (a b c : SignedRatio) : Equiv (sub a c) (add (sub a b) (sub b 
   omega
 
 theorem add_sub_cancel_left (a b : SignedRatio) : Equiv (sub (add a b) a) b := by
-  simp only [Equiv, sub, add, neg, Int.natCast_mul, Int.add_mul, Int.mul_add, Int.neg_mul,
+  simp only [Equiv, sub, add, neg, Int.natCast_mul, Int.add_mul, Int.mul_add, Int.neg_mul, Int.mul_neg,
     Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
   omega
 
