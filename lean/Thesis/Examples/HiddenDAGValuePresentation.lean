@@ -75,11 +75,13 @@ theorem observed_cardinality_still_three (index : Fin HiddenDAGMultivaluedPresen
 theorem factual_null_stays_null :
     QProb.Equiv (presented.observationalValue (fun values => decide (readValue (values y) = 2))) QProb.zero := by
   change QProb.Equiv (presented.observationalDist.probVal _) QProb.zero
+  dsimp only [presented]
   rw [model.retainedValueModel_observationalDist requested]
   exact null_observed_y
 
 theorem forcing_null_still_has_probability_one :
     QProb.Equiv (presented.interventionalValue forceNull (fun values => decide (readValue (values y) = 2))) QProb.one := by
+  dsimp only [presented]
   rw [model.retainedValueModel_interventionalValue requested forceNull (List.mem_cons_of_mem _ List.mem_cons_self)]
   exact do_y_null_probability_one
 

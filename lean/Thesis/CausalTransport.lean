@@ -286,6 +286,11 @@ intervention laws when recoding private noise. `HiddenDAGCompactSources`
 combines this with compression to give actual bounded `Fin` noise alphabets
 while retaining precisely the compression's selected probabilities. Neither
 module compresses endogenous hidden-node values or enumerates mechanisms.
+`HiddenDAGReachableValues` and `HiddenDAGValuePresentation` separately give
+bounded hidden-value codes on a fixed full DAG, with explicit defaults and
+proved simulation of retained trajectories. They preserve every declared
+observed value, including null intervention targets. Finite mechanism-table
+enumeration and its catalogue-coverage theorem remain separate obligations.
 `HiddenDAGPolynomial` compiles native causal probabilities with a proved
 binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied

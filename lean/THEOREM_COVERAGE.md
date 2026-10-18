@@ -267,6 +267,39 @@ two sampling codes while retaining the observed null value two as a valid
 intervention target. A five-node hidden-relay fixture also checks the adapter
 without imposing pairwise-only latent causes.
 
+### Bounded hidden values on a fixed full DAG
+
+`HiddenDAGReachableValues` enumerates trajectories for each supplied hard
+intervention and every declared noise assignment, always adding the factual
+intervention. A literal first atom of the normalized joint prior supplies a
+factual default, without choice and without assuming that atom has positive
+individual weight. Hidden nodes retain reached values; observed nodes retain
+their entire declared domains, including null intervention values.
+
+`valueWitness_card_bound` proves at most
+`(actions.length + 1) * product_j noiseEnumeration[j].length` codes per hidden
+node. `valueWitness_card_bound_of_noise_bound` gives the corresponding
+`(actions.length + 1) * K^N` bound when every source enumeration has length at
+most `K`. Repeated action positions are counted, not silently deduplicated.
+
+`HiddenDAGValuePresentation.retainedValueModel` constructs an actual native
+model with finite endogenous code types and the unchanged full graph and
+private-source law. `retainedValueModel_evalNode` and
+`retainedValueModel_evalObserved` prove trajectory simulation. Off-domain
+equation outputs have an explicit default; inverse-decoding proofs establish
+that it cannot alter a retained trajectory. `retainedValueModel_interventionalDist`
+proves literal equality of the entire record for each retained intervention,
+not merely selected event probabilities. Factual records and supported
+conditionals are preserved too. `retainedObservedEquiv_card` proves observed
+code sizes equal the public domain sizes, independently of repetitions in
+the original native enumerations. The public observed signature is unchanged.
+
+The separate source compression may already have changed unretained effects
+of the original model. Hidden-value presentation preserves the retained
+intervention laws of its own input model; it does not undo that distinction.
+Neither trajectory coding nor its cardinality theorem yet enumerates all
+mechanisms or proves a finite mechanism-catalogue coverage theorem.
+
 ## Exact probability polynomials and supplied bound certificates
 
 `RationalPolynomial` represents finite sparse polynomials with signed rational
@@ -351,20 +384,17 @@ appearing in the requested target. Existing source compression gives a bound
 when requested. Uniform zero-padding to a common `Fin K` is not needed by
 this compact adapter and is not asserted implemented.
 
-The remaining representation steps would be:
+Hidden-value enumeration, finite coding, explicit defaults and evaluator
+simulation on a fixed full DAG are now implemented as described above. The
+factual intervention is always included, so the bound uses `actions.length + 1`
+positions. The remaining step is to enumerate finite mechanism tables on the
+bounded domains and prove that every original model has a representative in
+that finite catalogue with the same observed law and target values. Only that
+coverage theorem would justify checking one certificate per template to
+establish a graph-wide bound.
 
-1. Enumerate the hidden values reached under the retained interventions and
-   relabel them too. With `N` native nodes and `I` listed interventions, a
-   crude candidate bound is `I * K^N` values per hidden node. Mechanisms on
-   unreachable parent inputs need explicit defaults, while evaluator simulation
-   must prove those defaults cannot change a retained trajectory.
-2. Enumerate finite mechanism tables on those bounded domains, then prove that
-   every original model has a representative in this family with the same
-   observed law and target values. Only that coverage theorem would justify
-   checking one certificate per template to establish a graph-wide bound.
-
-These are proposed proof obligations, not existing formal cardinality or
-coverage results. The finite search can also be enormous; mathematical
+Finite mechanism-catalogue coverage remains a proof obligation, not an existing
+theorem. The finite search can also be enormous; mathematical
 finiteness is not an efficiency guarantee. If only an observed projection is
 fixed while the number and arrangement of hidden nodes vary, another graph
 representation theorem is needed as well. A potentially better route for that
@@ -394,15 +424,14 @@ bijection of the old ambient noise type. A common `Fin K` presentation can
 still be added separately with zero-weight positions and an explicit decoded
 default; the compact `Fin k_j` construction avoids that unnecessary padding.
 
-For a fixed full DAG, the proposed hidden-value bound can be made precise
-as follows: enumerate all coded noise assignments and each retained hard
-intervention, evaluate each hidden vertex, and deduplicate its resulting
-values. With `N` native nodes this gives at most `I * product_j k_j`, hence
-at most `I * K^N`, values per hidden vertex. Defaults on other parent-table
-rows must be proved unreachable on every retained trajectory by rank
-induction. Normalize observed native values using their supplied two-sided
-observed-value equivalences rather than discarding permitted null values.
-This simulation and finite-table completeness are not implemented yet.
+For a fixed full DAG, `HiddenDAGReachableValues` and
+`HiddenDAGValuePresentation` now implement the hidden-value coding and
+simulation. Their bound is `I * product_j k_j`, hence at most `I * K^N`,
+where `I = actions.length + 1` counts the included factual action. The existing
+acyclic evaluator-uniqueness theorem proves simulation of the explicit
+retained trajectories; observed values are converted two-sidedly rather than
+restricted to positive support. Finite mechanism-table completeness is not
+implemented yet.
 
 Preserving **all** hard-intervention distributions is still a finite target:
 if coordinate `i` has `d_i` declared values, enumerate
@@ -445,9 +474,11 @@ Finite source bounds are also established for discrete independent-source
 networks by [Rosset, Gisin and Wolfe](https://arxiv.org/abs/1709.00707).
 That is supporting literature, not a Lean assumption or an automatic
 rational/constructive transfer. The repository's existing compression proof
-is the rational foundation. Review checkpoint: the compact source adapter
-is implemented; choose fixed-full-DAG versus projection-wide
-coverage before undertaking hidden-table or root-grouping infrastructure.
+is the rational foundation. The user selected the fixed-full-DAG route first;
+source and hidden-value coding are implemented. Finite mechanism enumeration
+and its coverage theorem come next, before a separate assessment of the
+projection-wide root-grouping route. No projection-wide coverage is inferred
+from the fixed-full-DAG result.
 
 ## Research checkpoint 7: fixed-observed-law procedures
 
