@@ -21,8 +21,9 @@ other nonmechanism fields are kept unchanged by this particular adapter.
 Applying it to the existing bounded representation gives an explicitly listed
 mechanism table for every original model's bounded representative. The code
 catalogue depends on the graph/cardinality vectors, not that representative's
-equations or source weights. Combining finitely many shapes and normalizing
-the remaining observed-conversion data are separate catalogue-coverage steps;
+equations or source weights. `HiddenDAGMechanismCatalogue` combines finitely
+many bounded shapes; normalizing the remaining observed-conversion data is
+a separate native-template coverage step. Likewise,
 infinitely many rational source-weight assignments are not enumerated here.
 -/
 

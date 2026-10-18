@@ -297,8 +297,8 @@ the original native enumerations. The public observed signature is unchanged.
 The separate source compression may already have changed unretained effects
 of the original model. Hidden-value presentation preserves the retained
 intervention laws of its own input model; it does not undo that distinction.
-Neither trajectory coding nor its cardinality theorem yet enumerates all
-mechanisms or proves a finite mechanism-catalogue coverage theorem.
+Trajectory coding itself does not enumerate mechanisms. The later code-table
+catalogue described below supplies that separate enumeration and coverage.
 
 `HiddenDAGFiniteRepresentation` composes both steps.
 `FiniteHiddenDAGSCM.boundedRepresentation original targets` constructs a
@@ -318,8 +318,48 @@ properties for any constructed observational source compression.
 their joint-event and evidence queries were both retained. Only retained
 probabilities agree with the original uncompressed model; the whole
 intervention-law equality in the value step is with its compressed input.
-An explicit finite catalogue of all possible code cardinalities and
-mechanism tables, with its membership/coverage proof, remains to be built.
+The later code-table catalogue covers all bounded cardinality shapes and
+compatible equations; the standalone native-template boundary is described
+separately below.
+
+### Exhaustive finite code-mechanism tables
+
+`FiniteFunctionTables` constructs explicit finite row witnesses, enumerates
+all output tables, and proves `lookup_tabulate` and `tabulate_lookup`. The
+proof-indexed parent choices use supplied Boolean edge decisions. An absent
+parent contributes one vacuous function even when its unused value type is
+empty; it is not incorrectly treated as a required full-node assignment.
+
+`HiddenDAGMechanismTables.codeMechanismCatalogue` is fixed by the full graph
+and node/source cardinality vectors, independently of any model's equations
+or weights. `codeMechanismCatalogue_complete` and
+`lookupCodeMechanisms_tabulate` prove exhaustive graph-compatible equation
+coverage and reconstruction at **every** declared parent/noise input, not
+just positive or retained trajectories. The equations can read only their
+declared parents and their own private source.
+
+`HiddenDAGMechanismTableModels.withCodeTables_ownCodeTables` proves exact native
+model reconstruction through explicit two-sided value/noise conversions.
+For a `BoundedRepresentation`, `mechanismTables_mem` lists its actual equations;
+`tabulatedModel_eq`, `tabulatedModel_observational` and
+`tabulatedModel_preserved` retain the model and its original-law guarantees.
+
+`HiddenDAGMechanismCatalogue.boundedMechanismCatalogue` then enumerates every
+bounded cardinality shape and each shape's complete table list. The uniform
+node bound adds the sum of public observed-domain sizes to the hidden-value
+bound. `BoundedRepresentation.catalogueEntry_mem` proves that every original
+model's explicitly constructed representative has an entry in this **same**
+finite list, fixed only by the full graph, signature and target count. No
+equation from that original model is used to generate the list.
+
+This is finite coverage of code alphabets and equations, not yet a complete
+standalone native-template certificate family. Native replay still retains
+the base model's observed conversions and independent source law. Packaging
+the finite observed conversions and rational-weight family into a constructor
+from catalogue entries, with native-law coverage, remains to be done. Raw
+catalogue entries may include incompatible observed cardinalities or source
+alphabets with no normalized law; their presence cannot be mistaken for
+actual native models. Infinitely many rational weight assignments remain.
 
 ## Exact probability polynomials and supplied bound certificates
 
@@ -393,7 +433,7 @@ search, real-to-rational feasibility transfer, or universal arbitrary-graph
 fixed-law decision procedure is asserted. Conditional bounds additionally
 require justified cross-multiplication at a positive denominator.
 
-### Graph-wide coverage: assessed route, not a proved theorem
+### Graph-wide native-template coverage: remaining boundary
 
 For a **fixed full hidden DAG** with fixed observed domains, there is a
 plausible finite constructive route beyond the current fixed-template checker.
@@ -408,14 +448,16 @@ this compact adapter and is not asserted implemented.
 Hidden-value enumeration, finite coding, explicit defaults and evaluator
 simulation on a fixed full DAG are now implemented as described above. The
 factual intervention is always included, so the bound uses `actions.length + 1`
-positions. The remaining step is to enumerate finite mechanism tables on the
-bounded domains and prove that every original model has a representative in
-that finite catalogue with the same observed law and target values. Only that
-coverage theorem would justify checking one certificate per template to
-establish a graph-wide bound.
+positions. Bounded cardinality-shape and code-mechanism enumeration, their
+complete membership proofs, and exact native table replay are implemented.
+The replay adapter still keeps a base model's observed-value conversions and
+independent source law. A standalone constructor from catalogue entries,
+finite observed-conversion data and rational source parameters, together with
+its native-law coverage theorem, remains the next boundary. Only after that
+connection may checking one certificate per complete structural template be
+used to establish a bound over the full fixed-DAG family.
 
-Finite mechanism-catalogue coverage remains a proof obligation, not an existing
-theorem. The finite search can also be enormous; mathematical
+The finite search can also be enormous; mathematical
 finiteness is not an efficiency guarantee. If only an observed projection is
 fixed while the number and arrangement of hidden nodes vary, another graph
 representation theorem is needed as well. A potentially better route for that
@@ -451,8 +493,9 @@ simulation. Their bound is `I * product_j k_j`, hence at most `I * K^N`,
 where `I = actions.length + 1` counts the included factual action. The existing
 acyclic evaluator-uniqueness theorem proves simulation of the explicit
 retained trajectories; observed values are converted two-sidedly rather than
-restricted to positive support. Finite mechanism-table completeness is not
-implemented yet.
+restricted to positive support. Code-mechanism completeness and bounded-shape
+catalogue membership are implemented by the modules above. Standalone native
+template construction and full observed-conversion/source-law coverage remain.
 
 Preserving **all** hard-intervention distributions is still a finite target:
 if coordinate `i` has `d_i` declared values, enumerate
@@ -496,8 +539,9 @@ networks by [Rosset, Gisin and Wolfe](https://arxiv.org/abs/1709.00707).
 That is supporting literature, not a Lean assumption or an automatic
 rational/constructive transfer. The repository's existing compression proof
 is the rational foundation. The user selected the fixed-full-DAG route first;
-source and hidden-value coding are implemented. Finite mechanism enumeration
-and its coverage theorem come next, before a separate assessment of the
+source and hidden-value coding, code-mechanism enumeration and bounded-shape
+coverage are implemented. Completing the standalone native-template boundary
+comes next, before a separate assessment of the
 projection-wide root-grouping route. No projection-wide coverage is inferred
 from the fixed-full-DAG result.
 

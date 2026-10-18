@@ -58,6 +58,11 @@ Stable facade for the finite constructive probability development.
 This facade imports the complete public probability API, whose implementation
 is split by responsibility.
 
+`FiniteFunctionTables` enumerates all output vectors on explicitly supplied
+finite input codes and proves exact tabulation/lookup inverses. Its decidable
+proof-function slots handle absent native parents without dropping valid root
+rows or invoking general function equality, choice or excluded middle.
+
 `FiniteProductResponse` includes exchange of finite matrix products;
 `FiniteProductAllocation` proves the law of one optionally allocated random
 channel, with deterministic absence elsewhere and normalization of unused
