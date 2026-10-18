@@ -2,10 +2,13 @@
 
 This guide separates graph-level identification from applying a formula at a
 particular law, and both from fixed-law identification. The actual Lean
-statements remain authoritative. All probabilities below are finite rational
-records, with zero-weight cells permitted unless an explicit positivity
+statements remain authoritative. All implemented probability theorems concern
+finite rational records, with zero-weight cells permitted unless an explicit positivity
 assumption says otherwise. Original hidden DAG results allow arbitrary finite
 hidden and private-noise alphabet sizes; observed alphabets remain fixed.
+Research checkpoints below are labelled assessments, not additional Lean
+theorems. The real-to-rational comparison only explains a limit of importing
+an external method; it does not extend the probability framework.
 
 ## Graph-level ID/IDC
 
@@ -376,6 +379,8 @@ if coordinate `i` has `d_i` declared values, enumerate
 events for each. Source compression on that `I * A` query family gives the
 candidate bound `K = I * A + 1`. This is an assessed sufficient route, not
 a proved cardinality theorem or practical enumeration recommendation.
+It concerns each intervention's distribution, not arbitrary joint
+cross-world counterfactuals unless those are retained separately as well.
 
 For a fixed observed projection with varying hidden topology,
 `FiniteHiddenDAGSCM.toLatentRootSCM` in `HiddenDAGCollapse` is the useful
