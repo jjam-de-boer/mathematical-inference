@@ -80,14 +80,18 @@ def status : Result → Status
 
 theorem valueStatus_equiv {left right : QProb} (same : QProb.Equiv left right) :
     valueStatus left = valueStatus right := by
-  unfold valueStatus
-  rw [QProb.equiv_num_zero_iff same]
+  by_cases leftZero : left.num = 0
+  · have rightZero := (QProb.equiv_num_zero_iff same).mp leftZero
+    simp [valueStatus, leftZero, rightZero]
+  · have rightNonzero : right.num ≠ 0 := fun zero =>
+      leftZero ((QProb.equiv_num_zero_iff same).mpr zero)
+    simp [valueStatus, leftZero, rightNonzero]
 
 theorem valueStatus_add (left right : QProb) :
     valueStatus (QProb.add left right) = Status.add (valueStatus left) (valueStatus right) := by
   by_cases leftZero : left.num = 0 <;> by_cases rightZero : right.num = 0 <;>
     simp [valueStatus, QProb.add, Status.add, leftZero, rightZero,
-      Nat.add_eq_zero, Nat.mul_eq_zero, Nat.ne_of_gt left.den_pos, Nat.ne_of_gt right.den_pos]
+      Nat.add_eq_zero_iff, Nat.mul_eq_zero, Nat.ne_of_gt left.den_pos, Nat.ne_of_gt right.den_pos]
 
 theorem valueStatus_mul (left right : QProb) :
     valueStatus (QProb.mul left right) = Status.multiply (valueStatus left) (valueStatus right) := by
