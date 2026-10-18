@@ -592,3 +592,249 @@ example : QProb.Equiv (multivariatePGF (Distro.pointMass ([] : List Nat)) [])
         (multivariateMonomial [] orders)))) := by decide +kernel
 
 end Thesis.Examples.DistributionExtensions
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Negative values, unreduced fractions and an irrelevant zero-weight
+outlier exercise the signed rational algebra on an actual finite record. -/
+def rationalAlgebraFixture : Distro Nat := ofWeightedAtoms [(0, 1), (1, 1), (99, 0)] (by decide)
+def rationalAlgebraFirst (x : Nat) : SignedRatio :=
+  if x = 0 then ⟨-3, 2, by decide⟩ else if x = 1 then ⟨2, 4, by decide⟩ else ⟨17, 3, by decide⟩
+def rationalAlgebraSecond (x : Nat) : SignedRatio :=
+  if x = 0 then ⟨4, 6, by decide⟩ else if x = 1 then ⟨-1, 3, by decide⟩ else ⟨-47, 5, by decide⟩
+
+example : SignedRatio.Equiv (rationalAlgebraFixture.rationalCovariance rationalAlgebraFirst rationalAlgebraSecond)
+    ⟨-1, 2, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv (rationalAlgebraFixture.rationalCovariance
+    (fun x => SignedRatio.mul ⟨-4, 6, by decide⟩ (rationalAlgebraFirst x)) rationalAlgebraSecond)
+    ⟨1, 3, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv (rationalAlgebraFixture.rationalVariance
+    (fun x => SignedRatio.add (rationalAlgebraFirst x) (rationalAlgebraSecond x)))
+    ⟨1, 4, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv (rationalAlgebraFixture.rationalVariance
+    (fun x => SignedRatio.mul ⟨-4, 6, by decide⟩ (rationalAlgebraFirst x)))
+    ⟨4, 9, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv ((rationalAlgebraFixture.product rationalAlgebraFixture).rationalExpectation
+    (fun pair => SignedRatio.mul (rationalAlgebraFirst pair.1) (rationalAlgebraSecond pair.2)))
+    ⟨-1, 12, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv ((rationalAlgebraFixture.product rationalAlgebraFixture).rationalCovariance
+    (fun pair => rationalAlgebraFirst pair.1) (fun pair => rationalAlgebraSecond pair.2)) SignedRatio.zero :=
+  Distro.rationalCovariance_independent _ _ rationalAlgebraFirst rationalAlgebraSecond
+
+end Thesis.Examples.DistributionExtensions
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Correct supported fibre means coexist with an arbitrary value on the
+retained null fibre. Uniqueness is consequently almost sure. -/
+def conditionalPrediction (label : Fin 3) : SignedRatio :=
+  if label.val = 0 then ⟨1, 2, by decide⟩ else if label.val = 1 then ⟨5, 2, by decide⟩ else ⟨-97, 3, by decide⟩
+
+example : partitionMomentFixture.AlmostSurely (fun x => SignedRatio.Equiv
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable x)
+    (conditionalPrediction (threeEvidenceCells x))) :=
+  Distro.conditionalExpectation_unique _ threeEvidenceCells partitionMomentObservable conditionalPrediction (by decide +kernel)
+
+example : ¬ SignedRatio.Equiv
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable 99)
+    (conditionalPrediction (threeEvidenceCells 99)) := by decide +kernel
+
+example : SignedRatio.Equiv (partitionMomentFixture.conditionalExpectation threeEvidenceCells
+    (fun x => SignedRatio.mul (conditionalPrediction (threeEvidenceCells x)) (partitionMomentObservable x)) 99)
+    SignedRatio.zero := by decide +kernel
+
+example : SignedRatio.Equiv (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable))
+    ⟨1, 4, by decide⟩ := by decide +kernel
+
+example : SignedRatio.Equiv (partitionMomentFixture.rationalExpectation (fun x => SignedRatio.mul
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable x)
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable x)))
+    ⟨13, 4, by decide⟩ := by decide +kernel
+
+example : SignedRatio.LE (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable))
+    (partitionMomentFixture.rationalSquaredError partitionMomentObservable (fun _ => SignedRatio.zero)) :=
+  Distro.conditionalExpectation_least_squares _ threeEvidenceCells partitionMomentObservable (fun _ => SignedRatio.zero)
+
+example : SignedRatio.LE (partitionMomentFixture.rationalExpectation (fun x => SignedRatio.mul
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable x)
+    (partitionMomentFixture.conditionalExpectation threeEvidenceCells partitionMomentObservable x)))
+    (partitionMomentFixture.rationalExpectation (fun x => SignedRatio.mul (partitionMomentObservable x) (partitionMomentObservable x))) :=
+  Distro.conditionalExpectation_square_contraction _ threeEvidenceCells partitionMomentObservable
+
+end Thesis.Examples.DistributionExtensions
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- The fixed total and dimension hold almost surely despite a retained
+zero-weight empty vector with a different dimension and total. -/
+def highestMomentFixture : Distro (List Nat) := ofWeightedAtoms [([0, 2], 1), ([1, 1], 1), ([], 0)] (by decide)
+
+example : QProb.Equiv (highestMomentFixture.pmf [0, 2])
+    (QProb.div (jointFactorialMoment highestMomentFixture [0, 2])
+      (QProb.ofNat (orderFactorial [0, 2])) (orderFactorial_pos _)) :=
+  Distro.pmf_of_highestFactorialMoment _ 2 _ (by decide +kernel) (by decide)
+
+example : highestMomentFixture.SameLaw (highestMomentFixture.rescaleWeights 3 (by decide)) :=
+  Distro.sameLaw_of_highestFactorialMoments _ _ 2 2 (by decide +kernel) (by decide +kernel)
+    (fun orders _ _ => (highestMomentFixture.rescaleWeights_sameLaw 3 (by decide)).symm.jointFactorialMoment orders)
+
+example : QProb.Equiv ((multinomialDistro 3 [1, 0, 2] (by decide)).pmf [1, 0, 2]) ⟨4, 9, by decide⟩ :=
+  QProb.equiv_trans (multinomial_pmf_highestOrder 3 [1, 0, 2] [1, 0, 2] (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+example : QProb.Equiv ((multinomialDistro 3 [1, 0, 2] (by decide)).pmf [1, 1, 1]) QProb.zero :=
+  QProb.equiv_trans (multinomial_pmf_highestOrder 3 [1, 0, 2] [1, 1, 1] (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+example : QProb.Equiv ((reinforcedCountDistro 3 [1, 0, 2] 2 (by decide)).pmf [1, 0, 2]) ⟨8, 35, by decide⟩ :=
+  QProb.equiv_trans (reinforcedCount_pmf_highestOrder 3 2 [1, 0, 2] [1, 0, 2] (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+example : QProb.Equiv ((multivariateHypergeometricDistro 3 [2, 0, 3] (by decide)).pmf [1, 0, 2]) ⟨3, 5, by decide⟩ :=
+  QProb.equiv_trans (multivariateHypergeometric_pmf_highestOrder 3 [2, 0, 3] [1, 0, 2] (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+example : QProb.Equiv ((multivariateHypergeometricDistro 0 [] (by decide)).pmf []) QProb.one :=
+  QProb.equiv_trans (multivariateHypergeometric_pmf_highestOrder 0 [] [] (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Feasible counts suffice, including an exhausted population and zero stocks. -/
+example : depletingCountsSupported 3 [2, 0, 1] [2, 0, 1] :=
+  (depletingCountsSupported_iff_coordinates _ _ _).mpr (by decide +kernel)
+
+example : depletingCountsSupported 0 [] [] :=
+  (depletingCountsSupported_iff_coordinates _ _ _).mpr (by decide +kernel)
+
+example : ¬ depletingCountsSupported 1 [2, 0, 1] [0, 1, 0] := by
+  intro supported
+  have data := (depletingCountsSupported_iff_coordinates _ _ _).mp supported
+  have impossible := data.2.2 1 (by decide)
+  change 1 ≤ 0 at impossible
+  omega
+
+example : ¬ depletingCountsSupported 0 [0, 0] [] := by
+  intro supported
+  have data := (depletingCountsSupported_iff _ _ _).mp supported
+  have impossible : (0 : Nat) = 2 := data.1
+  omega
+
+example : QProb.Equiv ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [0, 2])
+    ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [2, 0]) :=
+  multicolourDepleting_exchangeable [2, 0, 1] [0, 2] [2, 0] (by decide) (List.Perm.swap ..)
+
+/-- Both an exhausted colour and an invalid colour retain the exchangeability law. -/
+example : QProb.Equiv ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [1, 0])
+    ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [0, 1]) :=
+  multicolourDepleting_exchangeable [2, 0, 1] [1, 0] [0, 1] (by decide) (List.Perm.swap ..)
+
+example : QProb.Equiv ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [7, 0])
+    ((multicolourDepletingDistro 2 [2, 0, 1] (by decide)).pmf [0, 7]) :=
+  multicolourDepleting_exchangeable [2, 0, 1] [7, 0] [0, 7] (by decide) (List.Perm.swap ..)
+
+example : QProb.Equiv ((depletingCountsContinuationOfBounds 1 1 [1, 1, 1] [1, 0, 0]
+    (by decide) (by decide) (by decide) (by decide +kernel)).pmf [1]) ⟨1, 2, by decide⟩ :=
+  depleting_next_after_counts_of_bounds _ _ _ (by decide) (by decide) (by decide) (by decide +kernel) _ (by decide)
+
+example : QProb.Equiv ((depletingCountsContinuationOfBounds 3 0 [2, 0, 1] [2, 0, 1]
+    (by decide) (by decide) (by decide) (by decide +kernel)).pmf []) QProb.one := by decide +kernel
+
+end Thesis.Examples.DistributionExtensions
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Three retained null outliers violate dimension, coordinate bounds, or both. -/
+def positiveOutlierFixture : Distro (List Nat) :=
+  ofWeightedAtoms [([0, 0], 1), ([1, 1], 1), ([], 0), ([200, 0], 0), ([300, 400, 500], 0)] (by decide)
+
+theorem positiveOutlier_shape : positiveOutlierFixture.AlmostSurely
+    (fun counts => counts.length = 2 ∧ ∀ count ∈ counts, count ≤ 1) := by decide +kernel
+
+example : positiveOutlierFixture.record.atoms =
+    [([0, 0], 1), ([1, 1], 1), ([], 0), ([200, 0], 0), ([300, 400, 500], 0)] := rfl
+
+example : ¬ ∀ atom ∈ positiveOutlierFixture.record.atoms, atom.1.length = 2 := by decide +kernel
+example : ¬ ∀ atom ∈ positiveOutlierFixture.record.atoms, ∀ count ∈ atom.1, count ≤ 1 := by decide +kernel
+
+/-- Null outliers do not affect any order, including orders outside the rectangle. -/
+theorem positiveOutlier_moments (orders : List Nat) :
+    QProb.Equiv (jointFactorialMoment positiveOutlierFixture orders) (jointFactorialMoment jointMomentFixture orders) := by
+  simp only [jointFactorialMoment, Distro.expectNat, positiveOutlierFixture, jointMomentFixture,
+    ofWeightedAtoms, natIntegral, FiniteProbRecord.totalMass, QProb.Equiv,
+    Nat.zero_mul, Nat.one_mul, Nat.add_zero]
+
+/-- The new bounded interface applies with bound one despite recorded values 500. -/
+theorem positiveOutlier_sameLaw : positiveOutlierFixture.SameLaw jointMomentFixture :=
+  Distro.sameLaw_of_jointFactorialMoments_positiveSupport _ _ 2 1 positiveOutlier_shape
+    (by decide +kernel) (fun orders _ _ => positiveOutlier_moments orders)
+
+example : positiveOutlierFixture.SameLaw jointMomentFixture :=
+  (Distro.sameLaw_iff_jointFactorialMoments_positiveSupport _ _ 2
+    (fun atom member weight => (positiveOutlier_shape atom member weight).1) (by decide +kernel)).mpr
+      (fun orders _ => positiveOutlier_moments orders)
+
+example (args : List QProb) (dimension : args.length = 2) :
+    QProb.Equiv (multivariatePGF positiveOutlierFixture (args.map (fun t => QProb.add t QProb.one)))
+      (QProb.listSum ((factorialBox args.length 1).map (fun orders =>
+        QProb.mul (multivariateFactorialCoefficient positiveOutlierFixture orders) (multivariateMonomial args orders)))) :=
+  multivariatePGF_factorial_expansion_positiveSupport _ args 1 (fun atom member weight =>
+    ⟨(positiveOutlier_shape atom member weight).1.trans dimension.symm, (positiveOutlier_shape atom member weight).2⟩)
+
+/-- Positional PGF uniqueness also accepts the same wrong-shaped null atoms. -/
+example : positiveOutlierFixture.SameLaw jointMomentFixture :=
+  Distro.sameLaw_of_multivariatePGF_positiveSupport _ _ 2 2 (by decide)
+    (fun atom member weight => ⟨(positiveOutlier_shape atom member weight).1,
+      fun count within => Nat.lt_succ_of_le ((positiveOutlier_shape atom member weight).2 count within)⟩)
+    (by decide +kernel) (fun args _ => positiveOutlier_sameLaw.expectation (multivariateMonomial args))
+
+def emptyPositiveOutlierFixture : Distro (List Nat) := ofWeightedAtoms [([], 2), ([9, 10], 0)] (by decide)
+
+example : emptyPositiveOutlierFixture.SameLaw (Distro.pointMass ([] : List Nat)) := by
+  apply Distro.sameLaw_of_jointFactorialMoments_positiveSupport _ _ 0 0 (by decide +kernel) (by decide +kernel)
+  intro orders dimension _
+  have empty : orders = [] := List.length_eq_zero_iff.mp dimension
+  subst orders
+  decide +kernel
+
+/-- Numeric expansion and reconstruction also ignore a retained out-of-bound null value. -/
+def positiveNumericOutlierFixture : NatDistro Nat := ⟨rationalAlgebraFixture, id⟩
+def positiveNumericCleanFixture : NatDistro Nat := ⟨ofWeightedAtoms [(0, 1), (1, 1)] (by decide), id⟩
+
+example (t : QProb) : QProb.Equiv (pgf positiveNumericOutlierFixture (QProb.add t QProb.one))
+    (QProb.listSum ((List.range 2).map (fun order =>
+      QProb.mul (factorialPGFCoefficient positiveNumericOutlierFixture order) (qpow t order)))) :=
+  pgf_factorial_expansion_positiveSupport _ 1 (by decide +kernel) t
+
+example : positiveNumericOutlierFixture.SameLaw positiveNumericCleanFixture := by
+  apply NatDistro.sameLaw_of_factorialMoments_positiveSupport _ _ 1 (by decide +kernel) (by decide +kernel)
+  intro order bound
+  have cases : order = 0 ∨ order = 1 := by omega
+  rcases cases with rfl | rfl <;> decide +kernel
+
+end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Highest-order extraction includes zero trials with retained zero-weight colours. -/
+example : QProb.Equiv ((multinomialDistro 0 [0, 1] (by decide)).pmf [0, 0]) QProb.one :=
+  QProb.equiv_trans (multinomial_pmf_highestOrder 0 [0, 1] [0, 0] (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+example : QProb.Equiv ((reinforcedCountDistro 0 [0, 1] 2 (by decide)).pmf [0, 0]) QProb.one :=
+  QProb.equiv_trans (reinforcedCount_pmf_highestOrder 0 2 [0, 1] [0, 0] (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+end Thesis.Examples.DistributionExtensions

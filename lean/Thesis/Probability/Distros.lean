@@ -32,6 +32,9 @@ import Thesis.Probability.Distros.FactorialMoments
 import Thesis.Probability.Distros.FactorialPGF
 import Thesis.Probability.Distros.MultivariateFactorialPGF
 import Thesis.Probability.Distros.MultivariateReconstruction
+import Thesis.Probability.Distros.PositiveSupport
+import Thesis.Probability.Distros.HighestFactorialMoments
+import Thesis.Probability.Distros.PositiveReconstruction
 import Thesis.Probability.Distros.PolyaUpdates
 import Thesis.Probability.Distros.Degenerate
 import Thesis.Probability.Distros.NegativeBinomialMoments
@@ -47,6 +50,7 @@ import Thesis.Probability.Distros.DepletingWord
 import Thesis.Probability.Distros.DepletingConditioning
 import Thesis.Probability.Distros.DepletingPrefix
 import Thesis.Probability.Distros.DepletingConsistency
+import Thesis.Probability.Distros.DepletingSupport
 import Thesis.Probability.Distros.Reweight
 import Thesis.Probability.Distros.MulticolourPolya
 import Thesis.Probability.Distros.KernelInvariance
@@ -54,12 +58,15 @@ import Thesis.Probability.Distros.SignedCovariance
 import Thesis.Probability.Distros.SignedCauchy
 import Thesis.Probability.Distros.RationalMoments
 import Thesis.Probability.Distros.RationalClearing
+import Thesis.Probability.Distros.RationalCovarianceAlgebra
 import Thesis.Probability.Distros.RationalConcentration
 import Thesis.Probability.Distros.RationalMarkov
 import Thesis.Probability.Distros.RationalChebyshev
 import Thesis.Probability.Distros.ConditionalMoments
 import Thesis.Probability.Distros.ConditionalObservable
 import Thesis.Probability.Distros.ConditionalTower
+import Thesis.Probability.Distros.ConditionalAlgebra
+import Thesis.Probability.Distros.ConditionalProjection
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.RationalBetaBinomial
@@ -281,4 +288,22 @@ retained rather than silently excluded as nonpositive support.
     using all mixed factorial moments. `MultivariateReconstruction` proves
     that a finite rectangle of those moments determines the entire joint
     event law; the all-orders characterization obtains its bound from support.
+54. `RationalCovarianceAlgebra` supplies signed rational product factorization,
+    symmetric bilinear covariance, rational scaling, independence, and the
+    dependent-sum variance formula, on the original finite records.
+55. `ConditionalAlgebra` gives rational linearity, pull-out, idempotence and
+    almost-sure uniqueness from fibre integrals. `ConditionalProjection`
+    proves the squared-error decomposition, least-squares optimality and
+    squared-norm contraction, retaining zero values on unsupported fibres.
+56. `HighestFactorialMoments` extracts PMFs and full fixed-total joint laws
+    from the top total order alone, with multinomial, reinforced and
+    hypergeometric formulas. `PositiveSupport` supplies weighted congruence
+    and finite-record singleton extensionality without shrinking domains.
+57. `DepletingSupport` characterizes supported count observations by dimension,
+    total draws and stock bounds, proves word permutation invariance even for
+    null words, and provides conditioning from explicit feasible-count data.
+58. `PositiveFactorialPGF`, `PositivePGFUniqueness` and `PositiveReconstruction`
+    require dimensions and bounds only almost surely, so null outliers do not
+    obstruct expansion or reconstruction. Original records and declared
+    domains, and all existing stronger interfaces, are retained.
 -/
