@@ -84,7 +84,11 @@ jobs:
         run: lake build Thesis.Probability.FiniteProductGrouping Thesis.Examples.FiniteProductGrouping
       - name: Check bounded rational source catalogues
         working-directory: lean
-        run: lake build Thesis.Probability.FiniteRecordCatalogue Thesis.Examples.FiniteRecordCatalogue
+        run: >-
+          lake build
+          Thesis.Probability.FiniteRecordCatalogue
+          Thesis.Examples.FiniteRecordCatalogue
+          Thesis.CausalTransport.BoundedNativeCatalogue
       - name: Check graph-only identification layers
         working-directory: lean
         run: >-
