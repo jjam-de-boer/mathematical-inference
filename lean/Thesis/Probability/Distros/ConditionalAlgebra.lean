@@ -92,6 +92,8 @@ theorem Distro.conditionalExpectation_pull_out (μ : Distro Ω) (key : Ω → Fi
     (conditionalBlockMean_mul_left cell (h (key x)) f)
   intro atom member
   have same := of_decide_eq_true (List.mem_filter.mp member).2
+  change SignedRatio.Equiv (SignedRatio.mul (h (key atom.1)) (f atom.1))
+    (SignedRatio.mul (h (key x)) (f atom.1))
   rw [same]
   exact SignedRatio.equiv_refl _
 
@@ -113,12 +115,14 @@ theorem Distro.conditionalExpectation_of_key (μ : Distro Ω) (key : Ω → Fin 
     SignedRatio.Equiv (μ.conditionalExpectation key (fun y => h (key y)) x) (h (key x)) := by
   let cell := μ.record.atoms.filter (fun atom => decide (key atom.1 = key x))
   have mass : 0 < FiniteProbRecord.totalMass cell := by
-    rw [FiniteProbRecord.totalMass_filter_event]
+    change 0 < FiniteProbRecord.totalMass (μ.record.atoms.filter (fun atom => decide (key atom.1 = key x)))
+    rw [FiniteProbRecord.totalMass_filter_event μ.record.atoms (fun y => decide (key y = key x))]
     exact positive
   refine SignedRatio.equiv_trans (conditionalBlockMean_congr_on_support cell _ (fun _ => h (key x)) ?_)
     (conditionalBlockMean_constant cell (h (key x)) mass)
   intro atom member
   have same := of_decide_eq_true (List.mem_filter.mp member).2
+  change SignedRatio.Equiv (h (key atom.1)) (h (key x))
   rw [same]
   exact SignedRatio.equiv_refl _
 
