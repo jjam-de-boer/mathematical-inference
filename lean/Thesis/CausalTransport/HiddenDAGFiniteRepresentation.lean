@@ -119,8 +119,9 @@ end FiniteHiddenDAGSCM.ObservationalSourceCompression
 namespace FiniteHiddenDAGSCM
 
 /-- Constructive bounded-representative data for the *same full hidden DAG*.
-The model contains its actual independent rational source law; no external
-semantic correspondence, positivity or assumed representation is a field.
+The model contains its actual independent rational source law. The executable
+constructor below proves the preservation fields; callers are not asked for
+an external semantic-transfer assumption or an observed-positivity premise.
 Finite mechanism-catalogue membership is deliberately not included until
 that separate enumeration and coverage theorem have been proved. -/
 structure BoundedRepresentation (original : FiniteHiddenDAGSCM S P) (targets : List (NativeProbabilityQuery S)) where
