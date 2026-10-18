@@ -8,58 +8,92 @@ namespace Causality
 Transport-specific modal certificates.
 
 The executable epistemic records and transitions live in `Modalities`; this
-module adds the external soundness/completeness interfaces and mode-indexed
-identification theorems.
+module adds soundness/completeness interfaces and mode-indexed identification
+theorems.  Modal certificates retain their selected `GraphModelClass`; the
+default remains `all` for existing callers.  In particular, a positive-class
+certificate must not silently become an unrestricted zero-class certificate.
 -/
 
 /-- A transported joint certificate retaining its operation-sensitive modal trace. -/
 structure ModalEncodedJointDerivation
-    (G : ObservedGraph S) (query : JointKernelQuery S) where
-  certificate : JointIdentificationCertificate (GraphModelClass.all G) query
+    (G : ObservedGraph S) (query : JointKernelQuery S)
+    (C : GraphModelClass G := GraphModelClass.all G) where
+  certificate : JointIdentificationCertificate C query
   trace : ModalDerivationTrace G certificate.derivation
 
 /-- Conditional counterpart of `ModalEncodedJointDerivation`. -/
 structure ModalEncodedConditionalDerivation
-    (G : ObservedGraph S) (query : ConditionalKernelQuery S) where
-  certificate : ConditionalIdentificationCertificate (GraphModelClass.all G)
-    query
+    (G : ObservedGraph S) (query : ConditionalKernelQuery S)
+    (C : GraphModelClass G := GraphModelClass.all G) where
+  certificate : ConditionalIdentificationCertificate C query
   trace : ModalDerivationTrace G certificate.derivation
 
 def EncodedJointDerivation.toModal
     {G : ObservedGraph S} {query : JointKernelQuery S}
-    (encoded : EncodedJointDerivation (GraphModelClass.all G) query) :
-    ModalEncodedJointDerivation G query where
+    {C : GraphModelClass G} (encoded : EncodedJointDerivation C query) :
+    ModalEncodedJointDerivation G query C where
   certificate := encoded.certificate
   trace := encoded.certificate.derivation.toModalTrace
 
 def EncodedConditionalDerivation.toModal
     {G : ObservedGraph S} {query : ConditionalKernelQuery S}
-    (encoded : EncodedConditionalDerivation (GraphModelClass.all G) query) :
-    ModalEncodedConditionalDerivation G query where
+    {C : GraphModelClass G} (encoded : EncodedConditionalDerivation C query) :
+    ModalEncodedConditionalDerivation G query C where
   certificate := encoded.certificate
   trace := encoded.certificate.derivation.toModalTrace
 
 def ModalEncodedJointDerivation.erase
-    (encoded : ModalEncodedJointDerivation G query) :
-    EncodedJointDerivation (GraphModelClass.all G) query where
+    {C : GraphModelClass G} (encoded : ModalEncodedJointDerivation G query C) :
+    EncodedJointDerivation C query where
   certificate := encoded.certificate
 
 def ModalEncodedConditionalDerivation.erase
-    (encoded : ModalEncodedConditionalDerivation G query) :
-    EncodedConditionalDerivation (GraphModelClass.all G) query where
+    {C : GraphModelClass G} (encoded : ModalEncodedConditionalDerivation G query C) :
+    EncodedConditionalDerivation C query where
   certificate := encoded.certificate
 
 theorem ModalEncodedJointDerivation.identifiable
+    {C : GraphModelClass G}
     (sound : PublishedSoundness S G)
-    (encoded : ModalEncodedJointDerivation G query) :
-    TypeTheoreticIdentifiable G query :=
+    (encoded : ModalEncodedJointDerivation G query C) :
+    C.identifiable query :=
   transport_joint_soundness sound query encoded.erase
 
 theorem ModalEncodedConditionalDerivation.identifiable
+    {C : GraphModelClass G}
     (sound : PublishedSoundness S G)
-    (encoded : ModalEncodedConditionalDerivation G query) :
-    TypeTheoreticConditionalIdentifiable G query :=
+    (encoded : ModalEncodedConditionalDerivation G query C) :
+    C.conditionalIdentifiable query :=
   transport_conditional_soundness sound query encoded.erase
+
+/-! ## Mode indices with explicit model-class membership
+
+The historical mode wrappers below retain their unrestricted signatures.
+These class-indexed versions additionally remember that the stored model is
+in the certificate's class.  Compatibility alone would not justify applying
+a positive-class support constructor at a zero-containing mode.
+-/
+
+structure ModeIndexedJointDerivationIn (mode : CausalMode S)
+    {G : ObservedGraph S} (C : GraphModelClass G) (query : JointKernelQuery S) where
+  member : C.Mem mode.record.model
+  encoded : ModalEncodedJointDerivation G query C
+
+structure ModeIndexedConditionalDerivationIn (mode : CausalMode S)
+    {G : ObservedGraph S} (C : GraphModelClass G) (query : ConditionalKernelQuery S) where
+  member : C.Mem mode.record.model
+  encoded : ModalEncodedConditionalDerivation G query C
+
+/-- Class membership supplies the weaker graphical compatibility premise. -/
+theorem ModeIndexedJointDerivationIn.compatible
+    {C : GraphModelClass G} (indexed : ModeIndexedJointDerivationIn mode C query) :
+    Compatible mode.record.model G :=
+  C.mem_compatible mode.record.model indexed.member
+
+theorem ModeIndexedConditionalDerivationIn.compatible
+    {C : GraphModelClass G} (indexed : ModeIndexedConditionalDerivationIn mode C query) :
+    Compatible mode.record.model G :=
+  C.mem_compatible mode.record.model indexed.member
 
 /-- A modal certificate indexed by a concrete compatible epistemic mode. -/
 structure ModeIndexedJointDerivation (mode : CausalMode S)
@@ -73,6 +107,34 @@ structure ModeIndexedConditionalDerivation (mode : CausalMode S)
   encoded : ModalEncodedConditionalDerivation G query
 
 namespace CausalMode
+
+/-- Exact modal transport inside a selected class.  No completeness record
+for the larger `all` class is required or inferred. -/
+theorem transported_joint_iff_in (mode : CausalMode S)
+    {G : ObservedGraph S} (C : GraphModelClass G)
+    (complete : PublishedCompleteness C) (sound : PublishedSoundness S G)
+    (query : JointKernelQuery S) :
+    (C.Mem mode.record.model ∧ C.identifiable query) ↔
+      Nonempty (ModeIndexedJointDerivationIn mode C query) := by
+  constructor
+  · rintro ⟨member, identified⟩
+    exact ⟨⟨member, (transport_joint_completeness complete query identified).toModal⟩⟩
+  · rintro ⟨indexed⟩
+    exact ⟨indexed.member, indexed.encoded.identifiable sound⟩
+
+/-- Conditional transport has the same class boundary; the underlying
+certificate still retains its original source-support obligations. -/
+theorem transported_conditional_iff_in (mode : CausalMode S)
+    {G : ObservedGraph S} (C : GraphModelClass G)
+    (complete : PublishedCompleteness C) (sound : PublishedSoundness S G)
+    (query : ConditionalKernelQuery S) :
+    (C.Mem mode.record.model ∧ C.conditionalIdentifiable query) ↔
+      Nonempty (ModeIndexedConditionalDerivationIn mode C query) := by
+  constructor
+  · rintro ⟨member, identified⟩
+    exact ⟨⟨member, (transport_conditional_completeness complete query identified).toModal⟩⟩
+  · rintro ⟨indexed⟩
+    exact ⟨indexed.member, indexed.encoded.identifiable sound⟩
 
 def JointIdentifiable (mode : CausalMode S) (query : JointKernelQuery S) : Prop :=
   TypeTheoreticIdentifiable mode.record.model.observedGraph query
