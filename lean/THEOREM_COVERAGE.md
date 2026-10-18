@@ -600,6 +600,61 @@ bounded assessment of the projection-wide root-grouping route, before any
 substantial new representation infrastructure. No projection-wide coverage
 is inferred from the fixed-full-DAG result.
 
+### Bounded reassessment after fixed-full-DAG coverage
+
+This is an implementation assessment, not a new projection-wide Lean theorem.
+The completed fixed-DAG constructor now supplies the final compression and
+enumeration step of a possible projection-wide proof. Re-reading the existing
+collapse and reverse-realization APIs identifies the following concrete order:
+
+1. **A fixed clique-root graph.** Enumerate the Boolean observed-child masks
+   whose distinct members are pairwise bidirected-adjacent. Include singleton
+   and empty masks. Construct one hidden root per listed mask, with its mask
+   incidences and the signature's unchanged observed directed edges. Prove
+   exact projection and a node bound of `n + 2^n`. Including all two-node edge
+   masks recovers every required bidirected edge; larger clique masks add no
+   forbidden edge. Graph compatibility permits an unused root's mechanism to
+   be constant, so unused clique slots need not be deleted model-dependently.
+2. **An independent-law grouping adapter.** Collapse an arbitrary original
+   model using `toLatentRootSCM`, then assign each root to its exact child mask.
+   Each such mask is a clique by projected-graph agreement. A grouped value can
+   be a proof-indexed product `source -> owner source = mask -> Value source`.
+   The existing `ProofFunction` enumeration/equality construction handles its
+   absent coordinates without choosing values from unused alphabets. Construct
+   the actual block factors and prove that decoding their independent product
+   gives the whole old joint law, not only its one-source marginals. Finite
+   product exchange and singleton/rectangle extensionality provide reusable
+   proof ingredients; the disjoint-block law itself is still missing.
+3. **Multi-child native realization.** Install those block values as the
+   hidden roots' values/private sources in the fixed clique-root graph, with
+   deterministic observed-node private noise. Prove equation simulation and
+   all-hard-intervention event preservation. The existing
+   `HiddenDAGRootPlacement.sharedInput` data can describe arbitrary child
+   families, but `hiddenDAGRootPlacements` and `toHiddenDAGSCM` currently require
+   `Compatible`, which includes **at most two children per root**. They cannot
+   be applied directly to the grouped multi-child model. Prefer a narrow
+   clique-root constructor or an explicitly generalized placement API; do not
+   disguise this premise as projected-graph agreement alone.
+4. **Representation coverage with the right quantifiers.** Explicitly define
+   the family ranging over full hidden DAGs with the same observed projection.
+   Prove its models map into the fixed clique-root graph with their laws and
+   targets preserved. Conversely, that graph is itself a member of this
+   family. Only then compose with `nativeTemplateRepresentation`, obtaining
+   structural bounds independent of the original hidden-node count.
+5. **Regression and review.** Include empty graphs/masks, unused clique slots,
+   zero-weight cells, an internal hidden relay and a root with three children.
+   Check supported conditionals by retaining their joint/evidence queries.
+   Review this coverage checkpoint before adding feasibility/search machinery.
+
+There is a clear constructive strategy, with no identified mathematical
+obstruction, but this is substantial probability-and-model infrastructure,
+not a wiring change or a result already supplied by the reverse canonical
+countermodel lift. It can be staged at the graph construction and grouped-law
+boundaries. Even success would leave infinitely many rational weights and
+would not settle unrestricted rational feasibility or goal 5's formula-search
+termination question. Substantial implementation follows a separate review
+of this bounded assessment.
+
 ## Research checkpoint 7: fixed-observed-law procedures
 
 This assessment separates three possible extensions. None is currently a
