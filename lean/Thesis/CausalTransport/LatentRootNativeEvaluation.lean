@@ -100,9 +100,17 @@ theorem expectedValues_solution (intervention : HardIntervention S) (noise : (mo
       | some value => value
       | none => (model original).mechanism node (fun parent _ => expectedValues original intervention noise parent) (noise node) := by
   refine Fin.addCases (fun root => ?_) (fun observed => ?_) node
-  · change expectedValues original intervention noise (rootNode original root) = _
+  · change expectedValues original intervention noise (rootNode original root) =
+      match (model original).interventionValueAt intervention (rootNode original root) with
+      | some value => value
+      | none => (model original).mechanism (rootNode original root)
+          (fun parent _ => expectedValues original intervention noise parent) (noise (rootNode original root))
     rw [expectedValues_root, interventionValueAt_root, mechanism_root]
-  · change expectedValues original intervention noise (observedNode original observed) = _
+  · change expectedValues original intervention noise (observedNode original observed) =
+      match (model original).interventionValueAt intervention (observedNode original observed) with
+      | some value => value
+      | none => (model original).mechanism (observedNode original observed)
+          (fun parent _ => expectedValues original intervention noise parent) (noise (observedNode original observed))
     rw [expectedValues_observed, interventionValueAt_observed]
     cases forced : intervention.value observed with
     | some value =>
@@ -122,7 +130,7 @@ there is no extra global-Markov, graph-transfer or semantic-equality premise. -/
 theorem evalNode (intervention : HardIntervention S) (noise : (model original).NoiseAssignment) (node : Node original) :
     (model original).evalNode intervention noise node = expectedValues original intervention noise node :=
   (model original).evalNode_eq_of_solution intervention noise (expectedValues original intervention noise)
-    (expectedValues_solution original intervention noise) node
+    (fun current => expectedValues_solution original intervention noise current) node
 
 theorem evalObserved (intervention : HardIntervention S) (noise : (model original).NoiseAssignment) :
     (model original).evalObserved intervention noise = original.evalUnder intervention.value (decodeNoise original noise) := by
