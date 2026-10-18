@@ -52,7 +52,9 @@ private def valueZero (result : ProbabilityResult.Result)
   | some value =>
       change some value.num = some 0 at checked
       have numerator : value.num = 0 := Option.some.inj checked
-      exact .value (by change value.num * 1 = 0 * value.den; rw [numerator]; rfl)
+      exact .value (by
+        change value.num * 1 = 0 * value.den
+        simp only [numerator, Nat.zero_mul])
 
 private theorem usedOfZero {S : ObservedSignature.{0}} {P : FiniteLatentProjection S}
     (native : FiniteHiddenDAGSCM S P) (term : ProbabilityTerm S) (assignment : S.Assignment)
@@ -127,7 +129,7 @@ theorem atomic_joint_endpoint_zero : QProb.Equiv
       jointExecution.operation.atomicDenominator_positive) QProb.zero :=
   QProb.equiv_trans jointExecution.operation.atomicConditionedValue joint_value_zero
 
-theorem native_formula_zero : ProbabilityResult.Equivalent
+noncomputable def native_formula_zero : ProbabilityResult.Equivalent
     (model.termDenote jointCertificate.encoded.certificate.formula reference) (some QProb.zero) :=
   ProbabilityResult.trans jointExecution.formulaValue (.value joint_value_zero)
 
@@ -145,6 +147,7 @@ theorem null_source_undefined : model.kernelDenote nullKernel reference = none :
   decide +kernel
 
 theorem null_source_not_admissible : ¬ model.ConditioningAdmissibleAt nullKernel reference := by
+  unfold FiniteHiddenDAGSCM.ConditioningAdmissibleAt
   decide +kernel
 
 /-- Even if a syntactic derivation is supplied, an unsupported source cannot
