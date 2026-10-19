@@ -18,7 +18,7 @@ an external method; it does not extend the probability framework.
 | 2. Shared graph infrastructure | Connectivity, reachability and rank infrastructure extracted without changing public theorem names; current-engine dependency guards pass. | Further splitting is optional and is not claimed to cure compiler memory use. |
 | 3. Multivalued native example | Three declared observed values, an actual rational distribution, null intervention targets and supported conditionals checked through the native model. | The standalone-template regression now exercises the same boundary as well. |
 | 4. Support-pattern applicability | Exact undefined/zero/positive analysis and exhaustive comparison within supplied finite formula catalogues. | This does not enumerate every possible certified formula. |
-| 5. Universal alternative-formula coverage | Finite native causal support-profile coverage and all-expression/derivation support transport constructed; a bounded proof/guard language has been proposed. | Review before implementing proof-code enumeration or formula selection; no universal formula coverage or impossibility theorem yet. |
+| 5. Universal alternative-formula coverage | Finite native causal support-profile coverage, exact recursive support checking and a serialized causal proof/observable-guard certificate checker constructed. | Review before implementing proof-code enumeration or formula selection; no universal formula coverage or impossibility theorem yet. |
 | 6. Finite structural representation | Constructed standalone-template coverage both for a fixed full hidden DAG and across all finite hidden DAGs with a fixed observed projection. | Rational weight assignments remain infinite; compatibility, sharpness and complete search are separate obligations. |
 | 7. Fixed-observed-law procedures | Restricted results retained; exact compatibility and unconditional/conditional-target comparison for a full hidden DAG with declared finite alphabet and denominator bounds. Conditional support and positive-evidence values are reported separately. | Unrestricted rational feasibility remains separate; increasing bounds has no proved stopping rule. |
 
@@ -248,10 +248,63 @@ current observable guards remain unchanged because their checks depend only
 on observed support. Huge full model catalogues are not concretely expanded
 by these regressions.
 
-Review checkpoint: these two support stages do not implement serialized
-proof codes, guard-table compilation, bounded derivation enumeration or a
-new formula selector. Those remain the next proposed stages, not completed
-work or consequences of finite profile coverage alone.
+These two support stages did not themselves implement proof codes or a new
+selector. After their verified publication and review, the separately approved
+certificate-checker stage below adds proof codes and supplied guard-table
+checking. Derivation enumeration and formula selection remain unimplemented.
+
+### Approved serialized certificate-checker stage for goal 5
+
+`ProbabilityTermCode` uses constructor trees and natural dictionary indices,
+not arbitrary functions or supplied semantic proofs. Its dictionaries include
+every declared observed value, also null intervention targets. Invalid indices
+are rejected. This is an abstract serialized syntax, not a byte parser.
+`DerivationCode.check` reconstructs actual existing do-calculus derivations:
+all three executable graph rules, probability-algebra primitives, congruences,
+transitivity and syntactic endpoint reindexing. Syntactic joins use constructive
+finite equality, never numerical agreement at one model. Rule 3 retains its
+incoming-arrow cut. The separate top-level `actionOne` certificate reuses the
+already proved probability-one-action identity; it is not an unconditional
+graph rule or an arbitrary nested semantic-proof language.
+
+`HiddenDAGLocalDerivationSupport.check_exact` characterizes acceptance by an
+inhabited complete native support tree. `ofCheck` constructs that tree from
+the actual evaluated options; `check_of_supported` proves the converse.
+`check_eq_of_agreement` transfers the entire check across causal support
+profiles. Strict undefined intermediates remain mandatory even when both
+printed endpoints have values. Zero-weighted congruence skips its factor
+subtree only on the established defined-zero branch.
+
+`NativeSupportGuard` rows contain the complete observed support bit-list and
+a reference index. Runtime acceptance is observable. Certification checks
+**every** matching actual causal profile, not one favorable representative.
+Support demand is required wherever source and printed endpoints are both
+supported. The guard checker never tries to prove a numerical causal identity
+from uniform profile values: that identity comes from the reconstructed
+causal derivation or the proved `actionOne` theorem.
+
+`NativeCertificateCode.checkFixed` and `checkProjected` additionally verify
+the coded source and action-free printed output. Their accepted formulas have
+native soundness theorems `CheckedNativeFormula.fixed_soundAt` and
+`projected_soundAt`, respectively. The latter applies to every original
+finite hidden DAG with the fixed observed projection, not merely the clique
+graph used for finite checking. These adapters supply constructed profile
+coverage automatically; `checkOn` exposes a generic smaller-list interface
+whose application theorem explicitly requires coverage of the applied model.
+The existing two-guard formula API is unchanged.
+
+Application still requires the **original causal source support** separately.
+The regression even checks a printed formula that is available while its
+original conditional target is null: without the source premise it gives no
+soundness conclusion. Further regressions reject invalid dictionaries, false
+graphical steps, mismatched joins/sources, actionful printed branches and a
+strict cycle with a hidden undefined intermediate; they accept the genuine
+weighted null-factor case and the guarded action-one identity. Only tiny
+explicit profile lists are executed, not enormous full catalogues.
+
+Review checkpoint: the checker certifies supplied codes in this declared
+grammar. It does not enumerate derivations, produce a formula selector, prove
+bounded proof-search completeness, or cover arbitrary Lean semantic proofs.
 
 The universal stopping argument remains unresolved. Finitely many support
 cells bound the number of *coverage gains*, not the delay until the next

@@ -31,6 +31,7 @@ proofs, or settle the universal stopping/coverage question.
 -/
 
 variable {S : ObservedSignature.{0}} {P Q : FiniteLatentProjection S}
+variable {graph : ObservedGraph S} {profiles : List (NativeTemplateInstance Q)}
 
 namespace ProbabilityCode
 
