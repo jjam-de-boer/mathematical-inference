@@ -93,6 +93,38 @@ The main import still certifies the same published soundness result. This
 successful local target is a measured repair to the observed compilation
 boundary, not yet evidence that the entire project or audit fits locally.
 
+The monolithic `Completeness` subsequently exceeded the 1280 MiB aggregate
+watchdog. Its original source is now partitioned chronologically into
+certificate, failure-extraction, three historical legacy-case, and three
+hedge-model/parity/countermodel layers. The original entry point remains an
+import-compatible facade. All original declaration text reassembles exactly
+in its original order; no deeper failure case was added and no historical
+lemma was deleted. The unsplit `851b231` source has SHA-256
+`c9e5000ada10ceabcb3492f17b98e0bb5fb5a57c773faa55e04ba900dd195fcd`.
+
+All eight layers and the facade passed sequentially through ordinary Lake:
+
+| Completeness layer | Wall time | Sampled aggregate RSS |
+| --- | --- | --- |
+| Certificates | 4.84 s | 978.3 MiB |
+| Failure extraction | 1.51 s | 780.1 MiB |
+| Legacy shrink cases | 2.45 s | 861.2 MiB |
+| Legacy product cases | 1.77 s | 819.1 MiB |
+| Legacy deeper cases | 1.62 s | 792.1 MiB |
+| Hedge models | 9.03 s | 867.5 MiB |
+| Hedge parity | 3.17 s | 835.7 MiB |
+| Hedge countermodels | 2.74 s | 795.6 MiB |
+| Original facade | 0.51 s | 625.2 MiB |
+
+These are compilation repairs, not new mathematical soundness/completeness
+claims. Full local project/native/audit gates are still outstanding at this
+checkpoint. The builder now batches only no-build validation of unchanged
+targets; a stale batch falls back to individual prerequisite-first compilation.
+Intermediate source checks cover each target and its prerequisites so unrelated
+in-progress edits do not interrupt earlier work; the final checks still cover
+the complete planned tree. Resource-stop reports include the elapsed time,
+sampled process-group peak and log path.
+
 No larger memory or timeout setting is an automatic retry. Unrelated editor
 or manual compiler processes are not terminated. Machine-wide headroom still
 matters, especially on this machine while other applications retain swap.

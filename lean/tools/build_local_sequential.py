@@ -112,8 +112,11 @@ def run_group(command, root, environment, limits, log, allowed=(0,)):
             # A completed launcher must not leave an unmonitored compiler.
             if any(process.group == child.pid for process in processes()):
                 raise BuildStopped("build launcher exited with descendants still running")
-        except BaseException:
+        except BaseException as error:
             kill_group(child)
+            if isinstance(error, BuildStopped):
+                raise BuildStopped(f"{error}; wall={time.monotonic() - started:.2f}s; "
+                                   f"sampled group RSS={peak:.1f} MiB; log={log}") from error
             raise
     elapsed = time.monotonic() - started
     if result not in allowed:
@@ -247,9 +250,13 @@ def main():
             measurements, built, skipped = [], 0, 0
 
             def current(module=None):
-                scope = (tracked if module is None else
-                         [source_path(root, dependency) for dependency in prerequisite_scope(graph, module)] +
-                         [root / name for name in ("lakefile.toml", "lean-toolchain", "lake-manifest.json")])
+                if module is None:
+                    scope = tracked
+                else:
+                    roots = [module] if isinstance(module, str) else module
+                    required = set().union(*(prerequisite_scope(graph, item) for item in roots))
+                    scope = [source_path(root, dependency) for dependency in required]
+                    scope += [root / name for name in ("lakefile.toml", "lean-toolchain", "lake-manifest.json")]
                 if any(digest(path) != fingerprints[path] for path in scope):
                     raise BuildStopped("source/configuration changed; replan before continuing")
 
@@ -267,32 +274,45 @@ def main():
                 modules = ordered
                 if phase == "native" and not args.target:
                     modules, _ = ordered_modules(root, ["Main"])
-                for index, module in enumerate(modules, 1):
-                    current(module)
-                    facet = "olean" if phase == "lean" else "c.o"
-                    target = "+" + module + ":" + facet
-                    status = invoke(prefix + ["--no-build", "build", target], module + "-fresh-" + phase, (0, 3))
-                    if status["exit"] == 0:
-                        skipped += 1
-                        if index % 50 == 0:
-                            print(f"{phase}: {index}/{len(modules)}; rebuilt={built}; cached={skipped}", flush=True)
+                facet = "olean" if phase == "lean" else "c.o"
+                for first in range(0, len(modules), 50):
+                    chunk = modules[first:first + 50]
+                    current(chunk)
+                    # Batch only NO-BUILD validation, never compilation. This
+                    # avoids hundreds of separate Lake startups on resume or
+                    # an unchanged tree. Any stale chunk falls back to the
+                    # same prerequisite-first single-target builds below.
+                    fresh = invoke(prefix + ["--no-build", "build"] +
+                                   ["+" + module + ":" + facet for module in chunk],
+                                   f"chunk-{first + 1}-fresh-{phase}", (0, 3))
+                    if fresh["exit"] == 0:
+                        current(chunk)
+                        skipped += len(chunk)
+                        print(f"{phase}: {first + len(chunk)}/{len(modules)}; "
+                              f"rebuilt={built}; cached={skipped}", flush=True)
                         continue
-                    # All prerequisite modules must already be current. Do
-                    # not turn an unexpected dependency miss into a parallel
-                    # rebuild, even though the group monitor is a second gate.
-                    prerequisites = (["+" + dep + ":olean" for dep in graph[module]]
-                                     if phase == "lean" else ["+" + module + ":olean"])
-                    if prerequisites:
-                        invoke(prefix + ["--no-build", "build", *prerequisites], module + "-deps-" + phase)
-                    current(module)
-                    print(f"Rebuilding {index}/{len(modules)} {target}", flush=True)
-                    result = invoke(prefix + ["build", target], module + "-build-" + phase)
-                    current(module)
-                    built += 1
-                    print(f"Passed: {result['seconds']:.2f}s; group RSS={result['group_rss_mib']:.1f} MiB", flush=True)
-                    if args.max_builds is not None and built >= args.max_builds:
-                        print("Checkpoint only; complete local build NOT established. Resume through normal Lake cache.")
-                        return 2
+                    for index, module in enumerate(chunk, first + 1):
+                        current(module)
+                        target = "+" + module + ":" + facet
+                        status = invoke(prefix + ["--no-build", "build", target], module + "-fresh-" + phase, (0, 3))
+                        if status["exit"] == 0:
+                            skipped += 1
+                            continue
+                        # All prerequisite modules must already be current.
+                        # A miss never authorizes a parallel dependency build.
+                        prerequisites = (["+" + dep + ":olean" for dep in graph[module]]
+                                         if phase == "lean" else ["+" + module + ":olean"])
+                        if prerequisites:
+                            invoke(prefix + ["--no-build", "build", *prerequisites], module + "-deps-" + phase)
+                        current(module)
+                        print(f"Rebuilding {index}/{len(modules)} {target}", flush=True)
+                        result = invoke(prefix + ["build", target], module + "-build-" + phase)
+                        current(module)
+                        built += 1
+                        print(f"Passed: {result['seconds']:.2f}s; group RSS={result['group_rss_mib']:.1f} MiB", flush=True)
+                        if args.max_builds is not None and built >= args.max_builds:
+                            print("Checkpoint only; complete local build NOT established. Resume through normal Lake cache.")
+                            return 2
             if args.phase in {"all", "gates"}:
                 current()
                 # Finish any remaining executable link with resource flags

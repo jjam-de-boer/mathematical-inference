@@ -67,6 +67,30 @@ class IdentificationLayerTests(unittest.TestCase):
         for name in ("Soundness", "SoundnessFoundations", "SoundnessRegions", "SoundnessRules"):
             self.assertIn("Thesis.CausalTransport." + name, covered)
 
+    def test_completeness_extraction_keeps_order_and_import_compatibility(self):
+        layers = ["CompletenessCertificates", "CompletenessFailureExtraction",
+            "CompletenessLegacyShrinkFailures", "CompletenessLegacyProductFailures",
+            "CompletenessLegacyNestedFailures", "CompletenessHedgeModels",
+            "CompletenessHedgeParity", "CompletenessHedgeCountermodels", "Completeness"]
+        prefix = "Thesis.CausalTransport."
+        for earlier, later in zip(layers, layers[1:]):
+            self.assertEqual(self.graph[prefix + later], [prefix + earlier])
+            self.assertNotIn(prefix + later, reachable(self.graph, prefix + earlier))
+        dependencies = reachable(self.graph, prefix + "Completeness")
+        self.assertTrue({prefix + layer for layer in layers} <= dependencies)
+        self.assertNotIn(prefix + "Soundness", dependencies)
+
+    def test_completeness_preserves_immediate_query_header_and_audit_coverage(self):
+        root = Path(__file__).resolve().parents[1]
+        nested = (root / "Thesis/CausalTransport/CompletenessLegacyNestedFailures.lean").read_text()
+        self.assertIn("theorem identifyJoint_eq_failed_immediate_query_site", nested)
+        self.assertIn("def hedgeWitnessOfJoint", nested)
+        graph = self.graph | {"Thesis": initial_project_imports((root / "Thesis.lean").read_text())}
+        covered = reachable(graph, "Thesis.AxiomAudit")
+        for module in self.graph:
+            if module.startswith("Thesis.CausalTransport.Completeness"):
+                self.assertIn(module, covered)
+
 
 if __name__ == "__main__":
     unittest.main()

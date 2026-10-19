@@ -204,6 +204,21 @@ jobs:
           Thesis.Probability.Distros.RationalBetaBinomial
           Thesis.Probability.Distros.RationalUpdates
           Thesis.Examples.DistributionExtensions
+      # Historical cases and hedge-model proofs keep their original public
+      # names; verify each new compilation boundary before the broad clients.
+      - name: Check split completeness layers
+        working-directory: lean
+        run: >-
+          lake build
+          Thesis.CausalTransport.CompletenessCertificates
+          Thesis.CausalTransport.CompletenessFailureExtraction
+          Thesis.CausalTransport.CompletenessLegacyShrinkFailures
+          Thesis.CausalTransport.CompletenessLegacyProductFailures
+          Thesis.CausalTransport.CompletenessLegacyNestedFailures
+          Thesis.CausalTransport.CompletenessHedgeModels
+          Thesis.CausalTransport.CompletenessHedgeParity
+          Thesis.CausalTransport.CompletenessHedgeCountermodels
+          Thesis.CausalTransport.Completeness
       # Check the proof-preserving soundness boundaries explicitly before
       # their broad clients. The full build and axiom audit still follow.
       - name: Check split soundness layers
