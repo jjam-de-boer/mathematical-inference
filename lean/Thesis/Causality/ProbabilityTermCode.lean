@@ -60,4 +60,22 @@ def TermCode.decode (signature : ObservedSignature) : TermCode → Option (Proba
   | .divide numerator denominator => return .divide (← numerator.decode signature) (← denominator.decode signature)
 
 end ProbabilityCode
+
+namespace ProbabilityTerm
+
+/-- A printed observational formula must contain no actionful kernel,
+including inside a currently zero-weighted or undefined branch. -/
+def actionFreeCheck : ProbabilityTerm S → Bool
+  | .zero => true
+  | .kernel kernel => NodeSet.isEmpty kernel.action
+  | .marginalize _ inner => inner.actionFreeCheck
+  | .evaluateAt _ inner => inner.actionFreeCheck
+  | .add left right | .multiply left right | .weightedMultiply left right | .divide left right =>
+      left.actionFreeCheck && right.actionFreeCheck
+
+theorem actionFreeCheck_exact (term : ProbabilityTerm S) : term.actionFreeCheck = true ↔ term.ActionFree := by
+  induction term <;>
+    simp only [actionFreeCheck, ActionFree, Bool.and_eq_true_iff, NodeSet.isEmpty_eq_true_iff, *]
+
+end ProbabilityTerm
 end Thesis.Causality

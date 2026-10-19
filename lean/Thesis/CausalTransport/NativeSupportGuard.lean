@@ -52,19 +52,20 @@ def accepts (code : Code) (record : FiniteProbRecord S.Assignment) (reference : 
 /-- A support-only requirement may inspect interventional expressions, but
 its invariance must be proved before uniform profiles may certify it. -/
 abbrev Demand (signature : ObservedSignature.{0}) :=
-  {projection : FiniteLatentProjection signature} →
+  (projection : FiniteLatentProjection signature) →
     FiniteHiddenDAGSCM signature projection → signature.Assignment → Bool
 
 def Invariant (demand : Demand S) : Prop :=
   ∀ {leftProjection rightProjection : FiniteLatentProjection S}
     (left : FiniteHiddenDAGSCM S leftProjection) (right : FiniteHiddenDAGSCM S rightProjection),
-    CausalSupportAgreement left right → ∀ reference, demand left reference = demand right reference
+    CausalSupportAgreement left right → ∀ reference,
+      demand leftProjection left reference = demand rightProjection right reference
 
 def checkCell (profiles : List (NativeTemplateInstance Q)) (demand : Demand S) (cell : Cell) : Bool :=
   match ProbabilityCode.assignment S cell.reference with
   | none => false
   | some reference => profiles.all (fun entry =>
-      if cell.observed = pattern S entry.model.observationalDist then demand entry.model reference else true)
+      if cell.observed = pattern S entry.model.observationalDist then demand Q entry.model reference else true)
 
 def check (profiles : List (NativeTemplateInstance Q)) (demand : Demand S) (code : Code) : Bool :=
   code.all (checkCell profiles demand)
@@ -77,7 +78,7 @@ theorem soundAt (profiles : List (NativeTemplateInstance Q)) (demand : Demand S)
     (model : FiniteHiddenDAGSCM S P)
     (covered : ∃ entry, entry ∈ profiles ∧ CausalSupportAgreement entry.model model)
     (reference : S.Assignment) (accepted : accepts code model.observationalDist reference = true) :
-    demand model reference = true := by
+    demand P model reference = true := by
   rcases List.any_eq_true.mp accepted with ⟨cell, member, atCell⟩
   rcases covered with ⟨entry, listed, same⟩
   have rowChecked := (List.all_eq_true.mp checked) cell member
@@ -91,9 +92,9 @@ theorem soundAt (profiles : List (NativeTemplateInstance Q)) (demand : Demand S)
         simpa only [Cell.accepts, decoded, Bool.and_eq_true_iff, decide_eq_true_eq] using atCell
       have onEntry : cell.observed = pattern S entry.model.observationalDist :=
         rowAccepted.1.trans observedPattern.symm
-      have tested : demand entry.model fixed = true := by
+      have tested : demand Q entry.model fixed = true := by
         have atEntry := (List.all_eq_true.mp (show profiles.all (fun candidate =>
-          if cell.observed = pattern S candidate.model.observationalDist then demand candidate.model fixed else true) = true by
+          if cell.observed = pattern S candidate.model.observationalDist then demand Q candidate.model fixed else true) = true by
             simpa only [checkCell, decoded] using rowChecked)) entry listed
         simpa only [if_pos onEntry] using atEntry
       rw [invariant entry.model model same fixed, rowAccepted.2] at tested
