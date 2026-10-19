@@ -18,7 +18,7 @@ an external method; it does not extend the probability framework.
 | 2. Shared graph infrastructure | Connectivity, reachability and rank infrastructure extracted without changing public theorem names; current-engine dependency guards pass. | Further splitting is optional and is not claimed to cure compiler memory use. |
 | 3. Multivalued native example | Three declared observed values, an actual rational distribution, null intervention targets and supported conditionals checked through the native model. | The standalone-template regression now exercises the same boundary as well. |
 | 4. Support-pattern applicability | Exact undefined/zero/positive analysis and exhaustive comparison within supplied finite formula catalogues. | This does not enumerate every possible certified formula. |
-| 5. Universal alternative-formula coverage | Bounded research assessment completed; the missing syntax and termination obligations are stated below. | A decidable bounded derivation language first; no universal coverage or impossibility theorem yet. |
+| 5. Universal alternative-formula coverage | Finite native causal support-profile coverage and all-expression/derivation support transport constructed; a bounded proof/guard language has been proposed. | Review before implementing proof-code enumeration or formula selection; no universal formula coverage or impossibility theorem yet. |
 | 6. Finite structural representation | Constructed standalone-template coverage both for a fixed full hidden DAG and across all finite hidden DAGs with a fixed observed projection. | Rational weight assignments remain infinite; compatibility, sharpness and complete search are separate obligations. |
 | 7. Fixed-observed-law procedures | Restricted results retained; exact compatibility and unconditional/conditional-target comparison for a full hidden DAG with declared finite alphabet and denominator bounds. Conditional support and positive-evidence values are reported separately. | Unrestricted rational feasibility remains separate; increasing bounds has no proved stopping rule. |
 
@@ -154,7 +154,10 @@ support also remains a separate causal premise.
 
 ### Research checkpoint 5: alternative-formula coverage
 
-This is a bounded assessment, not an additional Lean completeness theorem.
+Universal formula coverage remains a bounded assessment, not an additional
+formula-completeness theorem. The implemented support foundations are
+recorded separately below.
+
 The natural first scope fixes the observed signature, the original finite
 hidden DAG/projection and a joint query. Candidates are the current
 `GuardedObservationalFormula` objects: current `ProbabilityTerm` syntax,
@@ -189,6 +192,66 @@ The two current guards (`always`, `actionOne`) cannot express an arbitrary
 extra support condition; generic support-certificate syntax or a richer
 proved guard language may be needed. Enumerating terms and applying existing
 soundness without addressing this step would be incomplete.
+
+### Approved support-foundation stages for goal 5
+
+The first two stages are implemented independently of a future proof-code
+language. `FiniteSupportCatalogue` enumerates actual normalized unit-weight
+records for every nonempty mask on each finite source alphabet. It covers
+the support of every original rational record, including repeated labels and
+zero weights, with no input denominator bound. An empty alphabet has no
+normalized support representative; an empty source family has one empty tuple.
+
+`FiniteProductSupportLaw.record_eventPositive_iff_of_factor_support_eq` proves
+that these reweightings preserve positivity of every mixed event in the
+actual independent product. `CodeNativeTemplate.supportAgreement_of_factor_support_eq`
+combines that result with unchanged native structural evaluation, retaining
+support of every observed event under every hard intervention. It does not
+preserve nonzero numerical values.
+
+`CausalSupportAgreement.term_status` covers every current nonnegative term
+constructor, including strict sums/products, explicit substitutions and the
+directional zero-weight product. `localSupportToRight` rebuilds the complete
+native derivation-support tree from the new model's own values, retaining
+every marginal branch and demanding factor support only on positive weighted
+branches. It does not transport an old probability value as though numerical
+equivalence had been proved. Signed subtraction/cancellation is outside this
+three-state abstraction.
+
+`NativeSupportProfiles.queries` is a finite basis of singleton events under
+all reference-valued intervention masks. Every permitted hard intervention is
+included, also when its assigned observed value has factual probability zero.
+The existing representation theorem preserves this entire finite basis;
+singleton extensionality extends preservation to every interventional event.
+Subsequent uniform reweighting forgets the values but retains their supports.
+
+`FiniteLatentProjection.completeSupportCatalogue` therefore supplies a finite
+list of actual native models covering the entire single-world hard-intervention
+support behaviour of the original model class.
+`FiniteHiddenDAGSCM.completeSupportCatalogue_covers`
+keeps the original full hidden DAG fixed. The separate
+`ProjectedHiddenDAGModel.completeSupportCatalogue_covers` ranges over all finite
+full hidden DAGs with the same observed projection and uses the fixed
+multi-child clique-root graph. Original hidden/source alphabets and rational
+denominators are unrestricted in both statements. The derived structural
+bounds belong to the representation proof, not extra input-model assumptions.
+
+This is coverage of support profiles, not exact fitting of a numerical
+observed law, numerical identity checking on uniform representatives, a
+minimal or duplicate-free profile classification, or an unrestricted rational
+identification procedure. The regressions explicitly show changed numerical
+values. Joint cross-world/AAP support is not retained by this finite basis.
+The regressions also show unchanged null cells, legal null intervention
+targets, strict versus
+weighted support and a transported complete weighted support tree. Both
+current observable guards remain unchanged because their checks depend only
+on observed support. Huge full model catalogues are not concretely expanded
+by these regressions.
+
+Review checkpoint: these two support stages do not implement serialized
+proof codes, guard-table compilation, bounded derivation enumeration or a
+new formula selector. Those remain the next proposed stages, not completed
+work or consequences of finite profile coverage alone.
 
 The universal stopping argument remains unresolved. Finitely many support
 cells bound the number of *coverage gains*, not the delay until the next
