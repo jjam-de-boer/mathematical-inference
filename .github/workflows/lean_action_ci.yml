@@ -92,7 +92,7 @@ jobs:
         run: lake build Thesis.Probability.FiniteProductGrouping Thesis.Examples.FiniteProductGrouping
       - name: Check rational template obstructions
         working-directory: lean
-        run: lake build Thesis.Probability.RationalSquareObstruction
+        run: lake build Thesis.Probability.RationalSquareObstruction Thesis.Probability.IndependentBooleanObstruction Thesis.Examples.IndependentBooleanObstruction
       - name: Check bounded rational source catalogues
         working-directory: lean
         run: >-

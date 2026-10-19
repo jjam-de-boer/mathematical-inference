@@ -32,8 +32,8 @@ private theorem even_of_twice_square (numerator denominator : Nat)
 
 private theorem descent (denominator : Nat) :
     ∀ numerator, 0 < denominator → 2 * (numerator * numerator) ≠ denominator * denominator := by
-  induction denominator using Nat.strong_induction_on with
-  | h denominator inductionHypothesis =>
+  induction denominator using Nat.strongRecOn with
+  | ind denominator inductionHypothesis =>
       intro numerator positive same
       have denominatorEven := even_of_twice_square numerator denominator same
       have denominatorSplit : denominator = 2 * (denominator / 2) := by omega
@@ -68,7 +68,7 @@ theorem square_ne_half (value : QProb) : ¬ Equiv (mul value value) ⟨1, 2, by 
   intro same
   change (value.num * value.num) * 2 = 1 * (value.den * value.den) at same
   apply RationalSquareObstruction.twice_square_ne_square value.num value.den value.den_pos
-  simpa only [Nat.mul_comm, Nat.one_mul] using same
+  simpa only [Nat.mul_comm, Nat.one_mul, Nat.mul_one] using same
 
 end QProb
 end Thesis.Probability

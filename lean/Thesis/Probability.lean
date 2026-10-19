@@ -1,5 +1,6 @@
 import Thesis.Probability.Core
 import Thesis.Probability.RationalSquareObstruction
+import Thesis.Probability.IndependentBooleanObstruction
 import Thesis.Probability.Combinatorics
 import Thesis.Probability.ConstructivePermutation
 import Thesis.Probability.Reindexing
@@ -82,6 +83,14 @@ alphabet below an explicit denominator bound. Singleton-mass aggregation
 covers records with repeated labels and zero weights without expanding unit
 cells, preserving their original denominator and every event probability.
 This bounded rational family is not an unrestricted feasibility procedure.
+
+`RationalSquareObstruction` proves by natural-number descent that a positive-
+denominator rational fraction cannot have square one half, without fraction
+normalization or real numbers. `IndependentBooleanObstruction` binds that
+obstruction to actual products of arbitrary Boolean source records and fixed
+readout mechanisms: their requested uniform observed law is impossible.
+This is fixed-mechanism rational incompatibility, not graph-wide failure or
+an impossibility theorem for a general rational feasibility algorithm.
 
 `FiniteProductSourceCompression` constructs bounded positive-atom source
 records while preserving a supplied finite family of mixed-event probabilities

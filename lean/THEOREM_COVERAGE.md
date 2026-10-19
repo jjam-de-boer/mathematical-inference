@@ -912,6 +912,9 @@ checker in this library. In particular, real feasibility must not be silently
 treated as rational feasibility.
 
 A concrete fixed-template obstruction makes that last warning substantive.
+Its rational negative direction is now formalized in
+`IndependentBooleanObstruction`, using actual independent Boolean records and
+their deterministic readout, not an assumed polynomial-binding interface.
 Take three independent binary sources with probabilities `u`, `v`, `f`.
 Use the fixed observed mechanisms
 `V = A && B` and `O = if F then A else !B`. Require the observed joint
@@ -921,13 +924,21 @@ table of `(O,V)` to be uniform. Its equations include
 `2*u^2=1`. A real solution exists in the unit interval, but no rational one:
 writing `u=a/b` in lowest terms gives `2*a^2=b^2`, forcing both `a` and `b`
 even. Conversely, the positive real root with `f=1/2` makes all four observed
-cells `1/4`. Exact truth-table polynomial expansion was checked during this
-assessment; this argument is not yet a Lean theorem and adds no real-valued
-probability implementation.
+cells `1/4`. The enlarged-scalar comparison in this sentence is explanatory,
+not a real-valued Lean probability implementation. The formal theorem
+`no_target_marginals` excludes even the three displayed marginal/joint targets
+for every original finite rational Boolean source record, including repeated
+labels, zero cells and unreduced denominators. `not_uniform` then excludes
+the full observed uniform law. `v_mass`, `joint_mass` and `o_mass` prove the
+actual finite-product event equations; no symbolic likelihood is trusted.
+`RationalSquareObstruction.twice_square_ne_square` closes the contradiction by
+strict natural-denominator descent, without selecting a lowest-terms fraction.
 
 This obstruction concerns the **fixed mechanisms**, not the graph-wide
 class: on the same parent graph, the different mechanisms `V=A`, `O=F`
-with rational fair sources realize the uniform table. It therefore disproves
+with rational fair sources realize the uniform table. The regression theorem
+`alternative_uniform` proves this alternative readout's entire event law,
+not just its marginals. It therefore disproves
 an automatic real-to-rational template transfer, not the existence of a
 general rational causal decision procedure. No reduction proving that
 general procedure impossible has been established here. Exact rational
