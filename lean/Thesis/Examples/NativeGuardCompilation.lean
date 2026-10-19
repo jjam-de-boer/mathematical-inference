@@ -79,16 +79,26 @@ noncomputable def fixed_original_sound
     (checked : CheckedNativeFormula projection.observedGraph projection.completeSupportCatalogue)
     (supported : entry.model.TermSupportedAt checked.source (reference 2))
     (accepted : checked.available entry.model.observationalDist (reference 2) = true) :
-    entry.model.TermEquivalentAt checked.withCompiledGuard.source checked.withCompiledGuard.formula (reference 2) :=
-  checked.withCompiledGuard.fixed_soundAt entry.model (reference 2) supported
+    entry.model.TermEquivalentAt checked.source checked.formula (reference 2) := by
+  have retainedSource : entry.model.TermSupportedAt checked.withCompiledGuard.source (reference 2) := by
+    rw [CheckedNativeFormula.withCompiledGuard_source]
+    exact supported
+  have generated := checked.withCompiledGuard.fixed_soundAt entry.model (reference 2) retainedSource
     (checked.withCompiledGuard_available entry.model entry.model.completeSupportCatalogue_covers (reference 2) accepted)
+  rw [CheckedNativeFormula.withCompiledGuard_source, CheckedNativeFormula.withCompiledGuard_formula] at generated
+  exact generated
 
 noncomputable def projection_original_sound
     (checked : CheckedNativeFormula projection.observedGraph projection.observedGraph.cliqueRootProjection.completeSupportCatalogue)
     (supported : projected.model.TermSupportedAt checked.source (reference 2))
     (accepted : checked.available projected.model.observationalDist (reference 2) = true) :
-    projected.model.TermEquivalentAt checked.withCompiledGuard.source checked.withCompiledGuard.formula (reference 2) :=
-  checked.withCompiledGuard.projected_soundAt projected (reference 2) supported
+    projected.model.TermEquivalentAt checked.source checked.formula (reference 2) := by
+  have retainedSource : projected.model.TermSupportedAt checked.withCompiledGuard.source (reference 2) := by
+    rw [CheckedNativeFormula.withCompiledGuard_source]
+    exact supported
+  have generated := checked.withCompiledGuard.projected_soundAt projected (reference 2) retainedSource
     (checked.withCompiledGuard_available projected.model projected.completeSupportCatalogue_covers (reference 2) accepted)
+  rw [CheckedNativeFormula.withCompiledGuard_source, CheckedNativeFormula.withCompiledGuard_formula] at generated
+  exact generated
 
 end Thesis.Causality.Examples.NativeGuardCompilation

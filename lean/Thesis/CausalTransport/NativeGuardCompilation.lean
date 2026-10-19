@@ -116,6 +116,14 @@ def withCompiledGuard (checked : CheckedNativeFormula graph profiles) : CheckedN
     guard := NativeSupportGuard.compile profiles checked.proof.demand
     guardChecked := NativeSupportGuard.compile_checked profiles checked.proof.demand }
 
+/-- Expose the unchanged fields without asking application elaboration to
+unfold the generated guard or its potentially enormous profile catalogue. -/
+theorem withCompiledGuard_source (checked : CheckedNativeFormula graph profiles) :
+    checked.withCompiledGuard.source = checked.source := rfl
+
+theorem withCompiledGuard_formula (checked : CheckedNativeFormula graph profiles) :
+    checked.withCompiledGuard.formula = checked.formula := rfl
+
 /-- Every already accepted cell remains accepted wherever this catalogue
 covers the original model. Numerical source/formula values are unchanged. -/
 theorem withCompiledGuard_available (checked : CheckedNativeFormula graph profiles)
