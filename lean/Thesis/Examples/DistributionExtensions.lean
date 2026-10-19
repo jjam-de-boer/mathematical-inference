@@ -988,3 +988,57 @@ example : SignedRatio.Equiv ((multinomialDistro 0 [1, 0, 2] (by decide)).occupan
 example : SignedRatio.Equiv ((multivariateHypergeometricDistro 3 [1, 0, 2] (by decide)).occupancyCovarianceForm 3 occupancyTestCoefficients) SignedRatio.zero := by decide +kernel
 
 end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- A zero-stock source and two empty destination groups remain explicit. -/
+example : ((multicolourDepletingDistro 2 [1, 0, 2, 1] (by decide)).map
+    (List.map (fun colour => ([0, 1, 0, 2] : List Nat).getD colour 0))).SameLaw
+    (multicolourDepletingDistro 2 [3, 0, 1, 0] (by decide)) :=
+  multicolourDepleting_aggregation 2 4 [1, 0, 2, 1] [0, 1, 0, 2] (by decide) (by decide) (by decide +kernel)
+
+example : aggregateCounts 4 [0, 1, 0, 2] (depletingState [1, 0, 2, 1] [0, 0, 1, 0]) =
+    depletingState [3, 0, 1, 0] [1, 0, 0, 0] :=
+  aggregateCounts_depletingState_supported 1 4 [1, 0, 2, 1] [0, 1, 0, 2] [0, 0, 1, 0]
+    (by decide) (by decide +kernel)
+
+/-- Different fine observations with the same grouped counts give the same
+complete future law after merging, not just the same next-draw mean. -/
+example : ((depletingCountsContinuation 1 1 [1, 0, 2, 1] [0, 0, 1, 0] (by decide) (by decide +kernel)).map
+    (List.map (fun colour => ([0, 1, 0, 2] : List Nat).getD colour 0))).SameLaw
+    (depletingCountsContinuation 1 1 [3, 0, 1, 0] [1, 0, 0, 0] (by decide) (by decide +kernel)) :=
+  depletingCountsContinuation_aggregation 1 1 4 [1, 0, 2, 1] [0, 1, 0, 2] [0, 0, 1, 0]
+    (by decide) (by decide) (by decide +kernel) (by decide +kernel)
+
+example : ((depletingCountsContinuation 1 1 [1, 0, 2, 1] [1, 0, 0, 0] (by decide) (by decide +kernel)).map
+    (List.map (fun colour => ([0, 1, 0, 2] : List Nat).getD colour 0))).SameLaw
+    (depletingCountsContinuation 1 1 [3, 0, 1, 0] [1, 0, 0, 0] (by decide) (by decide +kernel)) :=
+  depletingCountsContinuation_aggregation 1 1 4 [1, 0, 2, 1] [0, 1, 0, 2] [1, 0, 0, 0]
+    (by decide) (by decide) (by decide +kernel) (by decide +kernel)
+
+example : ((multicolourDepletingDistro 0 [] (by decide)).map
+    (List.map (fun colour => ([] : List Nat).getD colour 0))).SameLaw
+    (multicolourDepletingDistro 0 [] (by decide)) :=
+  multicolourDepleting_aggregation 0 0 [] [] (by decide) (by decide) (by decide +kernel)
+
+example : ((multicolourDepletingDistro 0 [] (by decide)).map
+    (List.map (fun colour => ([] : List Nat).getD colour 0))).SameLaw
+    (multicolourDepletingDistro 0 [0, 0, 0] (by decide)) :=
+  multicolourDepleting_aggregation 0 3 [] [] (by decide) (by decide) (by decide +kernel)
+
+example : ((depletingCountsContinuation 2 0 [1, 0, 1] [1, 0, 1] (by decide) (by decide +kernel)).map
+    (List.map (fun colour => ([0, 1, 0] : List Nat).getD colour 0))).SameLaw
+    (depletingCountsContinuation 2 0 [2, 0, 0] [2, 0, 0] (by decide) (by decide +kernel)) :=
+  depletingCountsContinuation_aggregation 2 0 3 [1, 0, 1] [0, 1, 0] [1, 0, 1]
+    (by decide) (by decide) (by decide +kernel) (by decide +kernel)
+
+/-- Raw event masses also merge when the horizon is impossible. -/
+example (event : Event (List Nat)) :
+    FiniteProbRecord.eventMass (multicolourDepletingAtoms 3 [1, 0, 1])
+      (fun word => event (word.map (fun colour => ([0, 1, 0] : List Nat).getD colour 0))) =
+    FiniteProbRecord.eventMass (multicolourDepletingAtoms 3 [2, 0, 0]) event :=
+  multicolourDepleting_eventMass_aggregation 3 3 [1, 0, 1] [0, 1, 0] (by decide) (by decide +kernel) event
+
+end Thesis.Examples.DistributionExtensions

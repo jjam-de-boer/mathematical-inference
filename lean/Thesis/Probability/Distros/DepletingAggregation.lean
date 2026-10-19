@@ -7,7 +7,7 @@ open Combinatorics
 private theorem modify_add_one_sub_one (values : List Nat) (index : Nat) :
     (values.modify index (fun x => x + 1)).modify index (fun x => x - 1) = values := by
   induction values generalizing index with
-  | nil => rfl
+  | nil => simp only [List.modify_nil]
   | cons value values ih => cases index with
       | zero => simp only [List.modify_zero_cons, Nat.add_sub_cancel]
       | succ index => simp only [List.modify_succ_cons, ih]
@@ -42,12 +42,12 @@ theorem aggregateCounts_remove_one (groups : Nat) (labels stocks : List Nat)
 
 private theorem finWeighted_member_weight (n : Nat) (w : Fin n → Nat) (atom : Fin n × Nat)
     (member : atom ∈ finWeighted n w) : atom.2 = w atom.1 := by
-  induction n generalizing w atom with
+  induction n with
   | zero => simp only [finWeighted, List.not_mem_nil] at member
   | succ n ih =>
       rw [finWeighted] at member
-      rcases List.mem_append.mp member with prefix | last
-      · rcases List.mem_map.mp prefix with ⟨old, listed, same⟩
+      rcases List.mem_append.mp member with earlier | last
+      · rcases List.mem_map.mp earlier with ⟨old, listed, same⟩
         cases same
         exact ih (fun i => w i.castSucc) old listed
       · have same := List.mem_singleton.mp last
@@ -57,7 +57,7 @@ private theorem finWeighted_member_weight (n : Nat) (w : Fin n → Nat) (atom : 
 private theorem categorical_natIntegral_dot (weights args : List Nat) (dimension : args.length = weights.length) :
     natIntegral (finWeighted weights.length (fun i => weights.getD i.val 0))
       (fun i => args.getD i.val 0) = weightedNatArgument weights args := by
-  rw [natIntegral_finWeighted]
+  rw [natIntegral_finWeighted weights.length (fun i => weights.getD i.val 0) (fun i => args.getD i 0)]
   have same := natSum_congr (n := weights.length)
     (f := fun i => finWeight (fun j : Fin weights.length => weights.getD j.val 0) i * args.getD i 0)
     (g := fun i => weights.getD i 0 * args.getD i 0)
@@ -123,7 +123,7 @@ theorem multicolourDepleting_eventMass_aggregation (n groups : Nat) (stocks labe
             (fun word => event (labels.getD head.1.val 0 :: word))
           rw [aggregateCounts_remove_one groups labels stocks dimension head.1.val head.1.isLt positive] at tail
           simpa only [List.map_cons, continuation, grouped] using congrArg (fun mass => head.2 * mass) tail
-      rw [rows, ← natIntegral_eq_sum]
+      rw [rows, ← natIntegral_eq_sum _ (fun i : Fin stocks.length => continuation (labels.getD i.val 0))]
       rw [categorical_natIntegral_aggregation groups stocks labels dimension within continuation]
       rw [natIntegral_eq_sum]
       apply congrArg List.sum
@@ -143,7 +143,8 @@ theorem multicolourDepleting_aggregation (n groups : Nat) (stocks labels : List 
   intro event
   change FiniteProbRecord.eventMass
       ((multicolourDepletingAtoms n stocks).map (fun atom => (atom.1.map (fun colour => labels.getD colour 0), atom.2))) event *
-      (multicolourDepletingDistro n (aggregateCounts groups labels stocks) _).record.den =
+      (multicolourDepletingDistro n (aggregateCounts groups labels stocks)
+        (by rw [aggregateCounts_sum groups labels stocks dimension within]; exact available)).record.den =
     FiniteProbRecord.eventMass (multicolourDepletingAtoms n (aggregateCounts groups labels stocks)) event *
       (multicolourDepletingDistro n stocks available).record.den
   rw [FiniteProbRecord.eventMass_map_labels, multicolourDepleting_den, multicolourDepleting_den,
