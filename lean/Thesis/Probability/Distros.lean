@@ -96,6 +96,9 @@ import Thesis.Probability.Distros.AlmostSureTower
 import Thesis.Probability.Distros.ObservationChains
 import Thesis.Probability.Distros.RationalLinearOrder
 import Thesis.Probability.Distros.RationalIntervalCheck
+import Thesis.Probability.Distros.RationalLinearInequalities
+import Thesis.Probability.Distros.RationalLinearProjection
+import Thesis.Probability.Distros.RationalLinearSolve
 import Thesis.Probability.Distros.CovarianceRows
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
