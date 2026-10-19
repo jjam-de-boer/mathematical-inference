@@ -23,6 +23,8 @@ import Thesis.Probability.FiniteProductSourceCompression
 import Thesis.Probability.FiniteProbabilityPolynomialCertificates
 import Thesis.Probability.FiniteRecordSlicing
 import Thesis.Probability.FiniteRecordCatalogue
+import Thesis.Probability.FiniteSupportCatalogue
+import Thesis.Probability.FiniteProductSupportLaw
 import Thesis.Probability.FiniteRecordPerturbation
 import Thesis.Probability.FiniteLinearResponse
 import Thesis.Probability.FiniteSignedMass
