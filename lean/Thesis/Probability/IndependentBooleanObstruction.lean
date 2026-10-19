@@ -49,10 +49,14 @@ private def offBranch : Event Input := fun state => !state.1 && !state.2.2
 
 theorem v_mass (a b f : FiniteProbRecord Bool) :
     eventMass (inputLaw a b f).atoms vEvent = f.den * (eventMass a.atoms id * eventMass b.atoms id) := by
-  have pair := eventMass_weightedCartesian a.atoms b.atoms id id
-  have outer := eventMass_weightedCartesian f.atoms (a.product b).atoms topEvent
-    (fun state => state.1 && state.2)
-  simpa only [inputLaw, product, topEvent, Bool.true_and, eventMass_top, f.total_mass, pair] using outer
+  have pair : eventMass (a.product b).atoms (fun state => state.1 && state.2) =
+      eventMass a.atoms id * eventMass b.atoms id := eventMass_weightedCartesian a.atoms b.atoms id id
+  have outer : eventMass (inputLaw a b f).atoms vEvent =
+      eventMass f.atoms topEvent * eventMass (a.product b).atoms (fun state => state.1 && state.2) :=
+    eventMass_weightedCartesian f.atoms (a.product b).atoms topEvent
+      (fun state : Bool × Bool => state.1 && state.2)
+  rw [pair, eventMass_top, f.total_mass] at outer
+  exact outer
 
 theorem joint_mass (a b f : FiniteProbRecord Bool) :
     eventMass (inputLaw a b f).atoms jointEvent =
@@ -62,9 +66,11 @@ theorem joint_mass (a b f : FiniteProbRecord Bool) :
     rcases state with ⟨switch, first, second⟩
     cases switch <;> cases first <;> cases second <;> rfl
   rw [pointwise]
-  change eventMass (weightedCartesian f.atoms (weightedCartesian a.atoms b.atoms)) _ = _
-  rw [eventMass_weightedCartesian f.atoms _ id (fun state => state.1 && state.2),
-    eventMass_weightedCartesian a.atoms b.atoms id id]
+  have pair : eventMass (a.product b).atoms (fun state => state.1 && state.2) =
+      eventMass a.atoms id * eventMass b.atoms id := eventMass_weightedCartesian a.atoms b.atoms id id
+  exact (eventMass_weightedCartesian f.atoms (a.product b).atoms id
+    (fun state : Bool × Bool => state.1 && state.2)).trans
+      (congrArg (fun mass => eventMass f.atoms id * mass) pair)
 
 theorem o_mass (a b f : FiniteProbRecord Bool) :
     eventMass (inputLaw a b f).atoms oEvent =
@@ -184,5 +190,49 @@ theorem not_uniform (a b f : FiniteProbRecord Bool) :
     ⟨QProb.equiv_trans (fitted Prod.snd) uniform_v,
       QProb.equiv_trans (fitted (fun pair => pair.1 && pair.2)) uniform_joint,
       QProb.equiv_trans (fitted Prod.fst) uniform_o⟩
+
+section ArbitrarySourcePresentations
+
+variable {A : Type u} {B : Type v} {F : Type w}
+
+/-- Private sources may have any finite record presentation, even an infinite
+ambient label type. Only their displayed Boolean readouts enter the fixed
+mechanisms; no two-state assumption is imposed on the private sources. -/
+def sourceLaw (a : FiniteProbRecord A) (b : FiniteProbRecord B) (f : FiniteProbRecord F)
+    (aBit : A → Bool) (bBit : B → Bool) (fBit : F → Bool) : FiniteProbRecord (Bool × Bool) :=
+  (f.product (a.product b)).map (fun state => readout (fBit state.1, aBit state.2.1, bBit state.2.2))
+
+/-- Push the explicit readouts through the actual products, retaining every
+observed event. There is no supplied preservation or independence interface. -/
+theorem sourceLaw_probVal (a : FiniteProbRecord A) (b : FiniteProbRecord B) (f : FiniteProbRecord F)
+    (aBit : A → Bool) (bBit : B → Bool) (fBit : F → Bool) (event : Event (Bool × Bool)) :
+    QProb.Equiv ((law (a.map aBit) (b.map bBit) (f.map fBit)).probVal event)
+      ((sourceLaw a b f aBit bBit fBit).probVal event) := by
+  have coded := (inputLaw (a.map aBit) (b.map bBit) (f.map fBit)).map_probVal readout event
+  have switch := f.product_map_left_probVal ((a.map aBit).product (b.map bBit)) fBit
+    (fun state => event (readout state))
+  have slices (sample : F) :
+      QProb.Equiv (((a.map aBit).product (b.map bBit)).probVal (fun pair => event (readout (fBit sample, pair))))
+        ((a.product b).probVal (fun pair => event (readout (fBit sample, aBit pair.1, bBit pair.2)))) :=
+    QProb.equiv_trans
+      (a.product_map_left_probVal (b.map bBit) aBit (fun pair => event (readout (fBit sample, pair))))
+      (a.product_map_right_probVal b bBit (fun pair => event (readout (fBit sample, aBit pair.1, pair.2))))
+  have original := f.product_probVal_equiv_of_slices ((a.map aBit).product (b.map bBit)) (a.product b)
+    (fun state => event (readout (fBit state.1, state.2)))
+    (fun state => event (readout (fBit state.1, aBit state.2.1, bBit state.2.2))) slices
+  exact QProb.equiv_trans coded (QProb.equiv_trans switch (QProb.equiv_trans original
+    (QProb.equiv_symm ((f.product (a.product b)).map_probVal
+      (fun state => readout (fBit state.1, aBit state.2.1, bBit state.2.2)) event))))
+
+/-- Enlarging or relabelling the finite private source alphabets cannot
+repair this fixed Boolean-readout obstruction. Denominators are unbounded. -/
+theorem sourceLaw_not_uniform (a : FiniteProbRecord A) (b : FiniteProbRecord B) (f : FiniteProbRecord F)
+    (aBit : A → Bool) (bBit : B → Bool) (fBit : F → Bool) :
+    ¬ (∀ event, QProb.Equiv ((sourceLaw a b f aBit bBit fBit).probVal event) (uniform.probVal event)) := by
+  intro fitted
+  exact not_uniform (a.map aBit) (b.map bBit) (f.map fBit)
+    (fun event => QProb.equiv_trans (sourceLaw_probVal a b f aBit bBit fBit event) (fitted event))
+
+end ArbitrarySourcePresentations
 
 end Thesis.Probability.IndependentBooleanObstruction

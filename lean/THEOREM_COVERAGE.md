@@ -933,6 +933,12 @@ the full observed uniform law. `v_mass`, `joint_mass` and `o_mass` prove the
 actual finite-product event equations; no symbolic likelihood is trusted.
 `RationalSquareObstruction.twice_square_ne_square` closes the contradiction by
 strict natural-denominator descent, without selecting a lowest-terms fraction.
+`sourceLaw_probVal` proves the full pushforward identity for arbitrary private
+sampling records and their explicit Boolean readouts. `sourceLaw_not_uniform`
+therefore retains the negative theorem for any finite private source alphabet
+sizes and unbounded denominators, not just sources literally labelled by
+`Bool`. Heterogeneous sampling presentations, zero cells and repeated natural
+labels are exercised separately. The observed mechanisms remain fixed.
 
 This obstruction concerns the **fixed mechanisms**, not the graph-wide
 class: on the same parent graph, the different mechanisms `V=A`, `O=F`

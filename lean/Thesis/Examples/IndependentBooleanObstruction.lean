@@ -51,4 +51,18 @@ theorem alternative_uniform (event : Event (Bool × Bool)) :
   rcases reference with ⟨first, second⟩
   cases first <;> cases second <;> decide +kernel
 
+def labelledSource : FiniteProbRecord Nat := ⟨[(7, 0), (9, 2), (7, 2)], 4, by decide, rfl⟩
+def ternarySource : FiniteProbRecord (Fin 3) := ⟨[(0, 1), (1, 0), (2, 1)], 2, by decide, rfl⟩
+def labelledBit (value : Nat) : Bool := decide (value = 9)
+def ternaryBit (value : Fin 3) : Bool := decide (value.val = 2)
+
+/-- Heterogeneous private presentations need not themselves be Boolean, and
+the first ambient type need not be finite. The actual sampling records are
+finite, with both repeated labels and null cells retained. -/
+theorem heterogeneous_sources_excluded :
+    ¬ (∀ event, QProb.Equiv
+      ((sourceLaw labelledSource repeatedFair ternarySource labelledBit id ternaryBit).probVal event)
+      (uniform.probVal event)) :=
+  sourceLaw_not_uniform labelledSource repeatedFair ternarySource labelledBit id ternaryBit
+
 end Thesis.Probability.Examples.IndependentBooleanObstruction
