@@ -7,9 +7,10 @@ open Combinatorics
 /-- Rational covariance agrees with the original natural-observable API. -/
 theorem Distro.rationalCovariance_ofNat (μ : Distro Ω) (f g : Ω → Nat) :
     SignedRatio.Equiv (μ.rationalCovariance (fun x => (QProb.ofNat (f x)).toSignedRatio)
-      (fun x => (QProb.ofNat (g x)).toSignedRatio)) (μ.covariance f g).toRatio :=
-  SignedRatio.equiv_trans (μ.rationalCovariance_int (fun x => (f x : Int)) (fun x => (g x : Int)))
-    (SignedMoment.toRatio_congr (μ.signedCovariance_nat f g))
+      (fun x => (QProb.ofNat (g x)).toSignedRatio)) (μ.covariance f g).toRatio := by
+  have result := μ.rationalCovariance_int (fun x => (f x : Int)) (fun x => (g x : Int))
+  rw [μ.signedCovariance_nat f g] at result
+  exact result
 
 theorem multivariateHypergeometric_coordinate_mean (n : Nat) (stocks : List Nat)
     (positive : 0 < binom stocks.sum n) (population : 0 < stocks.sum)
