@@ -94,6 +94,8 @@ import Thesis.Probability.Distros.ProjectionEquality
 import Thesis.Probability.Distros.RefinementGain
 import Thesis.Probability.Distros.AlmostSureTower
 import Thesis.Probability.Distros.ObservationChains
+import Thesis.Probability.Distros.RationalLinearOrder
+import Thesis.Probability.Distros.RationalIntervalCheck
 import Thesis.Probability.Distros.CovarianceRows
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
