@@ -29,6 +29,41 @@ all denominator bounds with a proved stopping rule.
 
 variable {S : ObservedSignature.{0}} {P : FiniteLatentProjection S}
 
+namespace FiniteHiddenDAG
+
+/-- Membership in the literal structural lists also enforces their stated
+numeric bounds. Completeness alone would not justify returning an arbitrary
+listed countermodel as a member of the intended bounded class. -/
+theorem cardinalityVectors_bounded_of_mem (count bound : Nat) (cards : Fin count → Nat)
+    (listed : cards ∈ cardinalityVectors count bound) (node : Fin count) : cards node ≤ bound :=
+  Nat.le_of_lt_succ (List.mem_range.mp (FiniteProduct.enumeration_coordinate_mem _ _ _ _ listed node))
+
+theorem codeAlphabetShapes_bounded_of_mem (H : FiniteHiddenDAG S) (nodeBound sourceBound : Nat)
+    (shape : H.CodeAlphabetShape) (listed : shape ∈ H.codeAlphabetShapes nodeBound sourceBound) :
+    (∀ node, shape.nodeCard node ≤ nodeBound) ∧ (∀ node, shape.sourceCard node ≤ sourceBound) := by
+  rcases List.mem_flatMap.mp listed with ⟨nodes, nodesListed, sourcesMapped⟩
+  rcases List.mem_map.mp sourcesMapped with ⟨sources, sourcesListed, same⟩
+  cases same
+  exact ⟨cardinalityVectors_bounded_of_mem _ _ nodes nodesListed, cardinalityVectors_bounded_of_mem _ _ sources sourcesListed⟩
+
+theorem boundedMechanismCatalogue_bounded_of_mem (H : FiniteHiddenDAG S) (nodeBound sourceBound : Nat)
+    (entry : H.CodeMechanismEntry) (listed : entry ∈ H.boundedMechanismCatalogue nodeBound sourceBound) :
+    (∀ node, entry.shape.nodeCard node ≤ nodeBound) ∧ (∀ node, entry.shape.sourceCard node ≤ sourceBound) := by
+  rcases List.mem_flatMap.mp listed with ⟨shape, shapeListed, tablesMapped⟩
+  rcases List.mem_map.mp tablesMapped with ⟨tables, _, same⟩
+  cases same
+  exact H.codeAlphabetShapes_bounded_of_mem _ _ shape shapeListed
+
+theorem nativeTemplateCatalogue_bounded_of_mem (H : FiniteHiddenDAG S) (nodeBound sourceBound : Nat)
+    (template : H.CodeNativeTemplate) (listed : template ∈ H.nativeTemplateCatalogue nodeBound sourceBound) :
+    (∀ node, template.entry.shape.nodeCard node ≤ nodeBound) ∧ (∀ node, template.entry.shape.sourceCard node ≤ sourceBound) := by
+  rcases List.mem_flatMap.mp listed with ⟨entry, entryListed, observedMapped⟩
+  rcases List.mem_map.mp observedMapped with ⟨observed, _, same⟩
+  cases same
+  exact H.boundedMechanismCatalogue_bounded_of_mem _ _ entry entryListed
+
+end FiniteHiddenDAG
+
 structure NativeTemplateInstance (P : FiniteLatentProjection S) where
   template : P.hiddenDAG.CodeNativeTemplate
   factors : (node : Fin P.hiddenDAG.count) → FiniteProbRecord (Fin (template.entry.shape.sourceCard node))

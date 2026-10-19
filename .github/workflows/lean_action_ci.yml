@@ -89,7 +89,9 @@ jobs:
           Thesis.Probability.FiniteRecordCatalogue
           Thesis.Examples.FiniteRecordCatalogue
           Thesis.CausalTransport.BoundedNativeCatalogue
+          Thesis.CausalTransport.BoundedNativeRepresentation
           Thesis.CausalTransport.BoundedNativeSearch
+          Thesis.Examples.BoundedNativeSearch
       - name: Check graph-only identification layers
         working-directory: lean
         run: >-
