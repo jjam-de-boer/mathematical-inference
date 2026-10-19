@@ -1,10 +1,93 @@
 # Resource-capped local checks
 
 Full project builds and the transitive axiom audit currently remain remote.
-Useful selected-module checking is feasible under the explicitly approved
-640 MiB Lean / 768 MiB sampled-RSS / 30-second single-process profile below.
+Useful selected-module checking is feasible under the conservative
+640 MiB Lean / 768 MiB sampled-RSS / 30-second single-process profile below;
+the explicit 768/1024 MiB pilot also checks downstream transportation modules.
 The previous laptop-wide freeze has not been diagnosed; this result does not
 establish that full proof elaboration fits local memory.
+
+## Transportation split and explicit resource profiles, 2026-10-19
+
+The machine reports 18 GiB physical RAM and 11 CPU cores. At the assessment
+snapshot, swap usage was zero and the system memory-pressure free metric was
+79%. That pressure metric is not a count of unused physical RAM, and this
+snapshot is not a permanent reservation or a guarantee against another freeze.
+Only one compiler is allowed through the helpers' shared OS lock; unrelated
+manual builds are not controlled by it. Both helpers now use the same monitor,
+CPU/wall bounds and explicit profiles:
+
+| Profile | Lean resident-memory threshold | Sampled child-RSS watchdog |
+| --- | --- | --- |
+| `conservative` (default) | 640 MiB | 768 MiB |
+| `pilot` (explicit) | 768 MiB | 1024 MiB |
+| `ceiling` (explicit upper trial) | 1024 MiB | 1280 MiB |
+
+Every profile retains one compiler thread and a 30-second per-child timeout.
+There is no automatic retry or promotion after failure. The ceiling is a
+reviewed trial boundary, not a measured hardware maximum or permission for
+parallel/full-project local builds. Source/closure/artifact bounds remain in
+force. A sampled watchdog can miss a short peak; Lean's periodic internal
+check is not an exact OS-enforced ceiling either.
+
+`FourLabelTransportationConstruction` now owns the data, finite eligible-edge
+search, supporting lemmas and `transport`. `FourLabelTransportation` imports
+it and retains `transportation_capacity` and `transportation_exists_iff`.
+All public names stay in `Thesis.Probability.FourLabelTransportation`, and
+existing imports still re-export them. The extraction was compared against
+checkpoint `2a87623`: both the construction body (from `abbrev Masses` through
+`transport`) and the final two theorems are byte-for-byte unchanged. Only
+module ownership/imports/documentation changed; zero totals, unbounded natural
+weights and the separate batched algorithm retain their original meaning.
+Source regressions guard the public boundary and full audit import coverage;
+they do not replace Lean checking or the transitive axiom audit.
+
+Actual sequential checks, with no overlapping compiler, gave:
+
+| Check | Profile | Outcome and measurements |
+| --- | --- | --- |
+| Fresh Core, construction, final theorems | 640/768 | All passed; 2.36 s, 1.17 s, 0.87 s; invocation child peak 653.3 MiB |
+| Cached construction and final theorems | 640/768 | Passed and retained; 2.08 s and 0.73 s; invocation child peak 633.9 MiB |
+| Original small transportation example via unchanged import | 640/768 | Passed in 0.52 s after sequential split checks; invocation child peak 634.3 MiB |
+| Fresh closure through reservation, batching and cell extrema | 768/1024 | All six library modules passed; reservation 2.37 s; invocation child peak 667.6 MiB before regression |
+| Cached construction, final theorems, reservation | 768/1024 | Passed and retained; 1.14 s, 0.67 s, 2.21 s; invocation child peak 697.1 MiB |
+| Cached batching, cell extrema, joint extrema | 768/1024 | Passed and retained; 0.63 s, 0.42 s, 0.50 s; invocation child peak 602.6 MiB |
+| Unchanged retained joint-extrema client | 768/1024 | Reused without re-elaboration; ordinary Core trace check 0.21 s |
+| Forced joint-extrema recheck with retained prerequisites | 768/1024 | Re-elaborated and passed; 1.34 s; invocation child peak 600.0 MiB |
+| `Examples.FourLabelTransportationBatched` after fresh prerequisites | 768/1024 | Lean threshold at `uniform_margins`, 2.03 s; invocation child peak 768.2 MiB |
+| Same fresh regression at upper trial | 1024/1280 | Same threshold failure, 4.25 s; invocation child peak 1024.2 MiB |
+
+Reported child peaks are cumulative maxima across children within each helper
+invocation, not separate exact per-module peaks or fresh proof-allocation
+budgets. The 640 MiB fresh run's 653.3 MiB reported peak is consistent with
+Lean's periodic check; no sampled watchdog was hit. These profiles are bounds
+on checked runs, not claims of exact memory use.
+
+The remaining large regression stops in the proof of the million-unit uniform
+margins (line 38), before its later uniform-table computation is established.
+The preceding billion-unit single-cell regression was reached without a
+reported error. Thus this result must not be described as either a successful
+whole regression or proof that the batching algorithm itself needs over 1 GiB.
+No theorem, regression or kernel decision was removed/weakened to make the
+local result green. The full project and these larger regressions still need
+remote verification.
+
+For a reusable local development loop, explicitly seed changed prerequisites
+in small sequential batches, then check only the edited client:
+
+```sh
+python3 -B lean/tools/check_module_cached.py Thesis.Probability.FourLabelTransportationConstruction Thesis.Probability.FourLabelTransportation Thesis.Probability.FourLabelTransportationReservation --profile pilot --max-selected 3 --check --retain
+python3 -B lean/tools/check_module_cached.py Thesis.Probability.FourLabelTransportationBatched Thesis.Probability.FourLabelTransportationExtrema Thesis.Probability.FourLabelTransportationJointExtrema --profile pilot --max-selected 3 --max-modules 8 --check --retain
+python3 -B lean/tools/check_module_cached.py Thesis.Probability.FourLabelTransportationJointExtrema --profile pilot --max-modules 8 --check --retain
+```
+
+The last command reports reuse for unchanged inputs; add `--force-check` to
+re-elaborate the selected client. This was tested separately, not inferred
+from cache reuse. Inputs include the memory/compiler settings, so a checked
+artifact from one profile is not silently reused as a check at another.
+Changing the helper itself also invalidates its retained entries. These
+artifacts stay separate from ordinary Lake output, which is never overwritten
+by either helper. Full `lake build` and `Thesis.AxiomAudit` remain remote gates.
 
 ## Cache-aware pilot
 
@@ -27,13 +110,15 @@ source change during the pilot invalidates its final result. The optional
 separate retained store is described below; every actual check also holds an
 OS lock so two invocations of this helper cannot overlap their compilers.
 
-The default limits remain a 384 MiB Lean memory threshold and 30 seconds per child.
+At the time of the initial measurements below, the default limits were a
+384 MiB Lean memory threshold and 30 seconds per child.
 An additional watchdog samples the child's RSS, stopping above 768 MiB.
 Sampling permission is checked before a compiler or Lake child is launched;
 if the sandbox denies that inspection, the helper stops. This is a sampled
 watchdog, not a hard OS memory reservation or a guarantee against all system
-pressure. No memory-limit increase is automatic. The accepted maximum is
-640 MiB, but values above the default require explicit selection. The earlier
+pressure. No memory-limit increase is automatic. The accepted maximum was
+640 MiB at that checkpoint, with values above the default requiring explicit
+selection. The earlier
 512 MB trial and the later 640 MiB diagnostic were separately authorized.
 
 The closure is limited to six modules by default, at most 128 KiB per source,
@@ -167,7 +252,8 @@ output was disposable, so this alone does not supply a persistent cache.
 
 The same bounded 640/768 MiB, single-process, 30-second profile was then
 authorized for continued sequential module/cache-loop checks, without any
-further limit increase. The helper's default remains 384 MiB: the corrected
+further limit increase. At that checkpoint the helper's default remained
+384 MiB: the corrected
 profile is selected explicitly with `--memory-mb 640`. Larger modules,
 persistent artifact reuse and the full project are separate verification
 requirements, not conclusions of this one successful fixture.
@@ -316,11 +402,10 @@ boundary and ensure the intrinsic layers do not import causal transport.
 CI checks the extracted modules and both clients early, then still runs the
 complete project and the unchanged transitive axiom gate.
 
-No broad soundness/completeness split is performed. The approved local pilot
-stops much earlier in the small `FiniteRecord` prerequisite, and even a tiny
-new definition after the cached core reaches the allocation boundary. This
-targeted dependency improvement has no demonstrated ability to cure that
-earlier limit. The
+No broad soundness/completeness split is performed. The original 384/512 MiB
+pilot stopped much earlier, including in `FiniteRecord` and a tiny definition
+after the cached core. The later diagnosis and 640 MiB results above supersede
+that old boundary; the graph extraction alone was not its cure. The
 remote cold/import-change build recorded completeness at 37 seconds; the
 18-second soundness attempt failed on a missing import, so it is not a valid
 successful-build timing. Once cached dependencies were available, checkpoint
@@ -337,16 +422,21 @@ is a repair to the mathematical theorem or an established local-memory cure.
 For an explicitly small source closure, an opt-in pilot is available:
 
 ```sh
-python3 lean/tools/check_module_capped.py Thesis.Probability.FourLabelTransportation
+python3 -B lean/tools/check_module_capped.py Thesis.Probability.FourLabelTransportation --plan
+python3 -B lean/tools/check_module_capped.py Thesis.Probability.FourLabelTransportation
 ```
 
 It uses the installed toolchain pinned in `lean/lean-toolchain`, never installs
 anything, never launches Lake, and checks project dependencies sequentially
 into a disposable directory. It does not reuse possibly stale project caches.
-Default per-child limits are one compiler thread, Lean's 384 MB memory setting,
-30 seconds wall time, and a separate CPU-time limit. Source size and closure
-size are also bounded. Low-priority scheduling is requested where permitted.
-The helper's accepted import-header syntax is intentionally restricted.
+The current default per-child limits are one compiler thread, Lean's 640 MiB
+memory threshold, a 768 MiB sampled-RSS watchdog, 30 seconds wall time and a
+separate CPU-time limit. It shares the cache-aware helper's named profiles and
+exclusive compiler slot; it does not persist its compiled artifacts. Source
+size and closure size are also bounded. Low-priority scheduling is requested
+where permitted. The accepted import-header syntax is intentionally restricted;
+nested documentation/line comments and quoted strings do not masquerade as
+headers. Plan mode launches nothing and writes no cache.
 
 Lean's memory setting is **not an OS-wide RSS limit**. Imported runtime/library
 memory can make the reported process peak exceed it. The helper reports the

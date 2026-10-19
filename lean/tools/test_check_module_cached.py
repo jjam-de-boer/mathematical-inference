@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import subprocess
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
@@ -56,6 +57,16 @@ class PlanningTests(unittest.TestCase):
             with self.subTest(source=source), self.assertRaises(pilot.PilotError):
                 pilot.imports(source)
 
+    def test_comments_and_strings_cannot_masquerade_as_import_headers(self):
+        source = ('/- leading /- nested -/ comment -/\nimport Thesis.Core -- dependency\n'
+                  'namespace Thesis\n/-!\nmodule prose is not a module header\n'
+                  'import Mathlib\n-/\ndef message := "/- not a comment"\n'
+                  'def quoted := "escaped \\" quote"\nend Thesis\n')
+        self.assertEqual(pilot.imports(source), ["Thesis.Core"])
+        for contents in ("/- unterminated", 'def text := "unterminated'):
+            with self.subTest(contents=contents), self.assertRaises(pilot.PilotError):
+                pilot.imports(contents)
+
     def test_module_names_cannot_escape_source_tree(self):
         for name in ("../Core", "Thesis..Core", "Thesis.Core;echo", "Other.Core"):
             with self.subTest(name=name), self.assertRaises(pilot.PilotError):
@@ -69,21 +80,30 @@ class PlanningTests(unittest.TestCase):
             pilot.closure(self.root, ["Thesis.Alias"], pilot.Limits())
 
     def test_limits_cannot_silently_expand(self):
-        for limits in (pilot.Limits(seconds=61), pilot.Limits(memory_mb=641),
-                       pilot.Limits(rss_mb=769), pilot.Limits(max_modules=9),
-                       pilot.Limits(max_selected=4)):
+        for limits in (pilot.Limits(seconds=61), pilot.Limits(memory_mb=1025),
+                       pilot.Limits(rss_mb=1281), pilot.Limits(max_modules=9),
+                       pilot.Limits(max_selected=4), pilot.Limits(memory_mb=768, rss_mb=768)):
             with self.subTest(limits=limits), self.assertRaises(pilot.PilotError):
                 limits.validate()
 
     def test_explicit_memory_trial_does_not_raise_defaults_or_rss_ceiling(self):
-        # The 640 MiB value is an explicitly requested diagnostic setting,
-        # not a new default or permission to launch concurrent compilers.
-        # The sampled external ceiling remains unchanged at 768 MiB.
-        trial = pilot.Limits(memory_mb=640)
+        # Raising the hard accepted ceiling does not promote the default
+        # conservative pair or permit concurrent compiler processes.
+        trial = pilot.Limits(memory_mb=1024, rss_mb=1280)
         trial.validate()
-        self.assertEqual(pilot.Limits().memory_mb, 384)
-        self.assertEqual(trial.rss_mb, 768)
+        self.assertEqual(pilot.Limits().memory_mb, 640)
+        self.assertEqual(pilot.Limits().rss_mb, 768)
         self.assertEqual(trial.max_selected, 1)
+
+    def test_named_profiles_and_legacy_explicit_overrides(self):
+        for name, pair in (("conservative", (640, 768)), ("pilot", (768, 1024)),
+                           ("ceiling", (1024, 1280))):
+            args = SimpleNamespace(profile=name, memory_mb=None, rss_mb=None,
+                                   seconds=30, max_modules=6, max_selected=1)
+            resolved = pilot.resolve_limits(args)
+            self.assertEqual((resolved.memory_mb, resolved.rss_mb), pair)
+            args.memory_mb = 512
+            self.assertEqual(pilot.resolve_limits(args).memory_mb, 512)
 
     def test_configuration_rejects_extra_hooks(self):
         (self.root / "lakefile.toml").write_text('name = "thesis"\n')
@@ -145,6 +165,18 @@ class MonitorTests(unittest.TestCase):
         with self.assertRaisesRegex(pilot.PilotError, "wall-time"):
             pilot.run_capped(["fake"], Path("."), {}, pilot.Limits())
         terminate.assert_called_once_with(child)
+
+    @patch.object(pilot.subprocess, "Popen")
+    @patch.object(pilot, "rss_mib", return_value=1.0)
+    @patch("builtins.print")
+    def test_failed_child_is_not_retried_at_a_larger_profile(self, _print, _rss, popen):
+        child = Mock(pid=12345)
+        child.poll.return_value = 1
+        child.wait.return_value = 1
+        popen.return_value = child
+        with self.assertRaisesRegex(pilot.PilotError, "child failed"):
+            pilot.run_capped(["fake", "-M640"], Path("."), {}, pilot.Limits())
+        popen.assert_called_once()
 
     @patch.object(pilot.subprocess, "run")
     def test_sampler_fails_closed(self, run):
