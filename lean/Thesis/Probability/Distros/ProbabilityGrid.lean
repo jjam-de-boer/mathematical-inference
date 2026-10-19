@@ -39,8 +39,8 @@ theorem probabilityGrid_bounded (bound : Nat) (probabilities : Nat → QProb)
       (fun atom => (atom.1.val, atom.2)) at member
   rcases List.mem_map.mp member with ⟨source, _, same⟩
   cases same
-  have within := source.1.isLt
-  rw [probabilityGrid_weights_length] at within
+  have within : source.1.val < bound + 1 := by
+    simpa only [probabilityGrid_weights_length] using source.1.isLt
   omega
 
 /-- Every table probability is recovered at its actual grid cell. -/
@@ -56,14 +56,17 @@ theorem probabilityGrid_pmf (bound : Nat) (probabilities : Nat → QProb)
       FiniteProbRecord.singletonEvent index := by
     funext i
     simp only [FiniteProbRecord.singletonEvent, Fin.ext_iff]
+    rfl
   refine QProb.equiv_trans (Distro.map_pmf (listCategoricalDistro weights positive) (fun i => i.val) value) ?_
   rw [events]
   have cell := categorical_pmf weights.length (fun i => weights.getD i.val 0)
     (by rw [finWeight_getD_sum]; exact positive) index
   change QProb.Equiv ((listCategoricalDistro weights positive).pmf index)
     ⟨weights.getD value 0, (listCategoricalDistro weights positive).record.den, _⟩ at cell
-  rw [listCategorical_den] at cell
-  refine QProb.equiv_trans cell ?_
+  have actual : QProb.Equiv ((listCategoricalDistro weights positive).pmf index)
+      ⟨weights.getD value 0, weights.sum, positive⟩ := by
+    simpa only [listCategorical_den] using cell
+  refine QProb.equiv_trans actual ?_
   have same : (QProb.listSum table).num = (QProb.listSum table).den := by
     simpa only [QProb.Equiv, QProb.one, Nat.mul_one, Nat.one_mul] using normalized
   have representation := rationalUrnWeights_parameter table value
@@ -86,7 +89,7 @@ private theorem finWeighted_cell_mem (n : Nat) (weights : Fin n → Nat) (index 
         refine ⟨(old, weights old.castSucc), ih (fun i => weights i.castSucc) old, ?_⟩
         change (old.castSucc, weights old.castSucc) = (index, weights index)
         rw [same]
-      · have same : index = Fin.last n := Fin.ext (by have upper := index.isLt; omega)
+      · have same : index = Fin.last n := Fin.ext (by simp only [Fin.val_last]; have upper := index.isLt; omega)
         rw [same]
         exact List.mem_append_right _ (List.mem_singleton_self _)
 

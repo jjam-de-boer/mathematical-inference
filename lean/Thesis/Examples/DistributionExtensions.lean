@@ -1172,3 +1172,18 @@ example : rectangleMomentFixture.SameLaw rectangleMomentOther :=
     (by decide +kernel) (by decide +kernel) rectangle_fixture_moments
 
 end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+def gridExampleProbability (value : Nat) : QProb :=
+  if value = 0 then ⟨1, 3, by decide⟩ else if value = 2 then ⟨2, 3, by decide⟩ else QProb.zero
+
+example : QProb.Equiv ((probabilityGrid 2 gridExampleProbability (by decide +kernel)).pmf 2) ⟨2, 3, by decide⟩ :=
+  probabilityGrid_pmf _ _ _ _ (by decide)
+example : (1, 0) ∈ (probabilityGrid 2 gridExampleProbability (by decide +kernel)).record.atoms := by decide +kernel
+example : ∃ weight, (1, weight) ∈ (probabilityGrid 2 gridExampleProbability (by decide +kernel)).record.atoms :=
+  probabilityGrid_retains _ _ _ _ (by decide)
+
+end Thesis.Examples.DistributionExtensions

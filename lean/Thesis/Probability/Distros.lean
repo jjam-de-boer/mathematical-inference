@@ -34,6 +34,8 @@ import Thesis.Probability.Distros.BinomialInversion
 import Thesis.Probability.Distros.FactorialInversion
 import Thesis.Probability.Distros.MomentTableAlgebra
 import Thesis.Probability.Distros.ProbabilityGrid
+import Thesis.Probability.Distros.FinitePmfExpectation
+import Thesis.Probability.Distros.FactorialMomentTable
 import Thesis.Probability.Distros.MultivariateFactorialInversion
 import Thesis.Probability.Distros.FactorialRectangle
 import Thesis.Probability.Distros.MultivariateFactorialPGF
