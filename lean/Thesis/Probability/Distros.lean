@@ -86,6 +86,8 @@ import Thesis.Probability.Distros.ConditionalAlgebra
 import Thesis.Probability.Distros.ConditionalProjection
 import Thesis.Probability.Distros.ProjectionEquality
 import Thesis.Probability.Distros.RefinementGain
+import Thesis.Probability.Distros.AlmostSureTower
+import Thesis.Probability.Distros.CovarianceRows
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.RationalBetaBinomial
