@@ -136,6 +136,7 @@ import Thesis.CausalTransport.CliqueRootNative
 import Thesis.CausalTransport.ProjectedHiddenDAGModels
 import Thesis.CausalTransport.ProjectionTemplateRepresentation
 import Thesis.CausalTransport.BoundedNativeCatalogue
+import Thesis.CausalTransport.BoundedNativeSearch
 import Thesis.CausalTransport.HiddenDAGFinitePresentation
 import Thesis.CausalTransport.HiddenDAGSourcePresentation
 import Thesis.CausalTransport.HiddenDAGSourceCompression
