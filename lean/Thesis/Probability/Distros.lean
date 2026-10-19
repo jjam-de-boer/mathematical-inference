@@ -43,6 +43,7 @@ import Thesis.Probability.Distros.FactorialRectangle
 import Thesis.Probability.Distros.ProbabilityList
 import Thesis.Probability.Distros.JointMomentTableAlgebra
 import Thesis.Probability.Distros.JointMomentTable
+import Thesis.Probability.Distros.JointMomentRealization
 import Thesis.Probability.Distros.MultivariateFactorialPGF
 import Thesis.Probability.Distros.MultivariateReconstruction
 import Thesis.Probability.Distros.PositiveSupport
