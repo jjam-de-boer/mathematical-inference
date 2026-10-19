@@ -556,6 +556,17 @@ by that exact test and returns one of three proof-carrying results:
 - **Ambiguous:** two actual fitted native models in that class have different
   requested target values.
 
+`BoundedNativeClassification` exposes the same guarantees as public semantic
+predicates over all original native models: `Compatible`, `PointIdentified`
+and `Separated`. Point identification requires compatibility, so an impossible
+input law does not count as vacuously identified. Each computed `Result`
+supplies explicit `Decidable` values and exact Boolean checks; these are not
+global instances that might automatically start a large catalogue search.
+`compatible_iff_pointIdentified_or_separated` and
+`not_pointIdentified_iff_incompatible_or_separated` give constructive exact
+alternatives. Their proof inspects the finite search result, rather than
+assuming a general negated-universal-to-counterexample or excluded-middle rule.
+
 These are unconditional interventional event probabilities; no conditional
 is evaluated at null evidence. Observational zero cells and null action
 targets are retained. The regression on `X -> Y` has two factual point-mass

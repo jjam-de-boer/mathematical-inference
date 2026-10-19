@@ -138,6 +138,7 @@ import Thesis.CausalTransport.ProjectionTemplateRepresentation
 import Thesis.CausalTransport.BoundedNativeCatalogue
 import Thesis.CausalTransport.BoundedNativeRepresentation
 import Thesis.CausalTransport.BoundedNativeSearch
+import Thesis.CausalTransport.BoundedNativeClassification
 import Thesis.CausalTransport.HiddenDAGFinitePresentation
 import Thesis.CausalTransport.HiddenDAGSourcePresentation
 import Thesis.CausalTransport.HiddenDAGSourceCompression
@@ -345,6 +346,11 @@ preserving every intervention and the original source denominators.
 bounded-class incompatibility, an attained common unconditional target value,
 or two actual compatible models with different target values. These results
 do not remove the supplied bounds or assign conditionals at null evidence.
+`BoundedNativeClassification` states compatibility, attained point
+identification and separation over the full original bounded native class.
+It supplies explicit decisions, exact Boolean checks and constructive
+classification equivalences, without global search-triggering instances or
+vacuous identification at incompatible observed laws.
 `HiddenDAGPolynomial` compiles native causal probabilities with a proved
 binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied
