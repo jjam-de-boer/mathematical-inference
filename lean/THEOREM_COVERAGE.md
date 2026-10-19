@@ -608,6 +608,11 @@ zero value at null evidence. The observational fitting list is shared by the
 two inspections. Regression tests cover mixed support with a common supported
 value, uniformly null evidence, uniformly positive evidence with disagreeing
 values, and incompatibility, without kernel expansion of the full catalogue.
+A separate three-valued `X -> Y` regression has mixed support and two different
+supported values: after a null factual action, evidence `Y != 0` is null in
+one fitted model and positive at responses one and two in two others.
+`solver_mixed_ambiguous` proves that the full bounded checker reports both a
+null-evidence witness and supported-value ambiguity for that same input law.
 
 This is an opt-in finite procedure, not a practical large-graph optimizer.
 Bounds are part of its class definition. In particular, projection-wide source

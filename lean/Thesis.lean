@@ -72,6 +72,7 @@ import Thesis.Examples.BoundedNativeSearch
 import Thesis.Examples.BoundedNativeClassification
 import Thesis.Examples.BoundedNativeConditionals
 import Thesis.Examples.BoundedNativeConditionalSearch
+import Thesis.Examples.BoundedNativeMixedConditionals
 import Thesis.Examples.RationalMonomial
 import Thesis.Examples.RationalPolynomialIdentity
 import Thesis.Examples.PolynomialBoundCertificate
