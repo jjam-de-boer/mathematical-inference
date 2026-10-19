@@ -368,4 +368,14 @@ retained rather than silently excluded as nonpositive support.
     `OccupancyNullspace` gives exact coefficient-based null criteria: on
     positive colours coefficients agree, while null-category coefficients are
     unrestricted; zero trials and full-population sampling are explicit exceptions.
+68. `AlmostSureTower` proves the pointwise tower law under refinement required
+    only almost surely, including unsupported coarse fibres. `CovarianceRows`
+    identifies null quadratic directions with zero covariance-row products and
+    specializes that equivalence to all three occupancy families.
+69. `MomentTableCheck` scans a supplied scalar table and returns a certified
+    realizing record or a negative-cell/normalization obstruction. The joint
+    table modules tensor the inverse over coordinate-specific rectangles,
+    construct the unique joint law and recover every supplied rectangle moment.
+    `JointMomentTableCheck` provides the same executable certified decision for
+    mixed tables. Both successful checkers retain every zero-mass grid cell.
 -/

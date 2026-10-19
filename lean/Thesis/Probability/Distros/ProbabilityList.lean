@@ -68,7 +68,8 @@ theorem probabilityList_expectation (cells : List A) (default : A) (probabilitie
     exact SignedRatio.mul_congr (QProb.toSignedRatio_congr (probabilityGrid_pmf (cells.length - 1)
       (fun i => probabilities (cells.getD i default)) (probabilityList_normalized cells default probabilities nonempty normalized)
       i (by have upper := List.mem_range.mp member; omega))) (SignedRatio.equiv_refl _)
-  · rw [Nat.sub_add_cancel (by omega), range_getD_map]
+  · rw [Nat.sub_add_cancel (by omega),
+      range_getD_map cells default (fun cell => SignedRatio.mul (probabilities cell).toSignedRatio (f cell))]
     exact SignedRatio.equiv_refl _
 
 end Thesis.Probability.Distros
