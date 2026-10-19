@@ -336,4 +336,9 @@ retained rather than silently excluded as nonpositive support.
 63. `RefinementGain` identifies the exact reduction in prediction error with
     the squared distance between the conditional means, and characterizes
     equality of the errors by almost-sure equality of those means.
+64. `FactorialRectangle` generalizes mixed expansion, explicit inversion and
+    moment reconstruction to coordinate-specific bounds holding only almost
+    surely. Its enumeration retains zero-width axes and the empty rectangle.
+65. `HypergeometricCovariance` extracts the mixed second moment and closed
+    nonpositive off-diagonal covariance, in both signed moment interfaces.
 -/

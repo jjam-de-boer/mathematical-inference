@@ -1110,3 +1110,65 @@ example : SignedRatio.Equiv ((multivariateHypergeometricDistro 3 [1, 0, 2] (by d
     (by decide +kernel)
 
 end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Tight unequal bounds, varying totals, a zero-width axis, and retained
+null outliers of both the wrong shape and excessive coordinates. -/
+def rectangleMomentFixture : Distro (List Nat) :=
+  ofWeightedAtoms [([0, 0, 0], 1), ([1, 0, 2], 2), ([0, 0, 1], 1), ([], 0), ([99, 99, 99, 99], 0)] (by decide)
+
+example : (factorialRectangle [1, 0, 2]).length = 6 := by decide +kernel
+example : factorialRectangle [0, 0] = [[0, 0]] := by decide +kernel
+example : factorialRectangle [] = [[]] := rfl
+
+example (args : List QProb) (dimension : args.length = 3) :
+    QProb.Equiv (multivariatePGF rectangleMomentFixture (args.map (fun t => QProb.add t QProb.one)))
+      (QProb.listSum ((factorialRectangle [1, 0, 2]).map (fun orders =>
+        QProb.mul (multivariateFactorialCoefficient rectangleMomentFixture orders) (multivariateMonomial args orders)))) :=
+  multivariatePGF_factorial_expansion_rectangle rectangleMomentFixture args [1, 0, 2]
+    (by simpa only [List.length_cons, List.length_nil] using dimension.symm) (by decide +kernel)
+
+example : SignedRatio.Equiv (rectangleMomentFixture.pmf [1, 0, 2]).toSignedRatio
+    (inverseRectangleFactorialPMF rectangleMomentFixture [1, 0, 2] [1, 0, 2]) :=
+  Distro.pmf_rectangleFactorial_inversion _ _ _ (by decide) (by decide +kernel)
+
+example : SignedRatio.Equiv (inverseRectangleFactorialPMF rectangleMomentFixture [1, 0, 2] [1, 0, 2])
+    ⟨1, 2, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv (inverseRectangleFactorialPMF rectangleMomentFixture [1, 0, 2] [1, 0, 1])
+    SignedRatio.zero := by decide +kernel
+example : SignedRatio.Equiv (inverseRectangleFactorialPMF rectangleMomentFixture [1, 0, 2] [2, 0, 0])
+    SignedRatio.zero := by decide +kernel
+
+example : SignedRatio.Equiv (emptyPositiveOutlierFixture.pmf []).toSignedRatio
+    (inverseRectangleFactorialPMF emptyPositiveOutlierFixture [] []) :=
+  Distro.pmf_rectangleFactorial_inversion _ _ _ rfl (by decide +kernel)
+
+def rectangleMomentOther : Distro (List Nat) :=
+  ofWeightedAtoms [([0, 0, 1], 2), ([0, 0, 0], 2), ([1, 0, 2], 4), ([0, 7], 0)] (by decide)
+
+private theorem rectangle_fixture_moments (orders : List Nat) (within : CoordinateBounds orders [1, 0, 2]) :
+    QProb.Equiv (jointFactorialMoment rectangleMomentFixture orders) (jointFactorialMoment rectangleMomentOther orders) := by
+  cases orders with
+  | nil => exact False.elim within
+  | cons a orders => cases orders with
+      | nil => exact False.elim within.2
+      | cons b orders => cases orders with
+          | nil => exact False.elim within.2.2
+          | cons c orders => cases orders with
+              | cons d orders => exact False.elim within.2.2.2
+              | nil =>
+                  have first : a = 0 ∨ a = 1 := by have bound := within.1; omega
+                  have middle : b = 0 := by have bound := within.2.1; omega
+                  have last : c = 0 ∨ c = 1 ∨ c = 2 := by have bound := within.2.2.1; omega
+                  subst b
+                  rcases first with rfl | rfl <;> rcases last with rfl | rfl | rfl <;> decide +kernel
+
+/-- Six actual rectangle moments suffice despite different raw null records. -/
+example : rectangleMomentFixture.SameLaw rectangleMomentOther :=
+  Distro.sameLaw_of_rectangleFactorialMoments _ _ [1, 0, 2]
+    (by decide +kernel) (by decide +kernel) rectangle_fixture_moments
+
+end Thesis.Examples.DistributionExtensions
