@@ -67,6 +67,8 @@ import Thesis.Causality.UsedConditionalAdmissibility
 import Thesis.Causality.SupportAwareKernelAlgebra
 import Thesis.Causality.PositiveDerivationSupport
 import Thesis.Causality.ProbabilityTermEquality
+import Thesis.Causality.ProbabilityTermCode
+import Thesis.Causality.DerivationCode
 import Thesis.Causality.ModalDerivation
 import Thesis.Causality.Modalities
 import Thesis.Causality.ConservativeLearning
@@ -141,6 +143,9 @@ assuming independence from marginal fairness alone.
 `ProbabilityTermEquality` supplies explicit finite syntax comparison for
 node selections, kernels, and complete expressions, without deciding
 denotational equivalence or using classical function equality.
+`ProbabilityTermCode` and `DerivationCode` decode function-free indexed data
+and reconstruct actual checked do-calculus trees. Graph/syntax acceptance is
+separate from native recursive support; neither module searches formulas.
 The facade excludes the external completeness
 interfaces; those begin in `Thesis.CausalTransport`.
 `HedgeQuery` retains a hedge's actual forests and action seed while reindexing
