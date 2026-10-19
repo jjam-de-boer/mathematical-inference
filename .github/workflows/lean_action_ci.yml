@@ -199,6 +199,7 @@ jobs:
             lake build
             Thesis.Probability.FiniteProductAllocation
             Thesis.Probability.FiniteProductSplicing
+            Thesis.Probability.FourLabelTransportationConstruction
             Thesis.Probability.FourLabelTransportation
             Thesis.Probability.FourLabelTransportationReservation
             Thesis.Probability.FourLabelTransportationBatched
