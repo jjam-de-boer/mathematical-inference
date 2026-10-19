@@ -11,12 +11,12 @@ def stageLabels : Nat → Nat
   | _ => 4
 
 def stageObserve : (stage : Nat) → Nat → Fin (stageLabels stage)
-  | 0, _ => 0
+  | 0, _ => ⟨0, Nat.zero_lt_one⟩
   | 1, x => unsupportedCoarse x
   | _ + 2, x => predictionFine x
 
 def stageMerge : (stage : Nat) → Fin (stageLabels (stage + 1)) → Fin (stageLabels stage)
-  | 0, _ => 0
+  | 0, _ => ⟨0, Nat.zero_lt_one⟩
   | 1, label => unsupportedMerge label
   | _ + 2, label => label
 
@@ -55,7 +55,7 @@ example : SignedRatio.Equiv
     (SignedRatio.add
       (partitionMomentFixture.rationalSquaredError partitionMomentObservable (finiteChain.mean partitionMomentObservable 2))
       (SignedRatio.listSum ((List.range 2).map (fun step => finiteChain.energy partitionMomentObservable step)))) :=
-  finiteChain.prediction_error_sum partitionMomentObservable 0 2 (by decide)
+  by simpa only [Nat.zero_add] using finiteChain.prediction_error_sum partitionMomentObservable 0 2 (by decide)
 
 example : SignedRatio.Equiv
     (partitionMomentFixture.rationalSquaredError partitionMomentObservable (finiteChain.mean partitionMomentObservable 1))
