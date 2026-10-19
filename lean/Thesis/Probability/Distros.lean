@@ -93,6 +93,9 @@ import Thesis.Probability.Distros.ConditionalProjection
 import Thesis.Probability.Distros.ProjectionEquality
 import Thesis.Probability.Distros.RefinementGain
 import Thesis.Probability.Distros.AlmostSureTower
+import Thesis.Probability.Distros.ObservationChains
+import Thesis.Probability.Distros.RationalLinearOrder
+import Thesis.Probability.Distros.RationalIntervalCheck
 import Thesis.Probability.Distros.CovarianceRows
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
@@ -378,4 +381,8 @@ retained rather than silently excluded as nonpositive support.
     construct the unique joint law and recover every supplied rectangle moment.
     `JointMomentTableCheck` provides the same executable certified decision for
     mixed tables. Both successful checkers retain every zero-mass grid cell.
+70. `ObservationChains` composes almost-sure finite refinements with changing
+    label dimensions, proves towers between stages, zero conditional increment
+    means and orthogonality, and decomposes cumulative prediction improvement
+    into the exact finite sum of increment energies.
 -/
