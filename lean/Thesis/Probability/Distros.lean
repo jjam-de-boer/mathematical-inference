@@ -54,6 +54,8 @@ import Thesis.Probability.Distros.DepletingConditioning
 import Thesis.Probability.Distros.DepletingPrefix
 import Thesis.Probability.Distros.DepletingConsistency
 import Thesis.Probability.Distros.DepletingSupport
+import Thesis.Probability.Distros.DepletingAggregation
+import Thesis.Probability.Distros.DepletingAggregationConditioning
 import Thesis.Probability.Distros.Reweight
 import Thesis.Probability.Distros.MulticolourPolya
 import Thesis.Probability.Distros.KernelInvariance
@@ -324,4 +326,8 @@ retained rather than silently excluded as nonpositive support.
     `OccupancyCovariance` specializes this to multinomial, reinforced and
     hypergeometric laws, including the fixed-total null direction and complete
     zero rows for zero-weight or zero-stock coordinates.
+62. `DepletingAggregation` merges complete ordered removal paths on the
+    original weighted records, even at raw impossible horizons. Its conditioning
+    module proves remaining-stock identities, positive grouped evidence and
+    commutation of the actual count-conditioned future path laws with merging.
 -/
