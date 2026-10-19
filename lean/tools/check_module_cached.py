@@ -40,20 +40,48 @@ class PilotError(RuntimeError):
     """A failed precondition is not a successful proof check."""
 
 
+# Profiles are explicit ceilings, not retry levels. A failed compiler never
+# promotes itself to the next profile. Both helpers resolve these same pairs
+# and share one OS-backed compiler slot, CPU/wall bounds and RSS monitor.
+RESOURCE_PROFILES = {
+    "conservative": (640, 768),
+    "pilot": (768, 1024),
+    "ceiling": (1024, 1280),
+}
+
+
 @dataclass(frozen=True)
 class Limits:
     seconds: int = 30
-    memory_mb: int = 384
+    memory_mb: int = 640
     rss_mb: int = 768
     max_modules: int = 6
     max_selected: int = 1
 
     def validate(self):
-        if not (1 <= self.seconds <= 60 and 128 <= self.memory_mb <= 640
-                and 256 <= self.rss_mb <= 768 and 1 <= self.max_modules <= 8
+        if not (1 <= self.seconds <= 60 and 128 <= self.memory_mb <= 1024
+                and 256 <= self.rss_mb <= 1280 and self.memory_mb < self.rss_mb
+                and 1 <= self.max_modules <= 8
                 and 1 <= self.max_selected <= 3):
-            raise PilotError("limits: 1–60 seconds, 128–640 MiB Lean memory, "
-                             "256–768 MiB sampled RSS, 1–8 closure modules, 1–3 selected modules")
+            raise PilotError("limits: 1–60 seconds, 128–1024 MiB Lean memory, "
+                             "256–1280 MiB sampled RSS strictly above Lean's threshold, "
+                             "1–8 closure modules, 1–3 selected modules")
+
+
+def resolve_limits(args):
+    """Resolve an explicit profile/override once; never escalate after failure."""
+    memory, rss = RESOURCE_PROFILES[args.profile]
+    limits = Limits(args.seconds,
+        memory if args.memory_mb is None else args.memory_mb,
+        rss if args.rss_mb is None else args.rss_mb,
+        args.max_modules, args.max_selected)
+    limits.validate()
+    return limits
+
+
+def describe_limits(limits):
+    return (f"Limits: Lean={limits.memory_mb} MiB; sampled RSS={limits.rss_mb} MiB; "
+            f"wall={limits.seconds}s per child; one compiler at a time")
 
 
 def source_path(root, module):
@@ -69,9 +97,52 @@ def imports(source):
     trace checker remain authoritative for every reused dependency. Selected
     modules are elaborated by the pinned compiler in the copied source tree.
     """
+    # Ignore nested block and line comments, including documentation whose
+    # prose happens to start with `module` or `import`. Quoted string contents
+    # are masked too, so comment markers inside a string are not interpreted
+    # as comments. This remains a conservative header preflight, not a Lean
+    # parser; the isolated compiler checks the actual copied source.
+    visible, position, depth, quoted = [], 0, 0, False
+    while position < len(source):
+        char, pair = source[position], source[position:position + 2]
+        if depth:
+            if pair == "/-":
+                depth += 1
+                position += 2
+                continue
+            if pair == "-/":
+                depth -= 1
+                position += 2
+                continue
+            visible.append("\n" if char == "\n" else " ")
+        elif quoted:
+            if char == "\\" and position + 1 < len(source):
+                visible.extend("\n" if part == "\n" else " " for part in pair)
+                position += 2
+                continue
+            if char == '"':
+                quoted = False
+            visible.append("\n" if char == "\n" else " ")
+        elif pair == "/-":
+            depth = 1
+            visible.append(" ")
+            position += 2
+            continue
+        elif pair == "--":
+            end = source.find("\n", position)
+            position = len(source) if end < 0 else end
+            continue
+        elif char == '"':
+            quoted = True
+            visible.append(" ")
+        else:
+            visible.append(char)
+        position += 1
+    if depth or quoted:
+        raise PilotError("unterminated comment or unsupported quoted source")
     result = []
     header_done = False
-    for line in source.splitlines():
+    for line in "".join(visible).splitlines():
         stripped = line.strip()
         if not stripped:
             continue
@@ -248,14 +319,17 @@ def main():
     parser.add_argument("--force-check", action="store_true",
                         help="elaborate selected modules even if --retain has a matching artifact")
     parser.add_argument("--seconds", type=int, default=30)
-    parser.add_argument("--memory-mb", type=int, default=384)
-    parser.add_argument("--rss-mb", type=int, default=768)
+    parser.add_argument("--profile", choices=RESOURCE_PROFILES, default="conservative",
+                        help="explicit memory pair; a failure never retries at a larger profile")
+    parser.add_argument("--memory-mb", type=int, default=None,
+                        help="explicit Lean threshold override in MiB")
+    parser.add_argument("--rss-mb", type=int, default=None,
+                        help="explicit sampled-RSS ceiling override in MiB")
     parser.add_argument("--max-modules", type=int, default=6)
     parser.add_argument("--max-selected", type=int, default=1)
     args = parser.parse_args()
     try:
-        limits = Limits(args.seconds, args.memory_mb, args.rss_mb, args.max_modules, args.max_selected)
-        limits.validate()
+        limits = resolve_limits(args)
         selected = list(dict.fromkeys(args.modules))
         if len(selected) > limits.max_selected:
             raise PilotError("too many selected compilation modules")
@@ -263,6 +337,7 @@ def main():
         check_configuration(root)
         ordered = closure(root, selected, limits)
         dependencies = [module for module in ordered if module not in selected]
+        print(describe_limits(limits), flush=True)
         print("Selected: " + ", ".join(module for module in ordered if module in selected), flush=True)
         print("Dependencies requiring cache validation: " + (", ".join(dependencies) or "none"), flush=True)
         if not args.check:
