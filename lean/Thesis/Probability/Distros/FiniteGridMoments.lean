@@ -18,6 +18,9 @@ theorem listSum_list_select [DecidableEq A] (cells : List A) (target : A) (f : A
           have different : cell ≠ target := by intro same; subst cell; exact (List.nodup_cons.mp distinct).1 listed
           rw [if_neg different]
           exact equiv_refl _
+        change Equiv (add (if target = target then f target else zero)
+          (listSum (cells.map (fun cell => if cell = target then f target else zero)))) (f target)
+        rw [if_pos rfl]
         exact equiv_trans (add_congr (equiv_refl _) others) (add_zero _)
       · have later := (List.mem_cons.mp member).resolve_left (Ne.symm here)
         change Equiv (add (if head = target then f target else zero)
