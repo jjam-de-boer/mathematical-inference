@@ -1042,3 +1042,47 @@ example (event : Event (List Nat)) :
   multicolourDepleting_eventMass_aggregation 3 3 [1, 0, 1] [0, 1, 0] (by decide) (by decide +kernel) event
 
 end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- The label refinement is deliberately false at the retained null outcome. -/
+example : SignedRatio.Equiv
+    (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+      (partitionMomentFixture.conditionalExpectation predictionCoarse partitionMomentObservable))
+    (SignedRatio.add
+      (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+        (partitionMomentFixture.conditionalExpectation predictionFine partitionMomentObservable))
+      (partitionMomentFixture.rationalSquaredError
+        (partitionMomentFixture.conditionalExpectation predictionFine partitionMomentObservable)
+        (partitionMomentFixture.conditionalExpectation predictionCoarse partitionMomentObservable))) :=
+  Distro.conditionalExpectation_refinement_gain_almostSurely _ predictionFine predictionCoarse predictionMerge
+    (by decide +kernel) partitionMomentObservable
+
+example : SignedRatio.Equiv (partitionMomentFixture.rationalSquaredError
+    (partitionMomentFixture.conditionalExpectation predictionFine partitionMomentObservable)
+    (partitionMomentFixture.conditionalExpectation predictionCoarse partitionMomentObservable)) ⟨1, 4, by decide⟩ := by decide +kernel
+
+example : ¬ SignedRatio.Equiv
+    (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+      (partitionMomentFixture.conditionalExpectation predictionCoarse partitionMomentObservable))
+    (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+      (partitionMomentFixture.conditionalExpectation predictionFine partitionMomentObservable)) := by decide +kernel
+
+/-- Refinement gives no improvement for a constant response. -/
+example : SignedRatio.Equiv
+    (partitionMomentFixture.rationalSquaredError (fun _ => SignedRatio.one)
+      (partitionMomentFixture.conditionalExpectation predictionCoarse (fun _ => SignedRatio.one)))
+    (partitionMomentFixture.rationalSquaredError (fun _ => SignedRatio.one)
+      (partitionMomentFixture.conditionalExpectation predictionFine (fun _ => SignedRatio.one))) :=
+  (Distro.conditionalExpectation_refinement_equal_iff_almostSurely _ predictionFine predictionCoarse predictionMerge
+    (by decide +kernel) (fun _ => SignedRatio.one)).mpr (by decide +kernel)
+
+example : partitionMomentFixture.AlmostSurely (fun x => SignedRatio.Equiv
+    (partitionMomentFixture.conditionalExpectation predictionFine (fun _ => SignedRatio.one) x)
+    (partitionMomentFixture.conditionalExpectation predictionCoarse (fun _ => SignedRatio.one) x)) :=
+  (Distro.conditionalExpectation_refinement_equal_iff_almostSurely _ predictionFine predictionCoarse predictionMerge
+    (by decide +kernel) (fun _ => SignedRatio.one)).mp (by decide +kernel)
+
+end Thesis.Examples.DistributionExtensions

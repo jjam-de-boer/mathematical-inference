@@ -75,6 +75,7 @@ import Thesis.Probability.Distros.ConditionalTower
 import Thesis.Probability.Distros.ConditionalAlgebra
 import Thesis.Probability.Distros.ConditionalProjection
 import Thesis.Probability.Distros.ProjectionEquality
+import Thesis.Probability.Distros.RefinementGain
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.RationalBetaBinomial
@@ -330,4 +331,7 @@ retained rather than silently excluded as nonpositive support.
     original weighted records, even at raw impossible horizons. Its conditioning
     module proves remaining-stock identities, positive grouped evidence and
     commutation of the actual count-conditioned future path laws with merging.
+63. `RefinementGain` identifies the exact reduction in prediction error with
+    the squared distance between the conditional means, and characterizes
+    equality of the errors by almost-sure equality of those means.
 -/
