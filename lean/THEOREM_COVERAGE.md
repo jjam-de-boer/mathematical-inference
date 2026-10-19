@@ -43,6 +43,44 @@ with an unrelated source condition guarantees all used conditionals exist.
 
 ## Applying a successful certificate
 
+### Positive-class modal connection
+
+`PositiveModal` connects the inhabited positive joint/conditional completeness
+package to the modal wrappers. `ObservedGraph.positive_joint_modal_iff` and
+`positive_conditional_modal_iff` retain `GraphModelClass.positive`, without an
+external completeness argument. `ModeIndexedJointDerivationIn` and its
+conditional counterpart retain actual membership of the mode's stored model;
+`realizeAt` constructs the kernel execution and every modal do-rule leaf.
+The older unrestricted wrapper signatures remain available with their explicit
+external completeness premise; they are not silently inhabited by this result.
+
+The concrete front-door regression reads one half and three quarters from
+executed intervention/observation records and also checks the atomic endpoint.
+These executions start from the stored model's initial prior, not an arbitrary
+updated belief.
+
+### Native support-aware modal connection
+
+`SupportedModal` connects the completed supported-zero completeness package
+to actual modal traces without changing its application domain. The native
+and mode-indexed `supported_joint_modal_iff` / `supported_conditional_modal_iff`
+theorems retain the independent supported-representation predicate.
+`NativeModalKernelRealization` stores the original native support tree,
+the executed kernel, every realized do-rule leaf, and native source/formula
+equations to the executed value. Local demand tests construct the support;
+conditional execution additionally requires the original causal conditioner.
+No positive-class membership or canonical two-child-root premise is inserted.
+
+The mode index stores equality to the actual native model's proved collapse;
+`sourceAtMode` reads the executed answer at that stored model. As in the
+positive API, execution starts from that model's initial prior, not an
+arbitrary updated epistemic belief. The native regression covers recursive
+joint ID, conditional Bayes, recursive IDC promotion at a null factual action,
+supported-zero endpoint values, structural atomic execution, and rejection
+of a genuinely undefined original conditioner. All examples belong to the
+full axiom-audit import closure. These bridges neither assert unrestricted
+zero-class completeness nor cover every alternative formula's domain.
+
 `GuardedAdmissibleCertificates` constructs inspectable successful derivations.
 The joint certificate's `intrinsic_soundAt` needs the printed formula's
 `UsedConditionalsAdmissibleAt` tests. The conditional version also needs

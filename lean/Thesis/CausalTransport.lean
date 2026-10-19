@@ -178,6 +178,8 @@ import Thesis.CausalTransport.HiddenDAGCorrespondence
 import Thesis.CausalTransport.Construction
 import Thesis.CausalTransport.Modal
 import Thesis.CausalTransport.ModalRealization
+import Thesis.CausalTransport.PositiveModal
+import Thesis.CausalTransport.SupportedModal
 import Thesis.CausalTransport.ConservativeLearningTransport
 import Thesis.CausalTransport.ModalCounterfactual
 import Thesis.CausalTransport.HedgeInterventionalSupport

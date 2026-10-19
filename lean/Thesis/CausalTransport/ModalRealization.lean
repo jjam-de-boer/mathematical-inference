@@ -16,6 +16,12 @@ payload once their source term, operation kernel, and underlying identification
 certificate are fixed. `OperationRealizedCertificateCore` carries that payload
 once. The generic, joint, and conditional public structures extend this core,
 while their promoted `certificate` fields retain the query-specific types.
+
+The shared payload is class-indexed.  Its realization premise is membership,
+not merely graph compatibility: the selected certificate may obtain local
+support from observational positivity.  Defaults preserve the historical
+unrestricted API; the `In` wrappers expose the stronger membership boundary
+for positive-class applications.
 -/
 
 /--
@@ -25,18 +31,19 @@ certificate presentation.
 structure OperationRealizedCertificateCore
     (sound : PublishedSoundness S G) (sourceTerm : ProbabilityTerm S)
     (operationKernel : Kernel S) (Certificate : Type u)
+    (C : GraphModelClass G)
     (toIdentification : Certificate ->
-      IdentificationCertificate (GraphModelClass.all G) sourceTerm) where
+      IdentificationCertificate C sourceTerm) where
   certificate : Certificate
   trace : ModalDerivationTrace G (toIdentification certificate).derivation
-  realized : forall (model : ExactModel S) (compatible : Compatible model G)
+  realized : forall (model : ExactModel S) (member : C.Mem model)
       (assignment : S.Assignment)
       (sourceSupported : sourceTerm.SupportedAt model assignment),
-    let supportTree := (toIdentification certificate).supported model compatible
+    let supportTree := (toIdentification certificate).supported model member
       assignment sourceSupported
     KernelOperationRealization model operationKernel assignment ×
       trace.OperationRealizations assignment
-        (sound.primitive model compatible) supportTree
+        (sound.primitive model (C.mem_compatible model member)) supportTree
 
 /--
 An identification certificate whose source kernel and every Pearl-rule leaf
@@ -44,32 +51,38 @@ are tied to executable record operations in every compatible target model.
 -/
 structure OperationRealizedCertificate
     (sound : PublishedSoundness S G) (sourceTerm : ProbabilityTerm S)
-    (operationKernel : Kernel S) extends
+    (operationKernel : Kernel S) (C : GraphModelClass G := GraphModelClass.all G) extends
       OperationRealizedCertificateCore sound sourceTerm operationKernel
-        (IdentificationCertificate (GraphModelClass.all G) sourceTerm) (fun certificate => certificate)
+        (IdentificationCertificate C sourceTerm) C (fun certificate => certificate)
 
 structure OperationRealizedJointCertificate
-    (sound : PublishedSoundness S G) (query : JointKernelQuery S) extends
+    (sound : PublishedSoundness S G) (query : JointKernelQuery S)
+    (C : GraphModelClass G := GraphModelClass.all G) extends
       OperationRealizedCertificateCore sound query.sourceTerm query.operationKernel
-        (JointIdentificationCertificate (GraphModelClass.all G) query)
+        (JointIdentificationCertificate C query) C
         (fun certificate => certificate.toGeneric)
 
 structure OperationRealizedConditionalCertificate
-    (sound : PublishedSoundness S G) (query : ConditionalKernelQuery S) extends
+    (sound : PublishedSoundness S G) (query : ConditionalKernelQuery S)
+    (C : GraphModelClass G := GraphModelClass.all G) extends
       OperationRealizedCertificateCore sound query.sourceTerm query.operationKernel
-        (ConditionalIdentificationCertificate (GraphModelClass.all G) query)
+        (ConditionalIdentificationCertificate C query) C
         (fun certificate => certificate.toGeneric)
 
 def OperationRealizedJointCertificate.toGeneric
-    (certificate : OperationRealizedJointCertificate sound query) :
-    OperationRealizedCertificate sound query.sourceTerm query.operationKernel where
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {sound : PublishedSoundness S G} {query : JointKernelQuery S}
+    (certificate : OperationRealizedJointCertificate sound query C) :
+    OperationRealizedCertificate sound query.sourceTerm query.operationKernel C where
   certificate := certificate.certificate.toGeneric
   trace := certificate.trace
   realized := certificate.realized
 
 def OperationRealizedConditionalCertificate.toGeneric
-    (certificate : OperationRealizedConditionalCertificate sound query) :
-    OperationRealizedCertificate sound query.sourceTerm query.operationKernel where
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {sound : PublishedSoundness S G} {query : ConditionalKernelQuery S}
+    (certificate : OperationRealizedConditionalCertificate sound query C) :
+    OperationRealizedCertificate sound query.sourceTerm query.operationKernel C where
   certificate := certificate.certificate.toGeneric
   trace := certificate.trace
   realized := certificate.realized
@@ -191,42 +204,46 @@ end ModeIndexedOperationRealizedConditionalCertificate
 namespace ModalEncodedJointDerivation
 
 noncomputable def toOperationRealized
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {query : JointKernelQuery S}
     (sound : PublishedSoundness S G)
-    (encoded : ModalEncodedJointDerivation G query) :
-    OperationRealizedJointCertificate sound query where
+    (encoded : ModalEncodedJointDerivation G query C) :
+    OperationRealizedJointCertificate sound query C where
   certificate := encoded.certificate
   trace := encoded.trace
   realized := by
-    intro model compatible assignment sourceSupported
-    let supportTree := encoded.certificate.supported model compatible assignment
+    intro model member assignment sourceSupported
+    let supportTree := encoded.certificate.supported model member assignment
       sourceSupported
     have kernelSupported : ProbabilityTerm.SupportedAt model
         (.kernel query.operationKernel) assignment := by
       simpa using sourceSupported
     exact ⟨KernelOperationRealization.ofSupported kernelSupported,
       encoded.trace.realizeOperations assignment
-        (sound.primitive model compatible) supportTree⟩
+        (sound.primitive model (C.mem_compatible model member)) supportTree⟩
 
 end ModalEncodedJointDerivation
 
 namespace ModalEncodedConditionalDerivation
 
 noncomputable def toOperationRealized
+    {S : ObservedSignature} {G : ObservedGraph S} {C : GraphModelClass G}
+    {query : ConditionalKernelQuery S}
     (sound : PublishedSoundness S G)
-    (encoded : ModalEncodedConditionalDerivation G query) :
-    OperationRealizedConditionalCertificate sound query where
+    (encoded : ModalEncodedConditionalDerivation G query C) :
+    OperationRealizedConditionalCertificate sound query C where
   certificate := encoded.certificate
   trace := encoded.trace
   realized := by
-    intro model compatible assignment sourceSupported
-    let supportTree := encoded.certificate.supported model compatible assignment
+    intro model member assignment sourceSupported
+    let supportTree := encoded.certificate.supported model member assignment
       sourceSupported
     have kernelSupported : ProbabilityTerm.SupportedAt model
         (.kernel query.operationKernel) assignment := by
       simpa using sourceSupported
     exact ⟨KernelOperationRealization.ofSupported kernelSupported,
       encoded.trace.realizeOperations assignment
-        (sound.primitive model compatible) supportTree⟩
+        (sound.primitive model (C.mem_compatible model member)) supportTree⟩
 
 end ModalEncodedConditionalDerivation
 
@@ -236,8 +253,8 @@ variable {S : ObservedSignature} {G : ObservedGraph S}
   {sound : PublishedSoundness S G} {query : JointKernelQuery S}
 
 theorem identifiable
-    (realized : OperationRealizedJointCertificate sound query) :
-    TypeTheoreticIdentifiable G query :=
+    {C : GraphModelClass G} (realized : OperationRealizedJointCertificate sound query C) :
+    C.identifiable query :=
   JointIdentificationCertificate.identifiable sound realized.certificate
 
 end OperationRealizedJointCertificate
@@ -248,11 +265,51 @@ variable {S : ObservedSignature} {G : ObservedGraph S}
   {sound : PublishedSoundness S G} {query : ConditionalKernelQuery S}
 
 theorem identifiable
-    (realized : OperationRealizedConditionalCertificate sound query) :
-    TypeTheoreticConditionalIdentifiable G query :=
+    {C : GraphModelClass G} (realized : OperationRealizedConditionalCertificate sound query C) :
+    C.conditionalIdentifiable query :=
   ConditionalIdentificationCertificate.identifiable sound realized.certificate
 
 end OperationRealizedConditionalCertificate
+
+/-! ## Executing a certificate at a class-indexed mode
+
+These endpoints read the stored model and its explicit class membership.
+As with the historical realization API, each kernel executes from that
+model's initial prior, not from an arbitrary updated epistemic belief.  This
+is an interpretation of a causal query at the mode's model, not a claim that
+conditioning preserves the positive model class or that every mode belief
+equals the model prior.
+-/
+
+noncomputable def ModeIndexedJointDerivationIn.realizeAt
+    {S : ObservedSignature} {G : ObservedGraph S}
+    {C : GraphModelClass G} {mode : CausalMode S} {query : JointKernelQuery S}
+    (sound : PublishedSoundness S G)
+    (indexed : ModeIndexedJointDerivationIn mode C query)
+    (assignment : S.Assignment)
+    (sourceSupported : query.sourceTerm.SupportedAt mode.record.model assignment) :
+    let supportTree := indexed.encoded.certificate.supported
+      mode.record.model indexed.member assignment sourceSupported
+    KernelOperationRealization mode.record.model query.operationKernel assignment ×
+      indexed.encoded.trace.OperationRealizations assignment
+        (sound.primitive mode.record.model indexed.compatible) supportTree :=
+  (indexed.encoded.toOperationRealized sound).realized
+    mode.record.model indexed.member assignment sourceSupported
+
+noncomputable def ModeIndexedConditionalDerivationIn.realizeAt
+    {S : ObservedSignature} {G : ObservedGraph S}
+    {C : GraphModelClass G} {mode : CausalMode S} {query : ConditionalKernelQuery S}
+    (sound : PublishedSoundness S G)
+    (indexed : ModeIndexedConditionalDerivationIn mode C query)
+    (assignment : S.Assignment)
+    (sourceSupported : query.sourceTerm.SupportedAt mode.record.model assignment) :
+    let supportTree := indexed.encoded.certificate.supported
+      mode.record.model indexed.member assignment sourceSupported
+    KernelOperationRealization mode.record.model query.operationKernel assignment ×
+      indexed.encoded.trace.OperationRealizations assignment
+        (sound.primitive mode.record.model indexed.compatible) supportTree :=
+  (indexed.encoded.toOperationRealized sound).realized
+    mode.record.model indexed.member assignment sourceSupported
 
 /--
 The finite source theorem transports all the way to operation-realized modal
