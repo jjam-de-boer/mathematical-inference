@@ -13,11 +13,11 @@ private theorem factorialTableCoefficient_zero (moments : Nat → QProb) :
 constraints. Zero cells need no separate positivity assumption. -/
 theorem factorialMomentTable_valid_of_moments (μ : NatDistro Ω) (moments : Nat → QProb) (bound : Nat)
     (support : μ.distro.AlmostSurely (fun x => μ.embed x ≤ bound))
-    (matches : ∀ order, order ≤ bound → QProb.Equiv (factorialMoment μ order) (moments order)) :
+    (momentsAgree : ∀ order, order ≤ bound → QProb.Equiv (factorialMoment μ order) (moments order)) :
     FactorialMomentTableValid moments bound := by
   constructor
   · intro value _
-    have same := inverseFactorialTable_of_moments μ moments bound value support matches
+    have same := inverseFactorialTable_of_moments μ moments bound value support momentsAgree
     exact (SignedRatio.nonnegative_congr same).mp (QProb.toSignedRatio_nonnegative _)
   · have zeroMoment := inverseFactorialTable_choose moments bound 0 (Nat.zero_le _)
     have terms := SignedRatio.listSum_map_congr (List.range (bound + 1))
@@ -27,7 +27,7 @@ theorem factorialMomentTable_valid_of_moments (μ : NatDistro Ω) (moments : Nat
         (SignedRatio.mul_one (inverseFactorialTable moments bound value)))
     exact SignedRatio.equiv_trans (SignedRatio.equiv_symm terms)
       (SignedRatio.equiv_trans zeroMoment (SignedRatio.equiv_trans (factorialTableCoefficient_zero moments)
-        (QProb.toSignedRatio_congr (QProb.equiv_trans (QProb.equiv_symm (matches 0 (Nat.zero_le _))) (factorialMoment_zero μ)))))
+        (QProb.toSignedRatio_congr (QProb.equiv_trans (QProb.equiv_symm (momentsAgree 0 (Nat.zero_le _))) (factorialMoment_zero μ)))))
 
 /-- Nonnegative candidate masses embed as ordinary probability values.
 The construction below is exposed only with the full validity certificate. -/
@@ -123,18 +123,18 @@ theorem factorialMomentTable_realizable_iff (moments : Nat → QProb) (bound : N
   · intro valid
     exact ⟨(realizedFactorialDistro moments bound valid).distro, realizedFactorialDistro_bounded moments bound valid,
       realizedFactorialDistro_moments moments bound valid⟩
-  · rintro ⟨μ, support, matches⟩
-    exact factorialMomentTable_valid_of_moments (⟨μ, id⟩ : NatDistro Nat) moments bound support matches
+  · rintro ⟨μ, support, momentsAgree⟩
+    exact factorialMomentTable_valid_of_moments (⟨μ, id⟩ : NatDistro Nat) moments bound support momentsAgree
 
 /-- Every realization has the canonical realization's full event law.
 Uniqueness is in law, rather than equality of raw weighted presentations. -/
 theorem realizedFactorialDistro_unique (moments : Nat → QProb) (bound : Nat) (valid : FactorialMomentTableValid moments bound)
     (μ : Distro Nat) (support : μ.AlmostSurely (fun value => value ≤ bound))
-    (matches : ∀ order, order ≤ bound → QProb.Equiv (factorialMoment (⟨μ, id⟩ : NatDistro Nat) order) (moments order)) :
+    (momentsAgree : ∀ order, order ≤ bound → QProb.Equiv (factorialMoment (⟨μ, id⟩ : NatDistro Nat) order) (moments order)) :
     μ.SameLaw (realizedFactorialDistro moments bound valid).distro := by
   have same := NatDistro.sameLaw_of_factorialMoments_positiveSupport (⟨μ, id⟩ : NatDistro Nat)
     (realizedFactorialDistro moments bound valid) bound support (realizedFactorialDistro_bounded moments bound valid)
-    (fun order within => QProb.equiv_trans (matches order within)
+    (fun order within => QProb.equiv_trans (momentsAgree order within)
       (QProb.equiv_symm (realizedFactorialDistro_moments moments bound valid order within)))
   exact (NatDistro.sameLaw_iff_events _ _).mp same
 

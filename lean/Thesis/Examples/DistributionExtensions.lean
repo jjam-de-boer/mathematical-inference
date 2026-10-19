@@ -819,8 +819,8 @@ example (t : QProb) : QProb.Equiv (pgf positiveNumericOutlierFixture (QProb.add 
 example : positiveNumericOutlierFixture.SameLaw positiveNumericCleanFixture := by
   apply NatDistro.sameLaw_of_factorialMoments_positiveSupport _ _ 1 (by decide +kernel) (by decide +kernel)
   intro order bound
-  have cases : order = 0 ∨ order = 1 := by omega
-  rcases cases with rfl | rfl <;> decide +kernel
+  have alternatives : order = 0 ∨ order = 1 := by omega
+  rcases alternatives with rfl | rfl <;> decide +kernel
 
 end Thesis.Examples.DistributionExtensions
 
@@ -1198,8 +1198,8 @@ def suppliedFactorialTable (order : Nat) : QProb := if order ≤ 2 then QProb.on
 theorem suppliedFactorialTable_valid : FactorialMomentTableValid suppliedFactorialTable 2 := by
   constructor
   · intro value within
-    have cases : value = 0 ∨ value = 1 ∨ value = 2 := by omega
-    rcases cases with rfl | rfl | rfl <;> decide +kernel
+    have alternatives : value = 0 ∨ value = 1 ∨ value = 2 := by omega
+    rcases alternatives with rfl | rfl | rfl <;> decide +kernel
   · decide +kernel
 
 example (order : Nat) (within : order ≤ 2) :
@@ -1219,8 +1219,8 @@ def suppliedTableOther : Distro Nat := ofWeightedAtoms [(0, 1), (2, 1), (99, 0)]
 example : suppliedTableOther.SameLaw (realizedFactorialDistro suppliedFactorialTable 2 suppliedFactorialTable_valid).distro := by
   apply realizedFactorialDistro_unique _ _ _ _ (by decide +kernel)
   intro order within
-  have cases : order = 0 ∨ order = 1 ∨ order = 2 := by omega
-  rcases cases with rfl | rfl | rfl <;> decide +kernel
+  have alternatives : order = 0 ∨ order = 1 ∨ order = 2 := by omega
+  rcases alternatives with rfl | rfl | rfl <;> decide +kernel
 
 /-- A normalized inverse can still be invalid through a negative cell. -/
 def negativeCellFactorialTable (order : Nat) : QProb :=

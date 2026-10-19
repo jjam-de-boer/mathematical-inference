@@ -63,7 +63,7 @@ theorem inverseFactorialTable_choose (moments : Nat → QProb) (bound order : Na
 /-- A table agreeing with actual bounded moments inverts to the actual PMF. -/
 theorem inverseFactorialTable_of_moments (μ : NatDistro Ω) (moments : Nat → QProb) (bound value : Nat)
     (support : μ.distro.AlmostSurely (fun x => μ.embed x ≤ bound))
-    (matches : ∀ order, order ≤ bound → QProb.Equiv (factorialMoment μ order) (moments order)) :
+    (momentsAgree : ∀ order, order ≤ bound → QProb.Equiv (factorialMoment μ order) (moments order)) :
     SignedRatio.Equiv (μ.distro.record.probVal (fun x => decide (μ.embed x = value))).toSignedRatio
       (inverseFactorialTable moments bound value) := by
   refine SignedRatio.equiv_trans (μ.pmf_factorial_inversion bound value support) ?_
@@ -71,6 +71,6 @@ theorem inverseFactorialTable_of_moments (μ : NatDistro Ω) (moments : Nat → 
   intro order member
   have within : order ≤ bound := by have upper := List.mem_range.mp member; omega
   exact SignedRatio.mul_congr (SignedRatio.equiv_refl _)
-    (QProb.toSignedRatio_congr (QProb.div_congr (matches order within) (QProb.equiv_refl _) _ _))
+    (QProb.toSignedRatio_congr (QProb.div_congr (momentsAgree order within) (QProb.equiv_refl _) _ _))
 
 end Thesis.Probability.Distros
