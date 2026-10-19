@@ -37,6 +37,7 @@ import Thesis.Probability.Distros.ProbabilityGrid
 import Thesis.Probability.Distros.FinitePmfExpectation
 import Thesis.Probability.Distros.FactorialMomentTable
 import Thesis.Probability.Distros.FactorialMomentRealization
+import Thesis.Probability.Distros.MomentTableCheck
 import Thesis.Probability.Distros.MultivariateFactorialInversion
 import Thesis.Probability.Distros.FactorialRectangle
 import Thesis.Probability.Distros.MultivariateFactorialPGF
