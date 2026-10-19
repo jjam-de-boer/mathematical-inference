@@ -13,6 +13,7 @@ import Thesis.Examples.LocalCheckDefinition
 import Thesis.Examples.LocalCheckRetainedDependency
 import Thesis.Examples.LocalCheckFiniteDecision
 import Thesis.Examples.PositiveModal
+import Thesis.Examples.SupportedModal
 import Lean.Elab.Command
 import Lean.Util.CollectAxioms
 
