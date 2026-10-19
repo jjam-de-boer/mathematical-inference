@@ -30,6 +30,9 @@ import Thesis.Probability.Distros.GeometricMoments
 import Thesis.Probability.Distros.HypergeometricMoments
 import Thesis.Probability.Distros.FactorialMoments
 import Thesis.Probability.Distros.FactorialPGF
+import Thesis.Probability.Distros.BinomialInversion
+import Thesis.Probability.Distros.FactorialInversion
+import Thesis.Probability.Distros.MultivariateFactorialInversion
 import Thesis.Probability.Distros.MultivariateFactorialPGF
 import Thesis.Probability.Distros.MultivariateReconstruction
 import Thesis.Probability.Distros.PositiveSupport
@@ -59,6 +62,8 @@ import Thesis.Probability.Distros.SignedCauchy
 import Thesis.Probability.Distros.RationalMoments
 import Thesis.Probability.Distros.RationalClearing
 import Thesis.Probability.Distros.RationalCovarianceAlgebra
+import Thesis.Probability.Distros.FiniteCovariance
+import Thesis.Probability.Distros.OccupancyCovariance
 import Thesis.Probability.Distros.RationalConcentration
 import Thesis.Probability.Distros.RationalMarkov
 import Thesis.Probability.Distros.RationalChebyshev
@@ -310,4 +315,13 @@ retained rather than silently excluded as nonpositive support.
 59. `ProjectionEquality` characterizes zero squared error and all optimal
     label predictors up to almost-sure equivalence, proves distance contraction,
     and proves decreasing optimal error under almost-sure label refinement.
+60. `BinomialInversion` supplies constructive signed inverse Pascal coefficients.
+    `FactorialInversion` and `MultivariateFactorialInversion` recover explicit
+    numeric and joint PMFs by finite alternating sums of factorial moments,
+    under almost-sure bounds and dimensions, with varying totals permitted.
+61. `FiniteCovariance` identifies weighted-sum variance with the covariance
+    quadratic form and proves positive semidefiniteness and its null directions.
+    `OccupancyCovariance` specializes this to multinomial, reinforced and
+    hypergeometric laws, including the fixed-total null direction and complete
+    zero rows for zero-weight or zero-stock coordinates.
 -/
