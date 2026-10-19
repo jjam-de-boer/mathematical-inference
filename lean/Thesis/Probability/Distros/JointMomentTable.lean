@@ -104,7 +104,10 @@ theorem jointFactorialMomentTable_valid_of_moments (μ : Distro (List Nat)) (mom
       refine QProb.equiv_trans (multivariateFactorialCoefficient_choose μ zeroOrders) ?_
       rw [actual]
       exact μ.expectNat_constant 1
-    have supplied := QProb.toSignedRatio_congr (QProb.div_congr (momentsAgree zeroOrders zeroBounded) (QProb.equiv_refl _) _ _)
+    have supplied : SignedRatio.Equiv (multivariateFactorialCoefficient μ zeroOrders).toSignedRatio
+        (jointFactorialTableCoefficient moments zeroOrders) :=
+      QProb.toSignedRatio_congr (QProb.div_congr (momentsAgree zeroOrders zeroBounded)
+        (QProb.equiv_refl (QProb.ofNat (orderFactorial zeroOrders))) (orderFactorial_pos zeroOrders) (orderFactorial_pos zeroOrders))
     exact SignedRatio.equiv_trans (SignedRatio.equiv_symm terms)
       (SignedRatio.equiv_trans (inverseJointFactorialTable_choose moments bounds zeroOrders zeroBounded)
         (SignedRatio.equiv_trans (SignedRatio.equiv_symm supplied) (QProb.toSignedRatio_congr one)))

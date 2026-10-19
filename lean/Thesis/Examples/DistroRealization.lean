@@ -98,7 +98,7 @@ example : SignedRatio.Equiv
 example : ([0, 0, 1], 0) ∈ (realizedJointFactorialDistro suppliedJointTable [1, 0, 2] suppliedJointTable_valid).record.atoms := by decide +kernel
 
 def alternativeJointLaw : Distro (List Nat) :=
-  ofWeightedAtoms [([1, 0, 2], 2), ([0, 0, 0], 2), ([], 0), ([99, 99], 0)] (by decide)
+  ofWeightedAtoms [([1, 0, 2], 1), ([1, 0, 2], 1), ([0, 0, 0], 2), ([], 0), ([99, 99], 0)] (by decide)
 
 example : alternativeJointLaw.SameLaw (realizedJointFactorialDistro suppliedJointTable [1, 0, 2] suppliedJointTable_valid) := by
   apply realizedJointFactorialDistro_unique _ _ _ alternativeJointLaw (by decide +kernel)
@@ -127,5 +127,10 @@ example : (match checkJointFactorialMomentTable (fun _ => QProb.one) [] with
 
 example : (match checkJointFactorialMomentTable (fun _ => QProb.one) [0, 0] with
     | .inl law => decide ((law.distro.pmf [0, 0]).num = (law.distro.pmf [0, 0]).den) | .inr _ => false) = true := by decide +kernel
+
+/-- A list grid preserves repeated cells as occurrences; both halves still
+contribute to the one-point law, and its out-of-range default is unused. -/
+example : QProb.Equiv ((probabilityList [0, 0] 99 (fun _ => (⟨1, 2, by decide⟩ : QProb))
+    (by decide) (by decide +kernel)).pmf 0) QProb.one := by decide +kernel
 
 end Thesis.Examples.DistroRealization
