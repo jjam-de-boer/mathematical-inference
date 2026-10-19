@@ -69,11 +69,21 @@ class PlanningTests(unittest.TestCase):
             pilot.closure(self.root, ["Thesis.Alias"], pilot.Limits())
 
     def test_limits_cannot_silently_expand(self):
-        for limits in (pilot.Limits(seconds=61), pilot.Limits(memory_mb=513),
+        for limits in (pilot.Limits(seconds=61), pilot.Limits(memory_mb=641),
                        pilot.Limits(rss_mb=769), pilot.Limits(max_modules=9),
                        pilot.Limits(max_selected=4)):
             with self.subTest(limits=limits), self.assertRaises(pilot.PilotError):
                 limits.validate()
+
+    def test_explicit_memory_trial_does_not_raise_defaults_or_rss_ceiling(self):
+        # The 640 MiB value is an explicitly requested diagnostic setting,
+        # not a new default or permission to launch concurrent compilers.
+        # The sampled external ceiling remains unchanged at 768 MiB.
+        trial = pilot.Limits(memory_mb=640)
+        trial.validate()
+        self.assertEqual(pilot.Limits().memory_mb, 384)
+        self.assertEqual(trial.rss_mb, 768)
+        self.assertEqual(trial.max_selected, 1)
 
     def test_configuration_rejects_extra_hooks(self):
         (self.root / "lakefile.toml").write_text('name = "thesis"\n')
