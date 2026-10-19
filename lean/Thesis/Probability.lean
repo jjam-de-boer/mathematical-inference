@@ -1,4 +1,5 @@
 import Thesis.Probability.Core
+import Thesis.Probability.RationalSquareObstruction
 import Thesis.Probability.Combinatorics
 import Thesis.Probability.ConstructivePermutation
 import Thesis.Probability.Reindexing
