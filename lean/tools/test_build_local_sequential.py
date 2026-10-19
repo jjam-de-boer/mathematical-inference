@@ -49,6 +49,13 @@ class PlanningTests(unittest.TestCase):
         self.assertEqual(resource_config, tomllib.loads(original))
         self.assertEqual((root / "lakefile.toml").read_text(), original)
 
+    def test_intermediate_freshness_includes_prerequisites_not_unrelated_work(self):
+        graph = {"Thesis.Core": [], "Thesis.Left": ["Thesis.Core"],
+                 "Thesis.Right": ["Thesis.Core"], "Thesis": ["Thesis.Left", "Thesis.Right"]}
+        self.assertEqual(build.prerequisite_scope(graph, "Thesis.Left"),
+                         {"Thesis.Core", "Thesis.Left"})
+        self.assertEqual(build.prerequisite_scope(graph, "Thesis"), set(graph))
+
     def test_process_monitor_parses_only_process_metadata(self):
         with patch.object(build.subprocess, "run", return_value=subprocess.CompletedProcess(
                 [], 0, "100 10 100 2048 /pinned/bin/lake\n101 100 100 4096 /pinned/bin/lean\n", "")):
@@ -105,7 +112,7 @@ class MonitorTests(unittest.TestCase):
             self.run_group([[], snapshot])
 
     def test_wall_timeout_is_not_labelled_as_memory_exhaustion(self):
-        with patch.object(build.time, "monotonic", side_effect=[0, 31]):
+        with patch.object(build.time, "monotonic", side_effect=[0, 31, 31]):
             with self.assertRaisesRegex(build.BuildStopped, "wall-time.*not a memory"):
                 self.run_group([[]])
 
@@ -123,7 +130,7 @@ class MonitorTests(unittest.TestCase):
 
 
 class FinalGateTests(unittest.TestCase):
-    def test_stale_native_prerequisites_cannot_launch_a_final_build(self):
+    def invoke(self, arguments, effect=None):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve() / "project"
             (root / "tools").mkdir(parents=True)
@@ -144,17 +151,72 @@ class FinalGateTests(unittest.TestCase):
                  patch.object(build.Path, "home", return_value=home), \
                  patch.object(build.os, "nice"), \
                  patch.dict(build.os.environ, {"LEAN_PATH": "", "LEAN_SRC_PATH": ""}), \
-                 patch("sys.argv", ["builder", "--check", "--phase", "gates"]), \
-                 patch.object(build, "run_group", side_effect=build.BuildStopped("stale native prerequisite")) as run, \
+                 patch("sys.argv", ["builder", *arguments]), \
+                 patch.object(build, "run_group", side_effect=effect,
+                              return_value={"exit": 0, "seconds": 0.1, "group_rss_mib": 1.0}) as run, \
                  redirect_stdout(io.StringIO()) as output:
-                self.assertEqual(build.main(), 1)
-            run.assert_called_once()
-            command = run.call_args.args[0]
+                result = build.main()
+            return result, run.call_args_list, output.getvalue()
+
+    def test_stale_native_prerequisites_cannot_launch_a_final_build(self):
+        result, calls, output = self.invoke(["--check", "--phase", "gates"],
+                                           build.BuildStopped("stale native prerequisite"))
+        self.assertEqual(result, 1)
+        self.assertEqual(len(calls), 1)
+        command = calls[0].args[0]
+        self.assertIn("--no-build", command)
+        self.assertIn("+Thesis.Core:c.o", command)
+        self.assertIn("+Thesis:c.o", command)
+        self.assertIn("+Main:c.o", command)
+        self.assertNotIn("FULL LOCAL BUILD AND AXIOM AUDIT PASSED", output)
+
+    def test_cached_chunk_uses_one_no_build_check_and_claims_only_its_phase(self):
+        result, calls, output = self.invoke(["--check", "--phase", "lean"])
+        self.assertEqual(result, 0)
+        self.assertEqual(len(calls), 1)
+        self.assertIn("--no-build", calls[0].args[0])
+        self.assertEqual(sum(arg.startswith("+") for arg in calls[0].args[0]), 4)
+        self.assertIn("full build and audit NOT established", output)
+
+    def test_stale_chunk_falls_back_to_checks_not_a_parallel_rebuild(self):
+        def only_chunk_is_stale(command, *_):
+            targets = [arg for arg in command if arg.startswith("+")]
             self.assertIn("--no-build", command)
-            self.assertIn("+Thesis.Core:c.o", command)
-            self.assertIn("+Thesis:c.o", command)
-            self.assertIn("+Main:c.o", command)
-            self.assertNotIn("FULL LOCAL BUILD AND AXIOM AUDIT PASSED", output.getvalue())
+            return {"exit": 3 if len(targets) > 1 else 0, "seconds": 0.1, "group_rss_mib": 1.0}
+        result, calls, _ = self.invoke(["--check", "--phase", "lean"], only_chunk_is_stale)
+        self.assertEqual(result, 0)
+        self.assertEqual(len(calls), 5)
+
+    def test_compilation_after_stale_chunk_selects_only_one_module(self):
+        def stale(command, *_):
+            return {"exit": 3 if "--no-build" in command else 0,
+                    "seconds": 0.1, "group_rss_mib": 1.0}
+        result, calls, output = self.invoke(["--check", "--phase", "lean", "--max-builds", "1"], stale)
+        self.assertEqual(result, 2)
+        compiled = [call.args[0] for call in calls if "--no-build" not in call.args[0]]
+        self.assertEqual(len(compiled), 1)
+        self.assertEqual([arg for arg in compiled[0] if arg.startswith("+")], ["+Thesis.Core:olean"])
+        self.assertIn("Checkpoint only", output)
+
+    def test_final_success_requires_both_actual_original_configuration_gates(self):
+        result, calls, output = self.invoke(["--check", "--phase", "gates"])
+        self.assertEqual(result, 0)
+        self.assertEqual(len(calls), 6)
+        for call in (calls[3], calls[5]):
+            self.assertNotIn("--file", call.args[0])
+            self.assertNotIn("--no-build", call.args[0])
+        self.assertEqual(calls[3].args[0][-1], "build")
+        self.assertEqual(calls[5].args[0][-2:], ["build", "Thesis.AxiomAudit"])
+        self.assertIn("FULL LOCAL BUILD AND AXIOM AUDIT PASSED", output)
+
+    def test_failed_actual_axiom_gate_cannot_claim_success(self):
+        def fail_audit(command, *_):
+            if command[-2:] == ["build", "Thesis.AxiomAudit"] and "--no-build" not in command:
+                raise build.BuildStopped("axiom gate failed")
+            return {"exit": 0, "seconds": 0.1, "group_rss_mib": 1.0}
+        result, _, output = self.invoke(["--check", "--phase", "gates"], fail_audit)
+        self.assertEqual(result, 1)
+        self.assertNotIn("FULL LOCAL BUILD AND AXIOM AUDIT PASSED", output)
 
 
 if __name__ == "__main__":
