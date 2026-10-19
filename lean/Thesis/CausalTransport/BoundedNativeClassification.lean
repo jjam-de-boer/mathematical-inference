@@ -123,16 +123,16 @@ def Result.separatedCheck (answer : Result P nodeBound sourceBound denominatorBo
   @decide (Separated P nodeBound sourceBound denominatorBound observed query) answer.separationDecision
 
 theorem Result.compatibleCheck_exact (answer : Result P nodeBound sourceBound denominatorBound observed query) :
-    answer.compatibleCheck = true ↔ Compatible P nodeBound sourceBound denominatorBound observed :=
-  @decide_eq_true_eq _ answer.compatibilityDecision
+    answer.compatibleCheck = true ↔ Compatible P nodeBound sourceBound denominatorBound observed := by
+  simp only [compatibleCheck, decide_eq_true_eq]
 
 theorem Result.pointIdentifiedCheck_exact (answer : Result P nodeBound sourceBound denominatorBound observed query) :
-    answer.pointIdentifiedCheck = true ↔ PointIdentified P nodeBound sourceBound denominatorBound observed query :=
-  @decide_eq_true_eq _ answer.pointIdentificationDecision
+    answer.pointIdentifiedCheck = true ↔ PointIdentified P nodeBound sourceBound denominatorBound observed query := by
+  simp only [pointIdentifiedCheck, decide_eq_true_eq]
 
 theorem Result.separatedCheck_exact (answer : Result P nodeBound sourceBound denominatorBound observed query) :
-    answer.separatedCheck = true ↔ Separated P nodeBound sourceBound denominatorBound observed query :=
-  @decide_eq_true_eq _ answer.separationDecision
+    answer.separatedCheck = true ↔ Separated P nodeBound sourceBound denominatorBound observed query := by
+  simp only [separatedCheck, decide_eq_true_eq]
 
 /-- Within the full bounded class, compatibility has a constructive exact
 alternative: an attained identified value or two disagreeing native models. -/
