@@ -72,6 +72,8 @@ theorem probabilityGrid_pmf (bound : Nat) (probabilities : Nat → QProb)
   have representation := rationalUrnWeights_parameter table value
   rw [probabilityGrid_table_getD bound probabilities value within] at representation
   change QProb.Equiv (⟨(rationalUrnWeights table).getD value 0, (rationalUrnWeights table).sum, positive⟩ : QProb) _
+  change (rationalUrnWeights table).getD value 0 * (probabilities value).den =
+    (probabilities value).num * (rationalUrnWeights table).sum
   rw [rationalUrnWeights_sum, same]
   exact representation
 

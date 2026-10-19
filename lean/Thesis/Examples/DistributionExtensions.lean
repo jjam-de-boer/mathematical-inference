@@ -1187,3 +1187,67 @@ example : ∃ weight, (1, weight) ∈ (probabilityGrid 2 gridExampleProbability 
   probabilityGrid_retains _ _ _ _ (by decide)
 
 end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- E[(X)₀]=E[(X)₁]=E[(X)₂]=1 corresponds to equal mass at zero and two. -/
+def suppliedFactorialTable (order : Nat) : QProb := if order ≤ 2 then QProb.one else QProb.zero
+
+theorem suppliedFactorialTable_valid : FactorialMomentTableValid suppliedFactorialTable 2 := by
+  constructor
+  · intro value within
+    have cases : value = 0 ∨ value = 1 ∨ value = 2 := by omega
+    rcases cases with rfl | rfl | rfl <;> decide +kernel
+  · decide +kernel
+
+example (order : Nat) (within : order ≤ 2) :
+    QProb.Equiv (factorialMoment (realizedFactorialDistro suppliedFactorialTable 2 suppliedFactorialTable_valid) order)
+      (suppliedFactorialTable order) := realizedFactorialDistro_moments _ _ _ _ within
+
+example : SignedRatio.Equiv
+    ((realizedFactorialDistro suppliedFactorialTable 2 suppliedFactorialTable_valid).distro.pmf 0).toSignedRatio
+    ⟨1, 2, by decide⟩ :=
+  SignedRatio.equiv_trans (realizedFactorialDistro_pmf _ _ _ 0 (by decide)) (by decide +kernel)
+
+example : (1, 0) ∈ (realizedFactorialDistro suppliedFactorialTable 2 suppliedFactorialTable_valid).distro.record.atoms := by decide +kernel
+
+/-- Uniqueness compares laws across different weighted and null presentations. -/
+def suppliedTableOther : Distro Nat := ofWeightedAtoms [(0, 1), (2, 1), (99, 0)] (by decide)
+
+example : suppliedTableOther.SameLaw (realizedFactorialDistro suppliedFactorialTable 2 suppliedFactorialTable_valid).distro := by
+  apply realizedFactorialDistro_unique _ _ _ _ (by decide +kernel)
+  intro order within
+  have cases : order = 0 ∨ order = 1 ∨ order = 2 := by omega
+  rcases cases with rfl | rfl | rfl <;> decide +kernel
+
+/-- A normalized inverse can still be invalid through a negative cell. -/
+def negativeCellFactorialTable (order : Nat) : QProb :=
+  if order = 0 then QProb.one else if order = 2 then QProb.ofNat 2 else QProb.zero
+
+theorem negativeCellFactorialTable_invalid : ¬ FactorialMomentTableValid negativeCellFactorialTable 2 := by
+  intro valid
+  have negative : ¬ SignedRatio.Nonnegative (inverseFactorialTable negativeCellFactorialTable 2 1) := by decide +kernel
+  exact negative (valid.1 1 (by decide))
+
+example : ¬ ∃ μ : Distro Nat, μ.AlmostSurely (fun value => value ≤ 2) ∧
+    ∀ order, order ≤ 2 → QProb.Equiv (factorialMoment (⟨μ, id⟩ : NatDistro Nat) order) (negativeCellFactorialTable order) := by
+  intro realized
+  exact negativeCellFactorialTable_invalid ((factorialMomentTable_realizable_iff negativeCellFactorialTable 2).mpr realized)
+
+example : ¬ FactorialMomentTableValid (fun _ => QProb.zero) 0 := by
+  intro valid
+  have impossible : ¬ SignedRatio.Equiv (SignedRatio.listSum ((List.range 1).map (inverseFactorialTable (fun _ => QProb.zero) 0)))
+      SignedRatio.one := by decide +kernel
+  exact impossible valid.2
+
+example : FactorialMomentTableValid (fun _ => QProb.one) 0 := by
+  constructor
+  · intro value within
+    have zero : value = 0 := by omega
+    subst value
+    decide +kernel
+  · decide +kernel
+
+end Thesis.Examples.DistributionExtensions

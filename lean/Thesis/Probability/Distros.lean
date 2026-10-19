@@ -346,4 +346,9 @@ retained rather than silently excluded as nonpositive support.
     surely. Its enumeration retains zero-width axes and the empty rectangle.
 65. `HypergeometricCovariance` extracts the mixed second moment and closed
     nonpositive off-diagonal covariance, in both signed moment interfaces.
+66. `MomentTableAlgebra` proves reverse Pascal inversion. `ProbabilityGrid`
+    constructs normalized rational tables with every zero-mass cell retained.
+    `FactorialMomentTable` and `FactorialMomentRealization` characterize bounded
+    rational moment tables by nonnegative normalized inverted masses, construct
+    their realizing law, recover every supplied moment, and prove uniqueness in law.
 -/

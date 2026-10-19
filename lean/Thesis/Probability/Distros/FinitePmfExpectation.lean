@@ -33,7 +33,8 @@ theorem Distro.rationalExpectation_bounded_pmf (μ : Distro Nat) (bound : Nat)
       exact SignedRatio.equiv_refl _
     · simp only [term, if_neg same, if_neg (Ne.symm same)]
       exact SignedRatio.equiv_refl _
-  refine SignedRatio.equiv_trans (μ.rationalExpectation_congr_positive f _
+  refine SignedRatio.equiv_trans (μ.rationalExpectation_congr_positive f
+    (fun x => SignedRatio.listSum ((List.range (bound + 1)).map (fun value => term value x)))
     (fun atom member weight => SignedRatio.equiv_symm (selected atom member weight))) ?_
   refine SignedRatio.equiv_trans (μ.rationalExpectation_listSum (List.range (bound + 1)) term) ?_
   apply SignedRatio.listSum_map_congr
