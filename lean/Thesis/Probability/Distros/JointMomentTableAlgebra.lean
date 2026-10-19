@@ -67,4 +67,63 @@ theorem jointInverseBinomial_reverse_rectangle_kernel (counts target bounds : Li
               · simp only [List.cons.injEq, first, rest, false_and, if_false]
                 exact SignedRatio.zero_mul _
 
+/-- Coordinate bounds characterize membership in the actual rectangle. -/
+theorem factorialRectangle_complete (bounds orders : List Nat) (bounded : CoordinateBounds orders bounds) :
+    orders ∈ factorialRectangle bounds := by
+  induction bounds generalizing orders with
+  | nil => cases orders with
+      | nil => exact List.mem_singleton_self _
+      | cons value orders => exact False.elim bounded
+  | cons bound bounds ih => cases orders with
+      | nil => exact False.elim bounded
+      | cons order orders =>
+          exact List.mem_flatMap.mpr ⟨order, List.mem_range.mpr (Nat.lt_succ_of_le bounded.1),
+            List.mem_map.mpr ⟨orders, ih orders bounded.2, rfl⟩⟩
+
+theorem coordinateBounds_zero (bounds : List Nat) : CoordinateBounds (List.replicate bounds.length 0) bounds := by
+  induction bounds with
+  | nil => exact True.intro
+  | cons bound bounds ih => exact ⟨Nat.zero_le _, ih⟩
+
+theorem factorialRectangle_positive (bounds : List Nat) : 0 < (factorialRectangle bounds).length := by
+  have member := factorialRectangle_complete bounds _ (coordinateBounds_zero bounds)
+  cases same : factorialRectangle bounds with
+  | nil => rw [same] at member; exact False.elim (List.not_mem_nil member)
+  | cons value values => exact Nat.zero_lt_succ _
+
+/-- The rectangle enumeration contains each bounded multi-index exactly once,
+as witnessed by its finite delta-selector identity. -/
+theorem factorialRectangle_select (bounds target : List Nat) (f : List Nat → SignedRatio)
+    (within : CoordinateBounds target bounds) :
+    SignedRatio.Equiv (SignedRatio.listSum ((factorialRectangle bounds).map (fun orders =>
+      if orders = target then f target else SignedRatio.zero))) (f target) := by
+  induction bounds generalizing target with
+  | nil => cases target with
+      | nil => exact SignedRatio.add_zero _
+      | cons value target => exact False.elim within
+  | cons bound bounds ih => cases target with
+      | nil => exact False.elim within
+      | cons value target =>
+          let term := fun order orders => if order :: orders = value :: target then f (value :: target) else SignedRatio.zero
+          have rows (order : Nat) : SignedRatio.Equiv
+              (SignedRatio.listSum ((factorialRectangle bounds).map (term order)))
+              (if order = value then f (value :: target) else SignedRatio.zero) := by
+            by_cases same : order = value
+            · subst order
+              simpa only [term, List.cons.injEq, true_and, if_true] using
+                ih target (fun _ => f (value :: target)) within.2
+            · simp only [term, List.cons.injEq, same, false_and, if_false]
+              exact SignedRatio.listSum_map_zero _
+          have grouped := SignedRatio.listSum_flatMap (List.range (bound + 1))
+            (fun order => (factorialRectangle bounds).map (term order))
+          refine SignedRatio.equiv_trans (by
+            simpa only [factorialRectangle, List.map_flatMap, List.map_map, Function.comp_def, term] using grouped) ?_
+          exact SignedRatio.equiv_trans (SignedRatio.listSum_map_congr _ _ _ rows)
+            (SignedRatio.listSum_range_select (bound + 1) value (fun _ => f (value :: target)) (Nat.lt_succ_of_le within.1))
+
+theorem jointChoose_zeroOrders (counts : List Nat) : jointChoose (List.replicate counts.length 0) counts = 1 := by
+  induction counts with
+  | nil => rfl
+  | cons count counts ih => simp only [List.length_cons, List.replicate_succ, jointChoose, binom_zero_right, Nat.one_mul, ih]
+
 end Thesis.Probability.Distros
