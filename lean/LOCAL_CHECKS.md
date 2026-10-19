@@ -1,8 +1,10 @@
 # Resource-capped local checks
 
 Full project builds and the transitive axiom audit currently remain remote.
-The previous laptop freeze has not been diagnosed; faster endpoint arithmetic
-does not establish that full proof elaboration fits local memory.
+Useful selected-module checking is feasible under the explicitly approved
+640 MiB Lean / 768 MiB sampled-RSS / 30-second single-process profile below.
+The previous laptop-wide freeze has not been diagnosed; this result does not
+establish that full proof elaboration fits local memory.
 
 ## Cache-aware pilot
 
@@ -20,16 +22,19 @@ disposable directory. Lake checks those copied dependencies with `--no-build`,
 `--rehash` and `--no-cache`. An outdated or missing dependency is a failure,
 not permission to rebuild it. Only explicitly selected source modules are
 then compiled, sequentially, using the pinned installed toolchain. The shared
-source tree and `.lake` cache are never overwritten, and a source change
-during the pilot invalidates its final result.
+source tree and ordinary Lake build artifacts are never overwritten, and a
+source change during the pilot invalidates its final result. The optional
+separate retained store is described below; every actual check also holds an
+OS lock so two invocations of this helper cannot overlap their compilers.
 
-The default limits remain 384 MB of Lean allocation and 30 seconds per child.
+The default limits remain a 384 MiB Lean memory threshold and 30 seconds per child.
 An additional watchdog samples the child's RSS, stopping above 768 MiB.
 Sampling permission is checked before a compiler or Lake child is launched;
 if the sandbox denies that inspection, the helper stops. This is a sampled
 watchdog, not a hard OS memory reservation or a guarantee against all system
-pressure. No allocation-limit increase is automatic. The accepted maximum is
-512 MB, but the recorded second trial below was separately authorized.
+pressure. No memory-limit increase is automatic. The accepted maximum is
+640 MiB, but values above the default require explicit selection. The earlier
+512 MB trial and the later 640 MiB diagnostic were separately authorized.
 
 The closure is limited to six modules by default, at most 128 KiB per source,
 512 KiB combined source and 64 MiB of copied cache artifacts. One module is
@@ -49,7 +54,7 @@ child peak. Thus that dependency really can be reused; it was not rebuilt.
 The selected `FourLabelTransportation` module then stopped at Lean's memory
 limit in `label_cases`, before later transportation proofs were checked:
 
-| Lean allocation setting | Selected-module wall time | Reported child peak | Result |
+| Lean `-M` setting | Selected-module wall time | Reported child peak | Result |
 | --- | --- | --- | --- |
 | 384 MB | 1.21 s | 579.8 MiB | Allocation limit reached |
 | 512 MB, separately authorized | 1.22 s | 581.0 MiB | Allocation limit reached |
@@ -86,7 +91,7 @@ python3 -B -m unittest discover -s lean/tools -p 'test_*.py'
 ### Separating import cost from new kernel work
 
 Five small fixtures were checked sequentially on 2026-10-16 under the
-unchanged one-thread, 384 MB allocation, 768 MiB sampled-RSS and 30-second
+unchanged one-thread, 384 MiB Lean threshold, 768 MiB sampled-RSS and 30-second
 limits. Each core-based check first validated its copied dependency trace;
 no prerequisite was rebuilt and all trial outputs remained disposable.
 
@@ -95,8 +100,8 @@ no prerequisite was rebuilt and all trial outputs remained disposable.
 | `LocalCheckImports` | None, `Std` only | 1.51 s | 572.6 MiB | Passed |
 | `LocalCheckCoreImports` | None, cached probability core | 0.55 s | 573.3 MiB | Passed |
 | `LocalCheckBaseline` | Apply the existing reflexivity theorem | 0.44 s | 580.4 MiB | Passed |
-| `LocalCheckDefinition` | A tiny natural-number recursive definition | 0.44 s | 575.9 MiB | Kernel allocation limit |
-| `LocalCheckFiniteDecision` | Exhaustive proof on `Fin 4` | 0.44 s | 574.7 MiB | Kernel allocation limit |
+| `LocalCheckDefinition` | A tiny natural-number recursive definition | 0.44 s | 575.9 MiB | Lean memory threshold |
+| `LocalCheckFiniteDecision` | Exhaustive proof on `Fin 4` | 0.44 s | 574.7 MiB | Lean memory threshold |
 
 The core cache checks took 0.19--0.45 seconds and about 52 MiB child peak.
 The table's peaks are the helper's cumulative child-peak measurements within
@@ -107,9 +112,10 @@ These results distinguish importing from checking new terms: the imported
 environment is loadable, and a reused proof term can pass, while ordinary
 small new definitions or finite kernel decisions already fail. The installed
 compiler source confirms that the forwarded `-M` argument sets its internal
-runtime memory threshold in units of 1024 squared bytes. It is not an OS RSS
-reservation or a separate fresh allowance for each declaration. Similar RSS
-figures alone do not identify the kernel's precise allocation accounting.
+runtime memory threshold in units of 1024 squared bytes. It is not an
+OS-enforced reservation or a separate fresh allowance for each declaration.
+The later pinned-source/binary investigation below identifies the actual macOS
+check; the earlier interpretation as an allocation budget was incomplete.
 
 Thus neither module source size nor finite proof-search size explains the
 whole observed boundary. A targeted graph extraction can still reduce
@@ -118,6 +124,128 @@ Import-only and reused-proof checks are feasible at these settings; larger
 new proof work and the full project remain remote. The fixtures themselves
 are included in CI and the full axiom gate so a local resource refusal never
 stands in for mathematical verification.
+
+### Minimal-failure diagnosis and bounded correction, 2026-10-18
+
+The failure was reproduced before changing any limit. Lake validated the
+copied core dependencies in 0.66 seconds (52.3 MiB child peak); checking
+`LocalCheckDefinition` then failed at `triangle` with `(kernel) excessive
+memory consumption detected`, in 1.47 seconds and 575.6 MiB child peak.
+No other Lean/Lake build was running.
+
+The exact pinned release's
+[`src/runtime/memory.cpp`](https://github.com/leanprover/lean4/blob/v4.30.0-rc2/src/runtime/memory.cpp)
+explains the refusal. In its non-jemalloc macOS implementation, `check_memory`
+samples every 200 calls. It first tests `getrusage`'s peak and, when needed,
+checks Mach `task_info`'s current resident size against `g_max_memory`.
+`Lean/Shell.lean` forwards `-M` into that threshold after multiplying by
+1024 squared. Thus this is the whole process's resident-memory test, including
+the imported environment, not a fresh allocation budget for a new proof.
+
+The installed ARM64 `libleanshared.dylib` independently confirms that path:
+disassembling `lean::check_memory(char const *)` shows the 200-call counter,
+`getrusage`, `task_info` and comparison against the stored threshold. This
+rules out merely assuming that the published source's optional allocator
+branch matches the local binary. A small import/reused-proof run need not
+trigger the same periodic check; passing one does not establish memory headroom.
+
+Both earlier thresholds, 384 and 512 MiB, are below the approximately 576 MiB
+baseline at which the tiny-definition fixture was refused. The observed
+failure is therefore explained by the selected cap; it is not evidence that
+this elementary definition inherently consumes hundreds of additional MiB,
+or that the large causal modules are its prerequisite bottleneck. This does
+not diagnose the original laptop-wide freeze, whose concurrency/system state
+was not recorded.
+
+The user separately authorized one 640 MiB Lean-threshold pilot, keeping one
+compiler process, the 768 MiB sampled-RSS watchdog and 30-second wall/CPU
+limits. Dependencies again validated (0.32 seconds, 52.3 MiB child peak).
+`LocalCheckDefinition` then **passed**, in 1.20 seconds, with sampled peak
+564.6 MiB and reported child peak 584.1 MiB. The sampled and reported peaks
+are different measurements; neither is an allocation delta. The successful
+output was disposable, so this alone does not supply a persistent cache.
+
+The same bounded 640/768 MiB, single-process, 30-second profile was then
+authorized for continued sequential module/cache-loop checks, without any
+further limit increase. The helper's default remains 384 MiB: the corrected
+profile is selected explicitly with `--memory-mb 640`. Larger modules,
+persistent artifact reuse and the full project are separate verification
+requirements, not conclusions of this one successful fixture.
+
+The subsequent explicitly sequential checks gave these results:
+
+| Module | Wall time | Reported child peak | Result |
+| --- | --- | --- | --- |
+| `LocalCheckFiniteDecision` | 1.15 s | 585.8 MiB | Passed |
+| `FourLabelTransportation` | 1.16 s | 640.2 MiB | Lean threshold, at line 375 |
+| `FiniteRecord` (independent invocation) | 1.19 s | 632.4 MiB | Passed |
+
+The transportation refusal remains a real local resource boundary. Its
+dependents were not silently accepted or rebuilt, and no threshold was
+raised. The `FiniteRecord` result establishes a real probability-library
+module check, not only an import or a tiny fixture. None is a full-project
+build or an axiom audit.
+
+### Persistent, input-addressed single-module development loop
+
+Add `--retain` to preserve successful selected `.olean` files in the ignored
+`lean/.lake/local-checks-v1` store. This is separate from Lake's ordinary
+`.lake/build` cache; no fabricated Lake trace or C output is installed there.
+For example, from the repository root:
+
+```sh
+python3 -B lean/tools/check_module_cached.py Thesis.Examples.LocalCheckDefinition --check --memory-mb 640 --retain
+python3 -B lean/tools/check_module_cached.py Thesis.Examples.LocalCheckRetainedDependency --check --memory-mb 640 --retain
+```
+
+The first command checks and retains the definition. The second imports that
+retained artifact and checks a genuinely new proof, without rebuilding the
+definition. Repeating the second command reuses the client as well, reporting
+`Reused checked artifact (no re-elaboration)`. `--force-check` re-elaborates
+selected modules even when such a matching result exists.
+
+Keys cover source bytes, recursive project-dependency keys, configuration,
+compiler arguments, checker implementation and the installed pinned compiler/
+runtime identity. The identity includes architecture and compiler/runtime
+hashes; the installed standard library is trusted as in a normal Lake build.
+Artifact hashes are verified on load. A prerequisite edit invalidates its
+clients, not unrelated modules. Source changes during checking prevent
+publication. Each successful module is published independently, so failure
+of a later selected module does not discard earlier checked work.
+
+Ordinary dependencies still pass Lake's copied-trace freshness check. A
+retained dependency has its own checked manifest, not a synthetic Lake trace.
+If an ordinary cached client depends on a retained module, the helper refuses
+to validate that ordinary trace and asks the caller to select that client for
+checking too. Missing/stale dependencies never become permission for an
+implicit full rebuild. Select changed dependencies explicitly, at most three
+sequential modules and eight closure modules under the existing size bounds.
+
+Live verification of this workflow checked the retained definition in 0.95 s
+(584.3 MiB reported child peak), then checked its importing client in 0.44 s
+(581.4 MiB). The unchanged client reused its artifact without a compiler
+launch. Adding the separate `triangle_four` theorem invalidated the old
+client result and checked the edited source in 0.38 s (581.5 MiB), still
+reusing the unchanged definition. The local checker files are tested without
+Lean for key invalidation, corrupted/incomplete entries, symlink refusal,
+compiler-slot locking and monitor/timeout failures. Both Lean fixtures remain
+inside the complete remote build and transitive axiom audit.
+
+The final implementation also retained an actual `FiniteRecord` check
+(0.91 s; 631.8 MiB reported invocation child peak). A subsequent two-module
+invocation imported that retained probability library, validated the ordinary
+core/graph prerequisites, then checked and retained `Probability.Construction`
+(0.93 s) and `Causality.Model` (0.66 s). The reported child peak for that
+invocation was 631.2 MiB; this is cumulative across its children, not a separate
+exact peak for each module. Thus the local loop reaches actual causal-model
+definitions as well as synthetic fixtures, without checking their unchanged
+prerequisites again. Repeating a check is still explicitly distinguished from
+reusing its already checked artifact.
+
+This is a usable loop for modules fitting these limits. It is not blanket
+permission for full local builds, unbounded source closures, arbitrary package
+hooks or concurrent manual compiler jobs. Exact-input reuse is not fresh
+elaboration, and neither replaces the complete project build or axiom gate.
 
 ## Import narrowing and the proof-module split decision
 

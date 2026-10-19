@@ -9,8 +9,10 @@ Only the repository's ordinary, initial `import Module.Name` header syntax is
 accepted.  Large closures and large source files require a different workflow,
 not a silent relaxation of the local safety limits.
 
-Lean's -M limits its own allocation accounting, not aggregate operating-system
-RSS.  The separate CPU and wall-clock limits, low process priority, absence of
+Lean's -M checks the runtime's memory measurement: the pinned macOS build uses
+resident size, including its imported environment. It is not an OS-enforced
+memory ceiling or a fresh allocation allowance for each declaration. The
+separate CPU and wall-clock limits, low process priority, absence of
 parallel children, and reported child peak RSS make this a bounded pilot; they
 do not establish that an unrestricted local build is safe.
 """
