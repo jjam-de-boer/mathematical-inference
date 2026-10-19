@@ -51,6 +51,20 @@ the regression itself sampled 633.4 MiB. The unmodified package configuration
 subsequently reported all eight targets up to date in 0.27 s, without rebuilding.
 These establish real normal-cache integration, not yet the complete project.
 
+The subsequent full-graph bootstrap rebuilt its first 20 missing/stale targets
+at the pilot profile, then resumed through module 113. `BetaBinomialMoments`
+reached Lean's 768 MiB threshold in `betaBinomial_secondMoment`. A separately
+selected ceiling-profile run passed that unchanged module in 2.74 s with
+884.3 MiB sampled aggregate RSS. No distribution theorem was altered. The
+combined checkout now also contains main's newer distribution modules; its
+full Lean/audit closure has 836 project modules at this checkpoint. Continuing
+that bootstrap uses the explicit ceiling profile, not an automatic retry and
+not a claim that every target fits the pilot profile:
+
+```sh
+python3 -B lean/tools/build_local_sequential.py --phase lean --profile ceiling --check
+```
+
 No larger memory or timeout setting is an automatic retry. Unrelated editor
 or manual compiler processes are not terminated. Machine-wide headroom still
 matters, especially on this machine while other applications retain swap.

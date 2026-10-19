@@ -279,6 +279,11 @@ def main():
                 # to be wholly current BEFORE its actual final build commands,
                 # so those commands cannot start an uncapped Lean rebuild.
                 original = [str(lake), "--rehash", "--no-cache"]
+                native_modules, _ = ordered_modules(root, ["Main"])
+                invoke(original + ["--no-build", "build"] +
+                       ["+" + module + ":c.o" for module in native_modules],
+                       "all-native-prerequisites")
+                current()
                 invoke(prefix + ["build"], "finish-link")
                 for command, label in ((["build"], "full-project"),
                                        (["build", "Thesis.AxiomAudit"], "axiom-audit")):
