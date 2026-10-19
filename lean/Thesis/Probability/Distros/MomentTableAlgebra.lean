@@ -42,10 +42,10 @@ theorem listSum_range_select (n value : Nat) (f : Nat → SignedRatio) (within :
           have different : k ≠ n := by have bound := List.mem_range.mp member; omega
           rw [if_neg different]
           exact equiv_refl _
-        exact equiv_trans (add_congr earlier (by rw [if_pos rfl]; exact equiv_refl _)) (zero_add _)
+        exact equiv_trans (add_congr earlier (by change Equiv (if n = n then f n else zero) (f n); rw [if_pos rfl]; exact equiv_refl _)) (zero_add _)
       · have earlier : value < n := by omega
         exact equiv_trans (add_congr (ih value earlier)
-          (by rw [if_neg (Ne.symm last)]; exact equiv_refl _)) (add_zero _)
+          (by change Equiv (if n = value then f value else zero) zero; rw [if_neg (Ne.symm last)]; exact equiv_refl _)) (add_zero _)
 
 end Thesis.Probability.SignedRatio
 
