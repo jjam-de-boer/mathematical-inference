@@ -125,6 +125,29 @@ in-progress edits do not interrupt earlier work; the final checks still cover
 the complete planned tree. Resource-stop reports include the elapsed time,
 sampled process-group peak and log path.
 
+The resumed full bootstrap reached module 628/853 before the front-door
+`IdentificationRegression` hit a native stack overflow (3.06 s; 1136.8 MiB
+sampled aggregate RSS). That is distinct from a timeout or the RSS watchdog.
+Merely spelling the generated formula with simpler finite masks did not
+resolve the numerical reduction. The repaired regression also checks the
+model's eight observed cell weights once, proves agreement for every event,
+and reuses that exact table beneath the nested sums and quotients. Literal
+syntax equality ties the compact expression to the engine's actual output.
+Neither bridge uses causal soundness/completeness or assumes the answer.
+Every original numerical statement, including the legacy `9/16` failure and
+both current-engine `1/2` successes, remains checked.
+
+The existing `ProbabilityTerm.observationalDenote` definition is extracted
+unchanged into `Causality.ObservationalEvaluation`, below native completeness.
+New `observationalDenote_eq_scm` and `observationalDenote_congr` bridges justify
+table reuse, including unsupported results; actionful leaves remain rejected.
+The resulting regression passed its ordinary Lake target in 2.56 s with
+946.5 MiB sampled aggregate RSS. Two Type-valued semantic proof witnesses
+are now explicitly `noncomputable`, consistently with the existing
+congruence interface; the closed numerical checks are still kernel proofs.
+The complete graph, now enlarged by newer distribution and certificate work,
+is being resumed. These measurements still do not establish the final gates.
+
 No larger memory or timeout setting is an automatic retry. Unrelated editor
 or manual compiler processes are not terminated. Machine-wide headroom still
 matters, especially on this machine while other applications retain swap.

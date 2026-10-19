@@ -1,6 +1,8 @@
 import Thesis.CausalTransport.Soundness
-import Thesis.CausalTransport.Completeness
+import Thesis.CausalTransport.CompletenessLegacyProductFailures
 import Thesis.Causality.IdentificationKernel
+import Thesis.Causality.ProbabilityTermEquality
+import Thesis.Causality.ObservationalEvaluation
 
 namespace Thesis
 namespace Causality
@@ -11,6 +13,11 @@ open Probability
 
 /-!
 # Positive front-door regression for executable identification
+
+Only the trace certificates and historical formula-aligned compiler interface
+are needed here. Importing their last required layer directly avoids loading
+the unrelated hedge-model and deeper nested-failure proof layers into this
+numerical regression.
 
 This module records a load-bearing discrepancy in the legacy ID engine,
 not an extra assumption and not a completed identification theorem.  In the
@@ -283,20 +290,98 @@ supplied adjustment expression or a special-case model branch. -/
 theorem kernelEngine_identified :
     identifyJointKernel graph query = .identified kernelEngineFormula := by rfl
 
+/-!
+The engine's node selections are functions computed by recursive graph
+search. Their extensions on these three nodes are small, but carrying their
+unevaluated search closures into every denotation reduction needlessly
+repeats that search and can exhaust the native stack on macOS.
+
+The following private spelling retains every constructor, including empty
+marginalizations and the precise order of nested products and quotients.
+It is not an independently supplied adjustment formula: the finite syntax
+comparison below proves literal equality to the actual engine output before
+the numerical regression uses it. Thus a changed engine output cannot pass
+merely because this displayed expression still has the expected value.
+-/
+
+/-- The complete observed table, with its eight natural cell weights. This
+does not replace the causal model: the event-agreement proof below checks
+every cell against the actual two-root model before reusing the table. -/
+private def observedTable : FiniteProbRecord signature.Assignment where
+  atoms := [(assignmentOf false false false, 9), (assignmentOf false false true, 3),
+    (assignmentOf false true false, 3), (assignmentOf false true true, 1),
+    (assignmentOf true false false, 1), (assignmentOf true false true, 3),
+    (assignmentOf true true false, 3), (assignmentOf true true true, 9)]
+  den := 32
+  den_pos := by decide
+  total_mass := rfl
+
+set_option maxRecDepth 100000 in
+set_option maxHeartbeats 1000000 in
+/-- Eight concrete singleton checks determine every observational event.
+No causal or faithfulness premise is used to justify this finite table. -/
+private theorem observedTable_agrees (event : Event signature.Assignment) :
+    QProb.Equiv (model.observationalDist.probVal event) (observedTable.probVal event) := by
+  apply FiniteProbRecord.probVal_extensional_of_singletons _ _
+    signature.assignmentEnumeration signature.assignmentEnumeration_nodup
+    signature.assignmentEnumeration_complete ?_ event
+  intro assignment
+  rw [assignment_eq assignment]
+  cases assignment x <;> cases assignment mediator <;> cases assignment y <;>
+    decide +kernel
+
+private def compactKernelEngineFormula : ProbabilityTerm signature :=
+  let joint : ProbabilityTerm signature :=
+    .kernel ⟨NodeSet.full, NodeSet.empty, NodeSet.empty⟩
+  .marginalize (NodeSet.singleton mediator)
+    (.multiply
+      (.marginalize NodeSet.empty
+        (.divide
+          (.marginalize NodeSet.empty
+            (.marginalize (NodeSet.singleton y) joint))
+          (.marginalize (NodeSet.singleton mediator)
+            (.marginalize (NodeSet.singleton y) joint))))
+      (.marginalize NodeSet.empty
+        (.marginalize (NodeSet.singleton x)
+          (.multiply
+            (.divide (.marginalize NodeSet.empty joint)
+              (.marginalize (NodeSet.singleton y) joint))
+            (.divide
+              (.marginalize
+                (NodeSet.union (NodeSet.singleton mediator) (NodeSet.singleton y)) joint)
+              (.marginalize NodeSet.full joint))))))
+
+set_option maxRecDepth 100000 in
+/-- Materialize the finite node selections without changing the returned
+syntax. The comparison is kernel checked, not a native-evaluation axiom. -/
+private theorem kernelEngineFormula_eq_compact :
+    kernelEngineFormula = compactKernelEngineFormula :=
+  (ProbabilityTerm.equal_eq_true_iff _ _).mp (by decide +kernel)
+
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 1000000 in
 /-- Prefix quotients of the actual current kernel yield the correct `1/2`,
-in contrast to the legacy output `9/16`.  Ordinary kernel reduction checks
-the entire generated expression, including its nested sums and divisions. -/
-def kernelEngineAtReferenceHalf :
+in contrast to the legacy output `9/16`. Kernel-checked table evaluation
+checks the entire expression, including its nested sums and divisions.
+Literal syntax equality and checked observational event equality connect
+this computation to the original engine and model. Neither step appeals
+to the causal soundness or completeness theorems under regression. -/
+noncomputable def kernelEngineAtReferenceHalf :
     ProbabilityResult.Equivalent (kernelEngineFormula.denote model reference)
-      (some ⟨1, 2, by decide⟩) :=
-  equivalentOfValueTest _ _ (by decide +kernel)
+      (some ⟨1, 2, by decide⟩) := by
+  rw [kernelEngineFormula_eq_compact]
+  have actionFree : compactKernelEngineFormula.ActionFree := by
+    simp [compactKernelEngineFormula, ProbabilityTerm.ActionFree, NodeSet.empty]
+  rw [← ProbabilityTerm.observationalDenote_eq_scm model _ actionFree reference]
+  exact ProbabilityResult.trans
+    (ProbabilityTerm.observationalDenote_congr model.observationalDist
+      observedTable observedTable_agrees compactKernelEngineFormula reference)
+    (equivalentOfValueTest _ _ (by decide +kernel))
 
 /-- The replacement formula and the requested interventional source agree
 at the regression assignment.  This is a checked instance, not the general
 semantic soundness or completeness theorem for all ID runs. -/
-def kernelEngine_equivalent_source :
+noncomputable def kernelEngine_equivalent_source :
     ProbabilityTerm.EquivalentAt model query.sourceTerm kernelEngineFormula
       reference :=
   ProbabilityResult.trans sourceAtReferenceHalf
