@@ -141,6 +141,7 @@ import Thesis.CausalTransport.BoundedNativeSearch
 import Thesis.CausalTransport.BoundedNativeClassification
 import Thesis.CausalTransport.BoundedNativeConditionalInspection
 import Thesis.CausalTransport.BoundedNativeConditionalSearch
+import Thesis.CausalTransport.NativeSupportSemantics
 import Thesis.CausalTransport.HiddenDAGFinitePresentation
 import Thesis.CausalTransport.HiddenDAGSourcePresentation
 import Thesis.CausalTransport.HiddenDAGSourceCompression

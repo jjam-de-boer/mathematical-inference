@@ -32,7 +32,10 @@ def patterns (card : Nat) : List (Fin card → Bool) :=
 
 theorem patterns_complete {card : Nat} (pattern : Fin card → Bool) : pattern ∈ patterns card :=
   FiniteProduct.enumeration_mem_of_coordinate_mem _ _ _ pattern
-    (fun value => by cases pattern value <;> decide)
+    (fun value => by
+      cases pattern value with
+      | false => exact List.mem_cons_self
+      | true => exact List.mem_cons_of_mem false List.mem_cons_self)
 
 def maskRecord {card : Nat} (pattern : Fin card → Bool) (positive : 0 < mass (unitWeights pattern)) :
     FiniteProbRecord (Fin card) := fromWeights (unitWeights pattern) positive

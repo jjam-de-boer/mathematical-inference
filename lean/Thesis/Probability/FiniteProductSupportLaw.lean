@@ -28,12 +28,12 @@ theorem qProduct_num_pos_iff (count : Nat) (values : Fin count → QProb) :
       · intro _; exact Nat.zero_lt_one
   | succ count ih =>
       change 0 < (values (Fin.last count)).num * (qProduct count (fun source => values source.castSucc)).num ↔ _
-      rw [Nat.mul_pos_iff, ih]
       constructor
-      · rintro ⟨last, initial⟩ source
-        exact Fin.lastCases last initial source
+      · intro positive source
+        exact Fin.lastCases (Nat.pos_of_mul_pos_right positive)
+          ((ih _).mp (Nat.pos_of_mul_pos_left positive)) source
       · intro positive
-        exact ⟨positive (Fin.last count), fun source => positive source.castSucc⟩
+        exact Nat.mul_pos (positive (Fin.last count)) ((ih _).mpr (fun source => positive source.castSucc))
 
 variable {count : Nat} {cards : Fin count → Nat}
 
@@ -46,6 +46,7 @@ theorem record_singleton_positive_iff
   letI := assignmentDecidableEq count (fun source => Fin (cards source)) (fun _ => inferInstance)
   have compared := record_rectangular_probVal count (fun source => Fin (cards source)) factors
     (fun source => FiniteProbRecord.singletonEvent (reference source))
+  simp only [FiniteProbRecord.singletonEvent] at compared
   rw [rectangularEvent_assignment_singleton (fun _ => inferInstance) reference] at compared
   exact (QProb.equiv_num_pos_iff compared).trans (qProduct_num_pos_iff count _)
 

@@ -112,7 +112,7 @@ jobs:
           Thesis.Examples.BoundedNativeMixedConditionals
       - name: Check finite support-law foundations
         working-directory: lean
-        run: lake build Thesis.Probability.FiniteSupportCatalogue Thesis.Probability.FiniteProductSupportLaw
+        run: lake build Thesis.Probability.FiniteSupportCatalogue Thesis.Probability.FiniteProductSupportLaw Thesis.CausalTransport.NativeSupportSemantics
       - name: Check graph-only identification layers
         working-directory: lean
         run: >-
