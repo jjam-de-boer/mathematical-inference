@@ -130,7 +130,6 @@ theorem multicolourDepleting_eventMass_aggregation (n groups : Nat) (stocks labe
       apply List.map_congr_left
       intro head _
       rw [FiniteProbRecord.eventMass_map_weight]
-      rfl
 
 /-- Merging every draw gives the complete removal-path law with summed
 stocks, retaining empty destination groups and zero-stock categories. -/
