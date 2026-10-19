@@ -49,7 +49,7 @@ theorem rationalLinearCombination_one_colour (colours : Nat) (coefficients : Nat
   have empty : (colourCounts colours []).getD j 0 = 0 := by
     change (List.replicate colours 0).getD j 0 = 0
     rw [← List.getElem_eq_getD (h := by simpa only [List.length_replicate] using jWithin) 0]
-    exact List.getElem_replicate _
+    exact List.getElem_replicate (by simpa only [List.length_replicate] using jWithin)
   have coordinate := colourCounts_cons_coordinate colours index j [] jWithin
   rw [empty, Nat.add_zero] at coordinate
   change SignedRatio.Equiv (SignedRatio.mul (coefficients j)
@@ -80,7 +80,7 @@ theorem reinforcedCount_one_covarianceForm_zero_iff (weights : List Nat) (positi
   have categoricalVariance := categorical.rationalCovariance_congr_positive
     (fun i => response (colourCounts weights.length [i.val])) (fun i => coefficients i.val)
     (fun i => response (colourCounts weights.length [i.val])) (fun i => coefficients i.val) equivalent equivalent
-  have form := SignedRatio.equiv_trans (SignedRatio.equiv_symm (μ.rationalVariance_linearCombination _ _ _))
+  have form := SignedRatio.equiv_trans (SignedRatio.equiv_symm (μ.rationalVariance_linearCombination (List.range weights.length) countResponse coefficients))
     (SignedRatio.equiv_trans moved categoricalVariance)
   rw [SignedRatio.equiv_num_zero_iff form, categorical.rationalVariance_zero_iff_constant]
   constructor

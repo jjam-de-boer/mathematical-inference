@@ -1251,3 +1251,66 @@ example : FactorialMomentTableValid (fun _ => QProb.one) 0 := by
   · decide +kernel
 
 end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- The positive coordinates agree unreducedly; the null coordinate is arbitrary. -/
+def nullDirectionCoefficients (i : Nat) : SignedRatio :=
+  if i = 1 then ⟨-7, 3, by decide⟩ else ⟨2, 4, by decide⟩
+
+theorem nullDirectionCoefficients_constant : CoefficientsConstantOnPositive [1, 0, 2] nullDirectionCoefficients := by
+  refine ⟨⟨1, 2, by decide⟩, ?_⟩
+  intro i within positive
+  have alternatives : i = 0 ∨ i = 1 ∨ i = 2 := by
+    have bound : i < 3 := within
+    omega
+  rcases alternatives with rfl | rfl | rfl
+  · decide +kernel
+  · have impossible : ¬ 0 < ([1, 0, 2] : List Nat).getD 1 0 := by decide
+    exact False.elim (impossible positive)
+  · decide +kernel
+
+example : ((multinomialDistro 2 [1, 0, 2] (by decide)).occupancyCovarianceForm 3 nullDirectionCoefficients).num = 0 :=
+  (multinomial_covarianceForm_zero_iff 2 [1, 0, 2] (by decide) nullDirectionCoefficients).mpr
+    (Or.inr nullDirectionCoefficients_constant)
+
+example : ((reinforcedCountDistro 3 [1, 0, 2] 2 (by decide)).occupancyCovarianceForm 3 nullDirectionCoefficients).num = 0 :=
+  (reinforcedCount_covarianceForm_zero_iff 3 2 [1, 0, 2] (by decide) nullDirectionCoefficients).mpr
+    (Or.inr nullDirectionCoefficients_constant)
+
+example : ((multivariateHypergeometricDistro 1 [1, 0, 2] (by decide)).occupancyCovarianceForm 3 nullDirectionCoefficients).num = 0 :=
+  (multivariateHypergeometric_covarianceForm_zero_iff 1 [1, 0, 2] (by decide) nullDirectionCoefficients).mpr
+    (Or.inr (Or.inr nullDirectionCoefficients_constant))
+
+/-- Unequal coefficients on two positive colours give a nonzero direction. -/
+example : ((multinomialDistro 2 [1, 0, 2] (by decide)).occupancyCovarianceForm 3 occupancyTestCoefficients).num ≠ 0 := by
+  intro zero
+  have criterion := (multinomial_covarianceForm_zero_iff 2 [1, 0, 2] (by decide) occupancyTestCoefficients).mp zero
+  rcases criterion with impossible | ⟨c, constant⟩
+  · exact (by decide : (2 : Nat) ≠ 0) impossible
+  · have equal := SignedRatio.equiv_trans (constant 0 (by decide) (by decide))
+      (SignedRatio.equiv_symm (constant 2 (by decide) (by decide)))
+    exact (by decide +kernel : ¬ SignedRatio.Equiv (occupancyTestCoefficients 0) (occupancyTestCoefficients 2)) equal
+
+example (coefficients : Nat → SignedRatio) : SignedRatio.Equiv
+    ((multivariateHypergeometricDistro 3 [1, 0, 2] (by decide)).occupancyCovarianceForm 3 coefficients) SignedRatio.zero :=
+  multivariateHypergeometric_covarianceForm_full_population [1, 0, 2] (by decide) coefficients
+
+example (coefficients : Nat → SignedRatio) : SignedRatio.Equiv
+    ((reinforcedCountDistro 0 [1, 0, 2] 2 (by decide)).occupancyCovarianceForm 3 coefficients) SignedRatio.zero :=
+  reinforcedCount_covarianceForm_zero_trials 2 [1, 0, 2] (by decide) coefficients
+
+example (coefficients : Nat → SignedRatio) : SignedRatio.Equiv
+    ((multivariateHypergeometricDistro 0 [0, 0] (by decide)).occupancyCovarianceForm 2 coefficients) SignedRatio.zero :=
+  multivariateHypergeometric_covarianceForm_full_population [0, 0] (by decide) coefficients
+
+example (coefficients : Nat → SignedRatio) : SignedRatio.Equiv
+    ((multivariateHypergeometricDistro 1 [1] (by decide)).occupancyCovarianceForm 1 coefficients) SignedRatio.zero :=
+  multivariateHypergeometric_covarianceForm_full_population [1] (by decide) coefficients
+
+example : ((multivariateHypergeometricDistro 0 [] (by decide)).occupancyCovarianceForm 0 occupancyTestCoefficients).num = 0 :=
+  (multivariateHypergeometric_covarianceForm_zero_iff 0 [] (by decide) occupancyTestCoefficients).mpr (Or.inl rfl)
+
+end Thesis.Examples.DistributionExtensions

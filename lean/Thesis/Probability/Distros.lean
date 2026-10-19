@@ -354,4 +354,10 @@ retained rather than silently excluded as nonpositive support.
     `FactorialMomentTable` and `FactorialMomentRealization` characterize bounded
     rational moment tables by nonnegative normalized inverted masses, construct
     their realizing law, recover every supplied moment, and prove uniqueness in law.
+67. `OccupancyDegenerate` handles zero trials and full-population samples,
+    including empty and one-ball populations. `OccupancyCovarianceEntries`
+    factors the full covariance geometry through one categorical draw.
+    `OccupancyNullspace` gives exact coefficient-based null criteria: on
+    positive colours coefficients agree, while null-category coefficients are
+    unrestricted; zero trials and full-population sampling are explicit exceptions.
 -/
