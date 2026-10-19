@@ -1,11 +1,59 @@
 # Resource-capped local checks
 
-Full project builds and the transitive axiom audit currently remain remote.
+Full project builds and the transitive axiom audit currently remain remote;
+the normal-cache sequential bootstrap described below is being verified.
 Useful selected-module checking is feasible under the conservative
 640 MiB Lean / 768 MiB sampled-RSS / 30-second single-process profile below;
 the explicit 768/1024 MiB pilot also checks downstream transportation modules.
 The previous laptop-wide freeze has not been diagnosed; this result does not
 establish that full proof elaboration fits local memory.
+
+## Full-project sequential bootstrap (in progress)
+
+`tools/build_local_sequential.py` is separate from the small-closure pilot.
+It walks the actual default executable and full axiom-audit dependencies,
+asks Lake to build prerequisite-first, and retains genuine ordinary artifacts
+and traces in `.lake/build`. It never copies a pilot `.olean` into that cache
+or invents a successful trace. Intermediate successes are resumable, not a
+claim that the full project builds.
+
+```sh
+python3 -B lean/tools/build_local_sequential.py
+python3 -B lean/tools/build_local_sequential.py --phase lean --max-builds 20 --check
+python3 -B lean/tools/build_local_sequential.py --check
+```
+
+The first command only plans. The second is an optional checkpoint after 20
+actual rebuilt modules; it returns a distinct checkpoint exit code, not full
+success. Repeating it resumes using Lake freshness checks. The third attempts
+all Lean modules, native object files, the actual complete build and the full
+axiom audit. Only its explicit final gate result establishes end-to-end local
+success; a passed `--target` or individual `--phase` does not.
+
+The default explicit full-builder profile is 768 MiB Lean, 1024 MiB aggregate
+sampled RSS and 30 seconds per invocation. A temporary declarative TOML file
+adds only weak resource arguments (`-j1`, `-M768`, `-DmaxErrors=1`), which this
+pinned Lake excludes from proof traces. The committed configuration is not
+edited. The whole owned process group is monitored, including compiler and
+linker children; its aggregate RSS deliberately counts shared resident pages
+conservatively. Independent compiler families, unmonitorable children, source
+changes and resource overruns stop the build. Wall/CPU stops are distinguished
+from Lean's memory-threshold failures. Final commands use the original package
+configuration, with a no-build preflight before those commands can run.
+
+The original million-unit `uniform_margins` regression is now proved by a
+private symbolic lemma for every natural mass, then specialized to the same
+concrete total. Every original statement and numerical test remains. Its
+direct cached check passed in 1.26 s (596.2 MiB invocation child peak). The
+normal-cache seven-module transportation closure then passed sequentially;
+its reservation rebuild sampled 725.4 MiB for Lake plus its compiler, and
+the regression itself sampled 633.4 MiB. The unmodified package configuration
+subsequently reported all eight targets up to date in 0.27 s, without rebuilding.
+These establish real normal-cache integration, not yet the complete project.
+
+No larger memory or timeout setting is an automatic retry. Unrelated editor
+or manual compiler processes are not terminated. Machine-wide headroom still
+matters, especially on this machine while other applications retain swap.
 
 ## Transportation split and explicit resource profiles, 2026-10-19
 
