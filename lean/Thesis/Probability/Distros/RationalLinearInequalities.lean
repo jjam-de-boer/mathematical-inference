@@ -23,17 +23,19 @@ theorem dot_zero (variables : Nat) (values : Fin variables → SignedRatio) :
     SignedRatio.Equiv (dot variables (fun _ => 0) values) SignedRatio.zero := by
   induction variables with
   | zero => exact SignedRatio.equiv_refl _
-  | succ variables ih => exact SignedRatio.equiv_trans
-      (SignedRatio.add_congr (SignedRatio.zero_scaleInt _) (ih (fun i => values i.castSucc))) (SignedRatio.add_zero _)
+  | succ variables ih =>
+      exact SignedRatio.equiv_trans
+        (SignedRatio.add_congr (SignedRatio.zero_scaleInt _) (ih (fun i => values i.castSucc))) (SignedRatio.add_zero _)
 
 theorem dot_congr (variables : Nat) (coefficients : Fin variables → Int) (values other : Fin variables → SignedRatio)
     (same : ∀ i, SignedRatio.Equiv (values i) (other i)) :
     SignedRatio.Equiv (dot variables coefficients values) (dot variables coefficients other) := by
   induction variables with
   | zero => exact SignedRatio.equiv_refl _
-  | succ variables ih => exact SignedRatio.add_congr
-      (SignedRatio.scaleInt_congr _ (same (Fin.last variables)))
-      (ih (fun i => coefficients i.castSucc) (fun i => values i.castSucc) (fun i => other i.castSucc) (fun i => same i.castSucc))
+  | succ variables ih =>
+      exact SignedRatio.add_congr
+        (SignedRatio.scaleInt_congr _ (same (Fin.last variables)))
+        (ih (fun i => coefficients i.castSucc) (fun i => values i.castSucc) (fun i => other i.castSucc) (fun i => same i.castSucc))
 
 theorem dot_add_coefficients (variables : Nat) (first second : Fin variables → Int) (values : Fin variables → SignedRatio) :
     SignedRatio.Equiv (dot variables (fun i => first i + second i) values)
@@ -83,6 +85,7 @@ theorem Inequality.holds_extend_iff (row : Inequality (variables + 1)) (values :
     row.Holds (extend values last) ↔ SignedRatio.LE (SignedRatio.scaleInt row.pivot last) (row.residual values) := by
   unfold Holds
   rw [dot_extend, SignedRatio.add_le_iff_le_sub]
+  rfl
 
 /-- A projected pair combines an upper row and a lower row using positive
 integer multipliers. No rational division or normalization enters elimination. -/
