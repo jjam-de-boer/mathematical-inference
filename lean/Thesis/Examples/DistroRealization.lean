@@ -30,9 +30,9 @@ example : (partitionMomentFixture.rationalCovarianceForm [0, 0]
     (fun _ : Nat => partitionMomentObservable) (fun i => if i = 0 then ⟨0, 7, by decide⟩ else SignedRatio.one)).num = 0 :=
   (Distro.rationalCovarianceForm_zero_iff_rows _ _ _ _).mpr (by decide +kernel)
 
-example : (match checkFactorialMomentTable suppliedFactorialTable 2 with | .inl _ => True | .inr _ => False) := by decide +kernel
-example : (match checkFactorialMomentTable negativeCellFactorialTable 2 with | .inl _ => False | .inr (.negative value _ _) => value = 1 | .inr (.unnormalized _) => False) := by decide +kernel
-example : (match checkFactorialMomentTable (fun _ => QProb.zero) 0 with | .inr (.unnormalized _) => True | _ => False) := by decide +kernel
-example : (match checkFactorialMomentTable (fun _ => QProb.one) 0 with | .inl _ => True | .inr _ => False) := by decide +kernel
+example : (match checkFactorialMomentTable suppliedFactorialTable 2 with | .inl _ => true | .inr _ => false) = true := by decide +kernel
+example : (match checkFactorialMomentTable negativeCellFactorialTable 2 with | .inl _ => false | .inr (.negative value _ _) => decide (value = 1) | .inr (.unnormalized _) => false) = true := by decide +kernel
+example : (match checkFactorialMomentTable (fun _ => QProb.zero) 0 with | .inr (.unnormalized _) => true | _ => false) = true := by decide +kernel
+example : (match checkFactorialMomentTable (fun _ => QProb.one) 0 with | .inl _ => true | .inr _ => false) = true := by decide +kernel
 
 end Thesis.Examples.DistroRealization
