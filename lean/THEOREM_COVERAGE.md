@@ -154,7 +154,10 @@ support also remains a separate causal premise.
 
 ### Research checkpoint 5: alternative-formula coverage
 
-This is a bounded assessment, not an additional Lean completeness theorem.
+Universal formula coverage remains a bounded assessment, not an additional
+formula-completeness theorem. The implemented support foundations are
+recorded separately below.
+
 The natural first scope fixes the observed signature, the original finite
 hidden DAG/projection and a joint query. Candidates are the current
 `GuardedObservationalFormula` objects: current `ProbabilityTerm` syntax,
@@ -223,8 +226,9 @@ singleton extensionality extends preservation to every interventional event.
 Subsequent uniform reweighting forgets the values but retains their supports.
 
 `FiniteLatentProjection.completeSupportCatalogue` therefore supplies a finite
-list of actual native models covering the entire causal support behaviour of
-the original model class. `FiniteHiddenDAGSCM.completeSupportCatalogue_covers`
+list of actual native models covering the entire single-world hard-intervention
+support behaviour of the original model class.
+`FiniteHiddenDAGSCM.completeSupportCatalogue_covers`
 keeps the original full hidden DAG fixed. The separate
 `ProjectedHiddenDAGModel.completeSupportCatalogue_covers` ranges over all finite
 full hidden DAGs with the same observed projection and uses the fixed
@@ -236,7 +240,9 @@ This is coverage of support profiles, not exact fitting of a numerical
 observed law, numerical identity checking on uniform representatives, a
 minimal or duplicate-free profile classification, or an unrestricted rational
 identification procedure. The regressions explicitly show changed numerical
-values, unchanged null cells, legal null intervention targets, strict versus
+values. Joint cross-world/AAP support is not retained by this finite basis.
+The regressions also show unchanged null cells, legal null intervention
+targets, strict versus
 weighted support and a transported complete weighted support tree. Both
 current observable guards remain unchanged because their checks depend only
 on observed support. Huge full model catalogues are not concretely expanded

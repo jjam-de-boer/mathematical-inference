@@ -26,6 +26,8 @@ Projection-wide coverage retains the earlier multi-child clique-root model
 class; it does not replace shared roots by independent pair roots. Neither
 coverage theorem searches proof codes, certifies an arbitrary formula, fits
 a supplied numerical law, or supplies an unrestricted rational optimizer.
+The profiles concern single-world hard interventions. Joint cross-world or
+abduction-action-prediction support is not retained by this finite basis.
 -/
 
 variable {S : ObservedSignature.{0}}
