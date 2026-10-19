@@ -4,6 +4,7 @@ import Thesis.Examples.ConditionalReadoutPaths
 import Thesis.Examples.DistributionLaws
 import Thesis.Examples.DistributionExtensions
 import Thesis.Examples.DistroRealization
+import Thesis.Examples.DistroPartialMoments
 import Thesis.Examples.BooleanChannelExpansion
 import Thesis.Examples.FiniteProductBalance
 import Thesis.Examples.PairRootChannels
