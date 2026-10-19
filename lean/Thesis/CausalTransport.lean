@@ -144,6 +144,7 @@ import Thesis.CausalTransport.BoundedNativeConditionalSearch
 import Thesis.CausalTransport.NativeSupportSemantics
 import Thesis.CausalTransport.NativeTemplateSupport
 import Thesis.CausalTransport.NativeSupportProfiles
+import Thesis.CausalTransport.NativeDerivationSupportCheck
 import Thesis.CausalTransport.HiddenDAGFinitePresentation
 import Thesis.CausalTransport.HiddenDAGSourcePresentation
 import Thesis.CausalTransport.HiddenDAGSourceCompression
