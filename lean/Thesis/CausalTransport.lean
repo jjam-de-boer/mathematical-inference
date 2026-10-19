@@ -144,6 +144,9 @@ import Thesis.CausalTransport.BoundedNativeConditionalSearch
 import Thesis.CausalTransport.NativeSupportSemantics
 import Thesis.CausalTransport.NativeTemplateSupport
 import Thesis.CausalTransport.NativeSupportProfiles
+import Thesis.CausalTransport.NativeDerivationSupportCheck
+import Thesis.CausalTransport.NativeSupportGuard
+import Thesis.CausalTransport.NativeCertificateCheck
 import Thesis.CausalTransport.HiddenDAGFinitePresentation
 import Thesis.CausalTransport.HiddenDAGSourcePresentation
 import Thesis.CausalTransport.HiddenDAGSourceCompression
@@ -371,6 +374,14 @@ events to construct complete finite support catalogues, both on a fixed full
 DAG and across the full fixed-projection class. These catalogues have no
 original source-denominator bound but retain only support behaviour, not
 numerical causal values. They do not enumerate or certify proof codes.
+`NativeDerivationSupportCheck` checks and reconstructs every recursive support
+obligation, with exact acceptance and causal-support invariance theorems.
+`NativeSupportGuard` checks supplied observable support/reference tables across
+all matching causal profiles. `NativeCertificateCheck` combines those checks
+with serialized causal proofs and source/action-free-output validation. Its
+fixed-DAG and projection-wide soundness adapters retain original source support;
+no arbitrary semantic proof is accepted as serialized input. The old formula
+API is unchanged, and proof enumeration or formula selection is not added.
 `HiddenDAGPolynomial` compiles native causal probabilities with a proved
 binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied
