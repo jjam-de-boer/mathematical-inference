@@ -353,6 +353,13 @@ identification and separation over the full original bounded native class.
 It supplies explicit decisions, exact Boolean checks and constructive
 classification equivalences, without global search-triggering instances or
 vacuous identification at incompatible observed laws.
+`BoundedNativeConditionalInspection` keeps evidence-support inspection separate
+from comparison of positive-evidence conditional values.
+`BoundedNativeConditionalSearch` transports both reports to every original
+bounded native model. Its outer incompatibility branch distinguishes an empty
+fitting class from a compatible class with no supported conditional; mixed
+support can coexist with either an attained common supported value or two
+different supported values. No conditional is assigned at a null event.
 `HiddenDAGPolynomial` compiles native causal probabilities with a proved
 binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied

@@ -20,7 +20,7 @@ an external method; it does not extend the probability framework.
 | 4. Support-pattern applicability | Exact undefined/zero/positive analysis and exhaustive comparison within supplied finite formula catalogues. | This does not enumerate every possible certified formula. |
 | 5. Universal alternative-formula coverage | Bounded research assessment completed; the missing syntax and termination obligations are stated below. | A decidable bounded derivation language first; no universal coverage or impossibility theorem yet. |
 | 6. Finite structural representation | Constructed standalone-template coverage both for a fixed full hidden DAG and across all finite hidden DAGs with a fixed observed projection. | Rational weight assignments remain infinite; compatibility, sharpness and complete search are separate obligations. |
-| 7. Fixed-observed-law procedures | Restricted results retained; exact compatibility and unconditional-target comparison implemented for a full hidden DAG with declared finite alphabet and denominator bounds. | Conditional-target policy and unrestricted rational feasibility remain separate; increasing bounds has no proved stopping rule. |
+| 7. Fixed-observed-law procedures | Restricted results retained; exact compatibility and unconditional/conditional-target comparison for a full hidden DAG with declared finite alphabet and denominator bounds. Conditional support and positive-evidence values are reported separately. | Unrestricted rational feasibility remains separate; increasing bounds has no proved stopping rule. |
 
 ## Graph-level ID/IDC
 
@@ -550,8 +550,8 @@ positive and null causal evidence in both directions.
 supported conditioned record, with positivity explicitly supplied from the
 original interventional law. A three-valued regression retains a factual null
 at count two and its supported conditional after that null value is forced.
-This common representation bridge does not choose a conditional-search policy
-for compatible model families containing both positive and null evidence.
+The conditional-search policy built on this bridge reports support and values
+separately, as described below; the representation itself imposes no policy.
 
 `NativeTemplateInstance.observationCheck_exact` proves that checking all
 observational singleton probabilities is equivalent to matching the supplied
@@ -584,6 +584,30 @@ solver must report ambiguity for that effect, identification for the factual
 query and incompatibility at denominator bound zero. Those outcome theorems
 use the solver's proved obligations, not expansion of the whole catalogue;
 small two-entry tests separately execute the comparison algorithm.
+
+`BoundedNativeConditionalSearch.solve` extends the same bounded original-model
+class to `NativeConditionalQuery`, with three explicit inputs: intervention,
+evidence and event. It first reports incompatibility or an actual fitted
+witness. For a compatible law it returns two independent proof-carrying reports:
+
+- **Support:** positive causal evidence in every original fitted model, or an
+  actual fitted native model whose causal evidence numerator is exactly zero.
+- **Supported values:** no original fitted model has positive evidence; an
+  actual positive-evidence witness attains a value shared by every supported
+  original fitted model; or two positive-evidence fitted native models have
+  different conditional values.
+
+The null-witness branch does not suppress the supported-value report. Mixed
+support with a common supported value is therefore different from both an
+everywhere-defined identified conditional and value ambiguity. Likewise,
+compatibility with uniformly null evidence is different from incompatibility.
+`representative_supported_iff` and `representative_value` justify transporting
+the finite inspections through canonical coding to all original bounded
+records. They preserve the actual conditioned-record semantics, not a default
+zero value at null evidence. The observational fitting list is shared by the
+two inspections. Regression tests cover mixed support with a common supported
+value, uniformly null evidence, uniformly positive evidence with disagreeing
+values, and incompatibility, without kernel expansion of the full catalogue.
 
 This is an opt-in finite procedure, not a practical large-graph optimizer.
 Bounds are part of its class definition. In particular, projection-wide source
@@ -859,7 +883,7 @@ event needs its own qualification: the empty/full outcome events are trivial
 even without action overlap. These are assessed statements and construction
 steps, not yet formalized categorical-bow theorems.
 
-**Explicitly bounded models (implemented for unconditional targets).** The
+**Explicitly bounded models (unconditional and conditional targets).** The
 finite weight-vector coverage proof, original-type native adapter, exact
 observational filter and proof-carrying compatibility/uniqueness search are
 implemented above. Source masses are aggregated without unit-cell expansion,
@@ -868,8 +892,9 @@ Enumerating bounded cardinality shapes avoids a separate zero-padding step.
 The class fixes the full hidden DAG and bounds the original supplied finite
 enumerations and source denominators. Source compression is not asserted to
 preserve that denominator bound for arbitrary original models. Conditional
-targets still need an explicit policy for compatible models with null target
-conditioners. Increasing `D` does not itself give a terminating unrestricted
+targets report evidence support separately from value agreement among the
+positive-evidence members, including actual null-evidence witnesses when
+present. Increasing `D` does not itself give a terminating unrestricted
 procedure, and this implementation does not settle that separate question.
 
 **Unrestricted rational models.** Representation bounds control alphabet and
@@ -902,9 +927,9 @@ an automatic real-to-rational template transfer, not the existence of a
 general rational causal decision procedure. No reduction proving that
 general procedure impossible has been established here. Exact rational
 feasibility/uniqueness or a genuinely applicable impossibility reduction
-remains unresolved. The explicitly bounded unconditional checker is now a
-constructed result, not an assessment-only proposal. Review its conditional
-boundary before extending it; the categorical bow remains a separate assessed
+remains unresolved. The explicitly bounded unconditional and conditional
+checkers are constructed results, not assessment-only proposals. Their bounds
+and separate support/value semantics must not be dropped; the categorical bow remains a separate assessed
 extension. Do not launch an open-ended arbitrary-graph optimizer on the
 strength of finite representation or bounded-class search alone.
 

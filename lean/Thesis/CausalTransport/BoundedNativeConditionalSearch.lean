@@ -131,18 +131,22 @@ def valueReport (query : NativeConditionalQuery S)
 inspections of that retained list. No arbitrary-proposition decision, external
 optimizer, or conditional default at a null event is trusted by this search. -/
 def solve (query : NativeConditionalQuery S) : Result P nodeBound sourceBound denominatorBound observed query :=
-  match listed : fitted P nodeBound sourceBound denominatorBound observed with
+  let candidates := fitted P nodeBound sourceBound denominatorBound observed
+  match listed : candidates with
   | [] => .incompatible (by
       rintro ⟨original, nodes, sources, denominators, matched⟩
       exact no_native_match_of_empty P nodeBound sourceBound denominatorBound observed listed
         original nodes sources denominators matched)
   | head :: tail =>
       .compatible
-        (fittedModelOfMem P nodeBound sourceBound denominatorBound observed head (by rw [listed]; exact List.mem_cons_self))
+        (fittedModelOfMem P nodeBound sourceBound denominatorBound observed head (by
+          change head ∈ candidates
+          rw [listed]
+          exact List.mem_cons_self))
         (supportReport P nodeBound sourceBound denominatorBound observed query
-          (NativeTemplateInstance.inspectSupport query (fitted P nodeBound sourceBound denominatorBound observed)))
+          (NativeTemplateInstance.inspectSupport query candidates))
         (valueReport P nodeBound sourceBound denominatorBound observed query
-          (NativeTemplateInstance.inspectValues query (fitted P nodeBound sourceBound denominatorBound observed)))
+          (NativeTemplateInstance.inspectValues query candidates))
 
 end BoundedNativeConditionalSearch
 end Thesis.Causality

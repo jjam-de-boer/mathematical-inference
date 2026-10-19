@@ -37,6 +37,13 @@ variable {S : ObservedSignature.{0}} {P : FiniteLatentProjection S}
 def Supported (query : NativeConditionalQuery S) (model : FiniteHiddenDAGSCM S P) : Prop :=
   (model.interventionalDist query.intervention).EventPositive query.evidence
 
+/-- This instance computes just one finite event mass. It does not decide a
+quantified model-class statement or invoke the bounded catalogue search. -/
+instance (query : NativeConditionalQuery S) (model : FiniteHiddenDAGSCM S P) :
+    Decidable (query.Supported model) := by
+  unfold Supported
+  infer_instance
+
 def value (query : NativeConditionalQuery S) (model : FiniteHiddenDAGSCM S P)
     (supported : query.Supported model) : QProb :=
   ((model.interventionalDist query.intervention).conditionOn query.evidence supported).probVal query.event
