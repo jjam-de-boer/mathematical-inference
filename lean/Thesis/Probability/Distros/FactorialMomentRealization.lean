@@ -67,19 +67,19 @@ def realizedFactorialDistro (moments : Nat → QProb) (bound : Nat) (valid : Fac
 
 theorem realizedFactorialDistro_bounded (moments : Nat → QProb) (bound : Nat) (valid : FactorialMomentTableValid moments bound) :
     (realizedFactorialDistro moments bound valid).distro.AlmostSurely (fun value => value ≤ bound) :=
-  probabilityGrid_bounded _ _ _
+  probabilityGrid_bounded bound (factorialTableProbability moments bound) (factorialTableProbability_normalized moments bound valid)
 
 theorem realizedFactorialDistro_pmf (moments : Nat → QProb) (bound : Nat) (valid : FactorialMomentTableValid moments bound)
     (value : Nat) (within : value ≤ bound) :
     SignedRatio.Equiv ((realizedFactorialDistro moments bound valid).distro.pmf value).toSignedRatio
       (inverseFactorialTable moments bound value) :=
-  SignedRatio.equiv_trans (QProb.toSignedRatio_congr (probabilityGrid_pmf _ _ _ value within))
+  SignedRatio.equiv_trans (QProb.toSignedRatio_congr (probabilityGrid_pmf bound (factorialTableProbability moments bound) (factorialTableProbability_normalized moments bound valid) value within))
     (factorialTableProbability_spec moments bound value (valid.1 value within))
 
 theorem realizedFactorialDistro_retains (moments : Nat → QProb) (bound : Nat) (valid : FactorialMomentTableValid moments bound)
     (value : Nat) (within : value ≤ bound) :
     ∃ weight, (value, weight) ∈ (realizedFactorialDistro moments bound valid).distro.record.atoms :=
-  probabilityGrid_retains _ _ _ _ within
+  probabilityGrid_retains bound (factorialTableProbability moments bound) (factorialTableProbability_normalized moments bound valid) value within
 
 /-- Each reconstructed binomial moment equals its supplied table coefficient. -/
 theorem realizedFactorialDistro_coefficient (moments : Nat → QProb) (bound : Nat) (valid : FactorialMomentTableValid moments bound)

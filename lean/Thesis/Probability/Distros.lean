@@ -75,6 +75,7 @@ import Thesis.Probability.Distros.OccupancyCovariance
 import Thesis.Probability.Distros.HypergeometricCovariance
 import Thesis.Probability.Distros.OccupancyDegenerate
 import Thesis.Probability.Distros.OccupancyCovarianceEntries
+import Thesis.Probability.Distros.OccupancyNullspace
 import Thesis.Probability.Distros.RationalConcentration
 import Thesis.Probability.Distros.RationalMarkov
 import Thesis.Probability.Distros.RationalChebyshev

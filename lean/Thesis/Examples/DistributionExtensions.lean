@@ -1181,10 +1181,10 @@ def gridExampleProbability (value : Nat) : QProb :=
   if value = 0 then ⟨1, 3, by decide⟩ else if value = 2 then ⟨2, 3, by decide⟩ else QProb.zero
 
 example : QProb.Equiv ((probabilityGrid 2 gridExampleProbability (by decide +kernel)).pmf 2) ⟨2, 3, by decide⟩ :=
-  probabilityGrid_pmf _ _ _ _ (by decide)
+  probabilityGrid_pmf 2 gridExampleProbability (by decide +kernel) 2 (by decide)
 example : (1, 0) ∈ (probabilityGrid 2 gridExampleProbability (by decide +kernel)).record.atoms := by decide +kernel
 example : ∃ weight, (1, weight) ∈ (probabilityGrid 2 gridExampleProbability (by decide +kernel)).record.atoms :=
-  probabilityGrid_retains _ _ _ _ (by decide)
+  probabilityGrid_retains 2 gridExampleProbability (by decide +kernel) 1 (by decide)
 
 end Thesis.Examples.DistributionExtensions
 
@@ -1204,12 +1204,12 @@ theorem suppliedFactorialTable_valid : FactorialMomentTableValid suppliedFactori
 
 example (order : Nat) (within : order ≤ 2) :
     QProb.Equiv (factorialMoment (realizedFactorialDistro suppliedFactorialTable 2 suppliedFactorialTable_valid) order)
-      (suppliedFactorialTable order) := realizedFactorialDistro_moments _ _ _ _ within
+      (suppliedFactorialTable order) := realizedFactorialDistro_moments suppliedFactorialTable 2 suppliedFactorialTable_valid order within
 
 example : SignedRatio.Equiv
     ((realizedFactorialDistro suppliedFactorialTable 2 suppliedFactorialTable_valid).distro.pmf 0).toSignedRatio
     ⟨1, 2, by decide⟩ :=
-  SignedRatio.equiv_trans (realizedFactorialDistro_pmf _ _ _ 0 (by decide)) (by decide +kernel)
+  SignedRatio.equiv_trans (realizedFactorialDistro_pmf suppliedFactorialTable 2 suppliedFactorialTable_valid 0 (by decide)) (by decide +kernel)
 
 example : (1, 0) ∈ (realizedFactorialDistro suppliedFactorialTable 2 suppliedFactorialTable_valid).distro.record.atoms := by decide +kernel
 
@@ -1217,7 +1217,7 @@ example : (1, 0) ∈ (realizedFactorialDistro suppliedFactorialTable 2 suppliedF
 def suppliedTableOther : Distro Nat := ofWeightedAtoms [(0, 1), (2, 1), (99, 0)] (by decide)
 
 example : suppliedTableOther.SameLaw (realizedFactorialDistro suppliedFactorialTable 2 suppliedFactorialTable_valid).distro := by
-  apply realizedFactorialDistro_unique _ _ _ _ (by decide +kernel)
+  apply realizedFactorialDistro_unique suppliedFactorialTable 2 suppliedFactorialTable_valid suppliedTableOther (by decide +kernel)
   intro order within
   have alternatives : order = 0 ∨ order = 1 ∨ order = 2 := by omega
   rcases alternatives with rfl | rfl | rfl <;> decide +kernel

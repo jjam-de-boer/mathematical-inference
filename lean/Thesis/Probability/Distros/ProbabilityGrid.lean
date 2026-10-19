@@ -77,7 +77,7 @@ theorem probabilityGrid_pmf (bound : Nat) (probabilities : Nat → QProb)
   rw [rationalUrnWeights_sum, same]
   exact representation
 
-private theorem finWeighted_cell_mem (n : Nat) (weights : Fin n → Nat) (index : Fin n) :
+theorem finWeighted_cell_mem (n : Nat) (weights : Fin n → Nat) (index : Fin n) :
     (index, weights index) ∈ finWeighted n weights := by
   induction n with
   | zero => exact False.elim (Nat.not_lt_zero _ index.isLt)
