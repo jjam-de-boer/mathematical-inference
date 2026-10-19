@@ -1086,3 +1086,27 @@ example : partitionMomentFixture.AlmostSurely (fun x => SignedRatio.Equiv
     (by decide +kernel) (fun _ => SignedRatio.one)).mp (by decide +kernel)
 
 end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+example : SignedRatio.Equiv ((multivariateHypergeometricDistro 2 [1, 0, 2] (by decide)).rationalCovariance
+    (countResponse 0) (countResponse 2)) ⟨-2, 9, by decide⟩ :=
+  SignedRatio.equiv_trans
+    (multivariateHypergeometric_rationalCovariance 2 [1, 0, 2] (by decide) (by decide) 0 2 (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+example : SignedRatio.Equiv ((multivariateHypergeometricDistro 0 [1, 0, 2] (by decide)).rationalCovariance
+    (countResponse 0) (countResponse 2)) SignedRatio.zero :=
+  SignedRatio.equiv_trans
+    (multivariateHypergeometric_rationalCovariance 0 [1, 0, 2] (by decide) (by decide) 0 2 (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+example : SignedRatio.Equiv ((multivariateHypergeometricDistro 3 [1, 0, 2] (by decide)).rationalCovariance
+    (countResponse 0) (countResponse 2)) SignedRatio.zero :=
+  SignedRatio.equiv_trans
+    (multivariateHypergeometric_rationalCovariance 3 [1, 0, 2] (by decide) (by decide) 0 2 (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+end Thesis.Examples.DistributionExtensions
