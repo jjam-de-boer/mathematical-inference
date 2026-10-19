@@ -53,13 +53,13 @@ def check {G : ObservedGraph S} (model : FiniteHiddenDAGSCM S P) (reference : S.
     | .divideCongr numerator denominator => check model reference numerator && check model reference denominator
     | .eqCongr _ _ inner => check model reference inner
 
-private def endpointsOfCheck {G : ObservedGraph S} (model : FiniteHiddenDAGSCM S P)
+private noncomputable def endpointsOfCheck {G : ObservedGraph S} (model : FiniteHiddenDAGSCM S P)
     (reference : S.Assignment) {left right : ProbabilityTerm S}
     (derivation : DoCalculusDerivation G left right) (accepted : check model reference derivation = true) :
-    model.TermSupportedAt left reference × model.TermSupportedAt right reference :=
-  let endpoints := (Bool.and_eq_true_iff.mp accepted).1
-  ⟨ProbabilityResult.supportedOfIsSome _ (Bool.and_eq_true_iff.mp endpoints).1,
-    ProbabilityResult.supportedOfIsSome _ (Bool.and_eq_true_iff.mp endpoints).2⟩
+    model.TermSupportedAt left reference × model.TermSupportedAt right reference := by
+  cases derivation <;>
+    exact ⟨ProbabilityResult.supportedOfIsSome _ (Bool.and_eq_true_iff.mp (Bool.and_eq_true_iff.mp accepted).1).1,
+      ProbabilityResult.supportedOfIsSome _ (Bool.and_eq_true_iff.mp (Bool.and_eq_true_iff.mp accepted).1).2⟩
 
 /-- Rebuild all witnesses, including the actual values at each branch. No
 value is extracted from a propositional existential or copied from a profile. -/
@@ -86,7 +86,7 @@ noncomputable def ofCheck {G : ObservedGraph S} (model : FiniteHiddenDAGSCM S P)
   case marginalizeCongr nodes inner ih =>
     intro variant member
     exact ih variant ((List.all_eq_true.mp (Bool.and_eq_true_iff.mp accepted).2) variant member)
-  case evaluateAtCongr fixed inner ih => exact ih fixed (Bool.and_eq_true_iff.mp accepted).2
+  case evaluateAtCongr fixed left right inner ih => exact ih fixed (Bool.and_eq_true_iff.mp accepted).2
   case addCongr first second firstIH secondIH =>
     have both := Bool.and_eq_true_iff.mp (Bool.and_eq_true_iff.mp accepted).2
     exact ⟨firstIH reference both.1, secondIH reference both.2⟩
@@ -127,7 +127,7 @@ theorem check_of_supported {G : ObservedGraph S} (model : FiniteHiddenDAGSCM S P
   case multiplyAssoc => rfl
   case marginalizeCongr nodes inner ih =>
     exact List.all_eq_true.mpr (fun variant member => ih variant (supported.2.2 variant member))
-  case evaluateAtCongr fixed inner ih => exact ih fixed supported.2.2
+  case evaluateAtCongr fixed left right inner ih => exact ih fixed supported.2.2
   case addCongr first second firstIH secondIH =>
     exact Bool.and_eq_true_iff.mpr ⟨firstIH reference supported.2.2.1, secondIH reference supported.2.2.2⟩
   case multiplyCongr first second firstIH secondIH =>
