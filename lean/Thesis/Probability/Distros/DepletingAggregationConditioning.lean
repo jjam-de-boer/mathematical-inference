@@ -1,4 +1,5 @@
 import Thesis.Probability.Distros.DepletingAggregation
+import Thesis.Probability.FiniteRecordSupport
 
 namespace Thesis.Probability.Distros
 

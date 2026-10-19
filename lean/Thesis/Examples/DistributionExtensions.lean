@@ -993,7 +993,7 @@ end Thesis.Examples.DistributionExtensions
 namespace Thesis.Examples.DistributionExtensions
 open Probability Probability.Distros
 
-/-- A zero-stock source and two empty destination groups remain explicit. -/
+/-- A zero-stock source and two zero-stock destination groups remain explicit. -/
 example : ((multicolourDepletingDistro 2 [1, 0, 2, 1] (by decide)).map
     (List.map (fun colour => ([0, 1, 0, 2] : List Nat).getD colour 0))).SameLaw
     (multicolourDepletingDistro 2 [3, 0, 1, 0] (by decide)) :=
