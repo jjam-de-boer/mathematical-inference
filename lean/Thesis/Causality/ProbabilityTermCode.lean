@@ -67,7 +67,7 @@ namespace ProbabilityTerm
 including inside a currently zero-weighted or undefined branch. -/
 def actionFreeCheck : ProbabilityTerm S → Bool
   | .zero => true
-  | .kernel kernel => NodeSet.isEmpty kernel.action
+  | .kernel current => NodeSet.isEmpty current.action
   | .marginalize _ inner => inner.actionFreeCheck
   | .evaluateAt _ inner => inner.actionFreeCheck
   | .add left right | .multiply left right | .weightedMultiply left right | .divide left right =>
@@ -75,7 +75,7 @@ def actionFreeCheck : ProbabilityTerm S → Bool
 
 theorem actionFreeCheck_exact (term : ProbabilityTerm S) : term.actionFreeCheck = true ↔ term.ActionFree := by
   induction term <;>
-    simp only [actionFreeCheck, ActionFree, Bool.and_eq_true_iff, NodeSet.isEmpty_eq_true_iff, *]
+    simp [actionFreeCheck, ActionFree, NodeSet.isEmpty_eq_true_iff, *]
 
 end ProbabilityTerm
 end Thesis.Causality
