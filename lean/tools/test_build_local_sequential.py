@@ -49,6 +49,13 @@ class PlanningTests(unittest.TestCase):
         self.assertEqual(resource_config, tomllib.loads(original))
         self.assertEqual((root / "lakefile.toml").read_text(), original)
 
+    def test_intermediate_freshness_includes_prerequisites_not_unrelated_work(self):
+        graph = {"Thesis.Core": [], "Thesis.Left": ["Thesis.Core"],
+                 "Thesis.Right": ["Thesis.Core"], "Thesis": ["Thesis.Left", "Thesis.Right"]}
+        self.assertEqual(build.prerequisite_scope(graph, "Thesis.Left"),
+                         {"Thesis.Core", "Thesis.Left"})
+        self.assertEqual(build.prerequisite_scope(graph, "Thesis"), set(graph))
+
     def test_process_monitor_parses_only_process_metadata(self):
         with patch.object(build.subprocess, "run", return_value=subprocess.CompletedProcess(
                 [], 0, "100 10 100 2048 /pinned/bin/lake\n101 100 100 4096 /pinned/bin/lean\n", "")):

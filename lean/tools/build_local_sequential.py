@@ -176,6 +176,23 @@ def resource_configuration(source, limits):
     return source.replace("[[lean_lib]]", f"weakLeanArgs = {args}\n\n[[lean_lib]]", 1)
 
 
+def prerequisite_scope(graph, module):
+    """An unrelated editor change need not invalidate an earlier target.
+
+    This is only the intermediate check's scope. Final full-build gates still
+    fingerprint the complete planned source tree. A changed target header is
+    itself a fingerprint mismatch, so an unplanned new import cannot silently
+    authorize Lake to rebuild extra prerequisites.
+    """
+    seen, pending = set(), [module]
+    while pending:
+        current = pending.pop()
+        if current not in seen:
+            seen.add(current)
+            pending.extend(graph[current])
+    return seen
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
@@ -229,8 +246,11 @@ def main():
             prefix = [str(lake), "--file", str(configuration), "--rehash", "--no-cache"]
             measurements, built, skipped = [], 0, 0
 
-            def current():
-                if any(digest(path) != value for path, value in fingerprints.items()):
+            def current(module=None):
+                scope = (tracked if module is None else
+                         [source_path(root, dependency) for dependency in prerequisite_scope(graph, module)] +
+                         [root / name for name in ("lakefile.toml", "lean-toolchain", "lake-manifest.json")])
+                if any(digest(path) != fingerprints[path] for path in scope):
                     raise BuildStopped("source/configuration changed; replan before continuing")
 
             def invoke(command, label, allowed=(0,)):
@@ -248,7 +268,7 @@ def main():
                 if phase == "native" and not args.target:
                     modules, _ = ordered_modules(root, ["Main"])
                 for index, module in enumerate(modules, 1):
-                    current()
+                    current(module)
                     facet = "olean" if phase == "lean" else "c.o"
                     target = "+" + module + ":" + facet
                     status = invoke(prefix + ["--no-build", "build", target], module + "-fresh-" + phase, (0, 3))
@@ -264,9 +284,10 @@ def main():
                                      if phase == "lean" else ["+" + module + ":olean"])
                     if prerequisites:
                         invoke(prefix + ["--no-build", "build", *prerequisites], module + "-deps-" + phase)
+                    current(module)
                     print(f"Rebuilding {index}/{len(modules)} {target}", flush=True)
                     result = invoke(prefix + ["build", target], module + "-build-" + phase)
-                    current()
+                    current(module)
                     built += 1
                     print(f"Passed: {result['seconds']:.2f}s; group RSS={result['group_rss_mib']:.1f} MiB", flush=True)
                     if args.max_builds is not None and built >= args.max_builds:

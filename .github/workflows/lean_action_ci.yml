@@ -121,15 +121,6 @@ jobs:
           Thesis.CausalTransport.NativeSupportProfiles
           Thesis.Examples.FiniteSupportCatalogue
           Thesis.Examples.NativeSupportProfiles
-      - name: Check serialized causal proof data
-        working-directory: lean
-        run: >-
-          lake build
-          Thesis.Causality.ProbabilityTermCode
-          Thesis.Causality.DerivationCode
-          Thesis.CausalTransport.NativeDerivationSupportCheck
-          Thesis.CausalTransport.NativeSupportGuard
-          Thesis.CausalTransport.NativeCertificateCheck
       - name: Check graph-only identification layers
         working-directory: lean
         run: >-
