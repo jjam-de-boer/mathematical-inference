@@ -65,6 +65,34 @@ not a claim that every target fits the pilot profile:
 python3 -B lean/tools/build_local_sequential.py --phase lean --profile ceiling --check
 ```
 
+The large-proof stage then passed `DSeparationCorrectness` in 6.12 s with
+977.4 MiB sampled aggregate RSS. The unsplit `Soundness` stopped around line
+9740 at Lean's 1024 MiB threshold (6.16 s; 1090.8 MiB sampled group RSS); this
+was a memory result, not a timeout or a mathematical counterexample.
+
+Soundness is now extracted into `SoundnessFoundations`, `SoundnessRegions`,
+`SoundnessRules` and the original public `Soundness` assembler. Every original
+declaration's statement and proof script is retained byte-for-byte. Three
+independent point-mass/product lemmas move alongside their private enumeration
+helpers; all private helpers remain contained in their owning file, rather
+than being exposed or duplicated across module boundaries. Existing public
+names/imports are retained. The original unsplit source at `851b231` has
+SHA-256 `93c7040fd9662e837483b85e24cb663e400383008298734d61618f8c50ff021f`;
+the extraction's source partition was checked to reassemble it exactly.
+
+All four resulting ordinary Lake targets passed sequentially at the ceiling:
+
+| Soundness layer | Wall time | Sampled aggregate RSS |
+| --- | --- | --- |
+| Foundations | 2.79 s | 856.9 MiB |
+| Regions | 2.64 s | 828.7 MiB |
+| Rules | 4.44 s | 944.4 MiB |
+| Public assembly | 0.70 s | 690.1 MiB |
+
+The main import still certifies the same published soundness result. This
+successful local target is a measured repair to the observed compilation
+boundary, not yet evidence that the entire project or audit fits locally.
+
 No larger memory or timeout setting is an automatic retry. Unrelated editor
 or manual compiler processes are not terminated. Machine-wide headroom still
 matters, especially on this machine while other applications retain swap.
