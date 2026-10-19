@@ -35,6 +35,38 @@ class IdentificationLayerTests(unittest.TestCase):
                 self.assertNotIn("Thesis.CausalTransport.Completeness", dependencies)
                 self.assertFalse(any(name.startswith("Thesis.Causality.Legacy.") for name in dependencies))
 
+    def test_soundness_extraction_keeps_a_one_way_import_chain(self):
+        prefix = "Thesis.CausalTransport."
+        for client, dependency in (("Soundness", "SoundnessRules"),
+                                   ("SoundnessRules", "SoundnessRegions"),
+                                   ("SoundnessRegions", "SoundnessFoundations")):
+            self.assertEqual(self.graph[prefix + client], [prefix + dependency])
+            self.assertNotIn(prefix + client, reachable(self.graph, prefix + dependency))
+
+    def test_soundness_private_helpers_do_not_cross_extracted_layers(self):
+        root = Path(__file__).resolve().parents[1] / "Thesis/CausalTransport"
+        sources = {name: (root / (name + ".lean")).read_text() for name in
+                   ("Soundness", "SoundnessFoundations", "SoundnessRegions", "SoundnessRules")}
+        groups = {
+            "SoundnessFoundations": ("factorizationAssignmentDecidableEq", "factorizationAssignments",
+                "assignmentEvents", "rectangular_assignmentEvents", "unionList_event_true_of_mem",
+                "exists_event_of_unionList_true"),
+            "SoundnessRules": ("bool_and_four_pairs", "bool_and_mid_swap", "bool_and_rot_left"),
+        }
+        for owner, names in groups.items():
+            for name in names:
+                self.assertIn(name, sources[owner])
+                for module, source in sources.items():
+                    if module != owner:
+                        self.assertNotIn(name, source, (name, owner, module))
+
+    def test_soundness_layers_remain_in_full_axiom_audit_scope(self):
+        root = Path(__file__).resolve().parents[1]
+        graph = self.graph | {"Thesis": initial_project_imports((root / "Thesis.lean").read_text())}
+        covered = reachable(graph, "Thesis.AxiomAudit")
+        for name in ("Soundness", "SoundnessFoundations", "SoundnessRegions", "SoundnessRules"):
+            self.assertIn("Thesis.CausalTransport." + name, covered)
+
 
 if __name__ == "__main__":
     unittest.main()
