@@ -58,7 +58,7 @@ theorem Distro.conditionalExpectation_tower_almostSurely (μ : Distro Ω)
   have mask (u : Ω → SignedRatio) : SignedRatio.Equiv
       (FiniteProbRecord.rationalAtomSum (μ.record.atoms.filter (fun atom => decide (coarse atom.1 = coarse x))) u)
       (FiniteProbRecord.rationalAtomSum μ.record.atoms (fun y => SignedRatio.mul (h (fine y)) (u y))) := by
-    refine SignedRatio.equiv_trans (rationalAtomSum_filter μ.record.atoms _ u) ?_
+    refine SignedRatio.equiv_trans (rationalAtomSum_filter μ.record.atoms (fun y => decide (coarse y = coarse x)) u) ?_
     apply rationalAtomSum_congr_positive
     intro atom member weight
     rw [agrees atom member weight]
