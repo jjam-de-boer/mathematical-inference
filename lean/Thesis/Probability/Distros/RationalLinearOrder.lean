@@ -73,7 +73,7 @@ theorem scaleInt_neg (factor : Int) (value : SignedRatio) :
     Equiv (scaleInt factor (neg value)) (neg (scaleInt factor value)) := mul_neg _ _
 
 theorem neg_scaleInt (factor : Int) (value : SignedRatio) :
-    Equiv (scaleInt (-factor) value) (neg (scaleInt factor value)) := neg_mul _ _
+    Equiv (scaleInt (-factor) value) (neg (scaleInt factor value)) := neg_mul (⟨factor, 1, Nat.zero_lt_one⟩ : SignedRatio) value
 
 theorem scaleInt_add_factor (first second : Int) (value : SignedRatio) :
     Equiv (scaleInt (first + second) value) (add (scaleInt first value) (scaleInt second value)) := by
@@ -103,6 +103,16 @@ theorem divideNat_le_divideNat_iff (a b : SignedRatio) (m n : Nat) (hm : 0 < m) 
   have first : a.num * ((b.den : Int) * n) = (n : Int) * a.num * b.den := by ac_rfl
   have second : b.num * ((a.den : Int) * m) = (m : Int) * b.num * a.den := by ac_rfl
   rw [first, second]
+
+theorem scaleInt_sub (factor : Int) (a b : SignedRatio) :
+    Equiv (scaleInt factor (sub a b)) (sub (scaleInt factor a) (scaleInt factor b)) := mul_sub _ _ _
+
+theorem le_scaleInt_iff_divide_le (factor : Nat) (positive : 0 < factor) (bound value : SignedRatio) :
+    LE bound (scaleInt (factor : Int) value) ↔ LE (divideNat bound factor positive) value := by
+  rw [le_iff_cross, le_iff_cross]
+  simp only [scaleInt, mul, divideNat, Nat.one_mul, Int.natCast_mul]
+  have same : (factor : Int) * value.num * (bound.den : Int) = value.num * ((bound.den : Int) * factor) := by ac_rfl
+  rw [same]
 
 def selectMin (initial : SignedRatio) : List SignedRatio → SignedRatio
   | [] => initial
