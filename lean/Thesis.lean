@@ -70,6 +70,7 @@ import Thesis.Examples.LatentRootGrouping
 import Thesis.Examples.ProjectionTemplateRepresentation
 import Thesis.Examples.BoundedNativeSearch
 import Thesis.Examples.BoundedNativeClassification
+import Thesis.Examples.BoundedNativeConditionals
 import Thesis.Examples.RationalMonomial
 import Thesis.Examples.RationalPolynomialIdentity
 import Thesis.Examples.PolynomialBoundCertificate

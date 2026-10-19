@@ -543,6 +543,15 @@ denominators. `boundedSearchRepresentative_mem` proves catalogue membership
 from bounds on the original supplied enumeration lengths and denominators,
 without asking for an external coverage or simulation theorem. Repeated
 enumeration entries count honestly toward the stated input length bounds.
+`boundedSearchRepresentative_eventPositive_iff` and
+`boundedSearchRepresentative_num_zero_iff` retain
+positive and null causal evidence in both directions.
+`boundedSearchRepresentative_conditionOn_probVal` preserves the actual
+supported conditioned record, with positivity explicitly supplied from the
+original interventional law. A three-valued regression retains a factual null
+at count two and its supported conditional after that null value is forced.
+This common representation bridge does not choose a conditional-search policy
+for compatible model families containing both positive and null evidence.
 
 `NativeTemplateInstance.observationCheck_exact` proves that checking all
 observational singleton probabilities is equivalent to matching the supplied

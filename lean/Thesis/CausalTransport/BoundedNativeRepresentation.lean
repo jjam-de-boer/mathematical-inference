@@ -71,6 +71,40 @@ theorem boundedSearchRepresentative_observationalValue (original : FiniteHiddenD
     QProb.Equiv (original.boundedSearchRepresentative.model.observationalValue event) (original.observationalValue event) :=
   original.boundedSearchRepresentative_interventionalValue (HardIntervention.empty S) event
 
+/-- Evidence support belongs to the actual interventional law. The bounded
+code representation neither removes positive evidence nor fills a null cell. -/
+theorem boundedSearchRepresentative_eventPositive_iff (original : FiniteHiddenDAGSCM S P)
+    (intervention : HardIntervention S) (evidence : Event S.Assignment) :
+    (original.boundedSearchRepresentative.model.interventionalDist intervention).EventPositive evidence ↔
+      (original.interventionalDist intervention).EventPositive evidence :=
+  QProb.equiv_num_pos_iff (original.boundedSearchRepresentative_interventionalValue intervention evidence)
+
+theorem boundedSearchRepresentative_num_zero_iff (original : FiniteHiddenDAGSCM S P)
+    (intervention : HardIntervention S) (evidence : Event S.Assignment) :
+    (original.boundedSearchRepresentative.model.interventionalValue intervention evidence).num = 0 ↔
+      (original.interventionalValue intervention evidence).num = 0 :=
+  QProb.equiv_num_zero_iff (original.boundedSearchRepresentative_interventionalValue intervention evidence)
+
+/-- Supported conditioned records preserve every event. Positivity is an
+explicit original-law input, transported by the preceding theorem; this
+statement does not define a conditional probability at null evidence or
+choose how a later search should classify mixed-support model families. -/
+theorem boundedSearchRepresentative_conditionOn_probVal (original : FiniteHiddenDAGSCM S P)
+    (intervention : HardIntervention S) (evidence event : Event S.Assignment)
+    (supported : (original.interventionalDist intervention).EventPositive evidence) :
+    QProb.Equiv
+      (((original.boundedSearchRepresentative.model.interventionalDist intervention).conditionOn evidence
+        ((original.boundedSearchRepresentative_eventPositive_iff intervention evidence).mpr supported)).probVal event)
+      (((original.interventionalDist intervention).conditionOn evidence supported).probVal event) := by
+  let supportedNew := (original.boundedSearchRepresentative_eventPositive_iff intervention evidence).mpr supported
+  exact QProb.equiv_trans
+    ((original.boundedSearchRepresentative.model.interventionalDist intervention).conditionOn_probVal evidence event supportedNew)
+    (QProb.equiv_trans
+      (QProb.div_congr
+        (original.boundedSearchRepresentative_interventionalValue intervention (fun values => evidence values && event values))
+        (original.boundedSearchRepresentative_interventionalValue intervention evidence) supportedNew supported)
+      (QProb.equiv_symm ((original.interventionalDist intervention).conditionOn_probVal evidence event supported)))
+
 theorem boundedSearchRepresentative_den (original : FiniteHiddenDAGSCM S P) (node : Fin P.hiddenDAG.count) :
     (original.boundedSearchRepresentative.factors node).den = (original.factor node).den :=
   original.enumeratedInstance.canonical_factor_den node

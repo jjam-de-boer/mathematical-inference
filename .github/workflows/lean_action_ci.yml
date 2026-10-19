@@ -102,6 +102,7 @@ jobs:
           Thesis.Examples.BoundedNativeSearch
           Thesis.CausalTransport.BoundedNativeClassification
           Thesis.Examples.BoundedNativeClassification
+          Thesis.Examples.BoundedNativeConditionals
       - name: Check graph-only identification layers
         working-directory: lean
         run: >-
