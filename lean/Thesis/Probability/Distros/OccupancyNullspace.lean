@@ -1,5 +1,6 @@
 import Thesis.Probability.Distros.OccupancyCovarianceEntries
 import Thesis.Probability.Distros.ProbabilityGrid
+import Thesis.Probability.Distros.MultinomialCovariance
 
 namespace Thesis.Probability.Distros
 open Combinatorics
@@ -80,9 +81,12 @@ theorem reinforcedCount_one_covarianceForm_zero_iff (weights : List Nat) (positi
   have categoricalVariance := categorical.rationalCovariance_congr_positive
     (fun i => response (colourCounts weights.length [i.val])) (fun i => coefficients i.val)
     (fun i => response (colourCounts weights.length [i.val])) (fun i => coefficients i.val) equivalent equivalent
-  have form := SignedRatio.equiv_trans (SignedRatio.equiv_symm (μ.rationalVariance_linearCombination (List.range weights.length) countResponse coefficients))
-    (SignedRatio.equiv_trans moved categoricalVariance)
-  rw [SignedRatio.equiv_num_zero_iff form, categorical.rationalVariance_zero_iff_constant]
+  have form : SignedRatio.Equiv (μ.occupancyCovarianceForm weights.length coefficients)
+      (categorical.rationalVariance (fun i => coefficients i.val)) :=
+    SignedRatio.equiv_trans (SignedRatio.equiv_symm (μ.rationalVariance_linearCombination (List.range weights.length) countResponse coefficients))
+      (SignedRatio.equiv_trans moved categoricalVariance)
+  refine ((SignedRatio.equiv_num_zero_iff form).trans
+    (categorical.rationalVariance_zero_iff_constant (fun i => coefficients i.val))).trans ?_
   constructor
   · rintro ⟨c, constant⟩
     refine ⟨c, ?_⟩
@@ -139,7 +143,10 @@ theorem multinomial_covarianceForm_zero_iff (n : Nat) (weights : List Nat) (posi
     (coefficients : Nat → SignedRatio) :
     ((multinomialDistro n weights positive).occupancyCovarianceForm weights.length coefficients).num = 0 ↔
       n = 0 ∨ CoefficientsConstantOnPositive weights coefficients := by
-  simpa only [reinforcedCount_zero] using reinforcedCount_covarianceForm_zero_iff n 0 weights positive coefficients
+  have same := (reinforcedCount_zero n weights positive).rationalCovarianceForm
+    (List.range weights.length) countResponse coefficients
+  exact (SignedRatio.equiv_num_zero_iff same).symm.trans
+    (reinforcedCount_covarianceForm_zero_iff n 0 weights positive coefficients)
 
 /-- The full criterion also covers empty and one-ball populations. A proper
 nonempty sample has the same null coefficient geometry as one categorical draw. -/
