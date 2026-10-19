@@ -64,6 +64,6 @@ theorem solve_success_iff (variables : Nat) (rows : List (Inequality variables))
   | infeasible certificate =>
       constructor
       · intro impossible; exact False.elim impossible
-      · intro exists; exact False.elim (certificate.not_exists exists)
+      · intro realizable; exact False.elim (certificate.not_exists realizable)
 
 end Thesis.Probability.Distros.RationalLinear
