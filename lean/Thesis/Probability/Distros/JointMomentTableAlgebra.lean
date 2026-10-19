@@ -97,7 +97,7 @@ theorem factorialRectangle_select (bounds target : List Nat) (f : List Nat → S
     (within : CoordinateBounds target bounds) :
     SignedRatio.Equiv (SignedRatio.listSum ((factorialRectangle bounds).map (fun orders =>
       if orders = target then f target else SignedRatio.zero))) (f target) := by
-  induction bounds generalizing target with
+  induction bounds generalizing target f with
   | nil => cases target with
       | nil => exact SignedRatio.add_zero _
       | cons value target => exact False.elim within

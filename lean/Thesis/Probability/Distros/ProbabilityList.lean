@@ -37,6 +37,7 @@ theorem probabilityList_supported (cells : List A) (default : A) (probabilities 
   have bounded := probabilityGrid_bounded (cells.length - 1) (fun i => probabilities (cells.getD i default))
     (probabilityList_normalized cells default probabilities nonempty normalized) source listed weight
   have within : source.1 < cells.length := by omega
+  change cells.getD source.1 default ∈ cells
   rw [← List.getElem_eq_getD (h := within) default]
   exact List.getElem_mem within
 
@@ -56,6 +57,7 @@ theorem probabilityList_expectation (cells : List A) (default : A) (probabilitie
     (f : A → SignedRatio) :
     SignedRatio.Equiv ((probabilityList cells default probabilities nonempty normalized).rationalExpectation f)
       (SignedRatio.listSum (cells.map (fun cell => SignedRatio.mul (probabilities cell).toSignedRatio (f cell)))) := by
+  unfold probabilityList
   rw [Distro.rationalExpectation_map]
   refine SignedRatio.equiv_trans (Distro.rationalExpectation_bounded_pmf _ (cells.length - 1)
     (probabilityGrid_bounded (cells.length - 1) (fun i => probabilities (cells.getD i default))
