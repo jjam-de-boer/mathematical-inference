@@ -44,6 +44,7 @@ import Thesis.Examples.IndependentBooleanObstruction
 import Thesis.Examples.FiniteSupportCatalogue
 import Thesis.Examples.NativeSupportProfiles
 import Thesis.Examples.NativeCertificateCheck
+import Thesis.Examples.NativeGuardCompilation
 import Thesis.Examples.IntegerLinearAlgebra
 import Thesis.Examples.IntegerNullspace
 import Thesis.Examples.FiniteRatioMinimum

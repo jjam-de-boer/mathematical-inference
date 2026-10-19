@@ -14,11 +14,11 @@ an external method; it does not extend the probability framework.
 
 | Point | Current result | Next boundary |
 | --- | --- | --- |
-| 1. Safe local builds | Measured import/proof costs and cache-aware checks under explicit resource caps; see `LOCAL_CHECKS.md`. | A safe full local build is not established; heavy checks remain remote. |
-| 2. Shared graph infrastructure | Connectivity, reachability and rank infrastructure extracted without changing public theorem names; current-engine dependency guards pass. | Further splitting is optional and is not claimed to cure compiler memory use. |
+| 1. Safe local builds | Measured import/proof costs, cache-aware checks and a resumable sequential builder under explicit resource caps; extracted soundness/completeness layers pass capped ordinary local targets. See `LOCAL_CHECKS.md`. | A complete local project/native/audit run is not established; full verification remains remote. |
+| 2. Shared graph infrastructure | Connectivity, reachability and rank infrastructure extracted without changing public theorem names; current-engine dependency guards pass. Resource-driven soundness/completeness splits retain the original declaration text. | Further splitting should address a measured bottleneck; it is not itself a mathematical repair or a guarantee of full local feasibility. |
 | 3. Multivalued native example | Three declared observed values, an actual rational distribution, null intervention targets and supported conditionals checked through the native model. | The standalone-template regression now exercises the same boundary as well. |
-| 4. Support-pattern applicability | Exact undefined/zero/positive analysis and exhaustive comparison within supplied finite formula catalogues. | This does not enumerate every possible certified formula. |
-| 5. Universal alternative-formula coverage | Finite native causal support-profile coverage, exact recursive support checking and a serialized causal proof/observable-guard certificate checker constructed. | Review before implementing proof-code enumeration or formula selection; no universal formula coverage or impossibility theorem yet. |
+| 4. Support-pattern applicability | Exact undefined/zero/positive analysis and exhaustive comparison within supplied finite formula catalogues; complete native causal support profiles also preserve recursive derivation support. | This does not enumerate every possible certified formula; observed support alone need not determine causal support. |
+| 5. Universal alternative-formula coverage | Finite native causal support-profile coverage, exact recursive support checking, a serialized certificate checker and maximal proof-admissible observable guard compilation constructed. | Bounded proof-search completeness and formula selection remain; no universal stopping, formula-coverage or impossibility theorem yet. |
 | 6. Finite structural representation | Constructed standalone-template coverage both for a fixed full hidden DAG and across all finite hidden DAGs with a fixed observed projection. | Rational weight assignments remain infinite; compatibility, sharpness and complete search are separate obligations. |
 | 7. Fixed-observed-law procedures | Restricted results retained; exact compatibility and unconditional/conditional-target comparison for a full hidden DAG with declared finite alphabet and denominator bounds. Conditional support and positive-evidence values are reported separately. | Unrestricted rational feasibility remains separate; increasing bounds has no proved stopping rule. |
 
@@ -306,6 +306,43 @@ Review checkpoint: the checker certifies supplied codes in this declared
 grammar. It does not enumerate derivations, produce a formula selector, prove
 bounded proof-search completeness, or cover arbitrary Lean semantic proofs.
 
+### Generated proof-admissible guards for goal 5
+
+`NativeGuardCompilation` generates a guard for one supplied checked proof.
+Its rows use only observed patterns actually represented in the supplied
+causal-profile catalogue, paired with every declared reference index. Thus
+factually null intervention values remain included, without enumerating a
+separate cube of impossible observed patterns. Duplicate rows are permitted;
+there is no minimal-size or efficient general execution claim.
+
+`NativeSupportGuard.compile_checked` proves the generated table passes the
+existing universal matching-profile checker. `compile_maximalAt` proves that
+any other passing table for the **same demand** has no greater acceptance on
+represented observed patterns. `compile_soundAt` applies a passing generated
+guard to an original model using support invariance and actual coverage.
+The complete fixed-DAG and projection-wide profile catalogues supply that
+coverage throughout their respective native model classes.
+
+`CheckedNativeFormula.withCompiledGuard` changes only the guard, retaining the
+source, formula and actual proof. `withCompiledGuard_available` proves that
+no previously available application is lost on a covered model.
+`NativeProofCode.compileGuardOn`, `compileGuardFixed` and
+`compileGuardProjected` also accept raw source/proof codes: the existing
+source-match, graphical and action-free checks run before guard generation.
+The existing native soundness application theorems apply unchanged.
+
+This is **maximal proof-admissible coverage**, not semantic maximality of a
+formula. A strict chain/inverse-chain proof has an unsupported intermediate
+at a null reference where direct reflexivity certifies the same endpoints.
+The regression compares those generated guards, preserves the legitimate
+zero-weighted exception, and checks the guarded probability-one-action leaf.
+It also retains the example with an available printed answer but an undefined
+original conditional source: source support is still a separate application
+premise. Executable regressions use tiny actual-profile lists; whole-class
+adapters are checked symbolically rather than expanding enormous catalogues.
+Proof enumeration, bounded proof-search completeness and formula selection
+are not implemented by this guard construction.
+
 The universal stopping argument remains unresolved. Finitely many support
 cells bound the number of *coverage gains*, not the delay until the next
 gain: even one new cell can first appear after an arbitrarily long initial
@@ -313,8 +350,10 @@ plateau. Neither a plateau nor bounded-search exhaustion certifies universal
 exhaustion. A proof-length bound, finite complete rewrite/derivation basis,
 or another complete coverability decision is still needed. This refutes
 that proposed stopping shortcut; it is not an impossibility proof for a
-universal selector. Review checkpoint: specify the proof/guard grammar before
-building generic search infrastructure.
+universal selector. The proof/guard grammar and its checker are now specified
+and implemented; a subsequent search stage still needs a precise bound and
+an encoding/enumeration completeness theorem before it can claim bounded
+exhaustion of that grammar.
 
 ## Fixed-law results beyond graph-level completeness
 
