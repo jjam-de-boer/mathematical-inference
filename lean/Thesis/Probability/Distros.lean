@@ -32,7 +32,13 @@ import Thesis.Probability.Distros.FactorialMoments
 import Thesis.Probability.Distros.FactorialPGF
 import Thesis.Probability.Distros.BinomialInversion
 import Thesis.Probability.Distros.FactorialInversion
+import Thesis.Probability.Distros.MomentTableAlgebra
+import Thesis.Probability.Distros.ProbabilityGrid
+import Thesis.Probability.Distros.FinitePmfExpectation
+import Thesis.Probability.Distros.FactorialMomentTable
+import Thesis.Probability.Distros.FactorialMomentRealization
 import Thesis.Probability.Distros.MultivariateFactorialInversion
+import Thesis.Probability.Distros.FactorialRectangle
 import Thesis.Probability.Distros.MultivariateFactorialPGF
 import Thesis.Probability.Distros.MultivariateReconstruction
 import Thesis.Probability.Distros.PositiveSupport
@@ -66,6 +72,10 @@ import Thesis.Probability.Distros.RationalClearing
 import Thesis.Probability.Distros.RationalCovarianceAlgebra
 import Thesis.Probability.Distros.FiniteCovariance
 import Thesis.Probability.Distros.OccupancyCovariance
+import Thesis.Probability.Distros.HypergeometricCovariance
+import Thesis.Probability.Distros.OccupancyDegenerate
+import Thesis.Probability.Distros.OccupancyCovarianceEntries
+import Thesis.Probability.Distros.OccupancyNullspace
 import Thesis.Probability.Distros.RationalConcentration
 import Thesis.Probability.Distros.RationalMarkov
 import Thesis.Probability.Distros.RationalChebyshev
@@ -75,6 +85,7 @@ import Thesis.Probability.Distros.ConditionalTower
 import Thesis.Probability.Distros.ConditionalAlgebra
 import Thesis.Probability.Distros.ConditionalProjection
 import Thesis.Probability.Distros.ProjectionEquality
+import Thesis.Probability.Distros.RefinementGain
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.RationalBetaBinomial
@@ -330,4 +341,23 @@ retained rather than silently excluded as nonpositive support.
     original weighted records, even at raw impossible horizons. Its conditioning
     module proves remaining-stock identities, positive grouped evidence and
     commutation of the actual count-conditioned future path laws with merging.
+63. `RefinementGain` identifies the exact reduction in prediction error with
+    the squared distance between the conditional means, and characterizes
+    equality of the errors by almost-sure equality of those means.
+64. `FactorialRectangle` generalizes mixed expansion, explicit inversion and
+    moment reconstruction to coordinate-specific bounds holding only almost
+    surely. Its enumeration retains zero-width axes and the empty rectangle.
+65. `HypergeometricCovariance` extracts the mixed second moment and closed
+    nonpositive off-diagonal covariance, in both signed moment interfaces.
+66. `MomentTableAlgebra` proves reverse Pascal inversion. `ProbabilityGrid`
+    constructs normalized rational tables with every zero-mass cell retained.
+    `FactorialMomentTable` and `FactorialMomentRealization` characterize bounded
+    rational moment tables by nonnegative normalized inverted masses, construct
+    their realizing law, recover every supplied moment, and prove uniqueness in law.
+67. `OccupancyDegenerate` handles zero trials and full-population samples,
+    including empty and one-ball populations. `OccupancyCovarianceEntries`
+    factors the full covariance geometry through one categorical draw.
+    `OccupancyNullspace` gives exact coefficient-based null criteria: on
+    positive colours coefficients agree, while null-category coefficients are
+    unrestricted; zero trials and full-population sampling are explicit exceptions.
 -/
