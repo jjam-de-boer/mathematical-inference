@@ -62,6 +62,58 @@ theorem scaleInt_divide_le_iff (factor : Nat) (positive : 0 < factor) (value bou
   have same : (factor : Int) * value.num * (bound.den : Int) = value.num * ((bound.den : Int) * factor) := by ac_rfl
   rw [same]
 
+theorem scaleInt_zero (factor : Int) : Equiv (scaleInt factor zero) zero := mul_zero _
+theorem zero_scaleInt (value : SignedRatio) : Equiv (scaleInt 0 value) zero := zero_mul _
+theorem one_scaleInt (value : SignedRatio) : Equiv (scaleInt 1 value) value := one_mul _
+
+theorem neg_neg (value : SignedRatio) : Equiv (neg (neg value)) value := by
+  simp only [Equiv, neg, Int.neg_neg]
+
+theorem scaleInt_neg (factor : Int) (value : SignedRatio) :
+    Equiv (scaleInt factor (neg value)) (neg (scaleInt factor value)) := mul_neg _ _
+
+theorem neg_scaleInt (factor : Int) (value : SignedRatio) :
+    Equiv (scaleInt (-factor) value) (neg (scaleInt factor value)) := neg_mul (⟨factor, 1, Nat.zero_lt_one⟩ : SignedRatio) value
+
+theorem scaleInt_add_factor (first second : Int) (value : SignedRatio) :
+    Equiv (scaleInt (first + second) value) (add (scaleInt first value) (scaleInt second value)) := by
+  have entries : Equiv (⟨first + second, 1, Nat.zero_lt_one⟩ : SignedRatio)
+      (add ⟨first, 1, Nat.zero_lt_one⟩ ⟨second, 1, Nat.zero_lt_one⟩) := by
+    simp only [Equiv, add, Nat.mul_one, Int.natCast_one, Int.mul_one]
+  exact equiv_trans (mul_congr entries (equiv_refl _)) (add_mul _ _ _)
+
+theorem add_le_iff_le_sub (a b c : SignedRatio) : LE (add a b) c ↔ LE a (sub c b) := by
+  have difference : Equiv (sub c (add a b)) (sub (sub c b) a) :=
+    equiv_trans (add_congr (equiv_refl _) (neg_add a b))
+      (equiv_trans (add_congr (equiv_refl _) (add_comm (neg a) (neg b)))
+        (equiv_symm (add_assoc c (neg b) (neg a))))
+  exact nonnegative_congr difference
+
+theorem neg_le_neg_iff (a b : SignedRatio) : LE (neg b) (neg a) ↔ LE a b := by
+  rw [le_iff_cross, le_iff_cross]
+  simp only [neg, Int.neg_mul, Int.neg_le_neg_iff]
+
+theorem neg_le_iff_nonnegative_add (a b : SignedRatio) : LE (neg a) b ↔ Nonnegative (add b a) :=
+  nonnegative_congr (add_congr (equiv_refl _) (neg_neg a))
+
+theorem divideNat_le_divideNat_iff (a b : SignedRatio) (m n : Nat) (hm : 0 < m) (hn : 0 < n) :
+    LE (divideNat a m hm) (divideNat b n hn) ↔ LE (scaleInt (n : Int) a) (scaleInt (m : Int) b) := by
+  rw [le_iff_cross, le_iff_cross]
+  simp only [divideNat, scaleInt, mul, Nat.one_mul, Int.natCast_mul]
+  have first : a.num * ((b.den : Int) * n) = (n : Int) * a.num * b.den := by ac_rfl
+  have second : b.num * ((a.den : Int) * m) = (m : Int) * b.num * a.den := by ac_rfl
+  rw [first, second]
+
+theorem scaleInt_sub (factor : Int) (a b : SignedRatio) :
+    Equiv (scaleInt factor (sub a b)) (sub (scaleInt factor a) (scaleInt factor b)) := mul_sub _ _ _
+
+theorem le_scaleInt_iff_divide_le (factor : Nat) (positive : 0 < factor) (bound value : SignedRatio) :
+    LE bound (scaleInt (factor : Int) value) ↔ LE (divideNat bound factor positive) value := by
+  rw [le_iff_cross, le_iff_cross]
+  simp only [scaleInt, mul, divideNat, Nat.one_mul, Int.natCast_mul]
+  have same : (factor : Int) * value.num * (bound.den : Int) = value.num * ((bound.den : Int) * factor) := by ac_rfl
+  rw [same]
+
 def selectMin (initial : SignedRatio) : List SignedRatio → SignedRatio
   | [] => initial
   | value :: values => if LE value initial then selectMin value values else selectMin initial values

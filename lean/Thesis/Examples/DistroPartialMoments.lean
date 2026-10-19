@@ -83,4 +83,34 @@ example : (match checkRationalInterval [⟨2, 4, by decide⟩] [⟨1, 2, by deci
 example : (match checkRationalInterval [] [] with
     | .feasible value _ _ => decide (value.num = 0) | _ => false) = true := by decide +kernel
 
+def linearRow (first second : Int) (bound : SignedRatio) : RationalLinear.Inequality 2 :=
+  ⟨fun i => if i.val = 0 then first else second, bound⟩
+
+/-- x,y are nonnegative, x+y=1 and 1/4≤x≤1/3. Back-substitution
+computes x=1/4 and y=3/4, without a denominator grid being supplied. -/
+def feasibleLinearRows : List (RationalLinear.Inequality 2) :=
+  [linearRow (-1) 0 SignedRatio.zero, linearRow 0 (-1) SignedRatio.zero,
+    linearRow 1 1 SignedRatio.one, linearRow (-1) (-1) ⟨-1, 1, by decide⟩,
+    linearRow 1 0 ⟨1, 3, by decide⟩, linearRow (-1) 0 ⟨-1, 4, by decide⟩]
+
+example : (match RationalLinear.solve 2 feasibleLinearRows with
+    | .feasible values _ => decide ((values 0).num * 4 = (values 0).den ∧
+        (values 1).num * 4 = 3 * ((values 1).den : Int))
+    | .infeasible _ => false) = true := by decide +kernel
+
+/-- Incompatibility is discovered after projecting a genuinely coupled
+system, rather than by inspecting an individually false constant input. -/
+def impossibleLinearRows : List (RationalLinear.Inequality 2) :=
+  [linearRow 1 1 ⟨1, 4, by decide⟩,
+    linearRow (-1) (-1) ⟨-3, 4, by decide⟩]
+
+example : (match RationalLinear.solve 2 impossibleLinearRows with
+    | .infeasible _ => true | .feasible _ _ => false) = true := by decide +kernel
+
+example : (match RationalLinear.solve 0 [] with
+    | .feasible _ _ => true | .infeasible _ => false) = true := by decide +kernel
+
+example : (match RationalLinear.solve 1 [⟨fun _ => -1, ⟨1, 1, by decide⟩⟩] with
+    | .feasible values _ => decide ((values 0).num = -((values 0).den : Int)) | .infeasible _ => false) = true := by decide +kernel
+
 end Thesis.Examples.DistroPartialMoments
