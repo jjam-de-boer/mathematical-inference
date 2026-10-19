@@ -95,7 +95,8 @@ theorem reinforcedCount_one_covarianceForm_zero_iff (weights : List Nat) (positi
   · rintro ⟨c, constant⟩
     refine ⟨c, ?_⟩
     intro atom member weight
-    have same := finWeighted_atom_weight weights.length (fun i => weights.getD i.val 0) atom member
+    have same : atom.2 = weights.getD atom.1.val 0 :=
+      finWeighted_atom_weight weights.length (fun i => weights.getD i.val 0) atom member
     exact constant atom.1.val atom.1.isLt (by rw [← same]; exact weight)
 
 private theorem ratio_mul_num_zero_iff (factor value : SignedRatio) (nonzero : factor.num ≠ 0) :
