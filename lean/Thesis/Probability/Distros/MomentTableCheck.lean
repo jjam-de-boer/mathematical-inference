@@ -48,6 +48,7 @@ structure FactorialTableRealization (moments : Nat → QProb) (bound : Nat) wher
   bounded : distro.AlmostSurely (fun value => value ≤ bound)
   momentsAgree : ∀ order, order ≤ bound → QProb.Equiv
     (factorialMoment (⟨distro, id⟩ : NatDistro Nat) order) (moments order)
+  retains : ∀ value, value ≤ bound → ∃ weight, (value, weight) ∈ distro.record.atoms
 
 /-- Executable complete decision procedure. A success retains every grid
 cell, including zero masses; a failure gives a concrete checked obstruction. -/
@@ -61,7 +62,7 @@ def checkFactorialMomentTable (moments : Nat → QProb) (bound : Nat) :
       let valid : FactorialMomentTableValid moments bound :=
         ⟨fun value within => proof value (List.mem_range.mpr (Nat.lt_succ_of_le within)), normalized⟩
       .inl ⟨(realizedFactorialDistro moments bound valid).distro,
-        realizedFactorialDistro_bounded moments bound valid, realizedFactorialDistro_moments moments bound valid⟩
+        realizedFactorialDistro_bounded moments bound valid, realizedFactorialDistro_moments moments bound valid, realizedFactorialDistro_retains moments bound valid⟩
     else .inr (.unnormalized normalized)
 
 /-- Success is equivalent to validity; neither a valid table nor an
