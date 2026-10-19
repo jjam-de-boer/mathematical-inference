@@ -148,6 +148,38 @@ congruence interface; the closed numerical checks are still kernel proofs.
 The complete graph, now enlarged by newer distribution and certificate work,
 is being resumed. These measurements still do not establish the final gates.
 
+### Explicit extended profile after a measured higher-memory pilot
+
+The next original numerical fixture, `GuardedIdentificationKernel`, did not
+fit the conservative attempts, including the separately approved 1536 MiB
+trial. Original-source 2048 and 3072 MiB trials also stopped in its guarded
+value check. After explicit user approval for higher pilots, the unchanged
+file passed with 4608 MiB Lean / 5120 MiB aggregate RSS bounds: 11.90 s and
+3169.8 MiB sampled aggregate RSS. All three numerical theorem axiom reports
+contained only `propext` and `Quot.sound`. No swap was observed afterward.
+The speculative guarded-table refactor was discarded; its original proof
+and the existing native observational bridge are retained without changes.
+
+The full builder now accepts `--profile extended`, with that same reviewed
+4608/5120 MiB pair, one compiler family and at most 30 seconds per invocation.
+It is explicit, never selected automatically after a failure, and does not
+change the small-closure helpers' older limits. It is a memory budget, not
+a reservation or a measured hardware maximum; a single sampled process-group
+watchdog cannot guarantee laptop responsiveness under changing external load.
+
+```sh
+python3 -B lean/tools/build_local_sequential.py --phase lean --profile extended --check
+```
+
+The direct original-source pilot did not itself create a Lake artifact.
+The subsequent ordinary Lake check also passed the unchanged fixture:
+11.98 s, 3246.5 MiB sampled aggregate RSS, with a genuine reusable trace.
+The sequential run must still finish all remaining Lean/native/final gates
+before local full-build success can be reported. A separate 20-target native
+checkpoint already passed at the
+old ceiling, with sampled aggregate peaks below 112 MiB for those C-object
+builds; that small checkpoint does not certify the remaining native graph.
+
 No larger memory or timeout setting is an automatic retry. Unrelated editor
 or manual compiler processes are not terminated. Machine-wide headroom still
 matters, especially on this machine while other applications retain swap.
