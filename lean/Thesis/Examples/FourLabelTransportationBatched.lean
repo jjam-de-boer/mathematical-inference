@@ -35,11 +35,20 @@ theorem large_cell : largeTable.cells 0 1 = 1000000000 := by decide +kernel
 
 def uniform : Masses := fun _ => 1000000
 
-theorem uniform_margins : Margins 4000000 uniform uniform := by
+/-- Establish the uniform capacities before specializing the mass. Keeping
+this arithmetic proof symbolic avoids normalizing a large concrete margins
+constructor in the kernel. The later regression still uses the same million
+units per label and checks the actual batched table, not a smaller surrogate.
+Only natural-number arithmetic is used; no computational trust axiom is added. -/
+private theorem uniform_margins_general (mass : Nat) :
+    Margins (mass + mass + mass + mass) (fun _ => mass) (fun _ => mass) := by
   refine ⟨rfl, rfl, ?_⟩
   intro _
-  change 2000000 ≤ 4000000
-  decide +kernel
+  change mass + mass ≤ mass + mass + mass + mass
+  omega
+
+theorem uniform_margins : Margins 4000000 uniform uniform :=
+  uniform_margins_general 1000000
 
 def uniformTable : Transportation uniform uniform :=
   transportBatched 4000000 uniform uniform uniform_margins

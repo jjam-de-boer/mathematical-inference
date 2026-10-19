@@ -52,6 +52,14 @@ class TransportationSplitTests(unittest.TestCase):
                  initial_project_imports(path.read_text()) for path in paths}
         self.assertTrue({self.base, self.construction} <= reachable(graph, "Thesis.AxiomAudit"))
 
+    def test_local_memory_refactor_keeps_the_large_numerical_regressions(self):
+        source = (self.root / "Thesis/Examples/FourLabelTransportationBatched.lean").read_text()
+        self.assertIn("private theorem uniform_margins_general (mass : Nat)", source)
+        self.assertIn("theorem uniform_margins : Margins 4000000 uniform uniform", source)
+        self.assertIn("uniform_margins_general 1000000", source)
+        self.assertIn("theorem large_cell : largeTable.cells 0 1 = 1000000000", source)
+        self.assertIn("theorem uniform_first_cell : uniformTable.cells 0 1 = 1000000", source)
+
 
 if __name__ == "__main__":
     unittest.main()
