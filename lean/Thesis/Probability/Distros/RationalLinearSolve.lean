@@ -6,8 +6,12 @@ namespace Thesis.Probability.Distros.RationalLinear
 theorem extend_restrict (values : Fin (variables + 1) → SignedRatio) :
     extend (fun i => values i.castSucc) (values (Fin.last variables)) = values := by
   funext i
-  exact Fin.lastCases (by simp only [extend, Fin.lastCases_last])
-    (fun j => by simp only [extend, Fin.lastCases_castSucc]) i
+  by_cases earlier : i.val < variables
+  · let old : Fin variables := ⟨i.val, earlier⟩
+    have same : old.castSucc = i := Fin.ext rfl
+    rw [← same, extend_castSucc]
+  · have same : i = Fin.last variables := Fin.ext (by simp only [Fin.val_last]; have bound := i.isLt; omega)
+    rw [same, extend_last]
 
 /-- A finite elimination trace ends in an actual contradictory constant
 row. This is checked data, not an oracle declaring the system infeasible. -/

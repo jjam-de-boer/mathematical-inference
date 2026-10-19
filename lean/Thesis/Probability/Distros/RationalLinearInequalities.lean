@@ -11,13 +11,21 @@ def dot : (variables : Nat) → (Fin variables → Int) → (Fin variables → S
         (dot variables (fun i => coefficients i.castSucc) (fun i => values i.castSucc))
 
 def extend (values : Fin variables → SignedRatio) (last : SignedRatio) : Fin (variables + 1) → SignedRatio :=
-  Fin.lastCases last values
+  fun i => if earlier : i.val < variables then values ⟨i.val, earlier⟩ else last
+
+theorem extend_castSucc (values : Fin variables → SignedRatio) (last : SignedRatio) (i : Fin variables) :
+    extend values last i.castSucc = values i := by
+  simp only [extend, Fin.val_castSucc, dif_pos i.isLt]
+
+theorem extend_last (values : Fin variables → SignedRatio) (last : SignedRatio) :
+    extend values last (Fin.last variables) = last := by
+  simp only [extend, Fin.val_last, dif_neg (Nat.lt_irrefl variables)]
 
 theorem dot_extend (coefficients : Fin (variables + 1) → Int) (values : Fin variables → SignedRatio) (last : SignedRatio) :
     dot (variables + 1) coefficients (extend values last) =
       SignedRatio.add (SignedRatio.scaleInt (coefficients (Fin.last variables)) last)
         (dot variables (fun i => coefficients i.castSucc) values) := by
-  simp only [dot, extend, Fin.lastCases_last, Fin.lastCases_castSucc]
+  simp only [dot, extend_last, extend_castSucc]
 
 theorem dot_zero (variables : Nat) (values : Fin variables → SignedRatio) :
     SignedRatio.Equiv (dot variables (fun _ => 0) values) SignedRatio.zero := by
