@@ -35,6 +35,38 @@ example : (match checkFactorialMomentTable negativeCellFactorialTable 2 with | .
 example : (match checkFactorialMomentTable (fun _ => QProb.zero) 0 with | .inr (.unnormalized _) => true | _ => false) = true := by decide +kernel
 example : (match checkFactorialMomentTable (fun _ => QProb.one) 0 with | .inl _ => true | .inr _ => false) = true := by decide +kernel
 
+/-- A null outcome has an unsupported coarse label and violates refinement.
+The almost-sure tower conclusion still holds pointwise there. -/
+def unsupportedCoarse (x : Nat) : Fin 3 := if x = 99 then 2 else (predictionCoarse x).castSucc
+
+def unsupportedMerge (label : Fin 4) : Fin 3 := (predictionMerge label).castSucc
+
+example (x : Nat) : SignedRatio.Equiv
+    (partitionMomentFixture.conditionalExpectation unsupportedCoarse
+      (partitionMomentFixture.conditionalExpectation predictionFine partitionMomentObservable) x)
+    (partitionMomentFixture.conditionalExpectation unsupportedCoarse partitionMomentObservable x) :=
+  Distro.conditionalExpectation_tower_almostSurely _ predictionFine unsupportedCoarse unsupportedMerge
+    (by decide +kernel) partitionMomentObservable x
+
+example : unsupportedCoarse 99 ≠ unsupportedMerge (predictionFine 99) := by decide +kernel
+example : SignedRatio.Equiv
+    (partitionMomentFixture.conditionalExpectation unsupportedCoarse partitionMomentObservable 99) SignedRatio.zero := by decide +kernel
+
+/-- The duplicate occurrence of index zero matters: 1 - 2 + 1 = 0. -/
+example : (partitionMomentFixture.rationalCovarianceForm [0, 1, 0]
+    (fun _ : Nat => partitionMomentObservable) (fun i => if i = 0 then SignedRatio.one else ⟨-2, 1, by decide⟩)).num = 0 :=
+  (Distro.rationalCovarianceForm_zero_iff_rows _ _ _ _).mpr (by decide +kernel)
+
+example (coefficients : Nat → SignedRatio) : ∀ i ∈ List.range 3, SignedRatio.Equiv
+    ((multivariateHypergeometricDistro 3 [1, 0, 2] (by decide)).rationalCovarianceRow (List.range 3) countResponse coefficients i)
+      SignedRatio.zero :=
+  (multivariateHypergeometric_covarianceRows_zero_iff 3 [1, 0, 2] (by decide) coefficients).mpr (Or.inr (Or.inl rfl))
+
+example (coefficients : Nat → SignedRatio) : ∀ i ∈ List.range 3, SignedRatio.Equiv
+    ((reinforcedCountDistro 0 [1, 0, 2] 2 (by decide)).rationalCovarianceRow (List.range 3) countResponse coefficients i)
+      SignedRatio.zero :=
+  (reinforcedCount_covarianceRows_zero_iff 0 2 [1, 0, 2] (by decide) coefficients).mpr (Or.inl rfl)
+
 /-- Supplied mixed moments for equal mass at [0,0,0] and [1,0,2].
 This definition does not presuppose a realizing distribution. -/
 def suppliedJointTable : List Nat → QProb
