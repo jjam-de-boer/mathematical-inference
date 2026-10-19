@@ -91,6 +91,30 @@ class IdentificationLayerTests(unittest.TestCase):
             if module.startswith("Thesis.CausalTransport.Completeness"):
                 self.assertIn(module, covered)
 
+    def test_observational_evaluator_stays_below_causal_completeness(self):
+        module = "Thesis.Causality.ObservationalEvaluation"
+        self.assertEqual(self.graph[module], ["Thesis.Causality.Semantics"])
+        self.assertFalse(any(name.startswith("Thesis.CausalTransport.")
+                             for name in reachable(self.graph, module)))
+        self.assertIn(module, self.graph["Thesis.CausalTransport.ObservationalFormulaSelection"])
+        root = Path(__file__).resolve().parents[1]
+        graph = self.graph | {"Thesis": initial_project_imports((root / "Thesis.lean").read_text())}
+        self.assertIn(module, reachable(graph, "Thesis.AxiomAudit"))
+
+    def test_frontdoor_value_check_retains_exact_syntax_and_model_bridges(self):
+        root = Path(__file__).resolve().parents[1]
+        source = (root / "Thesis/Examples/IdentificationRegression.lean").read_text()
+        self.assertIn("kernelEngineFormula = compactKernelEngineFormula", source)
+        self.assertIn("private theorem observedTable_agrees", source)
+        for name in ("sourceAtReferenceHalf", "legacyEngineAtReferenceNineSixteenths",
+                     "kernelEngineAtReferenceHalf", "mediatorSourceAtReferenceHalf",
+                     "kernelMediatorAtReferenceHalf"):
+            self.assertIn("def " + name + " :", source)
+        value_check = source.split("def kernelEngineAtReferenceHalf :", 1)[1].split("/--", 1)[0]
+        self.assertIn("ProbabilityTerm.observationalDenote_congr", value_check)
+        self.assertNotIn("publishedSoundness", value_check)
+        self.assertNotIn("denotational_sound", value_check)
+
 
 if __name__ == "__main__":
     unittest.main()

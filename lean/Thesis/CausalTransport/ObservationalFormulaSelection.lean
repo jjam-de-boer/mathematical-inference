@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.GuardedAdmissibleCertificates
 import Thesis.CausalTransport.HiddenDAGAlmostSureIntervention
+import Thesis.Causality.ObservationalEvaluation
 
 namespace Thesis
 namespace Causality
@@ -32,29 +33,6 @@ global non-identifiability.  Nothing here claims maximality over all formulas.
 -/
 
 namespace ProbabilityTerm
-
-/-- Evaluate syntax directly from an observational record.  Actionful kernel
-leaves are rejected, rather than quietly reinterpreted as observational ones.
-For certified action-free terms this is literally the native evaluation. -/
-def observationalDenote (record : FiniteProbRecord S.Assignment) :
-    ProbabilityTerm S → S.Assignment → ProbabilityResult.Result
-  | .zero, _ => some QProb.zero
-  | .kernel queryKernel, reference =>
-      if queryKernel.hasAction then none else
-        ProbabilityResult.divide (some (record.probVal (queryKernel.numeratorEvent reference)))
-          (some (record.probVal (queryKernel.conditionEvent reference)))
-  | .marginalize nodes inner, reference =>
-      ProbabilityResult.sum ((marginalAssignments S nodes reference).map
-        (fun variant => inner.observationalDenote record variant))
-  | .evaluateAt fixed inner, _ => inner.observationalDenote record fixed
-  | .add left right, reference => ProbabilityResult.add
-      (left.observationalDenote record reference) (right.observationalDenote record reference)
-  | .multiply left right, reference => ProbabilityResult.multiply
-      (left.observationalDenote record reference) (right.observationalDenote record reference)
-  | .weightedMultiply weight factor, reference => ProbabilityResult.weightedMultiply
-      (weight.observationalDenote record reference) (factor.observationalDenote record reference)
-  | .divide numerator denominator, reference => ProbabilityResult.divide
-      (numerator.observationalDenote record reference) (denominator.observationalDenote record reference)
 
 /-- No hidden mechanism or intervention oracle is used by observational
 evaluation of an action-free expression, including its guarded zero branches. -/
