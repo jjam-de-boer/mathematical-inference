@@ -335,6 +335,14 @@ targets. This projection-wide structural catalogue is finite; its rational
 weights remain unbounded, and exact feasibility or complete search is not
 inferred. Supported conditional targets retain joint/evidence queries and
 the original positive causal conditioner.
+`BoundedNativeCatalogue` adds an explicit rational denominator bound to the
+finite structural family. `BoundedNativeRepresentation` constructs listed
+representatives of arbitrary native models with bounded supplied alphabets,
+preserving every intervention and the original source denominators.
+`BoundedNativeSearch` checks the entire supplied observational law and returns
+bounded-class incompatibility, an attained common unconditional target value,
+or two actual compatible models with different target values. These results
+do not remove the supplied bounds or assign conditionals at null evidence.
 `HiddenDAGPolynomial` compiles native causal probabilities with a proved
 binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied

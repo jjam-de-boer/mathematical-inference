@@ -20,7 +20,7 @@ an external method; it does not extend the probability framework.
 | 4. Support-pattern applicability | Exact undefined/zero/positive analysis and exhaustive comparison within supplied finite formula catalogues. | This does not enumerate every possible certified formula. |
 | 5. Universal alternative-formula coverage | Bounded research assessment completed; the missing syntax and termination obligations are stated below. | A decidable bounded derivation language first; no universal coverage or impossibility theorem yet. |
 | 6. Finite structural representation | Constructed standalone-template coverage both for a fixed full hidden DAG and across all finite hidden DAGs with a fixed observed projection. | Rational weight assignments remain infinite; compatibility, sharpness and complete search are separate obligations. |
-| 7. Fixed-observed-law procedures | Restricted results retained; bounded-model and unrestricted rational problems assessed separately. | No unrestricted feasibility-and-uniqueness procedure is inferred from the finite structural catalogue. |
+| 7. Fixed-observed-law procedures | Restricted results retained; exact compatibility and unconditional-target comparison implemented for a full hidden DAG with declared finite alphabet and denominator bounds. | Conditional-target policy and unrestricted rational feasibility remain separate; increasing bounds has no proved stopping rule. |
 
 ## Graph-level ID/IDC
 
@@ -481,6 +481,60 @@ Unlike the uncompressed clique representative, the final compressed template
 need not preserve unlisted interventions. Neither construction makes rational
 parameter assignments finite or decides their feasibility.
 
+## Exact bounded-class compatibility and fixed-law target comparison
+
+`FiniteRecordCatalogue` enumerates normalized laws on a declared `Fin card`
+alphabet below an explicit denominator bound. `canonical_mem` covers arbitrary
+original records by aggregating singleton masses; repeated labels and zero
+occurrences are allowed. `canonical_den` retains the original denominator,
+and `canonical_probVal` and `canonicalProduct_probVal` preserve every event
+and the full independent product law without expanding weights into unit cells.
+Empty alphabets and a zero denominator bound cannot invent normalized factors.
+
+`FiniteLatentProjection.boundedNativeCatalogue`, in `BoundedNativeCatalogue`,
+combines the exhaustive bounded structural catalogue with these finite source
+laws. Every entry instantiates an actual native SCM. Membership enforces the
+declared node, source and denominator bounds; completeness covers all bounded
+mechanisms, observed conversions and rational factor presentations.
+
+`BoundedNativeRepresentation` closes the original-type boundary. Its
+`boundedSearchRepresentative` constructs two-sided codes from the actual
+native model's deduplicated complete enumerations, then aggregates source
+weights. It preserves every hard-intervention event and the original source
+denominators. `boundedSearchRepresentative_mem` proves catalogue membership
+from bounds on the original supplied enumeration lengths and denominators,
+without asking for an external coverage or simulation theorem. Repeated
+enumeration entries count honestly toward the stated input length bounds.
+
+`NativeTemplateInstance.observationCheck_exact` proves that checking all
+observational singleton probabilities is equivalent to matching the supplied
+whole observed law. `BoundedNativeSearch.solve` filters the finite catalogue
+by that exact test and returns one of three proof-carrying results:
+
+- **Incompatible:** no original native model satisfying those enumeration and
+  denominator bounds has the supplied observed law.
+- **Identified:** an actual fitted native witness attains a value shared by
+  every original native model in that bounded class.
+- **Ambiguous:** two actual fitted native models in that class have different
+  requested target values.
+
+These are unconditional interventional event probabilities; no conditional
+is evaluated at null evidence. Observational zero cells and null action
+targets are retained. The regression on `X -> Y` has two factual point-mass
+models which disagree after forcing an observationally null action. The full
+solver must report ambiguity for that effect, identification for the factual
+query and incompatibility at denominator bound zero. Those outcome theorems
+use the solver's proved obligations, not expansion of the whole catalogue;
+small two-entry tests separately execute the comparison algorithm.
+
+This is an opt-in finite procedure, not a practical large-graph optimizer.
+Bounds are part of its class definition. In particular, projection-wide source
+compression has not been proved to preserve a prescribed denominator bound.
+Bounded identification or incompatibility does not imply the corresponding
+unrestricted conclusion. A returned pair of disagreeing models is, however,
+a genuine fixed-law counterexample in any larger class containing that pair.
+No rule for stopping an increasing-bound search is asserted.
+
 ## Exact probability polynomials and supplied bound certificates
 
 `RationalPolynomial` represents finite sparse polynomials with signed rational
@@ -747,22 +801,18 @@ event needs its own qualification: the empty/full outcome events are trivial
 even without action overlap. These are assessed statements and construction
 steps, not yet formalized categorical-bow theorems.
 
-**Explicitly bounded models.** For a fixed full graph, fixed finite node/source
-alphabets and a supplied upper bound `D` on each source denominator, enumerate
-all nonnegative weight vectors with positive total at most `D`, and all
-typed finite mechanism tables. Filter by exact equality of every observed
-singleton probability. An empty list means incompatible **within that bounded
-class**; otherwise compare the actual target values, returning either a
-common value or a pair of disagreeing native models. Constructing results
-from this list needs no choice. The structural catalogue is now available;
-the remaining finite weight-vector coverage proof must aggregate repeated
-factor labels while preserving their probabilities and declared denominator.
+**Explicitly bounded models (implemented for unconditional targets).** The
+finite weight-vector coverage proof, original-type native adapter, exact
+observational filter and proof-carrying compatibility/uniqueness search are
+implemented above. Source masses are aggregated without unit-cell expansion,
+retaining repeated-label probabilities and the original denominator.
 Enumerating bounded cardinality shapes avoids a separate zero-padding step.
-The denominator bound restricts the model class; source compression is not
-asserted to preserve that bound for arbitrary original models. Conditional
-targets also need an explicit policy for compatible models with null target
+The class fixes the full hidden DAG and bounds the original supplied finite
+enumerations and source denominators. Source compression is not asserted to
+preserve that denominator bound for arbitrary original models. Conditional
+targets still need an explicit policy for compatible models with null target
 conditioners. Increasing `D` does not itself give a terminating unrestricted
-procedure.
+procedure, and this implementation does not settle that separate question.
 
 **Unrestricted rational models.** Representation bounds control alphabet and
 table sizes, not the infinitely many rational source weights. The remaining
@@ -794,10 +844,11 @@ an automatic real-to-rational template transfer, not the existence of a
 general rational causal decision procedure. No reduction proving that
 general procedure impossible has been established here. Exact rational
 feasibility/uniqueness or a genuinely applicable impossibility reduction
-remains unresolved. Review checkpoint: the categorical bow or the explicitly
-bounded-model checker is a credible next implementation; do not launch an
-open-ended arbitrary-graph optimizer on the strength of finite representation
-alone.
+remains unresolved. The explicitly bounded unconditional checker is now a
+constructed result, not an assessment-only proposal. Review its conditional
+boundary before extending it; the categorical bow remains a separate assessed
+extension. Do not launch an open-ended arbitrary-graph optimizer on the
+strength of finite representation or bounded-class search alone.
 
 ## Construction, execution, and proof verification
 

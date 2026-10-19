@@ -36,8 +36,8 @@ def signature : ObservedSignature where
     have edge := of_decide_eq_true selected
     omega
 
-def x : Fin signature.count := 0
-def y : Fin signature.count := 1
+def x : Fin signature.count := ⟨0, by decide⟩
+def y : Fin signature.count := ⟨1, by decide⟩
 
 def fullGraph : FiniteHiddenDAG signature where
   count := 2
@@ -98,9 +98,9 @@ def entry (respond : Bool) : NativeTemplateInstance projection :=
       (fun _ => ⟨id, id, fun _ => rfl, fun _ => rfl⟩) (fun _ => ⟨id, id, fun _ => rfl, fun _ => rfl⟩),
     (model respond).nativeTemplateFactors (fun _ => 1) (fun _ => ⟨id, id, fun _ => rfl, fun _ => rfl⟩)⟩
 
-def observed : FiniteProbRecord signature.Assignment := ⟨[(fun _ => 0, 1)], 1, by decide, rfl⟩
-def outcome : Event signature.Assignment := fun values => decide (values y = 1)
-def effect : NativeProbabilityQuery signature := ⟨(HardIntervention.empty signature).set x 1, outcome⟩
+def observed : FiniteProbRecord signature.Assignment := ⟨[(fun _ => (0 : Fin 2), 1)], 1, by decide, rfl⟩
+def outcome : Event signature.Assignment := fun values => decide (values y = (1 : Fin 2))
+def effect : NativeProbabilityQuery signature := ⟨(HardIntervention.empty signature).set x (1 : Fin 2), outcome⟩
 def factual : NativeProbabilityQuery signature := ⟨HardIntervention.empty signature, outcome⟩
 
 theorem template_listed (respond : Bool) :
@@ -113,13 +113,15 @@ theorem nodes_bounded (respond : Bool) (node : Fin fullGraph.count) :
     ((entry respond).model.nodeEnumeration node).length ≤ 2 := by
   change (List.finRange 2).length ≤ 2
   rw [List.length_finRange]
+  exact Nat.le_refl 2
 
 theorem sources_bounded (respond : Bool) (node : Fin fullGraph.count) :
     ((entry respond).model.noiseEnumeration node).length ≤ 1 := by
   change (List.finRange 1).length ≤ 1
   rw [List.length_finRange]
+  exact Nat.le_refl 1
 
-theorem matches (respond : Bool) : (entry respond).MatchesObservation observed := by
+theorem observational_agreement (respond : Bool) : (entry respond).MatchesObservation observed := by
   apply ((entry respond).observationCheck_exact observed).mp
   cases respond <;> decide +kernel
 
@@ -146,10 +148,10 @@ search result into its ambiguity branch, without expanding the catalogue. -/
 theorem complete_class_effect_ambiguous
     (answer : Causality.BoundedNativeSearch.Result projection 2 1 1 observed effect) : resultTag answer = 2 := by
   cases answer with
-  | incompatible noMatch => exact False.elim (noMatch (entry false).model (nodes_bounded false) (sources_bounded false) (denominator_bounded false) (matches false))
+  | incompatible noMatch => exact False.elim (noMatch (entry false).model (nodes_bounded false) (sources_bounded false) (denominator_bounded false) (observational_agreement false))
   | identified witness unique =>
-      have left := unique (entry false).model (nodes_bounded false) (sources_bounded false) (denominator_bounded false) (matches false)
-      have right := unique (entry true).model (nodes_bounded true) (sources_bounded true) (denominator_bounded true) (matches true)
+      have left := unique (entry false).model (nodes_bounded false) (sources_bounded false) (denominator_bounded false) (observational_agreement false)
+      have right := unique (entry true).model (nodes_bounded true) (sources_bounded true) (denominator_bounded true) (observational_agreement true)
       exact False.elim (different_effects (QProb.equiv_trans left (QProb.equiv_symm right)))
   | ambiguous _ _ _ => rfl
 
@@ -160,7 +162,7 @@ theorem solver_effect_ambiguous :
 theorem complete_class_factual_identified
     (answer : Causality.BoundedNativeSearch.Result projection 2 1 1 observed factual) : resultTag answer = 1 := by
   cases answer with
-  | incompatible noMatch => exact False.elim (noMatch (entry false).model (nodes_bounded false) (sources_bounded false) (denominator_bounded false) (matches false))
+  | incompatible noMatch => exact False.elim (noMatch (entry false).model (nodes_bounded false) (sources_bounded false) (denominator_bounded false) (observational_agreement false))
   | identified _ _ => rfl
   | ambiguous left right different =>
       exact False.elim (different (QProb.equiv_trans (left.matched outcome) (QProb.equiv_symm (right.matched outcome))))
