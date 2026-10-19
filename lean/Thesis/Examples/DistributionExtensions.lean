@@ -819,8 +819,8 @@ example (t : QProb) : QProb.Equiv (pgf positiveNumericOutlierFixture (QProb.add 
 example : positiveNumericOutlierFixture.SameLaw positiveNumericCleanFixture := by
   apply NatDistro.sameLaw_of_factorialMoments_positiveSupport _ _ 1 (by decide +kernel) (by decide +kernel)
   intro order bound
-  have cases : order = 0 ∨ order = 1 := by omega
-  rcases cases with rfl | rfl <;> decide +kernel
+  have alternatives : order = 0 ∨ order = 1 := by omega
+  rcases alternatives with rfl | rfl <;> decide +kernel
 
 end Thesis.Examples.DistributionExtensions
 
@@ -1040,5 +1040,277 @@ example (event : Event (List Nat)) :
       (fun word => event (word.map (fun colour => ([0, 1, 0] : List Nat).getD colour 0))) =
     FiniteProbRecord.eventMass (multicolourDepletingAtoms 3 [2, 0, 0]) event :=
   multicolourDepleting_eventMass_aggregation 3 3 [1, 0, 1] [0, 1, 0] (by decide) (by decide +kernel) event
+
+end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- The label refinement is deliberately false at the retained null outcome. -/
+example : SignedRatio.Equiv
+    (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+      (partitionMomentFixture.conditionalExpectation predictionCoarse partitionMomentObservable))
+    (SignedRatio.add
+      (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+        (partitionMomentFixture.conditionalExpectation predictionFine partitionMomentObservable))
+      (partitionMomentFixture.rationalSquaredError
+        (partitionMomentFixture.conditionalExpectation predictionFine partitionMomentObservable)
+        (partitionMomentFixture.conditionalExpectation predictionCoarse partitionMomentObservable))) :=
+  Distro.conditionalExpectation_refinement_gain_almostSurely _ predictionFine predictionCoarse predictionMerge
+    (by decide +kernel) partitionMomentObservable
+
+example : SignedRatio.Equiv (partitionMomentFixture.rationalSquaredError
+    (partitionMomentFixture.conditionalExpectation predictionFine partitionMomentObservable)
+    (partitionMomentFixture.conditionalExpectation predictionCoarse partitionMomentObservable)) ⟨1, 4, by decide⟩ := by decide +kernel
+
+example : ¬ SignedRatio.Equiv
+    (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+      (partitionMomentFixture.conditionalExpectation predictionCoarse partitionMomentObservable))
+    (partitionMomentFixture.rationalSquaredError partitionMomentObservable
+      (partitionMomentFixture.conditionalExpectation predictionFine partitionMomentObservable)) := by decide +kernel
+
+/-- Refinement gives no improvement for a constant response. -/
+example : SignedRatio.Equiv
+    (partitionMomentFixture.rationalSquaredError (fun _ => SignedRatio.one)
+      (partitionMomentFixture.conditionalExpectation predictionCoarse (fun _ => SignedRatio.one)))
+    (partitionMomentFixture.rationalSquaredError (fun _ => SignedRatio.one)
+      (partitionMomentFixture.conditionalExpectation predictionFine (fun _ => SignedRatio.one))) :=
+  (Distro.conditionalExpectation_refinement_equal_iff_almostSurely _ predictionFine predictionCoarse predictionMerge
+    (by decide +kernel) (fun _ => SignedRatio.one)).mpr (by decide +kernel)
+
+example : partitionMomentFixture.AlmostSurely (fun x => SignedRatio.Equiv
+    (partitionMomentFixture.conditionalExpectation predictionFine (fun _ => SignedRatio.one) x)
+    (partitionMomentFixture.conditionalExpectation predictionCoarse (fun _ => SignedRatio.one) x)) :=
+  (Distro.conditionalExpectation_refinement_equal_iff_almostSurely _ predictionFine predictionCoarse predictionMerge
+    (by decide +kernel) (fun _ => SignedRatio.one)).mp (by decide +kernel)
+
+end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+example : SignedRatio.Equiv ((multivariateHypergeometricDistro 2 [1, 0, 2] (by decide)).rationalCovariance
+    (countResponse 0) (countResponse 2)) ⟨-2, 9, by decide⟩ :=
+  SignedRatio.equiv_trans
+    (multivariateHypergeometric_rationalCovariance 2 [1, 0, 2] (by decide) (by decide) 0 2 (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+example : SignedRatio.Equiv ((multivariateHypergeometricDistro 0 [1, 0, 2] (by decide)).rationalCovariance
+    (countResponse 0) (countResponse 2)) SignedRatio.zero :=
+  SignedRatio.equiv_trans
+    (multivariateHypergeometric_rationalCovariance 0 [1, 0, 2] (by decide) (by decide) 0 2 (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+example : SignedRatio.Equiv ((multivariateHypergeometricDistro 3 [1, 0, 2] (by decide)).rationalCovariance
+    (countResponse 0) (countResponse 2)) SignedRatio.zero :=
+  SignedRatio.equiv_trans
+    (multivariateHypergeometric_rationalCovariance 3 [1, 0, 2] (by decide) (by decide) 0 2 (by decide) (by decide) (by decide))
+    (by decide +kernel)
+
+end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- Tight unequal bounds, varying totals, a zero-width axis, and retained
+null outliers of both the wrong shape and excessive coordinates. -/
+def rectangleMomentFixture : Distro (List Nat) :=
+  ofWeightedAtoms [([0, 0, 0], 1), ([1, 0, 2], 2), ([0, 0, 1], 1), ([], 0), ([99, 99, 99, 99], 0)] (by decide)
+
+example : (factorialRectangle [1, 0, 2]).length = 6 := by decide +kernel
+example : factorialRectangle [0, 0] = [[0, 0]] := by decide +kernel
+example : factorialRectangle [] = [[]] := rfl
+
+example (args : List QProb) (dimension : args.length = 3) :
+    QProb.Equiv (multivariatePGF rectangleMomentFixture (args.map (fun t => QProb.add t QProb.one)))
+      (QProb.listSum ((factorialRectangle [1, 0, 2]).map (fun orders =>
+        QProb.mul (multivariateFactorialCoefficient rectangleMomentFixture orders) (multivariateMonomial args orders)))) :=
+  multivariatePGF_factorial_expansion_rectangle rectangleMomentFixture args [1, 0, 2]
+    (by simpa only [List.length_cons, List.length_nil] using dimension.symm) (by decide +kernel)
+
+example : SignedRatio.Equiv (rectangleMomentFixture.pmf [1, 0, 2]).toSignedRatio
+    (inverseRectangleFactorialPMF rectangleMomentFixture [1, 0, 2] [1, 0, 2]) :=
+  Distro.pmf_rectangleFactorial_inversion _ _ _ (by decide) (by decide +kernel)
+
+example : SignedRatio.Equiv (inverseRectangleFactorialPMF rectangleMomentFixture [1, 0, 2] [1, 0, 2])
+    ⟨1, 2, by decide⟩ := by decide +kernel
+example : SignedRatio.Equiv (inverseRectangleFactorialPMF rectangleMomentFixture [1, 0, 2] [1, 0, 1])
+    SignedRatio.zero := by decide +kernel
+example : SignedRatio.Equiv (inverseRectangleFactorialPMF rectangleMomentFixture [1, 0, 2] [2, 0, 0])
+    SignedRatio.zero := by decide +kernel
+
+example : SignedRatio.Equiv (emptyPositiveOutlierFixture.pmf []).toSignedRatio
+    (inverseRectangleFactorialPMF emptyPositiveOutlierFixture [] []) :=
+  Distro.pmf_rectangleFactorial_inversion _ _ _ rfl (by decide +kernel)
+
+def rectangleMomentOther : Distro (List Nat) :=
+  ofWeightedAtoms [([0, 0, 1], 2), ([0, 0, 0], 2), ([1, 0, 2], 4), ([0, 7], 0)] (by decide)
+
+private theorem rectangle_fixture_moments (orders : List Nat) (within : CoordinateBounds orders [1, 0, 2]) :
+    QProb.Equiv (jointFactorialMoment rectangleMomentFixture orders) (jointFactorialMoment rectangleMomentOther orders) := by
+  cases orders with
+  | nil => exact False.elim within
+  | cons a orders => cases orders with
+      | nil => exact False.elim within.2
+      | cons b orders => cases orders with
+          | nil => exact False.elim within.2.2
+          | cons c orders => cases orders with
+              | cons d orders => exact False.elim within.2.2.2
+              | nil =>
+                  have first : a = 0 ∨ a = 1 := by have bound := within.1; omega
+                  have middle : b = 0 := by have bound := within.2.1; omega
+                  have last : c = 0 ∨ c = 1 ∨ c = 2 := by have bound := within.2.2.1; omega
+                  subst b
+                  rcases first with rfl | rfl <;> rcases last with rfl | rfl | rfl <;> decide +kernel
+
+/-- Six actual rectangle moments suffice despite different raw null records. -/
+example : rectangleMomentFixture.SameLaw rectangleMomentOther :=
+  Distro.sameLaw_of_rectangleFactorialMoments _ _ [1, 0, 2]
+    (by decide +kernel) (by decide +kernel) rectangle_fixture_moments
+
+end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+def gridExampleProbability (value : Nat) : QProb :=
+  if value = 0 then ⟨1, 3, by decide⟩ else if value = 2 then ⟨2, 3, by decide⟩ else QProb.zero
+
+example : QProb.Equiv ((probabilityGrid 2 gridExampleProbability (by decide +kernel)).pmf 2) ⟨2, 3, by decide⟩ :=
+  probabilityGrid_pmf 2 gridExampleProbability (by decide +kernel) 2 (by decide)
+example : (1, 0) ∈ (probabilityGrid 2 gridExampleProbability (by decide +kernel)).record.atoms := by decide +kernel
+example : ∃ weight, (1, weight) ∈ (probabilityGrid 2 gridExampleProbability (by decide +kernel)).record.atoms :=
+  probabilityGrid_retains 2 gridExampleProbability (by decide +kernel) 1 (by decide)
+
+end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- E[(X)₀]=E[(X)₁]=E[(X)₂]=1 corresponds to equal mass at zero and two. -/
+def suppliedFactorialTable (order : Nat) : QProb := if order ≤ 2 then QProb.one else QProb.zero
+
+theorem suppliedFactorialTable_valid : FactorialMomentTableValid suppliedFactorialTable 2 := by
+  constructor
+  · intro value within
+    have alternatives : value = 0 ∨ value = 1 ∨ value = 2 := by omega
+    rcases alternatives with rfl | rfl | rfl <;> decide +kernel
+  · decide +kernel
+
+example (order : Nat) (within : order ≤ 2) :
+    QProb.Equiv (factorialMoment (realizedFactorialDistro suppliedFactorialTable 2 suppliedFactorialTable_valid) order)
+      (suppliedFactorialTable order) := realizedFactorialDistro_moments suppliedFactorialTable 2 suppliedFactorialTable_valid order within
+
+example : SignedRatio.Equiv
+    ((realizedFactorialDistro suppliedFactorialTable 2 suppliedFactorialTable_valid).distro.pmf 0).toSignedRatio
+    ⟨1, 2, by decide⟩ :=
+  SignedRatio.equiv_trans (realizedFactorialDistro_pmf suppliedFactorialTable 2 suppliedFactorialTable_valid 0 (by decide)) (by decide +kernel)
+
+example : (1, 0) ∈ (realizedFactorialDistro suppliedFactorialTable 2 suppliedFactorialTable_valid).distro.record.atoms := by decide +kernel
+
+/-- Uniqueness compares laws across different weighted and null presentations. -/
+def suppliedTableOther : Distro Nat := ofWeightedAtoms [(0, 1), (2, 1), (99, 0)] (by decide)
+
+example : suppliedTableOther.SameLaw (realizedFactorialDistro suppliedFactorialTable 2 suppliedFactorialTable_valid).distro := by
+  apply realizedFactorialDistro_unique suppliedFactorialTable 2 suppliedFactorialTable_valid suppliedTableOther (by decide +kernel)
+  intro order within
+  have alternatives : order = 0 ∨ order = 1 ∨ order = 2 := by omega
+  rcases alternatives with rfl | rfl | rfl <;> decide +kernel
+
+/-- A normalized inverse can still be invalid through a negative cell. -/
+def negativeCellFactorialTable (order : Nat) : QProb :=
+  if order = 0 then QProb.one else if order = 2 then QProb.ofNat 2 else QProb.zero
+
+theorem negativeCellFactorialTable_invalid : ¬ FactorialMomentTableValid negativeCellFactorialTable 2 := by
+  intro valid
+  have negative : ¬ SignedRatio.Nonnegative (inverseFactorialTable negativeCellFactorialTable 2 1) := by decide +kernel
+  exact negative (valid.1 1 (by decide))
+
+example : ¬ ∃ μ : Distro Nat, μ.AlmostSurely (fun value => value ≤ 2) ∧
+    ∀ order, order ≤ 2 → QProb.Equiv (factorialMoment (⟨μ, id⟩ : NatDistro Nat) order) (negativeCellFactorialTable order) := by
+  intro realized
+  exact negativeCellFactorialTable_invalid ((factorialMomentTable_realizable_iff negativeCellFactorialTable 2).mpr realized)
+
+example : ¬ FactorialMomentTableValid (fun _ => QProb.zero) 0 := by
+  intro valid
+  have impossible : ¬ SignedRatio.Equiv (SignedRatio.listSum ((List.range 1).map (inverseFactorialTable (fun _ => QProb.zero) 0)))
+      SignedRatio.one := by decide +kernel
+  exact impossible valid.2
+
+example : FactorialMomentTableValid (fun _ => QProb.one) 0 := by
+  constructor
+  · intro value within
+    have zero : value = 0 := by omega
+    subst value
+    decide +kernel
+  · decide +kernel
+
+end Thesis.Examples.DistributionExtensions
+
+
+namespace Thesis.Examples.DistributionExtensions
+open Probability Probability.Distros
+
+/-- The positive coordinates agree unreducedly; the null coordinate is arbitrary. -/
+def nullDirectionCoefficients (i : Nat) : SignedRatio :=
+  if i = 1 then ⟨-7, 3, by decide⟩ else ⟨2, 4, by decide⟩
+
+theorem nullDirectionCoefficients_constant : CoefficientsConstantOnPositive [1, 0, 2] nullDirectionCoefficients := by
+  refine ⟨⟨1, 2, by decide⟩, ?_⟩
+  intro i within positive
+  have alternatives : i = 0 ∨ i = 1 ∨ i = 2 := by
+    have bound : i < 3 := within
+    omega
+  rcases alternatives with rfl | rfl | rfl
+  · decide +kernel
+  · have impossible : ¬ 0 < ([1, 0, 2] : List Nat).getD 1 0 := by decide
+    exact False.elim (impossible positive)
+  · decide +kernel
+
+example : ((multinomialDistro 2 [1, 0, 2] (by decide)).occupancyCovarianceForm 3 nullDirectionCoefficients).num = 0 :=
+  (multinomial_covarianceForm_zero_iff 2 [1, 0, 2] (by decide) nullDirectionCoefficients).mpr
+    (Or.inr nullDirectionCoefficients_constant)
+
+example : ((reinforcedCountDistro 3 [1, 0, 2] 2 (by decide)).occupancyCovarianceForm 3 nullDirectionCoefficients).num = 0 :=
+  (reinforcedCount_covarianceForm_zero_iff 3 2 [1, 0, 2] (by decide) nullDirectionCoefficients).mpr
+    (Or.inr nullDirectionCoefficients_constant)
+
+example : ((multivariateHypergeometricDistro 1 [1, 0, 2] (by decide)).occupancyCovarianceForm 3 nullDirectionCoefficients).num = 0 :=
+  (multivariateHypergeometric_covarianceForm_zero_iff 1 [1, 0, 2] (by decide) nullDirectionCoefficients).mpr
+    (Or.inr (Or.inr nullDirectionCoefficients_constant))
+
+/-- Unequal coefficients on two positive colours give a nonzero direction. -/
+example : ((multinomialDistro 2 [1, 0, 2] (by decide)).occupancyCovarianceForm 3 occupancyTestCoefficients).num ≠ 0 := by
+  intro zero
+  have criterion := (multinomial_covarianceForm_zero_iff 2 [1, 0, 2] (by decide) occupancyTestCoefficients).mp zero
+  rcases criterion with impossible | ⟨c, constant⟩
+  · exact (by decide : (2 : Nat) ≠ 0) impossible
+  · have equal := SignedRatio.equiv_trans (constant 0 (by decide) (by decide))
+      (SignedRatio.equiv_symm (constant 2 (by decide) (by decide)))
+    exact (by decide +kernel : ¬ SignedRatio.Equiv (occupancyTestCoefficients 0) (occupancyTestCoefficients 2)) equal
+
+example (coefficients : Nat → SignedRatio) : SignedRatio.Equiv
+    ((multivariateHypergeometricDistro 3 [1, 0, 2] (by decide)).occupancyCovarianceForm 3 coefficients) SignedRatio.zero :=
+  multivariateHypergeometric_covarianceForm_full_population [1, 0, 2] (by decide) coefficients
+
+example (coefficients : Nat → SignedRatio) : SignedRatio.Equiv
+    ((reinforcedCountDistro 0 [1, 0, 2] 2 (by decide)).occupancyCovarianceForm 3 coefficients) SignedRatio.zero :=
+  reinforcedCount_covarianceForm_zero_trials 2 [1, 0, 2] (by decide) coefficients
+
+example (coefficients : Nat → SignedRatio) : SignedRatio.Equiv
+    ((multivariateHypergeometricDistro 0 [0, 0] (by decide)).occupancyCovarianceForm 2 coefficients) SignedRatio.zero :=
+  multivariateHypergeometric_covarianceForm_full_population [0, 0] (by decide) coefficients
+
+example (coefficients : Nat → SignedRatio) : SignedRatio.Equiv
+    ((multivariateHypergeometricDistro 1 [1] (by decide)).occupancyCovarianceForm 1 coefficients) SignedRatio.zero :=
+  multivariateHypergeometric_covarianceForm_full_population [1] (by decide) coefficients
+
+example : ((multivariateHypergeometricDistro 0 [] (by decide)).occupancyCovarianceForm 0 occupancyTestCoefficients).num = 0 :=
+  (multivariateHypergeometric_covarianceForm_zero_iff 0 [] (by decide) occupancyTestCoefficients).mpr (Or.inl rfl)
 
 end Thesis.Examples.DistributionExtensions
