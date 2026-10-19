@@ -46,8 +46,16 @@ theorem record_singleton_positive_iff
   letI := assignmentDecidableEq count (fun source => Fin (cards source)) (fun _ => inferInstance)
   have compared := record_rectangular_probVal count (fun source => Fin (cards source)) factors
     (fun source => FiniteProbRecord.singletonEvent (reference source))
-  simp only [FiniteProbRecord.singletonEvent] at compared
-  rw [rectangularEvent_assignment_singleton (fun _ => inferInstance) reference] at compared
+  have rectangles : rectangularEvent count (fun source => Fin (cards source))
+      (fun source => FiniteProbRecord.singletonEvent (reference source)) = FiniteProbRecord.singletonEvent reference := by
+    funext sample
+    apply Bool.eq_iff_iff.mpr
+    rw [rectangularEvent_eq_true_iff]
+    simp only [FiniteProbRecord.singletonEvent, decide_eq_true_eq]
+    constructor
+    · intro equalCoordinates; exact funext equalCoordinates
+    · intro equal; exact congrFun equal
+  rw [rectangles] at compared
   exact (QProb.equiv_num_pos_iff compared).trans (qProduct_num_pos_iff count _)
 
 /-- Coordinate support equality implies equality of the *whole* independent

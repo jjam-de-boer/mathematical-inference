@@ -58,10 +58,23 @@ theorem kernel_eventPositive_iff (same : CausalSupportAgreement left right) (ker
 
 theorem kernel_status (same : CausalSupportAgreement left right) (kernel : Kernel S) (reference : S.Assignment) :
     ProbabilityResult.status (left.kernelDenote kernel reference) = ProbabilityResult.status (right.kernelDenote kernel reference) := by
-  simp only [FiniteHiddenDAGSCM.kernelDenote, ProbabilityResult.status_divide, ProbabilityResult.status]
-  have numerator := ProbabilityResult.valueStatus_eq_of_num_pos_iff _ _
+  change ProbabilityResult.status (ProbabilityResult.divide
+    (some ((left.kernelDistribution kernel reference).probVal (kernel.numeratorEvent reference)))
+    (some ((left.kernelDistribution kernel reference).probVal (kernel.conditionEvent reference)))) =
+      ProbabilityResult.status (ProbabilityResult.divide
+        (some ((right.kernelDistribution kernel reference).probVal (kernel.numeratorEvent reference)))
+        (some ((right.kernelDistribution kernel reference).probVal (kernel.conditionEvent reference))))
+  simp only [ProbabilityResult.status_divide]
+  change ProbabilityResult.Status.divide
+    (ProbabilityResult.valueStatus ((left.kernelDistribution kernel reference).probVal (kernel.numeratorEvent reference)))
+    (ProbabilityResult.valueStatus ((left.kernelDistribution kernel reference).probVal (kernel.conditionEvent reference))) = _
+  have numerator := ProbabilityResult.valueStatus_eq_of_num_pos_iff
+    ((left.kernelDistribution kernel reference).probVal (kernel.numeratorEvent reference))
+    ((right.kernelDistribution kernel reference).probVal (kernel.numeratorEvent reference))
     (same.kernel_eventPositive_iff kernel reference (kernel.numeratorEvent reference))
-  have denominator := ProbabilityResult.valueStatus_eq_of_num_pos_iff _ _
+  have denominator := ProbabilityResult.valueStatus_eq_of_num_pos_iff
+    ((left.kernelDistribution kernel reference).probVal (kernel.conditionEvent reference))
+    ((right.kernelDistribution kernel reference).probVal (kernel.conditionEvent reference))
     (same.kernel_eventPositive_iff kernel reference (kernel.conditionEvent reference))
   rw [numerator, denominator]
 
@@ -106,16 +119,16 @@ def positiveSupportedToLeft (same : CausalSupportAgreement left right) (term : P
 /-- Transport *all* recursively used support, rather than checking only the
 printed endpoints. Positive branch evidence is moved backwards before using
 the old factor-support function, then the factor's support is rebuilt forwards. -/
-def localSupportToRight (same : CausalSupportAgreement left right) {G : ObservedGraph S}
+noncomputable def localSupportToRight (same : CausalSupportAgreement left right) {G : ObservedGraph S}
     {first second : ProbabilityTerm S} (derivation : DoCalculusDerivation G first second) (reference : S.Assignment)
     (supported : HiddenDAGLocalDerivationSupport left reference derivation) :
     HiddenDAGLocalDerivationSupport right reference derivation := by
   induction derivation generalizing reference with
   | refl => exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1, ()⟩
-  | symm inner ih => exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1, ih supported.2.2⟩
+  | symm inner ih => exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1, ih reference supported.2.2⟩
   | trans first second firstIH secondIH =>
       exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1,
-        firstIH supported.2.2.1, secondIH supported.2.2.2⟩
+        firstIH reference supported.2.2.1, secondIH reference supported.2.2.2⟩
   | doRule => exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1, ()⟩
   | marginalization => exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1, ()⟩
   | conditioning => exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1, ()⟩
@@ -125,21 +138,21 @@ def localSupportToRight (same : CausalSupportAgreement left right) {G : Observed
   | multiplyAssoc => exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1, ()⟩
   | marginalizeCongr nodes inner ih =>
       exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1,
-        fun variant member => ih (supported.2.2 variant member)⟩
-  | evaluateAtCongr fixed inner ih => exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1, ih supported.2.2⟩
+        fun variant member => ih variant (supported.2.2 variant member)⟩
+  | evaluateAtCongr fixed inner ih => exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1, ih fixed supported.2.2⟩
   | addCongr first second firstIH secondIH =>
       exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1,
-        firstIH supported.2.2.1, secondIH supported.2.2.2⟩
+        firstIH reference supported.2.2.1, secondIH reference supported.2.2.2⟩
   | multiplyCongr first second firstIH secondIH =>
       exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1,
-        firstIH supported.2.2.1, secondIH supported.2.2.2⟩
+        firstIH reference supported.2.2.1, secondIH reference supported.2.2.2⟩
   | @weightedMultiplyCongr weight _ _ _ first second firstIH secondIH =>
       exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1,
-        firstIH supported.2.2.1, fun positive => secondIH (supported.2.2.2 (same.positiveSupportedToLeft weight reference positive))⟩
+        firstIH reference supported.2.2.1, fun positive => secondIH reference (supported.2.2.2 (same.positiveSupportedToLeft weight reference positive))⟩
   | divideCongr numerator denominator numeratorIH denominatorIH =>
       exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1,
-        numeratorIH supported.2.2.1, denominatorIH supported.2.2.2⟩
-  | eqCongr _hfirst _hsecond inner ih => exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1, ih supported.2.2⟩
+        numeratorIH reference supported.2.2.1, denominatorIH reference supported.2.2.2⟩
+  | eqCongr _hfirst _hsecond inner ih => exact ⟨same.termSupportedToRight _ _ supported.1, same.termSupportedToRight _ _ supported.2.1, ih reference supported.2.2⟩
 
 end CausalSupportAgreement
 end Thesis.Causality
