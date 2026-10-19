@@ -90,6 +90,8 @@ theorem jointFactorialMomentTable_valid_of_moments (μ : Distro (List Nat)) (mom
           change jointChoose (List.replicate bounds.length 0) counts = 1
           rw [← dimension]
           exact jointChoose_zeroOrders counts
+        change SignedRatio.Equiv (SignedRatio.mul (inverseJointFactorialTable moments bounds counts)
+          (QProb.ofNat (jointChoose zeroOrders counts)).toSignedRatio) (inverseJointFactorialTable moments bounds counts)
         rw [choose]
         exact SignedRatio.mul_one _)
     have actual := μ.expectNat_congr_positive (jointChoose zeroOrders) (fun _ => 1) (by
