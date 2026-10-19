@@ -5,7 +5,10 @@ These small fixtures instead guard process-group accounting, serial ordering,
 configuration isolation, and refusal paths before that real work is attempted.
 """
 
+from contextlib import redirect_stdout
+import io
 from pathlib import Path
+import shutil
 import subprocess
 import tempfile
 import tomllib
@@ -117,6 +120,41 @@ class MonitorTests(unittest.TestCase):
         result, kill = self.run_group([[], []])
         self.assertEqual(result["exit"], 0)
         kill.assert_not_called()
+
+
+class FinalGateTests(unittest.TestCase):
+    def test_stale_native_prerequisites_cannot_launch_a_final_build(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve() / "project"
+            (root / "tools").mkdir(parents=True)
+            (root / "Thesis").mkdir()
+            repository = Path(__file__).resolve().parents[1]
+            for name in ("lakefile.toml", "lean-toolchain", "lake-manifest.json"):
+                shutil.copyfile(repository / name, root / name)
+            (root / "Main.lean").write_text("import Thesis\n")
+            (root / "Thesis.lean").write_text("import Thesis.Core\n")
+            (root / "Thesis/Core.lean").write_text("import Std\n")
+            (root / "Thesis/AxiomAudit.lean").write_text("import Thesis\n")
+            home = root / "home"
+            release = (root / "lean-toolchain").read_text().strip().replace(":", "---").replace("/", "--")
+            lake = home / ".elan/toolchains" / release / "bin/lake"
+            lake.parent.mkdir(parents=True)
+            lake.write_text("never executed")
+            with patch.object(build, "__file__", str(root / "tools/build_local_sequential.py")), \
+                 patch.object(build.Path, "home", return_value=home), \
+                 patch.object(build.os, "nice"), \
+                 patch.dict(build.os.environ, {"LEAN_PATH": "", "LEAN_SRC_PATH": ""}), \
+                 patch("sys.argv", ["builder", "--check", "--phase", "gates"]), \
+                 patch.object(build, "run_group", side_effect=build.BuildStopped("stale native prerequisite")) as run, \
+                 redirect_stdout(io.StringIO()) as output:
+                self.assertEqual(build.main(), 1)
+            run.assert_called_once()
+            command = run.call_args.args[0]
+            self.assertIn("--no-build", command)
+            self.assertIn("+Thesis.Core:c.o", command)
+            self.assertIn("+Thesis:c.o", command)
+            self.assertIn("+Main:c.o", command)
+            self.assertNotIn("FULL LOCAL BUILD AND AXIOM AUDIT PASSED", output.getvalue())
 
 
 if __name__ == "__main__":
