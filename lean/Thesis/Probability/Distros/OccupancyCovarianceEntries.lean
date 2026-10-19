@@ -37,7 +37,7 @@ theorem reinforcedCount_rationalCovariance_entry (n increment : Nat) (weights : 
     refine SignedRatio.equiv_trans (SignedMoment.toRatio_congr
       (reinforcedCount_covariance n increment weights positive i j hi hj same)) ?_
     simp only [occupancyCovarianceEntry, if_neg same, SignedRatio.Equiv, SignedMoment.toRatio,
-      Int.natCast_mul, Int.neg_mul, Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
+      Int.natCast_mul, Int.neg_mul, Int.mul_neg, Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
 
 theorem reinforcedCount_one_covariance_entry (weights : List Nat) (positive : 0 < weights.sum)
     (i j : Nat) (hi : i < weights.length) (hj : j < weights.length) :
@@ -47,7 +47,7 @@ theorem reinforcedCount_one_covariance_entry (weights : List Nat) (positive : 0 
   by_cases same : i = j <;>
     simp only [occupancyCovarianceEntry, same, if_true, if_false, SignedRatio.Equiv,
       Nat.zero_mul, Nat.add_zero, Nat.mul_one, Nat.one_mul, Int.natCast_mul,
-      Int.neg_mul, Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
+      Int.neg_mul, Int.mul_neg, Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
 
 theorem multivariateHypergeometric_rationalCovariance_entry (n : Nat) (stocks : List Nat)
     (positive : 0 < binom stocks.sum n) (population : 1 < stocks.sum)
@@ -64,7 +64,7 @@ theorem multivariateHypergeometric_rationalCovariance_entry (n : Nat) (stocks : 
       Int.natCast_mul, Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
   · refine SignedRatio.equiv_trans (multivariateHypergeometric_rationalCovariance n stocks positive population i j hi hj same) ?_
     simp only [occupancyCovarianceEntry, if_neg same, SignedRatio.Equiv,
-      Int.natCast_mul, Int.neg_mul, Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
+      Int.natCast_mul, Int.neg_mul, Int.mul_neg, Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
 
 /-- Entrywise scalar identities lift to every finite covariance quadratic form. -/
 theorem Distro.occupancyCovarianceForm_scale_entries (μ ν : Distro (List Nat)) (colours : Nat)
