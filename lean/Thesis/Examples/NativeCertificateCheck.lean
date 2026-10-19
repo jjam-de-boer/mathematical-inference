@@ -33,9 +33,9 @@ example : ProbabilityCode.mask signature 2 = none := by decide +kernel
 example : ProbabilityCode.assignment signature 3 = none := by decide +kernel
 example : (TermCode.evaluateAt 3 source).decode signature = none := by decide +kernel
 example : (TermCode.kernel ⟨2, 0, 0⟩).decode signature = none := by decide +kernel
-example : (DerivationCode.primitive .rule1 ⟨1, 1, 0, 0⟩).check projection.observedGraph = none := by decide +kernel
-example : (DerivationCode.trans (.refl .zero) (.refl source)).check projection.observedGraph = none := by decide +kernel
-example : (DerivationCode.eqCongr .zero source (.refl source)).check projection.observedGraph = none := by decide +kernel
+example : ((DerivationCode.primitive .rule1 ⟨1, 1, 0, 0⟩).check projection.observedGraph).isSome = false := by decide +kernel
+example : ((DerivationCode.trans (.refl .zero) (.refl source)).check projection.observedGraph).isSome = false := by decide +kernel
+example : ((DerivationCode.eqCongr .zero source (.refl source)).check projection.observedGraph).isSome = false := by decide +kernel
 
 /-- Every existing algebraic primitive and congruence is represented, not
 just the do-rule leaf used by one happy-path example. -/
@@ -153,11 +153,11 @@ def graph : ObservedGraph signature where
 
 def quad : QuadCode := ⟨0, 2, 1, 0⟩
 
-example : (DerivationCode.primitive .rule1 quad).check graph = none := by decide +kernel
+example : ((DerivationCode.primitive .rule1 quad).check graph).isSome = false := by decide +kernel
 example : ((DerivationCode.primitive .rule2 quad).check graph).isSome = true := by decide +kernel
 /-- Cutting incoming arrows to the proposed action does not erase its
 outgoing causal path. Using an outgoing cut for rule 3 would wrongly pass. -/
-example : (DerivationCode.primitive .rule3 quad).check graph = none := by decide +kernel
+example : ((DerivationCode.primitive .rule3 quad).check graph).isSome = false := by decide +kernel
 
 end DirectedPair
 end Thesis.Causality.Examples.NativeCertificateCheck
