@@ -86,6 +86,12 @@ covers records with repeated labels and zero weights without expanding unit
 cells, preserving their original denominator and every event probability.
 This bounded rational family is not an unrestricted feasibility procedure.
 
+`FiniteSupportCatalogue` instead lists unit-weight representatives of every
+nonempty finite support mask, without bounding the original denominator.
+`FiniteProductSupportLaw` proves that factor support equality preserves every
+mixed-event positivity test in the actual independent product. Numerical
+probabilities need not agree after this support-only reweighting.
+
 `RationalSquareObstruction` proves by natural-number descent that a positive-
 denominator rational fraction cannot have square one half, without fraction
 normalization or real numbers. `IndependentBooleanObstruction` binds that

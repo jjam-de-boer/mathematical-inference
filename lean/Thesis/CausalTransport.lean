@@ -363,6 +363,14 @@ bounded native model. Its outer incompatibility branch distinguishes an empty
 fitting class from a compatible class with no supported conditional; mixed
 support can coexist with either an attained common supported value or two
 different supported values. No conditional is assigned at a null event.
+`NativeSupportSemantics` transports exact undefined/zero/positive statuses and
+every recursively required native derivation-support witness. `NativeTemplateSupport`
+constructs support-preserving uniform reweightings of actual fixed templates.
+`NativeSupportProfiles` uses a finite basis of all interventional singleton
+events to construct complete finite support catalogues, both on a fixed full
+DAG and across the full fixed-projection class. These catalogues have no
+original source-denominator bound but retain only support behaviour, not
+numerical causal values. They do not enumerate or certify proof codes.
 `HiddenDAGPolynomial` compiles native causal probabilities with a proved
 binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied

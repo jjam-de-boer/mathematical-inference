@@ -41,6 +41,8 @@ import Thesis.Examples.FourLabelTransportationBatched
 import Thesis.Examples.RationalMixture
 import Thesis.Examples.RationalValues
 import Thesis.Examples.IndependentBooleanObstruction
+import Thesis.Examples.FiniteSupportCatalogue
+import Thesis.Examples.NativeSupportProfiles
 import Thesis.Examples.IntegerLinearAlgebra
 import Thesis.Examples.IntegerNullspace
 import Thesis.Examples.FiniteRatioMinimum

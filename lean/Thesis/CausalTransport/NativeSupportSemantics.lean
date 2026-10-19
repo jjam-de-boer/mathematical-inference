@@ -77,6 +77,7 @@ theorem kernel_status (same : CausalSupportAgreement left right) (kernel : Kerne
     ((right.kernelDistribution kernel reference).probVal (kernel.conditionEvent reference))
     (same.kernel_eventPositive_iff kernel reference (kernel.conditionEvent reference))
   rw [numerator, denominator]
+  rfl
 
 /-- Exact status, not merely a sufficient support test. Strict products and
 strict sums retain undefined branches; only weighted multiplication may skip

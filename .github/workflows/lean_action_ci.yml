@@ -119,6 +119,8 @@ jobs:
           Thesis.CausalTransport.NativeSupportSemantics
           Thesis.CausalTransport.NativeTemplateSupport
           Thesis.CausalTransport.NativeSupportProfiles
+          Thesis.Examples.FiniteSupportCatalogue
+          Thesis.Examples.NativeSupportProfiles
       - name: Check graph-only identification layers
         working-directory: lean
         run: >-
