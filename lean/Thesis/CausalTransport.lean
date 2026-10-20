@@ -384,6 +384,12 @@ with serialized causal proofs and source/action-free-output validation. Its
 fixed-DAG and projection-wide soundness adapters retain original source support;
 no arbitrary semantic proof is accepted as serialized input. The old formula
 API is unchanged, and proof enumeration or formula selection is not added.
+`NativeGuardCompilation` constructs maximal observable guards relative to a
+supplied checked proof's support requirements, preserving existing accepted
+applications. `NativeProofEnumeration` constructs all successful checked
+formulas from an explicit bounded proof family, with exact code membership
+and native acceptance-coverage theorems. It does not select a formula, range
+over arbitrary Lean semantic proofs or infer unbounded exhaustion.
 `HiddenDAGPolynomial` compiles native causal probabilities with a proved
 binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied

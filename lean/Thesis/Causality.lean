@@ -148,6 +148,10 @@ denotational equivalence or using classical function equality.
 `ProbabilityTermCode` and `DerivationCode` decode function-free indexed data
 and reconstruct actual checked do-calculus trees. Graph/syntax acceptance is
 separate from native recursive support; neither module searches formulas.
+`ProbabilityTermEnumeration` and `DerivationEnumeration` separately enumerate
+exactly the codes within declared expression/proof tree-depth budgets. They
+bound explicit terms throughout intermediate subproofs, not merely endpoints;
+syntax membership still does not certify a causal or support condition.
 The facade excludes the external completeness
 interfaces; those begin in `Thesis.CausalTransport`.
 `HedgeQuery` retains a hedge's actual forests and action seed while reindexing

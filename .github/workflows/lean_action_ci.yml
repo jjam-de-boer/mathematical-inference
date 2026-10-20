@@ -136,6 +136,7 @@ jobs:
           Thesis.CausalTransport.NativeProofEnumeration
           Thesis.Examples.NativeCertificateCheck
           Thesis.Examples.NativeGuardCompilation
+          Thesis.Examples.NativeProofEnumeration
       - name: Check graph-only identification layers
         working-directory: lean
         run: >-

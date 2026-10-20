@@ -67,7 +67,7 @@ def catalogueOn (graph : ObservedGraph S) (profiles : List (NativeTemplateInstan
 theorem mem_catalogueOn_iff (graph : ObservedGraph S) (profiles : List (NativeTemplateInstance Q))
     (source : TermCode) (expressionDepth proofDepth : Nat) (checked : CheckedNativeFormula graph profiles) :
     checked ∈ catalogueOn graph profiles source expressionDepth proofDepth ↔
-      ∃ proof, proof.Within S expressionDepth proofDepth ∧ proof.compileGuardOn graph profiles source = some checked := by
+      ∃ proof : NativeProofCode, proof.Within S expressionDepth proofDepth ∧ proof.compileGuardOn graph profiles source = some checked := by
   simp only [catalogueOn, List.mem_filterMap, mem_enumerate_iff]
 
 def catalogueFixed (projection : FiniteLatentProjection S) (source : TermCode) (expressionDepth proofDepth : Nat) :=
@@ -88,11 +88,12 @@ theorem NativeCertificateCode.compileGuardOn_of_checkOn (code : NativeCertificat
   rcases code with ⟨source, proof, guard⟩
   cases decodedSource : source.decode S with
   | none =>
-      simp only [NativeCertificateCode.checkOn, decodedSource, Option.bind_none, reduceCtorEq] at accepted
+      simp only [NativeCertificateCode.checkOn, decodedSource, Option.bind_eq_bind,
+        Option.bind_none, reduceCtorEq] at accepted
   | some sourceTerm =>
       cases decodedProof : proof.check graph with
       | none =>
-          simp only [NativeCertificateCode.checkOn, decodedSource, Option.bind_some,
+          simp only [NativeCertificateCode.checkOn, decodedSource, Option.bind_eq_bind, Option.bind_some,
             decodedProof, Option.bind_none, reduceCtorEq] at accepted
       | some proofTerm =>
           by_cases sameSource : proofTerm.left = sourceTerm
@@ -102,20 +103,19 @@ theorem NativeCertificateCode.compileGuardOn_of_checkOn (code : NativeCertificat
                     (ProbabilityTerm.actionFreeCheck_exact proofTerm.right).mp actionFree,
                     guard, guardChecked⟩ : CheckedNativeFormula graph profiles) = checked := by
                   exact Option.some.inj (by
-                    simpa only [NativeCertificateCode.checkOn, decodedSource, Option.bind_some,
+                    simpa only [NativeCertificateCode.checkOn, decodedSource, Option.bind_eq_bind, Option.bind_some,
                       decodedProof, dif_pos sameSource, dif_pos actionFree, dif_pos guardChecked,
                       Option.pure_def] using accepted)
                 cases same
                 have emptyChecked : NativeSupportGuard.check profiles proofTerm.demand [] = true := rfl
-                simp only [NativeProofCode.compileGuardOn, NativeCertificateCode.checkOn, decodedSource,
-                  Option.bind_some, decodedProof, dif_pos sameSource, dif_pos actionFree,
+                simpa only [NativeProofCode.compileGuardOn, NativeCertificateCode.checkOn, decodedSource,
+                  Option.bind_eq_bind, Option.bind_some, decodedProof, dif_pos sameSource, dif_pos actionFree,
                   dif_pos emptyChecked, Option.pure_def, Option.map_some]
-                rfl
-              · simp only [NativeCertificateCode.checkOn, decodedSource, Option.bind_some, decodedProof,
+              · simp only [NativeCertificateCode.checkOn, decodedSource, Option.bind_eq_bind, Option.bind_some, decodedProof,
                   dif_pos sameSource, dif_pos actionFree, dif_neg guardChecked, reduceCtorEq] at accepted
-            · simp only [NativeCertificateCode.checkOn, decodedSource, Option.bind_some, decodedProof,
+            · simp only [NativeCertificateCode.checkOn, decodedSource, Option.bind_eq_bind, Option.bind_some, decodedProof,
                 dif_pos sameSource, dif_neg actionFree, reduceCtorEq] at accepted
-          · simp only [NativeCertificateCode.checkOn, decodedSource, Option.bind_some, decodedProof,
+          · simp only [NativeCertificateCode.checkOn, decodedSource, Option.bind_eq_bind, Option.bind_some, decodedProof,
               dif_neg sameSource, reduceCtorEq] at accepted
 
 /-- Bounded completeness is about acceptance coverage, not only whether a
