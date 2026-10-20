@@ -127,6 +127,8 @@ jobs:
           lake build
           Thesis.Causality.ProbabilityTermCode
           Thesis.Causality.DerivationCode
+          Thesis.Causality.ProbabilityTermEnumeration
+          Thesis.Causality.DerivationEnumeration
           Thesis.CausalTransport.NativeDerivationSupportCheck
           Thesis.CausalTransport.NativeSupportGuard
           Thesis.CausalTransport.NativeCertificateCheck

@@ -69,6 +69,8 @@ import Thesis.Causality.PositiveDerivationSupport
 import Thesis.Causality.ProbabilityTermEquality
 import Thesis.Causality.ProbabilityTermCode
 import Thesis.Causality.DerivationCode
+import Thesis.Causality.ProbabilityTermEnumeration
+import Thesis.Causality.DerivationEnumeration
 import Thesis.Causality.ModalDerivation
 import Thesis.Causality.Modalities
 import Thesis.Causality.ConservativeLearning
