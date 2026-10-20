@@ -149,6 +149,7 @@ import Thesis.CausalTransport.NativeSupportGuard
 import Thesis.CausalTransport.NativeCertificateCheck
 import Thesis.CausalTransport.NativeGuardCompilation
 import Thesis.CausalTransport.NativeProofEnumeration
+import Thesis.CausalTransport.NativeSearchPreflight
 import Thesis.CausalTransport.HiddenDAGFinitePresentation
 import Thesis.CausalTransport.HiddenDAGSourcePresentation
 import Thesis.CausalTransport.HiddenDAGSourceCompression
@@ -390,6 +391,10 @@ applications. `NativeProofEnumeration` constructs all successful checked
 formulas from an explicit bounded proof family, with exact code membership
 and native acceptance-coverage theorems. It does not select a formula, range
 over arbitrary Lean semantic proofs or infer unbounded exhaustion.
+`NativeSearchPreflight` adds opt-in resource admission without truncating the
+old catalogue: supplied profiles, guard rows and total profile-comparison
+work have separate limits. It does not preflight construction of the complete
+profile generators or promise a hard memory/time bound on model evaluation.
 `HiddenDAGPolynomial` compiles native causal probabilities with a proved
 binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied
