@@ -99,6 +99,7 @@ import Thesis.Probability.Distros.RationalIntervalCheck
 import Thesis.Probability.Distros.RationalLinearInequalities
 import Thesis.Probability.Distros.RationalLinearProjection
 import Thesis.Probability.Distros.RationalLinearSolve
+import Thesis.Probability.Distros.RationalLinearBounds
 import Thesis.Probability.Distros.FiniteGridMoments
 import Thesis.Probability.Distros.RationalSimplex
 import Thesis.Probability.Distros.RationalMassGrid
