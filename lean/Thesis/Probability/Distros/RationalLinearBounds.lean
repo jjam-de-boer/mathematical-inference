@@ -142,13 +142,13 @@ def sharpRange (others : Nat) (rows : List (Inequality (others + 1)))
   have lowerExists : lowerBounds projected (fun i => Fin.elim0 i) ≠ [] := by
     intro empty
     have member : (headRow 0 (-1) (SignedRatio.neg lo)).lowerValue (fun i => Fin.elim0 i) ∈ lowerBounds projected (fun i => Fin.elim0 i) :=
-      List.mem_map.mpr ⟨_, List.mem_filter.mpr ⟨lowerRow, by decide⟩, rfl⟩
+      List.mem_map.mpr ⟨_, List.mem_filter.mpr ⟨lowerRow, by change decide ((-1 : Int) < 0) = true; decide⟩, rfl⟩
     rw [empty] at member
     exact List.not_mem_nil member
   have upperExists : upperBounds projected (fun i => Fin.elim0 i) ≠ [] := by
     intro empty
     have member : (headRow 0 1 hi).upperValue (fun i => Fin.elim0 i) ∈ upperBounds projected (fun i => Fin.elim0 i) :=
-      List.mem_map.mpr ⟨_, List.mem_filter.mpr ⟨upperRow, by decide⟩, rfl⟩
+      List.mem_map.mpr ⟨_, List.mem_filter.mpr ⟨upperRow, by change decide (0 < (1 : Int)) = true; decide⟩, rfl⟩
     rw [empty] at member
     exact List.not_mem_nil member
   let endpoints := oneRange projected (values 0) (projectToOne_sound others rows values valid) lowerExists upperExists
