@@ -1,5 +1,87 @@
 # Resource-capped local checks
 
+## Ordinary Lake builds (no Python prerequisite)
+
+The supported native local route is now:
+
+```sh
+cd lean
+export LEAN_NUM_THREADS=1
+lake build
+lake build Thesis.AxiomAudit
+```
+
+The environment setting gives Lake one worker. The committed `weakLeanArgs`
+separately give each child Lean compiler one thread and a 4608 MiB memory
+threshold. These are distinct controls: `-j1` alone does not serialize Lake's
+independent jobs. An isolated two-module cold pilot and the actual complete
+project commands were observed under the existing single-compiler watchdog;
+neither launched concurrent compiler families.
+
+The smoke executable has an explicit `needs = ["Thesis"]` build prerequisite.
+It therefore still checks the **same entire public proof facade**, including
+its regression examples, before compiling. `Main` itself only imports the
+standard-library IO interface it uses. This removes unnecessary C-object
+compilation and linking of the mathematical library from the executable,
+without dropping proof checks, deleting declarations, changing imports of the
+public facade, or weakening the separate full axiom gate. Building `thesis`
+explicitly also retains this prerequisite; the optimization is not merely a
+smaller default target list.
+
+Ordinary Lake does **not** implement the Python helper's aggregate-RSS
+watchdog, source-change fingerprints, shared lock or per-invocation wall stop.
+The native command's per-compiler memory threshold is not a hard whole-machine
+reservation. Keep the single-worker setting and adequate machine headroom;
+use the monitored helper below when those extra safeguards are wanted.
+No unrestricted parallel cold build is recommended for this laptop.
+
+The sections below preserve the investigation and monitored route. Their
+earlier object counts precede the native-build restructuring.
+
+### Native measurements, 2026-10-20
+
+The shared checkout's newer bounded-proof modules were included, not removed
+for the comparison. The unchanged full proof/audit traversal contains 890
+project modules. Before the restructuring, the actual default executable
+build reported 1744 jobs and its runtime closure needed 871 project native
+objects. Afterward, the actual default build reported 874 jobs and only Main
+needed a project native object. The complete axiom audit still reported 890
+jobs and checked 42,391 declarations under the unchanged permitted-axiom policy.
+The smoke binary occupies approximately 2.2 MiB.
+
+The first actual native build after changing Main passed in 2.03 s with
+365.5 MiB sampled aggregate RSS, including Main elaboration, C compilation
+and linking. The following full audit passed in 0.77 s from the current
+proof cache. A subsequent fully cached native build/audit pair took **2.48 s**
+in total, versus **11.92 s** for the fully cached monitored Python workflow
+on the same restructured checkout: approximately **4.8 times faster** for
+that warm verification workflow. Both native measurements used `--rehash`
+and `--no-cache`, so they did not gain speed by bypassing dependency freshness
+or downloading someone else's artifacts.
+
+This is **not a measured twofold speedup of all proof elaboration or a full
+cold build**. The native command avoids monitoring/startup overhead, and the
+build-graph change eliminates unused machine-code work; existing mathematical
+proofs still require their original kernel checks. The old baseline also
+rebuilt several concurrently added proof modules, so its 170-second total is
+not used as a warm speedup comparison. Further cold-build acceleration would
+need a controlled complete cold benchmark and targeted optimization of the
+remaining expensive proof checks, rather than counting skipped C jobs as
+twice-faster mathematics.
+
+An independent isolated Lake pilot also checks the prerequisite boundary:
+two previously uncached proof modules build sequentially, and an intentionally
+invalid proof makes the default executable build fail even when its previous
+binary exists. It is not possible to obtain a successful smoke build merely
+by avoiding a runtime import of the proof facade. The repository's 84 helper
+and structural tests passed, and the retained monitored complete workflow
+also passed with no rebuilt mathematical modules.
+
+The native measurement logs are retained in
+`.lake/native-lake-build-8h13a5wk/` and `.lake/native-lake-warm-whhj7apf/`.
+
+## Monitored full-project route
+
 The complete local build and transitive axiom audit passed on 2026-10-20,
 using the cache-aware, sequential workflow below and the original committed
 project configuration. The full builder's explicit `extended` profile keeps

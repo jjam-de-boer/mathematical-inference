@@ -197,8 +197,9 @@ def check_configuration(root):
     Refuse an ambient Lean search path as well: it would defeat isolation.
     """
     expected = {"name": "thesis", "version": "0.1.0", "defaultTargets": ["thesis"],
+                "weakLeanArgs": ["-j1", "-M4608", "-DmaxErrors=1"],
                 "lean_lib": [{"name": "Thesis"}],
-                "lean_exe": [{"name": "thesis", "root": "Main"}]}
+                "lean_exe": [{"name": "thesis", "root": "Main", "needs": ["Thesis"]}]}
     if tomllib.loads((root / "lakefile.toml").read_text()) != expected:
         raise PilotError("package configuration differs from the reviewed pilot configuration")
     manifest = json.loads((root / "lake-manifest.json").read_text())

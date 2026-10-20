@@ -171,7 +171,7 @@ def project_imports(source):
     return ["Thesis" if module == marker else module for module in parsed]
 
 
-def ordered_modules(root, targets):
+def ordered_modules(root, targets, build_dependencies=False):
     ordered, graph, visiting = [], {}, set()
 
     def visit(module):
@@ -181,6 +181,11 @@ def ordered_modules(root, targets):
             return
         visiting.add(module)
         dependencies = project_imports(source_path(root, module).read_text())
+        # Only the Lean-check/fingerprint graph includes this reviewed build
+        # prerequisite. The runtime import graph used for native objects must
+        # remain separate, including for an explicit --target Main request.
+        if build_dependencies and module == "Main" and "Thesis" not in dependencies:
+            dependencies = ["Thesis", *dependencies]
         for dependency in dependencies:
             visit(dependency)
         visiting.remove(module)
@@ -196,7 +201,30 @@ def resource_configuration(source, limits):
     if source.count("[[lean_lib]]") != 1:
         raise BuildStopped("unsupported configuration layout")
     args = json.dumps(["-j1", f"-M{limits.memory_mb}", "-DmaxErrors=1"])
+    # The reviewed committed configuration now carries native-build resource
+    # arguments too. Replace that one package-level line, never duplicate the
+    # TOML key or let a conservative pilot inherit the larger native ceiling.
+    pattern = r"(?m)^weakLeanArgs\s*=\s*\[[^\n]*\]\s*$"
+    matches = list(re.finditer(pattern, source))
+    if len(matches) == 1:
+        return re.sub(pattern, "weakLeanArgs = " + args, source, count=1)
+    if matches or "weakLeanArgs" in source:
+        raise BuildStopped("unsupported weak resource argument layout")
     return source.replace("[[lean_lib]]", f"weakLeanArgs = {args}\n\n[[lean_lib]]", 1)
+
+
+def lean_build_roots(selected=None):
+    """Include Main's explicit proof prerequisite before any compiler runs.
+
+    Main no longer runtime-imports the facade. Its reviewed declarative Lake
+    `needs` still requires that facade, including in an intermediate Main
+    check. Keep this build-only dependency out of the native-object traversal:
+    those proof modules must be checked, not needlessly linked into the binary.
+    """
+    targets = list(selected) if selected else ["Thesis", "Main", "Thesis.AxiomAudit"]
+    if "Main" in targets:
+        targets = ["Thesis", *(target for target in targets if target != "Thesis")]
+    return targets
 
 
 def prerequisite_scope(graph, module):
@@ -235,10 +263,10 @@ def main():
             raise BuildStopped("max-builds must be positive")
         root = Path(__file__).resolve().parents[1]
         check_configuration(root)
-        targets = args.target or ["Main", "Thesis.AxiomAudit"]
+        targets = lean_build_roots(args.target)
         if args.target and args.phase in {"gates", "all"}:
             raise BuildStopped("intermediate targets require --phase lean or native")
-        ordered, graph = ordered_modules(root, targets)
+        ordered, graph = ordered_modules(root, targets, build_dependencies=True)
         print(f"Plan: {len(ordered)} modules; phase={args.phase}; "
               f"Lean={memory} MiB; aggregate RSS={rss} MiB; wall={limits.seconds}s; "
               "one compiler family", flush=True)
@@ -292,8 +320,8 @@ def main():
                 if phase == "gates":
                     continue
                 modules = ordered
-                if phase == "native" and not args.target:
-                    modules, _ = ordered_modules(root, ["Main"])
+                if phase == "native":
+                    modules, _ = ordered_modules(root, args.target or ["Main"])
                 facet = "olean" if phase == "lean" else "c.o"
                 for first in range(0, len(modules), 50):
                     chunk = modules[first:first + 50]

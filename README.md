@@ -138,14 +138,16 @@ cases are covered by theorem statements and kernel-checked
 
 See the [theorem-coverage guide](lean/THEOREM_COVERAGE.md) for the public
 soundness/completeness results, fixed-law extensions, and application support
-boundaries. [Resource-capped local checks](lean/LOCAL_CHECKS.md) document the
-conservative local pilot; full verification currently remains remote.
+boundaries. [Local build instructions and measurements](lean/LOCAL_CHECKS.md)
+document the verified complete local build, native Lake route, and optional
+resource-monitored checks. Full verification also runs in continuous integration.
 
 The project uses Lean `v4.30.0-rc2` and has no third-party Lake dependencies.
-To build the development:
+To build the development locally with ordinary Lake and one compiler at a time:
 
 ```sh
 cd lean
+export LEAN_NUM_THREADS=1
 lake build
 ```
 
@@ -153,12 +155,22 @@ To enforce the project-wide kernel-axiom policy, run:
 
 ```sh
 cd lean
+export LEAN_NUM_THREADS=1
 lake build Thesis.AxiomAudit
 ```
 
 The audit checks every declaration owned by an imported `Thesis.*` library
 module and fails the build if a transitive kernel dependency is not `propext`
 or `Quot.sound`. Continuous integration builds this audit target explicitly.
+The executable's explicit Lake prerequisite still checks the complete `Thesis`
+facade, but its tiny runtime no longer imports and links every proof module.
+The committed compiler settings retain one Lean thread and the measured
+4608 MiB per-compiler memory threshold. `LEAN_NUM_THREADS=1` also limits Lake's
+worker pool; the compiler's `-j1` setting alone does not do that. No Python
+script is needed for these native commands. The optional monitored helper
+adds an aggregate-RSS watchdog and wall-time stops that ordinary Lake lacks;
+see the local-build instructions before attempting a cold parallel build.
+
 Finite-model soundness, d-separation correctness, and positive-model joint
 and conditional completeness are implemented constructively. The public
 constructors are `ObservedGraph.publishedSoundness` and

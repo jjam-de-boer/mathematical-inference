@@ -57,8 +57,48 @@ class PlanningTests(unittest.TestCase):
         limits = build.Limits(memory_mb=768, rss_mb=1024)
         resource_config = tomllib.loads(build.resource_configuration(original, limits))
         self.assertEqual(resource_config.pop("weakLeanArgs"), ["-j1", "-M768", "-DmaxErrors=1"])
-        self.assertEqual(resource_config, tomllib.loads(original))
+        committed_config = tomllib.loads(original)
+        committed_config.pop("weakLeanArgs")
+        self.assertEqual(resource_config, committed_config)
         self.assertEqual((root / "lakefile.toml").read_text(), original)
+
+    def test_resource_config_replaces_native_ceiling_without_duplicate_keys(self):
+        original = ('name = "thesis"\nweakLeanArgs = ["-j1", "-M4608", "-DmaxErrors=1"]\n'
+                    '[[lean_lib]]\nname = "Thesis"\n')
+        conservative = build.Limits(memory_mb=640, rss_mb=768)
+        result = build.resource_configuration(original, conservative)
+        self.assertEqual(tomllib.loads(result)["weakLeanArgs"],
+                         ["-j1", "-M640", "-DmaxErrors=1"])
+        self.assertEqual(result.count("weakLeanArgs"), 1)
+
+    def test_resource_config_rejects_ambiguous_resource_layout(self):
+        for source in ('weakLeanArgs = [\n "-j1"\n]\n[[lean_lib]]\n',
+                       'weakLeanArgs = []\nweakLeanArgs = []\n[[lean_lib]]\n'):
+            with self.subTest(source=source), self.assertRaises(build.BuildStopped):
+                build.resource_configuration(source, build.Limits())
+
+    def test_main_build_only_dependency_precedes_intermediate_and_full_checks(self):
+        self.assertEqual(build.lean_build_roots(), ["Thesis", "Main", "Thesis.AxiomAudit"])
+        self.assertEqual(build.lean_build_roots(["Main"]), ["Thesis", "Main"])
+        self.assertEqual(build.lean_build_roots(["Thesis.Core"]), ["Thesis.Core"])
+        self.assertEqual(build.lean_build_roots(["Main", "Thesis"]), ["Thesis", "Main"])
+
+    def test_main_fingerprints_and_preflights_proofs_without_runtime_linkage(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "Thesis").mkdir()
+            (root / "Thesis/Core.lean").write_text("import Std\n")
+            (root / "Thesis.lean").write_text("import Thesis.Core\n")
+            (root / "Main.lean").write_text("import Init.System.IO\n")
+            # An edit anywhere in the checked facade must invalidate Main's
+            # intermediate fingerprint scope, not start an unchecked rebuild.
+            ordered, graph = build.ordered_modules(root, ["Main"], build_dependencies=True)
+            self.assertEqual(ordered, ["Thesis.Core", "Thesis", "Main"])
+            self.assertEqual(graph["Main"], ["Thesis"])
+            self.assertEqual(build.prerequisite_scope(graph, "Main"), set(ordered))
+            # Even an explicit intermediate native Main target must not
+            # compile those build-only mathematical dependencies into objects.
+            self.assertEqual(build.ordered_modules(root, ["Main"]), (["Main"], {"Main": []}))
 
     def test_intermediate_freshness_includes_prerequisites_not_unrelated_work(self):
         graph = {"Thesis.Core": [], "Thesis.Left": ["Thesis.Core"],
