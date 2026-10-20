@@ -33,6 +33,13 @@ variable {S : ObservedSignature.{0}} {P Q : FiniteLatentProjection S}
 
 namespace ProbabilityCode
 
+-- Expose the standard monad projections without unfolding semantic objects.
+-- Both equalities are definitional; they add no interpretation assumption.
+private theorem except_bind_eq_bind (value : Except E A) (next : A → Except E B) :
+    (value >>= next) = Except.bind value next := rfl
+
+private theorem except_pure_eq (value : A) : (pure value : Except E A) = .ok value := rfl
+
 namespace CappedCount
 
 /-- Inspect at most `limit + 1` list cells. This never computes the complete
@@ -190,17 +197,17 @@ theorem guardedCatalogueOn_exact (limits : SearchLimits) (graph : ObservedGraph 
     (accepted : guardedCatalogueOn limits graph profiles source expressionDepth proofDepth = .ok catalogue) :
     catalogue = catalogueOn graph profiles source expressionDepth proofDepth := by
   cases metadataChecked : preflightSyntax limits S expressionDepth proofDepth with
-  | error reason => simp only [guardedCatalogueOn, metadataChecked, Except.bind] at accepted; contradiction
+  | error reason => simp only [guardedCatalogueOn, metadataChecked, except_bind_eq_bind, Except.bind] at accepted; contradiction
   | ok estimate =>
-      simp only [guardedCatalogueOn, metadataChecked, Except.bind] at accepted
+      simp only [guardedCatalogueOn, metadataChecked, except_bind_eq_bind, Except.bind] at accepted
       split at accepted
       · cases checked : preflightProfiles limits estimate.dictionary.references profiles with
-        | error reason => simp only [checked, Except.bind] at accepted; contradiction
+        | error reason => simp only [checked, except_bind_eq_bind, Except.bind] at accepted; contradiction
         | ok result =>
-            simp only [checked, Except.bind] at accepted
+            simp only [checked, except_bind_eq_bind, Except.bind] at accepted
             cases total : preflightTotal limits estimate.candidates result.comparisonsPerCertificate with
-            | error reason => simp only [total, Except.bind] at accepted; contradiction
-            | ok result => simp only [total, Except.bind, pure, Except.pure] at accepted; cases accepted; rfl
+            | error reason => simp only [total, except_bind_eq_bind, Except.bind] at accepted; contradiction
+            | ok result => simp only [total, except_bind_eq_bind, Except.bind, except_pure_eq] at accepted; cases accepted; rfl
       · contradiction
 
 /-- Expose every successful admission gate, including the separately bounded
@@ -214,17 +221,17 @@ theorem guardedCatalogueOn_admission (limits : SearchLimits) (graph : ObservedGr
       ∃ profile, preflightProfiles limits metadata.dictionary.references profiles = .ok profile ∧
         ∃ total, preflightTotal limits metadata.candidates profile.comparisonsPerCertificate = .ok total := by
   cases metadataChecked : preflightSyntax limits S expressionDepth proofDepth with
-  | error reason => simp only [guardedCatalogueOn, metadataChecked, Except.bind] at accepted; contradiction
+  | error reason => simp only [guardedCatalogueOn, metadataChecked, except_bind_eq_bind, Except.bind] at accepted; contradiction
   | ok estimate =>
-      simp only [guardedCatalogueOn, metadataChecked, Except.bind] at accepted
+      simp only [guardedCatalogueOn, metadataChecked, except_bind_eq_bind, Except.bind] at accepted
       split at accepted
       · rename_i sourceFits
         cases checked : preflightProfiles limits estimate.dictionary.references profiles with
-        | error reason => simp only [checked, Except.bind] at accepted; contradiction
+        | error reason => simp only [checked, except_bind_eq_bind, Except.bind] at accepted; contradiction
         | ok result =>
-            simp only [checked, Except.bind] at accepted
+            simp only [checked, except_bind_eq_bind, Except.bind] at accepted
             cases total : preflightTotal limits estimate.candidates result.comparisonsPerCertificate with
-            | error reason => simp only [total, Except.bind] at accepted; contradiction
+            | error reason => simp only [total, except_bind_eq_bind, Except.bind] at accepted; contradiction
             | ok count => exact ⟨estimate, metadataChecked, sourceFits, result, checked, count, total⟩
       · contradiction
 

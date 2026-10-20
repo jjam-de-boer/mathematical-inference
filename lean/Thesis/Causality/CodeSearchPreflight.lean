@@ -51,6 +51,23 @@ inductive SearchRefusal where
   | totalProfileComparisons (limit : Nat)
   deriving Repr, DecidableEq
 
+/-- A consumer can display a refusal without translating it into an empty
+search result or accidentally asserting a causal impossibility theorem. -/
+def SearchRefusal.message (reason : SearchRefusal) : String :=
+  let detail := match reason with
+    | .observedNodes requested limit => s!"Observed-node count {requested} exceeds limit {limit}."
+    | .expressionDepth requested limit => s!"Expression depth {requested} exceeds limit {limit}."
+    | .proofDepth requested limit => s!"Proof depth {requested} exceeds limit {limit}."
+    | .maskDictionary limit => s!"Mask dictionary estimate exceeds limit {limit}."
+    | .referenceDictionary limit => s!"Reference dictionary estimate exceeds limit {limit}."
+    | .rawCandidates limit => s!"Raw proof-code count exceeds limit {limit}."
+    | .source limit => s!"Source query is outside depth limit {limit} or the permitted dictionary indices."
+    | .profiles limit => s!"Supplied profile count exceeds limit {limit}."
+    | .guardRows limit => s!"Guard-row count per certificate exceeds limit {limit}."
+    | .profileComparisons limit => s!"Profile comparisons per certificate exceed limit {limit}."
+    | .totalProfileComparisons limit => s!"Total profile-comparison allowance exceeds limit {limit}."
+  s!"Search refused: {detail} This is not a non-identifiability result."
+
 namespace CappedCount
 
 /-- Only coordinate counts are read. No product assignment is built. -/

@@ -1,5 +1,5 @@
 import Thesis.CausalTransport.NativeSearchPreflight
-import Thesis.Examples.NativeGuardCompilation
+import Thesis.Examples.NativeProofEnumeration
 
 namespace Thesis.Causality.Examples.NativeSearchPreflight
 
@@ -57,6 +57,8 @@ example : preflightProfiles { limits with maxProfileComparisons := 2 } 3 profile
 example : preflightProfiles limits 3 profiles = .ok ⟨1, 3, 3⟩ := by decide +kernel
 example : preflightTotal limits 1000 5 = .error (.totalProfileComparisons 4000) := by decide +kernel
 example : preflightTotal limits 939 3 = .ok 2817 := by decide +kernel
+example : (SearchRefusal.rawCandidates 100).message =
+    "Search refused: Raw proof-code count exceeds limit 100. This is not a non-identifiability result." := by decide +kernel
 
 /-- Oversized source queries are refused independently of the encoded-proof
 budget. No formula or support profile has to be compiled to report this. -/
@@ -65,6 +67,9 @@ example : NativeProofCode.guardedCatalogueOn { limits with maxSourceDepth := 0 }
 
 example : NativeProofCode.guardedCatalogueOn { limits with maxProfiles := 0 }
     projection.observedGraph profiles source 0 1 = .error (.profiles 0) := rfl
+
+example : NativeProofCode.guardedCatalogueOn { limits with maxTotalProfileComparisons := 0 }
+    projection.observedGraph profiles source 0 1 = .error (.totalProfileComparisons 0) := rfl
 
 /-- An admitted empty proof family is a successful bounded result, not a
 resource refusal and not a claim of graph-level non-identifiability. -/
@@ -82,5 +87,15 @@ theorem admitted_catalogue_unchanged (expressionDepth proofDepth : Nat)
       expressionDepth proofDepth = .ok catalogue) :
     catalogue = NativeProofCode.catalogueOn projection.observedGraph profiles source expressionDepth proofDepth :=
   NativeProofCode.guardedCatalogueOn_exact limits _ _ _ _ _ _ accepted
+
+/-- The old semantic acceptance witness, including its null reference, is
+retained whenever admission succeeds. The large catalogue stays symbolic. -/
+theorem admitted_null_cell_covered
+    (catalogue : List (CheckedNativeFormula projection.observedGraph profiles))
+    (accepted : NativeProofCode.guardedCatalogueOn limits projection.observedGraph profiles source 1 2 = .ok catalogue) :
+    ∃ generated, generated ∈ catalogue ∧
+      generated.available entry.model.observationalDist (reference 2) = true := by
+  rw [admitted_catalogue_unchanged 1 2 catalogue accepted]
+  exact NativeProofEnumeration.null_cell_covered
 
 end Thesis.Causality.Examples.NativeSearchPreflight

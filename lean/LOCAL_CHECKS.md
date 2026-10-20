@@ -388,6 +388,21 @@ automatically; native verification continued remotely. The earlier complete
 local build above concerns its recorded checkpoint, not these later additions.
 Logs are retained in `.lake/local-builds-v1/20261020-141555-pybr948z/`.
 
+### Incremental resource-preflight pilot, 2026-10-20
+
+The new arithmetic counting module `CodeEnumerationCounts` passed in 0.88 s
+with 687.0 MiB sampled aggregate RSS; `CodeSearchPreflight` passed in 0.99 s
+with 670.5 MiB. Both used the unchanged conservative 640 MiB Lean / 768 MiB
+RSS / 30-second profile and genuine ordinary Lake artifacts. The helper's
+exclusive lock refused an earlier attempt while another builder held it;
+no competing compiler was launched. The native semantic wrapper is checked
+remotely, not by claiming these two small local checks establish its build.
+
+The successful runs are recorded in
+`.lake/local-builds-v1/20261020-145928-q6m5mxhe/` (counting module) and
+`.lake/local-builds-v1/20261020-150105-xw0gdswv/` (syntax-preflight module).
+These are selected-module results, not a new complete local build or audit.
+
 ## Transportation split and explicit resource profiles, 2026-10-19
 
 The machine reports 18 GiB physical RAM and 11 CPU cores. At the assessment
