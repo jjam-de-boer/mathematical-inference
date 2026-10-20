@@ -43,6 +43,15 @@ real-number model would need its own proof and is not silently assumed.
   unequal positive prior weights. The fair-law/prior `(1/4,3/4)` KL value is
   certified exactly as `log₂(4/3)/2`.
 
+## Checkpoint 3: constructive arithmetic–geometric mean foundation
+
+`FiniteAMGM` proves the denominator-cleared finite inequality at every list
+length, using Cauchy's finite doubling/descending proof. Natural multiplicities
+then give weighted AM–GM, including zero values and weights. Both non-strict and
+strict common-denominator product bounds are available for the rational Gibbs
+inequality. This foundation does not yet establish KL nonnegativity, its equality
+case, entropy concavity, or maximum-entropy optimization.
+
 ## Remaining full goal
 
 1. Strengthen the grid-independence interface as needed for the later optimizer;

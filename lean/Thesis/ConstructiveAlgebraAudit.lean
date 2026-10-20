@@ -1,3 +1,4 @@
+import Thesis.Examples.FiniteAMGM
 import Thesis.Examples.Entropy
 import Thesis.Examples.ExactLog
 import Thesis.Examples.RationalValues
