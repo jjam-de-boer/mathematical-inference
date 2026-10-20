@@ -113,4 +113,40 @@ example : (match RationalLinear.solve 0 [] with
 example : (match RationalLinear.solve 1 [⟨fun _ => -1, ⟨1, 1, by decide⟩⟩] with
     | .feasible values _ => decide ((values 0).num = -((values 0).den : Int)) | .infeasible _ => false) = true := by decide +kernel
 
+/-- The public partial-moment interface constructs a fractional law from
+one selected first moment, without a completed table or denominator cap. -/
+def fractionalProblem := scalarPartialMomentProblem 1
+  [factorialMomentInterval 1 ⟨1, 3, by decide⟩ ⟨1, 3, by decide⟩]
+
+example : (match fractionalProblem.solve with
+    | .feasible law => decide (QProb.Equiv (law.distro.pmf 0) ⟨2, 3, by decide⟩ ∧
+        QProb.Equiv (law.distro.pmf 1) ⟨1, 3, by decide⟩)
+    | .infeasible _ => false) = true := by decide +kernel
+
+/-- Each specified moment lies within its individual range, but the two
+cannot hold together: the second factorial moment forces all mass onto 2. -/
+def incompatibleMomentProblem := scalarPartialMomentProblem 2
+  [factorialMomentInterval 1 QProb.one QProb.one,
+    factorialMomentInterval 2 (QProb.ofNat 2) (QProb.ofNat 2)]
+
+example : (match incompatibleMomentProblem.solve with
+    | .infeasible _ => true | .feasible _ => false) = true := by decide +kernel
+
+/-- A zero-dimensional joint count vector still has its one-cell law. -/
+def emptyJointProblem := jointPartialMomentProblem [] []
+
+example : (match emptyJointProblem.solve with
+    | .feasible law => decide (QProb.Equiv (law.distro.pmf []) QProb.one)
+    | .infeasible _ => false) = true := by decide +kernel
+
+/-- The rectangle includes a forced zero coordinate. The mixed moment
+selects one of its two cells with a fractional mass. -/
+def mixedProblem := jointPartialMomentProblem [0, 1]
+  [mixedFactorialMomentInterval [0, 1] ⟨1, 2, by decide⟩ ⟨1, 2, by decide⟩]
+
+example : (match mixedProblem.solve with
+    | .feasible law => decide (QProb.Equiv (law.distro.pmf [0, 0]) ⟨1, 2, by decide⟩ ∧
+        QProb.Equiv (law.distro.pmf [0, 1]) ⟨1, 2, by decide⟩)
+    | .infeasible _ => false) = true := by decide +kernel
+
 end Thesis.Examples.DistroPartialMoments

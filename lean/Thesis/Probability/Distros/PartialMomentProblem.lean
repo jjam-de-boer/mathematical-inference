@@ -151,7 +151,7 @@ end PartialMomentProblem
 
 /-- Scalar factorial-moment intervals on a known finite count bound. -/
 def factorialMomentInterval (order : Nat) (lower upper : QProb) : MomentInterval Nat :=
-  ⟨fun value => (Combinatorics.fallingFactorial value order : Int), lower.toSignedRatio, upper.toSignedRatio⟩
+  ⟨fun value => (fallingFactorial value order : Int), lower.toSignedRatio, upper.toSignedRatio⟩
 
 def scalarPartialMomentProblem (bound : Nat) (intervals : List (MomentInterval Nat)) : PartialMomentProblem Nat :=
   ⟨List.range (bound + 1), 0, by simp only [List.length_range]; omega, List.nodup_range, intervals⟩
