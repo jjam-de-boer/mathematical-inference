@@ -108,6 +108,7 @@ import Thesis.Probability.Distros.PartialMomentProblem
 import Thesis.Probability.Distros.PartialMomentBounds
 import Thesis.Probability.Distros.CovarianceRows
 import Thesis.Probability.Distros.RationalVectorSpace
+import Thesis.Probability.Distros.RationalCoordinateBasis
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.RationalBetaBinomial
