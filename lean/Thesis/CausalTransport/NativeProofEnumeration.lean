@@ -46,6 +46,10 @@ def Within (signature : ObservedSignature) (expressionDepth : Nat) : Nat → Nat
   | depth + 1, .derivation code => code.Within (.ofSignature signature) expressionDepth depth
   | _ + 1, .actionOne code => code.Within (.ofSignature signature)
 
+instance decidableWithin (signature : ObservedSignature) (expressionDepth proofDepth : Nat) (code : NativeProofCode) :
+    Decidable (code.Within signature expressionDepth proofDepth) := by
+  cases proofDepth <;> cases code <;> simp only [Within] <;> infer_instance
+
 def enumerate (signature : ObservedSignature) (expressionDepth : Nat) : Nat → List NativeProofCode
   | 0 => []
   | depth + 1 =>

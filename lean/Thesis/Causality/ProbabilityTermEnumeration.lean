@@ -57,6 +57,10 @@ namespace KernelCode
 def Within (dictionary : CodeDictionaries) (code : KernelCode) : Prop :=
   code.outcome < dictionary.masks ∧ code.action < dictionary.masks ∧ code.condition < dictionary.masks
 
+instance decidableWithin (dictionary : CodeDictionaries) (code : KernelCode) : Decidable (code.Within dictionary) := by
+  unfold Within
+  infer_instance
+
 def enumerate (dictionary : CodeDictionaries) : List KernelCode :=
   CodeEnumeration.ternary KernelCode.mk (List.range dictionary.masks)
     (List.range dictionary.masks) (List.range dictionary.masks)
@@ -88,6 +92,16 @@ def Within (dictionary : CodeDictionaries) : Nat → TermCode → Prop
   | depth + 1, .add left right | depth + 1, .multiply left right
   | depth + 1, .weightedMultiply left right | depth + 1, .divide left right =>
       left.Within dictionary depth ∧ right.Within dictionary depth
+
+/-- Test a supplied tree structurally; do not build the Cartesian catalogue
+merely to decide whether that one tree lies within the budget. -/
+instance decidableWithin (dictionary : CodeDictionaries) (depth : Nat) (code : TermCode) :
+    Decidable (code.Within dictionary depth) := by
+  induction depth generalizing code with
+  | zero => exact isFalse (fun impossible => impossible)
+  | succ depth inductionHypothesis =>
+      letI : ∀ inner : TermCode, Decidable (inner.Within dictionary depth) := inductionHypothesis
+      cases code <;> simp only [Within] <;> infer_instance
 
 def enumerate (dictionary : CodeDictionaries) : Nat → List TermCode
   | 0 => []

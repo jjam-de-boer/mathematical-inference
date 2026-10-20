@@ -30,6 +30,10 @@ def Within (dictionary : CodeDictionaries) (code : QuadCode) : Prop :=
   code.x < dictionary.masks ∧ code.y < dictionary.masks ∧
     code.z < dictionary.masks ∧ code.w < dictionary.masks
 
+instance decidableWithin (dictionary : CodeDictionaries) (code : QuadCode) : Decidable (code.Within dictionary) := by
+  unfold Within
+  infer_instance
+
 def enumerate (dictionary : CodeDictionaries) : List QuadCode :=
   (List.range dictionary.masks).flatMap (fun x =>
     CodeEnumeration.ternary (QuadCode.mk x) (List.range dictionary.masks)
@@ -81,6 +85,16 @@ def Within (dictionary : CodeDictionaries) (expressionDepth : Nat) : Nat → Der
   | depth + 1, .eqCongr left right inner =>
       left.Within dictionary expressionDepth ∧ right.Within dictionary expressionDepth ∧
         inner.Within dictionary expressionDepth depth
+
+/-- Budget validation visits the supplied proof, independently of the size
+of the exhaustive list. All local decisions are finite data decisions. -/
+instance decidableWithin (dictionary : CodeDictionaries) (expressionDepth proofDepth : Nat) (code : DerivationCode) :
+    Decidable (code.Within dictionary expressionDepth proofDepth) := by
+  induction proofDepth generalizing code with
+  | zero => exact isFalse (fun impossible => impossible)
+  | succ depth inductionHypothesis =>
+      letI : ∀ inner : DerivationCode, Decidable (inner.Within dictionary expressionDepth depth) := inductionHypothesis
+      cases code <;> simp only [Within] <;> infer_instance
 
 def enumerate (dictionary : CodeDictionaries) (expressionDepth : Nat) : Nat → List DerivationCode
   | 0 => []
