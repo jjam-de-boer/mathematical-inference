@@ -9,17 +9,38 @@ def ofSignedRatio (q : SignedRatio) : ExactLog :=
   ⟨⟨2 ^ q.num.toNat, 2 ^ (-q.num).toNat, Nat.pow_pos (by decide), Nat.pow_pos (by decide)⟩,
     q.den, q.den_pos⟩
 
+private theorem signed_parts (a : Int) : (a.toNat : Int) - ((-a).toNat : Int) = a := by
+  cases a with
+  | ofNat n => cases n <;> rfl
+  | negSucc n => rfl
+
+private theorem cross_difference (p q r s : Int) : p + s ≤ r + q ↔ p - q ≤ r - s := by
+  have left : (p - q) + (q + s) = p + s := by
+    rw [← Int.add_assoc, Int.sub_add_cancel]
+  have right : (r - s) + (q + s) = r + q := by
+    calc
+      _ = ((r - s) + s) + q := by ac_rfl
+      _ = r + q := by rw [Int.sub_add_cancel]
+  calc
+    _ ↔ (p - q) + (q + s) ≤ (r - s) + (q + s) := by rw [left, right]
+    _ ↔ _ := Int.add_le_add_iff_right (q + s)
+
 private theorem signed_cross (a b : Int) (m n : Nat) :
     a.toNat * m + (-b).toNat * n ≤ b.toNat * n + (-a).toNat * m ↔
       a * (m : Int) ≤ b * (n : Int) := by
-  have left : (a.toNat : Int) - ((-a).toNat : Int) = a := by omega
-  have right : (b.toNat : Int) - ((-b).toNat : Int) = b := by omega
   rw [← Int.ofNat_le]
   simp only [Int.natCast_add, Int.natCast_mul]
-  have leftScaled := congrArg (fun z : Int => z * (m : Int)) left
-  have rightScaled := congrArg (fun z : Int => z * (n : Int)) right
-  simp only [Int.sub_mul] at leftScaled rightScaled
-  omega
+  rw [cross_difference, ← Int.sub_mul, ← Int.sub_mul, signed_parts a, signed_parts b]
+
+private theorem two_pow_le_iff (m n : Nat) : 2 ^ m ≤ 2 ^ n ↔ m ≤ n := by
+  constructor
+  · intro bounded
+    by_cases compared : m ≤ n
+    · exact compared
+    · exact False.elim (Nat.not_le_of_gt (Nat.pow_lt_pow_of_lt (by decide : 1 < 2)
+        (Nat.lt_of_not_ge compared)) bounded)
+  · intro compared
+    exact Nat.pow_le_pow_right (by decide : 0 < 2) compared
 
 /-- Rational-bit comparison is the existing integer cross-product comparison. -/
 theorem ofSignedRatio_le_iff (a b : SignedRatio) :
@@ -27,7 +48,7 @@ theorem ofSignedRatio_le_iff (a b : SignedRatio) :
   change (2 ^ a.num.toNat) ^ b.den * (2 ^ (-b.num).toNat) ^ a.den ≤
     (2 ^ b.num.toNat) ^ a.den * (2 ^ (-a.num).toNat) ^ b.den ↔ _
   simp only [← Nat.pow_mul, ← Nat.pow_add]
-  rw [Nat.pow_le_pow_iff_right (by decide : 1 < 2)]
+  rw [two_pow_le_iff]
   exact signed_cross _ _ _ _
 
 theorem ofSignedRatio_equiv_iff (a b : SignedRatio) :

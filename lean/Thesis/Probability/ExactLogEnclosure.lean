@@ -30,7 +30,11 @@ def bisect (x : ExactLog) : (steps : Nat) → DyadicBracket x steps
       lower_bound := natural_lower x
       upper_bound := by
         have endpoint : -((x.argument.den.log2 + 1 : Nat) : Int) + (initialWidth x : Int) = ((x.argument.num.log2 + 1 : Nat) : Int) := by
-          simp only [initialWidth, Int.natCast_add]; omega
+          change -((x.argument.den.log2 + 1 : Nat) : Int) +
+            (((x.argument.num.log2 + 1 : Nat) : Int) + ((x.argument.den.log2 + 1 : Nat) : Int)) =
+            ((x.argument.num.log2 + 1 : Nat) : Int)
+          rw [Int.add_comm ((x.argument.num.log2 + 1 : Nat) : Int) ((x.argument.den.log2 + 1 : Nat) : Int),
+            Int.neg_add_cancel_left]
         rw [endpoint]
         exact natural_upper x }
   | steps + 1 =>
@@ -48,7 +52,9 @@ def bisect (x : ExactLog) : (steps : Nat) → DyadicBracket x steps
           · exact backward
         upper_bound := by
           have endpoint : midpoint + (initialWidth x : Int) = 2 * (previous.lower + (initialWidth x : Int)) := by
-            dsimp [midpoint]; omega
+            dsimp [midpoint]
+            rw [Int.mul_add, Int.two_mul (initialWidth x : Int)]
+            exact Int.add_assoc _ _ _
           rw [endpoint]
           exact (le_congr (equiv_refl x)
             (ofSignedRatio_congr (dyadic_double (previous.lower + (initialWidth x : Int)) steps))).mpr previous.upper_bound }
