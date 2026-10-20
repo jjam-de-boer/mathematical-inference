@@ -14,11 +14,11 @@ an external method; it does not extend the probability framework.
 
 | Point | Current result | Next boundary |
 | --- | --- | --- |
-| 1. Safe local builds | Measured import/proof costs, cache-aware checks and a resumable sequential builder under explicit resource caps; extracted soundness/completeness layers pass capped ordinary local targets. See `LOCAL_CHECKS.md`. | A complete local project/native/audit run is not established; full verification remains remote. |
+| 1. Safe local builds | Complete local Lean/native build and transitive axiom audit passed through the cache-aware sequential builder; measured caps and reusable ordinary artifacts are documented in `LOCAL_CHECKS.md`. | Use the guarded sequential route; success does not establish safety of unrestricted parallel cold builds or arbitrary external machine load. |
 | 2. Shared graph infrastructure | Connectivity, reachability and rank infrastructure extracted without changing public theorem names; current-engine dependency guards pass. Resource-driven soundness/completeness splits retain the original declaration text. | Further splitting should address a measured bottleneck; it is not itself a mathematical repair or a guarantee of full local feasibility. |
 | 3. Multivalued native example | Three declared observed values, an actual rational distribution, null intervention targets and supported conditionals checked through the native model. | The standalone-template regression now exercises the same boundary as well. |
 | 4. Support-pattern applicability | Exact undefined/zero/positive analysis and exhaustive comparison within supplied finite formula catalogues; complete native causal support profiles also preserve recursive derivation support. | This does not enumerate every possible certified formula; observed support alone need not determine causal support. |
-| 5. Universal alternative-formula coverage | Finite native causal support-profile coverage, exact recursive support checking, a serialized certificate checker and maximal proof-admissible observable guard compilation constructed. | Bounded proof-search completeness and formula selection remain; no universal stopping, formula-coverage or impossibility theorem yet. |
+| 5. Universal alternative-formula coverage | Finite native support profiles, a serialized certificate checker, maximal proof-admissible guards, and exact bounded code enumeration with native acceptance-coverage theorems constructed. | Formula selection remains a separate stage; no universal stopping, unrestricted formula-coverage or impossibility theorem yet. |
 | 6. Finite structural representation | Constructed standalone-template coverage both for a fixed full hidden DAG and across all finite hidden DAGs with a fixed observed projection. | Rational weight assignments remain infinite; compatibility, sharpness and complete search are separate obligations. |
 | 7. Fixed-observed-law procedures | Restricted results retained; exact compatibility and unconditional/conditional-target comparison for a full hidden DAG with declared finite alphabet and denominator bounds. Conditional support and positive-evidence values are reported separately. | Unrestricted rational feasibility remains separate; increasing bounds has no proved stopping rule. |
 
@@ -302,9 +302,9 @@ strict cycle with a hidden undefined intermediate; they accept the genuine
 weighted null-factor case and the guarded action-one identity. Only tiny
 explicit profile lists are executed, not enormous full catalogues.
 
-Review checkpoint: the checker certifies supplied codes in this declared
-grammar. It does not enumerate derivations, produce a formula selector, prove
-bounded proof-search completeness, or cover arbitrary Lean semantic proofs.
+This checker certifies supplied codes in its declared grammar. Enumeration
+is a separate downstream stage, described below; neither the checker alone
+nor the bounded enumerator covers arbitrary Lean semantic proofs.
 
 ### Generated proof-admissible guards for goal 5
 
@@ -343,6 +343,57 @@ adapters are checked symbolically rather than expanding enormous catalogues.
 Proof enumeration, bounded proof-search completeness and formula selection
 are not implemented by this guard construction.
 
+### Bounded code enumeration and native acceptance coverage for goal 5
+
+`ProbabilityTermEnumeration` and `DerivationEnumeration` construct finite
+lists with independent **expression-tree depth** and **proof-tree depth**
+budgets. Zero admits no tree; each constructor consumes one level. Bounded
+arity consequently also bounds total tree size. These are not byte-length
+budgets, numerical probability bounds or complexity guarantees.
+
+Expression depth bounds every explicit `TermCode` field anywhere inside a
+proof, including intermediate subproofs and `eqCongr` fields. It is not a
+bound merely on the source and final formula. Primitive rules construct
+their existing derived endpoints when checked; those expansions are not
+the encoded term fields counted by this budget. All natural indices are
+bounded by finite dictionary ranges. `CodeDictionaries.ofSignature` uses all
+declared masks and assignments, not only factually supported assignments.
+
+The `TermCode.mem_enumerate_iff` and `DerivationCode.mem_enumerate_iff`
+theorems prove exact membership for the independent recursive `Within`
+predicates. Every existing constructor, primitive tag and congruence tag is
+included. Raw generation deliberately does not assert a graphical condition,
+a valid endpoint join, an action-free output or native support.
+
+`NativeProofEnumeration` includes both native code branches. Its wrapper
+consumes one proof level, and its `actionOne` branch is a leaf.
+`NativeProofCode.mem_enumerate_iff` proves exact native code membership.
+`catalogueOn` applies the existing checker and guard compiler to every
+enumerated proof for a fixed supplied source. `mem_catalogueOn_iff` specifies
+exactly which successful bounded codes produce catalogue members. Members
+are actual `CheckedNativeFormula` objects, with their existing native
+soundness theorems, not unproved numerical identities.
+
+`NativeCertificateCode.compileGuardOn_of_checkOn` connects an accepted old
+supplied guard to that same proof's generated guard. Consequently
+`NativeProofCode.catalogueOn_covers` proves more than raw syntax coverage:
+every accepted supplied guard for a bounded proof has all its accepted
+applications retained by a generated member on a covered original model.
+`catalogueFixed_covers` and `catalogueProjected_covers` supply the constructed
+profile coverage for their entire respective native model classes. No bound
+on original hidden alphabets or source denominators is added. Original
+conditional-source support remains a separate soundness premise.
+
+The regressions execute tiny literal syntax lists and use the exactness
+theorems for larger symbolic membership and native coverage. They include
+insufficient wrapper depth, a bad reference hidden in an intermediate term,
+raw graphical failures, a strict cycle with null intermediate support, and
+preservation of the three-valued fixture's null reference. Complete native
+catalogues are not concretely expanded. No formula is selected, and no
+minimality, duplicate-free output or practical large-instance execution
+claim is made. This stage covers the bounded serialized grammar, not every
+arbitrary Lean proof of a semantic identity.
+
 The universal stopping argument remains unresolved. Finitely many support
 cells bound the number of *coverage gains*, not the delay until the next
 gain: even one new cell can first appear after an arbitrarily long initial
@@ -350,10 +401,10 @@ plateau. Neither a plateau nor bounded-search exhaustion certifies universal
 exhaustion. A proof-length bound, finite complete rewrite/derivation basis,
 or another complete coverability decision is still needed. This refutes
 that proposed stopping shortcut; it is not an impossibility proof for a
-universal selector. The proof/guard grammar and its checker are now specified
-and implemented; a subsequent search stage still needs a precise bound and
-an encoding/enumeration completeness theorem before it can claim bounded
-exhaustion of that grammar.
+universal selector. The declared proof/guard grammar now has an exact bounded
+enumerator and acceptance-coverage theorem. Increasing its budgets still
+has no proved stopping criterion for universal coverage. Formula selection
+is the next separate implementation checkpoint.
 
 ## Fixed-law results beyond graph-level completeness
 

@@ -110,7 +110,7 @@ theorem NativeCertificateCode.compileGuardOn_of_checkOn (code : NativeCertificat
                 have emptyChecked : NativeSupportGuard.check profiles proofTerm.demand [] = true := rfl
                 simpa only [NativeProofCode.compileGuardOn, NativeCertificateCode.checkOn, decodedSource,
                   Option.bind_eq_bind, Option.bind_some, decodedProof, dif_pos sameSource, dif_pos actionFree,
-                  dif_pos emptyChecked, Option.pure_def, Option.map_some]
+                  dif_pos emptyChecked, Option.pure_def, Option.map_some, CheckedNativeFormula.withCompiledGuard]
               · simp only [NativeCertificateCode.checkOn, decodedSource, Option.bind_eq_bind, Option.bind_some, decodedProof,
                   dif_pos sameSource, dif_pos actionFree, dif_neg guardChecked, reduceCtorEq] at accepted
             · simp only [NativeCertificateCode.checkOn, decodedSource, Option.bind_eq_bind, Option.bind_some, decodedProof,

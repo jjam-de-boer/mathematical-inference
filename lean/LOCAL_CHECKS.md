@@ -289,6 +289,23 @@ Local measurements and individual invocation logs are retained in
 `FULL LOCAL BUILD AND AXIOM AUDIT PASSED using the committed configuration.`
 The build-helper regression suite also passed all 76 tests.
 
+### Incremental bounded-enumeration pilot, 2026-10-20
+
+The new `ProbabilityTermEnumeration` and `DerivationEnumeration` modules
+passed ordinary sequential Lake targets at the conservative 640 MiB Lean /
+768 MiB aggregate-RSS / 30-second profile: respectively 2.12 s / 651.2 MiB
+and 1.00 s / 664.1 MiB sampled group RSS. Genuine prerequisite artifacts were
+reused and the shared exclusive compiler lock prevented an overlapping build.
+
+The downstream `NativeProofEnumeration` target stopped at Lean's 640 MiB
+threshold, in its first definitions after loading the native support/checker
+environment: 1.10 s / 762.4 MiB sampled group RSS. Its proof bridge and example
+file were not established by that run. This was a resource refusal, not an
+unsuccessful mathematical proof or a timeout. No larger profile was retried
+automatically; native verification continued remotely. The earlier complete
+local build above concerns its recorded checkpoint, not these later additions.
+Logs are retained in `.lake/local-builds-v1/20261020-141555-pybr948z/`.
+
 ## Transportation split and explicit resource profiles, 2026-10-19
 
 The machine reports 18 GiB physical RAM and 11 CPU cores. At the assessment
