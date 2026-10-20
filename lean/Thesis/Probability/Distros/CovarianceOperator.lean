@@ -24,8 +24,9 @@ private theorem linearCombination_neg (indices : List I) (responses : I → A �
     SignedRatio.Equiv (rationalLinearCombination indices (fun i => SignedRatio.neg (coefficients i)) responses x)
       (SignedRatio.neg (rationalLinearCombination indices coefficients responses x)) :=
   SignedRatio.equiv_trans (SignedRatio.listSum_map_congr indices _ _ (fun i => SignedRatio.neg_mul _ _))
-    (by simpa only [List.map_map, Function.comp_def] using SignedRatio.listSum_map_neg
-      (indices.map (fun i => SignedRatio.mul (coefficients i) (responses i x))))
+    (by
+      simpa only [List.map_map, Function.comp_def] using SignedRatio.listSum_map_neg
+        (indices.map (fun i => SignedRatio.mul (coefficients i) (responses i x))))
 
 private theorem linearCombination_sub (indices : List I) (responses : I → A → SignedRatio)
     (first second : I → SignedRatio) (x : A) :
