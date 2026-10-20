@@ -63,14 +63,14 @@ structure Operator (domain codomain : Nat) where
 namespace Operator
 
 def Image (operator : Operator n m) (value : Vector m) : Prop := ∃ source, Equiv (operator.apply source) value
-def Kernel (operator : Operator n m) (value : Vector n) : Prop := Equiv (operator.apply value) zero
+def Kernel (operator : Operator n m) (value : Vector n) : Prop := Equiv (operator.apply value) RationalVector.zero
 
 theorem map_combine (operator : Operator n m) (indices : List I) (vectors : I → Vector n) (coefficients : I → SignedRatio) :
     Equiv (operator.apply (combine indices vectors coefficients)) (combine indices (fun i => operator.apply (vectors i)) coefficients) := by
   induction indices with
   | nil => exact operator.zero
   | cons index indices ih =>
-      exact equiv_trans (operator.add (scale (coefficients index) (vectors index)) (combine indices vectors coefficients))
+      exact equiv_trans (operator.add (RationalVector.scale (coefficients index) (vectors index)) (combine indices vectors coefficients))
         (fun i => SignedRatio.add_congr (operator.scale (coefficients index) (vectors index) i) (ih i))
 
 end Operator
@@ -129,8 +129,11 @@ def zeroRank (operator : Operator n m) (vanished : ∀ value, Equiv (operator.ap
 /-- For a zero operator, every coordinate direction is a kernel basis vector. -/
 def zeroKernelBasis (operator : Operator n m) (vanished : ∀ value, Equiv (operator.apply value) zero) :
     Basis n operator.Kernel (Fin n) :=
-  { standardBasis n with
+  { indices := List.finRange n
+    distinct := finRange_nodup n
+    vectors := unit
     belongs := by intro i _; exact vanished (unit i)
+    independent := (standardBasis n).independent
     spanning := by intro value _; exact (standardBasis n).spanning value True.intro }
 
 end Thesis.Probability.Distros.RationalVector
