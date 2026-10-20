@@ -17,10 +17,10 @@ def prepend (first : A) (tail : Fin n → A) : Fin (n + 1) → A :=
   fun i => if zero : i.val = 0 then first else tail ⟨i.val - 1, by have bound := i.isLt; omega⟩
 
 theorem prepend_zero (first : A) (tail : Fin n → A) : prepend first tail 0 = first := by
-  simp only [prepend, Fin.val_zero, dif_pos rfl]
+  simp only [prepend, Fin.val_zero, dite_true]
 
 theorem prepend_succ (first : A) (tail : Fin n → A) (i : Fin n) : prepend first tail i.succ = tail i := by
-  simp only [prepend, Fin.val_succ, Nat.add_one_ne_zero, dif_neg, Nat.add_sub_cancel]
+  simp only [prepend, Fin.val_succ, Nat.add_one_ne_zero, dite_false, Nat.add_sub_cancel]
 
 theorem prepend_restrict (values : Fin (n + 1) → A) : prepend (values 0) (fun i => values i.succ) = values := by
   funext i
@@ -90,7 +90,7 @@ theorem headRow_holds_iff (others : Nat) (coefficient : Int) (bound : SignedRati
     (headRow others coefficient bound).Holds values ↔ SignedRatio.LE (SignedRatio.scaleInt coefficient (values 0)) bound := by
   have coefficients : (headRow others coefficient bound).coefficients = prepend coefficient (fun _ => 0) := by
     funext i
-    by_cases zero : i.val = 0 <;> simp only [headRow, prepend, zero, if_true, if_false, dif_pos, dif_neg]
+    by_cases zero : i.val = 0 <;> simp only [headRow, prepend, zero, if_true, if_false, dite_true, dite_false]
   change SignedRatio.LE (dot (others + 1) (headRow others coefficient bound).coefficients values) bound ↔ _
   rw [coefficients]
   exact SignedRatio.le_congr (SignedRatio.equiv_trans (dot_prepend coefficient (fun _ => 0) values)

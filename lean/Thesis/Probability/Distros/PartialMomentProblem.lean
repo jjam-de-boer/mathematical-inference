@@ -153,7 +153,7 @@ end PartialMomentProblem
 carrier instead of the standard range lemma's classical dependency. -/
 theorem range_nodup_constructive (n : Nat) : (List.range n).Nodup := by
   have same := finRange_val_map n (fun i => i)
-  simp only [List.map_id_fun] at same
+  simp only [List.map_id_fun'] at same
   rw [← same]
   apply List.pairwise_map.mpr
   apply (finRange_nodup n).imp
@@ -193,5 +193,17 @@ def mixedFactorialMomentInterval (orders : List Nat) (lower upper : QProb) : Mom
 
 def jointPartialMomentProblem (bounds : List Nat) (intervals : List (MomentInterval (List Nat))) : PartialMomentProblem (List Nat) :=
   ⟨factorialRectangle bounds, [], factorialRectangle_positive bounds, factorialRectangle_nodup bounds, intervals⟩
+
+/-- The public factorial helper uses the established factorial-moment
+observable, rather than a separate numerical convention. -/
+theorem factorialMomentInterval_mean (μ : Distro Nat) (order : Nat) (lower upper : QProb) :
+    SignedRatio.Equiv ((factorialMomentInterval order lower upper).mean μ)
+      (factorialMoment (⟨μ, id⟩ : NatDistro Nat) order).toSignedRatio :=
+  μ.rationalExpectation_ofNat (fun value => fallingFactorial value order)
+
+theorem mixedFactorialMomentInterval_mean (μ : Distro (List Nat)) (orders : List Nat) (lower upper : QProb) :
+    SignedRatio.Equiv ((mixedFactorialMomentInterval orders lower upper).mean μ)
+      (jointFactorialMoment μ orders).toSignedRatio :=
+  μ.rationalExpectation_ofNat (jointFalling orders)
 
 end Thesis.Probability.Distros
