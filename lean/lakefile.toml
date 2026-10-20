@@ -2,9 +2,19 @@ name = "thesis"
 version = "0.1.0"
 defaultTargets = ["thesis"]
 
+# Keep each Lean compiler within the already measured local ceiling. These
+# resource arguments do not change proof traces. For sequential native Lake
+# scheduling as well, set LEAN_NUM_THREADS=1 in the invoking environment;
+# -j1 alone limits a child compiler, not the number of Lake build jobs.
+weakLeanArgs = ["-j1", "-M4608", "-DmaxErrors=1"]
+
 [[lean_lib]]
 name = "Thesis"
 
 [[lean_exe]]
 name = "thesis"
 root = "Main"
+# Check exactly the same full facade before building the smoke executable.
+# This is a build dependency, not a runtime import: kernel-check every proof
+# without compiling all of those definitions into unused machine-code objects.
+needs = ["Thesis"]
