@@ -108,6 +108,24 @@ theorem mem_enumerate_iff (dictionary : CodeDictionaries) (expressionDepth proof
       cases code <;>
         simp [enumerate, Within, CodeEnumeration.mem_binary, CodeEnumeration.mem_ternary,
           TermCode.mem_enumerate_iff, QuadCode.mem_enumerate_iff, inductionHypothesis]
+      case multiplyAssoc first second third =>
+        constructor
+        · rintro ⟨left, leftBound, middle, middleBound, right, rightBound, rfl, rfl, rfl⟩
+          exact ⟨leftBound, middleBound, rightBound⟩
+        · rintro ⟨firstBound, secondBound, thirdBound⟩
+          exact ⟨first, firstBound, second, secondBound, third, thirdBound, rfl, rfl, rfl⟩
+      case congr kind first second =>
+        constructor
+        · rintro ⟨_, left, leftBound, right, rightBound, rfl, rfl, rfl⟩
+          exact ⟨leftBound, rightBound⟩
+        · rintro ⟨firstBound, secondBound⟩
+          exact ⟨kind, first, firstBound, second, secondBound, rfl, rfl, rfl⟩
+      case eqCongr left right inner =>
+        constructor
+        · rintro ⟨first, firstBound, second, secondBound, third, thirdBound, rfl, rfl, rfl⟩
+          exact ⟨firstBound, secondBound, thirdBound⟩
+        · rintro ⟨leftBound, rightBound, innerBound⟩
+          exact ⟨left, leftBound, right, rightBound, inner, innerBound, rfl, rfl, rfl⟩
 
 end DerivationCode
 end Thesis.Causality.ProbabilityCode

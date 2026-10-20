@@ -148,6 +148,7 @@ import Thesis.CausalTransport.NativeDerivationSupportCheck
 import Thesis.CausalTransport.NativeSupportGuard
 import Thesis.CausalTransport.NativeCertificateCheck
 import Thesis.CausalTransport.NativeGuardCompilation
+import Thesis.CausalTransport.NativeProofEnumeration
 import Thesis.CausalTransport.HiddenDAGFinitePresentation
 import Thesis.CausalTransport.HiddenDAGSourcePresentation
 import Thesis.CausalTransport.HiddenDAGSourceCompression
