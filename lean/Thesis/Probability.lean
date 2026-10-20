@@ -1,3 +1,4 @@
+import Thesis.Probability.FiniteAMGM
 import Thesis.Probability.ExactLogEnclosure
 import Thesis.Probability.Core
 import Thesis.Probability.RationalSquareObstruction
