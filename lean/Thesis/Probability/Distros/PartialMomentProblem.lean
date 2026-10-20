@@ -149,12 +149,23 @@ theorem solve_success_iff [DecidableEq A] (problem : PartialMomentProblem A) :
 
 end PartialMomentProblem
 
+/-- Constructive duplicate-freeness, reusing the checked finite-index
+carrier instead of the standard range lemma's classical dependency. -/
+theorem range_nodup_constructive (n : Nat) : (List.range n).Nodup := by
+  have same := finRange_val_map n (fun i => i)
+  simp only [List.map_id_fun] at same
+  rw [← same]
+  apply List.pairwise_map.mpr
+  apply (finRange_nodup n).imp
+  intro first second different equal
+  exact different (Fin.ext equal)
+
 /-- Scalar factorial-moment intervals on a known finite count bound. -/
 def factorialMomentInterval (order : Nat) (lower upper : QProb) : MomentInterval Nat :=
   ⟨fun value => (fallingFactorial value order : Int), lower.toSignedRatio, upper.toSignedRatio⟩
 
 def scalarPartialMomentProblem (bound : Nat) (intervals : List (MomentInterval Nat)) : PartialMomentProblem Nat :=
-  ⟨List.range (bound + 1), 0, by simp only [List.length_range]; omega, List.nodup_range, intervals⟩
+  ⟨List.range (bound + 1), 0, by simp only [List.length_range]; omega, range_nodup_constructive (bound + 1), intervals⟩
 
 /-- Rectangle enumeration has no repeated count vectors. This is a finite
 list fact and never shrinks the declared outcome domain or positive support. -/
@@ -169,7 +180,7 @@ theorem factorialRectangle_nodup (bounds : List Nat) : (factorialRectangle bound
         apply ih.imp
         intro first second different same
         exact different (List.cons.inj same).2
-      · apply (List.nodup_range (n := bound + 1)).imp
+      · apply (range_nodup_constructive (bound + 1)).imp
         intro first second different x xMember y yMember same
         rcases List.mem_map.mp xMember with ⟨tail, _, xSame⟩
         rcases List.mem_map.mp yMember with ⟨other, _, ySame⟩
