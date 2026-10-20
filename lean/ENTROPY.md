@@ -52,6 +52,23 @@ strict common-denominator product bounds are available for the rational Gibbs
 inequality. This foundation does not yet establish KL nonnegativity, its equality
 case, entropy concavity, or maximum-entropy optimization.
 
+## Checkpoint 4: rational Gibbs inequality and KL nonnegativity
+
+`RationalAMGM` clears the finitely supplied argument denominators and proves
+weighted rational products are at most one whenever their arithmetic mean is
+at most one, including empty and zero-weight families. `LogMeanInequality`
+transports that algebraic result to common-degree exact logarithms.
+
+`Distros.EntropyGibbs` proves grid PMF normalization and numerator sums, then
+`Distro.relativeEntropy_nonnegative` for every rational law and positive reference
+law on the declared grid. It imposes no positivity assumption on observed masses.
+The proof includes aggregation of duplicate atom occurrences and null outliers.
+Executed regressions include a point law on a three-state grid with two zero
+observed cells, whose uniform-reference KL equals `log₂(3)` exactly.
+
+The equality case, upper entropy bounds, strict concavity and optimization
+results remain outstanding; KL nonnegativity alone does not establish them.
+
 ## Remaining full goal
 
 1. Strengthen the grid-independence interface as needed for the later optimizer;
@@ -69,6 +86,8 @@ case, entropy concavity, or maximum-entropy optimization.
    and null presentations, and the three-state mean-1/2 irrational-optimum case.
    State the additional semantic bridge required for real-optimum claims.
 
-Capped local elaboration checks cover selected modules only. Each checkpoint
-still requires remote full compilation and both transitive axiom gates before
-being reported as verified on main.
+Ordinary local Lake builds use `LEAN_NUM_THREADS=1`, the committed 4608 MiB
+compiler threshold and the existing cache. Only one build may run on the machine
+at a time. Targeted checks do not establish full-project success; the full build
+and axiom audit remain mandatory. Remote CI repeats both gates for published
+checkpoints before they are reported as verified on main.
