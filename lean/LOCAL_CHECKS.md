@@ -214,6 +214,14 @@ of one observed time-limit boundary, not five independently diagnosed errors.
 Swap usage remained zero afterward. The actual complete local build, final
 link and local axiom-policy gate still must pass before reporting success.
 
+The subsequent published `16f690a` covariance/rank additions also passed
+sequentially, including their new `DistroRanks` regression and affected
+distribution examples. Each newly added library module stayed below 700 MiB.
+Repeating the original-configuration, source-fingerprinted no-build inventories
+then confirmed **881/886 Lean/audit targets and 863/867 native-object targets**
+current. The blocked target names above are unchanged; the larger totals come
+from the concurrent distribution additions, not from a new causal failure.
+
 ## Transportation split and explicit resource profiles, 2026-10-19
 
 The machine reports 18 GiB physical RAM and 11 CPU cores. At the assessment
