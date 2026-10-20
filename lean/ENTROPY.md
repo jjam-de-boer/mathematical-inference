@@ -25,11 +25,28 @@ These are symbolic logarithms with an exact ordered arithmetic interpretation,
 not a newly assumed real logarithm. A separate semantic bridge to a completed
 real-number model would need its own proof and is not silently assumed.
 
+## Checkpoint 2: entropy and positive-reference KL
+
+- `ExactLogWeights` proves congruence for both rational coefficients and exact
+  logarithm values, monotonicity, and finite-sum congruence/permutation laws.
+- `EntropyValue` defines `-p log₂(p)` and `p log₂(p/r)`, with explicit zero
+  observed-mass branches and positive reference masses. Both respect unreduced
+  rational presentations. Entropy contributions in `[0,1]` are nonnegative.
+- `Distros.EntropyGrid` requires distinct observable outcomes. `Distro.entropy`
+  and `Distro.relativeEntropy` require almost-sure grid support, so extra null
+  atom labels remain admissible. They aggregate the original singleton PMFs.
+- Entropy and KL are invariant under `SameLaw`. Entropy is nonnegative and
+  invariant under grid permutation and adjoining a zero-mass cell. Positive
+  reference laws have zero self-divergence.
+- Executed regressions cover fair and point laws, duplicate/split/reordered
+  records, rescaled denominators, a retained null outlier, grid changes, and
+  unequal positive prior weights. The fair-law/prior `(1/4,3/4)` KL value is
+  certified exactly as `log₂(4/3)/2`.
+
 ## Remaining full goal
 
-1. Define Shannon entropy and positive-reference KL divergence on distinct finite
-   grids, aggregating duplicate outcome occurrences. Prove `SameLaw` invariance,
-   including splitting, reordering, denominator changes and null outliers.
+1. Strengthen the grid-independence interface as needed for the later optimizer;
+   preserve every established atom-presentation and null-cell invariance law.
 2. Prove entropy bounds, KL nonnegativity and equality, strict concavity,
    uniqueness and global log-linear optimality, with explicit support/boundary
    assumptions. Investigate a finite weighted AM–GM route.

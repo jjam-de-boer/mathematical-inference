@@ -1,3 +1,4 @@
+import Thesis.Examples.Entropy
 import Thesis.Examples.ExactLog
 import Thesis
 import Thesis.Examples.ConditionalReadoutFailure
