@@ -1,12 +1,18 @@
 import Thesis.Probability.Distros.SignedCovariance
 import Thesis.Probability.Distros.Concentration
+import Thesis.Probability.Distros.LawBasics
 
 namespace Thesis.Probability.Distros
 
-/-- Almost-sure statements ignore zero-weight occurrences but retain all
-positive occurrences, including repeated outcome labels. -/
-def Distro.AlmostSurely (μ : Distro Ω) (predicate : Ω → Prop) : Prop :=
-  ∀ atom ∈ μ.record.atoms, 0 < atom.2 → predicate atom.1
+/-!
+# Signed concentration and almost sure equality
+
+The basic `Distro.AlmostSurely` predicate is re-exported from `LawBasics`.
+This module supplies the stronger integral, variance and concentration laws;
+support-only clients should import that lightweight interface directly.
+All statements retain their original treatment of positive occurrences,
+repeated labels and null atoms.
+-/
 
 theorem natIntegral_eq_zero_iff (atoms : List (Ω × Nat)) (f : Ω → Nat) :
     natIntegral atoms f = 0 ↔ ∀ atom ∈ atoms, 0 < atom.2 → f atom.1 = 0 := by
