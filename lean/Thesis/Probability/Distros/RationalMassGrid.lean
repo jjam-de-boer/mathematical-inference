@@ -31,6 +31,7 @@ theorem indexedMassProbability_normalized (values : Fin variables → SignedRati
     QProb.Equiv (QProb.listSum ((List.range variables).map (indexedMassProbability values))) QProb.one := by
   apply (QProb.toSignedRatio_equiv_iff _ _).mp
   rw [mass_sum_embedding, List.map_map]
+  simp only [Function.comp_def]
   rw [← finRange_val_map variables (fun i => (indexedMassProbability values i).toSignedRatio)]
   refine SignedRatio.equiv_trans (SignedRatio.listSum_map_congr (List.finRange variables) _ values ?_) (simplex_sum values simplex)
   intro i
