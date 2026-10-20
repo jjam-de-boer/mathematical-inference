@@ -34,7 +34,7 @@ theorem combine_kernel_coordinate (active : Fin n → Bool) (coefficients : Opti
 
 private theorem add_sub_cancel (a b : SignedRatio) : SignedRatio.Equiv (SignedRatio.add a (SignedRatio.sub b a)) b := by
   simp only [SignedRatio.Equiv, SignedRatio.sub, SignedRatio.add, SignedRatio.neg, Int.natCast_mul,
-    Int.mul_add, Int.mul_neg, Int.neg_neg, Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
+    Int.mul_add, Int.mul_neg, Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
   omega
 
 /-- The kernel basis consists of the all-ones vector and one coordinate
@@ -121,7 +121,6 @@ theorem contrast_rank_nullity (active : Fin n → Bool) (pivot : Fin n) (positiv
     ((positiveIndices active).length - 1) + ((nullIndices active).length + 1) = n := by
   have partition := filter_partition_length (List.finRange n) active
   rw [List.length_finRange] at partition
-  have contrast := contrastIndices_length active pivot positive
   change (positiveIndices active).length + (nullIndices active).length = n at partition
   have member := (positiveIndices_mem active pivot).mpr positive
   have nonempty : 0 < (positiveIndices active).length := by

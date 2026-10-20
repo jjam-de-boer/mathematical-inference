@@ -411,4 +411,13 @@ retained rather than silently excluded as nonpositive support.
     compatible laws. `RationalLinearBounds` projects the objective to one
     closed interval and lifts both endpoints; the public certificate includes
     actual compatible laws attaining both bounds and universal inequalities.
+73. `RationalVectorSpace` supplies finite rational bases with explicit
+    independence and spanning. `OccupancyRank` constructs image bases from
+    nonpivot positive-coordinate covariance columns and kernel bases from the
+    all-ones vector and null-coordinate units. Thus r positive categories give
+    rank r-1 for nonzero multinomial/reinforced trials and proper nonempty
+    hypergeometric samples. `OccupancyRankDegenerate` supplies empty image bases
+    and full coordinate kernel bases at zero trials or a full-population sample.
+    Rank certificates carry actual image bases of the stated cardinality;
+    the linear algebra never normalizes rational presentations by choice.
 -/

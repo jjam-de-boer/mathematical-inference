@@ -57,7 +57,7 @@ theorem contrastIndices_length (active : Fin n → Bool) (pivot : Fin n) (positi
 
 private theorem sub_sub_cancel (a b : SignedRatio) : SignedRatio.Equiv (SignedRatio.sub a (SignedRatio.sub a b)) b := by
   simp only [SignedRatio.Equiv, SignedRatio.sub, SignedRatio.add, SignedRatio.neg, Int.natCast_mul,
-    Int.mul_add, Int.mul_neg, Int.neg_neg, Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
+    Int.mul_add, Int.mul_neg, Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
   omega
 
 /-- Subtracting the pivot coefficient and discarding null coordinates

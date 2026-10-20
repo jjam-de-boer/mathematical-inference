@@ -62,7 +62,7 @@ theorem multinomial_occupancyKernel (n : Nat) (weights : List Nat) (positive : 0
   constructor
   · intro null
     rcases criterion.mp null with zero | constant
-    · omega
+    · exact False.elim (by omega)
     · exact (coefficientsConstant_iff weights coefficients).mp constant
   · intro constant
     exact criterion.mpr (Or.inr ((coefficientsConstant_iff weights coefficients).mpr constant))
@@ -76,7 +76,7 @@ theorem reinforcedCount_occupancyKernel (n increment : Nat) (weights : List Nat)
   constructor
   · intro null
     rcases criterion.mp null with zero | constant
-    · omega
+    · exact False.elim (by omega)
     · exact (coefficientsConstant_iff weights coefficients).mp constant
   · intro constant
     exact criterion.mpr (Or.inr ((coefficientsConstant_iff weights coefficients).mpr constant))
@@ -91,8 +91,8 @@ theorem multivariateHypergeometric_occupancyKernel (n : Nat) (stocks : List Nat)
   constructor
   · intro null
     rcases criterion.mp null with zero | full | constant
-    · omega
-    · omega
+    · exact False.elim (by omega)
+    · exact False.elim (by omega)
     · exact (coefficientsConstant_iff stocks coefficients).mp constant
   · intro constant
     exact criterion.mpr (Or.inr (Or.inr ((coefficientsConstant_iff stocks coefficients).mpr constant)))

@@ -102,7 +102,7 @@ theorem simplexGrid_integer_expectation (cells : List A) (default : A) (values :
       (RationalLinear.dot cells.length (fun i => response (cells.getD i.val default)) values) :=
   SignedRatio.equiv_trans (simplexGrid_expectation cells default values simplex nonempty _)
     (SignedRatio.equiv_trans (SignedRatio.listSum_map_congr (List.finRange cells.length) _ _
-      (fun i => SignedRatio.mul_comm _ _)) (SignedRatio.equiv_symm (RationalLinear.dot_sum _ _ _)))
+      (fun _ => SignedRatio.mul_comm _ _)) (SignedRatio.equiv_symm (RationalLinear.dot_sum _ _ _)))
 
 /-- Read an arbitrary grid-supported law as its vector of rational PMFs. -/
 def gridMasses [DecidableEq A] (μ : Distro A) (cells : List A) (default : A) : Fin cells.length → SignedRatio :=
@@ -114,7 +114,7 @@ theorem gridMasses_integer_expectation [DecidableEq A] (μ : Distro A) (cells : 
       (RationalLinear.dot cells.length (fun i => response (cells.getD i.val default)) (gridMasses μ cells default)) := by
   refine SignedRatio.equiv_trans (μ.rationalExpectation_grid_pmf cells distinct support _) ?_
   rw [← finRange_getD_map cells default (fun cell => SignedRatio.mul (μ.pmf cell).toSignedRatio ⟨response cell, 1, Nat.zero_lt_one⟩)]
-  exact SignedRatio.equiv_trans (SignedRatio.listSum_map_congr _ _ _ (fun i => SignedRatio.mul_comm _ _))
+  exact SignedRatio.equiv_trans (SignedRatio.listSum_map_congr _ _ _ (fun _ => SignedRatio.mul_comm _ _))
     (SignedRatio.equiv_symm (RationalLinear.dot_sum _ _ _))
 
 theorem gridMasses_simplex [DecidableEq A] (μ : Distro A) (cells : List A) (default : A)
