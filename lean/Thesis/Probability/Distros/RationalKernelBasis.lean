@@ -106,4 +106,28 @@ theorem constantKernelBasis_cardinality (operator : Operator n m) (active : Fin 
     (constantKernelBasis operator active pivot positive criterion).indices.length = (nullIndices active).length + 1 := by
   simp only [constantKernelBasis, kernelIndices, List.length_cons, List.length_map]
 
+private theorem filter_partition_length (indices : List I) (active : I → Bool) :
+    (indices.filter active).length + (indices.filter (fun i => !active i)).length = indices.length := by
+  induction indices with
+  | nil => rfl
+  | cons i indices ih =>
+      cases selected : active i <;>
+        simp only [List.filter_cons, selected, Bool.not_false, Bool.not_true, Bool.false_eq_true,
+          if_true, if_false, List.length_cons] <;> omega
+
+/-- The explicit image and kernel basis cardinalities sum to the complete
+original coordinate dimension, including every null category. -/
+theorem contrast_rank_nullity (active : Fin n → Bool) (pivot : Fin n) (positive : active pivot = true) :
+    ((positiveIndices active).length - 1) + ((nullIndices active).length + 1) = n := by
+  have partition := filter_partition_length (List.finRange n) active
+  rw [List.length_finRange] at partition
+  have contrast := contrastIndices_length active pivot positive
+  change (positiveIndices active).length + (nullIndices active).length = n at partition
+  have member := (positiveIndices_mem active pivot).mpr positive
+  have nonempty : 0 < (positiveIndices active).length := by
+    cases same : positiveIndices active with
+    | nil => rw [same] at member; exact False.elim (List.not_mem_nil member)
+    | cons i indices => simp only [List.length_cons]; omega
+  omega
+
 end Thesis.Probability.Distros.RationalVector
