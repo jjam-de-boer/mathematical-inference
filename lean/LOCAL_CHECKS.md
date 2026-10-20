@@ -184,6 +184,26 @@ No larger memory or timeout setting is an automatic retry. Unrelated editor
 or manual compiler processes are not terminated. Machine-wide headroom still
 matters, especially on this machine while other applications retain swap.
 
+### Resumed full-scope checks, 2026-10-20
+
+The published `587fa1e` checkpoint includes the newer finite-grid and partial
+moment distribution modules. Its complete local Lean/audit graph has 879
+modules. All seven new distribution modules passed sequentially, with sampled
+aggregate peaks below 700 MiB. Separately, all 38 then-unbuilt examples that
+were independent of `HedgeObstructionModel` passed, including the positive and
+supported-zero modal regressions. These are intermediate checks, not a full
+build or a replacement for the complete axiom-policy gate.
+
+The full traversal subsequently reached `HedgeObstructionModel` (module 836).
+It stopped at the unchanged 30-second wall deadline: 30.04 s and 891.7 MiB
+sampled aggregate RSS. This is **not** a memory failure, an invalid proof, or
+evidence that local compilation is impossible. A longer single-module pilot
+requires separate approval; the reusable builder still rejects time limits
+above 30 seconds. No proof statement or numerical fixture has been removed
+to get past this boundary. The ordinary native-object bootstrap is also in
+progress; an earlier checkpoint reached target 350 with peaks below 150 MiB
+in that batch. The actual complete local build and audit remain outstanding.
+
 ## Transportation split and explicit resource profiles, 2026-10-19
 
 The machine reports 18 GiB physical RAM and 11 CPU cores. At the assessment
