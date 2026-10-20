@@ -165,4 +165,22 @@ example : (match ambiguousProblem.solveEventBounds (fun x => decide (x = 2)) wit
 example : (match incompatibleMomentProblem.solveBounds (fun x => (x : Int)) with
     | .infeasible _ => true | .bounded _ => false) = true := by decide +kernel
 
+/-- Genuine interval input leaves a range of laws, and each rational
+endpoint is attained by a constructed probability record. -/
+def intervalProblem := scalarPartialMomentProblem 1
+  [factorialMomentInterval 1 ⟨1, 3, by decide⟩ ⟨2, 3, by decide⟩]
+
+example : (match intervalProblem.solveBounds (fun x => (x : Int)) with
+    | .bounded bounds => decide (SignedRatio.Equiv bounds.lower ⟨1, 3, by decide⟩ ∧
+        SignedRatio.Equiv bounds.upper ⟨2, 3, by decide⟩)
+    | .infeasible _ => false) = true := by decide +kernel
+
+/-- The original retained null outcome 99 is outside the declared grid,
+yet the necessity/completeness direction accepts its unchanged law. -/
+example : (match (scalarPartialMomentProblem 3 []).solve with | .feasible _ => True | .infeasible _ => False) := by
+  apply ((scalarPartialMomentProblem 3 []).solve_success_iff).mpr
+  refine ⟨partitionMomentFixture, by decide +kernel, ?_⟩
+  intro constraint member
+  exact False.elim (List.not_mem_nil member)
+
 end Thesis.Examples.DistroPartialMoments

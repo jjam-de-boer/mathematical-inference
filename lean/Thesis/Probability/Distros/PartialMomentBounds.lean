@@ -171,4 +171,26 @@ theorem eventResponse_expectation (μ : Distro A) (event : Event A) :
 def PartialMomentProblem.solveEventBounds [DecidableEq A] (problem : PartialMomentProblem A) (event : Event A) :=
   problem.solveBounds (eventResponse event)
 
+/-- Event-bound certificates speak directly about event probabilities. -/
+theorem PartialMomentProblem.SharpBounds.event_bounds [DecidableEq A]
+    {problem : PartialMomentProblem A} {event : Event A}
+    (sharp : problem.SharpBounds (eventResponse event)) (μ : Distro A)
+    (support : μ.AlmostSurely (fun x => x ∈ problem.cells))
+    (moments : ∀ constraint ∈ problem.intervals, constraint.LawHolds μ) :
+    SignedRatio.LE sharp.lower (μ.record.probVal event).toSignedRatio ∧
+      SignedRatio.LE (μ.record.probVal event).toSignedRatio sharp.upper := by
+  have bounded := sharp.bounds μ support moments
+  exact ⟨(SignedRatio.le_congr (SignedRatio.equiv_refl _) (eventResponse_expectation μ event)).mp bounded.1,
+    (SignedRatio.le_congr (eventResponse_expectation μ event) (SignedRatio.equiv_refl _)).mp bounded.2⟩
+
+theorem PartialMomentProblem.SharpBounds.event_lower_attained
+    {problem : PartialMomentProblem A} {event : Event A} (sharp : problem.SharpBounds (eventResponse event)) :
+    SignedRatio.Equiv (sharp.lowerLaw.distro.record.probVal event).toSignedRatio sharp.lower :=
+  SignedRatio.equiv_trans (SignedRatio.equiv_symm (eventResponse_expectation sharp.lowerLaw.distro event)) sharp.lower_attained
+
+theorem PartialMomentProblem.SharpBounds.event_upper_attained
+    {problem : PartialMomentProblem A} {event : Event A} (sharp : problem.SharpBounds (eventResponse event)) :
+    SignedRatio.Equiv (sharp.upperLaw.distro.record.probVal event).toSignedRatio sharp.upper :=
+  SignedRatio.equiv_trans (SignedRatio.equiv_symm (eventResponse_expectation sharp.upperLaw.distro event)) sharp.upper_attained
+
 end Thesis.Probability.Distros

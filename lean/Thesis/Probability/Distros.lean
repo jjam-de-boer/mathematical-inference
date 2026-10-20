@@ -395,4 +395,14 @@ retained rather than silently excluded as nonpositive support.
     label dimensions, proves towers between stages, zero conditional increment
     means and orthogonality, and decomposes cumulative prediction improvement
     into the exact finite sum of increment energies.
+71. `RationalLinearSolve` decides finite rational linear inequalities by
+    constructive elimination and lifting, returning assignments or checked
+    refutation traces. `PartialMomentProblem` connects this to actual finite
+    laws for selected integer responses and scalar or mixed factorial moments,
+    with exact rational intervals and no denominator cap. Grid restrictions
+    are almost sure; constructed records retain every declared zero-mass cell.
+72. `PartialMomentBounds` computes sharp event and moment bounds over those
+    compatible laws. `RationalLinearBounds` projects the objective to one
+    closed interval and lifts both endpoints; the public certificate includes
+    actual compatible laws attaining both bounds and universal inequalities.
 -/
