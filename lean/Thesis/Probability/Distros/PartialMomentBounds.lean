@@ -164,7 +164,9 @@ theorem eventResponse_expectation (μ : Distro A) (event : Event A) :
     SignedRatio.Equiv (μ.rationalExpectation (integerResponse (eventResponse event))) (μ.record.probVal event).toSignedRatio := by
   refine SignedRatio.equiv_trans (μ.rationalExpectation_congr _ _ ?_) (μ.rationalExpectation_indicator event)
   intro x
-  cases selected : event x <;> exact SignedRatio.equiv_refl _
+  cases selected : event x <;>
+    simp only [integerResponse, eventResponse, selected, Bool.false_eq_true, if_true, if_false] <;>
+    exact SignedRatio.equiv_refl _
 
 def PartialMomentProblem.solveEventBounds [DecidableEq A] (problem : PartialMomentProblem A) (event : Event A) :=
   problem.solveBounds (eventResponse event)

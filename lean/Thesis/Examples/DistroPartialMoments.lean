@@ -149,4 +149,20 @@ example : (match mixedProblem.solve with
         QProb.Equiv (law.distro.pmf [0, 1]) ⟨1, 2, by decide⟩)
     | .infeasible _ => false) = true := by decide +kernel
 
+/-- A partial first moment does not determine the law. Optimization gives
+0 and 1/2 for P(X=2), with compatible laws at both endpoints. -/
+def ambiguousProblem := scalarPartialMomentProblem 2
+  [factorialMomentInterval 1 QProb.one QProb.one]
+
+example : (match ambiguousProblem.solveEventBounds (fun x => decide (x = 2)) with
+    | .bounded bounds => decide (SignedRatio.Equiv bounds.lower SignedRatio.zero ∧
+        SignedRatio.Equiv bounds.upper ⟨1, 2, by decide⟩ ∧
+        QProb.Equiv (bounds.lowerLaw.distro.pmf 1) QProb.one ∧
+        QProb.Equiv (bounds.upperLaw.distro.pmf 0) ⟨1, 2, by decide⟩ ∧
+        QProb.Equiv (bounds.upperLaw.distro.pmf 2) ⟨1, 2, by decide⟩)
+    | .infeasible _ => false) = true := by decide +kernel
+
+example : (match incompatibleMomentProblem.solveBounds (fun x => (x : Int)) with
+    | .infeasible _ => true | .bounded _ => false) = true := by decide +kernel
+
 end Thesis.Examples.DistroPartialMoments

@@ -153,7 +153,7 @@ end PartialMomentProblem
 carrier instead of the standard range lemma's classical dependency. -/
 theorem range_nodup_constructive (n : Nat) : (List.range n).Nodup := by
   have same := finRange_val_map n (fun i => i)
-  simp only [List.map_id_fun'] at same
+  simp only [List.map_id_fun', id_eq] at same
   rw [← same]
   apply List.pairwise_map.mpr
   apply (finRange_nodup n).imp
