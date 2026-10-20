@@ -200,9 +200,19 @@ sampled aggregate RSS. This is **not** a memory failure, an invalid proof, or
 evidence that local compilation is impossible. A longer single-module pilot
 requires separate approval; the reusable builder still rejects time limits
 above 30 seconds. No proof statement or numerical fixture has been removed
-to get past this boundary. The ordinary native-object bootstrap is also in
-progress; an earlier checkpoint reached target 350 with peaks below 150 MiB
-in that batch. The actual complete local build and audit remain outstanding.
+to get past this boundary.
+
+Subsequent sequential preparation finished every target independent of that
+one model. Separate no-build inventories using the **original committed
+configuration** confirmed 874/879 Lean/audit targets and 857/861 native-object
+targets current. Both inventories fingerprinted the complete source and
+configuration scope before and after; neither started compilation. The five
+remaining Lean targets are `HedgeObstructionModel`, its
+`HedgeObstructionCounterexample` client, `Thesis`, `Main`, and `Thesis.AxiomAudit`.
+The same first four still block the executable cache. These are dependencies
+of one observed time-limit boundary, not five independently diagnosed errors.
+Swap usage remained zero afterward. The actual complete local build, final
+link and local axiom-policy gate still must pass before reporting success.
 
 ## Transportation split and explicit resource profiles, 2026-10-19
 
