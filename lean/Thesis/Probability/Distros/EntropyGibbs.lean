@@ -54,6 +54,35 @@ theorem Distro.relativeEntropy_logMean [DecidableEq A] (μ reference : Distro A)
   intro cell _
   exact relativeEntropyTerm_root _ _ _
 
+/-- The reference mass retained on positive observed states bounds the
+arithmetic mean of inverse likelihood ratios; missing observed states only
+reduce that mass. -/
+theorem Distro.relativeRatioItems_inverse_mean [DecidableEq A] (μ reference : Distro A) (grid : EntropyGrid A)
+    (support : μ.AlmostSurely (fun value => value ∈ grid.cells))
+    (referenceSupport : reference.AlmostSurely (fun value => value ∈ grid.cells))
+    (positive : reference.GridPositive grid) :
+    QProb.LE
+      (RationalAMGM.weightedSum (RationalAMGM.inverses (μ.relativeRatioItems reference grid positive)))
+      (QProb.ofNat (RationalAMGM.totalWeight (μ.relativeRatioItems reference grid positive))) := by
+  rw [μ.relativeRatioItems_weight reference grid support positive]
+  unfold relativeRatioItems RationalAMGM.inverses
+  rw [List.map_map, RationalAMGM.weightedSum_map]
+  have compared := QProb.listSum_map_mono grid.cells.attach
+    (fun cell => QProb.scale (μ.pmf cell.val).num
+      (relativeRatio (μ.pmf cell.val) (reference.pmf cell.val) (positive cell.val cell.property)).inv.toQProb)
+    (fun cell => QProb.scale μ.record.den (reference.pmf cell.val))
+    (fun cell _ => inverse_relativeRatio_bound _ _ _)
+  have scaled : QProb.Equiv
+      (QProb.listSum (grid.cells.attach.map (fun cell => QProb.scale μ.record.den (reference.pmf cell.val))))
+      (QProb.ofNat μ.record.den) := by
+    rw [List.attach_map_val (f := fun value => QProb.scale μ.record.den (reference.pmf value))]
+    have distributed := QProb.listSum_scale (grid.cells.map reference.pmf) μ.record.den
+    rw [List.map_map] at distributed
+    refine QProb.equiv_trans distributed ?_
+    have normalized := QProb.scale_congr μ.record.den (reference.pmf_grid_normalization grid referenceSupport)
+    exact QProb.equiv_trans normalized (by simp only [QProb.Equiv, QProb.scale, QProb.one, QProb.ofNat, Nat.mul_one])
+  exact QProb.le_congr (QProb.equiv_refl _) scaled compared
+
 /-- Finite KL nonnegativity for arbitrary rational laws and a positive
 reference law, proved by rational AM–GM on the aggregated likelihood ratios. -/
 theorem Distro.relativeEntropy_nonnegative [DecidableEq A] (μ reference : Distro A) (grid : EntropyGrid A)
@@ -61,27 +90,7 @@ theorem Distro.relativeEntropy_nonnegative [DecidableEq A] (μ reference : Distr
     (referenceSupport : reference.AlmostSurely (fun value => value ∈ grid.cells))
     (positive : reference.GridPositive grid) :
     ExactLog.LE ExactLog.zero (μ.relativeEntropy reference grid support referenceSupport positive) := by
-  have arithmetic : QProb.LE
-      (RationalAMGM.weightedSum (RationalAMGM.inverses (μ.relativeRatioItems reference grid positive)))
-      (QProb.ofNat (RationalAMGM.totalWeight (μ.relativeRatioItems reference grid positive))) := by
-    rw [μ.relativeRatioItems_weight reference grid support positive]
-    unfold relativeRatioItems RationalAMGM.inverses
-    rw [List.map_map, RationalAMGM.weightedSum_map]
-    have compared := QProb.listSum_map_mono grid.cells.attach
-      (fun cell => QProb.scale (μ.pmf cell.val).num
-        (relativeRatio (μ.pmf cell.val) (reference.pmf cell.val) (positive cell.val cell.property)).inv.toQProb)
-      (fun cell => QProb.scale μ.record.den (reference.pmf cell.val))
-      (fun cell _ => inverse_relativeRatio_bound _ _ _)
-    have scaled : QProb.Equiv
-        (QProb.listSum (grid.cells.attach.map (fun cell => QProb.scale μ.record.den (reference.pmf cell.val))))
-        (QProb.ofNat μ.record.den) := by
-      rw [List.attach_map_val (f := fun value => QProb.scale μ.record.den (reference.pmf value))]
-      have distributed := QProb.listSum_scale (grid.cells.map reference.pmf) μ.record.den
-      rw [List.map_map] at distributed
-      refine QProb.equiv_trans distributed ?_
-      have normalized := QProb.scale_congr μ.record.den (reference.pmf_grid_normalization grid referenceSupport)
-      exact QProb.equiv_trans normalized (by simp only [QProb.Equiv, QProb.scale, QProb.one, QProb.ofNat, Nat.mul_one])
-    exact QProb.le_congr (QProb.equiv_refl _) scaled compared
+  have arithmetic := μ.relativeRatioItems_inverse_mean reference grid support referenceSupport positive
   have result := RationalAMGM.logMean_nonnegative (μ.relativeRatioItems reference grid positive)
     μ.record.den μ.record.den_pos arithmetic
   exact (ExactLog.le_congr (ExactLog.equiv_refl _)

@@ -42,4 +42,10 @@ theorem inverse_relativeRatio_bound (p r : QProb) (referencePositive : 0 < r.num
     change QProb.LE QProb.zero (QProb.scale p.den r)
     exact QProb.zero_le _
 
+theorem relativeRatio_equiv_one_iff (p r : QProb) (referencePositive : 0 < r.num) (positive : 0 < p.num) :
+    PositiveRatio.Equiv (relativeRatio p r referencePositive) PositiveRatio.one ↔ QProb.Equiv p r := by
+  simp only [relativeRatio, positive, ↓reduceDIte, PositiveRatio.Equiv, PositiveRatio.toQProb,
+    PositiveRatio.mul, PositiveRatio.inv, PositiveRatio.one, QProb.Equiv, Nat.mul_one, Nat.one_mul]
+  rw [Nat.mul_comm p.den r.num]
+
 end Thesis.Probability

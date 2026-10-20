@@ -26,4 +26,8 @@ theorem zero_le_root_iff (a : PositiveRatio) (degree : Nat) (positive : 0 < degr
     LE zero (root a degree positive) ↔ PositiveRatio.LE PositiveRatio.one a := by
   simp only [LE, root, zero, PositiveRatio.pow_one, PositiveRatio.one_pow]
 
+theorem root_equiv_zero_iff (a : PositiveRatio) (degree : Nat) (positive : 0 < degree) :
+    Equiv (root a degree positive) zero ↔ PositiveRatio.Equiv a PositiveRatio.one := by
+  simp only [Equiv, root, zero, PositiveRatio.pow_one, PositiveRatio.one_pow]
+
 end Thesis.Probability.ExactLog

@@ -69,6 +69,20 @@ observed cells, whose uniform-reference KL equals `log₂(3)` exactly.
 The equality case, upper entropy bounds, strict concavity and optimization
 results remain outstanding; KL nonnegativity alone does not establish them.
 
+## Checkpoint 5: equality in Gibbs and KL
+
+`FiniteAMGMEquality` proves the weighted equality case using midpoint
+comparisons and the already established finite AM–GM bound. `RationalAMGMEquality`
+and `LogMeanEquality` transport it to arbitrary positive rational arguments;
+zero-weight arguments remain unrestricted.
+
+`Distro.relativeEntropy_equiv_zero_iff` proves that KL vanishes exactly when
+the laws agree on every Boolean event. Equality at positive observed cells
+and normalization also force equality at zero observed cells. The regressions
+check a split/rescaled/reordered law with a null outlier, a genuinely different
+point law, and an unrestricted zero-weight argument in the rational equality
+lemma. No literal atom-list equality is assumed.
+
 ## Remaining full goal
 
 1. Strengthen the grid-independence interface as needed for the later optimizer;
