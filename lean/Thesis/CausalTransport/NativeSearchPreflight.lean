@@ -109,7 +109,9 @@ theorem preflightProfiles_bounds (limits : SearchLimits) (references : Nat)
     exact Nat.min_eq_left (Nat.le_trans rowBound (Nat.le_succ _))
   have comparisonBound : (profiles.length * references) * profiles.length ≤ limits.maxProfileComparisons :=
     (CappedCount.clip_le_iff _ _).mp (by
-      simpa only [rowExact, countExact, CappedCount.clip_mul] using Nat.le_of_not_gt comparisonsFit)
+      have checked := Nat.le_of_not_gt comparisonsFit
+      rw [rowExact, countExact, CappedCount.clip_mul] at checked
+      exact checked)
   exact ⟨countExact, countBound, rowExact, Nat.le_of_not_gt rowsFit,
     by rw [rowExact, countExact, CappedCount.clip_mul]; exact Nat.min_eq_left (Nat.le_trans comparisonBound (Nat.le_succ _)),
     Nat.le_of_not_gt comparisonsFit⟩
@@ -173,10 +175,10 @@ policy, not a change to the old grammar's completeness theorem. -/
 def guardedCatalogueOn (limits : SearchLimits) (graph : ObservedGraph S)
     (profiles : List (NativeTemplateInstance Q)) (source : TermCode) (expressionDepth proofDepth : Nat) :
     Except SearchRefusal (List (CheckedNativeFormula graph profiles)) := do
-  let syntax ← preflightSyntax limits S expressionDepth proofDepth
-  if source.Within syntax.dictionary limits.maxSourceDepth then
-    let profile ← preflightProfiles limits syntax.dictionary.references profiles
-    let _ ← preflightTotal limits syntax.candidates profile.comparisonsPerCertificate
+  let metadata ← preflightSyntax limits S expressionDepth proofDepth
+  if source.Within metadata.dictionary limits.maxSourceDepth then
+    let profile ← preflightProfiles limits metadata.dictionary.references profiles
+    let _ ← preflightTotal limits metadata.candidates profile.comparisonsPerCertificate
     pure (catalogueOn graph profiles source expressionDepth proofDepth)
   else .error (.source limits.maxSourceDepth)
 
@@ -187,10 +189,10 @@ theorem guardedCatalogueOn_exact (limits : SearchLimits) (graph : ObservedGraph 
     (catalogue : List (CheckedNativeFormula graph profiles))
     (accepted : guardedCatalogueOn limits graph profiles source expressionDepth proofDepth = .ok catalogue) :
     catalogue = catalogueOn graph profiles source expressionDepth proofDepth := by
-  cases syntax : preflightSyntax limits S expressionDepth proofDepth with
-  | error reason => simp only [guardedCatalogueOn, syntax, Except.bind] at accepted; contradiction
+  cases metadataChecked : preflightSyntax limits S expressionDepth proofDepth with
+  | error reason => simp only [guardedCatalogueOn, metadataChecked, Except.bind] at accepted; contradiction
   | ok estimate =>
-      simp only [guardedCatalogueOn, syntax, Except.bind] at accepted
+      simp only [guardedCatalogueOn, metadataChecked, Except.bind] at accepted
       split at accepted
       · cases checked : preflightProfiles limits estimate.dictionary.references profiles with
         | error reason => simp only [checked, Except.bind] at accepted; contradiction
@@ -207,14 +209,14 @@ theorem guardedCatalogueOn_admission (limits : SearchLimits) (graph : ObservedGr
     (profiles : List (NativeTemplateInstance Q)) (source : TermCode) (expressionDepth proofDepth : Nat)
     (catalogue : List (CheckedNativeFormula graph profiles))
     (accepted : guardedCatalogueOn limits graph profiles source expressionDepth proofDepth = .ok catalogue) :
-    ∃ syntax, preflightSyntax limits S expressionDepth proofDepth = .ok syntax ∧
-      source.Within syntax.dictionary limits.maxSourceDepth ∧
-      ∃ profile, preflightProfiles limits syntax.dictionary.references profiles = .ok profile ∧
-        ∃ total, preflightTotal limits syntax.candidates profile.comparisonsPerCertificate = .ok total := by
-  cases syntax : preflightSyntax limits S expressionDepth proofDepth with
-  | error reason => simp only [guardedCatalogueOn, syntax, Except.bind] at accepted; contradiction
+    ∃ metadata, preflightSyntax limits S expressionDepth proofDepth = .ok metadata ∧
+      source.Within metadata.dictionary limits.maxSourceDepth ∧
+      ∃ profile, preflightProfiles limits metadata.dictionary.references profiles = .ok profile ∧
+        ∃ total, preflightTotal limits metadata.candidates profile.comparisonsPerCertificate = .ok total := by
+  cases metadataChecked : preflightSyntax limits S expressionDepth proofDepth with
+  | error reason => simp only [guardedCatalogueOn, metadataChecked, Except.bind] at accepted; contradiction
   | ok estimate =>
-      simp only [guardedCatalogueOn, syntax, Except.bind] at accepted
+      simp only [guardedCatalogueOn, metadataChecked, Except.bind] at accepted
       split at accepted
       · rename_i sourceFits
         cases checked : preflightProfiles limits estimate.dictionary.references profiles with
@@ -223,7 +225,7 @@ theorem guardedCatalogueOn_admission (limits : SearchLimits) (graph : ObservedGr
             simp only [checked, Except.bind] at accepted
             cases total : preflightTotal limits estimate.candidates result.comparisonsPerCertificate with
             | error reason => simp only [total, Except.bind] at accepted; contradiction
-            | ok count => exact ⟨estimate, syntax, sourceFits, result, checked, count, total⟩
+            | ok count => exact ⟨estimate, metadataChecked, sourceFits, result, checked, count, total⟩
       · contradiction
 
 theorem guardedCatalogueOn_total_bound (limits : SearchLimits) (graph : ObservedGraph S)
@@ -234,11 +236,11 @@ theorem guardedCatalogueOn_total_bound (limits : SearchLimits) (graph : Observed
       ((profiles.length * (CodeDictionaries.ofSignature S).references) * profiles.length) ≤
         limits.maxTotalProfileComparisons := by
   rcases guardedCatalogueOn_admission limits graph profiles source expressionDepth proofDepth catalogue accepted with
-    ⟨syntax, syntaxChecked, _sourceFits, profile, profileChecked, total, totalChecked⟩
-  have syntaxBounds := preflightSyntax_bounds limits S expressionDepth proofDepth syntax syntaxChecked
-  have profileBounds := preflightProfiles_bounds limits syntax.dictionary.references profiles profile profileChecked
-  have totalBounds := preflightTotal_bounds limits syntax.candidates profile.comparisonsPerCertificate total totalChecked
-  have rawExact : syntax.candidates = (enumerate S expressionDepth proofDepth).length := by
+    ⟨metadata, metadataChecked, _sourceFits, profile, profileChecked, total, totalChecked⟩
+  have syntaxBounds := preflightSyntax_bounds limits S expressionDepth proofDepth metadata metadataChecked
+  have profileBounds := preflightProfiles_bounds limits metadata.dictionary.references profiles profile profileChecked
+  have totalBounds := preflightTotal_bounds limits metadata.candidates profile.comparisonsPerCertificate total totalChecked
+  have rawExact : metadata.candidates = (enumerate S expressionDepth proofDepth).length := by
     rw [syntaxBounds.2.2.2.2, syntaxBounds.1, count_eq_length]
   have comparisonsExact : profile.comparisonsPerCertificate =
       (profiles.length * (CodeDictionaries.ofSignature S).references) * profiles.length := by
