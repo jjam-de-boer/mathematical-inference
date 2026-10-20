@@ -406,6 +406,40 @@ enumerator and acceptance-coverage theorem. Increasing its budgets still
 has no proved stopping criterion for universal coverage. Formula selection
 is the next separate implementation checkpoint.
 
+### Resource preflight for bounded proof catalogues
+
+`CodeEnumerationCounts` proves exact list-entry counts for the raw expression
+and derivation enumerators. `NativeProofCode.count_eq_length` adds the native
+wrapper. `CappedCount.term_exact`, `derivation_exact` and `native_exact` prove
+that executable saturated arithmetic returns the exact count clipped at
+`limit + 1`. Overflow is not displayed as an exact size. The three-binary-node
+example has **135,298,563** raw native candidates already at expression depth
+1 / native proof depth 2; the regression computes only this arithmetic.
+
+`CodeSearchPreflight` checks explicit node/depth policies before counting.
+Coordinate-length estimates gate the construction of full mask/assignment
+dictionaries. The actual dictionary and accepted candidate counts are bounded
+by `preflightSyntax_bounds`. No probability-zero intervention value is dropped.
+
+`NativeSearchPreflight` additionally limits supplied profile count, guard
+rows, per-certificate profile comparisons and total comparisons across raw
+candidates. Source-query depth is a separate policy. Successful
+`guardedEnumeration` and `guardedCatalogueOn` results equal the old complete
+bounded lists; no silent truncation weakens their mathematical coverage.
+`guardedCatalogueOn_admission` exposes the successful gates, and
+`guardedCatalogueOn_total_bound` proves the admitted structural comparison
+allowance. `Except.error` is resource/policy refusal, while `Except.ok []`
+is an empty result in this particular checked bounded family. Neither is a
+general non-identifiability certificate.
+
+This is **not a complete runtime-cost or memory model**. Evaluating one
+profile/demand can itself be expensive, and inputs can contain arbitrary
+enumeration functions. Profiles are already supplied: in strict evaluation,
+passing `completeSupportCatalogue` first builds that list. Accordingly there
+is no new supposedly guarded automatic fixed/projection-wide profile generator.
+Its generation cost needs separate analysis; external CPU/RSS safeguards are
+still necessary for concrete execution. No selector is implemented here.
+
 ## Fixed-law results beyond graph-level completeness
 
 | Graph/target | Public theorem | Scope |

@@ -71,6 +71,8 @@ import Thesis.Causality.ProbabilityTermCode
 import Thesis.Causality.DerivationCode
 import Thesis.Causality.ProbabilityTermEnumeration
 import Thesis.Causality.DerivationEnumeration
+import Thesis.Causality.CodeEnumerationCounts
+import Thesis.Causality.CodeSearchPreflight
 import Thesis.Causality.ModalDerivation
 import Thesis.Causality.Modalities
 import Thesis.Causality.ConservativeLearning
@@ -152,6 +154,9 @@ separate from native recursive support; neither module searches formulas.
 exactly the codes within declared expression/proof tree-depth budgets. They
 bound explicit terms throughout intermediate subproofs, not merely endpoints;
 syntax membership still does not certify a causal or support condition.
+`CodeEnumerationCounts` proves exact list-size recurrences and saturated
+arithmetic counts. `CodeSearchPreflight` checks explicit dictionary, depth
+and raw-candidate limits before enumeration; refusal is not non-identifiability.
 The facade excludes the external completeness
 interfaces; those begin in `Thesis.CausalTransport`.
 `HedgeQuery` retains a hedge's actual forests and action seed while reindexing

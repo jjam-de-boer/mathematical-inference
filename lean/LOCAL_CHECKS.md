@@ -388,6 +388,36 @@ automatically; native verification continued remotely. The earlier complete
 local build above concerns its recorded checkpoint, not these later additions.
 Logs are retained in `.lake/local-builds-v1/20261020-141555-pybr948z/`.
 
+### Incremental resource-preflight pilot, 2026-10-20
+
+The new arithmetic counting module `CodeEnumerationCounts` passed in 0.88 s
+with 687.0 MiB sampled aggregate RSS; `CodeSearchPreflight` passed in 0.99 s
+with 670.5 MiB. Both used the unchanged conservative 640 MiB Lean / 768 MiB
+RSS / 30-second profile and genuine ordinary Lake artifacts. The helper's
+exclusive lock refused an earlier attempt while another builder held it;
+no competing compiler was launched. Those two small checks alone did not
+establish the native semantic wrapper or a complete build.
+
+The successful runs are recorded in
+`.lake/local-builds-v1/20261020-145928-q6m5mxhe/` (counting module) and
+`.lake/local-builds-v1/20261020-150105-xw0gdswv/` (syntax-preflight module).
+These were selected-module results, not a complete local build or audit.
+
+After the local-build restructuring was confirmed, the native wrapper passed
+locally in 1.12 s / 784.5 MiB and its examples in 0.88 s / 812.8 MiB using the
+explicit `extended` profile. A full local audit then caught an indirect
+`Classical.choice` dependency introduced by automated reasoning about a
+clipped-count inequality. Its proof now explicitly decides the natural-number
+comparison and uses the two minimum bounds; the policy was not weakened.
+
+The repaired stage subsequently passed the **complete local build and axiom
+audit**, including the actual original-configuration final gates: 894
+Lean/audit modules, 42,734 audited project declarations, and only `propext`
+and `Quot.sound`. The audit rebuild took 5.25 s / 1112.9 MiB. Logs are in
+`.lake/local-builds-v1/20261020-191432-z5gd9kba/`. No full code or model-support
+catalogue was expanded by these regressions. These measurements do not
+establish a cold-build speedup or a general runtime memory guarantee.
+
 ## Transportation split and explicit resource profiles, 2026-10-19
 
 The machine reports 18 GiB physical RAM and 11 CPU cores. At the assessment
