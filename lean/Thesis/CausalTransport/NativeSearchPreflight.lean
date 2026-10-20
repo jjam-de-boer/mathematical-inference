@@ -15,8 +15,8 @@ catalogue: no constructor, certificate or guard row is silently truncated.
 this particular checked bounded catalogue. Neither proves non-identifiability.
 
 There are independent limits on dictionaries, depths, raw codes, supplied
-profiles, guard rows and per-certificate/total row/profile comparisons. For `p` profiles and `r`
-references, compilation creates `p*r` rows (duplicates retained) and can
+profiles, guard rows and per-certificate/total row/profile comparisons. For
+`p` profiles and `r` references, compilation creates `p*r` rows (duplicates retained) and can
 inspect `p*p*r` profiles per certificate. Short-circuiting may inspect fewer.
 These counts do not bound the cost of evaluating one model or one demand.
 
@@ -202,12 +202,12 @@ theorem guardedCatalogueOn_exact (limits : SearchLimits) (graph : ObservedGraph 
       simp only [guardedCatalogueOn, metadataChecked, except_bind_eq_bind, Except.bind] at accepted
       split at accepted
       · cases checked : preflightProfiles limits estimate.dictionary.references profiles with
-        | error reason => simp only [checked, except_bind_eq_bind, Except.bind] at accepted; contradiction
+        | error reason => simp only [checked] at accepted; contradiction
         | ok result =>
-            simp only [checked, except_bind_eq_bind, Except.bind] at accepted
+            simp only [checked] at accepted
             cases total : preflightTotal limits estimate.candidates result.comparisonsPerCertificate with
-            | error reason => simp only [total, except_bind_eq_bind, Except.bind] at accepted; contradiction
-            | ok result => simp only [total, except_bind_eq_bind, Except.bind, except_pure_eq] at accepted; cases accepted; rfl
+            | error reason => simp only [total] at accepted; contradiction
+            | ok result => simp only [total, except_pure_eq] at accepted; cases accepted; rfl
       · contradiction
 
 /-- Expose every successful admission gate, including the separately bounded
@@ -227,12 +227,12 @@ theorem guardedCatalogueOn_admission (limits : SearchLimits) (graph : ObservedGr
       split at accepted
       · rename_i sourceFits
         cases checked : preflightProfiles limits estimate.dictionary.references profiles with
-        | error reason => simp only [checked, except_bind_eq_bind, Except.bind] at accepted; contradiction
+        | error reason => simp only [checked] at accepted; contradiction
         | ok result =>
-            simp only [checked, except_bind_eq_bind, Except.bind] at accepted
+            simp only [checked] at accepted
             cases total : preflightTotal limits estimate.candidates result.comparisonsPerCertificate with
-            | error reason => simp only [total, except_bind_eq_bind, Except.bind] at accepted; contradiction
-            | ok count => exact ⟨estimate, metadataChecked, sourceFits, result, checked, count, total⟩
+            | error reason => simp only [total] at accepted; contradiction
+            | ok count => exact ⟨estimate, rfl, sourceFits, result, rfl, count, rfl⟩
       · contradiction
 
 theorem guardedCatalogueOn_total_bound (limits : SearchLimits) (graph : ObservedGraph S)
