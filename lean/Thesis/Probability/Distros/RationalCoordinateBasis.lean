@@ -18,7 +18,8 @@ theorem contrastIndices_mem (active : Fin n → Bool) (pivot i : Fin n) :
   simp only [contrastIndices, List.mem_filter, positiveIndices_mem, decide_eq_true_eq]
 
 theorem nullIndices_mem (active : Fin n → Bool) (i : Fin n) : i ∈ nullIndices active ↔ active i = false := by
-  simp only [nullIndices, List.mem_filter, List.mem_finRange, true_and, Bool.not_eq_true]
+  simp only [nullIndices, List.mem_filter, List.mem_finRange, true_and]
+  cases active i <;> decide
 
 theorem contrastIndices_distinct (active : Fin n → Bool) (pivot : Fin n) : (contrastIndices active pivot).Nodup :=
   List.Sublist.nodup List.filter_sublist (List.Sublist.nodup List.filter_sublist (finRange_nodup n))
@@ -80,7 +81,7 @@ theorem contrastRepresentative_difference (active : Fin n → Bool) (pivot : Fin
     exact SignedRatio.equiv_trans (ratio_sub_congr (SignedRatio.equiv_refl _) selected) (sub_sub_cancel _ _)
 
 theorem Operator.equal_of_difference_kernel (operator : Operator n m) (first second : Vector n)
-    (null : operator.Kernel (sub first second)) : Equiv (operator.apply first) (operator.apply second) := by
+    (null : operator.Kernel (RationalVector.sub first second)) : Equiv (operator.apply first) (operator.apply second) := by
   intro i
   apply (SignedRatio.sub_equiv_zero_iff _ _).mp
   exact SignedRatio.equiv_trans (SignedRatio.equiv_symm (operator.sub first second i)) (null i)

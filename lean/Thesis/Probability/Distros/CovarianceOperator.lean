@@ -105,7 +105,9 @@ theorem Distro.covarianceOperator_nat_row (μ : Distro A) (responses : Nat → A
     (μ.rationalCovariance (responses i.val) (responses j)))
   change SignedRatio.Equiv (SignedRatio.listSum _) (SignedRatio.listSum _)
   rw [← same]
-  exact SignedRatio.listSum_map_congr (List.finRange n) _ _ (fun j =>
-    SignedRatio.mul_congr (SignedRatio.equiv_refl _) (SignedRatio.equiv_refl _))
+  apply SignedRatio.listSum_map_congr (List.finRange n)
+  intro j
+  rw [natCoefficients_fin]
+  exact SignedRatio.equiv_refl _
 
 end Thesis.Probability.Distros

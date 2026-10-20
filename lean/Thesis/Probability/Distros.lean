@@ -111,6 +111,7 @@ import Thesis.Probability.Distros.RationalVectorSpace
 import Thesis.Probability.Distros.RationalCoordinateBasis
 import Thesis.Probability.Distros.RationalKernelBasis
 import Thesis.Probability.Distros.CovarianceOperator
+import Thesis.Probability.Distros.OccupancyRank
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.RationalBetaBinomial
