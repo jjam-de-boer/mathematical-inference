@@ -36,27 +36,27 @@ example : CappedCount.native 0 ⟨0, 0⟩ 0 0 = 0 := rfl
 example : CappedCount.mul 0 (CappedCount.clip 0 1000000000) (CappedCount.clip 0 0) = 0 := by decide +kernel
 example : CappedCount.listLength 1 [0, 1, 2, 3, 4] = 2 := rfl
 
-example : preflightSyntax limits signature 1000000 2 = .error (.expressionDepth 1000000 4) := by decide +kernel
-example : preflightSyntax limits signature 1 1000000 = .error (.proofDepth 1000000 4) := by decide +kernel
+example : preflightSyntax limits signature 1000000 2 = .error (.expressionDepth 1000000 4) := rfl
+example : preflightSyntax limits signature 1 1000000 = .error (.proofDepth 1000000 4) := rfl
 example : preflightSyntax { limits with maxObservedNodes := 0 } signature 1 2 =
-    .error (.observedNodes 1 0) := by decide +kernel
+    .error (.observedNodes 1 0) := rfl
 example : preflightSyntax { limits with maxDictionaryEntries := 1 } signature 1 2 =
-    .error (.maskDictionary 1) := by decide +kernel
+    .error (.maskDictionary 1) := rfl
 example : preflightSyntax { limits with maxDictionaryEntries := 2 } signature 1 2 =
-    .error (.referenceDictionary 2) := by decide +kernel
+    .error (.referenceDictionary 2) := rfl
 example : preflightSyntax { limits with maxRawCandidates := 100 } signature 1 2 =
-    .error (.rawCandidates 100) := by decide +kernel
+    .error (.rawCandidates 100) := rfl
 
 /-- The declared null value remains in the reference count. -/
-example : preflightSyntax limits signature 1 2 = .ok ⟨⟨2, 3⟩, 939⟩ := by decide +kernel
+example : preflightSyntax limits signature 1 2 = .ok ⟨⟨2, 3⟩, 939⟩ := rfl
 
-example : preflightProfiles { limits with maxProfiles := 0 } 3 profiles = .error (.profiles 0) := by decide +kernel
-example : preflightProfiles { limits with maxGuardRows := 2 } 3 profiles = .error (.guardRows 2) := by decide +kernel
+example : preflightProfiles { limits with maxProfiles := 0 } 3 profiles = .error (.profiles 0) := rfl
+example : preflightProfiles { limits with maxGuardRows := 2 } 3 profiles = .error (.guardRows 2) := rfl
 example : preflightProfiles { limits with maxProfileComparisons := 2 } 3 profiles =
-    .error (.profileComparisons 2) := by decide +kernel
-example : preflightProfiles limits 3 profiles = .ok ⟨1, 3, 3⟩ := by decide +kernel
-example : preflightTotal limits 1000 5 = .error (.totalProfileComparisons 4000) := by decide +kernel
-example : preflightTotal limits 939 3 = .ok 2817 := by decide +kernel
+    .error (.profileComparisons 2) := rfl
+example : preflightProfiles limits 3 profiles = .ok ⟨1, 3, 3⟩ := rfl
+example : preflightTotal limits 1000 5 = .error (.totalProfileComparisons 4000) := rfl
+example : preflightTotal limits 939 3 = .ok 2817 := rfl
 example : (SearchRefusal.rawCandidates 100).message =
     "Search refused: Raw proof-code count exceeds limit 100. This is not a non-identifiability result." := by decide +kernel
 

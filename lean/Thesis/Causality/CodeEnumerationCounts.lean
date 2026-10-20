@@ -118,8 +118,18 @@ def mul (limit left right : Nat) : Nat := clip limit (left * right)
 theorem clip_le (limit value : Nat) : clip limit value ≤ limit + 1 := Nat.min_le_right _ _
 
 theorem clip_le_iff (limit value : Nat) : clip limit value ≤ limit ↔ value ≤ limit := by
-  unfold clip
-  omega
+  constructor
+  · intro bounded
+    -- Decide this natural-number comparison explicitly. Automation on the
+    -- minimum/inequality equivalence can otherwise select a classical lemma.
+    by_cases within : value ≤ limit
+    · exact within
+    · have large : limit + 1 ≤ value := by omega
+      change min value (limit + 1) ≤ limit at bounded
+      rw [Nat.min_eq_right large] at bounded
+      exact False.elim (Nat.not_succ_le_self limit bounded)
+  · intro bounded
+    exact Nat.le_trans (Nat.min_le_left value (limit + 1)) bounded
 
 theorem clip_add (limit left right : Nat) :
     add limit (clip limit left) (clip limit right) = clip limit (left + right) := by
