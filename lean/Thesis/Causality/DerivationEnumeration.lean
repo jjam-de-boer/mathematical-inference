@@ -37,8 +37,15 @@ def enumerate (dictionary : CodeDictionaries) : List QuadCode :=
 
 theorem mem_enumerate_iff (dictionary : CodeDictionaries) (code : QuadCode) :
     code ∈ enumerate dictionary ↔ code.Within dictionary := by
-  cases code
-  simp [enumerate, Within, List.mem_flatMap, CodeEnumeration.mem_ternary]
+  cases code with
+  | mk x y z w =>
+      simp only [enumerate, List.mem_flatMap, CodeEnumeration.mem_ternary, Within, List.mem_range]
+      constructor
+      · rintro ⟨first, firstBound, second, secondBound, third, thirdBound, fourth, fourthBound, same⟩
+        rcases QuadCode.mk.inj same with ⟨rfl, rfl, rfl, rfl⟩
+        exact ⟨firstBound, secondBound, thirdBound, fourthBound⟩
+      · rintro ⟨xBound, yBound, zBound, wBound⟩
+        exact ⟨x, xBound, y, yBound, z, zBound, w, wBound, rfl⟩
 
 end QuadCode
 
@@ -95,7 +102,7 @@ budget. No plateau in a sequence of larger budgets is a termination test. -/
 theorem mem_enumerate_iff (dictionary : CodeDictionaries) (expressionDepth proofDepth : Nat)
     (code : DerivationCode) :
     code ∈ enumerate dictionary expressionDepth proofDepth ↔ code.Within dictionary expressionDepth proofDepth := by
-  induction proofDepth with
+  induction proofDepth generalizing code with
   | zero => simp [enumerate, Within]
   | succ depth inductionHypothesis =>
       cases code <;>

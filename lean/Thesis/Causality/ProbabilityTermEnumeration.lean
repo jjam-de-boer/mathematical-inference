@@ -63,8 +63,15 @@ def enumerate (dictionary : CodeDictionaries) : List KernelCode :=
 
 theorem mem_enumerate_iff (dictionary : CodeDictionaries) (code : KernelCode) :
     code ∈ enumerate dictionary ↔ code.Within dictionary := by
-  cases code
-  simp [enumerate, Within, CodeEnumeration.mem_ternary]
+  cases code with
+  | mk outcome action condition =>
+      simp only [enumerate, CodeEnumeration.mem_ternary, Within, List.mem_range]
+      constructor
+      · rintro ⟨left, leftBound, middle, middleBound, right, rightBound, same⟩
+        rcases KernelCode.mk.inj same with ⟨rfl, rfl, rfl⟩
+        exact ⟨leftBound, middleBound, rightBound⟩
+      · rintro ⟨outcomeBound, actionBound, conditionBound⟩
+        exact ⟨outcome, outcomeBound, action, actionBound, condition, conditionBound, rfl⟩
 
 end KernelCode
 
@@ -98,7 +105,7 @@ def enumerate (dictionary : CodeDictionaries) : Nat → List TermCode
 needed, and no conclusion about causal correctness follows from membership. -/
 theorem mem_enumerate_iff (dictionary : CodeDictionaries) (depth : Nat) (code : TermCode) :
     code ∈ enumerate dictionary depth ↔ code.Within dictionary depth := by
-  induction depth with
+  induction depth generalizing code with
   | zero => simp [enumerate, Within]
   | succ depth inductionHypothesis =>
       cases code <;>
