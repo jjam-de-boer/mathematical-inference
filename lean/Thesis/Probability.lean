@@ -1,3 +1,4 @@
+import Thesis.Probability.ExactLogEnclosure
 import Thesis.Probability.Core
 import Thesis.Probability.RationalSquareObstruction
 import Thesis.Probability.IndependentBooleanObstruction
