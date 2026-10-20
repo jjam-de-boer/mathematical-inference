@@ -130,7 +130,9 @@ jobs:
           Thesis.CausalTransport.NativeDerivationSupportCheck
           Thesis.CausalTransport.NativeSupportGuard
           Thesis.CausalTransport.NativeCertificateCheck
+          Thesis.CausalTransport.NativeGuardCompilation
           Thesis.Examples.NativeCertificateCheck
+          Thesis.Examples.NativeGuardCompilation
       - name: Check graph-only identification layers
         working-directory: lean
         run: >-

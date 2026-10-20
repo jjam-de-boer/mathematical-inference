@@ -28,13 +28,33 @@ import subprocess
 import tempfile
 import time
 
-from check_module_cached import (Limits, PilotError, RESOURCE_PROFILES,
+from check_module_cached import (Limits, PilotError, RESOURCE_PROFILES as SMALL_MODULE_PROFILES,
     check_configuration, digest, imports)
 from local_check_artifacts import ArtifactError, exclusive_check
 
 
 class BuildStopped(RuntimeError):
     """A resource/precondition stop is not a verified full build."""
+
+
+# The original small-closure helper retains its conservative profiles and
+# validation. This explicit full-builder-only extension was approved after
+# an unchanged guarded regression passed at about 3.1 GiB aggregate RSS.
+# No failure promotes a compiler into it automatically. The whole owned
+# process group, not each compiler separately, remains capped at 5 GiB.
+EXTENDED_PROFILE = (4608, 5120)
+RESOURCE_PROFILES = SMALL_MODULE_PROFILES | {"extended": EXTENDED_PROFILE}
+
+
+class SequentialLimits(Limits):
+    """Keep the larger reviewed profile isolated from small-module pilots."""
+
+    def validate(self):
+        if (self.memory_mb, self.rss_mb) != EXTENDED_PROFILE:
+            return super().validate()
+        if not (1 <= self.seconds <= 30 and 1 <= self.max_modules <= 8
+                and 1 <= self.max_selected <= 3):
+            raise PilotError("extended profile retains a 30-second maximum and existing selection bounds")
 
 
 @dataclass(frozen=True)
@@ -209,7 +229,7 @@ def main():
     args = parser.parse_args()
     try:
         memory, rss = RESOURCE_PROFILES[args.profile]
-        limits = Limits(seconds=args.seconds, memory_mb=memory, rss_mb=rss)
+        limits = SequentialLimits(seconds=args.seconds, memory_mb=memory, rss_mb=rss)
         limits.validate()
         if args.max_builds is not None and args.max_builds < 1:
             raise BuildStopped("max-builds must be positive")

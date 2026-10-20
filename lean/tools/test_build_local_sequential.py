@@ -19,6 +19,17 @@ import build_local_sequential as build
 
 
 class PlanningTests(unittest.TestCase):
+    def test_extended_profile_is_explicit_and_does_not_raise_small_helper_limits(self):
+        build.SequentialLimits(memory_mb=4608, rss_mb=5120).validate()
+        self.assertNotIn("extended", build.SMALL_MODULE_PROFILES)
+        self.assertEqual(build.RESOURCE_PROFILES["ceiling"], (1024, 1280))
+        with self.assertRaises(build.PilotError):
+            build.Limits(memory_mb=4608, rss_mb=5120).validate()
+        with self.assertRaises(build.PilotError):
+            build.SequentialLimits(memory_mb=4608, rss_mb=5120, seconds=31).validate()
+        with self.assertRaises(build.PilotError):
+            build.SequentialLimits(memory_mb=5120, rss_mb=5632).validate()
+
     def test_root_facade_adapter_ignores_body_comments(self):
         self.assertEqual(build.project_imports(
             "import Thesis\nimport Thesis.Probability.Core\n/-\nimport Thesis\n-/\n"),
@@ -176,6 +187,13 @@ class FinalGateTests(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         self.assertIn("--no-build", calls[0].args[0])
         self.assertEqual(sum(arg.startswith("+") for arg in calls[0].args[0]), 4)
+        self.assertIn("full build and audit NOT established", output)
+
+    def test_extended_cli_profile_reaches_only_the_bounded_runner(self):
+        result, calls, output = self.invoke(["--check", "--phase", "lean", "--profile", "extended"])
+        self.assertEqual(result, 0)
+        limits = calls[0].args[3]
+        self.assertEqual((limits.memory_mb, limits.rss_mb, limits.seconds), (4608, 5120, 30))
         self.assertIn("full build and audit NOT established", output)
 
     def test_stale_chunk_falls_back_to_checks_not_a_parallel_rebuild(self):
