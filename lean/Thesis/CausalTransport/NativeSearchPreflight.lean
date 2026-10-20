@@ -232,7 +232,7 @@ theorem guardedCatalogueOn_admission (limits : SearchLimits) (graph : ObservedGr
             simp only [checked] at accepted
             cases total : preflightTotal limits estimate.candidates result.comparisonsPerCertificate with
             | error reason => simp only [total] at accepted; contradiction
-            | ok count => exact ⟨estimate, rfl, sourceFits, result, rfl, count, rfl⟩
+            | ok count => exact ⟨estimate, rfl, sourceFits, result, rfl, count, total⟩
       · contradiction
 
 theorem guardedCatalogueOn_total_bound (limits : SearchLimits) (graph : ObservedGraph S)
