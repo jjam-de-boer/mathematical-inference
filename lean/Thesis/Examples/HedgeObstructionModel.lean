@@ -395,6 +395,122 @@ private def factualSlice (perturbed : Bool) (sample : Observation) (unit : Hidde
 private def factualWeight (perturbed : Bool) (sample : Observation) (unit : Hidden) : QProb :=
   ⟨(rowWeights perturbed sample unit).foldl Nat.mul 1, observationalDenominator, by decide⟩
 
+/-- The four shared singleton factors, followed by the seven literal row
+factors.  This is only a small comparison expression: the model and its
+likelihood still use `tables` and the generic structural realization above.
+The pointwise theorem below checks this expression against that actual
+realization before it can be used in a likelihood proof.  The companion
+intervention regression reuses the untouched factors through this same
+boundary, rather than duplicating the local-input encoder checks. -/
+def factualFactor (perturbed : Bool) (sample : Observation) (unit : Hidden)
+    (root : Fin 11) : QProb :=
+  match root.val with
+  | 0 => ⟨1, 2, by decide⟩
+  | 1 => ⟨1, 2, by decide⟩
+  | 2 => ⟨1, 6, by decide⟩
+  | 3 => ⟨1, 3, by decide⟩
+  | 4 => ⟨outputWeight 1536 (aTrueWeight unit) sample.a, 1536, by decide⟩
+  | 5 => ⟨outputWeight 1024 (rTrueWeight perturbed unit) sample.r, 1024, by decide⟩
+  | 6 => ⟨outputWeight 6 (if sample.r then 5 else 1) sample.u, 6, by decide⟩
+  | 7 => ⟨outputWeight 6 (vTrueWeight sample unit) sample.v, 6, by decide⟩
+  | 8 => ⟨outputWeight 6 (bTrueWeight sample unit) sample.b, 6, by decide⟩
+  | 9 => ⟨outputWeight 6 (qTrueWeight sample unit) sample.q, 6, by decide⟩
+  | _ => ⟨outputWeight 6 (yTrueWeight sample) sample.y, 6, by decide⟩
+
+/-- Check only the coordinates that each local factor can actually read.
+For example, the factor at `B` needs `V,B,J,K`, not all seven observed bits
+and all four shared inputs.  The other coordinates remain arbitrary in this
+theorem, so this is full coverage rather than a restriction to default-valued
+observations.  Finite Boolean/Nat cases are constructive; impossible finite
+indices are eliminated explicitly through `False`.
+
+Keeping this boundary pointwise avoids repeating the entire typed encoder,
+eleven-factor product and cross multiplication for every one of the
+`2 × 128 × 72` model/observation/shared-tuple combinations. -/
+theorem factual_slice_factor (perturbed : Bool) (sample : Observation) (unit : Hidden)
+    (root : Fin 11) :
+    QProb.Equiv
+      ((tables perturbed).sliceFactors (FiniteLatentSCM.noIntervention signature)
+        (hiddenAssignment unit) (observationAssignment sample) root)
+      (factualFactor perturbed sample unit root) := by
+  rcases sample with ⟨sa, sr, su, sv, sb, sq, sy⟩
+  rcases unit with ⟨h, l, ⟨j, jBound⟩, ⟨k, kBound⟩⟩
+  rcases root with ⟨index, bound⟩
+  -- `decide_cbv` produces ordinary kernel-checked proof terms for each
+  -- small rational comparison, including its division/remainder decoders.
+  -- Unrelated coordinates stay free; no whole joint table is expanded.
+  match index with
+  | 0 => cases h <;> decide_cbv
+  | 1 => cases l <;> decide_cbv
+  | 2 =>
+      rcases j with _ | _ | _ | _ | _ | _ | j <;>
+        first | exact False.elim (by omega) | decide_cbv
+  | 3 =>
+      rcases k with _ | _ | _ | k <;>
+        first | exact False.elim (by omega) | decide_cbv
+  | 4 =>
+      cases sa <;> cases h <;>
+        rcases j with _ | _ | _ | _ | _ | _ | j <;>
+          first | exact False.elim (by omega) | decide_cbv
+  | 5 => cases perturbed <;> cases sr <;> cases h <;> cases l <;> decide_cbv
+  | 6 => cases sr <;> cases su <;> decide_cbv
+  | 7 =>
+      cases sa <;> cases su <;> cases sv <;>
+        rcases k with _ | _ | _ | k <;>
+          first | exact False.elim (by omega) | decide_cbv
+  | 8 =>
+      cases sv <;> cases sb <;>
+        rcases j with _ | _ | _ | _ | _ | _ | j <;>
+          rcases k with _ | _ | _ | k <;>
+            first | exact False.elim (by omega) | decide_cbv
+  | 9 => cases sb <;> cases sq <;> cases l <;> decide_cbv
+  | 10 => cases sv <;> cases sq <;> cases sy <;> decide_cbv
+  | _ + 11 => exact False.elim (by omega)
+
+/-- After the actual factors have been checked, their product is ordinary
+symbolic natural-number arithmetic.  The shared prefix contributes `1/72`;
+the remaining denominators and row numerators are exactly the original
+likelihood table's.  No concrete observation needs a separate product proof. -/
+private theorem factual_factors_product (perturbed : Bool) (sample : Observation) (unit : Hidden) :
+    QProb.Equiv (FiniteProduct.qProduct 11 (factualFactor perturbed sample unit))
+      (factualWeight perturbed sample unit) := by
+  let aWeight := outputWeight 1536 (aTrueWeight unit) sample.a
+  let rWeight := outputWeight 1024 (rTrueWeight perturbed unit) sample.r
+  let uWeight := outputWeight 6 (if sample.r then 5 else 1) sample.u
+  let vWeight := outputWeight 6 (vTrueWeight sample unit) sample.v
+  let bWeight := outputWeight 6 (bTrueWeight sample unit) sample.b
+  let qWeight := outputWeight 6 (qTrueWeight sample unit) sample.q
+  let yWeight := outputWeight 6 (yTrueWeight sample) sample.y
+  -- Check the closed denominator once. Do not ask symbolic simplification
+  -- to repeatedly unfold or expand this large natural-number product.
+  have denominator :
+      6 * (6 * (6 * (6 * (6 * (1024 * (1536 * (3 * (6 * (2 * (2 * 1)))))))))) =
+        observationalDenominator := by decide +kernel
+  change
+    (yWeight * (qWeight * (bWeight * (vWeight * (uWeight * (rWeight * (aWeight * 1))))))) *
+        observationalDenominator =
+      ([aWeight, rWeight, uWeight, vWeight, bWeight, qWeight, yWeight].foldl Nat.mul 1) *
+        (6 * (6 * (6 * (6 * (6 * (1024 * (1536 * (3 * (6 * (2 * (2 * 1)))))))))))
+  rw [denominator]
+  apply congrArg (fun numerator => numerator * observationalDenominator)
+  -- Expose the left fold in ordinary multiplication notation before the
+  -- associative/commutative normalization; the seven weights stay symbolic.
+  change
+    yWeight * (qWeight * (bWeight * (vWeight * (uWeight * (rWeight * (aWeight * 1)))))) =
+      ((((((1 * aWeight) * rWeight) * uWeight) * vWeight) * bWeight) * qWeight) * yWeight
+  simp only [Nat.one_mul, Nat.mul_assoc, Nat.mul_left_comm, Nat.mul_comm]
+
+/-- Transport the symbolic product proof back to the actual SCM factors.
+This rational equivalence, not an independently postulated row table, licenses
+the faster proof of the original exhaustive finite regression below. -/
+private theorem factual_slice_equiv_by_factors
+    (perturbed : Bool) (sample : Observation) (unit : Hidden) :
+    QProb.Equiv (factualSlice perturbed sample unit) (factualWeight perturbed sample unit) := by
+  unfold factualSlice
+  exact QProb.equiv_trans
+    (FiniteProduct.qProduct_congr 11 (factual_slice_factor perturbed sample unit))
+    (factual_factors_product perturbed sample unit)
+
 /-- This finite check bridges the actual local-input encoder and actual row
 records to the original seven table factors.  It does not evaluate a huge
 private response prior: that integration is already a general theorem.
@@ -402,12 +518,12 @@ Every observed assignment, shared tuple, and member of the pair is checked. -/
 private theorem factual_slice_checks (perturbed : Bool) (sample : Observation) :
     hiddenAssignments.all (fun unit => decide
       (QProb.Equiv (factualSlice perturbed sample unit) (factualWeight perturbed sample unit))) = true := by
-  -- Keep each kernel reduction bounded to 72 shared tuples.  A single
-  -- nested check of all observations creates a needlessly large reduction
-  -- cache; structural Boolean cases establish precisely the same coverage.
-  rcases sample with ⟨sa, sr, su, sv, sb, sq, sy⟩
-  cases perturbed <;> cases sa <;> cases sr <;> cases su <;>
-    cases sv <;> cases sb <;> cases sq <;> cases sy <;> decide +kernel
+  -- Retain the original exhaustive Boolean assertion.  Its entries follow
+  -- from the pointwise local-factor theorem for arbitrary shared inputs,
+  -- rather than reducing the same encoder and product thousands of times.
+  apply List.all_eq_true.mpr
+  intro unit _listed
+  exact decide_eq_true (factual_slice_equiv_by_factors perturbed sample unit)
 
 private theorem factualSlice_equiv (perturbed : Bool) (sample : Observation) (unit : Hidden) :
     QProb.Equiv (factualSlice perturbed sample unit) (factualWeight perturbed sample unit) := by

@@ -1,14 +1,20 @@
 # Resource-capped local checks
 
-Full project builds and the transitive axiom audit currently remain remote;
-the normal-cache sequential bootstrap described below is being verified.
-Useful selected-module checking is feasible under the conservative
+The complete local build and transitive axiom audit passed on 2026-10-20,
+using the cache-aware, sequential workflow below and the original committed
+project configuration. The full builder's explicit `extended` profile keeps
+one compiler family, a 4608 MiB Lean threshold, a 5120 MiB sampled aggregate-RSS
+watchdog and a 30-second limit per invocation. The final audit checked 42,173
+imported project declarations and allowed only `propext` and `Quot.sound`.
+
+Useful selected-module checking is also feasible under the conservative
 640 MiB Lean / 768 MiB sampled-RSS / 30-second single-process profile below;
 the explicit 768/1024 MiB pilot also checks downstream transportation modules.
-The previous laptop-wide freeze has not been diagnosed; this result does not
-establish that full proof elaboration fits local memory.
+The previous laptop-wide freeze has not been diagnosed. This measured success
+establishes a bounded sequential local route, not the safety of an unrestricted
+parallel cold build or guaranteed responsiveness under arbitrary external load.
 
-## Full-project sequential bootstrap (in progress)
+## Full-project sequential build (verified)
 
 `tools/build_local_sequential.py` is separate from the small-closure pilot.
 It walks the actual default executable and full axiom-audit dependencies,
@@ -20,7 +26,7 @@ claim that the full project builds.
 ```sh
 python3 -B lean/tools/build_local_sequential.py
 python3 -B lean/tools/build_local_sequential.py --phase lean --max-builds 20 --check
-python3 -B lean/tools/build_local_sequential.py --check
+python3 -B lean/tools/build_local_sequential.py --profile extended --check
 ```
 
 The first command only plans. The second is an optional checkpoint after 20
@@ -30,9 +36,11 @@ all Lean modules, native object files, the actual complete build and the full
 axiom audit. Only its explicit final gate result establishes end-to-end local
 success; a passed `--target` or individual `--phase` does not.
 
-The default explicit full-builder profile is 768 MiB Lean, 1024 MiB aggregate
-sampled RSS and 30 seconds per invocation. A temporary declarative TOML file
-adds only weak resource arguments (`-j1`, `-M768`, `-DmaxErrors=1`), which this
+Without an explicit profile the full builder uses 768 MiB Lean, 1024 MiB
+aggregate sampled RSS and 30 seconds per invocation. That smaller profile is
+not sufficient for the complete project; use `extended` for the verified
+full-build route. A temporary declarative TOML file adds only weak resource
+arguments (`-j1`, the selected `-M` threshold, `-DmaxErrors=1`), which this
 pinned Lake excludes from proof traces. The committed configuration is not
 edited. The whole owned process group is monitored, including compiler and
 linker children; its aggregate RSS deliberately counts shared resident pages
@@ -40,6 +48,10 @@ conservatively. Independent compiler families, unmonitorable children, source
 changes and resource overruns stop the build. Wall/CPU stops are distinguished
 from Lean's memory-threshold failures. Final commands use the original package
 configuration, with a no-build preflight before those commands can run.
+
+The following measurements record the staged investigation chronologically.
+References to outstanding gates describe those earlier checkpoints, not the
+current result; the final verification is recorded below.
 
 The original million-unit `uniform_margins` regression is now proved by a
 private symbolic lemma for every natural mass, then specialized to the same
@@ -221,6 +233,61 @@ Repeating the original-configuration, source-fingerprinted no-build inventories
 then confirmed **881/886 Lean/audit targets and 863/867 native-object targets**
 current. The blocked target names above are unchanged; the larger totals come
 from the concurrent distribution additions, not from a new causal failure.
+
+### Complete local build and audit passed, 2026-10-20
+
+The two remaining exhaustive hedge regressions now check actual SCM factors
+pointwise, then combine them by symbolic product arithmetic. The model's
+`factual_slice_factor` certificate checks only the observed and shared inputs
+read by each factor, leaving all other inputs arbitrary. The companion's
+`intervention_slice_factor` reuses that certificate at untouched coordinates
+and checks the two forced consistency indicators directly. Their respective
+`factual_factors_product` and `intervention_factors_product` lemmas recover the
+original likelihood weights and denominators. The original exhaustive Boolean
+assertions still follow, without repeatedly reducing the full joint encoder.
+
+Every pre-existing definition, theorem statement and numerical regression in
+both files remains unchanged. Outside the new helper blocks, only the proof
+bodies of the private `factual_slice_checks` and `intervention_slice_checks`
+assertions changed. A preservation check removed the new blocks and restored
+those two old bodies, reproducing the original files at `210ef53` byte-for-byte:
+
+| Original source | SHA-256 |
+| --- | --- |
+| `HedgeObstructionModel.lean` | `fbb0143d1ffff9441bacff033cf46690f57b97c6beab02253ec148e920c98f59` |
+| `HedgeObstructionCounterexample.lean` | `b0cb819e491df38d981853b6c84aa3bf15e7d1ad57fe0293a5051d9977f70677` |
+
+Both original whole-table checks had reached the 30-second deadline. Their
+repaired ordinary Lake targets passed in 4.95 s / 1119.8 MiB and 1.23 s /
+765.3 MiB sampled aggregate RSS, respectively. Although a 60-second pilot was
+subsequently approved, neither repair needed it: the reusable builder's
+30-second limit and 5 GiB aggregate cap stayed unchanged. These are verified
+proof-compilation repairs, not an enlargement of the causal theorem scope.
+
+The complete `--profile extended --check` run then traversed all 886 Lean/audit
+modules and 867 native-object modules, linked the executable, and ran the
+actual final commands under the **original committed configuration**. Genuine
+Lake artifacts were reused; no successful trace or artifact was fabricated.
+The source/configuration fingerprints remained unchanged throughout the run.
+
+| Final step | Result | Wall time | Sampled aggregate RSS |
+| --- | --- | --- | --- |
+| Elaborate `Thesis.AxiomAudit` | 42,173 declarations pass the axiom policy | 4.86 s | 1105.7 MiB |
+| Link executable | Passed | 1.72 s | 753.8 MiB |
+| Actual `lake build` | Passed, 1736 jobs current | 0.41 s | 144.3 MiB |
+| Actual `lake build Thesis.AxiomAudit` | Passed, 886 jobs current | 0.30 s | 123.1 MiB |
+
+The final warm-command measurements are not the memory cost of a cold build.
+Earlier measured compilation in this bootstrap reached approximately 3.8 GiB
+aggregate RSS. The verified local route prepares stale prerequisites one at a
+time, then runs the real complete commands after no-build preflights; it does
+not silently allow those commands to start an unbounded parallel rebuild.
+Subsequent incremental runs reuse the same normal `.lake/build` cache.
+
+Local measurements and individual invocation logs are retained in
+`.lake/local-builds-v1/20261020-101218-uk54hjo6/`. The successful final banner is
+`FULL LOCAL BUILD AND AXIOM AUDIT PASSED using the committed configuration.`
+The build-helper regression suite also passed all 76 tests.
 
 ## Transportation split and explicit resource profiles, 2026-10-19
 

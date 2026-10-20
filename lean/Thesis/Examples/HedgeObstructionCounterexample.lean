@@ -49,15 +49,97 @@ private def interventionWeight (perturbed : Bool) (sample : Observation) (unit :
   ⟨if consistent sample then freeRowWeight perturbed sample unit else 0,
     interventionDenominator, by decide⟩
 
+/-- Only the private response factors at `A` and `B` are replaced by forced
+consistency indicators.  Every shared source and every other local response
+keeps the already verified factual factor.  This expression is checked
+against the actual intervened SCM below; it is not a truncation assumption.
+The forced factors keep denominator one visible even before a bit is split
+into cases, so the symbolic product needs no conditional-denominator proof. -/
+private def interventionFactor (perturbed : Bool) (sample : Observation) (unit : Hidden)
+    (root : Fin 11) : QProb :=
+  if root.val = 4 then ⟨if sample.a then 0 else 1, 1, by decide⟩
+  else if root.val = 8 then ⟨if sample.b then 0 else 1, 1, by decide⟩
+  else factualFactor perturbed sample unit root
+
+/-- Reuse the factual row certificates at all untouched coordinates.  At
+the two forced coordinates the generic CPT semantics reduces directly to
+the supplied bit's consistency with `false`.  No observed or hidden input
+is fixed to a default value, and the exact intervention remains `do(A,B)`. -/
+private theorem intervention_slice_factor
+    (perturbed : Bool) (sample : Observation) (unit : Hidden) (root : Fin 11) :
+    QProb.Equiv
+      ((tables perturbed).sliceFactors intervention
+        (hiddenAssignment unit) (observationAssignment sample) root)
+      (interventionFactor perturbed sample unit root) := by
+  rcases sample with ⟨sa, sr, su, sv, sb, sq, sy⟩
+  have factual := factual_slice_factor perturbed ⟨sa, sr, su, sv, sb, sq, sy⟩ unit root
+  rcases root with ⟨index, bound⟩
+  match index with
+  | 0 => exact factual
+  | 1 => exact factual
+  | 2 => exact factual
+  | 3 => exact factual
+  | 4 => cases sa <;> exact QProb.equiv_refl _
+  | 5 => exact factual
+  | 6 => exact factual
+  | 7 => exact factual
+  | 8 => cases sb <;> exact QProb.equiv_refl _
+  | 9 => exact factual
+  | 10 => exact factual
+  | _ + 11 => exact False.elim (by omega)
+
+/-- The shared prefix still contributes `1/72`; forced response factors
+have denominator one.  Thus the original intervention denominator is
+unchanged.  Only the two action bits need cases: the remaining five row
+weights stay symbolic, including all their outside-relay dependencies. -/
+private theorem intervention_factors_product
+    (perturbed : Bool) (sample : Observation) (unit : Hidden) :
+    QProb.Equiv (FiniteProduct.qProduct 11 (interventionFactor perturbed sample unit))
+      (interventionWeight perturbed sample unit) := by
+  let rWeight := outputWeight 1024 (rTrueWeight perturbed unit) sample.r
+  let uWeight := outputWeight 6 (if sample.r then 5 else 1) sample.u
+  let vWeight := outputWeight 6 (vTrueWeight sample unit) sample.v
+  let qWeight := outputWeight 6 (qTrueWeight sample unit) sample.q
+  let yWeight := outputWeight 6 (yTrueWeight sample) sample.y
+  have denominator :
+      6 * (6 * (1 * (6 * (6 * (1024 * (1 * (3 * (6 * (2 * (2 * 1)))))))))) =
+        interventionDenominator := by decide +kernel
+  change
+    (yWeight * (qWeight * ((if sample.b then 0 else 1) *
+      (vWeight * (uWeight * (rWeight * ((if sample.a then 0 else 1) * 1))))))) *
+        interventionDenominator =
+      (if consistent sample then rWeight * uWeight * vWeight * qWeight * yWeight else 0) *
+        (6 * (6 * (1 * (6 * (6 * (1024 * (1 * (3 * (6 * (2 * (2 * 1)))))))))))
+  rw [denominator]
+  apply congrArg (fun numerator => numerator * interventionDenominator)
+  cases aValue : sample.a <;> cases bValue : sample.b <;>
+    simp only [consistent, aValue, bValue, Bool.not_false, Bool.not_true,
+      Bool.false_and, Bool.true_and, Bool.false_eq_true, if_false, if_true,
+      Nat.zero_mul, Nat.mul_zero, Nat.one_mul, Nat.mul_one,
+      Nat.mul_assoc, Nat.mul_left_comm, Nat.mul_comm]
+
+/-- Relate the checked local factors back to the original, actual SCM
+slice product before deriving the original finite Boolean assertion. -/
+private theorem intervention_slice_equiv_by_factors
+    (perturbed : Bool) (sample : Observation) (unit : Hidden) :
+    QProb.Equiv (interventionSlice perturbed sample unit) (interventionWeight perturbed sample unit) := by
+  unfold interventionSlice
+  exact QProb.equiv_trans
+    (FiniteProduct.qProduct_congr 11 (intervention_slice_factor perturbed sample unit))
+    (intervention_factors_product perturbed sample unit)
+
 /-- Forced-node consistency gives zero for an assignment with a nonzero
 action bit, and otherwise gives the five remaining likelihood factors.
 The check uses actual SCM slice factors, not a guessed truncation rule. -/
 private theorem intervention_slice_checks (perturbed : Bool) (sample : Observation) :
     hiddenAssignments.all (fun unit => decide
       (QProb.Equiv (interventionSlice perturbed sample unit) (interventionWeight perturbed sample unit))) = true := by
-  rcases sample with ⟨sa, sr, su, sv, sb, sq, sy⟩
-  cases perturbed <;> cases sa <;> cases sr <;> cases su <;>
-    cases sv <;> cases sb <;> cases sq <;> cases sy <;> decide +kernel
+  -- Preserve the exact exhaustive assertion, now justified for arbitrary
+  -- shared inputs by the pointwise factor proof instead of repeated
+  -- whole-assignment reductions.
+  apply List.all_eq_true.mpr
+  intro unit _listed
+  exact decide_eq_true (intervention_slice_equiv_by_factors perturbed sample unit)
 
 private theorem interventionSlice_equiv (perturbed : Bool) (sample : Observation) (unit : Hidden) :
     QProb.Equiv (interventionSlice perturbed sample unit) (interventionWeight perturbed sample unit) := by
