@@ -5,6 +5,9 @@ namespace Thesis.Probability.Distros.RationalVector
 abbrev Vector (dimension : Nat) := Fin dimension → SignedRatio
 
 def Equiv (first second : Vector n) : Prop := ∀ i, SignedRatio.Equiv (first i) (second i)
+instance (first second : Vector n) : Decidable (Equiv first second) :=
+  inferInstanceAs (Decidable (∀ i, SignedRatio.Equiv (first i) (second i)))
+
 def zero : Vector n := fun _ => SignedRatio.zero
 def add (first second : Vector n) : Vector n := fun i => SignedRatio.add (first i) (second i)
 def scale (factor : SignedRatio) (value : Vector n) : Vector n := fun i => SignedRatio.mul factor (value i)

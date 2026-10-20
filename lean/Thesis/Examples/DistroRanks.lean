@@ -8,7 +8,9 @@ def multinomialRankFixture := multinomial_covarianceRank 2 [1, 0, 2] (by decide)
 def multinomialKernelFixture := multinomial_covarianceKernelBasis 2 [1, 0, 2] (by decide) (by decide)
 
 example : positiveColourCount [1, 0, 2] = 2 := by decide +kernel
-example : multinomialRankFixture.basis.indices = [⟨2, by decide⟩] := by decide +kernel
+example : multinomialRankFixture.basis.indices = [⟨2, by decide⟩] := by
+  change (multinomialRankFixture.basis.indices : List (Fin 3)) = [⟨2, by decide⟩]
+  decide +kernel
 example : multinomialKernelFixture.indices = [none, some ⟨1, by decide⟩] := by decide +kernel
 
 /-- The chosen image vector is an actual covariance column. -/
@@ -22,7 +24,9 @@ example (coefficients : Fin 3 → SignedRatio)
     (vanished : RationalVector.Equiv
       (combine multinomialRankFixture.basis.indices multinomialRankFixture.basis.vectors coefficients) RationalVector.zero) :
     SignedRatio.Equiv (coefficients ⟨2, by decide⟩) SignedRatio.zero :=
-  multinomialRankFixture.basis.independent coefficients vanished ⟨2, by decide⟩ (by decide)
+  multinomialRankFixture.basis.independent coefficients vanished ⟨2, by decide⟩ (by
+    change (⟨2, by decide⟩ : Fin 3) ∈ (multinomialRankFixture.basis.indices : List (Fin 3))
+    decide +kernel)
 
 example (source : Vector 3) : ∃ coefficients, RationalVector.Equiv
     (combine multinomialRankFixture.basis.indices multinomialRankFixture.basis.vectors coefficients)
@@ -40,10 +44,14 @@ example : RationalVector.Equiv
     (fun i => if i.val = 1 then ⟨-3, 2, by decide⟩ else ⟨1, 2, by decide⟩) := by decide +kernel
 
 example : (reinforcedCount_covarianceRank 2 2 [1, 0, 2] (by decide) (by decide)).basis.indices =
-    [⟨2, by decide⟩] := by decide +kernel
+    [⟨2, by decide⟩] := by
+  change ((reinforcedCount_covarianceRank 2 2 [1, 0, 2] (by decide) (by decide)).basis.indices : List (Fin 3)) = [⟨2, by decide⟩]
+  decide +kernel
 
 example : (multivariateHypergeometric_covarianceRank 2 [1, 0, 2] (by decide) (by decide) (by decide)).basis.indices =
-    [⟨2, by decide⟩] := by decide +kernel
+    [⟨2, by decide⟩] := by
+  change ((multivariateHypergeometric_covarianceRank 2 [1, 0, 2] (by decide) (by decide) (by decide)).basis.indices : List (Fin 3)) = [⟨2, by decide⟩]
+  decide +kernel
 example : SignedRatio.Equiv
     ((multivariateHypergeometric_covarianceRank 2 [1, 0, 2] (by decide) (by decide) (by decide)).basis.vectors
       ⟨2, by decide⟩ ⟨0, by decide⟩) ⟨-2, 9, by decide⟩ := by decide +kernel
