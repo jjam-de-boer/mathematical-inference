@@ -84,7 +84,7 @@ class IdentificationLayerTests(unittest.TestCase):
 
     def test_completeness_preserves_immediate_query_header_and_audit_coverage(self):
         root = Path(__file__).resolve().parents[1]
-        nested = (root / "Thesis/CausalTransport/CompletenessLegacyNestedFailures.lean").read_text()
+        nested = (root / "Thesis/CausalTransport/Historical/LegacyNestedFailures.lean").read_text()
         self.assertIn("theorem identifyJoint_eq_failed_immediate_query_site", nested)
         self.assertIn("def hedgeWitnessOfJoint", nested)
         graph = self.graph | {"Thesis": initial_project_imports((root / "Thesis.lean").read_text())}

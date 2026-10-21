@@ -1,5 +1,7 @@
-import Thesis.CausalTransport.HedgeOutcomeFlow
-import Thesis.CausalTransport.HedgePositive
+import Thesis.CausalTransport.Soundness
+import Thesis.CausalTransport.Correspondence
+import Thesis.CausalTransport.ConditionalBayes
+import Thesis.Causality.TermSupport
 import Thesis.CausalTransport.KernelSuccessCompilation
 import Thesis.CausalTransport.KernelFailureExtraction
 
@@ -11,13 +13,14 @@ open Probability
 /-!
 # Assembly lemmas for the published completeness theorem
 
-`Completeness` and `Soundness` remain independent implementation modules.
-`HedgeOutcomeFlow` develops its countermodel semantics without importing
-soundness; `HedgePositive` uses the finite marginalization algebra from
-`Soundness` at a one-way integration boundary.  This module is a further
-assembly boundary: it may use `ObservedGraph.publishedSoundness` to connect
-an inspectable derivation with its denotation, but neither main theorem
-development imports this file.
+This one-way assembly imports the current supported compilers, structural
+failure extraction and the proved `ObservedGraph.publishedSoundness`. It
+connects inspectable derivations with their denotations; neither the soundness
+implementation nor the structural compiler/failure proofs import this file.
+The shared `ConditionalBayes` bridge supplies the precise source-local support
+argument without importing historical ready-case countermodels or legacy
+engine traces. Those older results remain verified through compatibility
+imports elsewhere, but are not prerequisites of this current theorem path.
 
 The first application is conditional identification.  Bayes compilation
 needs a strictly positive identified denominator only at assignments where

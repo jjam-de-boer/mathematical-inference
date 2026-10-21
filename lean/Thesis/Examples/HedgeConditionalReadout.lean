@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.HedgeConditionalReadout
 import Thesis.Examples.KernelFailureExtraction
+import Thesis.Examples.HedgeConditionalReadout.Failure
 
 namespace Thesis
 namespace Causality
@@ -33,88 +34,6 @@ and geometric premises; the semantic proofs are the general library theorems.
 set_option maxRecDepth 100000
 set_option maxHeartbeats 1000000
 
-/-! ## Two confounded roots, an unconfounded merge, and a retained conditioner -/
-
-def signature : ObservedSignature where
-  count := 6
-  Value := fun _ => Bool
-  valueEnumeration := fun _ => [false, true]
-  value_complete := by intro _ value; cases value <;> simp
-  value_nodup := by intro _; simp
-  defaultValue := fun _ => false
-  valueDecidableEq := fun _ => inferInstance
-  directed := fun parent child => decide
-    ((parent.val = 0 ∧ (child.val = 1 ∨ child.val = 2)) ∨
-      ((parent.val = 1 ∨ parent.val = 2) ∧ child.val = 3) ∨
-      (parent.val = 3 ∧ child.val = 4) ∨ (parent.val = 4 ∧ child.val = 5))
-  directed_earlier := by
-    intro parent child edge
-    have selected := of_decide_eq_true edge
-    rcases selected with ⟨_, _ | _⟩ | ⟨(_ | _), _⟩ | ⟨_, _⟩ | ⟨_, _⟩ <;> omega
-
-def graph : ObservedGraph signature where
-  bidirected := fun left right => decide (left ≠ right ∧ left.val < 3 ∧ right.val < 3)
-  bidirected_symmetric := by
-    intro left right edge
-    have selected := of_decide_eq_true edge
-    exact decide_eq_true ⟨Ne.symm selected.1, selected.2.2, selected.2.1⟩
-  bidirected_irreflexive := by
-    intro node
-    exact decide_eq_false (fun selected => selected.1 rfl)
-
-def actionNode : Fin signature.count := ⟨0, by decide⟩
-def firstRoot : Fin signature.count := ⟨1, by decide⟩
-def secondRoot : Fin signature.count := ⟨2, by decide⟩
-def mergeNode : Fin signature.count := ⟨3, by decide⟩
-def outcomeNode : Fin signature.count := ⟨4, by decide⟩
-def conditionNode : Fin signature.count := ⟨5, by decide⟩
-def forestHost : NodeSet signature := fun node => decide (node.val < 3)
-def rootMask : NodeSet signature := fun node => decide (node.val = 1 ∨ node.val = 2)
-
-def query : ConditionalKernelQuery signature where
-  outcome := NodeSet.singleton outcomeNode
-  action := NodeSet.singleton actionNode
-  condition := NodeSet.singleton conditionNode
-  action_outcome_disjoint := NodeSet.disjoint_singletons_of_ne (by decide)
-  action_condition_disjoint := NodeSet.disjoint_singletons_of_ne (by decide)
-  outcome_condition_disjoint := NodeSet.disjoint_singletons_of_ne (by decide)
-
-def rich : ObservedSignature.ValueRich signature where
-  first := fun _ => false
-  second := fun _ => true
-  first_enumerated := fun _ => List.mem_cons_self
-  second_enumerated := fun _ => List.mem_cons.mpr (Or.inr List.mem_cons_self)
-  different := fun _ => Bool.false_ne_true
-
-/-! ## Actual engine failure, without replacing the terminal query -/
-
-theorem condition_nonempty : NodeSet.isEmpty query.condition = false := by decide +kernel
-theorem no_exchange : conditionalExchangeStep? graph query = none := rfl
-
-private def computedFailure : IdentificationFail signature :=
-  match identifyJointKernel graph query.jointNumerator with
-  | .failed fail => fail
-  | _ => ⟨NodeSet.empty, NodeSet.empty⟩
-
-/-- The failure is on the confounded three-node component, not the entire
-six-node numerator host.  Its small forest consists of both roots. -/
-theorem joint_failed : identifyJointKernel graph query.jointNumerator = .failed ⟨forestHost, rootMask⟩ := by
-  have failed : identifyJointKernel graph query.jointNumerator = .failed computedFailure := rfl
-  have large : computedFailure.remaining = forestHost :=
-    (NodeSet.equal_eq_true_iff _ _).mp (by decide +kernel)
-  have small : computedFailure.free = rootMask :=
-    (NodeSet.equal_eq_true_iff _ _).mp (by decide +kernel)
-  have coordinates : computedFailure = ⟨forestHost, rootMask⟩ := by
-    cases record : computedFailure with
-    | mk remaining free =>
-        rw [record] at large small
-        cases large
-        cases small
-        rfl
-  exact failed.trans (congrArg IdentificationOutcome.failed coordinates)
-
-theorem conditional_failed : identifyConditionalKernel graph query = .failed ⟨forestHost, rootMask⟩ := by
-  simpa only [identifyConditionalKernel, identifyConditionalKernelFuel, no_exchange] using joint_failed
 
 noncomputable def extraction := identifyJointKernelFailedHedge query.jointNumerator joint_failed
 

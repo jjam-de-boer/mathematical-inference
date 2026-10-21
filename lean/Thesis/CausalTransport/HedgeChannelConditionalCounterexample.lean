@@ -2,7 +2,7 @@ import Thesis.CausalTransport.HedgeChannelCounterexample
 import Thesis.CausalTransport.HedgeChannelMarginal
 import Thesis.CausalTransport.HedgeChannelConditionalGap
 import Thesis.Causality.ValueRefinementMarginal
-import Thesis.CausalTransport.ConditionalFailureExtraction
+import Thesis.CausalTransport.ConditionalFailureCore
 
 namespace Thesis
 namespace Causality

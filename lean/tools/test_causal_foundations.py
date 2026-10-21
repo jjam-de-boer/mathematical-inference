@@ -1,13 +1,16 @@
 """Protect causal foundations extracted without changing their mathematics.
 
 The hashes compare exact source blocks (including proof bodies) with the
-verified pre-extraction revision f7204c7. Import checks protect the smaller
+verified pre-extraction revision f7204c7 and first causal checkpoint e2eee12.
+The failure-core check normalizes only extra blank lines left by extraction.
+Import checks protect the smaller
 current interfaces while keeping historical imports and audit reachability.
 Neither check replaces Lean elaboration or the transitive axiom audit.
 """
 
 import hashlib
 from pathlib import Path
+import re
 import unittest
 
 from test_example_coverage import initial_project_imports, reachable
@@ -29,13 +32,22 @@ class CausalFoundationTests(unittest.TestCase):
                        "Causality.IdentificationOutcomeTraces", "Causality.CForestConstruction",
                        "CausalTransport.ActionDeletion",
                        "CausalTransport.Hedge.ReadoutGeometry", "CausalTransport.Hedge.Models",
+                       "CausalTransport.Hedge.Parity", "CausalTransport.HedgePartialIncidence",
+                       "CausalTransport.HedgeChannelCounterexample",
+                       "CausalTransport.HedgeChannelEnvironmentIncidence",
+                       "CausalTransport.ConditionalBayes", "CausalTransport.CompletenessAssembly",
+                       "CausalTransport.ConditionalFailureCore", "CausalTransport.Hedge.WitnessSearch",
+                       "CausalTransport.HedgeChannelCompleteness",
+                       "CausalTransport.HiddenDAGCorrespondence",
+                       "CausalTransport.HiddenDAGSupportedCorrespondence",
+                       "CausalTransport.PositiveModal", "CausalTransport.SupportedModal",
                        "CausalTransport.ChainCompilation", "CausalTransport.HedgeChannelCharacters",
                        "CausalTransport.ValueRefinementCounterexample",
                        "CausalTransport.KernelCompilation", "CausalTransport.KernelFailureExtraction"):
             with self.subTest(module=module):
                 dependencies = reachable(self.graph, "Thesis." + module)
                 self.assertNotIn("Thesis.CausalTransport.Completeness", dependencies)
-                self.assertFalse(any(".Legacy." in name or ".CompletenessLegacy" in name
+                self.assertFalse(any(".Legacy." in name or ".CompletenessLegacy" in name or ".Historical." in name
                                      for name in dependencies))
 
     def test_moved_declarations_and_proofs_are_preserved_exactly(self):
@@ -70,6 +82,21 @@ class CausalFoundationTests(unittest.TestCase):
             ("Causality.CForestConstruction", "/--\nA bidirected component with a well-formed kept-child map",
              "end Causality",
              "e5545232ae27d60b98fcdb878b66f90ddd047a02495f66c210c8297daecbb6c5"),
+            ("CausalTransport.Hedge.Parity", "/-- Correct a Boolean incidence target at one anchor",
+             "/-!\n### C-forest incidence flow all the way to query outcomes",
+             "4f5db4651640dac655343136089b9779dfb81451447c4b56474a2a5d165a4fee"),
+            ("CausalTransport.Hedge.Parity", "/-!\n### C-forest incidence flow all the way to query outcomes",
+             "end Causality",
+             "7f78796ec777507f81eeee5208f184226db2f0eec93761fad854411522340f6c"),
+            ("CausalTransport.ConditionalBayes", "/-- Bayes writes `P(Y | do(X), Z)`",
+             "end Causality",
+             "4fbd2e3b23e6eee094758718d98bc5a6e2b853108736efd94fd895e791552bd1"),
+            ("CausalTransport.ConditionalFailureCarrierCases", "/-- A positive conditional countermodel whenever every common root",
+             "end Causality",
+             "ac95c0442153b5ee63c57331ab6c8b8d3e9d75c3ce55bc7b338b200b0bf35cce"),
+            ("CausalTransport.Hedge.WitnessSearch", "/-- Unpack the Boolean hedge tests",
+             "end Causality",
+             "4fa577485830009b3306099454fb0d5f7f49ac0b32824bfb58c23db1791705c8"),
         )
         for module, start, end, expected in blocks:
             with self.subTest(module=module, start=start):
@@ -81,13 +108,24 @@ class CausalFoundationTests(unittest.TestCase):
                               collector.rindex("end Causality")].rstrip()
         self.assertEqual(hashlib.sha256(collector.encode()).hexdigest(),
                          "6696879c589107a12774e18bb3e9f5d924ec16657a1eb7eb6152deaeee1e72f7")
+        core = self.source("Thesis.CausalTransport.ConditionalFailureCore")
+        start = "/-! ## Inspectable exchange traces and their semantic equality -/"
+        core = core[core.index(start):core.rindex("end Causality")]
+        core = re.sub(r"\n{3,}", "\n\n", core).rstrip()
+        self.assertEqual(hashlib.sha256(core.encode()).hexdigest(),
+                         "46c954b9164640331989efc3b212d0cc06bfb021111a0781dfd1b818da47dff1")
 
     def test_old_imports_reexport_the_new_foundations(self):
         pairs = (("CompletenessCertificates", "Thesis.Causality.TermSupport"),
                  ("CompletenessCertificates", "Thesis.Causality.CForestConstruction"),
                  ("CompletenessCertificates", "Thesis.CausalTransport.ActionDeletion"),
+                 ("CompletenessCertificates", "Thesis.CausalTransport.ConditionalBayes"),
                  ("CompletenessFailureExtraction", "Thesis.CausalTransport.Hedge.ReadoutGeometry"),
+                 ("CompletenessFailureExtraction", "Thesis.CausalTransport.Hedge.WitnessSearch"),
+                 ("ConditionalFailureExtraction", "Thesis.CausalTransport.ConditionalFailureCore"),
+                 ("ConditionalFailureExtraction", "Thesis.CausalTransport.ConditionalFailureCarrierCases"),
                  ("CompletenessHedgeParity", "Thesis.Causality.InterventionalCounterexample"),
+                 ("CompletenessHedgeParity", "Thesis.CausalTransport.Hedge.Parity"),
                  ("CompletenessHedgeModels", "Thesis.CausalTransport.Hedge.Models"))
         for old, foundation in pairs:
             with self.subTest(old=old):
@@ -101,6 +139,10 @@ class CausalFoundationTests(unittest.TestCase):
                        "Causality.IdentificationOutcomeTraces", "Causality.CForestConstruction",
                        "CausalTransport.ActionDeletion",
                        "CausalTransport.Hedge.ReadoutGeometry", "CausalTransport.Hedge.Models",
+                       "CausalTransport.Hedge.Parity",
+                       "CausalTransport.ConditionalBayes",
+                       "CausalTransport.ConditionalFailureCore", "CausalTransport.ConditionalFailureCarrierCases",
+                       "CausalTransport.Hedge.WitnessSearch",
                        "CausalTransport.CompletenessLegacyShrinkFailures",
                        "CausalTransport.CompletenessLegacyProductFailures",
                        "CausalTransport.CompletenessLegacyNestedFailures"):
@@ -115,6 +157,24 @@ class CausalFoundationTests(unittest.TestCase):
         facade = self.source("Thesis.CausalTransport.Completeness")
         self.assertNotIn("Detailed implementation inventory.", facade)
         self.assertIn("docs/history/completeness-development.md", facade)
+
+    def test_archived_failure_stacks_keep_every_original_declaration_and_proof(self):
+        hashes = {
+            "Shrink": "091e6b4864c4942638ce5bdbedace2b37b1cd829f7242285a4ef458a474d2677",
+            "Product": "8332c4cf0eae0dfee1e776cc407831472133405e29e96c02ceb59cc1da7bda7f",
+            "Nested": "147b9366088b80b3ffde953d3734730ed2db9e55563164ad1d0e3072e4041c00",
+        }
+        covered = reachable(self.graph, "Thesis.AxiomAudit")
+        for kind, expected in hashes.items():
+            with self.subTest(kind=kind):
+                archived = "Thesis.CausalTransport.Historical.Legacy" + kind + "Failures"
+                old = "Thesis.CausalTransport.CompletenessLegacy" + kind + "Failures"
+                source = self.source(archived)
+                body = source[source.index("namespace Thesis\n"):].rstrip()
+                self.assertEqual(hashlib.sha256(body.encode()).hexdigest(), expected)
+                self.assertIn(archived, reachable(self.graph, old))
+                self.assertIn(archived, covered)
+                self.assertIn(old, covered)
 
 
 if __name__ == "__main__":

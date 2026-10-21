@@ -1,4 +1,4 @@
-import Thesis.CausalTransport.HedgePositive
+import Thesis.CausalTransport.Hedge.Parity
 
 namespace Thesis
 namespace Causality
