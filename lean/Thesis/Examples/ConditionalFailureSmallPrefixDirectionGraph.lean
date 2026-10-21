@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.ConditionalFailureSmallAbsorption
+import Thesis.CausalTransport.Hedge.WitnessSearch
 import Thesis.CausalTransport.HedgeChannelEnvironmentPrefixDirection
 import Thesis.CausalTransport.ActivePathEndpointHeads
 

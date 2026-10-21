@@ -1517,46 +1517,6 @@ After that single correction the remaining pair-root target is even and can
 be recovered by the existing exhaustive component section.
 -/
 
-/-- Correct a Boolean incidence target at one anchor by its total selected
-parity. -/
-def hedgeDefectAdjustedTarget (nodes : NodeSet S) (anchor : Fin S.count)
-    (target : Fin S.count → Bool) (node : Fin S.count) : Bool :=
-  Bool.xor (target node)
-    (if node = anchor then hedgeNodeXor nodes target else false)
-
-/-- XOR of a one-anchor vector is its selected bit. -/
-theorem hedgeNodeXor_singleAnchor (nodes : NodeSet S)
-    (anchor : Fin S.count) (inside : nodes anchor = true) (bit : Bool) :
-    hedgeNodeXor nodes (fun node => if node = anchor then bit else false) =
-      bit := by
-  unfold hedgeNodeXor
-  cases bit with
-  | false =>
-      exact foldl_unchanged _ false (NodeSet.members nodes)
-        (fun total node => by simp)
-  | true =>
-      have member := (NodeSet.mem_members_iff nodes anchor).mpr inside
-      simpa using foldl_xor_indicator_of_mem_nodup
-        (NodeSet.members nodes) anchor member (NodeSet.nodup_members nodes)
-
-/-- The anchor correction has even support, stated in the exact list-parity
-form consumed by `BidirectedComponent.evenTargetPairBits`. -/
-theorem hedgeDefectAdjustedTarget_even (nodes : NodeSet S)
-    (anchor : Fin S.count) (inside : nodes anchor = true)
-    (target : Fin S.count → Bool) :
-    (hedgeTrueVertices nodes
-      (hedgeDefectAdjustedTarget nodes anchor target)).length % 2 = 0 := by
-  apply (foldl_xor_eq_false_iff_filter_even
-    (hedgeDefectAdjustedTarget nodes anchor target)
-    (NodeSet.members nodes)).mp
-  unfold hedgeDefectAdjustedTarget
-  rw [foldl_xor_pointwise]
-  change Bool.xor (hedgeNodeXor nodes target)
-      (hedgeNodeXor nodes (fun node =>
-        if node = anchor then hedgeNodeXor nodes target else false)) = false
-  rw [hedgeNodeXor_singleAnchor nodes anchor inside (hedgeNodeXor nodes target)]
-  generalize hedgeNodeXor nodes target = parity
-  cases parity <;> rfl
 
 /-- Incidence demanded by a large-forest target after correcting its parity at
 the witness's common action root. -/

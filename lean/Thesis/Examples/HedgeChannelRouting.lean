@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.HedgeChannelRouting
+import Thesis.CausalTransport.Hedge.WitnessSearch
 import Thesis.CausalTransport.HedgeChannelInterventional
 import Thesis.CausalTransport.HedgeChannelCounterexample
 import Thesis.CausalTransport.HedgeChannelConditionalCounterexample

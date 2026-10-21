@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.HedgeInterventionalSupport
+import Thesis.CausalTransport.HedgePositive
 
 namespace Thesis
 namespace Causality

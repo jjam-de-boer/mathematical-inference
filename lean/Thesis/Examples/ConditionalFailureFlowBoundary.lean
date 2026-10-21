@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.ConditionalFailureFlowBoundary
+import Thesis.CausalTransport.Hedge.WitnessSearch
 import Thesis.Examples.ConditionalFailureActivationSelectionGraph
 
 namespace Thesis

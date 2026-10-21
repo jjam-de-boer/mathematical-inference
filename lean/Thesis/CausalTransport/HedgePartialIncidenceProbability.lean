@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.HedgePartialIncidenceComparison
+import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.HedgeInterventionalProbability
 
 namespace Thesis

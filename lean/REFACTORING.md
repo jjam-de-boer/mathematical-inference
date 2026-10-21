@@ -25,14 +25,14 @@ refactor.
 
 | Stage | Pass 1 status | Evidence and remaining work |
 | --- | --- | --- |
-| 1. Combined baseline | Verified for this revision | Original combined baseline `f298629cf204a426687e05684703938325ed6c6d` passed all local and remote gates. Newer entropy and metadata checkpoints are retained as recorded below. |
+| 1. Combined baseline | Verified for this revision | Original combined baseline `f298629cf204a426687e05684703938325ed6c6d` passed all local and remote gates. Combined `a44aa4a` retains newer entropy, bounded selection and the first causal refactor, with complete CI passed. |
 | 2. Mathematical and API inventory | Implemented, awaiting review | Result families and boundaries below; moved declarations also require exact preservation checks. |
 | 3. Current documentation | Implemented, awaiting review | Historical completeness inventory moved verbatim to `docs/history/completeness-development.md`; the compatibility facade now identifies completed public results. One stale channel-gap claim is corrected; the full comment review remains pending. |
-| 4. Lightweight foundations | Implemented, awaiting review | Distribution extraction passed complete remote gates at `340772f`. Causal support, ordered collectors, action deletion, forest construction, readout geometry and shared models are extracted unchanged and targeted current compilers pass. Complete causal checkpoint gates and remaining parity/history separation are pending. |
-| 5. Historical separation | Pending | Classify shared mathematics before moving historical proofs. Keep every retained declaration and mandatory audit coverage. |
-| 6. Measured bottlenecks | Pending | Protocol below distinguishes warm, incremental and cold results. No further speedup has yet been established. |
-| 7. Folder and module organization | Implemented, awaiting review | Shared readout geometry and model construction now have a `CausalTransport/Hedge` home; compatibility imports remain. The broader layout and reading-order review is still pending. |
-| 8. Verified publication | Implemented, awaiting review | First foundation checkpoint `340772f` published to main after complete remote verification. The causal checkpoint and final acceptance, including Passes 2 and 3, remain pending. |
+| 4. Lightweight foundations | Implemented, awaiting review | Distribution extraction passed complete gates at `340772f`; first causal extraction at `e2eee12` and combined `a44aa4a` also passed complete CI. Further parity, Bayes, conditional-core and witness-search boundaries remove historical imports from current public completeness paths; full local gates passed for the pending checkpoint. |
+| 5. Historical separation | Implemented, awaiting review | Three finite-depth legacy proof collections moved unchanged to `CausalTransport/Historical`, with exact namespace-body guards, old-path facades and mandatory audit reachability. Full local archived-checkpoint gates passed; remote verification and classification review remain pending. |
+| 6. Measured bottlenecks | Implemented, awaiting review | Two measured 30-second conditional-readout regression timeouts were removed by separating unchanged graph/engine checks from semantic routing. Comparable full-project speedup benchmarks and final review remain pending; no new universal twofold claim is made. |
+| 7. Folder and module organization | Implemented, awaiting review | Shared hedge mathematics and historical failure stacks have separate `Hedge` and `Historical` homes; `docs/structure.md` gives reading order and compatibility maps. The broader layout review remains pending. |
+| 8. Verified publication | Implemented, awaiting review | `340772f` and combined causal/entropy/selection checkpoint `a44aa4a` are on main after complete remote verification. The newer extraction/archive checkpoint and final acceptance, including Passes 2 and 3, remain pending. |
 
 Pass 2 has not started. Pass 3 has not started. No historical mathematical
 declaration has been approved for deletion.
@@ -57,10 +57,10 @@ elaboration costs.
 The pre-existing modified `latex/mathematical_inference.pdf` is excluded from
 this task. The other agent's search-metadata work is committed in `f7204c7`
 and passed complete CI run `39566237118`. That checkpoint includes the
-distribution extraction and entropy revision `219cb99`. The newer untracked
-`NativeFormulaSelection` work belongs to that agent and is not part of this
-causal extraction. Entropy and search results are retained, not claimed as
-new mathematical results of refactoring.
+distribution extraction and entropy revision `219cb99`. The other agent's
+native formula/bounded selection work is now committed as `d104df6`, retained
+in combined `a44aa4a`, and is no longer untracked work. Entropy and search
+results are retained, not claimed as new mathematical results of refactoring.
 
 The first foundation checkpoint was combined with the newer entropy results
 without switching or resetting the shared checkout. Exact commit
@@ -69,6 +69,15 @@ including the complete project, full kernel-axiom policy, distribution audit,
 constructive-algebra audit and helper/regression gates. It was then published
 to main. This is a verified intermediate checkpoint, not final refactor
 acceptance.
+
+First causal extraction `e2eee12fd1095eabf81b8691be53d044f9eaf75d`
+passed complete CI run `39569394543`. Main advanced independently with further
+entropy results, so the retained combined checkpoint is
+`a44aa4ab2b098674862463e0d4f6d0ef41323e48`, verified by complete CI run
+`39570398367`. It contains the causal extraction, entropy through the rational
+zero-boundary threshold, and admitted bounded native formula selection. That
+exact combined checkpoint is on main; no force push, checkout reset or PDF
+staging was used.
 
 ## Mathematical and public interface contract
 
@@ -85,6 +94,7 @@ change an algorithm's output or revive the removed unsafe identification API.
 | Finite records and distributions | `FiniteRecord`, `Distros.Basic`, `LawEquivalence` and the named-law/moment families exposed by `Probability.Distros` | Repeated atom labels, null weights, normalization, every-event law agreement and the exact support premises of conditioning. |
 | Entropy | `ExactLog*`, `EntropyValue`, `Distros.Entropy`; `Distro.entropy_nonnegative`, `entropy_sameLaw`, `relativeEntropy_sameLaw`, `relativeEntropy_self` | Exact symbolic entropy values are not rational atom weights or an assumed real logarithm. Reference positivity and declared grid support remain explicit. |
 | Gibbs inequality and equality | Newer retained `Distros.EntropyGibbs` and `EntropyGibbsEquality`; `Distro.sameLaw_of_relativeEntropy_zero`, `relativeEntropy_equiv_zero_iff` | The original finite-grid coverage and reference-positivity premises, symbolic exact logarithms and every-event equality of laws. |
+| Further entropy results | Retained `CrossEntropy`, `EntropyUniform`, `EntropyConcavity`, `EntropyMomentConvex` and rational boundary estimates | Supplied finite grids, positive natural mixture coefficients, exact equality/strictness premises, closed rational moment intervals and the proved rational precision threshold; no assumed real-valued optimizer or irrational probabilities. |
 | Weighted arithmetic–geometric mean | `FiniteAMGM.weighted_inequality`, `weighted_product_le_pow`, `weighted_product_lt_pow` | Supplied natural multiplicities, actual products, and the original non-strict/strict hypotheses. |
 | Primitive causal soundness | `ObservedGraph.publishedSoundness` in `CausalTransport.Soundness`; native interpretation in `HiddenDAGSoundness` | The same three graph rules and derivation support; no external soundness premise is inserted. |
 | Positive-class completeness | `ObservedGraph.publishedCompleteness` in `HedgeChannelCompleteness` | Joint, conditional and hedge fields; positive compatible models, supplied distinct observed labels, actual engine outputs and actual original-query countermodels. |
@@ -93,7 +103,7 @@ change an algorithm's output or revive the removed unsafe identification API.
 | Modal integration | `PositiveModal`, `SupportedModal`, `ModalRealization`; positive/supported joint and conditional modal equivalences | Actual stored-model membership, executed endpoints, and the original positive/support-aware class distinction. |
 | Fixed-law and IV results | `BinaryInstrumentalSharpBounds`, `BinaryInstrumentalIdentification`, `BinaryInstrumentalAttainable` | Explicit compatible-law premises, null instrument arms, exact risks and the injective signed-effect encoding, endpoint models and rational attainable values. |
 | Representation and certificates | `HiddenDAGFiniteRepresentation`, `HiddenDAGNativeTemplateCoverage`, finite polynomial and source-compression families | Actual supplied finite presentations, retained events/interventions, independence and bounded/checked-certificate qualifications; no complete unrestricted optimizer is presumed. |
-| Bounded proof search | `NativeProofEnumeration`, `CodeEnumerationCounts`, `CodeSearchPreflight`, `NativeSearchPreflight` | The exact grammar and depth/resource budgets, original public dictionary, coverage of accepted supplied guards and the absence of an unrestricted stopping theorem. |
+| Bounded proof search | `NativeProofEnumeration`, `CodeEnumerationCounts`, `CodeSearchPreflight`, `NativeSearchPreflight`, `NativeBoundedSelection` | The exact grammar and depth/resource budgets, certified domain-size metadata, source alignment, soundness/coverage of admitted catalogue selection, and the absence of an unrestricted stopping theorem. |
 | Historical results | `CompletenessLegacy*`, qualified `Causality.Legacy` engines, historical carrier constructions and regressions | Preserve source and results, distinguish valid control-flow facts from the refuted general legacy formula compiler, and keep all retained history audited. |
 
 Every extraction must record its source block and new owner, verify unchanged
@@ -147,9 +157,9 @@ Before extraction, `ChainCompilation`, `ValueRefinementCounterexample` and
 `HedgeChannelCharacters` reached 36, 39 and 36 project modules respectively.
 They now reach 21, 19 and 24. Each of those current clients is free of legacy
 modules. The current structural success/failure compiler prerequisites also
-compile against the focused interfaces. The complete public completeness path
-still reaches history through other parity/countermodel imports; that remaining
-dependency is not hidden by these local improvements.
+compile against the focused interfaces. At first checkpoint `e2eee12`, the
+complete public completeness path still reached history through other
+parity/countermodel imports; the second boundary below removes those paths.
 
 Targeted local checks passed for the new modules and selected current clients.
 The unchanged 5,295-line model module compiled in 12.51 seconds with 851.2 MiB
@@ -157,12 +167,107 @@ sampled aggregate RSS; the initial 1,590-line readout extraction took 1.75 secon
 with 721.0 MiB. These single invocations measure feasibility, not speedup against
 the original owner. Adding the remaining shared ancestry block subsequently
 passed in 1.80 seconds with 744.4 MiB. Helper/regression tests currently pass
-98 tests. The complete causal build and axiom audit are still pending.
+98 tests at the first causal checkpoint, whose complete remote build and axiom
+audit subsequently passed as recorded above.
 
 Two targeted checks exposed missing explicit dependencies after removing broad
 imports: query types for `ActionDeletion`, and ancestry/forest constructors for
 `KernelHedgeTransport`. These were repaired by importing or extracting their
-original definitions, without changing proofs. Their targeted rechecks passed.
+original definitions, without changing proofs. A later full-cohort check likewise
+required the explicit public-certificate import in `KernelSuccessCompilation`.
+All three targeted repairs passed and the complete first-checkpoint CI passed.
+
+## Current completeness and retained history boundary
+
+`Hedge.Parity` now owns the unchanged incidence/support development plus the
+three unchanged one-anchor correction declarations from `HedgePositive`.
+`HedgePartialIncidence` imports that parity layer, rather than the entire
+positive carrier development. The channel counterexample's 63-module closure
+passed locally; parity itself compiled in 3.10 seconds with 819.1 MiB sampled
+aggregate RSS.
+
+`ConditionalBayes` owns the original six joint/conditional syntax, derivation
+and source-support declarations. Completeness assembly imports this bridge and
+proved soundness directly, rather than obtaining it through historical
+countermodel imports. `ConditionalFailureCore` preserves general exchange
+extraction and terminal assembly; the single geometrically qualified carrier
+case is retained separately in `ConditionalFailureCarrierCases`. The original
+`ConditionalFailureExtraction` path reexports both. `Hedge.WitnessSearch`
+preserves the general Boolean-test-to-hedge construction; regression clients
+now import it explicitly instead of inheriting historical failure machinery.
+
+Targeted compilation passed both the complete current package and its retained
+carrier-case compatibility path (192 modules before physical archiving).
+Current positive-class, original-hidden-DAG, supported-zero and modal theorem
+paths contain no `Causality.Legacy`, `CompletenessLegacy` or `Historical` module.
+Before/after project closure counts against `f7204c7` are 181 to 177 for
+`HedgeChannelCompleteness`, 210 to 206 for `HiddenDAGCorrespondence`, and 237 to
+233 for `HiddenDAGSupportedCorrespondence`; the counterexample client shrinks
+from 80 to 63. Soundness remains at 25. These counts describe dependencies,
+not elapsed-time speedups.
+
+The three finite-depth legacy collections are category 2 historical material,
+including their retained legacy trace-compiler interfaces. Shared support,
+graph, parity, derivation and collector mathematics was extracted first.
+Their unchanged namespace bodies now live in `Historical.LegacyShrinkFailures`,
+`Historical.LegacyProductFailures` and `Historical.LegacyNestedFailures`.
+Every old path remains a facade, and every archived body is inside mandatory
+full-audit reachability. Public current end-results and qualified carrier
+theorems are not discarded or classified obsolete merely for lacking callers.
+
+The structural reading guide records each old-to-new location. Preservation
+guards check exact moved blocks and archive bodies; only surplus blank lines
+are normalized for the conditional-core extraction check. The helper suite
+currently passes 108 tests, including the other agent's three bounded-selection
+tests. The complete new extraction/archive local build and axiom audit passed
+with 961 planned modules and 43,563 imported project declarations checked.
+Evidence is retained in `.lake/local-builds-v1/20261021-155013-3c4a4im7/`.
+Both actual native final commands passed (0.489 seconds for the warm build,
+0.540 seconds for the warm audit). This resumed traversal rebuilt 98 modules
+and reused 864 valid facets; it is not a clean cold-build measurement. The
+unmodified resource limits and all retained history/regressions remained active.
+Remote verification of this exact forthcoming checkpoint remains pending.
+
+The earlier full local attempt rebuilt through module 618 before the other
+agent changed the shared import facades. The source-fingerprint safeguard
+stopped it; that attempt is not a full local success. Compiler-slot contention
+was handled by deferring checks, never by launching a competing compiler.
+
+## Measured conditional readout bottleneck
+
+The complete local traversal reached the original
+`Examples.HedgeConditionalReadout` regression, then stopped at the unchanged
+30-second wall limit with 2524.3 MiB sampled aggregate RSS. This was a time
+stop, not a memory failure. The bounded import profile took about 1.1 seconds;
+the remaining cost was not explained by import loading alone.
+
+A first graph/semantic two-file extraction still timed out in its graph half.
+The successful refinement separates graph definitions, the finite no-exchange
+check, and exact engine-failure coordinates into
+`Examples/HedgeConditionalReadout/{Graph,Exchange,Failure}.lean`. The original
+entry point retains the unchanged routing and actual countermodels. Its graph
+checks import only the intrinsic current engine, not semantic readout or carrier
+machinery. No theorem statement, proof body, finite calculation or resource cap
+was weakened or omitted.
+
+The bounded ordinary Lake checks passed at 1.59 seconds / 638.4 MiB for graph
+setup, 21.93 seconds / 2384.1 MiB for exchange, 8.34 seconds / 2502.0 MiB for
+engine failure, and 1.29 seconds / 746.8 MiB for the semantic readout module.
+Their aggregate 33.15 seconds is not a full-build speedup claim. The benefit is
+bounded local invocations and dependency reuse: a readout-theory change no
+longer invalidates the independent concrete graph computations. Exact source
+guards reassemble the original graph block and protect the original complete
+routing/countermodel tail.
+
+The separate `HedgeConditionalClosedReadout` fixture subsequently hit the same
+30-second limit at 2722.3 MiB. Its unchanged data and two independent query
+computations now live in `HedgeConditionalClosedReadout/{Graph,PrimaryEngine,
+EarlierEngine}.lean`; the original root retains all semantic countermodels.
+The checks passed in 1.53, 16.25 and 16.45 seconds respectively, followed by
+0.95 seconds for the semantic module. Exact-source guards retain all six engine
+assertions, both identical private failure helpers and the semantic body. Again,
+this establishes bounded local feasibility and reuse, not a cold speedup.
+Full local verification then passed as recorded above.
 
 ## Measurement protocol
 

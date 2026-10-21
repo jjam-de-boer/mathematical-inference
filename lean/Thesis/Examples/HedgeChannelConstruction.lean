@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.HedgeChannelCharacters
+import Thesis.CausalTransport.Hedge.WitnessSearch
 import Thesis.CausalTransport.HedgeChannelOrthogonality
 import Thesis.CausalTransport.HedgeChannelIntegration
 import Thesis.Probability.BooleanChannelTable

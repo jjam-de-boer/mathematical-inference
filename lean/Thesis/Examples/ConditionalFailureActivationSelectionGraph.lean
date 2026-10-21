@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.ConditionalFailureActivationSelection
+import Thesis.CausalTransport.Hedge.WitnessSearch
 
 namespace Thesis
 namespace Causality

@@ -1,6 +1,6 @@
 import Thesis.CausalTransport.DSeparationWitness
 import Thesis.CausalTransport.ActivePathTransport
-import Thesis.CausalTransport.ConditionalFailureExtraction
+import Thesis.CausalTransport.ConditionalFailureCore
 
 namespace Thesis
 namespace Causality

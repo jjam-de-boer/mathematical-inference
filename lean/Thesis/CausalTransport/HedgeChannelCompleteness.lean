@@ -1,5 +1,5 @@
 import Thesis.CausalTransport.HedgeChannelJointCompleteness
-import Thesis.CausalTransport.ConditionalFailureExtraction
+import Thesis.CausalTransport.ConditionalFailureCore
 import Thesis.CausalTransport.ConditionalFailureTerminalCounterexample
 
 namespace Thesis

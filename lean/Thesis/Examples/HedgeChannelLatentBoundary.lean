@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.HedgeChannelConditionalGap
+import Thesis.CausalTransport.Hedge.WitnessSearch
 import Thesis.Causality.ConditionalIdentificationKernel
 
 namespace Thesis

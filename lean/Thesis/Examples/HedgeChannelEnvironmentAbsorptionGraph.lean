@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.HedgeChannelEnvironmentAbsorption
+import Thesis.CausalTransport.Hedge.WitnessSearch
 import Thesis.CausalTransport.ConditionalFailureFlowBoundary
 
 namespace Thesis

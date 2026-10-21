@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.HedgeCarrierObservationalState
+import Thesis.CausalTransport.HedgePositive
 import Thesis.CausalTransport.HedgeInterventionalMarginal
 import Thesis.Causality.PrivateNoise
 

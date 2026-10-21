@@ -1,5 +1,5 @@
 import Thesis.Causality.ConditionalUniqueness
-import Thesis.CausalTransport.ConditionalFailureExtraction
+import Thesis.CausalTransport.ConditionalFailureCore
 
 namespace Thesis
 namespace Causality
