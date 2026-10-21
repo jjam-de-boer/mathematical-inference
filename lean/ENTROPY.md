@@ -217,18 +217,43 @@ infeasible boxes, an infeasible moment problem, the full singleton solver with a
 clipped zero lower endpoint, and a fair-law certificate at tolerance `1/1000`.
 The whole dependency closure passes the constructive arithmetic axiom gate.
 
+## Checkpoint 12: signed-moment log-linear optimality
+
+`LogExpectation` integrates exact logarithmic observables against aggregated
+PMFs and proves finite affine integration. `ShiftedMoments` computes a finite
+offset for each signed integer response on the original declared grid. Fixed
+signed expectations therefore fix the corresponding nonnegative natural moments;
+unsupported zero-weight atom labels impose no extra shift hypothesis.
+
+`PartialMomentProblem.LogLinearReference` records a positive rational reference,
+an affine log score and selected exact rows from the original problem. The
+coefficients are arbitrary exact logarithm values and may be negative. The
+selected endpoints need only be equivalent rational presentations; redundant
+rows and other interval constraints remain admissible.
+
+`LogLinearReference.crossEntropy_fixed` proves equal cross entropy for every two
+feasible laws. A feasible anchor consequently gives a universal entropy upper
+bound even when the reference itself has the wrong target expectation. If the
+positive reference is feasible, `LogLinearReference.optimal` proves global
+maximality and equality exactly at the same probability law. This is the promised
+fixed-expectation bridge, not merely a stationary-point assertion.
+
+The reference positivity premise includes every declared cell. A candidate with
+forced zeros cannot satisfy that premise on the full grid; the total optimizer
+has no such premise and already handles those boundaries. The entropy-preserving
+internal support restriction is available for separate boundary score arguments.
+Regressions prove a nonuniform global maximum under a negative integer response,
+with a retained null outlier. The constructive arithmetic audit passes.
+
 ## Remaining full goal
 
-1. Complete the bridge from fixed rational moment expectations and a log-linear
-   reference score to the established global cross-entropy optimality criterion,
-   with explicit support/boundary assumptions.
-2. Complete the three-state mean-`1/2` example with useful concrete certified
+1. Complete the three-state mean-`1/2` example with useful concrete certified
    approximations and an accurate explanation of its usual irrational optimum.
    Extend executed optimizer regressions for forced-zero and redundant rows.
-3. Document the precise additional real-number semantic/density bridge needed to
+2. Document the precise additional real-number semantic/density bridge needed to
    interpret rational universal certificates as bounds on the usual real optimum.
    The implementation currently quantifies over the framework's rational laws.
-4. Continue complete-project builds, full axiom audits and remote CI for each
+3. Continue complete-project builds, full axiom audits and remote CI for each
    published checkpoint. Targeted or early checks alone are never full verification.
 
 Ordinary local Lake builds use `LEAN_NUM_THREADS=1`, the committed 4608 MiB
