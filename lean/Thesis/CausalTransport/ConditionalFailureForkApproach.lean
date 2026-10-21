@@ -9,7 +9,8 @@ open PathSpecification Probability FiniteBooleanInteraction
 
 variable {S : ObservedSignature.{0}} {graph : ObservedGraph S} {query : ConditionalKernelQuery S}
 
-/-!+# Actual proper approaches have no hidden normalized-path prefix read
+/-!
+# Actual proper approaches have no hidden normalized-path prefix read
 
 The first-core-only construction could let a proper prefix pass through an
 omitted observed path fork.  That fork genuinely feeds an original receiving
@@ -32,8 +33,9 @@ proved on the unchanged full query cylinder.
 
 This supplies a universal approach-transfer operation at actual head, trace
 or fork contacts.  It does not yet choose the globally successful combination
-of such transfers: the outcome-side incidence/connectivity argument and all
-outside-Small row parities are still required for conditional completeness.
+of such transfers. `ConditionalFailureHeadConnectivity` supplies that global
+combination and the outside-Small row parities for the completed terminal
+countermodel construction.
 -/
 
 namespace ConditionalBackdoorPathNormalForm

@@ -36,8 +36,9 @@ observed coordinates: conditioning an observation does not fix its root.
 These are actual column and support theorems, not a supplied balance matrix
 or a universal conditional countermodel.  `ConditionalFailurePathIncidence`
 separately derives the ordinary noncollider head columns and the outcome's
-single selected-row incidence.  The global incidence connectivity to an
-original Small source and its successful supported direction remain open.
+single selected-row incidence. `ConditionalFailureHeadConnectivity` then
+proves global connectivity to an original Small source and constructs the
+successful supported direction used by the universal terminal theorem.
 -/
 
 namespace ConditionalBackdoorPathNormalForm

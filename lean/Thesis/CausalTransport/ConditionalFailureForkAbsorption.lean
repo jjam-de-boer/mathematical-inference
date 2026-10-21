@@ -31,8 +31,8 @@ importantly, a fork's chosen receiver already reads that original fork in
 the fused path/activation signal.  The new XOR parent mask cancels that one
 input, retaining the receiver's own bit and all original reserved inputs.
 This is a proved parity-aware routing operation, not yet the universal
-supported-direction theorem: contacts at actual heads and the full remaining
-outside-Small partition still require the graph-to-direction argument.
+supported-direction theorem: the later `ConditionalFailureHeadConnectivity`
+supplies the head-contact and outside-Small graph-to-direction argument.
 -/
 
 namespace ConditionalBackdoorPathNormalForm
@@ -369,8 +369,8 @@ have been discharged above.  The assembler below deliberately leaves only
 the supported direction and its outcome/background parities as premises.
 It accepts a corrected direction as well as the original path direction,
 and never asks that actual nonzero prefix or fork inputs be zero.  These
-direction premises are still the load-bearing universal theorem to prove;
-having this assembler is not an inhabitant of `PublishedCompleteness`.
+direction premises are constructed in `ConditionalFailureHeadConnectivity`;
+this generic assembler alone is not an inhabitant of `PublishedCompleteness`.
 -/
 
 /-- Package any genuinely supported odd-outcome/even-background direction

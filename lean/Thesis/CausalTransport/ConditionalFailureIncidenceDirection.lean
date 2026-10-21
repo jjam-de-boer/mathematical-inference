@@ -30,7 +30,8 @@ This replaces supplied parity-readiness fields by one explicit graph leaf:
 prove the actual finite outcome-to-Small search succeeds for each terminal.
 No universal success theorem is asserted here.  Neither a bounded example
 nor the ability to run the search inhabits published conditional completeness
-without that still-required structural connectivity proof.
+without a structural connectivity proof. That proof is supplied downstream
+by `ConditionalFailureHeadConnectivity`, not assumed by this search adapter.
 -/
 
 namespace ConditionalBackdoorPathNormalForm
@@ -196,7 +197,8 @@ def HedgeChannelEnvironmentInstallation.ConditionalParityWitness.ofForkIncidence
 
 /-- Positive models on every original observed label, with the unchanged
 conditional query gap, whenever the actual outcome-to-Small search succeeds.
-Proving that success for all terminals is still the universal graph leaf. -/
+The downstream `ConditionalFailureHeadConnectivity` proves that success at
+the actual terminal's constructed pivot and cut forest. -/
 noncomputable def conditionalCounterexampleOfForkIncidenceReachability
     (w : HedgeWitness graph query.jointNumerator) (rich : ObservedSignature.ValueRich S)
     (boundary : ConditionedSmallFlowBoundary w) (pivot : RetainedConditionalPivot query)

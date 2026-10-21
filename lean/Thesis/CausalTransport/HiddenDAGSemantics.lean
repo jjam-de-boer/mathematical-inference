@@ -30,7 +30,8 @@ The recursive support tree is native too.  It records supported endpoints and
 exactly the subderivations required by each constructor.  Guarded congruence
 retains its factor subtree only under a positive native weight.  This module
 provides the semantic bridge for soundness; it does not assume a published
-latent-projection interface or supply the remaining completeness countermodels.
+latent-projection interface. The separate `HiddenDAGCompleteness` constructs
+the completeness countermodels on the original hidden DAG.
 -/
 
 namespace FiniteHiddenDAGSCM

@@ -28,9 +28,10 @@ full finite alphabets of the supplied rich signature.
 The one geometric restriction remains explicit: the canonical outcome
 routes may enter the small forest or leave the large forest, but may not
 modify an outer-only forest vertex.  This is not yet the universal
-`hedge_counterexample` field of `PublishedCompleteness`.  Removing that
-restriction and constructing the remaining conditional terminal families
-are still required for the complete published theorem.
+`hedge_counterexample` field of `PublishedCompleteness`. The independent
+channel construction in `HedgeChannelCompleteness` supplies that unrestricted
+field and the conditional terminal families, without asserting that this
+older compensated construction satisfies its geometric premise everywhere.
 -/
 
 namespace HedgeCompensatedCounterexample

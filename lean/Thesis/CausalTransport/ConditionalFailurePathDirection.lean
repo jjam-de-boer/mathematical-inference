@@ -26,8 +26,9 @@ No joint hedge is assumed or constructed here.  Exhausted exchange alone
 can occur in an observationally identifiable query.  The direction is real
 graph-to-signal data, not a conditional countermodel.  The separate
 `ConditionalFailureActivationInteraction` installs the actual activation
-traces; the entire mandatory Small forest and any required Small-to-pivot
-oddness transfer still have to be assembled before conditional completeness.
+traces. Small/fork absorption and `ConditionalFailureHeadConnectivity`
+subsequently assemble the mandatory Small forest and the required oddness
+transfer for `ConditionalFailureTerminalCounterexample`.
 -/
 
 variable {S : ObservedSignature.{0}} {graph : ObservedGraph S}

@@ -29,7 +29,9 @@ vertex, arbitrary Boolean events on complete observed assignments, and the
 original biased prior.  It neither replaces that prior by a fair one nor
 assumes an equality of interventional distributions.  It also does not compare
 the large and small carrier models: that distinct conditional-countermodel
-obligation remains open.
+comparison is not proved here. General conditional countermodels are assembled
+independently in `ConditionalFailureTerminalCounterexample`; its existence
+does not assert a new equality for this particular carrier pair.
 -/
 
 /-! ## Explicit latent translations preserve the old enumeration -/

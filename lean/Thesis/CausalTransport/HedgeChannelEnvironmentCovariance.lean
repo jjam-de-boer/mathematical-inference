@@ -29,10 +29,11 @@ and lifts that same cell to every supplied original label.  It does not
 replace the outcome with a selected endpoint, require equal conditioning
 masses, or add a globally incident shared switching variable.
 
-Universal conditional completeness still needs to construct this finite
-parity witness from every required irreducible active path, including collider
-activation branches and intersections with the small forest.  The witness
-is an explicit remaining obligation, not an asserted universal instance.
+Here the finite parity witness is supplied explicitly; this local constructor
+does not assert that arbitrary proposed witnesses work. The later
+`ConditionalFailureHeadConnectivity` and `ConditionalFailureTerminalCounterexample`
+construct the required witness from each irreducible terminal, including
+collider activation branches and intersections with the small forest.
 -/
 
 variable {S : ObservedSignature.{0}} {G : ObservedGraph S} {query : ConditionalKernelQuery S}

@@ -23,8 +23,9 @@ installed mechanism remains `LinearSignal.ofActivePath`.
 These full-cube identities do not themselves choose a direction.  The separate
 `HedgeChannelPathDirection` constructor proves actual conditioning support,
 source oddness and evenness of every other selected row from these identities
-and path activity.  Activation installation and integration of all mandatory
-Small rows remain separate conditional-completeness work.
+and path activity. Activation installation and integration of all mandatory
+Small rows are separate downstream steps, completed by the conditional-failure
+chain ending in `ConditionalFailureTerminalCounterexample`.
 -/
 
 variable {S : ObservedSignature.{0}}

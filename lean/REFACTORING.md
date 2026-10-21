@@ -107,6 +107,7 @@ change an algorithm's output or revive the removed unsafe identification API.
 | Original hidden DAGs | `FiniteLatentProjection.publishedHiddenDAGCompleteness`; `HiddenDAGModelClass.identifyJointKernel_identifiable_iff` and `identifyConditionalKernel_identifiable_iff` | Fixed observed domains with value richness, arbitrary finite hidden/private-noise sizes and the unchanged original DAG and query. |
 | Supported zeros | `HiddenDAGSupportedDomain.identifyGuardedJointKernel_identifiable_iff` and its conditional counterpart | Expression-qualified supported representation, original conditional-target support, and existing positive-model coverage; not unrestricted applicability of every chosen expression. |
 | Modal integration | `PositiveModal`, `SupportedModal`, `ModalRealization`; positive/supported joint and conditional modal equivalences | Actual stored-model membership, executed endpoints, and the original positive/support-aware class distinction. |
+| Counterfactual semantics and transport | `Causality.Counterfactual`, `CausalTransport.Counterfactual`; single-action/twin-network identities and finite source transport | Shared latent assignments across worlds and the existing explicit external multiworld-completeness interface; joint/conditional ID completeness is not silently enlarged to a proved unrestricted counterfactual identification theorem. |
 | Fixed-law and IV results | `BinaryInstrumentalSharpBounds`, `BinaryInstrumentalIdentification`, `BinaryInstrumentalAttainable` | Explicit compatible-law premises, null instrument arms, exact risks and the injective signed-effect encoding, endpoint models and rational attainable values. |
 | Representation and certificates | `HiddenDAGFiniteRepresentation`, `HiddenDAGNativeTemplateCoverage`, finite polynomial and source-compression families | Actual supplied finite presentations, retained events/interventions, independence and bounded/checked-certificate qualifications; no complete unrestricted optimizer is presumed. |
 | Bounded proof search | `NativeProofEnumeration`, `CodeEnumerationCounts`, `CodeSearchPreflight`, `NativeSearchPreflight`, `NativeBoundedSelection` | The exact grammar and depth/resource budgets, certified domain-size metadata, source alignment, soundness/coverage of admitted catalogue selection, and the absence of an unrestricted stopping theorem. |
@@ -343,6 +344,24 @@ This comparison concerns the two supported warm workflows, not a mathematical
 elaboration speedup or evidence that a clean cold build is twice as fast.
 
 ## Measurement protocol
+
+The carrier dependency checkpoint `9a98e7e` was saved after the complete local
+build/audit and the paired warm measurements above. Its exact remote run is
+`39659979565` (pending when this entry was written). Concurrent native rewrite
+path/linearization work and its guide/workflow changes belong to the other
+agent; they are not part of this checkpoint or evidence for this refactor.
+
+The broader Pass 1 status-language scan then found additional developmental
+"still open" wording in 21 transport modules. Those edits change comments
+only: a nested-comment/string-aware source comparison confirms identical
+non-comment Lean text for every affected file. The explanations now distinguish
+locally supplied graph/parity/support premises from their completed downstream
+constructors, and distinguish old qualified carrier families from general
+channel completeness. No claim is added that the old carrier method itself
+works outside its original geometric hypotheses. A malformed documentation
+heading and a subject/verb mismatch are also corrected. The focused eight
+foundation guards pass; complete verification of this comment-only batch is
+pending. Pass 2 and frozen Pass 3 have not begun.
 
 Fix the compared source snapshots, pinned toolchain, platform, resource profile
 and benchmark category before an optimization. Keep one compiler family and

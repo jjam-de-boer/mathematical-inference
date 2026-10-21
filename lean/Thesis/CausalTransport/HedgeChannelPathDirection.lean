@@ -25,7 +25,8 @@ not smuggled into the selected interaction.
 This discharges the path-signal direction obligation.  It does not install
 the collider activation traces, route every mandatory Small row, or transfer
 the odd source to a genuine Small approach when the pivot is outside Small.
-Those remain the load-bearing universal conditional-completeness tasks.
+Those are supplied by the later activation, Small/fork absorption and
+`ConditionalFailureHeadConnectivity` modules, not by this local path theorem.
 -/
 
 variable {S : ObservedSignature.{0}}

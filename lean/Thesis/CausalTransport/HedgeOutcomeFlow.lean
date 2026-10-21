@@ -8,8 +8,8 @@ open Probability
 /-!
 # Semantic support of the hedge outcome-flow models
 
-The shared `Hedge` layers construct two graph-compatible additive flows that transport
-hedge incidence to a common set of query-outcome sinks and proves that their
+The shared `Hedge` layers construct two graph-compatible additive flows that
+transport hedge incidence to common query-outcome sinks and prove that their
 interventional kernels disagree.  This module develops the complementary
 observational-support calculation.
 

@@ -21,8 +21,9 @@ module neither invents a replacement pair nor assumes that a reverse
 conditional is identifiable for every irreducible terminal.
 
 The arbitrary-depth wrapper composes this terminal argument with the
-existing checked exchange trace.  It adds no bounded failure unpacker and
-does not change the remaining universal completeness obligations.
+existing checked exchange trace. It adds no bounded failure unpacker and
+does not claim that the reverse-conditional premise always holds. The separate
+universal terminal argument is in `ConditionalFailureTerminalCounterexample`.
 -/
 
 /-- Transfer joint separation through a common reverse conditional in

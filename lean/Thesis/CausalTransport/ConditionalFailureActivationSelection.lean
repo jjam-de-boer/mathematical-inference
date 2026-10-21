@@ -34,7 +34,9 @@ traces with the path heads and proves their conserved phase and supported
 direction.  These arguments need only a retained conditioner and the shared
 exact-cut policy; no original-graph latest-pivot certificate is used.  Older
 bar-policy clients pass the explicit data-preserving `toCutForest` adapter.
-Integration with the whole mandatory Small forest remains open.
+The later Small/fork absorption and `ConditionalFailureHeadConnectivity`
+modules integrate the whole mandatory Small forest; that integration is not
+an additional conclusion of this selection lemma.
 -/
 
 /-! ## The finite scan has exactly the displayed collider windows -/

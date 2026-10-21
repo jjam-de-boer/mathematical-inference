@@ -37,13 +37,15 @@ independently in `KernelSuccessCompilation`.  At this integration boundary,
 published soundness turns its supported certificate into correctness and
 identifiability of every identified joint result.  These conclusions do not
 assert that every semantically identifiable query succeeds; that direction
-still requires the failure/hedge countermodel argument.
+uses the separate failure/hedge countermodel argument.
 
 `KernelFailureExtraction` now supplies the structural failure-to-original-query
 hedge argument for every run of the corrected joint program.  The joint
-assembly below therefore isolates exactly the remaining semantic leaf: a
+assembly below therefore isolates the semantic parameter for its selected class: a
 counterexample in the selected class for an arbitrary original-query hedge.
 It does not assume that all failure leaves already have positive countermodels.
+`HedgeChannelJointCompleteness` supplies this parameter for the positive class;
+the general joint/conditional package is assembled in `HedgeChannelCompleteness`.
 -/
 
 /-! ## Denotational correctness of every successful replacement joint run -/

@@ -33,9 +33,10 @@ row XOR that head.  The actual full-cube basis test has exactly those two row
 values.  These are derived facts for every retained fork, not additional
 column, window or direction-readiness premises.
 
-This supplies the fork part of the incidence graph.  Connecting the outcome
-side to an original Small source, constructing its supported direction, and
-proving all outside-Small rows even remain the universal completeness work.
+This supplies the fork part of the incidence graph. The later
+`ConditionalFailureHeadConnectivity` connects the outcome side to an original
+Small source and supplies the supported direction with every outside-Small
+row even; the universal terminal constructor uses that completed argument.
 -/
 
 namespace ConditionalBackdoorPathNormalForm

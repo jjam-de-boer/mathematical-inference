@@ -29,7 +29,9 @@ coverage certificates hold universally.  Unconditioned missing Small rows
 need real routing, and a pivot outside Small still needs oddness transfer.
 `ConditionalFailureSmallAbsorption` now constructs that routing on the proved
 all-Small boundary, preserving the whole-cube phase and full Small/background
-matching identity.  The supported direction's row parities remain open there.
+matching identity. The later fork/incidence and `ConditionalFailureHeadConnectivity`
+modules construct the supported direction and its row parities; this adapter
+does not assume that the original uncorrected path direction suffices.
 The entire adapter now uses a retained conditioner and actual cut policy,
 without original-graph latest maximality.  The direction and parity proofs
 are the same general normalized-path construction at that supplied vertex.

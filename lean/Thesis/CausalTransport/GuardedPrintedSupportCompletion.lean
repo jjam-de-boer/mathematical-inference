@@ -33,7 +33,8 @@ theorem, including noncanonical multi-child root models.
 Printed factor inputs still include the recursively preceding marginal
 trees and displayed denominators.  Reading and constructing those inputs
 uniformly from the actual successful program's admissible observation domain
-remains separate; it is not assumed completed by the prefix bridge.
+is handled by the later local-data availability and admissible-certificate
+modules; it is not assumed as a conclusion of this prefix bridge.
 -/
 
 namespace GuardedHostChain

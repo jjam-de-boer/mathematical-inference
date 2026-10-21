@@ -24,9 +24,10 @@ no absent summand is completed with an arbitrary rational value.
 
 As with the public ID/IDC certificate APIs, the carrier universe here is
 zero.  This puts no bound on the finite observed, hidden or noise alphabets.
-The remaining recursive compiler proof must use these evaluation facts to
-construct its inner data and connect the causal/displayed prefix guards.
-That conclusion is not asserted by this module.
+`LocalKernelDataAvailability` and the later admissible-certificate assembly
+use these evaluation facts to construct recursive data and connect the
+causal/displayed prefix guards. Those conclusions are separate from the
+partial-expression facts proved in this module.
 -/
 
 variable {S : ObservedSignature.{0}}

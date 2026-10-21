@@ -42,9 +42,10 @@ an unused common root in the queried outcome remains available below.
 
 These constructors do not cover every irreducible conditional terminal.
 Conditioners without a suitable omitted-small closed set or protection, and
-outer-only route updates, remain open general cases.  The geometric premises
-are retained rather than asserted to inhabit the universal conditional field
-of published completeness.
+outer-only route updates are outside this constructor's coverage. The geometric
+premises are retained; the universal conditional field of published completeness
+is instead supplied by the independent channel/terminal construction in
+`HedgeChannelCompleteness`.
 -/
 
 /-- Construct the original conditional counterexample in the compensated

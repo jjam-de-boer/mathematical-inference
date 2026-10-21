@@ -28,7 +28,9 @@ does not justify this constructor's sink-based interventional substitution.
 The later `HedgeCompensatedCounterexample` constructor includes responding
 small-forest descendants by compensation and direct prior integration,
 without reusing this sink-only substitution theorem.  Outer-only route
-updates remain an open general case.
+updates remain outside this constructor's coverage. The completed general
+countermodel theorem in `HedgeChannelCompleteness` uses the independent
+channel construction rather than assuming this sink-only route works there.
 -/
 
 variable {S : ObservedSignature.{0}}
