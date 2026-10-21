@@ -49,8 +49,8 @@ real-number model would need its own proof and is not silently assumed.
 length, using Cauchy's finite doubling/descending proof. Natural multiplicities
 then give weighted AM–GM, including zero values and weights. Both non-strict and
 strict common-denominator product bounds are available for the rational Gibbs
-inequality. This foundation does not yet establish KL nonnegativity, its equality
-case, entropy concavity, or maximum-entropy optimization.
+inequality. Later checkpoints use this foundation to establish KL and entropy
+bounds; strict concavity and the total optimizer remain separate tasks.
 
 ## Checkpoint 4: rational Gibbs inequality and KL nonnegativity
 
@@ -66,8 +66,8 @@ The proof includes aggregation of duplicate atom occurrences and null outliers.
 Executed regressions include a point law on a three-state grid with two zero
 observed cells, whose uniform-reference KL equals `log₂(3)` exactly.
 
-The equality case, upper entropy bounds, strict concavity and optimization
-results remain outstanding; KL nonnegativity alone does not establish them.
+KL nonnegativity alone does not establish the equality or optimality results;
+the following checkpoints prove those additional statements separately.
 
 ## Checkpoint 5: equality in Gibbs and KL
 
@@ -83,13 +83,34 @@ check a split/rescaled/reordered law with a null outlier, a genuinely different
 point law, and an unrestricted zero-weight argument in the rational equality
 lemma. No literal atom-list equality is assumed.
 
+## Checkpoint 6: entropy bounds and the cross-entropy criterion
+
+`ExactLogLinear` proves rational bilinearity and the finite-sum identities needed
+for entropy comparisons. `CrossEntropyValue` and `Distros.CrossEntropy` establish
+KL = cross entropy minus entropy, the global cross-entropy upper bound, and a
+positive-candidate optimality criterion: fixing the candidate cross entropy
+makes the candidate a global entropy maximum, with equality exactly at the same
+law. The bridge from rational moment constraints and a log-linear score to this
+cross-entropy equality is still required.
+
+`EntropyGrid.uniform` retains every declared cell with weight one.
+`Distros.EntropyUniform` proves its entropy is exactly `log₂(cardinality)` and
+that every supported law satisfies `0 ≤ H ≤ log₂(cardinality)`. Equality in the
+upper bound holds exactly for the uniform law. Null cells in the declared grid
+remain part of the cardinality, and null atom outliers remain admissible.
+
+`Thesis.Examples.EntropyBounds` checks the three-state uniform bound and its
+equality case, and the nonuniform candidate `(1/4, 1/4, 1/2)` with entropy `3/2`
+bits. A competitor with the same cross entropy and a retained null outlier has
+strictly smaller entropy.
+
 ## Remaining full goal
 
 1. Strengthen the grid-independence interface as needed for the later optimizer;
    preserve every established atom-presentation and null-cell invariance law.
-2. Prove entropy bounds, KL nonnegativity and equality, strict concavity,
-   uniqueness and global log-linear optimality, with explicit support/boundary
-   assumptions. Investigate a finite weighted AM–GM route.
+2. Prove strict concavity, uniqueness of attained maxima and the moment/log-linear
+   bridge, with explicit support and boundary assumptions. Entropy bounds and KL
+   nonnegativity/equality are established above using finite weighted AM–GM.
 3. Integrate exact/interval rational expectations through `PartialMomentProblem`,
    retaining infeasibility certificates, forced-zero cells and redundant rows.
 4. Prove an explicit uniform entropy continuity modulus, including zero. Implement
