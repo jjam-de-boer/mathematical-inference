@@ -217,19 +217,111 @@ infeasible boxes, an infeasible moment problem, the full singleton solver with a
 clipped zero lower endpoint, and a fair-law certificate at tolerance `1/1000`.
 The whole dependency closure passes the constructive arithmetic axiom gate.
 
-## Remaining full goal
+## Checkpoint 12: signed-moment log-linear optimality
 
-1. Complete the bridge from fixed rational moment expectations and a log-linear
-   reference score to the established global cross-entropy optimality criterion,
-   with explicit support/boundary assumptions.
-2. Complete the three-state mean-`1/2` example with useful concrete certified
-   approximations and an accurate explanation of its usual irrational optimum.
-   Extend executed optimizer regressions for forced-zero and redundant rows.
-3. Document the precise additional real-number semantic/density bridge needed to
-   interpret rational universal certificates as bounds on the usual real optimum.
-   The implementation currently quantifies over the framework's rational laws.
-4. Continue complete-project builds, full axiom audits and remote CI for each
-   published checkpoint. Targeted or early checks alone are never full verification.
+`LogExpectation` integrates exact logarithmic observables against aggregated
+PMFs and proves finite affine integration. `ShiftedMoments` computes a finite
+offset for each signed integer response on the original declared grid. Fixed
+signed expectations therefore fix the corresponding nonnegative natural moments;
+unsupported zero-weight atom labels impose no extra shift hypothesis.
+
+`PartialMomentProblem.LogLinearReference` records a positive rational reference,
+an affine log score and selected exact rows from the original problem. The
+coefficients are arbitrary exact logarithm values and may be negative. The
+selected endpoints need only be equivalent rational presentations; redundant
+rows and other interval constraints remain admissible.
+
+`LogLinearReference.crossEntropy_fixed` proves equal cross entropy for every two
+feasible laws. A feasible anchor consequently gives a universal entropy upper
+bound even when the reference itself has the wrong target expectation. If the
+positive reference is feasible, `LogLinearReference.optimal` proves global
+maximality and equality exactly at the same probability law. This is the promised
+fixed-expectation bridge, not merely a stationary-point assertion.
+
+The reference positivity premise includes every declared cell. A candidate with
+forced zeros cannot satisfy that premise on the full grid; the total optimizer
+has no such premise and already handles those boundaries. The entropy-preserving
+internal support restriction is available for separate boundary score arguments.
+Regressions prove a nonuniform global maximum under a negative integer response,
+with a retained null outlier. The constructive arithmetic audit passes.
+
+## Checkpoint 13: tight mean-one-half certificate and validation
+
+`EntropyHomogeneous` proves an equivalent common-degree entropy formula, allowing
+concrete certificates to execute without multiplying all the individual root
+degrees. `Thesis.Examples.EntropyMeanHalf` uses the exactly feasible rational law
+`(62/100, 26/100, 12/100)`, with a split atom and a retained null outlier. It keeps
+the original grid, exact mean `1/2` and duplicate redundant signed rows.
+
+A rational Gibbs reference with ratio `13/30` gives a global upper bound through
+the proved moment/log-linear bridge, even though that reference has a different
+mean. Exact rational-power comparisons certify the interval `[2599/2000,
+2601/2000] = [1.2995,1.3005]` bits, with width exactly `1/1000`, for the requested
+rational optimum certificate. No exact rational maximizer is asserted.
+
+The same example exposes the general total algorithm at every positive rational
+tolerance. Additional executed regressions retain a forced-zero cell and repeated
+signed constraint rows. `EntropyCertificate.width_bound` also states the width as
+the existing witnessed rational subtraction `U - L ≤ epsilon`.
+
+All six planned mathematical activities are now implemented for rational laws.
+The complete build and full axiom audit remain mandatory publication gates.
+Practical improvements to the exhaustive fallback and the separate real-number
+semantic development are extensions beyond this completed rational scope.
+
+## Standard real-valued semantics: additional bridge required
+
+The kernel results above concern exact symbolic logarithms and the framework's
+rational probability laws. No completed real-number type, real logarithm axioms,
+choice principle or real-valued maximizer is silently imported.
+
+To interpret the same certificates in the usual finite real model, a separate
+semantic development must establish the following facts.
+
+1. Interpret an `ExactLog` as `log₂(argument)/degree` in a real-number model with
+   a logarithm on positive arguments, and prove that equivalence, addition, rational scaling and
+   rational-power order agree with that interpretation. Embed rational bit bounds
+   by the same ordered map. This identifies the symbolic entropy with
+   `-sum p_i log₂(p_i)`, using the proved zero convention.
+2. Embed the original rational moment rows into real finite-coordinate space and
+   prove density of exactly feasible rational points in their real feasible
+   polytope. Rounding coordinates independently is insufficient for exact moment
+   equalities. A suitable route is a finite rational-vertex representation followed
+   by rational approximation of convex combination coefficients; that preserves
+   exact equalities, closed intervals, forced-zero faces and redundant rows.
+3. Prove continuity of real finite entropy, including zero. Density and the closed
+   order relation then transfer each universal rational upper certificate to
+   every real feasible law. Compactness of the nonempty bounded closed polytope
+   and continuity yield an attained usual real maximum, if that existence claim
+   is wanted. Constructive real existence would require its own corresponding
+   compactness or effective-limit proof.
+
+These are additional semantic/density theorems, not premises exposed by the
+rational algorithm. The implementation already returns the requested universal
+rational certificates without assuming those real theorems.
+
+## The three-state mean-one-half real model
+
+In the usual real interpretation, a positive Gibbs law on `{0,1,2}` with mean
+`1/2` has probabilities `(1,r,r²)/(1+r+r²)`, where `3r²+r-1=0`. The positive
+solution is `r=(sqrt(13)-1)/6`. It satisfies the constraint, and the global Gibbs
+inequality certifies it as the real entropy maximum. Strict concavity gives
+uniqueness. Since `r` is irrational and equals the ratio of its second and first
+probabilities, that exact real optimizer cannot have all rational probabilities.
+
+This real-model explanation is not asserted as a new Lean theorem about a real
+number type. The rational library instead certifies exactly feasible rational
+approximations and universal error bounds. Its separate real semantic/density
+bridge, described above, is what would formally connect those certificates to
+the displayed real optimizer.
+
+## Verification and scope
+
+Every new example is included in both the early constructive audit and the full
+project audit. Completed mathematical checkpoints are published to main only
+after the complete CI build and full axiom gate pass. The implementation keeps
+rational laws, exact symbolic logarithms, and certified rational approximations;
+it does not claim an efficient exhaustive search or a completed real semantics.
 
 Ordinary local Lake builds use `LEAN_NUM_THREADS=1`, the committed 4608 MiB
 compiler threshold and the existing cache. Only one build may run on the machine

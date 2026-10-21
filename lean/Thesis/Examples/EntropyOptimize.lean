@@ -30,6 +30,21 @@ example : isInfeasible (impossible.solveEntropy ⟨1, 100, by decide⟩ (by deci
 The singleton optimum has zero entropy and a clipped nonnegative lower bound. -/
 example : hasZeroLower (singleton.solveEntropy ⟨1, 8, by decide⟩ (by decide)) = true := by decide +kernel
 
+private def forcedZero : PartialMomentProblem Nat :=
+  ⟨[0, 1], 0, by decide, by decide,
+    [MomentInterval.exact (fun value => if value = 1 then 1 else 0) SignedRatio.zero,
+      MomentInterval.exact (fun _ => -2) ⟨-2, 1, by decide⟩,
+      MomentInterval.exact (fun _ => -2) ⟨-2, 1, by decide⟩]⟩
+private def retainsNullOne {problem : PartialMomentProblem Nat} {tolerance : QProb}
+    (result : problem.EntropyResult tolerance) : Bool :=
+  match result with
+  | .feasible certificate => decide ((1, 0) ∈ certificate.law.distro.record.atoms)
+  | .infeasible _ => false
+
+/-- The executed solver retains the original forced-zero cell and repeated
+signed rows rather than deleting them from the declared problem. -/
+example : retainsNullOne (forcedZero.solveEntropy ⟨2, 1, by decide⟩ (by decide)) = true := by decide +kernel
+
 private def fair : Distro Nat := ⟨⟨[(0, 1), (1, 1)], 2, by decide, by decide⟩⟩
 private def fairLaw : binary.CompatibleLaw :=
   ⟨fair, (by

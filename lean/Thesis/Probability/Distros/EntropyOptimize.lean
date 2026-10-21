@@ -1,6 +1,20 @@
 import Thesis.Probability.Distros.EntropyBoxSearch
 import Thesis.Probability.ExactLogPositiveEnclosure
 
+namespace Thesis.Probability.QProb
+
+/-- A witnessed nonnegative difference inherits the corresponding additive
+upper bound, without introducing signed probability weights. -/
+theorem sub_le_of_le_add (p q r : QProb) (ordered : LE q p) (bounded : LE p (add q r)) :
+    LE (sub p q ordered) r := by
+  have cleared : (p.num * q.den) * r.den ≤ (q.num * p.den) * r.den + r.num * (p.den * q.den) := by
+    simpa only [LE, add, Nat.add_mul, Nat.mul_add, Nat.mul_assoc, Nat.mul_comm, Nat.mul_left_comm] using bounded
+  change (p.num * q.den - q.num * p.den) * r.den ≤ r.num * (p.den * q.den)
+  rw [Nat.sub_mul]
+  omega
+
+end Thesis.Probability.QProb
+
 namespace Thesis.Probability.Distros.PartialMomentProblem
 
 /-- An exactly feasible rational law with a global rational entropy bracket.
@@ -20,6 +34,13 @@ theorem EntropyCertificate.lower_le_upper [DecidableEq A] {problem : PartialMome
     (certificate : problem.EntropyCertificate tolerance) : QProb.LE certificate.lower certificate.upper :=
   (ExactLog.ofQProb_le_iff _ _).mp (ExactLog.le_trans certificate.lower_bound
     (certificate.global_bound certificate.law.distro ⟨certificate.law.support, certificate.law.moments⟩))
+
+/-- The additive gap field is exactly the requested witnessed difference
+bound `U - L ≤ epsilon` in the existing nonnegative rational interface. -/
+theorem EntropyCertificate.width_bound [DecidableEq A] {problem : PartialMomentProblem A} {tolerance : QProb}
+    (certificate : problem.EntropyCertificate tolerance) :
+    QProb.LE (QProb.sub certificate.upper certificate.lower certificate.lower_le_upper) tolerance :=
+  QProb.sub_le_of_le_add _ _ _ certificate.lower_le_upper certificate.gap
 
 /-- Rational enclosure width and symbolic optimization error each receive
 half of the supplied epsilon. The resulting bounds cover all feasible laws. -/
