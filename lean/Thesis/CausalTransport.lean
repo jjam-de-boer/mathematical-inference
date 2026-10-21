@@ -151,6 +151,8 @@ import Thesis.CausalTransport.NativeGuardCompilation
 import Thesis.CausalTransport.NativeProofEnumeration
 import Thesis.CausalTransport.NativeSearchPreflight
 import Thesis.CausalTransport.NativeSearchMetadata
+import Thesis.CausalTransport.NativeFormulaSelection
+import Thesis.CausalTransport.NativeBoundedSelection
 import Thesis.CausalTransport.HiddenDAGFinitePresentation
 import Thesis.CausalTransport.HiddenDAGSourcePresentation
 import Thesis.CausalTransport.HiddenDAGSourceCompression
@@ -400,6 +402,12 @@ profile generators or promise a hard memory/time bound on model evaluation.
 certified domain-size metadata, without measuring generated value lists before
 early dictionary refusal. It retains all source/profile/total-work gates;
 neither metadata preparation nor complete profile generation is timed here.
+`NativeFormulaSelection` retains native support-table guards when scanning a
+supplied certificate list. `NativeBoundedSelection` selects only from an
+explicitly admitted metadata-guarded bounded catalogue, distinguishing policy
+refusal from admitted unavailability. It proves common-query preservation,
+supported native soundness and bounded acceptance coverage, not universal
+formula coverage or a complete cost bound for evaluating formulas.
 `HiddenDAGPolynomial` compiles native causal probabilities with a proved
 binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied

@@ -448,6 +448,33 @@ Logs are in `.lake/local-builds-v1/20261020-194452-arafz14b/`. All 93 helper
 and source-regression tests also passed. This records that source checkpoint,
 not later entropy additions or an unrestricted cold-build timing.
 
+### Bounded native selector, 2026-10-21
+
+The generic native scan passed locally in 0.75 s / 743.3 MiB sampled aggregate
+RSS; the metadata-admitted bounded adapter passed in 0.72 s / 745.5 MiB and
+its examples in 0.91 s / 756.5 MiB. All used the unchanged explicit `extended`
+profile and shared single-builder slot. Busy slots were refused rather than
+starting a competing compiler. Logs are retained in
+`.lake/local-builds-v1/20261021-102715-_i0yqjez/` (generic layer) and
+`.lake/local-builds-v1/20261021-102958-kc2osgeb/` (adapter and regressions).
+These are selected-module checks, not a complete build or full-axiom claim.
+
+Generated code was inspected: the adapter first calls the guarded catalogue,
+returns a refusal without scanning, and calls the native first-available scan
+only after admission. The scan tests each visited candidate once and returns
+without visiting its tail after success. This is an observed implementation
+property under the pinned compiler, not a formal whole-runtime cost bound.
+Concrete regressions expand only eight native leaves on supplied tiny
+profiles; deeper bounded acceptance coverage remains symbolic. Arbitrary
+profile construction, record preparation and formula-evaluation costs remain
+outside the structural comparison allowance.
+
+The first complete-project attempt at this stage stopped when concurrent
+refactoring changed source files during the run. It correctly withheld full
+success, rather than accepting a mixed source snapshot. That stop was not a
+selector proof failure or a resource-cap failure; selected-module success
+alone still does not establish the complete project or axiom audit.
+
 ## Transportation split and explicit resource profiles, 2026-10-19
 
 The machine reports 18 GiB physical RAM and 11 CPU cores. At the assessment

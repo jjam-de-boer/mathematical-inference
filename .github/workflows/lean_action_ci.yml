@@ -139,11 +139,14 @@ jobs:
           Thesis.CausalTransport.NativeProofEnumeration
           Thesis.CausalTransport.NativeSearchPreflight
           Thesis.CausalTransport.NativeSearchMetadata
+          Thesis.CausalTransport.NativeFormulaSelection
+          Thesis.CausalTransport.NativeBoundedSelection
           Thesis.Examples.NativeCertificateCheck
           Thesis.Examples.NativeGuardCompilation
           Thesis.Examples.NativeProofEnumeration
           Thesis.Examples.NativeSearchPreflight
           Thesis.Examples.NativeSearchMetadata
+          Thesis.Examples.NativeBoundedSelection
       - name: Check graph-only identification layers
         working-directory: lean
         run: >-

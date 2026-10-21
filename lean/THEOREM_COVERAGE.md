@@ -389,8 +389,8 @@ theorems for larger symbolic membership and native coverage. They include
 insufficient wrapper depth, a bad reference hidden in an intermediate term,
 raw graphical failures, a strict cycle with null intermediate support, and
 preservation of the three-valued fixture's null reference. Complete native
-catalogues are not concretely expanded. No formula is selected, and no
-minimality, duplicate-free output or practical large-instance execution
+catalogues are not concretely expanded. The enumeration layer itself selects
+no formula; no minimality, duplicate-free output or practical large-instance execution
 claim is made. This stage covers the bounded serialized grammar, not every
 arbitrary Lean proof of a semantic identity.
 
@@ -403,8 +403,8 @@ or another complete coverability decision is still needed. This refutes
 that proposed stopping shortcut; it is not an impossibility proof for a
 universal selector. The declared proof/guard grammar now has an exact bounded
 enumerator and acceptance-coverage theorem. Increasing its budgets still
-has no proved stopping criterion for universal coverage. Formula selection
-is the next separate implementation checkpoint.
+has no proved stopping criterion for universal coverage. The bounded selector
+below uses an admitted finite family; it does not close that research gap.
 
 ### Resource preflight for bounded proof catalogues
 
@@ -464,7 +464,48 @@ Profiles are already supplied: in strict evaluation,
 passing `completeSupportCatalogue` first builds that list. Accordingly there
 is no new supposedly guarded automatic fixed/projection-wide profile generator.
 Its generation cost needs separate analysis; external CPU/RSS safeguards are
-still necessary for concrete execution. No selector is implemented here.
+still necessary for concrete execution. The preflight layer itself does not
+select formulas.
+
+### Selection within admitted bounded native catalogues
+
+`NativeFormulaSelection` scans a supplied finite native-certificate list in
+its given order, retaining each full support-table guard. It does not coerce
+native guards into the older two-constructor observable-guard language or
+erase a guard to reuse that selector. `select_mem`, `select_available`,
+`select_none_iff` and `select_complete` specify exact finite-list behaviour.
+The first available candidate wins; a rejected first candidate cannot mask
+an available fallback. Defined zero is available; undefined is not.
+
+`guardedSelectOnWithMetadata` in `NativeBoundedSelection` (namespace
+`ProbabilityCode.NativeProofCode`) first uses the existing metadata
+admission and then scans the entire admitted checked catalogue. Its outputs
+are deliberately distinct: resource/policy refusal, admitted search with no
+available member, and an available checked native formula. Refusal propagation
+is exact. Empty success is characterized only within that admitted list;
+neither negative result proves general non-identifiability.
+
+`checkOn_source`, `compileGuardOn_source`, `catalogueOn_source` and
+`guardedSelectOnWithMetadata_source` retain the literal decoded input query.
+`guardedSelectOnWithMetadata_soundAt` therefore interprets the selected formula
+as an answer to that query on a covered original native model, with original
+conditional-source support still an explicit premise. Finding an available
+printed formula does not decide whether its causal source has a value.
+
+`guardedSelectOnWithMetadata_covers` turns the existing bounded acceptance
+coverage into selection success: any accepted supplied guard for a bounded
+serialized proof forces a result on a covered original model, provided that
+the search is admitted. The chosen syntax need not be that witness's syntax.
+`guardedCatalogueOnWithMetadata_length_bound` bounds the scan's input length
+by the admitted raw-candidate limit, without silent truncation.
+
+This is not universal formula coverage, a universal stopping theorem, or a
+new complete runtime-cost model. The whole admitted catalogue is constructed
+before scanning. The existing profile-comparison allowances concern catalogue
+certification; arbitrary observational formula evaluation is not bounded by
+them. Profiles, the observational record and cheap metadata are prepared
+inputs, not lazily generated under these gates. The new regression executes
+only eight-leaf catalogues and uses symbolic coverage for deeper proof budgets.
 
 ## Fixed-law results beyond graph-level completeness
 
