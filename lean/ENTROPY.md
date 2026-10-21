@@ -161,6 +161,26 @@ Regressions include probability zero and a non-dyadic mass `3/10000000`.
 This completes the scalar boundary estimate. The uniform two-point continuity
 modulus, moment/log-linear bridge and total constrained optimizer remain open.
 
+## Checkpoint 10: uniform two-point entropy continuity
+
+`EntropyIncrement` proves algebraic bounds on the change of an entropy term
+between positive probabilities. `EntropyContinuity` combines those bounds with
+the zero-boundary estimate. For every natural precision `n`, coordinate distance
+at most `1/2^(3n+6)` gives entropy-contribution error at most `1/2^n`. The theorem
+covers arbitrary unreduced rational presentations and both probability endpoints.
+A total rational threshold interface also accepts every positive rational error.
+
+`Distros.EntropyContinuity` lifts that result to full entropy on the caller's
+declared grid. Its explicit coordinate threshold depends only on grid cardinality
+and requested error. The resulting symmetric entropy bounds quantify over all
+supported rational laws, without a denominator cap or an interior-support premise.
+Regressions exercise zero, one, interior probabilities, unrelated denominators,
+a zero cell gaining positive mass, a shared null cell and null record outliers.
+
+The finite-box constrained optimizer and the moment/log-linear optimality bridge
+remain unfinished. Uniform continuity is now a proved input to that optimizer,
+rather than an assumption left to its caller.
+
 ## Remaining full goal
 
 1. Strengthen the grid-independence interface as needed for the later optimizer;
@@ -171,8 +191,8 @@ modulus, moment/log-linear bridge and total constrained optimizer remain open.
 3. Connect log-linear certificates and the approximation algorithm to
    `PartialMomentProblem`. Exact/interval feasibility and conditional uniqueness
    already preserve forced-zero cells, redundant rows and infeasibility results.
-4. Prove an explicit uniform entropy continuity modulus, including zero. Implement
-   total finite-box optimization with exactly feasible rational witnesses and a
+4. Use the proved uniform entropy continuity modulus to implement total
+   finite-box optimization with exactly feasible rational witnesses and a
    global rational entropy gap at every positive rational tolerance. No fixed
    denominator cap or exact rational maximizer is presumed.
 5. Exercise uniform/unique/inconsistent/boundary/redundant constraints, duplicate
