@@ -104,13 +104,32 @@ equality case, and the nonuniform candidate `(1/4, 1/4, 1/2)` with entropy `3/2`
 bits. A competitor with the same cross entropy and a retained null outlier has
 strictly smaller entropy.
 
+## Checkpoint 7: strict concavity, including the boundary
+
+`Distro.mixture` wraps the scale-and-append rational record construction, keeping
+both atom lists and their null outliers. Singleton masses and cross entropy obey
+the expected affine formulas even when input denominators differ.
+
+`Distro.entropy_mixture_comparison` proves concavity for any two positive natural
+mixing masses, normalized by their sum, and equality exactly when the input laws
+are `SameLaw`. `Distro.entropy_strict_concave` states the strict consequence for
+different laws. Shared zero-mass cells are handled by an internal positive-support
+restriction with a proved entropy-preservation lemma; the caller's declared grid
+and atom records are never replaced. No full-grid positivity premise remains.
+
+`Distro.entropy_maximum_unique` proves that any attained maximum in a class closed
+under midpoints is unique as a law. This is a conditional uniqueness theorem,
+not an existence assertion for exact rational maximizers. Regressions exercise
+shared zero cells, null outliers, unequal denominators, unequal mixing weights,
+strict inequality for distinct point laws, and equality for split presentations.
+
 ## Remaining full goal
 
 1. Strengthen the grid-independence interface as needed for the later optimizer;
    preserve every established atom-presentation and null-cell invariance law.
-2. Prove strict concavity, uniqueness of attained maxima and the moment/log-linear
-   bridge, with explicit support and boundary assumptions. Entropy bounds and KL
-   nonnegativity/equality are established above using finite weighted AM–GM.
+2. Prove the moment/log-linear bridge, with explicit support and boundary
+   assumptions. Entropy bounds, KL nonnegativity/equality, strict concavity and
+   conditional uniqueness are established above using finite weighted AM–GM.
 3. Integrate exact/interval rational expectations through `PartialMomentProblem`,
    retaining infeasibility certificates, forced-zero cells and redundant rows.
 4. Prove an explicit uniform entropy continuity modulus, including zero. Implement
