@@ -1,3 +1,5 @@
+import Thesis.Probability.Distros.EntropyGibbsEquality
+import Thesis.Probability.Distros.EntropyGibbs
 import Thesis.Probability.Distros.Entropy
 import Thesis.Probability.Distros.Basic
 import Thesis.Probability.Distros.FinitePresentation

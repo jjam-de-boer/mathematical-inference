@@ -1,3 +1,5 @@
+import Thesis.Examples.EntropyGibbsEquality
+import Thesis.Examples.EntropyGibbs
 import Thesis.Examples.FiniteAMGM
 import Thesis.Examples.Entropy
 import Thesis.Examples.ExactLog
