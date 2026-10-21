@@ -1,4 +1,5 @@
 import Thesis.Probability.Distros.Moments
+import Thesis.Probability.Distros.LawBasics
 
 namespace Thesis.Probability.Distros
 
@@ -8,29 +9,11 @@ independent products, positive conditioning, expectations, moments,
 variance and PGFs.  Outcome types need neither decidable equality nor a
 finite enumeration.  Observable bounds and common denominators are
 constructed on the records' explicit finite supports.
+
+The basic `Distro.SameLaw` interface and its elementary transport live in
+`LawBasics`, below moments. This module retains their existing import path
+and adds the expectation, moment and conditioning transport results below.
 -/
-
-/-- Agreement of all Boolean event probabilities, independent of the
-ordering, splitting, or denominator of the atom presentation. -/
-def Distro.SameLaw (μ ν : Distro Ω) : Prop :=
-  ∀ event : Event Ω, QProb.Equiv (μ.record.probVal event) (ν.record.probVal event)
-
-namespace Distro.SameLaw
-
-theorem refl (μ : Distro Ω) : μ.SameLaw μ := fun _ => QProb.equiv_refl _
-
-theorem symm {μ ν : Distro Ω} (h : μ.SameLaw ν) : ν.SameLaw μ :=
-  fun event => QProb.equiv_symm (h event)
-
-theorem trans {μ ν ξ : Distro Ω} (h : μ.SameLaw ν) (h' : ν.SameLaw ξ) : μ.SameLaw ξ :=
-  fun event => QProb.equiv_trans (h event) (h' event)
-
-theorem map {μ ν : Distro Ω} (h : μ.SameLaw ν) (f : Ω → X) :
-    (μ.map f).SameLaw (ν.map f) := fun event =>
-  QProb.equiv_trans (μ.map_probVal f event)
-    (QProb.equiv_trans (h (fun x => event (f x))) (QProb.equiv_symm (ν.map_probVal f event)))
-
-end Distro.SameLaw
 
 theorem natIntegral_congr_on_support (atoms : List (Ω × Nat)) (f g : Ω → Nat)
     (h : ∀ atom ∈ atoms, f atom.1 = g atom.1) :

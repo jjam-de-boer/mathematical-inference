@@ -150,6 +150,7 @@ import Thesis.CausalTransport.NativeCertificateCheck
 import Thesis.CausalTransport.NativeGuardCompilation
 import Thesis.CausalTransport.NativeProofEnumeration
 import Thesis.CausalTransport.NativeSearchPreflight
+import Thesis.CausalTransport.NativeSearchMetadata
 import Thesis.CausalTransport.HiddenDAGFinitePresentation
 import Thesis.CausalTransport.HiddenDAGSourcePresentation
 import Thesis.CausalTransport.HiddenDAGSourceCompression
@@ -395,6 +396,10 @@ over arbitrary Lean semantic proofs or infer unbounded exhaustion.
 old catalogue: supplied profiles, guard rows and total profile-comparison
 work have separate limits. It does not preflight construction of the complete
 profile generators or promise a hard memory/time bound on model evaluation.
+`NativeSearchMetadata` supplies the same admission and catalogue results from
+certified domain-size metadata, without measuring generated value lists before
+early dictionary refusal. It retains all source/profile/total-work gates;
+neither metadata preparation nor complete profile generation is timed here.
 `HiddenDAGPolynomial` compiles native causal probabilities with a proved
 binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied

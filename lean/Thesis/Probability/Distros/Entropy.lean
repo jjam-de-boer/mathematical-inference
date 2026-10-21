@@ -1,5 +1,5 @@
 import Thesis.Probability.EntropyValue
-import Thesis.Probability.Distros.SignedConcentration
+import Thesis.Probability.Distros.LawBasics
 
 namespace Thesis.Probability.Distros
 

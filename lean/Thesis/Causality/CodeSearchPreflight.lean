@@ -10,8 +10,9 @@ Admission is a resource decision, not an identification decision. A refusal
 does not mean that a certificate is absent, even within the requested depth.
 Limits are supplied explicitly; this module never raises them after failure.
 
-Check node/depth limits first. Estimate dictionary lengths from coordinate
-lengths, without enumerating their Cartesian products. The assignment
+Check node/depth limits first, then the mask count before inspecting any
+coordinate values. Estimate reference lengths from coordinate lengths,
+without enumerating their Cartesian products. The assignment
 estimate bounds even the pre-deduplication product, so is never too small. Only
 after those gates may the real, bounded dictionaries be constructed. Then
 the saturated code count decides whether raw enumeration may start.
@@ -85,8 +86,9 @@ theorem natProduct_exact (limit count : Nat) (values : Fin count → Nat) :
 
 end CappedCount
 
-/-- This cheap estimate deliberately precedes `CodeDictionaries.ofSignature`.
-The latter obtains lengths by constructing the actual mask/assignment lists. -/
+/-- The pair of estimates used in the mathematical bounds. This eager record
+can inspect value enumerations. The executable preflight deliberately checks
+the mask count separately before calculating its reference-count component. -/
 def dictionaryEstimate (limit : Nat) (signature : ObservedSignature) : CodeDictionaries :=
   ⟨CappedCount.natProduct limit signature.count (fun _ => 2),
     CappedCount.natProduct limit signature.count (fun index => (signature.valueEnumeration index).length)⟩
@@ -133,14 +135,17 @@ def preflightSyntax (limits : SearchLimits) (signature : ObservedSignature)
   else if proofDepth > limits.maxProofDepth then
     .error (.proofDepth proofDepth limits.maxProofDepth)
   else
-    let estimated := dictionaryEstimate limits.maxDictionaryEntries signature
-    if estimated.masks > limits.maxDictionaryEntries then .error (.maskDictionary limits.maxDictionaryEntries)
-    else if estimated.references > limits.maxDictionaryEntries then .error (.referenceDictionary limits.maxDictionaryEntries)
+    let masks := CappedCount.natProduct limits.maxDictionaryEntries signature.count (fun _ => 2)
+    if masks > limits.maxDictionaryEntries then .error (.maskDictionary limits.maxDictionaryEntries)
     else
-      let dictionary := CodeDictionaries.ofSignature signature
-      let candidates := CappedCount.native limits.maxRawCandidates dictionary expressionDepth proofDepth
-      if candidates > limits.maxRawCandidates then .error (.rawCandidates limits.maxRawCandidates)
-      else .ok ⟨dictionary, candidates⟩
+      let references := CappedCount.natProduct limits.maxDictionaryEntries signature.count
+        (fun index => (signature.valueEnumeration index).length)
+      if references > limits.maxDictionaryEntries then .error (.referenceDictionary limits.maxDictionaryEntries)
+      else
+        let dictionary := CodeDictionaries.ofSignature signature
+        let candidates := CappedCount.native limits.maxRawCandidates dictionary expressionDepth proofDepth
+        if candidates > limits.maxRawCandidates then .error (.rawCandidates limits.maxRawCandidates)
+        else .ok ⟨dictionary, candidates⟩
 
 theorem preflightSyntax_bounds (limits : SearchLimits) (signature : ObservedSignature)
     (expressionDepth proofDepth : Nat) (estimate : SyntaxEstimate)

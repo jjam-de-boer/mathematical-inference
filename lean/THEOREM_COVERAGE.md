@@ -417,9 +417,21 @@ example has **135,298,563** raw native candidates already at expression depth
 1 / native proof depth 2; the regression computes only this arithmetic.
 
 `CodeSearchPreflight` checks explicit node/depth policies before counting.
-Coordinate-length estimates gate the construction of full mask/assignment
-dictionaries. The actual dictionary and accepted candidate counts are bounded
+It checks the mask limit before calling any coordinate value enumeration;
+only a passing mask count permits the coordinate-length reference estimate.
+These estimates gate construction of the full mask/assignment dictionaries.
+The actual dictionary and accepted candidate counts are bounded
 by `preflightSyntax_bounds`. No probability-zero intervention value is dropped.
+
+`DomainSizeMetadata` in `CodeSearchMetadata` supplies numerical domain sizes
+with proofs equating them to the declared enumeration lengths. Its
+`preflightSyntaxWithMetadata` checks both dictionary limits without generating
+or measuring those lists. For `Fin n`, an existing symbolic length theorem
+certifies the number `n`; no `n`-element list need be generated on refusal.
+`preflightSyntaxWithMetadata_eq` proves equality with the existing preflight
+for **all** results, including refusals, and `_bounds` retains its size bounds.
+The result equality is deliberately not a compiler-replacement rule: the two
+paths have the same meaning but need not have the same execution cost.
 
 `NativeSearchPreflight` additionally limits supplied profile count, guard
 rows, per-certificate profile comparisons and total comparisons across raw
@@ -432,9 +444,23 @@ allowance. `Except.error` is resource/policy refusal, while `Except.ok []`
 is an empty result in this particular checked bounded family. Neither is a
 general non-identifiability certificate.
 
+`NativeSearchMetadata` exposes `guardedEnumerationWithMetadata` and
+`guardedCatalogueOnWithMetadata`. Their equality and exactness theorems
+preserve the entire existing bounded enumeration/catalogue, while
+`guardedCatalogueOnWithMetadata_total_bound` retains the structural comparison
+allowance. All source, supplied-profile and total-work checks remain mandatory.
+Regressions include early refusal with a symbolically certified billion-value
+domain and retention of the three-valued fixture's observationally null cell.
+They do not execute a billion-element list or a large raw proof catalogue.
+Source-order regressions and inspection of generated code supplement the
+logical equalities, since equality alone cannot establish eager execution cost.
+
 This is **not a complete runtime-cost or memory model**. Evaluating one
 profile/demand can itself be expensive, and inputs can contain arbitrary
-enumeration functions. Profiles are already supplied: in strict evaluation,
+enumeration functions. Metadata should itself be prepared cheaply: computing
+its numbers by generating and measuring lists would defeat this optimization.
+The fallback without metadata still measures lists after its mask gate.
+Profiles are already supplied: in strict evaluation,
 passing `completeSupportCatalogue` first builds that list. Accordingly there
 is no new supposedly guarded automatic fixed/projection-wide profile generator.
 Its generation cost needs separate analysis; external CPU/RSS safeguards are

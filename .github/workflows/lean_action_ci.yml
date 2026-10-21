@@ -131,16 +131,19 @@ jobs:
           Thesis.Causality.DerivationEnumeration
           Thesis.Causality.CodeEnumerationCounts
           Thesis.Causality.CodeSearchPreflight
+          Thesis.Causality.CodeSearchMetadata
           Thesis.CausalTransport.NativeDerivationSupportCheck
           Thesis.CausalTransport.NativeSupportGuard
           Thesis.CausalTransport.NativeCertificateCheck
           Thesis.CausalTransport.NativeGuardCompilation
           Thesis.CausalTransport.NativeProofEnumeration
           Thesis.CausalTransport.NativeSearchPreflight
+          Thesis.CausalTransport.NativeSearchMetadata
           Thesis.Examples.NativeCertificateCheck
           Thesis.Examples.NativeGuardCompilation
           Thesis.Examples.NativeProofEnumeration
           Thesis.Examples.NativeSearchPreflight
+          Thesis.Examples.NativeSearchMetadata
       - name: Check graph-only identification layers
         working-directory: lean
         run: >-
