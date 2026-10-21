@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.KernelHedgeTransport
+import Thesis.Causality.IdentificationOutcomeTraces
 
 namespace Thesis
 namespace Causality

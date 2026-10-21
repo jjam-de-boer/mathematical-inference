@@ -25,14 +25,14 @@ refactor.
 
 | Stage | Pass 1 status | Evidence and remaining work |
 | --- | --- | --- |
-| 1. Combined baseline | Verified for this revision | `f298629cf204a426687e05684703938325ed6c6d`; local complete build and audit passed, 84 helper tests passed, and main CI run `39465544030` passed. |
+| 1. Combined baseline | Verified for this revision | Original combined baseline `f298629cf204a426687e05684703938325ed6c6d` passed all local and remote gates. Newer entropy and metadata checkpoints are retained as recorded below. |
 | 2. Mathematical and API inventory | Implemented, awaiting review | Result families and boundaries below; moved declarations also require exact preservation checks. |
-| 3. Current documentation | Implemented, awaiting review | Historical completeness inventory copied verbatim to `docs/history/completeness-development.md`; source-facade cleanup and final current-status cross-references remain pending. |
-| 4. Lightweight foundations | Implemented, awaiting review | Unchanged law-equality and almost-sure-support declarations extracted to `Distros.LawBasics`; both targeted modules compile. Compatibility clients and full checkpoint gates still require verification. The causal dependency chain remains pending. |
+| 3. Current documentation | Implemented, awaiting review | Historical completeness inventory moved verbatim to `docs/history/completeness-development.md`; the compatibility facade now identifies completed public results. One stale channel-gap claim is corrected; the full comment review remains pending. |
+| 4. Lightweight foundations | Implemented, awaiting review | Distribution extraction passed complete remote gates at `340772f`. Causal support, ordered collectors, action deletion, forest construction, readout geometry and shared models are extracted unchanged and targeted current compilers pass. Complete causal checkpoint gates and remaining parity/history separation are pending. |
 | 5. Historical separation | Pending | Classify shared mathematics before moving historical proofs. Keep every retained declaration and mandatory audit coverage. |
 | 6. Measured bottlenecks | Pending | Protocol below distinguishes warm, incremental and cold results. No further speedup has yet been established. |
-| 7. Folder and module organization | Pending | Choose mathematical boundaries after dependency cleanup; preserve old import paths and namespaces where appropriate. |
-| 8. Verified publication | Pending | Publish coherent verified checkpoints; final acceptance also requires Passes 2 and 3. |
+| 7. Folder and module organization | Implemented, awaiting review | Shared readout geometry and model construction now have a `CausalTransport/Hedge` home; compatibility imports remain. The broader layout and reading-order review is still pending. |
+| 8. Verified publication | Implemented, awaiting review | First foundation checkpoint `340772f` published to main after complete remote verification. The causal checkpoint and final acceptance, including Passes 2 and 3, remain pending. |
 
 Pass 2 has not started. Pass 3 has not started. No historical mathematical
 declaration has been approved for deletion.
@@ -55,10 +55,20 @@ from the current normal cache. These are warm measurements, not cold proof
 elaboration costs.
 
 The pre-existing modified `latex/mathematical_inference.pdf` is excluded from
-this task. Concurrent search-metadata edits in `CodeSearchPreflight`,
-`CodeSearchMetadata` and `NativeSearchMetadata` belong to the other agent and
-are not part of the first extraction. New entropy results developed elsewhere
-must not be overwritten or misreported as established by this refactor.
+this task. The other agent's search-metadata work is committed in `f7204c7`
+and passed complete CI run `39566237118`. That checkpoint includes the
+distribution extraction and entropy revision `219cb99`. The newer untracked
+`NativeFormulaSelection` work belongs to that agent and is not part of this
+causal extraction. Entropy and search results are retained, not claimed as
+new mathematical results of refactoring.
+
+The first foundation checkpoint was combined with the newer entropy results
+without switching or resetting the shared checkout. Exact commit
+`340772f6f4b1c3f72ddd15b9714737569f31adc2` passed CI run `39469288493`,
+including the complete project, full kernel-axiom policy, distribution audit,
+constructive-algebra audit and helper/regression gates. It was then published
+to main. This is a verified intermediate checkpoint, not final refactor
+acceptance.
 
 ## Mathematical and public interface contract
 
@@ -74,6 +84,7 @@ change an algorithm's output or revive the removed unsafe identification API.
 | Constructive probability | `Probability.Core`, `Urn`, `QualitativeUrn`; `ClaytonWaddington.QualitativeUrnScale.eqv_iff_sameRatio` and its rescaling results | Boolean events, supplied finite data, positive denominators and cross-multiplication equality; no general classical selection. |
 | Finite records and distributions | `FiniteRecord`, `Distros.Basic`, `LawEquivalence` and the named-law/moment families exposed by `Probability.Distros` | Repeated atom labels, null weights, normalization, every-event law agreement and the exact support premises of conditioning. |
 | Entropy | `ExactLog*`, `EntropyValue`, `Distros.Entropy`; `Distro.entropy_nonnegative`, `entropy_sameLaw`, `relativeEntropy_sameLaw`, `relativeEntropy_self` | Exact symbolic entropy values are not rational atom weights or an assumed real logarithm. Reference positivity and declared grid support remain explicit. |
+| Gibbs inequality and equality | Newer retained `Distros.EntropyGibbs` and `EntropyGibbsEquality`; `Distro.sameLaw_of_relativeEntropy_zero`, `relativeEntropy_equiv_zero_iff` | The original finite-grid coverage and reference-positivity premises, symbolic exact logarithms and every-event equality of laws. |
 | Weighted arithmetic–geometric mean | `FiniteAMGM.weighted_inequality`, `weighted_product_le_pow`, `weighted_product_lt_pow` | Supplied natural multiplicities, actual products, and the original non-strict/strict hypotheses. |
 | Primitive causal soundness | `ObservedGraph.publishedSoundness` in `CausalTransport.Soundness`; native interpretation in `HiddenDAGSoundness` | The same three graph rules and derivation support; no external soundness premise is inserted. |
 | Positive-class completeness | `ObservedGraph.publishedCompleteness` in `HedgeChannelCompleteness` | Joint, conditional and hedge fields; positive compatible models, supplied distinct observed labels, actual engine outputs and actual original-query countermodels. |
@@ -110,10 +121,48 @@ The entropy import closure shrank from 19 modules at the baseline to 13,
 while `LawBasics` has an eight-module closure. Its ordinary Lake target passed
 in 0.49 seconds / 629.0 MiB sampled aggregate RSS; the unchanged entropy proofs
 passed in 0.56 seconds / 636.7 MiB. These are targeted compilation results,
-not evidence that the complete refactored tree or audit has passed, and not a
-before/after elapsed-time speedup. The compatibility cohort was deferred once
-because the other agent held the shared compiler slot; no competing compiler
-was launched.
+not a before/after elapsed-time speedup. After the shared compiler slot became
+available, the 24-module law-equivalence, signed-concentration and entropy-example
+compatibility cohort passed from the normal cache. Complete remote verification
+of the combined extraction is recorded above; no competing compiler was launched.
+
+## Shared causal foundations
+
+The causal extraction starts from fully verified `f7204c7`. Exact source blocks,
+including their proof bodies, are protected by `test_causal_foundations.py`.
+The extracted interfaces retain their original declaration namespaces and
+support/graph premises. No new soundness or completeness theorem is claimed.
+
+| Shared owner | Preserved declarations and role | Compatibility path |
+| --- | --- | --- |
+| `Causality.TermSupport` | Unconditional and positive observational support, finite marginal support, product support and positive-denominator division support | `CompletenessCertificates` |
+| `Causality.InterventionalCounterexample` | `InterventionalQuery.not_kernelValueEquivalent_of_not_value` for the unchanged query | `CompletenessHedgeParity` |
+| `Causality.IdentificationOutcomeTraces` | Ordered first failure/sentinel witnesses and exact successful collector alignment | `Causality.Legacy.IdentificationInduction` |
+| `Causality.CForestConstruction` | The three component/child-map-to-forest constructors | `CompletenessCertificates` |
+| `CausalTransport.ActionDeletion` | Rule-3 query equalities, action restriction and inspectable deletion/shrink derivations | `CompletenessCertificates` |
+| `CausalTransport.Hedge.ReadoutGeometry` | Finite ancestry reflection, explicit routes, typed lookups and common outcome-sink geometry | `CompletenessFailureExtraction` |
+| `CausalTransport.Hedge.Models` | The unchanged finite latent, pair-root, incidence, parity and routing-model development | `CompletenessHedgeModels` |
+
+Before extraction, `ChainCompilation`, `ValueRefinementCounterexample` and
+`HedgeChannelCharacters` reached 36, 39 and 36 project modules respectively.
+They now reach 21, 19 and 24. Each of those current clients is free of legacy
+modules. The current structural success/failure compiler prerequisites also
+compile against the focused interfaces. The complete public completeness path
+still reaches history through other parity/countermodel imports; that remaining
+dependency is not hidden by these local improvements.
+
+Targeted local checks passed for the new modules and selected current clients.
+The unchanged 5,295-line model module compiled in 12.51 seconds with 851.2 MiB
+sampled aggregate RSS; the initial 1,590-line readout extraction took 1.75 seconds
+with 721.0 MiB. These single invocations measure feasibility, not speedup against
+the original owner. Adding the remaining shared ancestry block subsequently
+passed in 1.80 seconds with 744.4 MiB. Helper/regression tests currently pass
+98 tests. The complete causal build and axiom audit are still pending.
+
+Two targeted checks exposed missing explicit dependencies after removing broad
+imports: query types for `ActionDeletion`, and ancestry/forest constructors for
+`KernelHedgeTransport`. These were repaired by importing or extracting their
+original definitions, without changing proofs. Their targeted rechecks passed.
 
 ## Measurement protocol
 

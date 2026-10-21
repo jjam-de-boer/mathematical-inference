@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.KernelProductCompilation
 import Thesis.CausalTransport.KernelIdentification
+import Thesis.CausalTransport.Correspondence
 
 namespace Thesis
 namespace Causality

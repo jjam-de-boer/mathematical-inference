@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.CompletenessHedgeModels
+import Thesis.Causality.InterventionalCounterexample
 
 namespace Thesis
 namespace Causality
@@ -3518,29 +3519,6 @@ def hedgeRootParityEvent (rich : ObservedSignature.ValueRich S)
   fun assignment => hedgeNodeXor roots (fun node =>
     hedgeIsSecond rich node (assignment node))
 
-/-- Event-level disagreement for a local interventional query refutes
-equivalence of its entire distributional kernel.  The forward implication is
-proved constructively: kernel cells determine all singleton masses of the
-projected outcome law, and finite singleton extensionality determines the
-local event. -/
-theorem InterventionalQuery.not_kernelValueEquivalent_of_not_value
-    (q : InterventionalQuery S) (left right : ExactModel S)
-    (separated : Not (QProb.Equiv (q.value left) (q.value right))) :
-    Not (q.kernelQuery.ValueEquivalent left right) := by
-  intro kernelEquivalent
-  apply separated
-  have projectedEquivalent : QProb.Equiv
-      ((q.projectedDistribution left).probVal q.event)
-      ((q.projectedDistribution right).probVal q.event) :=
-    FiniteProbRecord.probVal_extensional_of_singletons
-      (q.projectedDistribution left) (q.projectedDistribution right)
-      S.assignmentEnumeration S.assignmentEnumeration_nodup
-      S.assignmentEnumeration_complete
-      (q.projectedSingleton_equiv left right kernelEquivalent) q.event
-  exact QProb.equiv_trans
-    (QProb.equiv_symm (q.projectedEvent_equiv_value left))
-    (QProb.equiv_trans projectedEquivalent
-      (q.projectedEvent_equiv_value right))
 
 /-- Root parity depends only on the coordinates selected by `roots`. -/
 theorem hedgeRootParityEvent_local

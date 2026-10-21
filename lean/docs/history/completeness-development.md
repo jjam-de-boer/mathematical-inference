@@ -6,7 +6,7 @@ They describe earlier stages, including obligations subsequently discharged;
 they are not a list of current open completeness problems. The current
 published positive-class theorem is assembled in `HedgeChannelCompleteness`,
 and native positive and supported-zero coverage is described in
-`THEOREM_COVERAGE.md`.
+[the theorem coverage guide](../../THEOREM_COVERAGE.md).
 
 This is a verbatim historical source comment. No mathematical declaration
 is moved or deleted by recording it here. The older engine's valid trace

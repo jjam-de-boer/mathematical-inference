@@ -1,4 +1,6 @@
 import Thesis.CausalTransport.KernelRecursionCompilation
+import Thesis.CausalTransport.Hedge.ReadoutGeometry
+import Thesis.Causality.CForestConstruction
 
 namespace Thesis
 namespace Causality

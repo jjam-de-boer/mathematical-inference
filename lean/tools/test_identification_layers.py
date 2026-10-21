@@ -74,8 +74,10 @@ class IdentificationLayerTests(unittest.TestCase):
             "CompletenessHedgeParity", "CompletenessHedgeCountermodels", "Completeness"]
         prefix = "Thesis.CausalTransport."
         for earlier, later in zip(layers, layers[1:]):
-            self.assertEqual(self.graph[prefix + later], [prefix + earlier])
+            self.assertIn(prefix + earlier, self.graph[prefix + later])
             self.assertNotIn(prefix + later, reachable(self.graph, prefix + earlier))
+        self.assertEqual(self.graph[prefix + "CompletenessHedgeModels"],
+                         [prefix + "CompletenessLegacyNestedFailures", prefix + "Hedge.Models"])
         dependencies = reachable(self.graph, prefix + "Completeness")
         self.assertTrue({prefix + layer for layer in layers} <= dependencies)
         self.assertNotIn(prefix + "Soundness", dependencies)

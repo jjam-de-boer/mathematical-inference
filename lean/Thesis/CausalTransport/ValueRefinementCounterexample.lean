@@ -1,5 +1,5 @@
 import Thesis.Causality.BinaryEncoding
-import Thesis.CausalTransport.Completeness
+import Thesis.Causality.InterventionalCounterexample
 
 namespace Thesis
 namespace Causality

@@ -1,4 +1,7 @@
-import Thesis.CausalTransport.Completeness
+import Thesis.CausalTransport.Certificates
+import Thesis.CausalTransport.DSeparationCorrectness
+import Thesis.Causality.IdentificationSearch
+import Thesis.Causality.TermSupport
 
 namespace Thesis
 namespace Causality
@@ -200,8 +203,8 @@ theorem chainProduct_prefix_succ_of_selected (remaining : NodeSet S)
 /-- Split an observational joint into a later block conditioned on its
 earlier block and the earlier block's marginal.  The only regularity premise
 is observational positivity in the selected model class; all intermediate
-conditioners are observational cylinders, whose positivity is already proved
-in `Completeness`. -/
+conditioners are observational cylinders, whose positivity is supplied by
+`Causality.TermSupport` independently of any completeness assembly. -/
 private noncomputable def observationalChainStepPublishedCertificate
     {G : ObservedGraph S} {C : GraphModelClass G}
     (correct : DSeparationCorrectness G)

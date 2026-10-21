@@ -1,5 +1,5 @@
 import Thesis.CausalTransport.HedgeChannelEnvironmentCoefficients
-import Thesis.CausalTransport.Completeness
+import Thesis.CausalTransport.Hedge.ReadoutGeometry
 
 namespace Thesis
 namespace Causality

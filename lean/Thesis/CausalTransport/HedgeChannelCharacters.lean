@@ -1,4 +1,4 @@
-import Thesis.CausalTransport.Completeness
+import Thesis.CausalTransport.Hedge.Models
 
 namespace Thesis
 namespace Causality
@@ -30,8 +30,10 @@ subsequent channel modules.  `HedgeChannelCoefficients` supplies positive
 natural-power tables and their complete mask-coefficient identity.
 `HedgeChannelInstallation` installs their explicit channel slots and typed
 signals for an arbitrary hedge.  `HedgeChannelObservational` evaluates and
-reindexes the complete actual expansion to prove observed-law equality;
-the original-query gap remains open.  A common mixing latent is not supplied,
+reindexes the complete actual expansion to prove observed-law equality.
+`HedgeChannelCounterexample` subsequently proves original-query separation,
+and `HedgeChannelCompleteness` assembles the published positive-class result.
+A common mixing latent is not supplied,
 and observational equivalence is not assumed as a replacement for integration.
 No channel enumeration or private response-function space is evaluated here.
 
