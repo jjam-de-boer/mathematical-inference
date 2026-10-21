@@ -3,6 +3,8 @@
 The hashes compare exact source blocks (including proof bodies) with the
 verified pre-extraction revision f7204c7 and causal checkpoints e2eee12/47904c8.
 The failure-core check normalizes only extra blank lines left by extraction.
+The countermodel check restores one precisely specified documentation
+clarification before comparing its original hash; no proof text is normalized.
 Import checks protect the smaller
 current interfaces while keeping historical imports and audit reachability.
 Neither check replaces Lean elaboration or the transitive axiom audit.
@@ -138,6 +140,26 @@ class CausalFoundationTests(unittest.TestCase):
             with self.subTest(module=module, start=start):
                 source = self.source("Thesis." + module)
                 block = source[source.index(start):source.index(end, source.index(start))].rstrip()
+                if module == "CausalTransport.Hedge.Countermodels":
+                    # Pass 2 corrected a misleading progress claim, not a
+                    # declaration or proof. Keep the original whole-body hash
+                    # and permit only this exact documented comment change.
+                    current = (
+                        "/-- Complete unrestricted-class counterexample for the common-root parity\n"
+                        "query. This record concerns `w.rootParityQuery rich`, not the original outcome\n"
+                        "query, and it does not claim positivity of its unsoftened pair. The separate\n"
+                        "channel construction in `HedgeChannelCompleteness` supplies positive\n"
+                        "countermodels for the original query. No unproved general-completeness\n"
+                        "obligation is hidden in this root-parity constructor. -/")
+                    original = (
+                        "/-- Complete unrestricted-class counterexample for the common-root parity\n"
+                        "query.  This packages compatibility, observational equivalence, and kernel\n"
+                        "separation in the same record required by published hedge completeness.  The\n"
+                        "remaining general-hedge work is precisely to transport this query from the\n"
+                        "common roots to the original outcome and then restore observational\n"
+                        "positivity. -/")
+                    self.assertEqual(block.count(current), 1)
+                    block = block.replace(current, original, 1)
                 self.assertEqual(hashlib.sha256(block.encode()).hexdigest(), expected)
         collector = self.source("Thesis.Causality.IdentificationOutcomeTraces")
         collector = collector[collector.index("namespace IdentificationOutcome\n"):
@@ -195,6 +217,15 @@ class CausalFoundationTests(unittest.TestCase):
         facade = self.source("Thesis.CausalTransport.Completeness")
         self.assertNotIn("Detailed implementation inventory.", facade)
         self.assertIn("docs/history/completeness-development.md", facade)
+
+    def test_pass_one_ledger_is_preserved_as_history_not_current_status(self):
+        history = (self.root / "docs/history/refactoring-pass1.md").read_bytes()
+        original = history.split(b"<!-- BEGIN PRESERVED PASS 1 LEDGER -->\n", 1)[1]
+        self.assertEqual(hashlib.sha256(original).hexdigest(),
+                         "bc0f06b5018e9ef3654502e64d63006388b4de2365cb67bb8684a99dd4f6959d")
+        current = (self.root / "REFACTORING.md").read_text()
+        self.assertIn("docs/history/refactoring-pass1.md", current)
+        self.assertNotIn("Pass 2 has not started", current)
 
     def test_archived_failure_stacks_keep_every_original_declaration_and_proof(self):
         hashes = {

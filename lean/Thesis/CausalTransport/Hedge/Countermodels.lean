@@ -243,11 +243,11 @@ theorem HedgeWitness.parityModels_observationally_equivalent
     (w.parityModels_observational_singleton_equiv rich) event
 
 /-- Complete unrestricted-class counterexample for the common-root parity
-query.  This packages compatibility, observational equivalence, and kernel
-separation in the same record required by published hedge completeness.  The
-remaining general-hedge work is precisely to transport this query from the
-common roots to the original outcome and then restore observational
-positivity. -/
+query. This record concerns `w.rootParityQuery rich`, not the original outcome
+query, and it does not claim positivity of its unsoftened pair. The separate
+channel construction in `HedgeChannelCompleteness` supplies positive
+countermodels for the original query. No unproved general-completeness
+obligation is hidden in this root-parity constructor. -/
 def HedgeWitness.rootParityCounterexample
     {G : ObservedGraph S} {q : JointKernelQuery S}
     (w : HedgeWitness G q) (rich : ObservedSignature.ValueRich S) :
