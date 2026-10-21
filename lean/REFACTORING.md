@@ -79,6 +79,12 @@ zero-boundary threshold, and admitted bounded native formula selection. That
 exact combined checkpoint is on main; no force push, checkout reset or PDF
 staging was used.
 
+The second causal boundary/archive checkpoint `47904c8` passed complete CI
+run `39617171554`. Main had meanwhile gained entropy continuity and certified
+rational moment approximation; these were retained by merge `dfdd3ae`, which
+passed complete CI run `39657497397` before publication was attempted. These
+are intermediate verified checkpoints, not acceptance of later local edits.
+
 ## Mathematical and public interface contract
 
 The baseline Git tree is the complete source inventory, including helpers and
@@ -268,6 +274,73 @@ The checks passed in 1.53, 16.25 and 16.45 seconds respectively, followed by
 assertions, both identical private failure helpers and the semantic body. Again,
 this establishes bounded local feasibility and reuse, not a cold speedup.
 Full local verification then passed as recorded above.
+
+## Remaining carrier dependency and status-comment review
+
+The second review found two current, qualified end-results (`HedgePositive`
+and `HedgeOutcomeFlow`) still inheriting `Completeness` for finite parity/mix
+lemmas. The exact 3,223-line mathematical body of the former
+`CompletenessHedgeCountermodels` now lives in `Hedge.Countermodels`; only its
+imports and module-level explanation changed. The old path reexports it and
+preserves the preceding historical interface. Its proof-body hash, old-path
+compatibility, audit reachability and history-free current clients are guarded
+by `test_causal_foundations.py`.
+
+The new owner and the two clients passed bounded local checks in 3.79, 4.16
+and 1.52 seconds, with sampled aggregate RSS below 867 MiB. Their current
+closures contain 29, 38 and 30 project modules respectively; the qualified
+conditional carrier path has 63. None reaches legacy/history. These are
+targeted feasibility and dependency results, not a whole-project speedup.
+
+The top-level supported-zero status was stale: recursive guarded ID/IDC and
+the expression-qualified completeness package are implemented, while coverage
+of every alternative formula's application domain remains unproved. Three
+channel/environment module summaries now point to the completed downstream
+original-outcome and terminal-countermodel theorems without erasing their
+valid local restrictions. A historical trace comment now distinguishes its
+fuel-exhaustion lemma from the current engine's separate termination proof.
+Full local verification of these subsequent edits passed in
+`.lake/local-builds-v1/20261021-210043-ppkvpaw1/`: 972 planned modules,
+255 rebuilt targets, 718 reused facets, and 43,805 imported project declarations
+passing the transitive axiom policy. Peak sampled aggregate RSS was
+3801.9 MiB, below the unchanged 5120 MiB watchdog. The actual final native
+build and audit commands passed with the committed configuration. This is a
+resumed incremental verification, not a clean cold benchmark. Exact-checkpoint
+remote verification remains pending.
+
+An independent source-graph scan found no cycles and no production dependency
+on regression examples. The old source paths from `f7204c7` all remain present.
+The new global guards exclude only the named historical/compatibility layers;
+current `CompletenessAssembly` and public end-results are not exempted merely
+because their names contain "Completeness". The helper suite passes 110 tests.
+The original defining-module paths remain compatible; narrowing a focused
+client deliberately stops relying on its old incidental historical reexports.
+
+The layout review retains the established topic-named bound, search, modal
+and distribution paths. Renaming all those files would create more forwarding
+modules and invalidate clients without a demonstrated semantic/dependency or
+build benefit. The introduced subfolders instead mark actual shared/history
+ownership or a measured regression boundary. The generic singleton-sum lemma
+stays in the shared countermodel layer for now: its only clients are in that
+family, and another tiny foundational file has no measured benefit here.
+
+Three fully cached native build/audit pairs on this combined source took
+1.585, 1.565 and 1.601 seconds (median 1.585 seconds), with a maximum sampled
+aggregate RSS of 87.5 MiB. Each actual pair was preceded by separate no-build
+freshness preflights; the reported pair times exclude those diagnostic
+preflights. The actual commands used the committed configuration,
+`LEAN_NUM_THREADS=1`, `--rehash` and `--no-cache`, under the unchanged external
+watchdog. Logs: `.lake/refactor-native-warm-5dkvtvqn/`. This measures warm
+workflow latency, not fresh proof elaboration or a cold-build speedup.
+
+The three immediately following, fully cached monitored workflows passed in
+16.560, 16.554 and 17.128 seconds (median 16.560 seconds), using the same
+combined source, normal cache and approved profile. Logs:
+`.lake/refactor-monitored-warm-zg0fkfh9/`. The monitored figure includes its
+extra source fingerprints, per-target preflights, process sampling and
+bookkeeping; the native pair does not claim to provide those extra safeguards.
+This comparison concerns the two supported warm workflows, not a mathematical
+elaboration speedup or evidence that a clean cold build is twice as fast.
 
 ## Measurement protocol
 

@@ -1,7 +1,7 @@
 """Protect causal foundations extracted without changing their mathematics.
 
 The hashes compare exact source blocks (including proof bodies) with the
-verified pre-extraction revision f7204c7 and first causal checkpoint e2eee12.
+verified pre-extraction revision f7204c7 and causal checkpoints e2eee12/47904c8.
 The failure-core check normalizes only extra blank lines left by extraction.
 Import checks protect the smaller
 current interfaces while keeping historical imports and audit reachability.
@@ -33,6 +33,8 @@ class CausalFoundationTests(unittest.TestCase):
                        "CausalTransport.ActionDeletion",
                        "CausalTransport.Hedge.ReadoutGeometry", "CausalTransport.Hedge.Models",
                        "CausalTransport.Hedge.Parity", "CausalTransport.HedgePartialIncidence",
+                       "CausalTransport.Hedge.Countermodels", "CausalTransport.HedgePositive",
+                       "CausalTransport.HedgeOutcomeFlow", "CausalTransport.ConditionalFailureCarrierCases",
                        "CausalTransport.HedgeChannelCounterexample",
                        "CausalTransport.HedgeChannelEnvironmentIncidence",
                        "CausalTransport.ConditionalBayes", "CausalTransport.CompletenessAssembly",
@@ -49,6 +51,37 @@ class CausalFoundationTests(unittest.TestCase):
                 self.assertNotIn("Thesis.CausalTransport.Completeness", dependencies)
                 self.assertFalse(any(".Legacy." in name or ".CompletenessLegacy" in name or ".Historical." in name
                                      for name in dependencies))
+
+    def test_all_current_causal_implementations_avoid_historical_facades(self):
+        # These are intentionally broad compatibility/archival entry points,
+        # not current semantic implementations. Do not exempt public current
+        # end-results merely because their names also contain "Completeness".
+        historical = {"Completeness", "CompletenessCertificates", "CompletenessFailureExtraction",
+                      "CompletenessLegacyShrinkFailures", "CompletenessLegacyProductFailures",
+                      "CompletenessLegacyNestedFailures", "CompletenessHedgeModels",
+                      "CompletenessHedgeParity", "CompletenessHedgeCountermodels"}
+        prefix = "Thesis.CausalTransport."
+        for module in self.graph:
+            if not module.startswith(prefix):
+                continue
+            local = module.removeprefix(prefix)
+            if local in historical or local.startswith("Historical."):
+                continue
+            with self.subTest(module=module):
+                dependencies = reachable(self.graph, module)
+                forbidden = {name for name in dependencies
+                             if name == prefix + "Completeness" or ".Legacy." in name
+                             or ".Historical." in name or ".CompletenessLegacy" in name}
+                self.assertFalse(forbidden, f"Current implementation imports history: {sorted(forbidden)}")
+
+    def test_production_modules_do_not_use_examples_as_foundations(self):
+        # Full facades/policy gates deliberately assemble regression files.
+        # Their convenience imports must not become a production dependency.
+        for module, dependencies in self.graph.items():
+            if module == "Thesis" or module.startswith("Thesis.Examples.") or module.endswith("Audit"):
+                continue
+            with self.subTest(module=module):
+                self.assertFalse(any(name.startswith("Thesis.Examples.") for name in dependencies))
 
     def test_moved_declarations_and_proofs_are_preserved_exactly(self):
         blocks = (
@@ -97,6 +130,9 @@ class CausalFoundationTests(unittest.TestCase):
             ("CausalTransport.Hedge.WitnessSearch", "/-- Unpack the Boolean hedge tests",
              "end Causality",
              "4fa577485830009b3306099454fb0d5f7f49ac0b32824bfb58c23db1791705c8"),
+            ("CausalTransport.Hedge.Countermodels", "/-! ### Observational equivalence of the unsoftened parity pair -/",
+             "end Causality",
+             "40b7f44b870fc2f4716a58b8c8422f4ab75ef52c11dd83cfc2d29145dbf868cc"),
         )
         for module, start, end, expected in blocks:
             with self.subTest(module=module, start=start):
@@ -126,6 +162,7 @@ class CausalFoundationTests(unittest.TestCase):
                  ("ConditionalFailureExtraction", "Thesis.CausalTransport.ConditionalFailureCarrierCases"),
                  ("CompletenessHedgeParity", "Thesis.Causality.InterventionalCounterexample"),
                  ("CompletenessHedgeParity", "Thesis.CausalTransport.Hedge.Parity"),
+                 ("CompletenessHedgeCountermodels", "Thesis.CausalTransport.Hedge.Countermodels"),
                  ("CompletenessHedgeModels", "Thesis.CausalTransport.Hedge.Models"))
         for old, foundation in pairs:
             with self.subTest(old=old):
@@ -140,6 +177,7 @@ class CausalFoundationTests(unittest.TestCase):
                        "CausalTransport.ActionDeletion",
                        "CausalTransport.Hedge.ReadoutGeometry", "CausalTransport.Hedge.Models",
                        "CausalTransport.Hedge.Parity",
+                       "CausalTransport.Hedge.Countermodels",
                        "CausalTransport.ConditionalBayes",
                        "CausalTransport.ConditionalFailureCore", "CausalTransport.ConditionalFailureCarrierCases",
                        "CausalTransport.Hedge.WitnessSearch",

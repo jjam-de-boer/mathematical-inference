@@ -32,10 +32,12 @@ are actual compatible, fully positive models with equal entire observed
 laws for every supplied hedge and every legal latent-input signal family.
 
 No causal or conditional separation is inferred from those three properties.
-The remaining task is to construct signal families on irreducible terminal
-active paths and prove a nonzero normalized query change after this actual
-environment integration.  This module removes the observed-parent-only
-restriction; it does not assume that the widened family has universal gaps.
+The subsequent environment routing and conditional-failure modules construct
+signals on terminal active paths and prove the nonzero normalized change after
+this actual integration. `ConditionalFailureTerminalCounterexample` assembles
+that argument for every irreducible terminal. This installation layer removes
+the observed-parent-only restriction; it does not assume that every member of
+the widened signal family has a gap.
 -/
 
 variable {S : ObservedSignature.{0}} {G : ObservedGraph S} {q : JointKernelQuery S}

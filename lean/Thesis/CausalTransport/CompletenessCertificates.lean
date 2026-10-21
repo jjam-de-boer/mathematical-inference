@@ -5858,8 +5858,9 @@ theorem identifyJoint_eq_identified_of_first_product
 
 /-! The shared connectivity, containing-component and rank lemmas
 now live in Causality.ComponentConnectivity and
-Causality.IdentificationRank, imported above. The forest constructors
-and historical trace proofs below keep their established public API. -/
+Causality.IdentificationRank, imported above. The shared forest constructors
+live in Causality.CForestConstruction. Those imports and the historical trace
+proofs below keep their established public API. -/
 
 
 namespace IdentificationUnfinishedTrace
@@ -5867,9 +5868,11 @@ namespace IdentificationUnfinishedTrace
 /--
 Every structurally unfinished ID run ends by exhausting fuel.  The other
 syntactic terminal, a missing containing c-component, contradicts the
-constructive host-containment theorem.  Thus the remaining totality task is
-precisely the advertised recursion-depth bound; there is no independent
-partition-shape gap hidden behind the same sentinel.
+constructive host-containment theorem. For this historical trace interface,
+the lemma isolates fuel exhaustion from partition shape; it does not assert
+an unresolved gap in the completed current engine's separate termination
+proof. The historical recursion-depth bound is a distinct obligation from
+the host-containment argument here.
 -/
 theorem endsInExhaustion_eq_true
     {G : ObservedGraph S}

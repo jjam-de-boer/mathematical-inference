@@ -1,4 +1,4 @@
-import Thesis.CausalTransport.Completeness
+import Thesis.CausalTransport.Hedge.Countermodels
 
 namespace Thesis
 namespace Causality
@@ -8,7 +8,7 @@ open Probability
 /-!
 # Semantic support of the hedge outcome-flow models
 
-`Completeness` constructs two graph-compatible additive flows that transport
+The shared `Hedge` layers construct two graph-compatible additive flows that transport
 hedge incidence to a common set of query-outcome sinks and proves that their
 interventional kernels disagree.  This module develops the complementary
 observational-support calculation.

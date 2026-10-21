@@ -42,10 +42,16 @@ follow mathematical responsibility rather than a uniform file-size target:
   forest-flow identities, plus the one-anchor parity correction shared by
   partial incidence and carrier models. It does not import positive-model
   counterexamples merely to obtain that Boolean correction.
+- `WitnessSearch` constructs an actual hedge from the executable graph tests.
+  It has no semantic completeness or legacy engine premise.
+- `Countermodels` proves the original observational parity equalities and
+  geometrically qualified mix counterexamples. Positive carriers and routed
+  outcome-flow support import it directly, without historical failure stacks.
 
 None of these shared modules imports the historical identification recursion or
-its branch-stack proofs. Some other current theorem paths still do; removing
-those remaining dependencies requires further shared-mathematics extraction.
+its branch-stack proofs. Current positive, supported-zero and modal theorem
+paths, as well as the retained qualified-carrier development, are guarded
+against accidentally regaining those historical dependencies.
 
 ## Compatibility and historical material
 
@@ -55,10 +61,20 @@ completeness-layer paths likewise reexport the support, graph and derivation
 declarations moved to their focused owners. Existing declaration names and
 mathematical statements are unchanged.
 
+Compatibility preserves each original defining-module path and the broad
+public facades. Focused clients should explicitly import any other interface
+they use: incidental historical reexports of a formerly broad dependency are
+not a reason for a current implementation to keep importing the old engine.
+
 `CompletenessHedgeParity` similarly reexports `Hedge.Parity` and retains the
 older model facade. `HedgePartialIncidence` imports the focused parity layer
 directly, so current channel integration no longer inherits the positive
 carrier development or its historical engine imports for elementary parity.
+`CompletenessHedgeCountermodels` likewise reexports `Hedge.Countermodels` while
+retaining its original preceding compatibility imports. The broad `Completeness`
+and `CausalTransport` facades intentionally continue to expose preserved history;
+they are convenience/audit entry points, not foundational imports for current
+implementation modules.
 
 `Causality/Legacy` quarantines the obsolete executable engine and its checked
 control-flow proofs. `CausalTransport/Historical` retains the historical
@@ -105,6 +121,13 @@ current-status facade. Mathematical explanations and historical proved results
 are preserved. A public end-result is not obsolete merely because no internal
 module calls it, and qualified carrier countermodels are not historical junk
 merely because a more general channel theorem exists.
+
+The remaining topic-named probability, causal, bound and search modules retain
+their established paths. A wholesale folder rename would add forwarding files
+and invalidate import clients without a measured dependency or checking
+benefit. New subfolders here therefore mark actual ownership boundaries
+(`Hedge`, `Historical`, and the two measured example fixtures), not a target
+file count or uniform size. The reading table supplies the broader topic map.
 
 ## Verification and build interfaces
 

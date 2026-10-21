@@ -39,8 +39,11 @@ universal conditional field of `PublishedCompleteness`.
 The normalized-cell route is independent of that matched-marginal family.
 Its channel constructor now lifts an actual unequal-denominator source cell
 to all original labels, and the last failure adapter below restores that
-same final pair along the complete exchange trace.  Constructing separating
-typed signals at every arbitrary terminal remains the general semantic leaf.
+same final pair along the complete exchange trace. The later
+`ConditionalFailureTerminalCounterexample` constructs separating typed signals
+at every irreducible terminal; `HedgeChannelCompleteness` uses that general
+semantic leaf. The matched-marginal family here retains its stated geometric
+limitations and is not silently identified with that stronger constructor.
 -/
 
 variable {S : ObservedSignature.{0}} {G : ObservedGraph S}

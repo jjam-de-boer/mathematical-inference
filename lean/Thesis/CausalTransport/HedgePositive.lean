@@ -1,5 +1,5 @@
 import Thesis.CausalTransport.Soundness
-import Thesis.CausalTransport.Completeness
+import Thesis.CausalTransport.Hedge.Countermodels
 
 namespace Thesis
 namespace Causality
@@ -9,15 +9,15 @@ open Probability
 /-!
 # Positive hedge counterexamples detected through outcome marginals
 
-`Completeness` provides both the complete-switch hedge mix and a one-root
+`Hedge.Countermodels` provides both the complete-switch hedge mix and a one-root
 variant localized to a selected bidirected edge.  Earlier composite-cylinder
 separation asked every queried outcome to be a direct child of one action
 seed.  That is stronger than semantic non-identifiability requires: equality
 of the full outcome kernel would imply equality of every outcome marginal.
 
 This module performs that reduction constructively.  It imports the finite
-marginalization identity from `Soundness`, while keeping the two main theorem
-development files independent of one another.  Pointwise `ValueEquivalent`
+marginalization identity from `Soundness`, without importing the historical
+completeness facade or its obsolete engine. Pointwise `ValueEquivalent`
 witnesses are hidden behind `Nonempty`; the marginal proof folds those
 inhabited witnesses over the finite assignment enumeration and never chooses
 a global witness family.

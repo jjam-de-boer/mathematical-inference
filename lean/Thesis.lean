@@ -214,8 +214,12 @@ and every identifiable joint or conditional query has a published certificate.
 `HiddenDAGCompleteness` realizes the countermodels on every finite original
 hidden DAG, and `HiddenDAGCorrespondence` proves the native positive-class
 ID/IDC success iff theorems.  Hidden and private-noise alphabets may have any
-finite sizes; observed alphabets remain fixed and value-rich.  Recursive
-zero-aware ID/IDC compilation remains open.  The older restricted carrier
+finite sizes; observed alphabets remain fixed and value-rich.
+`HiddenDAGSupportedCorrespondence` also proves recursive guarded ID/IDC
+compilation and completeness for expression-qualified supported-zero domains.
+The selected formula's actually used conditionals and the original conditional
+target retain their explicit support requirements. This is not universal
+coverage of every alternative formula's application domain. The older restricted carrier
 families below retain their genuine limitations; they are not the proof of
 unrestricted coverage supplied by the newer channel construction.
 

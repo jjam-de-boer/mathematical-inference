@@ -29,7 +29,10 @@ forest remain present independently.  This supplies the actual full-term
 phases needed by coefficient matching.  Literal coefficient evaluation and
 reindexing the surviving sums are separate steps toward the universal
 observational equality, not premises hidden in the phase identities.
-The original-outcome gap and universal conditional countermodels remain open.
+This module establishes those full-term identities, not the final query gap.
+`HedgeChannelProjection` proves the original-outcome separation, and
+`ConditionalFailureTerminalCounterexample` supplies the general irreducible
+conditional countermodels used by the completed `HedgeChannelCompleteness`.
 -/
 
 variable {S : ObservedSignature.{0}} {G : ObservedGraph S} {q : JointKernelQuery S}
