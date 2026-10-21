@@ -1,3 +1,5 @@
+import Thesis.Probability.Distros.EntropyHomogeneous
+import Thesis.Probability.Distros.LogLinearEntropy
 import Thesis.Probability.Distros.EntropyOptimize
 import Thesis.Probability.Distros.EntropyContinuity
 import Thesis.Probability.Distros.EntropyMomentConvex
