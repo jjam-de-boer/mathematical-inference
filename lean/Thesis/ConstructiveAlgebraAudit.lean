@@ -1,3 +1,4 @@
+import Thesis.Examples.EntropyMeanHalf
 import Thesis.Examples.LogLinearEntropy
 import Thesis.Examples.EntropyOptimize
 import Thesis.Examples.EntropyContinuity

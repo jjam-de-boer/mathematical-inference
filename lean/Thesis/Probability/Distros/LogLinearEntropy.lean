@@ -30,6 +30,18 @@ structure LogLinearReference [DecidableEq A] (problem : PartialMomentProblem A) 
       (reference.pmf value).den_pos, positive value member⟩)
     (logLinearScore problem.entropyGrid constraints coefficient offset value)
 
+/-- Exact affine cross-entropy value, useful for explicit finite certificates. -/
+theorem LogLinearReference.crossEntropy_affine [DecidableEq A] {problem : PartialMomentProblem A}
+    (certificate : problem.LogLinearReference) (μ : Distro A)
+    (support : μ.AlmostSurely (fun value => value ∈ problem.cells)) :
+    ExactLog.Equiv (μ.crossEntropy certificate.reference problem.entropyGrid support certificate.support certificate.positive)
+      (ExactLog.add certificate.offset (ExactLog.listSum (certificate.constraints.map (fun constraint =>
+        ExactLog.scaleRatio (μ.expectNat (problem.entropyGrid.shiftedResponse constraint.response)) (certificate.coefficient constraint))))) :=
+  ExactLog.equiv_trans (μ.crossEntropy_eq_logExpectation certificate.reference problem.entropyGrid support certificate.support certificate.positive
+    (logLinearScore problem.entropyGrid certificate.constraints certificate.coefficient certificate.offset) certificate.score)
+    (μ.logExpectation_affine problem.entropyGrid support certificate.constraints
+      (fun constraint => problem.entropyGrid.shiftedResponse constraint.response) certificate.coefficient certificate.offset)
+
 /-- Fixed exact moments force equal cross entropy for the represented affine
 log score. The proof is global finite integration, with no stationarity claim. -/
 theorem LogLinearReference.crossEntropy_fixed [DecidableEq A] {problem : PartialMomentProblem A}
