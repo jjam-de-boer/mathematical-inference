@@ -144,6 +144,23 @@ induction. `EntropySmallMass` derives
 nonnegative rational coefficient. These are proved ingredients for the boundary
 continuity argument, not yet a full entropy continuity modulus or an optimizer.
 
+## Checkpoint 9: quantitative entropy continuity at zero
+
+`EntropyTermBounds` derives a scalar cross-entropy bound from the actual
+Gibbs theorem, using an auxiliary two-state reference. The observed mass may
+be zero or one. For every `k`, it proves
+`p ≤ 1/2^(k+1) → -p log₂ p ≤ (k+3)/2^(k+1)`.
+
+`entropyBoundaryThreshold` supplies a positive rational threshold for every
+positive rational tolerance. `entropyTerm_near_zero` proves that every rational
+probability below that threshold has entropy contribution at most the requested
+error. Its construction uses finite powers and binary lengths, with no
+unbounded search, real logarithm axioms or denominator restriction on the input.
+Regressions include probability zero and a non-dyadic mass `3/10000000`.
+
+This completes the scalar boundary estimate. The uniform two-point continuity
+modulus, moment/log-linear bridge and total constrained optimizer remain open.
+
 ## Remaining full goal
 
 1. Strengthen the grid-independence interface as needed for the later optimizer;
