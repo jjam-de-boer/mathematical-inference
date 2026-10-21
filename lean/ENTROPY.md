@@ -181,23 +181,55 @@ The finite-box constrained optimizer and the moment/log-linear optimality bridge
 remain unfinished. Uniform continuity is now a proved input to that optimizer,
 rather than an assumption left to its caller.
 
+## Checkpoint 11: total certified rational entropy optimization
+
+`ProbabilityBoxes` enumerates a finite cover by rational coordinate intervals.
+Every rational probability in `[0,1]` has a floor-selected box, and any two points
+in one box differ by at most its width. The mesh controls interval width, never
+the denominator of an input law or a feasible solver witness.
+
+`EntropyBoxes` adds these coordinate intervals to the unchanged
+`PartialMomentProblem` grid and original exact/interval rows. `EntropyBoxSearch`
+uses the existing complete feasibility solver in each box. A box containing a
+feasible law cannot be rejected, and its exactly feasible witness is close enough
+for the proved entropy continuity bound. Exact comparisons select a maximum
+among those finitely many candidates. The result bounds every feasible rational
+law, not just those candidates. A universal-entropy-bound fast path can avoid the
+exhaustive cover when it already certifies the supplied feasible witness.
+
+`ExactLogPositiveEnclosure` clips a lower endpoint at zero only under a proved
+nonnegativity hypothesis. Its integer conversions use explicit constructive
+cases. `PartialMomentProblem.solveEntropy` either retains the original certified
+infeasibility result or returns an `EntropyCertificate` containing an actual
+compatible rational law `q` and nonnegative rational `L,U` with
+
+- `L ≤ H(q)`;
+- `H(p) ≤ U` for every exactly feasible rational law `p`;
+- `L ≤ U ≤ L + epsilon`.
+
+Optimization error and enclosure width each receive half of the requested
+positive rational tolerance. The fallback is a total reference algorithm; its
+finite Cartesian box enumeration may be very expensive. No practical runtime or
+exact rational maximizer is asserted.
+
+Executed regressions check arbitrary-denominator box indexing, feasible and
+infeasible boxes, an infeasible moment problem, the full singleton solver with a
+clipped zero lower endpoint, and a fair-law certificate at tolerance `1/1000`.
+The whole dependency closure passes the constructive arithmetic axiom gate.
+
 ## Remaining full goal
 
-1. Strengthen the grid-independence interface as needed for the later optimizer;
-   preserve every established atom-presentation and null-cell invariance law.
-2. Prove the moment/log-linear bridge, with explicit support and boundary
-   assumptions. Entropy bounds, KL nonnegativity/equality, strict concavity and
-   conditional uniqueness are established above using finite weighted AM–GM.
-3. Connect log-linear certificates and the approximation algorithm to
-   `PartialMomentProblem`. Exact/interval feasibility and conditional uniqueness
-   already preserve forced-zero cells, redundant rows and infeasibility results.
-4. Use the proved uniform entropy continuity modulus to implement total
-   finite-box optimization with exactly feasible rational witnesses and a
-   global rational entropy gap at every positive rational tolerance. No fixed
-   denominator cap or exact rational maximizer is presumed.
-5. Exercise uniform/unique/inconsistent/boundary/redundant constraints, duplicate
-   and null presentations, and the three-state mean-1/2 irrational-optimum case.
-   State the additional semantic bridge required for real-optimum claims.
+1. Complete the bridge from fixed rational moment expectations and a log-linear
+   reference score to the established global cross-entropy optimality criterion,
+   with explicit support/boundary assumptions.
+2. Complete the three-state mean-`1/2` example with useful concrete certified
+   approximations and an accurate explanation of its usual irrational optimum.
+   Extend executed optimizer regressions for forced-zero and redundant rows.
+3. Document the precise additional real-number semantic/density bridge needed to
+   interpret rational universal certificates as bounds on the usual real optimum.
+   The implementation currently quantifies over the framework's rational laws.
+4. Continue complete-project builds, full axiom audits and remote CI for each
+   published checkpoint. Targeted or early checks alone are never full verification.
 
 Ordinary local Lake builds use `LEAN_NUM_THREADS=1`, the committed 4608 MiB
 compiler threshold and the existing cache. Only one build may run on the machine

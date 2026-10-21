@@ -1,3 +1,4 @@
+import Thesis.Probability.Distros.EntropyOptimize
 import Thesis.Probability.Distros.EntropyContinuity
 import Thesis.Probability.Distros.EntropyMomentConvex
 import Thesis.Probability.Distros.EntropyConcavity

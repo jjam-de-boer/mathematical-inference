@@ -1,3 +1,4 @@
+import Thesis.Examples.EntropyOptimize
 import Thesis.Examples.EntropyContinuity
 import Thesis.Examples.EntropyMoments
 import Thesis.Examples.EntropySmallMass
