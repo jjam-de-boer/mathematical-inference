@@ -80,6 +80,25 @@ also passed with no rebuilt mathematical modules.
 The native measurement logs are retained in
 `.lake/native-lake-build-8h13a5wk/` and `.lake/native-lake-warm-whhj7apf/`.
 
+### Support-preserving proof-path checkpoint, 2026-10-21
+
+The new syntax module, endpoint/path-support module, native linearization
+induction, certificate adapter and literal regression module all passed
+ordinary module checks through the monitored sequential helper. Their new
+compiler invocations took approximately 0.7–1.1 seconds each, with sampled
+aggregate RSS below 800 MiB. These are invocation measurements, not the total
+cost of dependency-freshness checks or a cold build.
+
+The complete 977-module closure then passed both the actual full project
+build and full axiom audit using the committed configuration. The audit
+checked 44,191 imported project declarations and permitted only `propext`
+and `Quot.sound`. This run reused the normal cache and rebuilt 179 targets;
+it is not a complete cold-build benchmark. Other agents' live builds were
+allowed to finish before this run acquired the shared compiler slot.
+No compiler/memory limit or executable proof-facade prerequisite changed.
+The complete gate logs and sampled measurements are retained in
+`.lake/local-builds-v1/20261021-212241-n0qsvbtw/`.
+
 ## Monitored full-project route
 
 The complete local build and transitive axiom audit passed on 2026-10-20,

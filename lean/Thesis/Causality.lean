@@ -69,6 +69,7 @@ import Thesis.Causality.PositiveDerivationSupport
 import Thesis.Causality.ProbabilityTermEquality
 import Thesis.Causality.ProbabilityTermCode
 import Thesis.Causality.DerivationCode
+import Thesis.Causality.DerivationLinearization
 import Thesis.Causality.ProbabilityTermEnumeration
 import Thesis.Causality.DerivationEnumeration
 import Thesis.Causality.CodeEnumerationCounts
@@ -151,6 +152,10 @@ denotational equivalence or using classical function equality.
 `ProbabilityTermCode` and `DerivationCode` decode function-free indexed data
 and reconstruct actual checked do-calculus trees. Graph/syntax acceptance is
 separate from native recursive support; neither module searches formulas.
+`DerivationLinearization` presents an existing proof as a finite chain of
+single-leaf framed steps, preserving its source and target in the type.
+Its native support-preservation theorem is downstream in CausalTransport;
+neither path finiteness nor this syntax transformation proves search stopping.
 `ProbabilityTermEnumeration` and `DerivationEnumeration` separately enumerate
 exactly the codes within declared expression/proof tree-depth budgets. They
 bound explicit terms throughout intermediate subproofs, not merely endpoints;

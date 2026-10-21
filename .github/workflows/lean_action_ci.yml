@@ -127,6 +127,7 @@ jobs:
           lake build
           Thesis.Causality.ProbabilityTermCode
           Thesis.Causality.DerivationCode
+          Thesis.Causality.DerivationLinearization
           Thesis.Causality.ProbabilityTermEnumeration
           Thesis.Causality.DerivationEnumeration
           Thesis.Causality.CodeEnumerationCounts
@@ -141,12 +142,16 @@ jobs:
           Thesis.CausalTransport.NativeSearchMetadata
           Thesis.CausalTransport.NativeFormulaSelection
           Thesis.CausalTransport.NativeBoundedSelection
+          Thesis.CausalTransport.NativeRewritePathSupport
+          Thesis.CausalTransport.NativeDerivationLinearization
+          Thesis.CausalTransport.NativeLinearizedCertificate
           Thesis.Examples.NativeCertificateCheck
           Thesis.Examples.NativeGuardCompilation
           Thesis.Examples.NativeProofEnumeration
           Thesis.Examples.NativeSearchPreflight
           Thesis.Examples.NativeSearchMetadata
           Thesis.Examples.NativeBoundedSelection
+          Thesis.Examples.NativeDerivationLinearization
       - name: Check graph-only identification layers
         working-directory: lean
         run: >-

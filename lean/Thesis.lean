@@ -49,6 +49,7 @@ import Thesis.Examples.NativeProofEnumeration
 import Thesis.Examples.NativeSearchPreflight
 import Thesis.Examples.NativeSearchMetadata
 import Thesis.Examples.NativeBoundedSelection
+import Thesis.Examples.NativeDerivationLinearization
 import Thesis.Examples.IntegerLinearAlgebra
 import Thesis.Examples.IntegerNullspace
 import Thesis.Examples.FiniteRatioMinimum
