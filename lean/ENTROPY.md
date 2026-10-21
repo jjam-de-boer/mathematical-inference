@@ -123,6 +123,27 @@ not an existence assertion for exact rational maximizers. Regressions exercise
 shared zero cells, null outliers, unequal denominators, unequal mixing weights,
 strict inequality for distinct point laws, and equality for split presentations.
 
+## Checkpoint 8: moment feasibility and the first continuity estimate
+
+`EntropyMomentConvex` proves affine signed rational expectations for the actual
+mixture constructor, and preservation of every closed rational moment interval.
+`PartialMomentProblem.Admissible` includes the original almost-sure grid support
+and all existing constraint rows. Its entropy uniqueness theorem now applies
+directly to exact and interval problems, with no row independence or interior
+mass hypothesis. The existing feasibility/refutation solver remains the source
+of exactly feasible rational witnesses and infeasibility certificates.
+
+Regressions combine an exact mean, a signed response interval, a forced-zero
+coordinate, duplicate redundant rows, unrelated input denominators and retained
+null outliers. Mixture feasibility is proved for all such problems, not checked
+only on a denominator grid.
+
+`FiniteBernoulli` proves finite power difference and complement bounds by natural
+induction. `EntropySmallMass` derives
+`log₂(den/(den-1)) ≤ 1/m` whenever `2m ≤ den`, and exact-log monotonicity in a
+nonnegative rational coefficient. These are proved ingredients for the boundary
+continuity argument, not yet a full entropy continuity modulus or an optimizer.
+
 ## Remaining full goal
 
 1. Strengthen the grid-independence interface as needed for the later optimizer;
@@ -130,8 +151,9 @@ strict inequality for distinct point laws, and equality for split presentations.
 2. Prove the moment/log-linear bridge, with explicit support and boundary
    assumptions. Entropy bounds, KL nonnegativity/equality, strict concavity and
    conditional uniqueness are established above using finite weighted AM–GM.
-3. Integrate exact/interval rational expectations through `PartialMomentProblem`,
-   retaining infeasibility certificates, forced-zero cells and redundant rows.
+3. Connect log-linear certificates and the approximation algorithm to
+   `PartialMomentProblem`. Exact/interval feasibility and conditional uniqueness
+   already preserve forced-zero cells, redundant rows and infeasibility results.
 4. Prove an explicit uniform entropy continuity modulus, including zero. Implement
    total finite-box optimization with exactly feasible rational witnesses and a
    global rational entropy gap at every positive rational tolerance. No fixed

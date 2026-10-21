@@ -1,3 +1,5 @@
+import Thesis.Examples.EntropyMoments
+import Thesis.Examples.EntropySmallMass
 import Thesis.Examples.EntropyConcavity
 import Thesis.Examples.EntropyBounds
 import Thesis.Examples.EntropyGibbsEquality
