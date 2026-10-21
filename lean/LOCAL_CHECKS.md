@@ -418,6 +418,36 @@ and `Quot.sound`. The audit rebuild took 5.25 s / 1112.9 MiB. Logs are in
 catalogue was expanded by these regressions. These measurements do not
 establish a cold-build speedup or a general runtime memory guarantee.
 
+### Metadata-preflight hardening, 2026-10-20
+
+The fallback syntax preflight now refuses mask overflow before calling any
+coordinate value-enumeration function. The opt-in certified-metadata path
+additionally checks reference overflow using numerical domain sizes whose
+agreement with the original lists is proved in Lean. Both dictionary gates
+precede real dictionary construction. Generated C was inspected to confirm
+this evaluation order; the mathematical equality theorem alone would not
+exclude expensive eager work with an unused result.
+
+The changed fallback passed locally in 1.64 s / 686.4 MiB sampled aggregate
+RSS, and `CodeSearchMetadata` in 0.49 s / 648.8 MiB. The native metadata wrapper
+passed in 0.69 s / 769.2 MiB and its regressions in 0.74 s / 758.9 MiB. These
+used the unchanged explicit `extended` profile and the shared single-builder
+lock, with logs in `.lake/local-builds-v1/20261020-193935-wb0wmyhf/` and
+`.lake/local-builds-v1/20261020-194323-am439pxa/`. These are selected-module
+measurements, not a full-build claim. The large-domain refusal tests occur
+only as erased propositions/proofs, not executable billion-element lists.
+Neither these measurements nor metadata provide a general model-evaluation
+time/RAM bound or a guarded complete profile generator.
+
+The subsequent complete local build and full axiom audit passed on the same
+combined checkout, including the concurrently committed lightweight
+distribution extraction. The audit checked 43,156 imported project declarations
+with the unchanged `propext`/`Quot.sound` policy; its rebuild took 5.06 s /
+1106.1 MiB sampled aggregate RSS. Both actual final commands exited zero.
+Logs are in `.lake/local-builds-v1/20261020-194452-arafz14b/`. All 93 helper
+and source-regression tests also passed. This records that source checkpoint,
+not later entropy additions or an unrestricted cold-build timing.
+
 ## Transportation split and explicit resource profiles, 2026-10-19
 
 The machine reports 18 GiB physical RAM and 11 CPU cores. At the assessment

@@ -73,6 +73,7 @@ import Thesis.Causality.ProbabilityTermEnumeration
 import Thesis.Causality.DerivationEnumeration
 import Thesis.Causality.CodeEnumerationCounts
 import Thesis.Causality.CodeSearchPreflight
+import Thesis.Causality.CodeSearchMetadata
 import Thesis.Causality.ModalDerivation
 import Thesis.Causality.Modalities
 import Thesis.Causality.ConservativeLearning
@@ -157,6 +158,9 @@ syntax membership still does not certify a causal or support condition.
 `CodeEnumerationCounts` proves exact list-size recurrences and saturated
 arithmetic counts. `CodeSearchPreflight` checks explicit dictionary, depth
 and raw-candidate limits before enumeration; refusal is not non-identifiability.
+`CodeSearchMetadata` accepts domain sizes certified against the declared
+enumerations. Its mask-first numerical gates avoid generating value lists
+on early dictionary refusal, with a proof that every result is unchanged.
 The facade excludes the external completeness
 interfaces; those begin in `Thesis.CausalTransport`.
 `HedgeQuery` retains a hedge's actual forests and action seed while reindexing

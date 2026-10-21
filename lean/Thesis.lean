@@ -47,6 +47,7 @@ import Thesis.Examples.NativeCertificateCheck
 import Thesis.Examples.NativeGuardCompilation
 import Thesis.Examples.NativeProofEnumeration
 import Thesis.Examples.NativeSearchPreflight
+import Thesis.Examples.NativeSearchMetadata
 import Thesis.Examples.IntegerLinearAlgebra
 import Thesis.Examples.IntegerNullspace
 import Thesis.Examples.FiniteRatioMinimum
