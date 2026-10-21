@@ -49,8 +49,8 @@ real-number model would need its own proof and is not silently assumed.
 length, using Cauchy's finite doubling/descending proof. Natural multiplicities
 then give weighted AM–GM, including zero values and weights. Both non-strict and
 strict common-denominator product bounds are available for the rational Gibbs
-inequality. This foundation does not yet establish KL nonnegativity, its equality
-case, entropy concavity, or maximum-entropy optimization.
+inequality. Later checkpoints use this foundation to establish KL and entropy
+bounds; strict concavity and the total optimizer remain separate tasks.
 
 ## Checkpoint 4: rational Gibbs inequality and KL nonnegativity
 
@@ -66,8 +66,8 @@ The proof includes aggregation of duplicate atom occurrences and null outliers.
 Executed regressions include a point law on a three-state grid with two zero
 observed cells, whose uniform-reference KL equals `log₂(3)` exactly.
 
-The equality case, upper entropy bounds, strict concavity and optimization
-results remain outstanding; KL nonnegativity alone does not establish them.
+KL nonnegativity alone does not establish the equality or optimality results;
+the following checkpoints prove those additional statements separately.
 
 ## Checkpoint 5: equality in Gibbs and KL
 
@@ -83,15 +83,94 @@ check a split/rescaled/reordered law with a null outlier, a genuinely different
 point law, and an unrestricted zero-weight argument in the rational equality
 lemma. No literal atom-list equality is assumed.
 
+## Checkpoint 6: entropy bounds and the cross-entropy criterion
+
+`ExactLogLinear` proves rational bilinearity and the finite-sum identities needed
+for entropy comparisons. `CrossEntropyValue` and `Distros.CrossEntropy` establish
+KL = cross entropy minus entropy, the global cross-entropy upper bound, and a
+positive-candidate optimality criterion: fixing the candidate cross entropy
+makes the candidate a global entropy maximum, with equality exactly at the same
+law. The bridge from rational moment constraints and a log-linear score to this
+cross-entropy equality is still required.
+
+`EntropyGrid.uniform` retains every declared cell with weight one.
+`Distros.EntropyUniform` proves its entropy is exactly `log₂(cardinality)` and
+that every supported law satisfies `0 ≤ H ≤ log₂(cardinality)`. Equality in the
+upper bound holds exactly for the uniform law. Null cells in the declared grid
+remain part of the cardinality, and null atom outliers remain admissible.
+
+`Thesis.Examples.EntropyBounds` checks the three-state uniform bound and its
+equality case, and the nonuniform candidate `(1/4, 1/4, 1/2)` with entropy `3/2`
+bits. A competitor with the same cross entropy and a retained null outlier has
+strictly smaller entropy.
+
+## Checkpoint 7: strict concavity, including the boundary
+
+`Distro.mixture` wraps the scale-and-append rational record construction, keeping
+both atom lists and their null outliers. Singleton masses and cross entropy obey
+the expected affine formulas even when input denominators differ.
+
+`Distro.entropy_mixture_comparison` proves concavity for any two positive natural
+mixing masses, normalized by their sum, and equality exactly when the input laws
+are `SameLaw`. `Distro.entropy_strict_concave` states the strict consequence for
+different laws. Shared zero-mass cells are handled by an internal positive-support
+restriction with a proved entropy-preservation lemma; the caller's declared grid
+and atom records are never replaced. No full-grid positivity premise remains.
+
+`Distro.entropy_maximum_unique` proves that any attained maximum in a class closed
+under midpoints is unique as a law. This is a conditional uniqueness theorem,
+not an existence assertion for exact rational maximizers. Regressions exercise
+shared zero cells, null outliers, unequal denominators, unequal mixing weights,
+strict inequality for distinct point laws, and equality for split presentations.
+
+## Checkpoint 8: moment feasibility and the first continuity estimate
+
+`EntropyMomentConvex` proves affine signed rational expectations for the actual
+mixture constructor, and preservation of every closed rational moment interval.
+`PartialMomentProblem.Admissible` includes the original almost-sure grid support
+and all existing constraint rows. Its entropy uniqueness theorem now applies
+directly to exact and interval problems, with no row independence or interior
+mass hypothesis. The existing feasibility/refutation solver remains the source
+of exactly feasible rational witnesses and infeasibility certificates.
+
+Regressions combine an exact mean, a signed response interval, a forced-zero
+coordinate, duplicate redundant rows, unrelated input denominators and retained
+null outliers. Mixture feasibility is proved for all such problems, not checked
+only on a denominator grid.
+
+`FiniteBernoulli` proves finite power difference and complement bounds by natural
+induction. `EntropySmallMass` derives
+`log₂(den/(den-1)) ≤ 1/m` whenever `2m ≤ den`, and exact-log monotonicity in a
+nonnegative rational coefficient. These are proved ingredients for the boundary
+continuity argument, not yet a full entropy continuity modulus or an optimizer.
+
+## Checkpoint 9: quantitative entropy continuity at zero
+
+`EntropyTermBounds` derives a scalar cross-entropy bound from the actual
+Gibbs theorem, using an auxiliary two-state reference. The observed mass may
+be zero or one. For every `k`, it proves
+`p ≤ 1/2^(k+1) → -p log₂ p ≤ (k+3)/2^(k+1)`.
+
+`entropyBoundaryThreshold` supplies a positive rational threshold for every
+positive rational tolerance. `entropyTerm_near_zero` proves that every rational
+probability below that threshold has entropy contribution at most the requested
+error. Its construction uses finite powers and binary lengths, with no
+unbounded search, real logarithm axioms or denominator restriction on the input.
+Regressions include probability zero and a non-dyadic mass `3/10000000`.
+
+This completes the scalar boundary estimate. The uniform two-point continuity
+modulus, moment/log-linear bridge and total constrained optimizer remain open.
+
 ## Remaining full goal
 
 1. Strengthen the grid-independence interface as needed for the later optimizer;
    preserve every established atom-presentation and null-cell invariance law.
-2. Prove entropy bounds, KL nonnegativity and equality, strict concavity,
-   uniqueness and global log-linear optimality, with explicit support/boundary
-   assumptions. Investigate a finite weighted AM–GM route.
-3. Integrate exact/interval rational expectations through `PartialMomentProblem`,
-   retaining infeasibility certificates, forced-zero cells and redundant rows.
+2. Prove the moment/log-linear bridge, with explicit support and boundary
+   assumptions. Entropy bounds, KL nonnegativity/equality, strict concavity and
+   conditional uniqueness are established above using finite weighted AM–GM.
+3. Connect log-linear certificates and the approximation algorithm to
+   `PartialMomentProblem`. Exact/interval feasibility and conditional uniqueness
+   already preserve forced-zero cells, redundant rows and infeasibility results.
 4. Prove an explicit uniform entropy continuity modulus, including zero. Implement
    total finite-box optimization with exactly feasible rational witnesses and a
    global rational entropy gap at every positive rational tolerance. No fixed
