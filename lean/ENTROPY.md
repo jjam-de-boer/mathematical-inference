@@ -414,9 +414,55 @@ An alternative justification through a sampling/allocation model requires that
 model and its asymptotic argument as additional premises. Neither the probability
 rules nor fixed averages alone silently supply this policy.
 
-Activities 2–6 remain open: auxiliary constructive analysis, real feasible-law
-and optimizer bridges, multiplier necessity and interval/boundary qualifications,
-partition-function calculus, and the conditional physical correspondence.
+Activity 2 now has the initial value foundation described below. Activities 3–6
+remain open: real feasible-law and optimizer bridges, multiplier necessity and
+interval/boundary qualifications, partition-function calculus, and the
+conditional physical correspondence.
 Activity 7 remains ongoing as each new stage is tested and audited. The rational
 characterization regressions include unreduced unequal denominators, null cells
 at several positions, generic arbitrary measures, and the existing law adapter.
+
+
+### Constructive analytic values: first foundation
+
+`RationalApproximation` proves rational order closure under arbitrarily small
+positive rational errors, with an explicit separating precision. The proof
+works with unreduced signed fractions. `ConstructiveReal` then presents an
+auxiliary real value by an executable enclosure at every positive rational
+precision. Its intervals are mutually consistent and their widths are bounded
+by the requested precision. Rational values have singleton enclosures. Closed
+order is a proposition comparing all enclosure bounds; no arbitrary real
+comparison or equality decision is assumed.
+
+`ConstructiveRealAdditive` and `ConstructiveRealScaling` construct addition,
+negation, finite sums, natural division and nonnegative rational scaling, with
+proved congruence and additive/order laws. These values remain auxiliary;
+`Distro` atom weights and exactly feasible solver outputs are still rational.
+The current arithmetic gives correctness constructions, without a claim of
+an optimized numerical evaluator.
+
+`ExactLogRationalArithmetic` proves signed rational-bit addition and natural
+amplification identities. `ExactLogInterpretation` constructs a real presentation
+from the existing rational bisection certificates. It preserves and reflects
+`ExactLog` order and equivalence, agrees with the rational embedding, and
+preserves addition, negation, finite sums, natural division and rational scaling.
+Thus existing exact comparisons can be used as real-value bounds, and the
+interpretation does not identify unequal exact values.
+
+`EntropyInterpretation` constructs base-two logarithms of positive rational
+arguments in this value space, proves their product/inverse laws, and connects
+the existing rational entropy and KL summands to `−p log₂(p)` and
+`p (log₂(p) − log₂(r))`. The finite entropy sum is preserved. Zero observed
+mass contributes zero without evaluating `log(0)`; KL retains its explicit
+positive-reference hypothesis.
+
+This is a partial implementation of activity 2. Completeness and general limit
+rules, multiplication of arbitrary real values, logarithms on general positive
+real arguments, exponentials, differentiation and certified Taylor remainder
+bounds still require separate proofs. No calculus, ideal optimizer existence,
+rational feasible-polytope density, multiplier existence or physical entropy
+identification is claimed by this initial value foundation.
+
+The new audited regressions compute rational enclosures of `log₂(3)`, transfer
+an exact lower bound to real order, exercise arbitrary-presentation additive
+laws and rational scaling, and preserve null entropy coordinates and KL terms.

@@ -1,3 +1,4 @@
+import Thesis.Examples.ConstructiveReal
 import Thesis.Examples.UncertaintyMeasure
 import Thesis.Examples.EntropyMeanHalf
 import Thesis.Examples.LogLinearEntropy
