@@ -45,7 +45,7 @@ def divideNat (x : ConstructiveReal) (n : Nat) (positive : 0 < n) : Constructive
 
 theorem divideNat_mono {x y : ConstructiveReal} (bounded : LE x y) (n : Nat) (positive : 0 < n) :
     LE (divideNat x n positive) (divideNat y n positive) :=
-  fun first second => (SignedRatio.divideNat_le_iff _ _ n positive).mpr (bounded _ _)
+  fun _ _ => (SignedRatio.divideNat_le_iff _ _ n positive).mpr (bounded _ _)
 
 theorem divideNat_congr {x y : ConstructiveReal} (same : Equiv x y) (n : Nat) (positive : 0 < n) :
     Equiv (divideNat x n positive) (divideNat y n positive) :=

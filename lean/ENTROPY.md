@@ -456,8 +456,9 @@ the existing rational entropy and KL summands to `−p log₂(p)` and
 mass contributes zero without evaluating `log(0)`; KL retains its explicit
 positive-reference hypothesis.
 
-This is a partial implementation of activity 2. Completeness and general limit
-rules, multiplication of arbitrary real values, logarithms on general positive
+This is a partial implementation of activity 2. The subsequent checkpoint
+below constructs effective rational limits. General limit and continuity rules,
+multiplication of arbitrary real values, logarithms on general positive
 real arguments, exponentials, differentiation and certified Taylor remainder
 bounds still require separate proofs. No calculus, ideal optimizer existence,
 rational feasible-polytope density, multiplier existence or physical entropy
@@ -466,3 +467,27 @@ identification is claimed by this initial value foundation.
 The new audited regressions compute rational enclosures of `log₂(3)`, transfer
 an exact lower bound to real order, exercise arbitrary-presentation additive
 laws and rational scaling, and preserve null entropy coordinates and KL terms.
+
+
+### Effective rational limits
+
+`ConstructiveRealLimits` completes a regular rational approximation net by an
+explicit interval construction. It proves a bound around every supplied
+approximant and uniqueness of the resulting real value among presentations
+satisfying those bounds. A `RationalCauchySequence` includes an executable
+modulus and a proved tail-error estimate. A common later index turns it into
+a regular net, without requiring a monotone modulus. The resulting limit has
+proved error bounds for every sufficiently late sequence term.
+
+Every existing `ConstructiveReal` also supplies a regular net of computed
+rational lower endpoints. Completing that net is proved equivalent to the
+original real presentation. This is scalar rational reconstruction; it does
+not independently round probability coordinates or establish density inside
+a constrained feasible polytope.
+
+The regressions construct the nonconstant sequence `1 − 1/(n+1)`, give it a
+valid modulus, and prove its independently constructed limit equals one.
+They also check tail bounds and reconstruction for arbitrary real presentations
+and the certified `log₂(3)` presentation. The approximation modulus is explicit
+input data: these results do not assert convergence from strict concavity or
+supply the quantitative optimizer estimates still required in activity 3.
