@@ -328,3 +328,38 @@ compiler threshold and the existing cache. Only one build may run on the machine
 at a time. Targeted checks do not establish full-project success; the full build
 and axiom audit remain mandatory. Remote CI repeats both gates for published
 checkpoints before they are reported as verified on main.
+
+
+## Foundational and physical extension: in progress
+
+The completed six-activity rational implementation above defines Shannon
+entropy and proves its theory and certified optimization. The subsequent
+seven-activity goal additionally asks for a characterization from uncertainty
+requirements, constructive analytic semantics, a real feasible-polytope and
+optimizer bridge, multiplier necessity and sufficiency, partition-function
+calculus, and a conditional finite thermodynamic identification. These further
+activities are not claimed complete by the earlier checkpoint descriptions.
+
+The first foundation now includes:
+
+- `EntropyGrouping`: the exact product-mass identity, finite two-stage grouping,
+  independent-product additivity, rational presentation congruence, permutation
+  and insertion of null coordinates. Zero branch weights are allowed.
+- `Distros.UncertaintyMeasure`: normalized rational probability vectors and an
+  explicit abstract uncertainty specification. Its requirements are coordinate
+  representation invariance, permutation, null insertion, grouping, monotone
+  uniform uncertainty, and fair-bit normalization in `ExactLog`. No uniform
+  logarithm formula, derivative or uniqueness conclusion is a premise.
+- `UncertaintyMeasure.shannon`: the implemented entropy satisfies every listed
+  requirement. The bridge from an existing `Distro` uses aggregated singleton
+  masses, so split records and null outliers do not become extra states.
+- `Distros.UncertaintyUniform`: grouping implies `h(mn) = h(m) + h(n)`,
+  `h(1) = 0`, and `h(n^k) = k h(n)` for every abstract measure, including
+  exponent zero. These are the first steps of the number-theoretic proof;
+  uniqueness of `h(n)` and of the complete uncertainty measure remains open.
+
+The new regressions include unequal rational denominators, a three-way
+refinement with a zero-weight branch, retained zero coordinates, abstract
+uniform power laws, and the aggregated distribution bridge. Both early and
+full audits import the regression module. The remaining analytical and
+physical work retains its full requested scope and requires separate proofs.
