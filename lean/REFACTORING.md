@@ -2,8 +2,13 @@
 
 The first working pass is published as `8a6ea5cbe30efe5559bd87d073ec8e5120445a14`.
 Its [complete CI run](https://github.com/jjam-de-boer/mathematical-inference/actions/runs/39661212192)
-passed before publication. **Pass 2 is in progress; final acceptance is not yet
-established.** The detailed first-pass measurements, unsuccessful experiments,
+passed before publication. **Both working passes are finished.** The combined
+second-pass source checkpoint is `9fddbe71024f60db1492a60baccaf2cb305cd826`;
+its [complete CI run](https://github.com/jjam-de-boer/mathematical-inference/actions/runs/39823389597)
+and local full-build/axiom gates passed. This receipt's own commit is the final
+acceptance candidate: verify its CI and publication before beginning the frozen
+read-only pass. Acceptance is reported outside this file, not asserted in
+advance. The detailed first-pass measurements, unsuccessful experiments,
 source hashes and intermediate checkpoints are preserved in
 [the historical ledger](docs/history/refactoring-pass1.md).
 
@@ -25,8 +30,9 @@ source hashes and intermediate checkpoints are preserved in
 Statuses are **Pending**, **Implemented, awaiting review**, **Verified for this
 revision**, and **Blocked or incomplete**. Evidence belongs to its exact source
 revision; an edit invalidates affected checks. No mathematical declaration has
-been approved for deletion. The preceding goal turn made progress: it published
-the verified combined checkpoint, rather than merely restating the plan.
+been approved for deletion. This final receipt changes documentation only;
+the Lean sources, build configuration and source guards equal the verified
+combined second-pass checkpoint.
 
 ## Mathematical and interface inventory
 
@@ -41,6 +47,7 @@ names representative public results; it is not permission to drop unnamed ones.
 | `Distros.Basic`, `LawBasics`, `LawEquivalence`, named laws/moments | Every-event equality, repeated labels, null weights, normalization and exact conditioning support; no classical selection. |
 | `ExactLog*`, `EntropyValue`, `Distros.Entropy`, `EntropyGibbsEquality` | Exact symbolic logarithms over rational probability records, declared grids/reference support, Gibbs equality and law invariance; not irrational atom weights. |
 | `EntropyConcavity`, `EntropyMomentConvex`, `EntropyContinuity`, `EntropyOptimize`, `LogLinearEntropy` | Existing finite-grid, moment, mixture and positivity hypotheses; rational approximation certificates and proved log-linear optimality, not an assumed real optimizer. Newer published entropy work is retained, not attributed to this refactor. |
+| `Distros.UncertaintyMeasure`, `UncertaintyUniform`, `UncertaintyUniformUniqueness`, `EntropyGrouping` | The newer published rational uncertainty/grouping results and uniform-law uniqueness are retained from main, without changing probability weights or attributing new mathematics to this refactor. |
 | `FiniteAMGM` | Existing strict/non-strict weighted inequalities for supplied natural multiplicities. |
 | `ObservedGraph.publishedSoundness`, `HiddenDAGSoundness` | The same three graphical do rules and derivation-local support, with proved interpretation rather than an external soundness axiom. |
 | `ObservedGraph.publishedCompleteness`, `HiddenDAGCorrespondence` | Joint/conditional/hedge results in the positive class; original queries, actual engine outputs and countermodels, with supplied distinct observed labels. |
@@ -63,14 +70,14 @@ The second pass rechecks them after the moves, not just their original order.
 
 | Stage | Second-pass review / decision | Status |
 | --- | --- | --- |
-| 1. Combined baseline | Reconfirmed published `8a6ea5c`, complete CI and concurrent modifications. The published merge retains newer entropy without changing the other agent's working files. | Verified for this revision (`8a6ea5c`). |
-| 2. Mathematical/API inventory | Rechecked source preservation, support/model-class boundaries, public names/compatibility and counterfactual qualification. The current inventory explicitly includes newer entropy approximation/optimality results. No theorem removal or assumption change is justified. | Implemented, awaiting review. |
-| 3. Documentation | Moved the verbatim running diary out of this current ledger. Corrected one remaining root-parity progress claim: the unrestricted pair is not itself positive or an original-outcome counterexample; completed channel completeness is separate. | Implemented, awaiting review. |
-| 4. Foundations | Rechecked law/support and causal dependency guards, including all current causal implementations. Convenience/compatibility facades intentionally retain history, not current implementations. Keep the generic singleton-sum lemma in its shared family: another tiny file has no demonstrated benefit. | Implemented, awaiting review. |
-| 5. History | Rechecked all three exact archived namespace bodies, compatibility facades and mandatory audit reachability. Valid current carrier end-results remain current even without callers. No additional relocation/deletion is justified. | Implemented, awaiting review. |
-| 6. Performance | Rechecked measurement logs and scope: bounded incremental feasibility and warm workflow latency are established, not a universal twofold cold-build improvement. No new unmeasured optimization is justified. | Implemented, awaiting review. |
-| 7. Layout | Rechecked coherent `Hedge`/`Historical`/example boundaries, acyclicity, old paths, and absence of production imports of examples. Keep established topic paths instead of a wholesale forwarding-file rename. | Implemented, awaiting review. |
-| 8. Verification/publication | Reverify the comment/guard/ledger corrections, retain newer published main, publish only after exact combined gates pass, then freeze for acceptance. | Pending. |
+| 1. Combined baseline | Reconfirmed published `8a6ea5c`, then retained the native-path extension and main's newer entropy through `1a01f3d` in combined checkpoint `9fddbe7`. Its complete local and remote gates passed; only the pre-existing PDF remains dirty. | Verified for this revision (`9fddbe7`). |
+| 2. Mathematical/API inventory | Rechecked source preservation, support/model-class boundaries, public names/compatibility and counterfactual qualification. The inventory includes the newer entropy results. No theorem removal or assumption change is justified. | Verified for this revision (`9fddbe7`). |
+| 3. Documentation | Moved the verbatim running diary out of this current ledger. Corrected one remaining root-parity progress claim: the unrestricted pair is not itself positive or an original-outcome counterexample; completed channel completeness is separate. | Verified for this revision (`9fddbe7`). |
+| 4. Foundations | Rechecked law/support and causal dependency guards, including all current causal implementations. Convenience/compatibility facades intentionally retain history, not current implementations. Keep the generic singleton-sum lemma in its shared family: another tiny file has no demonstrated benefit. | Verified for this revision (`9fddbe7`). |
+| 5. History | Rechecked all three exact archived namespace bodies, compatibility facades and mandatory audit reachability. Valid current carrier end-results remain current even without callers. No additional relocation/deletion is justified. | Verified for this revision (`9fddbe7`). |
+| 6. Performance | Rechecked measurement logs and scope: bounded incremental feasibility and warm workflow latency are established, not a universal twofold cold-build improvement. No new unmeasured optimization is justified. | Verified for this revision (`9fddbe7`). |
+| 7. Layout | Rechecked coherent `Hedge`/`Historical`/example boundaries, acyclicity, old paths, and absence of production imports of examples. Keep established topic paths instead of a wholesale forwarding-file rename. | Verified for this revision (`9fddbe7`). |
+| 8. Verification/publication | The comment/guard/history checkpoint `9622bd6` passed complete CI, then `9fddbe7` retained newer main and passed all combined gates before publication. Verify this documentation-only receipt's exact CI/publication before freezing acceptance. | Verified for source revision `9fddbe7`; receipt gates precede Pass 3. |
 
 The countermodel source guard permits only the precisely specified comment
 correction before comparing the original whole-body hash. Proof text is still
@@ -85,17 +92,29 @@ separate exact-source guards. All 111 helper/source tests pass, including the
 new historical-ledger guard. Retained JSON/logs independently confirm every
 warm timing, the 43,805-declaration core audit and the 3801.9 MiB sampled peak.
 
-The shared branch subsequently retained `16c9ec9` (the other agent's elementary
-path/support extension) and merged published main as `7a86f99`. That concurrent
-work is preserved, not claimed as a new result of this refactor. Final combined
-verification must include it; this goal does not certify unpublished work from
-targeted checks alone. No new local compiler is started while its existing full
-verification owns the shared slot.
+The shared branch retained `16c9ec9` (the other agent's elementary path/support
+extension), merged published main as `7a86f99`, and then retained main's entropy
+work through `1a01f3d` in `9fddbe7`. That concurrent work is preserved, not claimed
+as new results of this refactor. Combined verification includes it, rather than
+inferring correctness from targeted checks. The shared compiler window was
+coordinated; no competing build or higher resource limit was introduced.
 
 ## Evidence and performance boundaries
 
 - First-pass combined complete remote gates: `8a6ea5c`, run `39661212192`.
   Core `9a98e7e` independently passed run `39659979565`.
+- Second-pass comment/guard/history checkpoint: `9622bd6`, complete CI run
+  `39663411847`. Final combined source: `9fddbe7`, complete CI run `39823389597`,
+  including constructive-arithmetic, distribution and full axiom gates.
+- Combined local traversal: 989 planned modules, 16 rebuilt targets, complete
+  native project build and 44,490-declaration transitive audit passed using the
+  committed configuration. Maximum sampled aggregate RSS was 1113.2 MiB;
+  longest invocation 5.07 seconds. These are cache-reusing incremental results,
+  not a cold benchmark. Logs: `.lake/local-builds-v1/20261022-193121-17cinc87/`.
+- All 111 helper/source tests pass on the combined source. All 906 baseline
+  module paths remain (including the root facade); all 253 example modules
+  are audit-reachable. The 990-module source graph is acyclic. Only the two
+  separately enforced audit modules lie outside the general audit's imports.
 - Complete core local traversal: 972 modules, 43,805 imported project declarations
   under the axiom policy; sampled peak 3801.9 MiB. Logs:
   `.lake/local-builds-v1/20261021-210043-ppkvpaw1/`.
@@ -118,15 +137,17 @@ No shared-cache cleaning or fabricated artifact freshness is allowed. Cold
 verification and incremental proof elaboration are not inferred from warm
 measurements. Further cold speedups are deliberately deferred, not claimed.
 
-## Remaining gates and freeze
+## Final receipt and frozen acceptance
 
-Run the complete helper/regression suite, ordinary Lake build, full transitive
-axiom audit and the two specialized audits for the exact final checkpoint.
-All current, historical and example modules must remain covered. The ordinary
+The source checkpoint passed the complete helper/regression suite, ordinary
+Lake build, full transitive axiom audit and both specialized remote audits.
+All current, historical and example modules remain covered. This receipt's
+commit must also pass exact CI before publication; a documentation-only change
+does not authorize assuming that a different CI revision passed. The ordinary
 native and monitored routes remain documented in [LOCAL_CHECKS.md](LOCAL_CHECKS.md).
 
-After Pass 2, freeze an exact commit and perform Pass 3 without changing source,
-layout or documentation. Recheck the contract, complete coverage/policy,
+After those receipt gates, freeze its exact commit and perform Pass 3 without
+changing source, layout or documentation. Recheck the contract, complete coverage/policy,
 documentation, native local builds, measurement claims and unrelated-work
 preservation. Report acceptance in the final response and goal status rather
 than editing this ledger during the read-only pass. A material failure leaves
