@@ -507,6 +507,59 @@ them. Profiles, the observational record and cheap metadata are prepared
 inputs, not lazily generated under these gates. The new regression executes
 only eight-leaf catalogues and uses symbolic coverage for deeper proof budgets.
 
+### Support-preserving elementary-path bridge for goal 5
+
+`DerivationLinearization` separates the old nonstructural leaves into
+`DoCalculusAtom`. A `DoCalculusRewriteStep` contains exactly one such leaf,
+possibly reversed and placed under expression frames; it cannot hide a
+transitivity tree. `DoCalculusRewritePath` is a finite chain with the original
+source and target retained in its type. `DoCalculusDerivation.linearize`
+constructs one path from the proof syntax before seeing any model or profile.
+Binary congruences change the left operand first; weighted congruence thus
+changes its weight before changing its factor.
+
+`NativeRewritePathSupport` proves `DoCalculusRewriteStep.check_eq_endpoints`:
+an elementary step needs exactly its complete endpoints' support, including
+all marginal substitutions and the positive-only weighted branch. This does
+**not** apply to an arbitrary derivation tree. `checkVertices` scans every
+vertex, retaining the source even for an empty path. `toDerivation_support`
+reconstructs the old complete recursive support tree from actual vertex
+values, without supplying a new causal law. `checkVertices_eq_toDerivation`
+proves exact agreement between the vertex scan and the old checker on that
+reconstructed path, not merely a sufficient support condition.
+
+`NativeDerivationLinearization` proves `linearize_equivalentVertices` and
+`linearize_supportedVertices`. Every original supported application retains
+equivalent numerical values and support at all vertices of this same path.
+The invariant is genuine rational equivalence, not equal support status.
+`linearize_checkVertices` and `linearize_toDerivation_check` preserve the old
+checker's accepted applications. Their graph is the model's actual observed
+projection. No global positivity or bound on the original finite alphabets
+or rational denominators is added.
+
+`NativeLinearizedCertificate` transforms reconstructed native certificates.
+`linearized_guardChecked` checks every supplied matching profile, provided
+its actual projected graph agrees with the certificate graph.
+`CheckedNativeFormula.linearized_source`, `linearized_formula` and
+`linearized_guard` preserve the original application boundary;
+`linearized_available` proves availability equal on arbitrary records and
+references. Original conditional-source support remains separate.
+`actionOne` stays an unchanged top-level leaf, not a new composable do-rule.
+
+The small regressions retain an unsupported strict intermediate under
+positive weight, skip it under a genuinely changed zero weight, inspect null
+marginal substitutions and fixed evaluation references, and preserve the old
+certificate guard and null-source boundary. Decoded proof equalities are
+handled through symbolic preservation theorems, not a native decision axiom.
+
+This is a typed proof-presentation bridge, not a serialized-code exporter or
+a general rewrite solver. It proves no proof-length bound or universal
+stopping law. A possible later reduction must keep every intermediate inside
+the supported-expression set and preserve one common certificate across all
+matching profiles. Ordinary unconstrained rewrite reachability does not
+settle that support-constrained question; its decidability for this particular
+causal grammar remains an explicit research obligation.
+
 ## Fixed-law results beyond graph-level completeness
 
 | Graph/target | Public theorem | Scope |

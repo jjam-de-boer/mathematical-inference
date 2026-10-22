@@ -153,6 +153,9 @@ import Thesis.CausalTransport.NativeSearchPreflight
 import Thesis.CausalTransport.NativeSearchMetadata
 import Thesis.CausalTransport.NativeFormulaSelection
 import Thesis.CausalTransport.NativeBoundedSelection
+import Thesis.CausalTransport.NativeRewritePathSupport
+import Thesis.CausalTransport.NativeDerivationLinearization
+import Thesis.CausalTransport.NativeLinearizedCertificate
 import Thesis.CausalTransport.HiddenDAGFinitePresentation
 import Thesis.CausalTransport.HiddenDAGSourcePresentation
 import Thesis.CausalTransport.HiddenDAGSourceCompression
@@ -408,6 +411,14 @@ explicitly admitted metadata-guarded bounded catalogue, distinguishing policy
 refusal from admitted unavailability. It proves common-query preservation,
 supported native soundness and bounded acceptance coverage, not universal
 formula coverage or a complete cost bound for evaluating formulas.
+`NativeRewritePathSupport` equates elementary-path vertex checking with the
+old recursive checker. `NativeDerivationLinearization` preserves numerical
+values and support at every vertex of one syntax-determined path, across all
+original supported applications. `NativeLinearizedCertificate` retains the
+same source, printed formula and observable guard on graph-matched profiles;
+availability is unchanged, including the separate null-source boundary.
+This typed proof bridge neither exports serialized codes nor supplies an
+unbounded path solver or universal stopping argument.
 `HiddenDAGPolynomial` compiles native causal probabilities with a proved
 binding to source-cell variables. `HiddenDAGPolynomialExpressions` extends that binding to signed
 sums, negatives and products. `HiddenDAGPolynomialEvidence` checks supplied
