@@ -1,4 +1,5 @@
-import Thesis.Probability.Distros.UncertaintyUniform
+import Thesis.Probability.ExactLogRational
+import Thesis.Probability.Distros.UncertaintyUniformUniqueness
 
 namespace Thesis.Examples.UncertaintyMeasure
 open Probability Probability.ProbabilityVector
@@ -35,6 +36,19 @@ example (measure : Probability.UncertaintyMeasure) :
 example (measure : Probability.UncertaintyMeasure) :
     ExactLog.Equiv (measure.value (uniform 729 (by decide)))
       (ExactLog.scaleNat 6 (measure.value (uniform 3 (by decide)))) := measure.uniform_pow 3 6 (by decide)
+
+/-- The logarithm of a uniform space is derived for an arbitrary measure;
+its specification contains no logarithm formula for general cardinalities. -/
+example (measure : Probability.UncertaintyMeasure) (size : Nat) (positive : 0 < size) :
+    ExactLog.Equiv (measure.value (uniform size positive))
+      (ExactLog.log (PositiveRatio.ofNat size positive)) := measure.uniform_log size positive
+
+example (measure : Probability.UncertaintyMeasure) :
+    ExactLog.LE (ExactLog.ofSignedRatio ⟨158, 100, by decide⟩)
+      (measure.value (uniform 3 (by decide))) := by
+  have lower : ExactLog.LE (ExactLog.ofSignedRatio ⟨158, 100, by decide⟩)
+      (ExactLog.log (PositiveRatio.ofNat 3 (by decide))) := by decide +kernel
+  exact (ExactLog.le_congr (ExactLog.equiv_refl _) (ExactLog.equiv_symm (measure.uniform_log 3 (by decide)))).mp lower
 
 private def grid : Distros.EntropyGrid Nat := ⟨[0, 1], by decide⟩
 private def split : Distros.Distro Nat := ⟨⟨[(0, 1), (1, 2), (99, 0), (0, 1)], 4, by decide, by decide⟩⟩

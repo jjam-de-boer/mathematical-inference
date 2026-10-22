@@ -356,10 +356,28 @@ The first foundation now includes:
 - `Distros.UncertaintyUniform`: grouping implies `h(mn) = h(m) + h(n)`,
   `h(1) = 0`, and `h(n^k) = k h(n)` for every abstract measure, including
   exponent zero. These are the first steps of the number-theoretic proof;
-  uniqueness of `h(n)` and of the complete uncertainty measure remains open.
+  the following checkpoint completes uniqueness of `h(n)`. Characterization
+  for arbitrary rational vectors remains open.
 
 The new regressions include unequal rational denominators, a three-way
 refinement with a zero-weight branch, retained zero coordinates, abstract
 uniform power laws, and the aggregated distribution bridge. Both early and
 full audits import the regression module. The remaining analytical and
 physical work retains its full requested scope and requires separate proofs.
+
+### Uniform uncertainty is now characterized
+
+`ExactLogSeparation` proves an explicit Archimedean separation principle for
+exact symbolic logarithms. A positive exact value has a computed natural
+multiple of at least one bit, by a finite Bernoulli lower bound. Consequently,
+if every natural amplification of `x` is at most the same amplification of
+`y` plus one bit, then `x ≤ y`. No real completion, derivative, general excluded
+middle, or extra separation axiom is used.
+
+`Distros.UncertaintyUniformUniqueness` compares each uniform choice with the
+two adjacent powers of two around its repeated product. Grouping and fair-bit
+normalization put every admissible uncertainty measure inside the same bit
+bracket. The proved separation principle forces two such measures to agree.
+Thus `UncertaintyMeasure.uniform_log` derives `h(n) = log₂(n)` from the listed
+requirements. The remaining step of the rational characterization is to apply
+uniform refinements to arbitrary rational vectors, including their null cells.
