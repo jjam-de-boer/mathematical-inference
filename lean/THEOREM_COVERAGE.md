@@ -18,7 +18,7 @@ an external method; it does not extend the probability framework.
 | 2. Shared graph infrastructure | Connectivity, reachability and rank infrastructure extracted without changing public theorem names; current-engine dependency guards pass. Resource-driven soundness/completeness splits retain the original declaration text. | Further splitting should address a measured bottleneck; it is not itself a mathematical repair or a guarantee of full local feasibility. |
 | 3. Multivalued native example | Three declared observed values, an actual rational distribution, null intervention targets and supported conditionals checked through the native model. | The standalone-template regression now exercises the same boundary as well. |
 | 4. Support-pattern applicability | Exact undefined/zero/positive analysis and exhaustive comparison within supplied finite formula catalogues; complete native causal support profiles also preserve recursive derivation support. | This does not enumerate every possible certified formula; observed support alone need not determine causal support. |
-| 5. Universal alternative-formula coverage | Finite native support profiles, a serialized certificate checker, maximal proof-admissible guards, and exact bounded code enumeration with native acceptance-coverage theorems constructed. | Formula selection remains a separate stage; no universal stopping, unrestricted formula-coverage or impossibility theorem yet. |
+| 5. Universal alternative-formula coverage | Finite native support profiles, a serialized certificate checker, maximal proof-admissible guards, exact bounded enumeration, resource-admitted selection and a support-preserving elementary-path bridge constructed. | Bounded selection is complete only for its admitted catalogue. The support-constrained stopping problem remains unresolved; no unrestricted formula-coverage or impossibility theorem is asserted. |
 | 6. Finite structural representation | Constructed standalone-template coverage both for a fixed full hidden DAG and across all finite hidden DAGs with a fixed observed projection. | Rational weight assignments remain infinite; compatibility, sharpness and complete search are separate obligations. |
 | 7. Fixed-observed-law procedures | Restricted results retained; exact compatibility and unconditional/conditional-target comparison for a full hidden DAG with declared finite alphabet and denominator bounds. Conditional support and positive-evidence values are reported separately. | Unrestricted rational feasibility remains separate; increasing bounds has no proved stopping rule. |
 
@@ -559,6 +559,110 @@ the supported-expression set and preserve one common certificate across all
 matching profiles. Ordinary unconstrained rewrite reachability does not
 settle that support-constrained question; its decidability for this particular
 causal grammar remains an explicit research obligation.
+
+### Bounded support-constrained reachability assessment, 2026-10-22
+
+This is a research assessment of the implemented language, not another Lean
+theorem or permission to start an unbounded solver project. It sharpens the
+remaining obligation after the elementary-path bridge. Nothing here changes
+the published graphical soundness/completeness statements, rational model
+class, support discipline or permitted axioms.
+
+**The exact profile quantifier matters.** Fix the graph, source term and one
+represented observable guard cell, including its decoded reference. Let
+`M` be every catalogue entry with that observed support pattern, and let `I`
+contain those entries in `M` where the original source is defined at this
+reference. For an action-free candidate that is observationally available at
+the cell, `CheckedNativeProof.demand` requires the derivation checker to pass
+on every entry in `I`; source-undefined entries contribute no extra demand.
+This follows by inspecting `demand`, `checkCell` and observational support
+invariance. Requiring the path on all of `M` would unnecessarily strengthen
+the existing API. Conversely, selecting a different successful path for each
+entry in `I` would weaken it: one common proof/formula must serve the cell.
+If `I` is empty, acceptance is vacuous about causal values, not a proof that a
+null conditional target has a value. Original source support stays separate.
+
+The typed derivation branch can therefore be investigated as follows: find
+one elementary path from the unchanged source to an action-free available
+term, with every vertex defined at the root reference in every entry of `I`.
+`linearize_checkVertices` preserves any old accepted proof in this form;
+`checkVertices_eq_toDerivation` recovers the established checker exactly from
+such a path. The separate top-level `actionOne` branch is already finite and
+is not an additional composable rewrite rule. Connecting arbitrary typed
+paths back to the serialized search language would also require a proved
+encoding/decoding round trip; the existing bridge is not that exporter.
+
+**An exact finite filter has a concrete construction.** With `m` supplied
+causal profiles and `a` declared assignments, record a term's three-valued
+status at all `m * a` profile/reference pairs. All references are necessary:
+marginalization changes the reference, and `evaluateAt` ignores the outer
+one. Zero and kernel statuses supply the leaf table; the proved arithmetic
+status operations and finite substitution lists give deterministic
+constructor transitions. An action-free bit can be carried as well. This gives at most
+`2 * 3^(m * a)` states for a bottom-up acceptance filter. The root tests use
+`I`; candidate observational availability is still checked independently.
+This is an explicit mathematical construction to formalize, not a newly
+implemented automaton, practical allocation recommendation or proof of
+search termination. It never merges numerical values: for example, a
+positive probability and its square have the same status but need not agree.
+
+The missing step is not the finiteness of that filter. It is an exact,
+terminating treatment of rewrite paths that remain inside its accepted
+language. Two terms reaching the same filter state need not be connected by
+a permitted equation or have the same reachable action-free endpoints.
+Replacing them by one representative without a lifting theorem could create
+spurious certificates or discard the only usable path.
+
+**The literature does not supply that step automatically.**
+
+- Narendran and Rusinowitch construct finite canonical systems for finite
+  ground equations modulo AC, without a cancellation assumption. Their
+  unconstrained word-problem result does not itself preserve support along
+  the reconstructed proof or decide reachability of an arbitrary supported
+  action-free target. [Primary paper](https://courses.grainger.illinois.edu/cs576/sp2017/readings/18-mar-9/narendran-rusinowitz-ground-AC-compl.pdf).
+- Tiwari's richer directed-closure construction assumes cancellative AC
+  operations and identity laws. Those are not constructors of the current
+  calculus; zero factors also prevent unconditional semantic cancellation.
+  Its Section 3 explicitly separates the non-cancellative case, so this
+  method must not silently strengthen the formal language.
+  [Primary paper, Section 3](https://www.csl.sri.com/users/tiwari/papers/fsttcs01.pdf).
+- Loeding's Theorem 4.25 proves undecidability for arbitrary ground-tree
+  systems with arbitrary regular path/target constraints. The proof uses a
+  machine-dependent rule bank and error filter. No reduction realizing those
+  ingredients by this symmetric causal equation bank and its arithmetic
+  support filters has been established. It rules out a generic inference
+  from regularity alone, not the desired causal theorem.
+  [Primary thesis, Section 4.3.3](https://publications.rwth-aachen.de/record/58868/files/Loeding_Christof.pdf).
+- Do-search terminates by storing identified kernel triples and skipping
+  previously identified distributions. This is a useful normal-form lead,
+  not a theorem of maximal formula applicability at zero-containing laws.
+  Its one-record-per-distribution cache cannot simply replace every formula
+  variant and its different support requirements in the current search.
+  [Primary paper, Algorithm 2 and Theorem 2](https://arxiv.org/html/1902.01073v3#S3.SS3).
+
+**Verdict and next research checkpoint.** There is neither a justified
+universal stopping theorem nor a causal impossibility reduction from this
+pass. A general solver is substantial research, not a moderate completion
+step. The most focused positive conjecture is a support-preserving
+kernel-normal-form theorem: a computable finite key set, fixed by the graph,
+signature, source and profiles before searching, suffices for every coverable
+cell. Its kernel/interface keys must retain weighted zero branches, all used
+references and one common formula. Rule applicability must depend only on
+the keys, and combining their stored witnesses must reconstruct a valid
+certificate. Such a theorem, plus effective rule closure and proof
+reconstruction, could justify finite saturation. Finiteness of the keys used
+by each individual finite proof, or merely proposing a fixed set of keys,
+does not establish this uniform claim.
+
+Before building a solver, a sensible bounded follow-up is to formulate that
+normal-form claim precisely and try either a derivation-normalization
+argument or a small counterexample. The finite status filter and typed/code
+round trip are feasible separate formalization tasks, but they do not by
+themselves resolve the conjecture. Any negative strategy must instead encode
+an undecidable problem using the actual causal rules, finite native profiles,
+and symmetric paths, without inserting arbitrary equations. Another round
+of increasing proof-depth budgets would establish none of these missing
+claims. Further substantial infrastructure requires a new review decision.
 
 ## Fixed-law results beyond graph-level completeness
 
