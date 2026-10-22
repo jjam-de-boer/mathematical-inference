@@ -491,3 +491,20 @@ They also check tail bounds and reconstruction for arbitrary real presentations
 and the certified `log₂(3)` presentation. The approximation modulus is explicit
 input data: these results do not assert convergence from strict concavity or
 supply the quantitative optimizer estimates still required in activity 3.
+
+
+### Exact rational error calculus
+
+`RationalNorm` defines the magnitude of an auxiliary signed rational as an
+unreduced nonnegative fraction. It proves presentation invariance, negation
+and product identities, the triangle inequality, and equivalence between an
+absolute-error bound and its two signed inequalities. Magnitude zero is proved
+equivalent to rational zero, including unreduced presentations.
+
+The product-error theorem bounds `|ab − cd|` by
+`|a − c| |b| + |c| |b − d|`, with a corollary using supplied error and magnitude
+bounds. Inputs may be negative and the nonnegative bounds need not be at most
+one. These are exact auxiliary arithmetic estimates for constructing real
+multiplication and later certified series; the general real multiplication
+and calculus results remain open. Regressions cover mixed signs, cancellation,
+unreduced magnitudes and a product difference of magnitude `1/24`.

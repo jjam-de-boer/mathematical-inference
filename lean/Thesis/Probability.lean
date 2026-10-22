@@ -1,3 +1,4 @@
+import Thesis.Probability.RationalNorm
 import Thesis.Probability.ConstructiveRealLimits
 import Thesis.Probability.EntropyInterpretation
 import Thesis.Probability.EntropyTermBounds

@@ -2,19 +2,6 @@ import Thesis.Probability.ConstructiveRealAdditive
 
 namespace Thesis.Probability.SignedRatio
 
-theorem sub_add_cancel (a b : SignedRatio) : Equiv (add (sub a b) b) a := by
-  have canceled : Equiv (add (neg b) b) zero := equiv_trans (add_comm _ _)
-    ((sub_equiv_zero_iff b b).mpr (equiv_refl b))
-  exact equiv_trans (add_assoc a (neg b) b)
-    (equiv_trans (add_congr (equiv_refl _) canceled) (add_zero a))
-
-theorem sub_le_iff_le_add (a b c : SignedRatio) : LE (sub a b) c ↔ LE a (add c b) := by
-  have same : Equiv (sub c (sub a b)) (sub (add c b) a) := by
-    simp only [Equiv, sub, add, neg, Int.natCast_mul, Int.mul_add,
-      Int.neg_add, Int.neg_neg, Int.mul_neg, Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
-    omega
-  exact nonnegative_congr same
-
 theorem sub_half_add (value : SignedRatio) (precision : PositiveRatio) :
     Equiv (add (sub value precision.half.toSignedRatio) precision.toSignedRatio)
       (add value precision.half.toSignedRatio) := by

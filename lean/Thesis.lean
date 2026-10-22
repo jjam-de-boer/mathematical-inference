@@ -1,3 +1,4 @@
+import Thesis.Examples.RationalNorm
 import Thesis.Examples.ConstructiveRealLimits
 import Thesis.Examples.ConstructiveReal
 import Thesis.Probability

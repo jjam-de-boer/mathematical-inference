@@ -57,6 +57,23 @@ theorem zero_le_sub_iff (a b : SignedRatio) : LE zero (sub a b) ↔ LE b a := by
   simp only [sub, add, neg, zero, Int.natCast_one, Int.mul_one, Int.zero_mul, Int.neg_mul]
   constructor <;> intro bounded <;> omega
 
+theorem sub_add_cancel (a b : SignedRatio) : Equiv (add (sub a b) b) a := by
+  have canceled : Equiv (add (neg b) b) zero := equiv_trans (add_comm _ _)
+    ((sub_equiv_zero_iff b b).mpr (equiv_refl b))
+  exact equiv_trans (add_assoc a (neg b) b)
+    (equiv_trans (add_congr (equiv_refl _) canceled) (add_zero a))
+
+theorem sub_le_iff_le_add (a b c : SignedRatio) : LE (sub a b) c ↔ LE a (add c b) := by
+  have same : Equiv (sub c (sub a b)) (sub (add c b) a) := by
+    simp only [Equiv, sub, add, neg, Int.natCast_mul, Int.mul_add,
+      Int.neg_add, Int.neg_neg, Int.mul_neg, Int.mul_assoc, Int.mul_left_comm, Int.mul_comm]
+    omega
+  exact nonnegative_congr same
+
+theorem neg_sub (a b : SignedRatio) : Equiv (neg (sub a b)) (sub b a) :=
+  equiv_trans (neg_add a (neg b))
+    (equiv_trans (add_congr (equiv_refl _) (neg_neg b)) (add_comm (neg a) b))
+
 /-- Rational order is closed under arbitrarily small explicit positive error.
 The separating precision is computed from the two stored denominators. -/
 theorem le_of_forall_add_positive (a b : SignedRatio)
