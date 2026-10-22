@@ -1,5 +1,5 @@
 import Thesis.Probability.ExactLogRational
-import Thesis.Probability.Distros.UncertaintyUniformUniqueness
+import Thesis.Probability.Distros.UncertaintyCharacterization
 
 namespace Thesis.Examples.UncertaintyMeasure
 open Probability Probability.ProbabilityVector
@@ -50,6 +50,27 @@ example (measure : Probability.UncertaintyMeasure) :
       (ExactLog.log (PositiveRatio.ofNat 3 (by decide))) := by decide +kernel
   exact (ExactLog.le_congr (ExactLog.equiv_refl _) (ExactLog.equiv_symm (measure.uniform_log 3 (by decide)))).mp lower
 
+/-- The common denominator is constructed from the actual unreduced
+entries, and the two coordinates remain separate observable alternatives. -/
+example : rescaledFair.countPresentation.den = 24 := by decide +kernel
+example : rescaledFair.countPresentation.counts = [12, 12] := by decide +kernel
+
+private def boundary : ProbabilityVector :=
+  ⟨[⟨0, 7, by decide⟩, ⟨2, 4, by decide⟩, QProb.zero, ⟨3, 6, by decide⟩, ⟨0, 19, by decide⟩], by decide⟩
+
+/-- Every admissible measure assigns one bit to this boundary vector,
+including all three declared null coordinates and unequal denominators. -/
+example (measure : Probability.UncertaintyMeasure) : ExactLog.Equiv (measure.value boundary)
+    (ExactLog.log ⟨2, 1, by decide, by decide⟩) :=
+  ExactLog.equiv_trans (measure.characterization boundary) (by decide +kernel)
+
+example (first second : Probability.UncertaintyMeasure) (vector : ProbabilityVector) :
+    ExactLog.Equiv (first.value vector) (second.value vector) := first.unique second vector
+
+example (measure : Probability.UncertaintyMeasure) : ExactLog.Equiv (measure.value choice.refined)
+    (ExactLog.root ⟨432, 1, by decide, by decide⟩ 6 (by decide)) :=
+  ExactLog.equiv_trans (measure.characterization choice.refined) (by decide +kernel)
+
 private def grid : Distros.EntropyGrid Nat := ⟨[0, 1], by decide⟩
 private def split : Distros.Distro Nat := ⟨⟨[(0, 1), (1, 2), (99, 0), (0, 1)], 4, by decide, by decide⟩⟩
 private theorem support : split.AlmostSurely (fun value => value ∈ grid.cells) := by
@@ -62,5 +83,9 @@ example : (ofDistro split grid support).masses.length = 2 := by decide +kernel
 example : (ofDistro split grid support).entropy = split.entropy grid support := ofDistro_entropy split grid support
 example : ExactLog.Equiv (ofDistro split grid support).entropy
     (ExactLog.log ⟨2, 1, by decide, by decide⟩) := by decide +kernel
+
+example (measure : Probability.UncertaintyMeasure) :
+    ExactLog.Equiv (measure.value (ofDistro split grid support)) (split.entropy grid support) :=
+  measure.distro_characterization split grid support
 
 end Thesis.Examples.UncertaintyMeasure

@@ -355,9 +355,9 @@ The first foundation now includes:
   masses, so split records and null outliers do not become extra states.
 - `Distros.UncertaintyUniform`: grouping implies `h(mn) = h(m) + h(n)`,
   `h(1) = 0`, and `h(n^k) = k h(n)` for every abstract measure, including
-  exponent zero. These are the first steps of the number-theoretic proof;
-  the following checkpoint completes uniqueness of `h(n)`. Characterization
-  for arbitrary rational vectors remains open.
+  exponent zero. These are the first steps of the number-theoretic proof.
+  The subsequent checkpoints establish uniform uniqueness and then the full
+  rational-vector characterization.
 
 The new regressions include unequal rational denominators, a three-way
 refinement with a zero-weight branch, retained zero coordinates, abstract
@@ -379,5 +379,44 @@ two adjacent powers of two around its repeated product. Grouping and fair-bit
 normalization put every admissible uncertainty measure inside the same bit
 bracket. The proved separation principle forces two such measures to agree.
 Thus `UncertaintyMeasure.uniform_log` derives `h(n) = log₂(n)` from the listed
-requirements. The remaining step of the rational characterization is to apply
-uniform refinements to arbitrary rational vectors, including their null cells.
+requirements. The subsequent refinement checkpoint applies this result to
+arbitrary rational vectors, including their null cells.
+
+### Complete rational Shannon characterization
+
+`ProbabilityVectorCounts` computes a common natural-count presentation of every
+normalized rational vector using the existing constructive denominator-clearing
+algorithm. It proves coordinate equivalence without imposing a denominator cap.
+`UncertaintyRefinement` groups a uniform space into positive count blocks and
+uses the proved uniform uniqueness to force agreement between any two admissible
+uncertainty measures on those rational vectors.
+
+`UncertaintyCharacterization` extends the result to arbitrary zero coordinates
+using permutation and null insertion. These transformations occur inside the
+proof; its public theorem concerns the entire original vector. Its theorem
+`UncertaintyMeasure.unique` compares any two measures satisfying the listed
+requirements. `UncertaintyMeasure.characterization` then specializes one of them
+to the proved Shannon instance and yields exactly the implemented entropy.
+`distro_characterization` connects the result to the existing `Distro.entropy`
+on aggregated observable grids, including split atoms and null outliers.
+
+This completes the rational `ExactLog` characterization requested in activity 1.
+No uniform logarithm formula, continuity, derivative or entropy formula was a
+premise about the arbitrary measure. The proof uses the established order
+separation of the chosen exact value space. It does not assert a characterization
+for arbitrary other value spaces or for unrestricted real probability vectors.
+
+The uncertainty requirements identify the quantity. They do not alone imply
+that an inference procedure must maximize it. Choosing maximal uncertainty
+subject to known constraints is an additional inference criterion; the existing
+certified optimizer proves that criterion is met to the supplied tolerance.
+An alternative justification through a sampling/allocation model requires that
+model and its asymptotic argument as additional premises. Neither the probability
+rules nor fixed averages alone silently supply this policy.
+
+Activities 2–6 remain open: auxiliary constructive analysis, real feasible-law
+and optimizer bridges, multiplier necessity and interval/boundary qualifications,
+partition-function calculus, and the conditional physical correspondence.
+Activity 7 remains ongoing as each new stage is tested and audited. The rational
+characterization regressions include unreduced unequal denominators, null cells
+at several positions, generic arbitrary measures, and the existing law adapter.
