@@ -558,3 +558,26 @@ that one and zero remain inequivalent.
 Multiplicative order and continuity laws, general real logarithms, exponentials
 and differentiation still require further proofs. These components do not
 complete activity 2 or the subsequent optimizer and physical activities.
+
+
+### Effective limits of real-valued sequences
+
+`ConstructiveRealCauchy` constructs a real limit from a real-valued sequence,
+an executable Cauchy modulus and a proved two-sided tail estimate. It computes
+a rational endpoint of a sufficiently late real term, proves that the resulting
+rational net is regular, and completes that net. The construction and proof
+allow a nonmonotone input modulus and use no countable choice or decidability
+of real order.
+
+The constructed limit has an explicit tail-error bound. Uniqueness accepts an
+explicit convergence modulus for a competing limit. Termwise equivalent
+sequences have equivalent limits even when their moduli differ. Constants,
+pointwise addition and arbitrary finite sums preserve effective convergence,
+and their limit identities are proved. Embedding a rational Cauchy sequence
+before completion gives the same value as its earlier rational completion.
+
+The audited regressions include distinct sequence terms, a nonconstant sequence
+approaching zero, and its shift by an arbitrary real value, specialized to
+`log₂(3)`. This supplies general effective scalar limits for subsequent analytic
+constructions. It does not provide the quantitative convergence estimates for
+an entropy optimizer, general real logarithms, exponentials or derivatives.

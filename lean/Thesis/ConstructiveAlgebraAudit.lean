@@ -1,3 +1,4 @@
+import Thesis.Examples.ConstructiveRealCauchy
 import Thesis.Examples.ConstructiveRealAlgebra
 import Thesis.Examples.ConstructiveRealMultiplication
 import Thesis.Examples.RationalNorm

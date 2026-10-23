@@ -1,3 +1,4 @@
+import Thesis.Probability.ConstructiveRealCauchy
 import Thesis.Probability.ConstructiveRealRing
 import Thesis.Probability.ConstructiveRealMultiplication
 import Thesis.Probability.RationalNorm
