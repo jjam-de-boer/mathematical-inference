@@ -134,6 +134,7 @@ jobs:
           Thesis.Causality.CodeSearchPreflight
           Thesis.Causality.CodeSearchMetadata
           Thesis.CausalTransport.NativeDerivationSupportCheck
+          Thesis.CausalTransport.NativeDerivationReplacement
           Thesis.CausalTransport.NativeSupportGuard
           Thesis.CausalTransport.NativeCertificateCheck
           Thesis.CausalTransport.NativeGuardCompilation
@@ -153,6 +154,7 @@ jobs:
           Thesis.Examples.NativeBoundedSelection
           Thesis.Examples.NativeDerivationLinearization
           Thesis.Examples.NativeKernelInterfaceObstruction
+          Thesis.Examples.NativeDerivationReplacement
       - name: Check graph-only identification layers
         working-directory: lean
         run: >-
