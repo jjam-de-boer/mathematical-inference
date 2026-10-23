@@ -22,10 +22,10 @@ The completed positive-class `PublishedCompleteness` package is constructed in
 `ConditionalFailureExtraction` handles conditional exchange traces, and the
 channel countermodel modules establish original-query separation. Native hidden
 DAG transfer and supported-zero qualifications are described in
-`lean/THEOREM_COVERAGE.md`; no local ready-case theorem silently replaces those
+`lean/REFERENCE.md#causal-results`; no local ready-case theorem silently replaces those
 published statements.
 
 The earlier detailed development inventory is preserved verbatim in
-`lean/docs/history/completeness-development.md`. Its historical obligations
+`lean/HISTORY.md#archived-completeness-inventory`. Its historical obligations
 must not be read as current open gaps or a roadmap for deeper failure stacks.
 -/

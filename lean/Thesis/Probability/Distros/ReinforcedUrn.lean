@@ -133,14 +133,6 @@ theorem reinforcedCount_one (n : Nat) (alphas : List Nat) (positive : 0 < alphas
   intro atom _
   rw [stepKernel_one]
 
-theorem modify_add_zero (values : List Nat) (index : Nat) : values.modify index (fun x => x + 0) = values := by
-  induction values generalizing index with
-  | nil => exact List.modify_nil _ _
-  | cons value values ih =>
-      cases index with
-      | zero => simp only [List.modify_zero_cons, Nat.add_zero]
-      | succ index => rw [List.modify_succ_cons, ih]
-
 theorem reinforcedUrn_zero (n : Nat) (alphas : List Nat) (positive : 0 < alphas.sum) :
     reinforcedUrnDistro n alphas 0 positive = categoricalWordDistro alphas positive n := by
   apply Distro.eq_of_atoms

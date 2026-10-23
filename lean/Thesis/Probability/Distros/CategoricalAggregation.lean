@@ -60,18 +60,6 @@ theorem categorical_aggregation (groups : Nat) (alphas labels : List Nat)
   change weightedNatArgument alphas (labels.map f) * grouped.sum = weightedNatArgument grouped args * alphas.sum
   rw [total, dot]
 
-theorem modify_add_comm (values : List Nat) (i a j b : Nat) :
-    ((values.modify i (fun x => x + a)).modify j (fun x => x + b)) =
-      ((values.modify j (fun x => x + b)).modify i (fun x => x + a)) := by
-  induction values generalizing i j with
-  | nil => simp only [List.modify_nil]
-  | cons value values ih =>
-      cases i <;> cases j
-      · simp only [List.modify_zero_cons]; congr 1; omega
-      · simp only [List.modify_zero_cons, List.modify_succ_cons]
-      · simp only [List.modify_zero_cons, List.modify_succ_cons]
-      · simp only [List.modify_succ_cons, ih]
-
 theorem modify_add_combine (values : List Nat) (i a b : Nat) :
     (values.modify i (fun x => x + a)).modify i (fun x => x + b) = values.modify i (fun x => x + (a + b)) := by
   induction values generalizing i with
@@ -95,6 +83,26 @@ theorem aggregateCounts_modify (groups : Nat) (labels alphas : List Nat)
               simp only [List.modify_succ_cons, aggregateCounts, List.getD_cons_succ]
               rw [ih labels (Nat.succ.inj dimension) i (by simpa only [List.length_cons, Nat.succ_lt_succ_iff] using within)]
               exact modify_add_comm _ _ _ _ _
+
+/-- Empty counts remain empty under grouping, including unused groups. -/
+theorem aggregateCounts_zeros (groups : Nat) (labels : List Nat) :
+    aggregateCounts groups labels (List.replicate labels.length 0) = List.replicate groups 0 := by
+  induction labels with
+  | nil => rfl
+  | cons label labels ih => simp only [List.length_cons, List.replicate_succ, aggregateCounts, ih, modify_add_zero]
+
+/-- Grouping a valid word's count vector agrees with counting its relabelled word. -/
+theorem aggregateCounts_colourCounts (groups colours : Nat) (labels word : List Nat)
+    (dimension : labels.length = colours) (valid : ∀ colour ∈ word, colour < colours) :
+    aggregateCounts groups labels (colourCounts colours word) =
+      colourCounts groups (word.map (fun colour => labels.getD colour 0)) := by
+  induction word with
+  | nil => rw [colourCounts, ← dimension, aggregateCounts_zeros]; rfl
+  | cons colour word ih =>
+      simp only [colourCounts, List.map_cons]
+      rw [aggregateCounts_modify groups labels _ (dimension.trans (colourCounts_length colours word).symm)
+        colour 1 (by simpa only [colourCounts_length] using valid colour (List.mem_cons_self ..)),
+        ih (fun i member => valid i (List.mem_cons_of_mem _ member))]
 
 theorem sum_modify_add_ge (values : List Nat) (i increment : Nat) :
     values.sum ≤ (values.modify i (fun x => x + increment)).sum := by

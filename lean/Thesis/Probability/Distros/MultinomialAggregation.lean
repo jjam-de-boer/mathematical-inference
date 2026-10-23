@@ -1,4 +1,4 @@
-import Thesis.Probability.Distros.CategoricalProduct
+import Thesis.Probability.Distros.CategoricalSampling
 import Thesis.Probability.Distros.BinomialMoments
 namespace Thesis.Probability.Distros
 open Combinatorics
@@ -17,18 +17,6 @@ theorem aggregateCounts_length (groups : Nat) (labels counts : List Nat) :
       cases counts with
       | nil => exact List.length_replicate
       | cons count counts => simp only [aggregateCounts, List.length_modify, ih]
-
-theorem sum_modify_add (counts : List Nat) (index increment : Nat) (within : index < counts.length) :
-    (counts.modify index (fun old => old + increment)).sum = counts.sum + increment := by
-  induction counts generalizing index with
-  | nil => simp only [List.length_nil] at within; omega
-  | cons count counts ih =>
-      cases index with
-      | zero => simp only [List.modify_zero_cons, List.sum_cons]; omega
-      | succ index =>
-          simp only [List.modify_succ_cons, List.sum_cons]
-          rw [ih index (by simpa only [List.length_cons, Nat.succ_lt_succ_iff] using within)]
-          omega
 
 theorem aggregateCounts_sum (groups : Nat) (labels counts : List Nat)
     (dimension : labels.length = counts.length) (within : ∀ label ∈ labels, label < groups) :

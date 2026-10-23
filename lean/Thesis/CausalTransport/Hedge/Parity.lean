@@ -70,7 +70,7 @@ theorem hedgeDefectAdjustedTarget_even (nodes : NodeSet S)
 /-!
 ### C-forest incidence flow all the way to query outcomes
 
-The abstract root-flow wrapper above still requires a caller to reconstruct
+The abstract root-flow wrapper in `Hedge.Models` requires a caller to reconstruct
 the root bits.  The models below instead put the pair-root incidence directly
 at every selected c-forest vertex and use the route-priority combined
 successor.  Forest incidence therefore flows toward common roots and, once it

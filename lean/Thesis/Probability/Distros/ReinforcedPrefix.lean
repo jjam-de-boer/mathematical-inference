@@ -46,7 +46,7 @@ theorem reinforcedPrefixEvent_mass (history : List Nat) (n : Nat) (alphas : List
     · simp only [FiniteProbRecord.singletonEvent, same, decide_false, Bool.false_and, Bool.false_eq_true,
         if_false, FiniteProbRecord.eventMass_false, Nat.mul_zero]
   rw [rows]
-  exact eventMass_factor_sum _ (FiniteProbRecord.singletonEvent history) _
+  exact FiniteProbRecord.eventMass_factor_sum _ (FiniteProbRecord.singletonEvent history) _
 
 theorem reinforcedPrefixEvent_positive (history : List Nat) (n : Nat) (alphas : List Nat) (increment : Nat)
     (positive : 0 < alphas.sum) (supported : reinforcedHistorySupported alphas increment history) :
@@ -87,8 +87,8 @@ theorem reinforcedPrefixContinuation_updated (history : List Nat) (n : Nat) (alp
 theorem reinforcedHistorySupported_valid (alphas : List Nat) (increment : Nat) (history : List Nat)
     (supported : reinforcedHistorySupported alphas increment history) :
     ∀ colour ∈ history, colour < alphas.length := by
-  rcases eventMass_positive_witness (reinforcedUrnAtoms history.length alphas increment)
-    (FiniteProbRecord.singletonEvent history) supported with ⟨atom, member, selected, _⟩
+  rcases (FiniteProbRecord.eventMass_pos_iff_exists_atom (reinforcedUrnAtoms history.length alphas increment)
+    (FiniteProbRecord.singletonEvent history)).mp supported with ⟨atom, member, _, selected⟩
   have same : atom.1 = history := of_decide_eq_true selected
   rw [← same]
   exact (reinforcedUrn_word_support history.length alphas increment atom member).2

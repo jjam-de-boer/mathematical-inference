@@ -1,4 +1,5 @@
 import Thesis.Probability.Distros.DepletingPrefix
+import Thesis.Probability.FiniteRecordSums
 
 namespace Thesis.Probability.Distros
 
@@ -39,7 +40,7 @@ theorem multicolourDepletingAtoms_prefix_mass (m n : Nat) (stocks : List Nat) (e
             (multicolourDepletingAtoms n (depletingUpdate stocks front.1)) topEvent = _
           rw [FiniteProbRecord.eventMass_top, multicolourDepletingAtoms_totalMass, remaining]
   rw [rows]
-  exact eventMass_factor_sum _ event _
+  exact FiniteProbRecord.eventMass_factor_sum _ event _
 
 /-- Extending a valid sampling horizon preserves every first-block event. -/
 theorem multicolourDepleting_prefix_consistent (m n : Nat) (stocks : List Nat) (within : m + n ≤ stocks.sum) :

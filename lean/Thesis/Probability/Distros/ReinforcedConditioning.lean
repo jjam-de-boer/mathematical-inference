@@ -1,4 +1,5 @@
 import Thesis.Probability.Distros.ReinforcedHistory
+import Thesis.Probability.FiniteRecordSums
 namespace Thesis.Probability.Distros
 open Combinatorics
 
@@ -15,14 +16,12 @@ instance (m : Nat) (alphas : List Nat) (increment : Nat) (counts : List Nat) :
   unfold reinforcedCountsSupported
   infer_instance
 
+/-- Compatibility spelling for the general record-level weighted-sum fact.
+Current clients use its foundational owner, which assumes no urn mechanism. -/
 theorem eventMass_factor_sum (atoms : List (Ω × Nat)) (evidence : Event Ω) (factor : Nat) :
     (atoms.map (fun atom => if evidence atom.1 then atom.2 * factor else 0)).sum =
-      FiniteProbRecord.eventMass atoms evidence * factor := by
-  induction atoms with
-  | nil => simp only [List.map_nil, List.sum_nil, FiniteProbRecord.eventMass, Nat.zero_mul]
-  | cons atom atoms ih =>
-      simp only [List.map_cons, List.sum_cons, FiniteProbRecord.eventMass, ih]
-      cases evidence atom.1 <;> simp only [Bool.false_eq_true, if_false, if_true, Nat.zero_add, Nat.add_mul]
+      FiniteProbRecord.eventMass atoms evidence * factor :=
+  FiniteProbRecord.eventMass_factor_sum atoms evidence factor
 
 /-- Every future event factors through the observed count vector and its
 updated urn. This is the finite sufficient-statistic factorization. -/
@@ -57,7 +56,7 @@ theorem reinforcedCountsEvent_mass (m n : Nat) (alphas counts : List Nat) (incre
       rw [reinforcedUpdate_counts, same]
     · simp only [same, decide_false, Bool.false_and, Bool.false_eq_true, if_false, FiniteProbRecord.eventMass_false, Nat.mul_zero]
   rw [rows]
-  exact eventMass_factor_sum (reinforcedUrnAtoms m alphas increment)
+  exact FiniteProbRecord.eventMass_factor_sum (reinforcedUrnAtoms m alphas increment)
     (fun word => decide (colourCounts alphas.length word = counts)) _
 
 theorem reinforcedCountsEvent_positive (m n : Nat) (alphas counts : List Nat) (increment : Nat)

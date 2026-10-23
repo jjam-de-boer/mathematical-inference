@@ -1,4 +1,289 @@
-# Causal theorem coverage and application boundaries
+# Lean mathematical reference
+
+This is the canonical mathematical coverage and source-navigation document.
+The actual Lean statements remain authoritative. Build policy and the current
+maintenance ledger live in [AGENTS.md](AGENTS.md); old progress narratives,
+measurements and complete pre-consolidation guides are preserved in
+[HISTORY.md](HISTORY.md). Historical commands are not current build advice.
+
+## Contents
+
+- [Source structure and reading order](#source-structure)
+- [Named finite distributions](#named-distributions)
+- [Causal results and application boundaries](#causal-results)
+- [Entropy and auxiliary analytic values](#entropy-and-auxiliary-values)
+- [Unresolved research boundaries](#research-boundaries)
+
+The probability laws remain finite rational records. Auxiliary exact logarithms
+and constructive real values are not irrational atom weights. Positive-class
+completeness, expression-qualified supported-zero completeness, and arbitrary
+fixed-law or alternative-formula questions must not be conflated.
+
+<a id="source-structure"></a>
+
+## Source structure and reading order
+
+The library separates finite probability semantics, graph-indexed causal
+programs, their mathematical verification, and applications. A broad facade
+preserves convenient imports; focused implementation modules should use the
+smallest mathematical layer that supplies their actual dependencies.
+
+## Current reading order
+
+| Start here | Mathematical responsibility | Continue with |
+| --- | --- | --- |
+| `Probability.Core`, `Urn`, `QualitativeUrn` | Finite rational probabilities, Boolean events and Clayton-style scale comparisons | `FiniteRecord`, finite products and support interfaces |
+| `Probability.Distros.Basic`, `Distros.LawBasics` | Named distribution records, every-event law equality and almost-sure support | Specialized moment, concentration and entropy modules |
+| `Probability.FiniteRecordSums`, `Distros.CategoricalSampling` | General selected-weight sums, valid colour counts and selected-head integrals | Aggregation and both urn-history families; no specialized urn import is needed for these facts |
+| `ExactLog*`, `EntropyValue`, `Distros.Entropy` | Exact symbolic logarithms and information quantities over rational records | `EntropyGibbs`, `EntropyGibbsEquality` and their examples |
+| `Causality.Graph`, `Model`, `Semantics`, `Identification` | Finite graph/model semantics, causal query meanings and identification specifications | Graph search and derivation certificates |
+| `Causality.IdentificationSearch`, `ComponentConnectivity`, `IdentificationRank` | Shared executable graph tests and constructive correctness/progress facts | The current `IdentificationKernel` and `ConditionalIdentificationKernel` programs |
+| `Causality.TermSupport`, `InterventionalCounterexample`, `CForestConstruction`, `IdentificationOutcomeTraces` | Shared support, event-to-kernel separation, forest construction and ordered result witnesses | Focused success/failure compilers without legacy imports |
+| `CausalTransport.DSeparation*`, `Certificates`, `Soundness*` | Checked graphical side conditions, inspectable derivations and soundness of their interpretation | Positive-class or support-aware compilation |
+| `CausalTransport.ActionDeletion`, `ChainCompilation`, `Kernel*Compilation` | Rule constructors and exact formula-aligned current-engine success certificates | `KernelSuccessCompilation` and `CompletenessAssembly` |
+| `CausalTransport.Hedge.ReadoutGeometry`, `Hedge.Models`, `Hedge.Parity` | Explicit graph routes, finite latent models and reusable parity/flow identities | Channel installation, integration and original-query countermodels |
+| `HedgeChannelCompleteness`, `HiddenDAGCorrespondence` | Completed positive-class joint/conditional results and original hidden-DAG transfer | Public theorem coverage and modal applications |
+| `HiddenDAGSupportedCorrespondence`, `PositiveModal`, `SupportedModal` | Supported-zero qualifications and actual mode-indexed executions | Support diagnostics and application examples |
+| IV/bow, compression, polynomial certificates and bounded-search families | Additional finite-domain identification, bounds and checked representations | Their topic-named examples and coverage qualifications |
+
+The model classes and support hypotheses are part of the results, not layout
+details. [The coverage guide](#causal-results) states their application
+boundaries; this reading order does not enlarge any theorem.
+
+## Shared hedge foundations
+
+`CausalTransport/Hedge` contains reusable geometry and model construction,
+with declaration namespaces kept under `Thesis.Causality`. Its boundaries
+follow mathematical responsibility rather than a uniform file-size target:
+
+- `ReadoutGeometry` computes routes from finite reachability evidence and
+  proves typed lookup and common-sink properties. It is not a countermodel
+  or positivity theorem.
+- `Models` builds actual finite latent/parity models and proves their local
+  invariants. Readiness conditions on the older model families remain explicit;
+  the unrestricted channel counterexample is assembled in its own modules.
+- `Parity` supplies full and nested incidence solvers, exact support and
+  forest-flow identities, plus the one-anchor parity correction shared by
+  partial incidence and carrier models. It does not import positive-model
+  counterexamples merely to obtain that Boolean correction.
+- `WitnessSearch` constructs an actual hedge from the executable graph tests.
+  It has no semantic completeness or legacy engine premise.
+- `Countermodels` proves the original observational parity equalities and
+  geometrically qualified mix counterexamples. Positive carriers and routed
+  outcome-flow support import it directly, without historical failure stacks.
+
+None of these shared modules imports the historical identification recursion or
+its branch-stack proofs. Current positive, supported-zero and modal theorem
+paths, as well as the retained qualified-carrier development, are guarded
+against accidentally regaining those historical dependencies.
+
+Generic consecutive-list operations and their reachability conversion live in
+`Causality.ReachabilityCorrectness`, not `DSeparationCorrectness`. Readout geometry
+therefore uses the shared walk foundation without importing the semantic
+correctness proof for active paths or moral graphs. The original graph-specific
+import still reexports those generic declarations for existing callers.
+
+The sampling boundary is analogous. `Distros.CategoricalSampling` owns the
+coordinate-update/count lemmas and finite selected-head integral, while
+`Probability.FiniteRecordSums` owns general mass factorization. Positive atom
+witnesses reuse `FiniteProbRecord.eventMass_pos_iff_exists_atom` from
+`Probability.FiniteRecordSupport`. The old
+reinforced-urn spellings remain compatible; depleting clients no longer import
+reinforced conditioning, exchangeability or update histories for these facts.
+Their use of reinforced factorial-moment results remains legitimate and intact.
+
+## Compatibility and historical material
+
+`CompletenessHedgeModels` is an import-compatible facade for `Hedge.Models`.
+It deliberately still exposes the preceding historical layers. Other original
+completeness-layer paths likewise reexport the support, graph and derivation
+declarations moved to their focused owners. Existing declaration names and
+mathematical statements are unchanged.
+
+Compatibility preserves each original defining-module path and the broad
+public facades. Focused clients should explicitly import any other interface
+they use: incidental historical reexports of a formerly broad dependency are
+not a reason for a current implementation to keep importing the old engine.
+
+`CompletenessHedgeParity` similarly reexports `Hedge.Parity` and retains the
+older model facade. `HedgePartialIncidence` imports the focused parity layer
+directly, so current channel integration no longer inherits the positive
+carrier development or its historical engine imports for elementary parity.
+`CompletenessHedgeCountermodels` likewise reexports `Hedge.Countermodels` while
+retaining its original preceding compatibility imports. The broad `Completeness`
+and `CausalTransport` facades intentionally continue to expose preserved history;
+they are convenience/audit entry points, not foundational imports for current
+implementation modules.
+
+`Causality/Legacy` quarantines the obsolete executable engine and its checked
+control-flow proofs. `CausalTransport/Historical` retains the historical
+finite-depth unpackers and legacy trace-compiler interfaces. They remain built and axiom-audited;
+they are not a substitute for current-engine semantic completeness and must
+not be exposed as an unsafe unqualified identification API.
+
+| Original import | Retained implementation |
+| --- | --- |
+| `CausalTransport.CompletenessLegacyShrinkFailures` | `CausalTransport.Historical.LegacyShrinkFailures` |
+| `CausalTransport.CompletenessLegacyProductFailures` | `CausalTransport.Historical.LegacyProductFailures` |
+| `CausalTransport.CompletenessLegacyNestedFailures` | `CausalTransport.Historical.LegacyNestedFailures` |
+
+Each old file is a compatibility facade. Exact-body preservation guards cover
+the archived namespaces, declarations and proofs; import guards ensure that
+the full audit still reaches both the old paths and the archived payloads.
+Current positive, hidden-DAG, supported-zero and modal completeness paths do
+not import those historical layers. Moving them does not claim that the
+mandatory whole-project verification can skip their checking cost.
+
+`ConditionalFailureCore` contains general IDC exchange/failure extraction and
+terminal assembly. `ConditionalFailureCarrierCases` retains a qualified
+carrier counterexample separately, and the old `ConditionalFailureExtraction`
+path reexports both. `ConditionalBayes` supplies the original source-local
+support argument without importing historical certificates.
+
+The measured conditional-readout regression has a topic-grouped fixture in
+`Examples/HedgeConditionalReadout`. `Graph` defines its original concrete query,
+`Exchange` retains the finite no-exchange check, and `Failure` retains the actual
+engine equations. The original `Examples.HedgeConditionalReadout` module still
+constructs and checks the same routed countermodels. This split keeps each
+local invocation within the existing limit and lets semantic edits reuse the
+independent graph computations; it does not skip any regression.
+
+`Examples/HedgeConditionalClosedReadout` applies the same boundary to its two
+independent query calculations: `Graph` supplies the original fixture data,
+`PrimaryEngine` and `EarlierEngine` retain all six engine assertions, and the
+original entry point retains the actual semantic countermodels. Both example
+families remain reachable from the full build and axiom audit.
+
+The long earlier completeness development inventory is retained in
+[historical documentation](HISTORY.md#archived-completeness-inventory), not in the
+current-status facade. Mathematical explanations and historical proved results
+are preserved. A public end-result is not obsolete merely because no internal
+module calls it, and qualified carrier countermodels are not historical junk
+merely because a more general channel theorem exists.
+
+The remaining topic-named probability, causal, bound and search modules retain
+their established paths. A wholesale folder rename would add forwarding files
+and invalidate import clients without a measured dependency or checking
+benefit. New subfolders here therefore mark actual ownership boundaries
+(`Hedge`, `Historical`, and the two measured example fixtures), not a target
+file count or uniform size. The reading table supplies the broader topic map.
+
+## Verification and build interfaces
+
+`Thesis` remains the broad proof-and-example facade. The executable's Lake
+prerequisite checks that facade even though its runtime needs only IO.
+`Thesis.AxiomAudit` checks the transitive imported project declarations,
+including retained history and regressions; only `propext` and `Quot.sound`
+are allowed. Source-dependency and preservation tests guard the extracted
+boundaries but do not replace Lean's checks.
+
+[Local checks](AGENTS.md#builds-and-checks) documents ordinary native Lake builds and
+the optional single-compiler resource-monitored route. The
+[refactoring ledger](AGENTS.md#targeted-maintenance-ledger) records exact checkpoint evidence,
+remaining work and the bounded review passes.
+
+<a id="named-distributions"></a>
+
+## Named finite distributions
+
+[`Thesis.Probability.Distros`](Thesis/Probability/Distros.lean) exposes
+the named finite laws and their checked interpretations. Geometric and
+negative-binomial outcomes count Bernoulli failures before the requested
+successes. Truncation conditions on success within the finite window;
+censoring clips the failure count to the cap and retains the entire tail.
+Both laws are derived from actual finite Bernoulli products, and the
+one-success negative binomial equals geometric.
+
+The lattice Gaussian uses the rational kernel `q^(x²)` on `x ∈ [-radius, radius]`,
+with `0 ≤ q ≤ 1`. Zero gives a point mass and one gives the discrete uniform
+law. Equivalent rational presentations of the kernel give the same Gaussian
+and finite χ² laws on every event. Its signed mean is zero and its variance is the exact finite second
+centred moment. The finite χ² law sums independent squared coordinates:
+equal radius and kernel give additivity in the degrees of freedom, mean
+`df · m₂`, and variance `df · (m₄ − m₂²)`.
+
+The library includes reusable expectation, map, independent-sum and PGF laws;
+closed Bernoulli, binomial, geometric, hypergeometric and beta-binomial
+moments; general rational censored PGFs; and a multivariate multinomial PGF
+with matching occupancy dimensions. Beta-binomial normalization is the
+rising factorial `(α+β)↑trials`, and its success-count law agrees on every
+event with sequential finite Pólya urn draws and same-colour reinforcement.
+Ordered Pólya words are exchangeable. Conditioning on a supported prefix
+updates the two urn counts by the observed colour counts, with the exact
+future law and both next-draw probabilities proved. The `*DistroOfTotal`
+constructors permit zero success weight in censored waiting times and one
+zero beta-binomial colour count. Their deterministic point-mass laws are
+proved; beta-binomial moments and the urn correspondence include both
+endpoints. Existing strict constructors agree with these variants.
+Law equivalence transports event agreement through maps, products, positive
+conditioning, expectations, moments, variance and PGFs, without requiring
+finite enumerations of outcome types. Chebyshev is connected to variance
+and holds at every positive rational radius. Finite generating functions
+determine numeric and bounded count-vector laws constructively. Independent draws from the categorical constructor produce
+the multinomial occupancy law on every event, including zero-weight colours.
+Arbitrary category partitions produce multinomial laws with summed weights;
+coordinate counts have binomial marginals, closed means and variances.
+Distinct-coordinate cross moments and nonpositive covariances are proved with
+integer numerators over positive denominators. The generic covariance agrees
+with the centered product integral and with witnessed variance on its diagonal.
+The signed-observable API extends this to integer coordinates, with symmetry,
+bilinearity, law/map transport, zero covariance under independence, and the
+covariance term in dependent-sum variance. Integer-observable variance is
+proved nonnegative and agrees with the existing witnessed natural variance.
+Falling-factorial moments of binomial, hypergeometric and beta-binomial laws
+are proved at every order,
+including orders above their finite support. General negative-binomial
+factorial moments reduce to shifted finite generating sums; their means,
+second moments and witnessed variances include the cap boundary terms and
+the censored zero-success-weight endpoint. Conditioning a larger truncated
+geometric or NB law on a smaller window recovers that smaller law; clipping
+a larger right-censored law gives the smaller censored law on every event.
+Hypergeometric is also realized by actual sequential two-colour urn draws
+without replacement: each Bernoulli colour draw removes one ball of that
+colour. Its count law agrees on every event, including empty and single-colour
+urns, and the mean and finite-population variance transport to that process.
+
+Multicolour Pólya paths draw from the current categorical weights and add one
+to the chosen colour. Their occupancy law is Dirichlet-multinomial, with
+multinomial coefficients times rising-factorial factors and normalizer
+`(sum α)↑trials`. The categorical first-step semantics, every-event count
+correspondence, support and PMF are proved, with zero individual parameters
+permitted. Two colours recover the positive-total beta-binomial numeric law.
+Natural likelihood reweighting transports through law equivalence and maps.
+A general urn can add any natural number of balls after each draw. Its
+rising-factorial normalizer and count law recover multinomial at increment
+zero and the existing Pólya / Dirichlet-multinomial at increment one.
+Scaling initial counts and reinforcement together preserves the law.
+Arbitrary nonnegative rational Pólya parameters are implemented by clearing
+one common denominator and adding that denominator after each draw. The
+ordered and occupancy laws are invariant under equivalent rational
+presentations and recover the original natural-parameter constructors.
+Every joint falling-factorial moment is proved for multinomial,
+Dirichlet-multinomial and arbitrary reinforcement. The formula is the total
+falling trial factor times the product of coordinate rising factors, divided
+by the rising total; at zero reinforcement these become weight powers.
+The identities include zero colours and orders above the trial count.
+Merging any categories in a reinforced path or count law sums their initial
+weights and retains their reinforcement increment. Every Dirichlet-multinomial
+coordinate has its beta-binomial marginal, closed mean and variance, with
+zero-weight and single-colour endpoints included. Joint factorial moments
+also give the individual factorial moments, means and distinct-coordinate
+cross moments and signed covariances for every reinforcement increment.
+Ordered reinforced words are exchangeable: equal colour counts give equal
+word probabilities. Conditioning the actual path record on observed counts
+and dropping the observed draws gives exactly the urn with parameters
+increased by the increment times those counts. Counts are therefore
+sufficient for every future event; the next-colour probability is
+`(alpha[i] + d * count[i]) / (sum alpha + d * observed draws)`.
+
+Variance uses the existing witnessed `QProb.sub` operation, and boundary
+cases are covered by theorem statements and kernel-checked
+[`DistributionLaws`](Thesis/Examples/DistributionLaws.lean) and
+[`DistributionExtensions`](Thesis/Examples/DistributionExtensions.lean) regressions.
+
+<a id="causal-results"></a>
+
+## Causal results and application boundaries
 
 This guide separates graph-level identification from applying a formula at a
 particular law, and both from fixed-law identification. The actual Lean
@@ -6,15 +291,15 @@ statements remain authoritative. All implemented probability theorems concern
 finite rational records, with zero-weight cells permitted unless an explicit positivity
 assumption says otherwise. Original hidden DAG results allow arbitrary finite
 hidden and private-noise alphabet sizes; observed alphabets remain fixed.
-Research checkpoints below are labelled assessments, not additional Lean
-theorems. The real-to-rational comparison only explains a limit of importing
-an external method; it does not extend the probability framework.
+Implemented constructions and remaining research are distinguished below.
+External real-valued methods do not by themselves extend the rational
+probability framework.
 
-## Seven-point work-plan checkpoint
+## Coverage overview
 
-| Point | Current result | Next boundary |
+| Topic | Current result | Boundary |
 | --- | --- | --- |
-| 1. Safe local builds | Complete local Lean/native build and transitive axiom audit passed through the cache-aware sequential builder; measured caps and reusable ordinary artifacts are documented in `LOCAL_CHECKS.md`. | Use the guarded sequential route; success does not establish safety of unrestricted parallel cold builds or arbitrary external machine load. |
+| 1. Safe local builds | Complete local Lean/native build and transitive axiom audit passed through the cache-aware sequential builder; measured caps and reusable ordinary artifacts are documented in `AGENTS.md`. | Use the guarded sequential route; success does not establish safety of unrestricted parallel cold builds or arbitrary external machine load. |
 | 2. Shared graph infrastructure | Connectivity, reachability and rank infrastructure extracted without changing public theorem names; current-engine dependency guards pass. Resource-driven soundness/completeness splits retain the original declaration text. | Further splitting should address a measured bottleneck; it is not itself a mathematical repair or a guarantee of full local feasibility. |
 | 3. Multivalued native example | Three declared observed values, an actual rational distribution, null intervention targets and supported conditionals checked through the native model. | The standalone-template regression now exercises the same boundary as well. |
 | 4. Support-pattern applicability | Exact undefined/zero/positive analysis and exhaustive comparison within supplied finite formula catalogues; complete native causal support profiles also preserve recursive derivation support. | This does not enumerate every possible certified formula; observed support alone need not determine causal support. |
@@ -152,48 +437,7 @@ applicability question; it does not bound the length of a certificate that
 might cover a previously uncovered pattern. Original conditional-target
 support also remains a separate causal premise.
 
-### Research checkpoint 5: alternative-formula coverage
-
-Universal formula coverage remains a bounded assessment, not an additional
-formula-completeness theorem. The implemented support foundations are
-recorded separately below.
-
-The natural first scope fixes the observed signature, the original finite
-hidden DAG/projection and a joint query. Candidates are the current
-`GuardedObservationalFormula` objects: current `ProbabilityTerm` syntax,
-action-free output, either existing guard, and the native interpretation
-proof. Maximal catalogue coverage would mean: for **every native model and
-reference**, whenever **any such certified candidate** is available, some
-member of one constructed finite catalogue is available. This is not merely
-coverage of ID's chosen expression, nor fixed-law point identification.
-A conditional-query version must retain its original source-support premise.
-
-There are finitely many support/reference pairs, but that does not yet give
-an algorithm for choosing a candidate for every coverable pair. In particular,
-the current `interpret` field is an arbitrary native semantic proof, not a
-serialized proof language with a decidable certificate checker. Bounding
-expression depth alone therefore does not decide which expressions can be
-certified by that interface.
-
-A complete **bounded derivation search** has a concrete route: canonically
-enumerate kernels, node selections, fixed assignments and terms up to an
-explicit height; enumerate derivation trees up to a separate size bound;
-check graphical leaves; reconstruct accepted derivations; then compile only
-those whose intermediate support obligations have been discharged. The
-`eqCongr` constructor requires extensional finite-function normalization,
-not equality of arbitrary function implementations. All intermediate terms,
-not only the final printed expression, must respect the declared bounds.
-The bounded theorem would cover this specified proof grammar, not every
-arbitrary semantic proof inhabiting `interpret`.
-
-Intermediate support is a real additional obligation. Endpoint availability
-alone is not a support witness for every intervened intermediate kernel.
-The two current guards (`always`, `actionOne`) cannot express an arbitrary
-extra support condition; generic support-certificate syntax or a richer
-proved guard language may be needed. Enumerating terms and applying existing
-soundness without addressing this step would be incomplete.
-
-### Approved support-foundation stages for goal 5
+### Finite causal support-profile foundations
 
 The first two stages are implemented independently of a future proof-code
 language. `FiniteSupportCatalogue` enumerates actual normalized unit-weight
@@ -248,12 +492,11 @@ current observable guards remain unchanged because their checks depend only
 on observed support. Huge full model catalogues are not concretely expanded
 by these regressions.
 
-These two support stages did not themselves implement proof codes or a new
-selector. After their verified publication and review, the separately approved
-certificate-checker stage below adds proof codes and supplied guard-table
-checking. Derivation enumeration and formula selection remain unimplemented.
+These support foundations do not themselves select a formula. The implemented
+checker, bounded enumerator and native selector are distinct downstream layers,
+with their exact finite-family guarantees and limitations described below.
 
-### Approved serialized certificate-checker stage for goal 5
+### Serialized certificate checking
 
 `ProbabilityTermCode` uses constructor trees and natural dictionary indices,
 not arbitrary functions or supplied semantic proofs. Its dictionaries include
@@ -306,7 +549,7 @@ This checker certifies supplied codes in its declared grammar. Enumeration
 is a separate downstream stage, described below; neither the checker alone
 nor the bounded enumerator covers arbitrary Lean semantic proofs.
 
-### Generated proof-admissible guards for goal 5
+### Generated proof-admissible guards
 
 `NativeGuardCompilation` generates a guard for one supplied checked proof.
 Its rows use only observed patterns actually represented in the supplied
@@ -343,7 +586,7 @@ adapters are checked symbolically rather than expanding enormous catalogues.
 Proof enumeration, bounded proof-search completeness and formula selection
 are not implemented by this guard construction.
 
-### Bounded code enumeration and native acceptance coverage for goal 5
+### Bounded code enumeration and native acceptance coverage
 
 `ProbabilityTermEnumeration` and `DerivationEnumeration` construct finite
 lists with independent **expression-tree depth** and **proof-tree depth**
@@ -507,7 +750,7 @@ them. Profiles, the observational record and cheap metadata are prepared
 inputs, not lazily generated under these gates. The new regression executes
 only eight-leaf catalogues and uses symbolic coverage for deeper proof budgets.
 
-### Support-preserving elementary-path bridge for goal 5
+### Support-preserving elementary-path bridge
 
 `DerivationLinearization` separates the old nonstructural leaves into
 `DoCalculusAtom`. A `DoCalculusRewriteStep` contains exactly one such leaf,
@@ -560,113 +803,9 @@ matching profiles. Ordinary unconstrained rewrite reachability does not
 settle that support-constrained question; its decidability for this particular
 causal grammar remains an explicit research obligation.
 
-### Bounded support-constrained reachability assessment, 2026-10-22
+### Proved common-kernel substitution obstruction
 
-This is a research assessment of the implemented language, not another Lean
-theorem or permission to start an unbounded solver project. It sharpens the
-remaining obligation after the elementary-path bridge. Nothing here changes
-the published graphical soundness/completeness statements, rational model
-class, support discipline or permitted axioms.
-
-**The exact profile quantifier matters.** Fix the graph, source term and one
-represented observable guard cell, including its decoded reference. Let
-`M` be every catalogue entry with that observed support pattern, and let `I`
-contain those entries in `M` where the original source is defined at this
-reference. For an action-free candidate that is observationally available at
-the cell, `CheckedNativeProof.demand` requires the derivation checker to pass
-on every entry in `I`; source-undefined entries contribute no extra demand.
-This follows by inspecting `demand`, `checkCell` and observational support
-invariance. Requiring the path on all of `M` would unnecessarily strengthen
-the existing API. Conversely, selecting a different successful path for each
-entry in `I` would weaken it: one common proof/formula must serve the cell.
-If `I` is empty, acceptance is vacuous about causal values, not a proof that a
-null conditional target has a value. Original source support stays separate.
-
-The typed derivation branch can therefore be investigated as follows: find
-one elementary path from the unchanged source to an action-free available
-term, with every vertex defined at the root reference in every entry of `I`.
-`linearize_checkVertices` preserves any old accepted proof in this form;
-`checkVertices_eq_toDerivation` recovers the established checker exactly from
-such a path. The separate top-level `actionOne` branch is already finite and
-is not an additional composable rewrite rule. Connecting arbitrary typed
-paths back to the serialized search language would also require a proved
-encoding/decoding round trip; the existing bridge is not that exporter.
-
-**An exact finite filter has a concrete construction.** With `m` supplied
-causal profiles and `a` declared assignments, record a term's three-valued
-status at all `m * a` profile/reference pairs. All references are necessary:
-marginalization changes the reference, and `evaluateAt` ignores the outer
-one. Zero and kernel statuses supply the leaf table; the proved arithmetic
-status operations and finite substitution lists give deterministic
-constructor transitions. An action-free bit can be carried as well. This gives at most
-`2 * 3^(m * a)` states for a bottom-up acceptance filter. The root tests use
-`I`; candidate observational availability is still checked independently.
-This is an explicit mathematical construction to formalize, not a newly
-implemented automaton, practical allocation recommendation or proof of
-search termination. It never merges numerical values: for example, a
-positive probability and its square have the same status but need not agree.
-
-The missing step is not the finiteness of that filter. It is an exact,
-terminating treatment of rewrite paths that remain inside its accepted
-language. Two terms reaching the same filter state need not be connected by
-a permitted equation or have the same reachable action-free endpoints.
-Replacing them by one representative without a lifting theorem could create
-spurious certificates or discard the only usable path.
-
-**The literature does not supply that step automatically.**
-
-- Narendran and Rusinowitch construct finite canonical systems for finite
-  ground equations modulo AC, without a cancellation assumption. Their
-  unconstrained word-problem result does not itself preserve support along
-  the reconstructed proof or decide reachability of an arbitrary supported
-  action-free target. [Primary paper](https://courses.grainger.illinois.edu/cs576/sp2017/readings/18-mar-9/narendran-rusinowitz-ground-AC-compl.pdf).
-- Tiwari's richer directed-closure construction assumes cancellative AC
-  operations and identity laws. Those are not constructors of the current
-  calculus; zero factors also prevent unconditional semantic cancellation.
-  Its Section 3 explicitly separates the non-cancellative case, so this
-  method must not silently strengthen the formal language.
-  [Primary paper, Section 3](https://www.csl.sri.com/users/tiwari/papers/fsttcs01.pdf).
-- Loeding's Theorem 4.25 proves undecidability for arbitrary ground-tree
-  systems with arbitrary regular path/target constraints. The proof uses a
-  machine-dependent rule bank and error filter. No reduction realizing those
-  ingredients by this symmetric causal equation bank and its arithmetic
-  support filters has been established. It rules out a generic inference
-  from regularity alone, not the desired causal theorem.
-  [Primary thesis, Section 4.3.3](https://publications.rwth-aachen.de/record/58868/files/Loeding_Christof.pdf).
-- Do-search terminates by storing identified kernel triples and skipping
-  previously identified distributions. This is a useful normal-form lead,
-  not a theorem of maximal formula applicability at zero-containing laws.
-  Its one-record-per-distribution cache cannot simply replace every formula
-  variant and its different support requirements in the current search.
-  [Primary paper, Algorithm 2 and Theorem 2](https://arxiv.org/html/1902.01073v3#S3.SS3).
-
-**Verdict and next research checkpoint.** There is neither a justified
-universal stopping theorem nor a causal impossibility reduction from this
-pass. A general solver is substantial research, not a moderate completion
-step. The most focused positive conjecture is a support-preserving
-kernel-normal-form theorem: a computable finite key set, fixed by the graph,
-signature, source and profiles before searching, suffices for every coverable
-cell. Its kernel/interface keys must retain weighted zero branches, all used
-references and one common formula. Rule applicability must depend only on
-the keys, and combining their stored witnesses must reconstruct a valid
-certificate. Such a theorem, plus effective rule closure and proof
-reconstruction, could justify finite saturation. Finiteness of the keys used
-by each individual finite proof, or merely proposing a fixed set of keys,
-does not establish this uniform claim.
-
-Before building a solver, a sensible bounded follow-up is to formulate that
-normal-form claim precisely and try either a derivation-normalization
-argument or a small counterexample. The finite status filter and typed/code
-round trip are feasible separate formalization tasks, but they do not by
-themselves resolve the conjecture. Any negative strategy must instead encode
-an undecidable problem using the actual causal rules, finite native profiles,
-and symmetric paths, without inserting arbitrary equations. Another round
-of increasing proof-depth budgets would establish none of these missing
-claims. Further substantial infrastructure requires a new review decision.
-
-### Bounded kernel-normal-form attempt, 2026-10-23
-
-The broad conjecture above remains unproved and unrefuted. This pass tests a
+A general support-preserving finite-key normal form remains unproved and unrefuted. This pass tests a
 specific proposed composition rule, rather than treating the phrase "finite
 keys" as a normal-form theorem. `Examples.NativeKernelInterfaceObstruction`
 gives a checked counterexample to the following **common-carrier shortcut**:
@@ -721,7 +860,7 @@ false, even with metadata agreement over every native model/reference. This
 does not prove that those keys are unusable in every possible algorithm:
 another proof reconstruction may avoid the carrier, as the supported direct
 chain proof does here. It does not refute every finite-key or context-indexed
-normal form, and it is not an impossibility result for goal 5. A general
+normal form, and it is not an impossibility result. A general
 positive result still needs a support-preserving lifting theorem, not merely
 finite metadata or conditional-demand transitive closure. No solver or
 production proof interface was added during this bounded attempt.
@@ -1269,181 +1408,7 @@ source-weight assignments. Neither proves complete certificate search,
 optimization, sharpness or rational feasibility decision. No excluded-middle,
 choice or real-to-rational transfer principle is added at these boundaries.
 
-### Research checkpoint 6: representation adapters
-
-The compact source-alphabet step is now implemented by the product/native
-presentation and compact-source theorems described above. They apply
-`FiniteProbRecord.atomPresentation` to compressed factors, use their actual
-independent product prior, and prove complete decoded-law equality through
-`FiniteProduct.probVal_extensional_of_rectangles`. The decoder need not be a
-bijection of the old ambient noise type. A common `Fin K` presentation can
-still be added separately with zero-weight positions and an explicit decoded
-default; the compact `Fin k_j` construction avoids that unnecessary padding.
-
-For a fixed full DAG, `HiddenDAGReachableValues` and
-`HiddenDAGValuePresentation` now implement the hidden-value coding and
-simulation. Their bound is `I * product_j k_j`, hence at most `I * K^N`,
-where `I = actions.length + 1` counts the included factual action. The existing
-acyclic evaluator-uniqueness theorem proves simulation of the explicit
-retained trajectories; observed values are converted two-sidedly rather than
-restricted to positive support. Code-mechanism completeness, bounded-shape
-catalogue membership, checked observed conversions and standalone native-law
-coverage are implemented by the modules above. The assembled
-`nativeTemplateRepresentation` constructs the final finite structural entry
-and its source parameters for every original fixed-DAG model.
-
-Preserving **all** hard-intervention distributions is still a finite target:
-if coordinate `i` has `d_i` declared values, enumerate
-`I = product_i (1 + d_i)` interventions and all `A` observed singleton
-events for each. Source compression on that `I * A` query family gives the
-candidate bound `K = I * A + 1`. This is an assessed sufficient route, not
-a proved cardinality theorem or practical enumeration recommendation.
-It concerns each intervention's distribution, not arbitrary joint
-cross-world counterfactuals unless those are retained separately as well.
-
-For a fixed observed projection with varying hidden topology,
-`FiniteHiddenDAGSCM.toLatentRootSCM` in `HiddenDAGCollapse` is the useful
-starting point. Group its
-independent roots by identical observed-child incidence, keeping all child
-sets, including sets of size greater than two. There are at most `2^n`
-incidence masks for `n` observed nodes. Grouped-law independence, local
-decoder/evaluator simulation and exact projected-root graph preservation are
-now proved by the modules above. The remaining step realizes that grouped
-model on the fixed full clique-root DAG, before invoking the existing native
-compression and finite mechanism enumeration.
-Dummy constant sources cannot simply be given arbitrary children: their
-arrows still add graphical bidirected edges. Omit unused masks, give them no
-arrows, or justify that their arrows add no edge outside the required graph.
-
-A cleaner fixed-template candidate is one root for **every bidirected
-clique mask**, including singleton masks and optionally the empty mask.
-Every original collapsed root's child set is such a clique. Group roots
-with that exact mask; use a unit-valued source when a clique has no original
-root. These dummy clique arrows add no forbidden edge, and including the
-two-vertex masks recovers every required bidirected edge. The number of
-roots is still at most `2^n`. This avoids a model-dependent incidence table,
-and the probability/evaluator grouping is now proved. Native-graph realization
-and assembled coverage still need proofs. It retains multi-child causes rather than wrongly
-reducing to pairwise roots. This route changes the full hidden DAG and must
-not be confused with the fixed-full-DAG representation above.
-The current native APIs are indexed by a projection object that also fixes
-its full hidden DAG. A projection-only search would need an explicit union
-over full hidden DAGs with the same observed graph, rather than silently
-changing the model class of an existing theorem.
-
-Finite source bounds are also established for discrete independent-source
-networks by [Rosset, Gisin and Wolfe](https://arxiv.org/abs/1709.00707).
-That is supporting literature, not a Lean assumption or an automatic
-rational/constructive transfer. The repository's existing compression proof
-is the rational foundation. The user selected the fixed-full-DAG route first;
-source and hidden-value coding, finite structural enumeration and standalone
-native-law coverage are now implemented. Following the bounded reassessment,
-the user approved staged projection-wide implementation. The fixed clique
-graph, independent block law, grouped causal root model, native realization
-and assembled projection-wide model-class coverage are now constructed and
-proved. The last step uses those actual bridges, rather than inferring
-projection-wide coverage merely from fixed-DAG compression or root grouping.
-
-### Bounded reassessment after fixed-full-DAG coverage
-
-The bounded assessment below was reviewed and the user approved staged
-implementation. Its graph, grouping, native-realization and projection-wide
-coverage stages are now implemented as described above. The completed
-fixed-DAG constructor supplies the final compression and enumeration step.
-The reviewed order and the construction used at each boundary are:
-
-1. **A fixed clique-root graph (implemented).** Enumerate the Boolean observed-child masks
-   whose distinct members are pairwise bidirected-adjacent. Include singleton
-   and empty masks. Construct one hidden root per listed mask, with its mask
-   incidences and the signature's unchanged observed directed edges. Prove
-   exact projection and a node bound of `n + 2^n`. Including all two-node edge
-   masks recovers every required bidirected edge; larger clique masks add no
-   forbidden edge. Graph compatibility permits an unused root's mechanism to
-   be constant, so unused clique slots need not be deleted model-dependently.
-2. **An independent-law grouping adapter (implemented).** Collapse an arbitrary original
-   model using `toLatentRootSCM`, then assign each root to its exact child mask.
-   Each such mask is a clique by projected-graph agreement. A grouped value can
-   be a proof-indexed product `source -> owner source = mask -> Value source`.
-   The existing `ProofFunction` enumeration/equality construction handles its
-   absent coordinates without choosing values from unused alphabets. Construct
-   the actual block factors and prove that decoding their independent product
-   gives the whole old joint law, not only its one-source marginals. Finite
-   product exchange and singleton/rectangle extensionality prove the complete
-   disjoint-block law in `FiniteProductGrouping`.
-3. **Multi-child native realization (implemented).** `LatentRootNativeModel`
-   installs the actual blocks as hidden-root values/private sources, with
-   vacuous observed-node noise. `LatentRootNativeEvaluation` proves equation
-   simulation and all-hard-intervention event preservation. The older
-   `HiddenDAGRootPlacement.sharedInput` data can describe arbitrary child
-   families, but `hiddenDAGRootPlacements` and `toHiddenDAGSCM` currently require
-   `Compatible`, which includes **at most two children per root**. They cannot
-   be applied directly to the grouped multi-child model. The new constructor
-   avoids that restricted API without weakening or disguising its premise.
-4. **Representation coverage with the right quantifiers (implemented).**
-   `ProjectedHiddenDAGModel` explicitly ranges over full original hidden DAGs
-   with the same observed projection. `toCliqueRootSCM` preserves all their
-   interventions on the fixed graph, which is itself a valid original graph
-   in the class. Composing with `nativeTemplateRepresentation` yields a listed
-   standalone template with structural bounds independent of the original
-   hidden-node count and with the requested probabilities preserved.
-5. **Regression and review.** Graph and grouping examples cover empty
-   graphs/masks, unused slots and zero-weight cells. The projection-wide
-   examples check an internal relay, a three-child shared cause, supported
-   conditionals through retained joint/evidence queries, a multivalued law
-   and intervention at a factual null value. Review the verified coverage
-   checkpoint before adding substantial feasibility/search infrastructure.
-
-The staged implementation closes this representation boundary, not the
-unrestricted feasibility problem. Infinitely many rational weights remain,
-and goal 5's formula-search termination question is independent. The approved
-projection-wide stages do not authorize an open-ended feasibility/search
-implementation afterward.
-
-## Research checkpoint 7: fixed-observed-law procedures
-
-This assessment separates three possible extensions. None is currently a
-new unrestricted rational identification theorem.
-
-**A further linearizable class.** A finite categorical confounded pair
-(`X -> Y`, `X <-> Y`) has a direct constructive route beyond the existing
-binary bow and binary IV results. For a fixed treatment `x`, let
-`p_xy = P(X=x,Y=y)` and let `q_y` be the proposed intervention marginal.
-The candidate attainable-set characterization is
-`q_y >= p_xy` for every outcome, with nonnegative rational `q_y` summing to
-one. The residual total is exactly `1 - P(X=x)`. At positive residual mass,
-allocate its normalized categorical distribution to units factually outside
-the requested action; at zero residual use the factual law without division.
-A shared finite root carrying the factual pair and the residual outcome
-gives the proposed native witness. Generic consistency bounds supply the
-other inclusion, and the two-node canonical realization machinery provides
-the original-DAG route. With at least two permitted outcome values, the
-proposed full-marginal identification criterion is `P(X=x)=1`. A single
-event needs its own qualification: the empty/full outcome events are trivial
-even without action overlap. These are assessed statements and construction
-steps, not yet formalized categorical-bow theorems.
-
-**Explicitly bounded models (unconditional and conditional targets).** The
-finite weight-vector coverage proof, original-type native adapter, exact
-observational filter and proof-carrying compatibility/uniqueness search are
-implemented above. Source masses are aggregated without unit-cell expansion,
-retaining repeated-label probabilities and the original denominator.
-Enumerating bounded cardinality shapes avoids a separate zero-padding step.
-The class fixes the full hidden DAG and bounds the original supplied finite
-enumerations and source denominators. Source compression is not asserted to
-preserve that denominator bound for arbitrary original models. Conditional
-targets report evidence support separately from value agreement among the
-positive-evidence members, including actual null-evidence witnesses when
-present. Increasing `D` does not itself give a terminating unrestricted
-procedure, and this implementation does not settle that separate question.
-
-**Unrestricted rational models.** Representation bounds control alphabet and
-table sizes, not the infinitely many rational source weights. The remaining
-constraints can be polynomial rather than linear. [Duarte et al.](https://arxiv.org/html/2109.13471v1)
-develop polynomial causal optimization with successively refined inner/outer
-bounds and an epsilon-sharp stopping criterion. Those results do not by
-themselves provide a terminating exact rational-only feasibility/uniqueness
-checker in this library. In particular, real feasibility must not be silently
-treated as rational feasibility.
+## Proved rational fixed-template obstruction
 
 A concrete fixed-template obstruction makes that last warning substantive.
 Its rational negative direction is now formalized in
@@ -1523,9 +1488,585 @@ table is allowed; equality of the two algorithms' literal cells is not needed.
 Large-mass regressions check the actual batched constructor in the kernel.
 
 This execution improvement is not a proof that full local compilation is
-memory-safe. See [LOCAL_CHECKS.md](LOCAL_CHECKS.md) for the capped pilot's actual
-result and limitations. CI checks the exact pushed commit with targeted and
+memory-safe. See [the operating guide](AGENTS.md#builds-and-checks) for current local
+commands and [the history](HISTORY.md) for the measured pilot limitations. CI checks the exact pushed commit with targeted and
 complete builds plus `Thesis.AxiomAudit`. The audit permits only `propext`
 and `Quot.sound`, rejecting choice, general propositional excluded middle
 dependencies, admitted proofs and untrusted Boolean proof reduction. A cached
 artifact or a successful isolated leaf check is not that project-wide gate.
+
+<a id="entropy-and-auxiliary-values"></a>
+
+## Entropy and auxiliary analytic values
+
+The goal retains rational probability laws and the existing constructive axiom
+policy. Entropy values may be irrational; exact symbolic logarithms and rational
+interval certificates are auxiliary values, never new atom weights. Units are bits.
+
+### exact logarithmic arithmetic
+
+- `PositiveRatio` supplies unreduced positive rational arguments, equivalence,
+  order, products, inverses and powers.
+- `ExactLog` represents `log₂(argument) / degree` with a positive natural degree.
+  Equivalence and order compare rational powers at common degrees. Addition,
+  negation, natural scaling and positive natural division respect the value.
+- `ExactLogRational` embeds signed rational numbers of bits and proves exact
+  correspondence with integer cross-product comparison.
+- `ExactLogEnclosure.enclose` terminates for every positive rational tolerance.
+  It returns a common-denominator rational interval containing the exact value,
+  with a proved width strictly below the requested tolerance. Binary-length
+  initial bounds and depth selection avoid a linear-depth precision search.
+- `Thesis.Examples.ExactLog` checks root/argument presentation changes, negative
+  values, exact bounds around `log₂(3)`, and executed certified bisection.
+  Both full and early arithmetic axiom gates import the regressions.
+
+These are symbolic logarithms with an exact ordered arithmetic interpretation,
+not a newly assumed real logarithm. The separately proved `ExactLogInterpretation` bridge below supplies an
+auxiliary constructive real interpretation; it does not change atom weights.
+
+### entropy and positive-reference KL
+
+- `ExactLogWeights` proves congruence for both rational coefficients and exact
+  logarithm values, monotonicity, and finite-sum congruence/permutation laws.
+- `EntropyValue` defines `-p log₂(p)` and `p log₂(p/r)`, with explicit zero
+  observed-mass branches and positive reference masses. Both respect unreduced
+  rational presentations. Entropy contributions in `[0,1]` are nonnegative.
+- `Distros.EntropyGrid` requires distinct observable outcomes. `Distro.entropy`
+  and `Distro.relativeEntropy` require almost-sure grid support, so extra null
+  atom labels remain admissible. They aggregate the original singleton PMFs.
+- Entropy and KL are invariant under `SameLaw`. Entropy is nonnegative and
+  invariant under grid permutation and adjoining a zero-mass cell. Positive
+  reference laws have zero self-divergence.
+- Executed regressions cover fair and point laws, duplicate/split/reordered
+  records, rescaled denominators, a retained null outlier, grid changes, and
+  unequal positive prior weights. The fair-law/prior `(1/4,3/4)` KL value is
+  certified exactly as `log₂(4/3)/2`.
+
+### constructive arithmetic–geometric mean foundation
+
+`FiniteAMGM` proves the denominator-cleared finite inequality at every list
+length, using Cauchy's finite doubling/descending proof. Natural multiplicities
+then give weighted AM–GM, including zero values and weights. Both non-strict and
+strict common-denominator product bounds are available for the rational Gibbs
+inequality. Later checkpoints use this foundation to establish KL and entropy
+bounds. Strict concavity and the certified rational optimizer are proved in
+separate downstream layers described below.
+
+### rational Gibbs inequality and KL nonnegativity
+
+`RationalAMGM` clears the finitely supplied argument denominators and proves
+weighted rational products are at most one whenever their arithmetic mean is
+at most one, including empty and zero-weight families. `LogMeanInequality`
+transports that algebraic result to common-degree exact logarithms.
+
+`Distros.EntropyGibbs` proves grid PMF normalization and numerator sums, then
+`Distro.relativeEntropy_nonnegative` for every rational law and positive reference
+law on the declared grid. It imposes no positivity assumption on observed masses.
+The proof includes aggregation of duplicate atom occurrences and null outliers.
+Executed regressions include a point law on a three-state grid with two zero
+observed cells, whose uniform-reference KL equals `log₂(3)` exactly.
+
+KL nonnegativity alone does not establish the equality or optimality results;
+the following checkpoints prove those additional statements separately.
+
+### equality in Gibbs and KL
+
+`FiniteAMGMEquality` proves the weighted equality case using midpoint
+comparisons and the already established finite AM–GM bound. `RationalAMGMEquality`
+and `LogMeanEquality` transport it to arbitrary positive rational arguments;
+zero-weight arguments remain unrestricted.
+
+`Distro.relativeEntropy_equiv_zero_iff` proves that KL vanishes exactly when
+the laws agree on every Boolean event. Equality at positive observed cells
+and normalization also force equality at zero observed cells. The regressions
+check a split/rescaled/reordered law with a null outlier, a genuinely different
+point law, and an unrestricted zero-weight argument in the rational equality
+lemma. No literal atom-list equality is assumed.
+
+### entropy bounds and the cross-entropy criterion
+
+`ExactLogLinear` proves rational bilinearity and the finite-sum identities needed
+for entropy comparisons. `CrossEntropyValue` and `Distros.CrossEntropy` establish
+KL = cross entropy minus entropy, the global cross-entropy upper bound, and a
+positive-candidate optimality criterion: fixing the candidate cross entropy
+makes the candidate a global entropy maximum, with equality exactly at the same
+law. The signed-moment/log-linear layer below supplies the bridge from the
+original rational moment constraints to this cross-entropy equality.
+
+`EntropyGrid.uniform` retains every declared cell with weight one.
+`Distros.EntropyUniform` proves its entropy is exactly `log₂(cardinality)` and
+that every supported law satisfies `0 ≤ H ≤ log₂(cardinality)`. Equality in the
+upper bound holds exactly for the uniform law. Null cells in the declared grid
+remain part of the cardinality, and null atom outliers remain admissible.
+
+`Thesis.Examples.EntropyBounds` checks the three-state uniform bound and its
+equality case, and the nonuniform candidate `(1/4, 1/4, 1/2)` with entropy `3/2`
+bits. A competitor with the same cross entropy and a retained null outlier has
+strictly smaller entropy.
+
+### strict concavity, including the boundary
+
+`Distro.mixture` wraps the scale-and-append rational record construction, keeping
+both atom lists and their null outliers. Singleton masses and cross entropy obey
+the expected affine formulas even when input denominators differ.
+
+`Distro.entropy_mixture_comparison` proves concavity for any two positive natural
+mixing masses, normalized by their sum, and equality exactly when the input laws
+are `SameLaw`. `Distro.entropy_strict_concave` states the strict consequence for
+different laws. Shared zero-mass cells are handled by an internal positive-support
+restriction with a proved entropy-preservation lemma; the caller's declared grid
+and atom records are never replaced. No full-grid positivity premise remains.
+
+`Distro.entropy_maximum_unique` proves that any attained maximum in a class closed
+under midpoints is unique as a law. This is a conditional uniqueness theorem,
+not an existence assertion for exact rational maximizers. Regressions exercise
+shared zero cells, null outliers, unequal denominators, unequal mixing weights,
+strict inequality for distinct point laws, and equality for split presentations.
+
+### moment feasibility and the first continuity estimate
+
+`EntropyMomentConvex` proves affine signed rational expectations for the actual
+mixture constructor, and preservation of every closed rational moment interval.
+`PartialMomentProblem.Admissible` includes the original almost-sure grid support
+and all existing constraint rows. Its entropy uniqueness theorem now applies
+directly to exact and interval problems, with no row independence or interior
+mass hypothesis. The existing feasibility/refutation solver remains the source
+of exactly feasible rational witnesses and infeasibility certificates.
+
+Regressions combine an exact mean, a signed response interval, a forced-zero
+coordinate, duplicate redundant rows, unrelated input denominators and retained
+null outliers. Mixture feasibility is proved for all such problems, not checked
+only on a denominator grid.
+
+`FiniteBernoulli` proves finite power difference and complement bounds by natural
+induction. `EntropySmallMass` derives
+`log₂(den/(den-1)) ≤ 1/m` whenever `2m ≤ den`, and exact-log monotonicity in a
+nonnegative rational coefficient. These are proved ingredients for the boundary
+continuity argument. The full modulus and certified optimizer are separate
+implemented layers described below.
+
+### quantitative entropy continuity at zero
+
+`EntropyTermBounds` derives a scalar cross-entropy bound from the actual
+Gibbs theorem, using an auxiliary two-state reference. The observed mass may
+be zero or one. For every `k`, it proves
+`p ≤ 1/2^(k+1) → -p log₂ p ≤ (k+3)/2^(k+1)`.
+
+`entropyBoundaryThreshold` supplies a positive rational threshold for every
+positive rational tolerance. `entropyTerm_near_zero` proves that every rational
+probability below that threshold has entropy contribution at most the requested
+error. Its construction uses finite powers and binary lengths, with no
+unbounded search, real logarithm axioms or denominator restriction on the input.
+Regressions include probability zero and a non-dyadic mass `3/10000000`.
+
+This scalar boundary estimate is an input to the implemented uniform two-point
+modulus, moment/log-linear bridge and certified constrained optimizer below.
+
+### uniform two-point entropy continuity
+
+`EntropyIncrement` proves algebraic bounds on the change of an entropy term
+between positive probabilities. `EntropyContinuity` combines those bounds with
+the zero-boundary estimate. For every natural precision `n`, coordinate distance
+at most `1/2^(3n+6)` gives entropy-contribution error at most `1/2^n`. The theorem
+covers arbitrary unreduced rational presentations and both probability endpoints.
+A total rational threshold interface also accepts every positive rational error.
+
+`Distros.EntropyContinuity` lifts that result to full entropy on the caller's
+declared grid. Its explicit coordinate threshold depends only on grid cardinality
+and requested error. The resulting symmetric entropy bounds quantify over all
+supported rational laws, without a denominator cap or an interior-support premise.
+Regressions exercise zero, one, interior probabilities, unrelated denominators,
+a zero cell gaining positive mass, a shared null cell and null record outliers.
+
+Uniform continuity is a proved input to the finite-box constrained optimizer,
+not an assumption left to its caller. Both that optimizer and the separate
+moment/log-linear optimality bridge are implemented below.
+
+### total certified rational entropy optimization
+
+`ProbabilityBoxes` enumerates a finite cover by rational coordinate intervals.
+Every rational probability in `[0,1]` has a floor-selected box, and any two points
+in one box differ by at most its width. The mesh controls interval width, never
+the denominator of an input law or a feasible solver witness.
+
+`EntropyBoxes` adds these coordinate intervals to the unchanged
+`PartialMomentProblem` grid and original exact/interval rows. `EntropyBoxSearch`
+uses the existing complete feasibility solver in each box. A box containing a
+feasible law cannot be rejected, and its exactly feasible witness is close enough
+for the proved entropy continuity bound. Exact comparisons select a maximum
+among those finitely many candidates. The result bounds every feasible rational
+law, not just those candidates. A universal-entropy-bound fast path can avoid the
+exhaustive cover when it already certifies the supplied feasible witness.
+
+`ExactLogPositiveEnclosure` clips a lower endpoint at zero only under a proved
+nonnegativity hypothesis. Its integer conversions use explicit constructive
+cases. `PartialMomentProblem.solveEntropy` either retains the original certified
+infeasibility result or returns an `EntropyCertificate` containing an actual
+compatible rational law `q` and nonnegative rational `L,U` with
+
+- `L ≤ H(q)`;
+- `H(p) ≤ U` for every exactly feasible rational law `p`;
+- `L ≤ U ≤ L + epsilon`.
+
+Optimization error and enclosure width each receive half of the requested
+positive rational tolerance. The fallback is a total reference algorithm; its
+finite Cartesian box enumeration may be very expensive. No practical runtime or
+exact rational maximizer is asserted.
+
+Executed regressions check arbitrary-denominator box indexing, feasible and
+infeasible boxes, an infeasible moment problem, the full singleton solver with a
+clipped zero lower endpoint, and a fair-law certificate at tolerance `1/1000`.
+The whole dependency closure passes the constructive arithmetic axiom gate.
+
+### signed-moment log-linear optimality
+
+`LogExpectation` integrates exact logarithmic observables against aggregated
+PMFs and proves finite affine integration. `ShiftedMoments` computes a finite
+offset for each signed integer response on the original declared grid. Fixed
+signed expectations therefore fix the corresponding nonnegative natural moments;
+unsupported zero-weight atom labels impose no extra shift hypothesis.
+
+`PartialMomentProblem.LogLinearReference` records a positive rational reference,
+an affine log score and selected exact rows from the original problem. The
+coefficients are arbitrary exact logarithm values and may be negative. The
+selected endpoints need only be equivalent rational presentations; redundant
+rows and other interval constraints remain admissible.
+
+`LogLinearReference.crossEntropy_fixed` proves equal cross entropy for every two
+feasible laws. A feasible anchor consequently gives a universal entropy upper
+bound even when the reference itself has the wrong target expectation. If the
+positive reference is feasible, `LogLinearReference.optimal` proves global
+maximality and equality exactly at the same probability law. This is the promised
+fixed-expectation bridge, not merely a stationary-point assertion.
+
+The reference positivity premise includes every declared cell. A candidate with
+forced zeros cannot satisfy that premise on the full grid; the total optimizer
+has no such premise and already handles those boundaries. The entropy-preserving
+internal support restriction is available for separate boundary score arguments.
+Regressions prove a nonuniform global maximum under a negative integer response,
+with a retained null outlier. The constructive arithmetic audit passes.
+
+### tight mean-one-half certificate and validation
+
+`EntropyHomogeneous` proves an equivalent common-degree entropy formula, allowing
+concrete certificates to execute without multiplying all the individual root
+degrees. `Thesis.Examples.EntropyMeanHalf` uses the exactly feasible rational law
+`(62/100, 26/100, 12/100)`, with a split atom and a retained null outlier. It keeps
+the original grid, exact mean `1/2` and duplicate redundant signed rows.
+
+A rational Gibbs reference with ratio `13/30` gives a global upper bound through
+the proved moment/log-linear bridge, even though that reference has a different
+mean. Exact rational-power comparisons certify the interval `[2599/2000,
+2601/2000] = [1.2995,1.3005]` bits, with width exactly `1/1000`, for the requested
+rational optimum certificate. No exact rational maximizer is asserted.
+
+The same example exposes the general total algorithm at every positive rational
+tolerance. Additional executed regressions retain a forced-zero cell and repeated
+signed constraint rows. `EntropyCertificate.width_bound` also states the width as
+the existing witnessed rational subtraction `U - L ≤ epsilon`.
+
+All six planned mathematical activities are now implemented for rational laws.
+The complete build and full axiom audit remain mandatory publication gates.
+Practical improvements to the exhaustive fallback and the separate real-number
+semantic development are extensions beyond this completed rational scope.
+
+### Real feasible-law and optimizer bridge: separate research
+
+The kernel results above concern exact symbolic logarithms and the framework's
+rational probability laws. The auxiliary constructive real type and rational-logarithm interpretation
+below are proved separately. No real logarithm axiom, choice principle or
+real-valued maximizer is silently imported.
+
+The full real feasible-law/optimizer bridge has the following distinct parts.
+The first is implemented for rational arguments by `ExactLogInterpretation`
+and `EntropyInterpretation`; the density and optimizer-transfer obligations
+in parts 2 and 3 remain separate research.
+
+1. Interpret an `ExactLog` as `log₂(argument)/degree` in a real-number model with
+   a logarithm on positive arguments, and prove that equivalence, addition, rational scaling and
+   rational-power order agree with that interpretation. Embed rational bit bounds
+   by the same ordered map. This identifies the symbolic entropy with
+   `-sum p_i log₂(p_i)`, using the proved zero convention.
+2. Embed the original rational moment rows into real finite-coordinate space and
+   prove density of exactly feasible rational points in their real feasible
+   polytope. Rounding coordinates independently is insufficient for exact moment
+   equalities. A suitable route is a finite rational-vertex representation followed
+   by rational approximation of convex combination coefficients; that preserves
+   exact equalities, closed intervals, forced-zero faces and redundant rows.
+3. Prove continuity of real finite entropy, including zero. Density and the closed
+   order relation then transfer each universal rational upper certificate to
+   every real feasible law. Compactness of the nonempty bounded closed polytope
+   and continuity yield an attained usual real maximum, if that existence claim
+   is wanted. Constructive real existence would require its own corresponding
+   compactness or effective-limit proof.
+
+These are additional semantic/density theorems, not premises exposed by the
+rational algorithm. The implementation already returns the requested universal
+rational certificates without assuming those real theorems.
+
+## The three-state mean-one-half real model
+
+In the usual real interpretation, a positive Gibbs law on `{0,1,2}` with mean
+`1/2` has probabilities `(1,r,r²)/(1+r+r²)`, where `3r²+r-1=0`. The positive
+solution is `r=(sqrt(13)-1)/6`. It satisfies the constraint, and the global Gibbs
+inequality certifies it as the real entropy maximum. Strict concavity gives
+uniqueness. Since `r` is irrational and equals the ratio of its second and first
+probabilities, that exact real optimizer cannot have all rational probabilities.
+
+This real-model explanation is not asserted as a new Lean theorem about a real
+number type. The rational library instead certifies exactly feasible rational
+approximations and universal error bounds. Its separate real semantic/density
+bridge, described above, is what would formally connect those certificates to
+the displayed real optimizer.
+
+## Verification and scope
+
+Every new example is included in both the early constructive audit and the full
+project audit. Completed mathematical checkpoints are published to main only
+after the complete CI build and full axiom gate pass. The implementation keeps
+rational laws, exact symbolic logarithms, and certified rational approximations;
+it does not claim an efficient exhaustive search or a completed general
+real feasible-polytope/optimizer semantics.
+
+Ordinary local Lake builds use `LEAN_NUM_THREADS=1`, the committed 4608 MiB
+compiler threshold and the existing cache. Only one build may run on the machine
+at a time. Targeted checks do not establish full-project success; the full build
+and axiom audit remain mandatory. Remote CI repeats both gates for published
+checkpoints before they are reported as verified on main.
+
+
+### Separately authorized auxiliary and physical research
+
+The completed six-activity rational implementation above defines Shannon
+entropy and proves its theory and certified optimization. The subsequent
+seven-activity goal additionally asks for a characterization from uncertainty
+requirements, constructive analytic semantics, a real feasible-polytope and
+optimizer bridge, multiplier necessity and sufficiency, partition-function
+calculus, and a conditional finite thermodynamic identification. These further
+activities are not claimed complete by the earlier checkpoint descriptions.
+
+The first foundation now includes:
+
+- `EntropyGrouping`: the exact product-mass identity, finite two-stage grouping,
+  independent-product additivity, rational presentation congruence, permutation
+  and insertion of null coordinates. Zero branch weights are allowed.
+- `Distros.UncertaintyMeasure`: normalized rational probability vectors and an
+  explicit abstract uncertainty specification. Its requirements are coordinate
+  representation invariance, permutation, null insertion, grouping, monotone
+  uniform uncertainty, and fair-bit normalization in `ExactLog`. No uniform
+  logarithm formula, derivative or uniqueness conclusion is a premise.
+- `UncertaintyMeasure.shannon`: the implemented entropy satisfies every listed
+  requirement. The bridge from an existing `Distro` uses aggregated singleton
+  masses, so split records and null outliers do not become extra states.
+- `Distros.UncertaintyUniform`: grouping implies `h(mn) = h(m) + h(n)`,
+  `h(1) = 0`, and `h(n^k) = k h(n)` for every abstract measure, including
+  exponent zero. These are the first steps of the number-theoretic proof.
+  The subsequent checkpoints establish uniform uniqueness and then the full
+  rational-vector characterization.
+
+The new regressions include unequal rational denominators, a three-way
+refinement with a zero-weight branch, retained zero coordinates, abstract
+uniform power laws, and the aggregated distribution bridge. Both early and
+full audits import the regression module. The remaining analytical and
+physical work retains its full requested scope and requires separate proofs.
+
+### Uniform uncertainty is now characterized
+
+`ExactLogSeparation` proves an explicit Archimedean separation principle for
+exact symbolic logarithms. A positive exact value has a computed natural
+multiple of at least one bit, by a finite Bernoulli lower bound. Consequently,
+if every natural amplification of `x` is at most the same amplification of
+`y` plus one bit, then `x ≤ y`. No real completion, derivative, general excluded
+middle, or extra separation axiom is used.
+
+`Distros.UncertaintyUniformUniqueness` compares each uniform choice with the
+two adjacent powers of two around its repeated product. Grouping and fair-bit
+normalization put every admissible uncertainty measure inside the same bit
+bracket. The proved separation principle forces two such measures to agree.
+Thus `UncertaintyMeasure.uniform_log` derives `h(n) = log₂(n)` from the listed
+requirements. The subsequent refinement checkpoint applies this result to
+arbitrary rational vectors, including their null cells.
+
+### Complete rational Shannon characterization
+
+`ProbabilityVectorCounts` computes a common natural-count presentation of every
+normalized rational vector using the existing constructive denominator-clearing
+algorithm. It proves coordinate equivalence without imposing a denominator cap.
+`UncertaintyRefinement` groups a uniform space into positive count blocks and
+uses the proved uniform uniqueness to force agreement between any two admissible
+uncertainty measures on those rational vectors.
+
+`UncertaintyCharacterization` extends the result to arbitrary zero coordinates
+using permutation and null insertion. These transformations occur inside the
+proof; its public theorem concerns the entire original vector. Its theorem
+`UncertaintyMeasure.unique` compares any two measures satisfying the listed
+requirements. `UncertaintyMeasure.characterization` then specializes one of them
+to the proved Shannon instance and yields exactly the implemented entropy.
+`distro_characterization` connects the result to the existing `Distro.entropy`
+on aggregated observable grids, including split atoms and null outliers.
+
+This completes the rational `ExactLog` characterization requested in activity 1.
+No uniform logarithm formula, continuity, derivative or entropy formula was a
+premise about the arbitrary measure. The proof uses the established order
+separation of the chosen exact value space. It does not assert a characterization
+for arbitrary other value spaces or for unrestricted real probability vectors.
+
+The uncertainty requirements identify the quantity. They do not alone imply
+that an inference procedure must maximize it. Choosing maximal uncertainty
+subject to known constraints is an additional inference criterion; the existing
+certified optimizer proves that criterion is met to the supplied tolerance.
+An alternative justification through a sampling/allocation model requires that
+model and its asymptotic argument as additional premises. Neither the probability
+rules nor fixed averages alone silently supply this policy.
+
+Activity 2 now has the initial value foundation described below. Activities 3–6
+remain open: real feasible-law and optimizer bridges, multiplier necessity and
+interval/boundary qualifications, partition-function calculus, and the
+conditional physical correspondence.
+Activity 7 remains ongoing as each new stage is tested and audited. The rational
+characterization regressions include unreduced unequal denominators, null cells
+at several positions, generic arbitrary measures, and the existing law adapter.
+
+
+### Constructive analytic values: first foundation
+
+`RationalApproximation` proves rational order closure under arbitrarily small
+positive rational errors, with an explicit separating precision. The proof
+works with unreduced signed fractions. `ConstructiveReal` then presents an
+auxiliary real value by an executable enclosure at every positive rational
+precision. Its intervals are mutually consistent and their widths are bounded
+by the requested precision. Rational values have singleton enclosures. Closed
+order is a proposition comparing all enclosure bounds; no arbitrary real
+comparison or equality decision is assumed.
+
+`ConstructiveRealAdditive` and `ConstructiveRealScaling` construct addition,
+negation, finite sums, natural division and nonnegative rational scaling, with
+proved congruence and additive/order laws. These values remain auxiliary;
+`Distro` atom weights and exactly feasible solver outputs are still rational.
+The current arithmetic gives correctness constructions, without a claim of
+an optimized numerical evaluator.
+
+`ExactLogRationalArithmetic` proves signed rational-bit addition and natural
+amplification identities. `ExactLogInterpretation` constructs a real presentation
+from the existing rational bisection certificates. It preserves and reflects
+`ExactLog` order and equivalence, agrees with the rational embedding, and
+preserves addition, negation, finite sums, natural division and rational scaling.
+Thus existing exact comparisons can be used as real-value bounds, and the
+interpretation does not identify unequal exact values.
+
+`EntropyInterpretation` constructs base-two logarithms of positive rational
+arguments in this value space, proves their product/inverse laws, and connects
+the existing rational entropy and KL summands to `−p log₂(p)` and
+`p (log₂(p) − log₂(r))`. The finite entropy sum is preserved. Zero observed
+mass contributes zero without evaluating `log(0)`; KL retains its explicit
+positive-reference hypothesis.
+
+This is a partial implementation of activity 2. The subsequent checkpoint
+below constructs effective rational limits. General limit and continuity rules,
+the remaining multiplicative algebra and continuity laws, logarithms on general positive
+real arguments, exponentials, differentiation and certified Taylor remainder
+bounds still require separate proofs. No calculus, ideal optimizer existence,
+rational feasible-polytope density, multiplier existence or physical entropy
+identification is claimed by this initial value foundation.
+
+The new audited regressions compute rational enclosures of `log₂(3)`, transfer
+an exact lower bound to real order, exercise arbitrary-presentation additive
+laws and rational scaling, and preserve null entropy coordinates and KL terms.
+
+
+### Effective rational limits
+
+`ConstructiveRealLimits` completes a regular rational approximation net by an
+explicit interval construction. It proves a bound around every supplied
+approximant and uniqueness of the resulting real value among presentations
+satisfying those bounds. A `RationalCauchySequence` includes an executable
+modulus and a proved tail-error estimate. A common later index turns it into
+a regular net, without requiring a monotone modulus. The resulting limit has
+proved error bounds for every sufficiently late sequence term.
+
+Every existing `ConstructiveReal` also supplies a regular net of computed
+rational lower endpoints. Completing that net is proved equivalent to the
+original real presentation. This is scalar rational reconstruction; it does
+not independently round probability coordinates or establish density inside
+a constrained feasible polytope.
+
+The regressions construct the nonconstant sequence `1 − 1/(n+1)`, give it a
+valid modulus, and prove its independently constructed limit equals one.
+They also check tail bounds and reconstruction for arbitrary real presentations
+and the certified `log₂(3)` presentation. The approximation modulus is explicit
+input data: these results do not assert convergence from strict concavity or
+supply the quantitative optimizer estimates still required in activity 3.
+
+
+### Exact rational error calculus
+
+`RationalNorm` defines the magnitude of an auxiliary signed rational as an
+unreduced nonnegative fraction. It proves presentation invariance, negation
+and product identities, the triangle inequality, and equivalence between an
+absolute-error bound and its two signed inequalities. Magnitude zero is proved
+equivalent to rational zero, including unreduced presentations.
+
+The product-error theorem bounds `|ab − cd|` by
+`|a − c| |b| + |c| |b − d|`, with a corollary using supplied error and magnitude
+bounds. Inputs may be negative and the nonnegative bounds need not be at most
+one. These are exact auxiliary arithmetic estimates for constructing real
+multiplication and later certified series. The following checkpoint constructs
+general real products; the remaining algebra and calculus proofs remain open. Regressions cover mixed signs, cancellation,
+unreduced magnitudes and a product difference of magnitude `1/24`.
+
+
+### Certified real products
+
+`ConstructiveRealDistance` defines two-sided rational error certificates in the
+closed real order. It proves the triangle and congruence rules and that values
+within every positive rational tolerance are equivalent. Regular rational
+approximants satisfy these real error bounds. Two regular nets with the same
+limit satisfy cross-error bounds, and any fixed natural multiple of the
+requested errors still forces agreement of their limits.
+
+`RationalPrecision` computes positive precision division and a cap at one.
+`RegularRationalAlgebra` computes integer magnitude bounds for approximants at
+precision at most one. It then constructs product nets whose input precision
+is divided by those bounds, using the exact product-error theorem. The proof
+allows different input presentations to compute different bounds and schedules.
+Equivalent input limits are proved to give equivalent product limits.
+
+`ConstructiveRealMultiplication` consequently defines multiplication of general
+real presentations. It proves presentation congruence, commutativity, zero and
+unit laws, agreement with exact signed-rational multiplication, and certified
+bounds around the computed rational product approximants. The regressions
+compute a negative product enclosure, change unreduced input presentations,
+and exercise the generic laws, including multiplication of `log₂(3)` by one.
+
+Associativity, distributivity, order/continuity laws, general real logarithms,
+exponentials and differentiation still require further proofs. These components
+do not complete activity 2 or the subsequent optimizer and physical activities.
+
+<a id="research-boundaries"></a>
+
+## Unresolved research boundaries
+
+The core graphical soundness/completeness results above are implemented with
+their explicit model-class and support qualifications. The following stronger
+questions are separate research, not missing premises to assume:
+
+- Universal coverage across every alternative formula's application domain.
+  Bounded proof/catalogue selection is implemented, but increasing budgets has
+  no proved universal stopping criterion. The common-kernel substitution
+  obstruction refutes one shortcut, not every finite-key strategy.
+- Exact arbitrary-graph identification at one fixed observed distribution.
+  Binary bow/IV and explicitly bounded native classes have their stated
+  complete results; unrestricted rational polynomial feasibility remains a
+  separate obligation. Structural finiteness does not make rational parameters
+  finite, and real feasibility is not automatically rational feasibility.
+- A full analytic feasible-polytope/optimizer and physical interpretation.
+  Existing auxiliary real-value results are retained, but their partial
+  development does not silently supply the remaining density, calculus,
+  multiplier or thermodynamic theorems.
+- Unrestricted multiworld counterfactual completeness. Existing semantics,
+  identities and explicitly parameterized interfaces are not an inhabited
+  general multiworld identification package.
+
+The complete earlier bounded assessments, unsuccessful stopping arguments and
+literature notes are preserved in [HISTORY.md](HISTORY.md#archived-theorem-coverage).
+Do not launch an open-ended solver or enlarge theorem claims as maintenance.

@@ -1,6 +1,6 @@
 """Exercise retained-artifact integrity and invalidation without invoking Lean.
 
-The real compiler pilots are recorded separately in LOCAL_CHECKS.md. Fake
+Current build policy is in AGENTS.md; retained compiler pilots are in HISTORY.md. Fake
 artifact bytes here test cache policy, not mathematical correctness. In
 particular a modified source, prerequisite, compiler profile or artifact must
 never acquire the status of a reusable successful check by accident.

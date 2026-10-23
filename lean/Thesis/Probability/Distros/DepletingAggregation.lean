@@ -1,5 +1,6 @@
 import Thesis.Probability.Distros.DepletingSupport
 import Thesis.Probability.Distros.HypergeometricAggregation
+import Thesis.Probability.Distros.CategoricalAggregation
 
 namespace Thesis.Probability.Distros
 open Combinatorics

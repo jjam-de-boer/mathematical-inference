@@ -33,8 +33,8 @@ theorem aggregateCounts_depletingState_supported (m groups : Nat) (stocks labels
     (dimension : labels.length = stocks.length) (supported : depletingCountsSupported m stocks counts) :
     aggregateCounts groups labels (depletingState stocks counts) =
       depletingState (aggregateCounts groups labels stocks) (aggregateCounts groups labels counts) := by
-  rcases eventMass_positive_witness (multicolourDepletingAtoms m stocks)
-    (fun word => decide (colourCounts stocks.length word = counts)) supported with ⟨atom, member, selected, weight⟩
+  rcases (FiniteProbRecord.eventMass_pos_iff_exists_atom (multicolourDepletingAtoms m stocks)
+    (fun word => decide (colourCounts stocks.length word = counts))).mp supported with ⟨atom, member, weight, selected⟩
   have observed : colourCounts stocks.length atom.1 = counts := of_decide_eq_true selected
   have valid := (multicolourDepletingAtoms_support m stocks atom member).2
   have wordPositive : 0 < depletingWordWeight stocks atom.1 := by
@@ -54,8 +54,8 @@ theorem depletingCountsSupported_aggregation (m groups : Nat) (stocks labels cou
     (dimension : labels.length = stocks.length) (within : ∀ label ∈ labels, label < groups)
     (supported : depletingCountsSupported m stocks counts) :
     depletingCountsSupported m (aggregateCounts groups labels stocks) (aggregateCounts groups labels counts) := by
-  rcases eventMass_positive_witness (multicolourDepletingAtoms m stocks)
-    (fun word => decide (colourCounts stocks.length word = counts)) supported with ⟨atom, member, selected, weight⟩
+  rcases (FiniteProbRecord.eventMass_pos_iff_exists_atom (multicolourDepletingAtoms m stocks)
+    (fun word => decide (colourCounts stocks.length word = counts))).mp supported with ⟨atom, member, weight, selected⟩
   have observed : colourCounts stocks.length atom.1 = counts := of_decide_eq_true selected
   have valid := (multicolourDepletingAtoms_support m stocks atom member).2
   have accepted : colourCounts groups (atom.1.map (fun colour => labels.getD colour 0)) =

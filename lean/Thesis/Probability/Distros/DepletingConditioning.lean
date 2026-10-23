@@ -1,4 +1,6 @@
 import Thesis.Probability.Distros.DepletingWord
+import Thesis.Probability.FiniteRecordSums
+import Thesis.Probability.FiniteRecordSupport
 
 namespace Thesis.Probability.Distros
 
@@ -19,8 +21,8 @@ coordinate stock bound. No impossible observation is conditioned on. -/
 theorem depletingCountsSupported_data (m : Nat) (stocks counts : List Nat)
     (supported : depletingCountsSupported m stocks counts) :
     counts.length = stocks.length ∧ counts.sum = m ∧ depletingCountsWithin counts stocks := by
-  rcases eventMass_positive_witness (multicolourDepletingAtoms m stocks)
-    (fun word => decide (colourCounts stocks.length word = counts)) supported with ⟨atom, member, selected, weight⟩
+  rcases (FiniteProbRecord.eventMass_pos_iff_exists_atom (multicolourDepletingAtoms m stocks)
+    (fun word => decide (colourCounts stocks.length word = counts))).mp supported with ⟨atom, member, weight, selected⟩
   have same : colourCounts stocks.length atom.1 = counts := of_decide_eq_true selected
   have shape := multicolourDepletingAtoms_support m stocks atom member
   have bounded := jointFalling_positive_within _ stocks (multicolourDepletingAtoms_kernel_positive m stocks atom member weight)
@@ -66,7 +68,7 @@ theorem depletingCountsEvent_mass (m n : Nat) (stocks counts : List Nat)
       rw [depletingUpdate_counts, same]
     · simp only [same, decide_false, Bool.false_and, Bool.false_eq_true, if_false, FiniteProbRecord.eventMass_false, Nat.mul_zero]
   rw [rows]
-  exact eventMass_factor_sum (multicolourDepletingAtoms m stocks)
+  exact FiniteProbRecord.eventMass_factor_sum (multicolourDepletingAtoms m stocks)
     (fun word => decide (colourCounts stocks.length word = counts)) _
 
 

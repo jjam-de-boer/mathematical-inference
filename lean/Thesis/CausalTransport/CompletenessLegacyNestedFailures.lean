@@ -12,5 +12,5 @@ not semantic correctness of its general identified formulas.
 This facade retains the old import path and the preceding historical layer.
 The full project and axiom audit still check the archived implementation;
 current published completeness paths do not import it. See
-`lean/docs/structure.md` for the source-location map and current reading order.
+`lean/REFERENCE.md#source-structure` for the source-location map and current reading order.
 -/

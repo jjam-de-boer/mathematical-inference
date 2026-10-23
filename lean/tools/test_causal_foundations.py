@@ -16,6 +16,7 @@ import re
 import unittest
 
 from test_example_coverage import initial_project_imports, reachable
+from test_documentation_consolidation import archived_text
 
 
 class CausalFoundationTests(unittest.TestCase):
@@ -37,7 +38,7 @@ class CausalFoundationTests(unittest.TestCase):
         graph_layer = "Thesis.CausalTransport.DSeparationCorrectness"
         source = self.source(owner)
         start = source.index("theorem Consecutive.mono ")
-        block = source[start:source.index("end PathSpecification", start)].rstrip()
+        block = source[start:source.index("\n\n", start)].rstrip()
         self.assertEqual(hashlib.sha256(block.encode()).hexdigest(),
                          "7dc5b1d97c43c7cf7b96d7450457e95f5563574ab9997cb0bdfc5ff49fb66cce")
         self.assertNotIn("theorem Consecutive.mono ", self.source(graph_layer))
@@ -49,6 +50,48 @@ class CausalFoundationTests(unittest.TestCase):
                 self.assertIn(owner, dependencies)
                 self.assertNotIn(graph_layer, dependencies)
                 self.assertNotIn("Thesis.CausalTransport.DSeparation", dependencies)
+
+    def test_generic_path_helpers_keep_their_original_proofs_and_old_import(self):
+        # Full downstream CI exposed additional incidental reexports after
+        # the first narrow check. These helpers belong below graph-specific
+        # correctness too; putting that broad import back would hide the bug.
+        owner = "Thesis.Causality.ReachabilityCorrectness"
+        old = "Thesis.CausalTransport.DSeparationCorrectness"
+        source = self.source(owner)
+        blocks = (
+            ("theorem Consecutive.pair_of_append ",
+             "1eee0819416373252cc0e551757f05bcd97922ff2c3294464a4141d16fc20701"),
+            ("theorem Consecutive.prefix_append ",
+             "706defa40ee98ed25b3de433e45914d8aaa5b42d6b632a18f31172a1cfd3ffb6"),
+            ("theorem Consecutive.drop ",
+             "1dd0b882ea677c8e8f49597ddb9c54335c914e29d168c827ed80d427b40c6497"),
+            ("theorem Consecutive.append ",
+             "504d70b3a6d2a966fd9ae2dcbf9e41532f0591b1f6730eed8679582c9cee560e"),
+            ("theorem Consecutive.delete_middle ",
+             "55d0508ee5f2a564e13aec8c25d09bcd2952cd1b2b153d020c323333611017ec"),
+            ("theorem Consecutive.map ",
+             "90f69a08714bd7cd147177b1cf83c7b3f4ecaffdcbbca0f46bbcde2ff4a95220"),
+            ("theorem Consecutive.snoc ",
+             "996929fe09ba7f5ea743d5d9613259dbd869f9cfb68734c06da2f1f3f372eed0"),
+            ("theorem Consecutive.reverse ",
+             "07ffd3e90214f3b8a84b2c41bd71ad505b3bdc141452d6577c8e0d7572a23cec"),
+            ("theorem FiniteReachability.Reachable.of_consecutive",
+             "0df2bac2cf1e98c01e4f9960ac58e1508ff4dad033b8926b59650833f1305300"),
+            ("theorem getLast?_suffix_append ",
+             "3d401600b3b12117e54ec6349d90a7599b67ffd6b55fb84cfc6aa25003b53cf9"),
+        )
+        for start, expected in blocks:
+            with self.subTest(start=start):
+                self.assertEqual(source.count(start), 1)
+                beginning = source.index(start)
+                block = source[beginning:source.index("\n\n", beginning)].rstrip()
+                self.assertEqual(hashlib.sha256(block.encode()).hexdigest(), expected)
+                self.assertNotIn(start, self.source(old))
+        self.assertIn(owner, reachable(self.graph, old))
+        for module in ("HedgeChannelFlowDirection", "HedgeChannelEnvironmentIncidence"):
+            dependencies = reachable(self.graph, "Thesis.CausalTransport." + module)
+            self.assertIn(owner, dependencies)
+            self.assertNotIn(old, dependencies)
 
     def test_current_foundations_and_selected_clients_avoid_legacy_completeness(self):
         for module in ("Causality.TermSupport", "Causality.InterventionalCounterexample",
@@ -161,6 +204,14 @@ class CausalFoundationTests(unittest.TestCase):
             with self.subTest(module=module, start=start):
                 source = self.source("Thesis." + module)
                 block = source[source.index(start):source.index(end, source.index(start))].rstrip()
+                if module == "CausalTransport.Hedge.Parity" and start.startswith("/-!"):
+                    # Only this exact stale positional reference changed.
+                    # Restore it before applying the original whole-body hash;
+                    # no declaration or proof is omitted or normalized.
+                    current = "The abstract root-flow wrapper in `Hedge.Models` requires a caller to reconstruct"
+                    original = "The abstract root-flow wrapper above still requires a caller to reconstruct"
+                    self.assertEqual(block.count(current), 1)
+                    block = block.replace(current, original, 1)
                 if module == "CausalTransport.Hedge.Countermodels":
                     # Pass 2 corrected a misleading progress claim, not a
                     # declaration or proof. Keep the original whole-body hash
@@ -231,21 +282,21 @@ class CausalFoundationTests(unittest.TestCase):
                 self.assertIn("Thesis." + module, covered)
 
     def test_historical_inventory_is_preserved_outside_the_public_facade(self):
-        history = (self.root / "docs/history/completeness-development.md").read_text()
+        history = archived_text(self.root, "lean/docs/history/completeness-development.md")
         block = history.split("```text\n", 1)[1].split("\n```", 1)[0]
         self.assertEqual(hashlib.sha256(block.encode()).hexdigest(),
                          "68a789944a66b368811c0507d92d590ae85bc088efe3e9f79249b099d1ce25b7")
         facade = self.source("Thesis.CausalTransport.Completeness")
         self.assertNotIn("Detailed implementation inventory.", facade)
-        self.assertIn("docs/history/completeness-development.md", facade)
+        self.assertIn("HISTORY.md#archived-completeness-inventory", facade)
 
     def test_pass_one_ledger_is_preserved_as_history_not_current_status(self):
-        history = (self.root / "docs/history/refactoring-pass1.md").read_bytes()
+        history = archived_text(self.root, "lean/docs/history/refactoring-pass1.md").encode()
         original = history.split(b"<!-- BEGIN PRESERVED PASS 1 LEDGER -->\n", 1)[1]
         self.assertEqual(hashlib.sha256(original).hexdigest(),
                          "bc0f06b5018e9ef3654502e64d63006388b4de2365cb67bb8684a99dd4f6959d")
-        current = (self.root / "REFACTORING.md").read_text()
-        self.assertIn("docs/history/refactoring-pass1.md", current)
+        current = (self.root / "AGENTS.md").read_text()
+        self.assertIn("HISTORY.md", current)
         self.assertNotIn("Pass 2 has not started", current)
 
     def test_archived_failure_stacks_keep_every_original_declaration_and_proof(self):
