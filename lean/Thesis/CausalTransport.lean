@@ -145,6 +145,7 @@ import Thesis.CausalTransport.NativeSupportSemantics
 import Thesis.CausalTransport.NativeTemplateSupport
 import Thesis.CausalTransport.NativeSupportProfiles
 import Thesis.CausalTransport.NativeDerivationSupportCheck
+import Thesis.CausalTransport.NativeDerivationReplacement
 import Thesis.CausalTransport.NativeSupportGuard
 import Thesis.CausalTransport.NativeCertificateCheck
 import Thesis.CausalTransport.NativeGuardCompilation
