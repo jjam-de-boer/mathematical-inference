@@ -152,6 +152,7 @@ jobs:
           Thesis.Examples.NativeSearchMetadata
           Thesis.Examples.NativeBoundedSelection
           Thesis.Examples.NativeDerivationLinearization
+          Thesis.Examples.NativeKernelInterfaceObstruction
       - name: Check graph-only identification layers
         working-directory: lean
         run: >-
