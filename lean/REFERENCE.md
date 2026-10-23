@@ -1964,8 +1964,9 @@ positive-reference hypothesis.
 This initial value foundation is not the complete current analytic layer.
 The later sections now include effective real limits, real ring/order laws,
 product stability and logarithms on explicitly bounded positive domains.
-Exponentials, differentiation and certified Taylor remainder bounds still
-require separate proofs. No calculus, ideal optimizer existence,
+A general real exponential and differentiation still require separate proofs;
+the certified rational-series and small-argument Taylor bounds are described
+below. No calculus, ideal optimizer existence,
 rational feasible-polytope density, multiplier existence or physical entropy
 identification is claimed by this initial value foundation.
 
@@ -2086,10 +2087,21 @@ its two inputs. `ConstructiveRealLogReciprocal` computes a lower bound for the
 constructed reciprocal and proves logarithm inverse and quotient laws, rather
 than leaving their domain certificates as extra unexplained premises.
 
+### Certified rational series and a small-argument exponential
+
+`RationalGeometricSeries` constructs effective limits of signed rational series
+with supplied bounds `|term n| ≤ C / 2ⁿ`, including `C = 0`, and proves the
+explicit remainder bound `2C / 2ⁿ` at every truncation.
+`RationalTaylorExponential` computes `xⁿ/n!` by recurrence. For a supplied
+rational input satisfying `|x| ≤ 1/2`, it constructs `expSmall`, proves
+presentation congruence and the value at zero, and certifies its remainder.
+Regressions compute enclosures for positive and negative half-arguments.
+This is not yet an exponential on every real input or a differentiation law.
+
 These newer results were combined from published auxiliary-value work through
-`8b1f99b` and `ca8d9cb`, not proved by the maintenance refactor. The updated
+`8b1f99b`, `ca8d9cb` and `22fd3b9`, not proved by the maintenance refactor. The updated
 guide through `8b1f99b` is preserved in [history](HISTORY.md#archived-entropy-8b1f99b).
-Exponentials, differentiation, constrained-optimizer convergence and the
+General real exponentials, differentiation, constrained-optimizer convergence and the
 physical activities are not supplied by these interfaces. Probability atom
 weights remain finite and rational throughout.
 
