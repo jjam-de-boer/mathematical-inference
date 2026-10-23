@@ -1,3 +1,4 @@
+import Thesis.Examples.RationalExponential
 import Thesis.Examples.RationalTaylorExponential
 import Thesis.Examples.ConstructiveRealLogLaws
 import Thesis.Examples.ConstructiveRealLogarithm
