@@ -1,3 +1,4 @@
+import Thesis.Probability.ConstructiveRealReciprocal
 import Thesis.Probability.ConstructiveRealProductLimits
 import Thesis.Probability.ConstructiveRealOrderedRing
 import Thesis.Probability.ConstructiveRealCauchyOrder
