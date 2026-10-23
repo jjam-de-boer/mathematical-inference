@@ -1,3 +1,4 @@
+import Thesis.Examples.ConstructiveRealProductLimits
 import Thesis.Examples.ConstructiveRealOrder
 import Thesis.Examples.ConstructiveRealCauchy
 import Thesis.Examples.ConstructiveRealAlgebra
