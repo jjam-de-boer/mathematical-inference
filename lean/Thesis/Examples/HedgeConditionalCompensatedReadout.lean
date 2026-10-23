@@ -321,7 +321,19 @@ theorem no_exchange : (conditionalExchangeStep? graph query).isNone = true := by
 
 theorem joint_program_failed : failed (identifyJointKernel graph query.jointNumerator) = true := by decide +kernel
 
-theorem conditional_program_failed : failed (identifyConditionalKernel graph query) = true := by decide +kernel
+/-- The conditional program's terminal branch is the already checked joint
+failure. Reusing its equation and the exhausted exchange check avoids a second
+kernel evaluation of the same graph searches; it does not replace the actual
+engine assertion by a semantic non-identifiability claim. -/
+theorem conditional_program_failed : failed (identifyConditionalKernel graph query) = true := by
+  have exhausted : conditionalExchangeStep? graph query = none := by
+    cases result : conditionalExchangeStep? graph query with
+    | none => rfl
+    | some step => have impossible := no_exchange; rw [result] at impossible; cases impossible
+  unfold identifyConditionalKernel
+  rw [identifyConditionalKernelFuel, exhausted]
+  cases result : identifyJointKernel graph query.jointNumerator <;>
+    simpa only [result, failed] using joint_program_failed
 
 end HedgeConditionalProtectedReentry
 end Examples

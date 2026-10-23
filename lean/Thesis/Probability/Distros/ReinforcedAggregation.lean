@@ -66,24 +66,6 @@ theorem reinforcedUrn_word_support (n : Nat) (alphas : List Nat) (increment : Na
       · subst colour; exact head.1.isLt
       · exact support.2 colour member
 
-theorem aggregateCounts_zeros (groups : Nat) (labels : List Nat) :
-    aggregateCounts groups labels (List.replicate labels.length 0) = List.replicate groups 0 := by
-  induction labels with
-  | nil => rfl
-  | cons label labels ih => simp only [List.length_cons, List.replicate_succ, aggregateCounts, ih, modify_add_zero]
-
-theorem aggregateCounts_colourCounts (groups colours : Nat) (labels word : List Nat)
-    (dimension : labels.length = colours) (valid : ∀ colour ∈ word, colour < colours) :
-    aggregateCounts groups labels (colourCounts colours word) =
-      colourCounts groups (word.map (fun colour => labels.getD colour 0)) := by
-  induction word with
-  | nil => rw [colourCounts, ← dimension, aggregateCounts_zeros]; rfl
-  | cons colour word ih =>
-      simp only [colourCounts, List.map_cons]
-      rw [aggregateCounts_modify groups labels _ (dimension.trans (colourCounts_length colours word).symm)
-        colour 1 (by simpa only [colourCounts_length] using valid colour (List.mem_cons_self ..)),
-        ih (fun i member => valid i (List.mem_cons_of_mem _ member))]
-
 /-- Every category partition gives the reinforced count law with summed
 initial weights, retaining the same increment and every event probability. -/
 theorem reinforcedCount_aggregation (n groups : Nat) (alphas labels : List Nat) (increment : Nat)

@@ -1,4 +1,5 @@
 import Thesis.Probability.Distros.DepletingConditioning
+import Thesis.Probability.FiniteRecordSums
 
 namespace Thesis.Probability.Distros
 
@@ -60,7 +61,7 @@ theorem depletingPrefixEvent_mass (history : List Nat) (n : Nat) (stocks : List 
     · simp only [FiniteProbRecord.singletonEvent, same, decide_false, Bool.false_and, Bool.false_eq_true,
         if_false, FiniteProbRecord.eventMass_false, Nat.mul_zero]
   rw [rows]
-  exact eventMass_factor_sum _ (FiniteProbRecord.singletonEvent history) _
+  exact FiniteProbRecord.eventMass_factor_sum _ (FiniteProbRecord.singletonEvent history) _
 
 
 theorem depletingPrefixEvent_positive (history : List Nat) (n : Nat) (stocks : List Nat)

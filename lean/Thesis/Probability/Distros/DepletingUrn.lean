@@ -1,5 +1,4 @@
 import Thesis.Probability.Distros.HypergeometricFactorialMoments
-import Thesis.Probability.Distros.ReinforcedUpdates
 
 namespace Thesis.Probability.Distros
 open Combinatorics

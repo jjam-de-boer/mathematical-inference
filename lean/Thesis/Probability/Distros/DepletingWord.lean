@@ -1,4 +1,5 @@
 import Thesis.Probability.Distros.DepletingHistory
+import Thesis.Probability.Distros.CategoricalSampling
 
 namespace Thesis.Probability.Distros
 

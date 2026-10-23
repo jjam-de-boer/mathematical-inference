@@ -1,41 +1,24 @@
 import Thesis.Probability.Distros.ReinforcedConditioning
 import Thesis.Probability.Distros.ReinforcedExchangeability
 import Thesis.Probability.Distros.RationalPolya
+import Thesis.Probability.FiniteRecordSupport
 namespace Thesis.Probability.Distros
 open Combinatorics
 
-theorem colourCounts_sum (colours : Nat) (word : List Nat)
-    (valid : ∀ colour ∈ word, colour < colours) : (colourCounts colours word).sum = word.length := by
-  induction word with
-  | nil => simp only [colourCounts, List.sum_replicate_nat, Nat.mul_zero, List.length_nil]
-  | cons colour word ih =>
-      rw [colourCounts, sum_modify_add _ colour 1 (by rw [colourCounts_length]; exact valid colour (List.mem_cons_self ..)),
-        ih (fun other member => valid other (List.mem_cons_of_mem _ member)), List.length_cons]
-
+/-- Compatibility order of the witness fields. Positivity is proved once
+for arbitrary finite records; this wrapper merely reorders its conjunction. -/
 theorem eventMass_positive_witness (atoms : List (Ω × Nat)) (event : Event Ω)
     (positive : 0 < FiniteProbRecord.eventMass atoms event) :
     ∃ atom ∈ atoms, event atom.1 = true ∧ 0 < atom.2 := by
-  induction atoms with
-  | nil => change 0 < 0 at positive; omega
-  | cons atom atoms ih =>
-      by_cases selected : event atom.1 = true
-      · by_cases weight : 0 < atom.2
-        · exact ⟨atom, List.mem_cons_self .., selected, weight⟩
-        · have tail : 0 < FiniteProbRecord.eventMass atoms event := by
-            simp only [FiniteProbRecord.eventMass, selected, if_true] at positive
-            omega
-          rcases ih tail with ⟨value, member, evidence, weight⟩
-          exact ⟨value, List.mem_cons_of_mem _ member, evidence, weight⟩
-      · have tail : 0 < FiniteProbRecord.eventMass atoms event := by
-          simpa only [FiniteProbRecord.eventMass, selected, if_false] using positive
-        rcases ih tail with ⟨value, member, evidence, weight⟩
-        exact ⟨value, List.mem_cons_of_mem _ member, evidence, weight⟩
+  rcases (FiniteProbRecord.eventMass_pos_iff_exists_atom atoms event).mp positive with
+    ⟨atom, listed, weight, selected⟩
+  exact ⟨atom, listed, selected, weight⟩
 
 theorem reinforcedCountsSupported_shape (m : Nat) (alphas counts : List Nat) (increment : Nat)
     (supported : reinforcedCountsSupported m alphas increment counts) :
     counts.length = alphas.length ∧ counts.sum = m := by
-  rcases eventMass_positive_witness (reinforcedUrnAtoms m alphas increment)
-    (fun word => decide (colourCounts alphas.length word = counts)) supported with ⟨atom, member, selected, _⟩
+  rcases (FiniteProbRecord.eventMass_pos_iff_exists_atom (reinforcedUrnAtoms m alphas increment)
+    (fun word => decide (colourCounts alphas.length word = counts))).mp supported with ⟨atom, member, _, selected⟩
   have same : colourCounts alphas.length atom.1 = counts := of_decide_eq_true selected
   have shape := reinforcedUrn_word_support m alphas increment atom member
   rw [← same]

@@ -1,4 +1,5 @@
 import Thesis.Probability.Distros.ReinforcedHistory
+import Thesis.Probability.Distros.CategoricalSampling
 namespace Thesis.Probability.Distros
 open Combinatorics
 
@@ -21,30 +22,6 @@ theorem reinforcedWordWeight_kernel (alphas : List Nat) (increment : Nat) (histo
       · rw [List.length_modify]
       · intro other member
         simpa only [List.length_modify] using valid other (List.mem_cons_of_mem _ member)
-
-theorem colourCounts_perm (colours : Nat) {history other : List Nat} (perm : history.Perm other) :
-    colourCounts colours history = colourCounts colours other := by
-  induction perm with
-  | nil => rfl
-  | cons head _ ih => simp only [colourCounts, ih]
-  | swap a b tail => exact modify_add_comm _ _ _ _ _
-  | trans _ _ ih ih' => exact ih.trans ih'
-
-/-- Integrating a selected head of a categorical list. -/
-theorem categorical_head_select (alphas : List Nat) (colour : Nat) (f : Nat → Nat)
-    (within : colour < alphas.length) :
-    natIntegral (finWeighted alphas.length (fun i => alphas.getD i.val 0))
-      (fun i => if i.val = colour then f i.val else 0) = alphas.getD colour 0 * f colour := by
-  rw [natIntegral_finWeighted alphas.length _ (fun i => if i = colour then f i else 0)]
-  have terms : natSum alphas.length (fun i => finWeight (fun j : Fin alphas.length => alphas.getD j.val 0) i *
-      (if i = colour then f i else 0)) =
-      natSum alphas.length (fun i => (if i = colour then alphas.getD colour 0 else 0) * f i) := by
-    apply natSum_congr
-    intro i hi
-    by_cases same : i = colour
-    · subst i; simp only [finWeight, dif_pos within, if_true]
-    · simp only [same, if_false, Nat.mul_zero, Nat.zero_mul]
-  rw [terms, natSum_spike, if_pos within]
 
 theorem reinforcedUrn_word_mass (alphas : List Nat) (increment : Nat) (history : List Nat)
     (valid : ∀ colour ∈ history, colour < alphas.length) :

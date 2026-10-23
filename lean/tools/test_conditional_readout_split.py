@@ -26,6 +26,25 @@ class ConditionalReadoutSplitTests(unittest.TestCase):
     def source(self, name):
         return (self.root / (name.replace(".", "/") + ".lean")).read_text()
 
+    def test_bounded_pilots_preserve_every_fixture_assertion(self):
+        # Pilot one found no speedup and was restored byte-for-byte. Pilot two
+        # changes only the proof of the same literal engine assertion; in
+        # particular no positive SCM, third-label or support assertion is lost.
+        first = self.source("Thesis.Examples.HedgeConditionalLatentCollider")
+        self.assertEqual(hashlib.sha256(first.encode()).hexdigest(),
+                         "bc0af8b35774a7aefa06e5f7bccccaa0126e3534187047e9e2a4e7940f56f9e7")
+        second = self.source("Thesis.Examples.HedgeConditionalCompensatedReadout")
+        start = second.index("/-- The conditional program's terminal branch")
+        end = second.index("\n\nend HedgeConditionalProtectedReentry", start)
+        block = second[start:end]
+        self.assertEqual(hashlib.sha256(block.encode()).hexdigest(),
+                         "561304d2f9c8a6c2f286427161eb6c790dc3057fd6bb51b320f5258b7ce6f30a")
+        original = ("theorem conditional_program_failed : failed "
+                    "(identifyConditionalKernel graph query) = true := by decide +kernel")
+        restored = second[:start] + original + second[end:]
+        self.assertEqual(hashlib.sha256(restored.encode()).hexdigest(),
+                         "fe701be89414b55c2dfda53e1aaf903b6c7fb821b592d02c352a78ae448ba5c8")
+
     def test_graph_checks_stay_below_semantic_transport_and_remain_audited(self):
         expected = {"Graph": ["Thesis.Causality.ConditionalIdentificationKernel"],
                     "Exchange": [self.prefix + ".Graph"],
