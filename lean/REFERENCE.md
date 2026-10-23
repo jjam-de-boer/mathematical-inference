@@ -2079,12 +2079,19 @@ uniform modulus on a given positive half-line. `ConstructiveRealLogOrder`
 proves monotonicity, the value at one, and the appropriate nonnegative or
 nonpositive conclusion when the argument is respectively above or below one.
 
+`ConstructiveRealLogLimits` transports the logarithm through effective limits
+on a supplied positive half-line. `ConstructiveRealLogMultiplication` proves
+the general positive-real product law, deriving the product's lower bound from
+its two inputs. `ConstructiveRealLogReciprocal` computes a lower bound for the
+constructed reciprocal and proves logarithm inverse and quotient laws, rather
+than leaving their domain certificates as extra unexplained premises.
+
 These newer results were combined from published auxiliary-value work through
-`8b1f99b`, not proved by the maintenance refactor. Their original updated guide
-is preserved in [history](HISTORY.md#archived-entropy-8b1f99b). General real-log
-product laws, exponentials, differentiation, constrained-optimizer convergence
-and the physical activities are not supplied by these interfaces. Probability
-atom weights remain finite and rational throughout.
+`8b1f99b` and `ca8d9cb`, not proved by the maintenance refactor. The updated
+guide through `8b1f99b` is preserved in [history](HISTORY.md#archived-entropy-8b1f99b).
+Exponentials, differentiation, constrained-optimizer convergence and the
+physical activities are not supplied by these interfaces. Probability atom
+weights remain finite and rational throughout.
 
 <a id="research-boundaries"></a>
 
