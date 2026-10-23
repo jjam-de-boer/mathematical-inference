@@ -458,7 +458,7 @@ positive-reference hypothesis.
 
 This is a partial implementation of activity 2. The subsequent checkpoint
 below constructs effective rational limits. General limit and continuity rules,
-multiplication of arbitrary real values, logarithms on general positive
+the remaining multiplicative algebra and continuity laws, logarithms on general positive
 real arguments, exponentials, differentiation and certified Taylor remainder
 bounds still require separate proofs. No calculus, ideal optimizer existence,
 rational feasible-polytope density, multiplier existence or physical entropy
@@ -505,6 +505,34 @@ The product-error theorem bounds `|ab − cd|` by
 `|a − c| |b| + |c| |b − d|`, with a corollary using supplied error and magnitude
 bounds. Inputs may be negative and the nonnegative bounds need not be at most
 one. These are exact auxiliary arithmetic estimates for constructing real
-multiplication and later certified series; the general real multiplication
-and calculus results remain open. Regressions cover mixed signs, cancellation,
+multiplication and later certified series. The following checkpoint constructs
+general real products; the remaining algebra and calculus proofs remain open. Regressions cover mixed signs, cancellation,
 unreduced magnitudes and a product difference of magnitude `1/24`.
+
+
+### Certified real products
+
+`ConstructiveRealDistance` defines two-sided rational error certificates in the
+closed real order. It proves the triangle and congruence rules and that values
+within every positive rational tolerance are equivalent. Regular rational
+approximants satisfy these real error bounds. Two regular nets with the same
+limit satisfy cross-error bounds, and any fixed natural multiple of the
+requested errors still forces agreement of their limits.
+
+`RationalPrecision` computes positive precision division and a cap at one.
+`RegularRationalAlgebra` computes integer magnitude bounds for approximants at
+precision at most one. It then constructs product nets whose input precision
+is divided by those bounds, using the exact product-error theorem. The proof
+allows different input presentations to compute different bounds and schedules.
+Equivalent input limits are proved to give equivalent product limits.
+
+`ConstructiveRealMultiplication` consequently defines multiplication of general
+real presentations. It proves presentation congruence, commutativity, zero and
+unit laws, agreement with exact signed-rational multiplication, and certified
+bounds around the computed rational product approximants. The regressions
+compute a negative product enclosure, change unreduced input presentations,
+and exercise the generic laws, including multiplication of `log₂(3)` by one.
+
+Associativity, distributivity, order/continuity laws, general real logarithms,
+exponentials and differentiation still require further proofs. These components
+do not complete activity 2 or the subsequent optimizer and physical activities.
