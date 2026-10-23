@@ -42,6 +42,15 @@ theorem positiveCenter_within (x : ConstructiveReal) (lower : PositiveRatio)
     simpa only [positiveEndpoint, if_neg positive] using
       (show Within precision.toQProb x (ofSignedRatio lower.toSignedRatio) from ⟨le_trans original.1 lowered, raised⟩)
 
+/-- Exact rational inputs give the same positive center value at every
+precision, independently of unreduced fraction presentations. -/
+theorem positiveCenter_ofPositiveRatio (value lower precision : PositiveRatio) (bounded : PositiveRatio.LE lower value) :
+    PositiveRatio.Equiv ((ofSignedRatio value.toSignedRatio).positiveCenter lower precision) value := by
+  apply (QProb.toSignedRatio_equiv_iff _ _).mp
+  have compared : SignedRatio.LE lower.toSignedRatio value.toSignedRatio := (SignedRatio.toSignedRatio_le_iff _ _).mpr bounded
+  simpa only [positiveEndpoint, ofSignedRatio, if_pos compared] using
+    positiveCenter_value (ofSignedRatio value.toSignedRatio) lower precision
+
 /-- A real above a given positive rational has a regular positive rational
 presentation with the same certified error radius. -/
 def positiveApproximation (x : ConstructiveReal) (lower : PositiveRatio)

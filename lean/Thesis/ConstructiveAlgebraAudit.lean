@@ -1,3 +1,4 @@
+import Thesis.Examples.ConstructiveRealLogarithm
 import Thesis.Examples.ConstructiveRealReciprocal
 import Thesis.Examples.ConstructiveRealProductLimits
 import Thesis.Examples.ConstructiveRealOrder
