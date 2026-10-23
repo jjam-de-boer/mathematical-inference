@@ -61,6 +61,37 @@ project closure changed 20→18. The sampling extraction changes DepletingUrn
 DepletingAggregationConditioning 80→77. Counts include the selected module;
 they are dependency measurements, not elapsed-time improvements.
 
+## Verified first-pass release and second-pass confirmation
+
+`cac0a6997702df61b844480df29dd1e160ad1428` was published to main after
+full CI run `39971865646`, all 122 helper tests and the complete local/native
+build plus 45,404-declaration axiom audit. Complete local receipts are in
+`.lake/local-builds-v1/20261023-164205-m1bcj247/`; both specialized audits
+passed in `20261023-164331-s8vko2kg/`. Only `propext` and `Quot.sound` are
+allowed by the passing transitive policy.
+
+Pass 2 revisited every stage. It kept the mathematical source unchanged and
+corrected only guide heading capitalization and the current ledger. Rechecking
+the same retained performance pilot on final validated dependencies took
+10.297 seconds and sampled 2860 MiB; report
+`.lake/local-pilots-v1/20261023-164447-5i58ryts/`. This confirms the earlier
+selected-module result; it is not a new controlled whole-project benchmark.
+
+Source diagnostics found all 599 original theorem headers and all 157 original
+computational/structure blocks in the touched area, with no changed original
+statement or computational code. The latter diagnostic disregards comments
+and blank lines, not code tokens; it supplements actual Lean checking. The
+twenty moved proof bodies retain their exact original hashes. Both entire
+regression fixtures retain their assertions: one was restored exactly, and the
+other changes only the precisely guarded proof of its existing engine assertion.
+
+The second-pass document commit is frozen for read-only acceptance. Its final
+outcome is reported through exact Git/CI receipts rather than another editing
+cycle. There were two optimization pilots, zero additional large splits, two
+path-ownership repairs, one test-boundary correction and one sampling-ownership
+repair. No unmeasured overall twofold speedup is claimed, and no unresolved
+research theorem is supplied by this maintenance work.
+
 ## Preserved guide snapshots
 
 Snapshot source: maintenance checkpoint `5a0803f` (its unmodified documentation

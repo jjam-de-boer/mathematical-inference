@@ -1503,7 +1503,7 @@ The goal retains rational probability laws and the existing constructive axiom
 policy. Entropy values may be irrational; exact symbolic logarithms and rational
 interval certificates are auxiliary values, never new atom weights. Units are bits.
 
-### exact logarithmic arithmetic
+### Exact logarithmic arithmetic
 
 - `PositiveRatio` supplies unreduced positive rational arguments, equivalence,
   order, products, inverses and powers.
@@ -1524,7 +1524,7 @@ These are symbolic logarithms with an exact ordered arithmetic interpretation,
 not a newly assumed real logarithm. The separately proved `ExactLogInterpretation` bridge below supplies an
 auxiliary constructive real interpretation; it does not change atom weights.
 
-### entropy and positive-reference KL
+### Entropy and positive-reference KL
 
 - `ExactLogWeights` proves congruence for both rational coefficients and exact
   logarithm values, monotonicity, and finite-sum congruence/permutation laws.
@@ -1542,7 +1542,7 @@ auxiliary constructive real interpretation; it does not change atom weights.
   unequal positive prior weights. The fair-law/prior `(1/4,3/4)` KL value is
   certified exactly as `log₂(4/3)/2`.
 
-### constructive arithmetic–geometric mean foundation
+### Constructive arithmetic–geometric mean foundation
 
 `FiniteAMGM` proves the denominator-cleared finite inequality at every list
 length, using Cauchy's finite doubling/descending proof. Natural multiplicities
@@ -1552,7 +1552,7 @@ inequality. Later checkpoints use this foundation to establish KL and entropy
 bounds. Strict concavity and the certified rational optimizer are proved in
 separate downstream layers described below.
 
-### rational Gibbs inequality and KL nonnegativity
+### Rational Gibbs inequality and KL nonnegativity
 
 `RationalAMGM` clears the finitely supplied argument denominators and proves
 weighted rational products are at most one whenever their arithmetic mean is
@@ -1569,7 +1569,7 @@ observed cells, whose uniform-reference KL equals `log₂(3)` exactly.
 KL nonnegativity alone does not establish the equality or optimality results;
 the following checkpoints prove those additional statements separately.
 
-### equality in Gibbs and KL
+### Equality in Gibbs and KL
 
 `FiniteAMGMEquality` proves the weighted equality case using midpoint
 comparisons and the already established finite AM–GM bound. `RationalAMGMEquality`
@@ -1583,7 +1583,7 @@ check a split/rescaled/reordered law with a null outlier, a genuinely different
 point law, and an unrestricted zero-weight argument in the rational equality
 lemma. No literal atom-list equality is assumed.
 
-### entropy bounds and the cross-entropy criterion
+### Entropy bounds and the cross-entropy criterion
 
 `ExactLogLinear` proves rational bilinearity and the finite-sum identities needed
 for entropy comparisons. `CrossEntropyValue` and `Distros.CrossEntropy` establish
@@ -1604,7 +1604,7 @@ equality case, and the nonuniform candidate `(1/4, 1/4, 1/2)` with entropy `3/2`
 bits. A competitor with the same cross entropy and a retained null outlier has
 strictly smaller entropy.
 
-### strict concavity, including the boundary
+### Strict concavity, including the boundary
 
 `Distro.mixture` wraps the scale-and-append rational record construction, keeping
 both atom lists and their null outliers. Singleton masses and cross entropy obey
@@ -1623,7 +1623,7 @@ not an existence assertion for exact rational maximizers. Regressions exercise
 shared zero cells, null outliers, unequal denominators, unequal mixing weights,
 strict inequality for distinct point laws, and equality for split presentations.
 
-### moment feasibility and the first continuity estimate
+### Moment feasibility and the first continuity estimate
 
 `EntropyMomentConvex` proves affine signed rational expectations for the actual
 mixture constructor, and preservation of every closed rational moment interval.
@@ -1645,7 +1645,7 @@ nonnegative rational coefficient. These are proved ingredients for the boundary
 continuity argument. The full modulus and certified optimizer are separate
 implemented layers described below.
 
-### quantitative entropy continuity at zero
+### Quantitative entropy continuity at zero
 
 `EntropyTermBounds` derives a scalar cross-entropy bound from the actual
 Gibbs theorem, using an auxiliary two-state reference. The observed mass may
@@ -1662,7 +1662,7 @@ Regressions include probability zero and a non-dyadic mass `3/10000000`.
 This scalar boundary estimate is an input to the implemented uniform two-point
 modulus, moment/log-linear bridge and certified constrained optimizer below.
 
-### uniform two-point entropy continuity
+### Uniform two-point entropy continuity
 
 `EntropyIncrement` proves algebraic bounds on the change of an entropy term
 between positive probabilities. `EntropyContinuity` combines those bounds with
@@ -1682,7 +1682,7 @@ Uniform continuity is a proved input to the finite-box constrained optimizer,
 not an assumption left to its caller. Both that optimizer and the separate
 moment/log-linear optimality bridge are implemented below.
 
-### total certified rational entropy optimization
+### Total certified rational entropy optimization
 
 `ProbabilityBoxes` enumerates a finite cover by rational coordinate intervals.
 Every rational probability in `[0,1]` has a floor-selected box, and any two points
@@ -1718,7 +1718,7 @@ infeasible boxes, an infeasible moment problem, the full singleton solver with a
 clipped zero lower endpoint, and a fair-law certificate at tolerance `1/1000`.
 The whole dependency closure passes the constructive arithmetic axiom gate.
 
-### signed-moment log-linear optimality
+### Signed-moment log-linear optimality
 
 `LogExpectation` integrates exact logarithmic observables against aggregated
 PMFs and proves finite affine integration. `ShiftedMoments` computes a finite
@@ -1746,7 +1746,7 @@ internal support restriction is available for separate boundary score arguments.
 Regressions prove a nonuniform global maximum under a negative integer response,
 with a retained null outlier. The constructive arithmetic audit passes.
 
-### tight mean-one-half certificate and validation
+### Tight mean-one-half certificate and validation
 
 `EntropyHomogeneous` proves an equivalent common-degree entropy formula, allowing
 concrete certificates to execute without multiplying all the individual root
