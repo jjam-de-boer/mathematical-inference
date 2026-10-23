@@ -1,4 +1,4 @@
-import Thesis.Probability.ConstructiveRealLogContinuity
+import Thesis.Probability.ConstructiveRealLogOrder
 import Thesis.Probability.ConstructiveRealReciprocal
 import Thesis.Probability.ConstructiveRealProductLimits
 import Thesis.Probability.ConstructiveRealOrderedRing

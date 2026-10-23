@@ -1,4 +1,4 @@
-import Thesis.Probability.ConstructiveRealLogContinuity
+import Thesis.Probability.ConstructiveRealLogOrder
 
 namespace Thesis.Examples.ConstructiveRealLogarithm
 open Probability
@@ -23,6 +23,16 @@ example (x y : ConstructiveReal) (lower precision : PositiveRatio)
     (close : ConstructiveReal.Within (lower.logInputPrecision precision).half.toQProb x y) :
     ConstructiveReal.Within precision.toQProb (x.positiveLog2 lower boundedX) (y.positiveLog2 lower boundedY) :=
   ConstructiveReal.positiveLog2_within x y lower boundedX boundedY precision close
+
+example (x y : ConstructiveReal) (first second : PositiveRatio)
+    (firstBound : ConstructiveReal.LE (ConstructiveReal.ofSignedRatio first.toSignedRatio) x)
+    (secondBound : ConstructiveReal.LE (ConstructiveReal.ofSignedRatio second.toSignedRatio) y)
+    (compared : ConstructiveReal.LE x y) :
+    ConstructiveReal.LE (x.positiveLog2 first firstBound) (y.positiveLog2 second secondBound) :=
+  ConstructiveReal.positiveLog2_mono x y first second firstBound secondBound compared
+
+example : ConstructiveReal.Equiv (ConstructiveReal.one.positiveLog2 PositiveRatio.one (ConstructiveReal.le_refl _))
+    ConstructiveReal.zero := ConstructiveReal.positiveLog2_one _ _
 
 private def half : PositiveRatio := ⟨1, 2, by decide, by decide⟩
 private def threeHalves : PositiveRatio := ⟨3, 2, by decide, by decide⟩
@@ -50,5 +60,19 @@ private theorem logThree_lower : ConstructiveReal.LE ConstructiveReal.one logThr
 example (precision : PositiveRatio) :
     ConstructiveReal.LE (ConstructiveReal.ofSignedRatio ((logThree.positiveLog2 PositiveRatio.one logThree_lower).enclose precision).lower)
       (logThree.positiveLog2 PositiveRatio.one logThree_lower) := ConstructiveReal.lower_bound _ _
+
+private def quarter : PositiveRatio := ⟨1, 4, by decide, by decide⟩
+private theorem half_lower : ConstructiveReal.LE (ConstructiveReal.ofSignedRatio quarter.toSignedRatio)
+    (ConstructiveReal.ofSignedRatio half.toSignedRatio) :=
+  (ConstructiveReal.ofSignedRatio_le_iff _ _).mpr (by decide +kernel)
+
+/-- A negative logarithm is represented and proved with the same general
+construction; it is not restricted to inputs at least one. -/
+example : ConstructiveReal.Equiv ((ConstructiveReal.ofSignedRatio half.toSignedRatio).positiveLog2 quarter half_lower)
+    (ConstructiveReal.ofSignedRatio ⟨-1, 1, by decide⟩) :=
+  ConstructiveReal.equiv_trans (ConstructiveReal.positiveLog2_ofPositiveRatio half quarter half_lower)
+    (ConstructiveReal.equiv_trans (ExactLog.interpret_congr
+      (show ExactLog.Equiv (ExactLog.log half) (ExactLog.ofSignedRatio ⟨-1, 1, by decide⟩) from by decide +kernel))
+      (ExactLog.interpret_ofSignedRatio _))
 
 end Thesis.Examples.ConstructiveRealLogarithm

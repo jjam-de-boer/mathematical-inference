@@ -55,6 +55,16 @@ theorem rational_log_modulus_bound (lower a b precision : PositiveRatio) (bLower
   rw [← ExactLog.log_mul] at monotone
   exact ExactLog.le_trans monotone (ExactLog.add_le_add (ExactLog.le_refl _) smallError)
 
+/-- The one-sided finite bound transfers to analytic logarithm values. -/
+theorem rationalLog2_le_add_of_close (lower a b precision : PositiveRatio) (bLower : PositiveRatio.LE lower b)
+    (close : SignedRatio.LE a.toSignedRatio (SignedRatio.add b.toSignedRatio (lower.logInputPrecision precision).toSignedRatio)) :
+    ConstructiveReal.LE (ConstructiveReal.rationalLog2 a)
+      (ConstructiveReal.add (ConstructiveReal.rationalLog2 b) (ConstructiveReal.ofSignedRatio precision.toSignedRatio)) :=
+  (ConstructiveReal.le_congr (ConstructiveReal.equiv_refl _)
+    (ConstructiveReal.equiv_trans (ExactLog.interpret_add _ _)
+      (ConstructiveReal.add_congr (ConstructiveReal.equiv_refl _) (ExactLog.interpret_ofSignedRatio _)))).mp
+    (ExactLog.interpret_mono (rational_log_modulus_bound lower a b precision bLower close))
+
 /-- Rational logarithms satisfy a certified real error bound on every
 explicit positive rational half-line. -/
 theorem rationalLog2_within (lower a b precision : PositiveRatio) (aLower : PositiveRatio.LE lower a)

@@ -42,6 +42,17 @@ theorem positiveCenter_within (x : ConstructiveReal) (lower : PositiveRatio)
     simpa only [positiveEndpoint, if_neg positive] using
       (show Within precision.toQProb x (ofSignedRatio lower.toSignedRatio) from ⟨le_trans original.1 lowered, raised⟩)
 
+/-- The clamped center is still below the real value: both the rational
+endpoint and the supplied lower bound are valid lower bounds. -/
+theorem positiveCenter_le (x : ConstructiveReal) (lower : PositiveRatio)
+    (bounded : LE (ofSignedRatio lower.toSignedRatio) x) (precision : PositiveRatio) :
+    LE (ofSignedRatio (x.positiveCenter lower precision).toSignedRatio) x := by
+  apply (le_congr ((ofSignedRatio_equiv_iff _ _).mpr (positiveCenter_value _ _ _)) (equiv_refl _)).mpr
+  unfold positiveEndpoint
+  split
+  · exact x.lower_bound precision
+  · exact bounded
+
 /-- Exact rational inputs give the same positive center value at every
 precision, independently of unreduced fraction presentations. -/
 theorem positiveCenter_ofPositiveRatio (value lower precision : PositiveRatio) (bounded : PositiveRatio.LE lower value) :
