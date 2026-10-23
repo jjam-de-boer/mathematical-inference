@@ -71,6 +71,11 @@ class DocumentationTests(unittest.TestCase):
                     if anchor and destination.suffix == ".md":
                         self.assertIn(anchor, anchors(destination.read_text()))
 
+    def test_newer_published_auxiliary_guide_is_not_lost_in_the_merge(self):
+        body = archived_text(self.lean, "lean/ENTROPY.md@8b1f99b")
+        self.assertEqual(hashlib.sha256(body.encode()).hexdigest(),
+                         "0b4bc7cf8ab979006db1edb21e75dd8def2300d1d40d1592db4dd47a68d0aad1")
+
     def test_current_operating_policy_is_separate_from_history(self):
         policy = (self.lean / "AGENTS.md").read_text()
         for text in ("propext", "Quot.sound", "4608", "5120", "30 seconds",

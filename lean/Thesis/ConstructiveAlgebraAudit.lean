@@ -1,3 +1,9 @@
+import Thesis.Examples.ConstructiveRealLogarithm
+import Thesis.Examples.ConstructiveRealReciprocal
+import Thesis.Examples.ConstructiveRealProductLimits
+import Thesis.Examples.ConstructiveRealOrder
+import Thesis.Examples.ConstructiveRealCauchy
+import Thesis.Examples.ConstructiveRealAlgebra
 import Thesis.Examples.ConstructiveRealMultiplication
 import Thesis.Examples.RationalNorm
 import Thesis.Examples.ConstructiveRealLimits

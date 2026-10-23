@@ -1961,11 +1961,11 @@ the existing rational entropy and KL summands to `−p log₂(p)` and
 mass contributes zero without evaluating `log(0)`; KL retains its explicit
 positive-reference hypothesis.
 
-This is a partial implementation of activity 2. The subsequent checkpoint
-below constructs effective rational limits. General limit and continuity rules,
-the remaining multiplicative algebra and continuity laws, logarithms on general positive
-real arguments, exponentials, differentiation and certified Taylor remainder
-bounds still require separate proofs. No calculus, ideal optimizer existence,
+This initial value foundation is not the complete current analytic layer.
+The later sections now include effective real limits, real ring/order laws,
+product stability and logarithms on explicitly bounded positive domains.
+Exponentials, differentiation and certified Taylor remainder bounds still
+require separate proofs. No calculus, ideal optimizer existence,
 rational feasible-polytope density, multiplier existence or physical entropy
 identification is claimed by this initial value foundation.
 
@@ -2010,8 +2010,9 @@ The product-error theorem bounds `|ab − cd|` by
 `|a − c| |b| + |c| |b − d|`, with a corollary using supplied error and magnitude
 bounds. Inputs may be negative and the nonnegative bounds need not be at most
 one. These are exact auxiliary arithmetic estimates for constructing real
-multiplication and later certified series. The following checkpoint constructs
-general real products; the remaining algebra and calculus proofs remain open. Regressions cover mixed signs, cancellation,
+multiplication and later certified series. General real products, ring laws
+and their order/stability properties are described below; calculus is separate.
+Regressions cover mixed signs, cancellation,
 unreduced magnitudes and a product difference of magnitude `1/24`.
 
 
@@ -2038,9 +2039,52 @@ bounds around the computed rational product approximants. The regressions
 compute a negative product enclosure, change unreduced input presentations,
 and exercise the generic laws, including multiplication of `log₂(3)` by one.
 
-Associativity, distributivity, order/continuity laws, general real logarithms,
-exponentials and differentiation still require further proofs. These components
-do not complete activity 2 or the subsequent optimizer and physical activities.
+### Real ring laws, ordered products and effective real limits
+
+`ConstructiveRealAssociativity`, `ConstructiveRealAdditionLimits` and
+`ConstructiveRealDistributivity` compare different approximation schedules
+and prove general associativity, completion of sums and both distributive
+laws. `ConstructiveRealRing` supplies signed products, subtraction, natural
+powers and finite-sum identities. These are equalities of values, not an
+assumption of decidable equality of real presentations.
+
+`ConstructiveRealCauchy` computes limits of real-valued sequences from a
+supplied executable Cauchy modulus and proved tail estimates. Moduli need not
+be monotone. Tail error, uniqueness, presentation invariance, constants, sums
+and agreement with rational completion are proved. `ConstructiveRealCauchyOrder`
+and `ConstructiveRealCauchyStability` pass closed order, intervals and supplied
+errors through those effective limits.
+
+`ConstructiveRealOrderedRing` proves nonnegative products, multiplication of
+closed inequalities and nonnegative squares without deciding real signs.
+`ConstructiveRealStability` gives explicit product perturbation estimates.
+`ConstructiveRealProductLimits` constructs pointwise products and powers of
+effective real sequences and proves the corresponding limit identities.
+`ConstructiveRealRationalScaling` relates rational scaling to ordinary real
+multiplication; `EntropyRealProducts` uses it for the existing rational-mass
+Shannon/KL summands, retaining zero-mass and positive-reference qualifications.
+
+### Positive reciprocals and real logarithms
+
+`ConstructiveRealReciprocal` takes an explicit positive rational lower bound
+on a real value. It constructs a reciprocal, proves its inverse and congruence
+laws, and never decides arbitrary real equality with zero. That supplied bound
+is computational input, not an assumption that every real has a chosen sign.
+
+`ConstructiveRealLogarithm` similarly constructs `positiveLog2` from certified
+positive rational approximations and their effective limit. It proves tail
+error, rational agreement and independence of both presentation and positive
+lower-bound witness. `ConstructiveRealLogContinuity` supplies an explicit
+uniform modulus on a given positive half-line. `ConstructiveRealLogOrder`
+proves monotonicity, the value at one, and the appropriate nonnegative or
+nonpositive conclusion when the argument is respectively above or below one.
+
+These newer results were combined from published auxiliary-value work through
+`8b1f99b`, not proved by the maintenance refactor. Their original updated guide
+is preserved in [history](HISTORY.md#archived-entropy-8b1f99b). General real-log
+product laws, exponentials, differentiation, constrained-optimizer convergence
+and the physical activities are not supplied by these interfaces. Probability
+atom weights remain finite and rational throughout.
 
 <a id="research-boundaries"></a>
 
