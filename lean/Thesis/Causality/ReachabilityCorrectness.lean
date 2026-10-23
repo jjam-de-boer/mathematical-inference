@@ -51,6 +51,142 @@ theorem Consecutive.mono {r s : α -> α -> Prop}
       ⟨included left right consecutive.1,
         Consecutive.mono included (right :: rest) consecutive.2⟩
 
+/-- Append an edge at the last vertex of a consecutive list. Kept with
+its generic predicate so reversal proofs need no active-path imports. -/
+theorem Consecutive.snoc {relation : α -> α -> Prop}
+    {nodes : List α} {last : α}
+    (consecutive : Consecutive relation nodes)
+    (linked : forall previous, nodes.getLast? = some previous ->
+      relation previous last) :
+    Consecutive relation (nodes ++ [last]) := by
+  cases nodes with
+  | nil => simp [Consecutive]
+  | cons first tail =>
+      cases tail with
+      | nil =>
+          exact ⟨linked first rfl, by simp [Consecutive]⟩
+      | cons second rest =>
+          exact ⟨consecutive.1,
+            Consecutive.snoc (nodes := second :: rest) consecutive.2
+              (fun previous hprev => linked previous (by
+                simpa [List.getLast?_cons_cons] using hprev))⟩
+
+/-- Reverse a consecutive list under a supplied symmetric relation. The
+original recursive proof uses only the generic snoc lemma above. -/
+theorem Consecutive.reverse {relation : α -> α -> Prop}
+    (symmetric : forall left right, relation left right -> relation right left) :
+    forall nodes : List α,
+      Consecutive relation nodes -> Consecutive relation nodes.reverse
+  | [], _consecutive => by simp [Consecutive]
+  | [_], _consecutive => by simp [Consecutive]
+  | previous :: next :: rest, consecutive => by
+      have tailReverse :=
+        Consecutive.reverse symmetric (next :: rest) consecutive.2
+      have reverseEq :
+          (previous :: next :: rest).reverse =
+            (next :: rest).reverse ++ [previous] := by
+        simp [List.reverse_cons]
+      rw [reverseEq]
+      apply Consecutive.snoc tailReverse
+      intro older olderLast
+      have lastEq : (next :: rest).reverse.getLast? = some next := by
+        simp [List.getLast?_reverse]
+      rw [lastEq] at olderLast
+      cases olderLast
+      exact symmetric previous next consecutive.1
+
+
+/-!
+The remaining relation-parametric list operations stay with the same
+foundation. In particular, downstream successor-path comparison needs `drop`
+after splitting a shared vertex; obtaining that operation through a
+separation theorem would reintroduce the dependency this boundary removes.
+The statements and proof bodies below are unchanged from the old owner.
+-/
+
+theorem Consecutive.pair_of_append {relation : α -> α -> Prop}
+    (beforePrefix suffix : List α) (left right : α)
+    (consecutive : Consecutive relation
+      (beforePrefix ++ left :: right :: suffix)) :
+    relation left right := by
+  induction beforePrefix with
+  | nil => exact consecutive.1
+  | cons head tail ih =>
+      cases tail with
+      | nil => exact consecutive.2.1
+      | cons second rest => exact ih consecutive.2
+
+theorem Consecutive.prefix_append {relation : α -> α -> Prop}
+    (before : List α) (node : α) (after : List α)
+    (consecutive : Consecutive relation (before ++ node :: after)) :
+    Consecutive relation (before ++ [node]) := by
+  induction before with
+  | nil => simp [Consecutive]
+  | cons head tail ih =>
+      cases tail with
+      | nil => exact ⟨consecutive.1, by simp [Consecutive]⟩
+      | cons second rest => exact ⟨consecutive.1, ih consecutive.2⟩
+
+theorem Consecutive.drop {relation : α -> α -> Prop} :
+    forall (count : Nat) (nodes : List α),
+      Consecutive relation nodes -> Consecutive relation (nodes.drop count)
+  | 0, nodes, consecutive => by simpa using consecutive
+  | _ + 1, [], _consecutive => by simp [Consecutive]
+  | count + 1, _ :: tail, consecutive =>
+      Consecutive.drop count tail (by
+        cases tail with
+        | nil => simp [Consecutive]
+        | cons _ _ => exact consecutive.2)
+
+theorem Consecutive.append {relation : α -> α -> Prop} :
+    forall (left right : List α),
+      Consecutive relation left ->
+        Consecutive relation right ->
+          (forall previous next,
+            left.getLast? = some previous ->
+              right.head? = some next -> relation previous next) ->
+            Consecutive relation (left ++ right)
+  | [], right, _leftCons, rightCons, _join => by simpa using rightCons
+  | [previous], right, _leftCons, rightCons, join => by
+      cases right with
+      | nil => simp [Consecutive]
+      | cons next rest =>
+          exact ⟨join previous next rfl rfl, rightCons⟩
+  | previous :: middle :: rest, right, leftCons, rightCons, join =>
+      ⟨leftCons.1, Consecutive.append (middle :: rest) right leftCons.2 rightCons
+        (fun older newer olderLast newerHead =>
+          join older newer (by simpa using olderLast) newerHead)⟩
+
+/-- Drop an internal vertex whose two neighbours are already related.
+Oxford uses this when a blocked non-collider sits between two DAG-adjacent
+vertices: the shorter walk remains a consecutive adjacency trail. -/
+theorem Consecutive.delete_middle {relation : α -> α -> Prop} :
+    forall (before : List α) (previous middle next : α) (after : List α),
+      Consecutive relation
+          (before ++ previous :: middle :: next :: after) ->
+        relation previous next ->
+          Consecutive relation (before ++ previous :: next :: after)
+  | [], _previous, _middle, _next, _after, consecutive, bridge =>
+      ⟨bridge, consecutive.2.2⟩
+  | [_head], _previous, _middle, _next, _after, consecutive, bridge =>
+      ⟨consecutive.1, ⟨bridge, consecutive.2.2.2⟩⟩
+  | _head :: second :: rest, previous, middle, next, after, consecutive,
+      bridge =>
+      ⟨consecutive.1,
+        Consecutive.delete_middle (second :: rest) previous middle next after
+          consecutive.2 bridge⟩
+
+theorem Consecutive.map {r : α -> α -> Prop} {s : β -> β -> Prop}
+    (f : α -> β)
+    (preserve : forall left right, r left right -> s (f left) (f right)) :
+    forall nodes, Consecutive r nodes -> Consecutive s (nodes.map f)
+  | [] => fun _ => by simp [Consecutive]
+  | [_] => fun _ => by simp [Consecutive]
+  | left :: right :: rest => fun consecutive =>
+      ⟨preserve left right consecutive.1,
+        Consecutive.map f preserve (right :: rest) consecutive.2⟩
+
+
 end PathSpecification
 
 namespace FiniteReachability
@@ -869,6 +1005,56 @@ theorem FiniteReachability.boundedWalk_of_reachable
 theorem finBeq_eq_true_iff {n : Nat} (left right : Fin n) :
     finBeq left right = true <-> left = right := by
   simp [finBeq, Fin.ext_iff]
+
+/-- An explicitly consecutive nonempty list gives a directed reachable
+witness with its actual endpoints. No graph-specific separation law or
+selection of a walk from an arbitrary proposition is needed. -/
+theorem FiniteReachability.Reachable.of_consecutive
+    (edge : α -> α -> Bool) (nodes : List α) {source target : α}
+    (starts : nodes.head? = some source)
+    (finishes : nodes.getLast? = some target)
+    (consecutive : PathSpecification.Consecutive
+      (fun left right => edge left right = true) nodes) :
+    FiniteReachability.Reachable edge source target := by
+  induction nodes generalizing source with
+  | nil => simp at starts
+  | cons first tail ih =>
+      simp only [List.head?_cons, Option.some.injEq] at starts
+      subst source
+      cases tail with
+      | nil =>
+          simp only [List.getLast?_singleton, Option.some.injEq] at finishes
+          subst target
+          exact FiniteReachability.Reachable.refl edge first
+      | cons next rest =>
+          have tailFinishes : (next :: rest).getLast? = some target := by
+            simpa using finishes
+          exact FiniteReachability.Reachable.prepend consecutive.1
+            (ih rfl tailFinishes consecutive.2)
+
+namespace ObservedGraph
+
+/-- A nonempty suffix keeps the last vertex of an appended list. The historic
+`ObservedGraph` name is retained for import compatibility, although the
+statement and proof are entirely list-parametric. -/
+theorem getLast?_suffix_append {α} {before : List α} {node target : α}
+    {after : List α}
+    (h : (before ++ node :: after).getLast? = some target) :
+    (node :: after).getLast? = some target := by
+  induction before with
+  | nil => simpa using h
+  | cons head tail ih =>
+      cases tail with
+      | nil =>
+          cases after with
+          | nil => simpa using h
+          | cons _ _ => simpa [List.getLast?_cons] using h
+      | cons _ _ =>
+          simpa [List.getLast?_cons] using ih (by
+            simpa [List.cons_append, List.getLast?_cons] using h)
+
+end ObservedGraph
+
 
 end Causality
 end Thesis
