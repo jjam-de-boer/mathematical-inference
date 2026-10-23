@@ -1,3 +1,7 @@
+import Thesis.Examples.ConstructiveRealMultiplication
+import Thesis.Examples.RationalNorm
+import Thesis.Examples.ConstructiveRealLimits
+import Thesis.Examples.ConstructiveReal
 import Thesis.Examples.UncertaintyMeasure
 import Thesis.Examples.EntropyMeanHalf
 import Thesis.Examples.LogLinearEntropy

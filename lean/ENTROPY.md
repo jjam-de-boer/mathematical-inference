@@ -414,9 +414,125 @@ An alternative justification through a sampling/allocation model requires that
 model and its asymptotic argument as additional premises. Neither the probability
 rules nor fixed averages alone silently supply this policy.
 
-Activities 2–6 remain open: auxiliary constructive analysis, real feasible-law
-and optimizer bridges, multiplier necessity and interval/boundary qualifications,
-partition-function calculus, and the conditional physical correspondence.
+Activity 2 now has the initial value foundation described below. Activities 3–6
+remain open: real feasible-law and optimizer bridges, multiplier necessity and
+interval/boundary qualifications, partition-function calculus, and the
+conditional physical correspondence.
 Activity 7 remains ongoing as each new stage is tested and audited. The rational
 characterization regressions include unreduced unequal denominators, null cells
 at several positions, generic arbitrary measures, and the existing law adapter.
+
+
+### Constructive analytic values: first foundation
+
+`RationalApproximation` proves rational order closure under arbitrarily small
+positive rational errors, with an explicit separating precision. The proof
+works with unreduced signed fractions. `ConstructiveReal` then presents an
+auxiliary real value by an executable enclosure at every positive rational
+precision. Its intervals are mutually consistent and their widths are bounded
+by the requested precision. Rational values have singleton enclosures. Closed
+order is a proposition comparing all enclosure bounds; no arbitrary real
+comparison or equality decision is assumed.
+
+`ConstructiveRealAdditive` and `ConstructiveRealScaling` construct addition,
+negation, finite sums, natural division and nonnegative rational scaling, with
+proved congruence and additive/order laws. These values remain auxiliary;
+`Distro` atom weights and exactly feasible solver outputs are still rational.
+The current arithmetic gives correctness constructions, without a claim of
+an optimized numerical evaluator.
+
+`ExactLogRationalArithmetic` proves signed rational-bit addition and natural
+amplification identities. `ExactLogInterpretation` constructs a real presentation
+from the existing rational bisection certificates. It preserves and reflects
+`ExactLog` order and equivalence, agrees with the rational embedding, and
+preserves addition, negation, finite sums, natural division and rational scaling.
+Thus existing exact comparisons can be used as real-value bounds, and the
+interpretation does not identify unequal exact values.
+
+`EntropyInterpretation` constructs base-two logarithms of positive rational
+arguments in this value space, proves their product/inverse laws, and connects
+the existing rational entropy and KL summands to `−p log₂(p)` and
+`p (log₂(p) − log₂(r))`. The finite entropy sum is preserved. Zero observed
+mass contributes zero without evaluating `log(0)`; KL retains its explicit
+positive-reference hypothesis.
+
+This is a partial implementation of activity 2. The subsequent checkpoint
+below constructs effective rational limits. General limit and continuity rules,
+the remaining multiplicative algebra and continuity laws, logarithms on general positive
+real arguments, exponentials, differentiation and certified Taylor remainder
+bounds still require separate proofs. No calculus, ideal optimizer existence,
+rational feasible-polytope density, multiplier existence or physical entropy
+identification is claimed by this initial value foundation.
+
+The new audited regressions compute rational enclosures of `log₂(3)`, transfer
+an exact lower bound to real order, exercise arbitrary-presentation additive
+laws and rational scaling, and preserve null entropy coordinates and KL terms.
+
+
+### Effective rational limits
+
+`ConstructiveRealLimits` completes a regular rational approximation net by an
+explicit interval construction. It proves a bound around every supplied
+approximant and uniqueness of the resulting real value among presentations
+satisfying those bounds. A `RationalCauchySequence` includes an executable
+modulus and a proved tail-error estimate. A common later index turns it into
+a regular net, without requiring a monotone modulus. The resulting limit has
+proved error bounds for every sufficiently late sequence term.
+
+Every existing `ConstructiveReal` also supplies a regular net of computed
+rational lower endpoints. Completing that net is proved equivalent to the
+original real presentation. This is scalar rational reconstruction; it does
+not independently round probability coordinates or establish density inside
+a constrained feasible polytope.
+
+The regressions construct the nonconstant sequence `1 − 1/(n+1)`, give it a
+valid modulus, and prove its independently constructed limit equals one.
+They also check tail bounds and reconstruction for arbitrary real presentations
+and the certified `log₂(3)` presentation. The approximation modulus is explicit
+input data: these results do not assert convergence from strict concavity or
+supply the quantitative optimizer estimates still required in activity 3.
+
+
+### Exact rational error calculus
+
+`RationalNorm` defines the magnitude of an auxiliary signed rational as an
+unreduced nonnegative fraction. It proves presentation invariance, negation
+and product identities, the triangle inequality, and equivalence between an
+absolute-error bound and its two signed inequalities. Magnitude zero is proved
+equivalent to rational zero, including unreduced presentations.
+
+The product-error theorem bounds `|ab − cd|` by
+`|a − c| |b| + |c| |b − d|`, with a corollary using supplied error and magnitude
+bounds. Inputs may be negative and the nonnegative bounds need not be at most
+one. These are exact auxiliary arithmetic estimates for constructing real
+multiplication and later certified series. The following checkpoint constructs
+general real products; the remaining algebra and calculus proofs remain open. Regressions cover mixed signs, cancellation,
+unreduced magnitudes and a product difference of magnitude `1/24`.
+
+
+### Certified real products
+
+`ConstructiveRealDistance` defines two-sided rational error certificates in the
+closed real order. It proves the triangle and congruence rules and that values
+within every positive rational tolerance are equivalent. Regular rational
+approximants satisfy these real error bounds. Two regular nets with the same
+limit satisfy cross-error bounds, and any fixed natural multiple of the
+requested errors still forces agreement of their limits.
+
+`RationalPrecision` computes positive precision division and a cap at one.
+`RegularRationalAlgebra` computes integer magnitude bounds for approximants at
+precision at most one. It then constructs product nets whose input precision
+is divided by those bounds, using the exact product-error theorem. The proof
+allows different input presentations to compute different bounds and schedules.
+Equivalent input limits are proved to give equivalent product limits.
+
+`ConstructiveRealMultiplication` consequently defines multiplication of general
+real presentations. It proves presentation congruence, commutativity, zero and
+unit laws, agreement with exact signed-rational multiplication, and certified
+bounds around the computed rational product approximants. The regressions
+compute a negative product enclosure, change unreduced input presentations,
+and exercise the generic laws, including multiplication of `log₂(3)` by one.
+
+Associativity, distributivity, order/continuity laws, general real logarithms,
+exponentials and differentiation still require further proofs. These components
+do not complete activity 2 or the subsequent optimizer and physical activities.
