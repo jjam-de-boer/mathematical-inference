@@ -457,9 +457,9 @@ mass contributes zero without evaluating `log(0)`; KL retains its explicit
 positive-reference hypothesis.
 
 This is a partial implementation of activity 2. The subsequent checkpoint
-below constructs effective rational limits. General limit and continuity rules,
-the remaining multiplicative algebra and continuity laws, logarithms on general positive
-real arguments, exponentials, differentiation and certified Taylor remainder
+below constructs effective rational limits and real ring arithmetic. General
+limit and continuity rules, multiplicative order laws, logarithms on general
+positive real arguments, exponentials, differentiation and certified Taylor remainder
 bounds still require separate proofs. No calculus, ideal optimizer existence,
 rational feasible-polytope density, multiplier existence or physical entropy
 identification is claimed by this initial value foundation.
@@ -506,7 +506,8 @@ The product-error theorem bounds `|ab − cd|` by
 bounds. Inputs may be negative and the nonnegative bounds need not be at most
 one. These are exact auxiliary arithmetic estimates for constructing real
 multiplication and later certified series. The following checkpoint constructs
-general real products; the remaining algebra and calculus proofs remain open. Regressions cover mixed signs, cancellation,
+general real products and ring laws; the remaining order and calculus proofs
+remain open. Regressions cover mixed signs, cancellation,
 unreduced magnitudes and a product difference of magnitude `1/24`.
 
 
@@ -533,6 +534,27 @@ bounds around the computed rational product approximants. The regressions
 compute a negative product enclosure, change unreduced input presentations,
 and exercise the generic laws, including multiplication of `log₂(3)` by one.
 
-Associativity, distributivity, order/continuity laws, general real logarithms,
-exponentials and differentiation still require further proofs. These components
-do not complete activity 2 or the subsequent optimizer and physical activities.
+### Real ring laws and finite polynomials
+
+`ConstructiveRealAssociativity` compares the two nested product schedules using
+an explicit common error bound. Its associativity theorem applies to arbitrary
+real presentations, even when reconstruction changes the computed magnitude
+bounds and precision schedules.
+
+`ConstructiveRealAdditionLimits` constructs sums of regular rational nets and
+proves that completion preserves addition. It also proves addition of real
+error certificates and uniqueness from approximation in the real order.
+`ConstructiveRealDistributivity` uses these bounds and the rational product-error
+inequality to prove both distributive laws for general real values.
+
+`ConstructiveRealRing` derives the signed product and subtraction identities,
+natural powers and their addition law, and multiplication through arbitrary
+finite sums. Rational powers agree with the existing exact signed-rational
+monomials. All algebraic equalities use value equivalence; they do not assume
+that real presentations have decidable equality or choose quotient representatives.
+The regressions exercise the general laws, compute `(3/2)^3 = 27/8`, and check
+that one and zero remain inequivalent.
+
+Multiplicative order and continuity laws, general real logarithms, exponentials
+and differentiation still require further proofs. These components do not
+complete activity 2 or the subsequent optimizer and physical activities.
