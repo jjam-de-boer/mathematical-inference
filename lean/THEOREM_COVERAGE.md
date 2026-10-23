@@ -18,7 +18,7 @@ an external method; it does not extend the probability framework.
 | 2. Shared graph infrastructure | Connectivity, reachability and rank infrastructure extracted without changing public theorem names; current-engine dependency guards pass. Resource-driven soundness/completeness splits retain the original declaration text. | Further splitting should address a measured bottleneck; it is not itself a mathematical repair or a guarantee of full local feasibility. |
 | 3. Multivalued native example | Three declared observed values, an actual rational distribution, null intervention targets and supported conditionals checked through the native model. | The standalone-template regression now exercises the same boundary as well. |
 | 4. Support-pattern applicability | Exact undefined/zero/positive analysis and exhaustive comparison within supplied finite formula catalogues; complete native causal support profiles also preserve recursive derivation support. | This does not enumerate every possible certified formula; observed support alone need not determine causal support. |
-| 5. Universal alternative-formula coverage | Finite native support profiles, a serialized certificate checker, maximal proof-admissible guards, exact bounded enumeration, resource-admitted selection and a support-preserving elementary-path bridge constructed. | Bounded selection is complete only for its admitted catalogue. The support-constrained stopping problem remains unresolved; no unrestricted formula-coverage or impossibility theorem is asserted. |
+| 5. Universal alternative-formula coverage | Finite native support profiles, a serialized certificate checker, maximal proof-admissible guards, exact bounded enumeration, resource-admitted selection and a support-preserving elementary-path bridge constructed. A native counterexample refutes unconditional substitution through a common kernel. | Bounded selection is complete only for its admitted catalogue. A general support-preserving kernel normal form and universal stopping remain unresolved; the counterexample does not establish causal undecidability. |
 | 6. Finite structural representation | Constructed standalone-template coverage both for a fixed full hidden DAG and across all finite hidden DAGs with a fixed observed projection. | Rational weight assignments remain infinite; compatibility, sharpness and complete search are separate obligations. |
 | 7. Fixed-observed-law procedures | Restricted results retained; exact compatibility and unconditional/conditional-target comparison for a full hidden DAG with declared finite alphabet and denominator bounds. Conditional support and positive-evidence values are reported separately. | Unrestricted rational feasibility remains separate; increasing bounds has no proved stopping rule. |
 
@@ -663,6 +663,76 @@ an undecidable problem using the actual causal rules, finite native profiles,
 and symmetric paths, without inserting arbitrary equations. Another round
 of increasing proof-depth budgets would establish none of these missing
 claims. Further substantial infrastructure requires a new review decision.
+
+### Bounded kernel-normal-form attempt, 2026-10-23
+
+The broad conjecture above remains unproved and unrefuted. This pass tests a
+specific proposed composition rule, rather than treating the phrase "finite
+keys" as a normal-form theorem. `Examples.NativeKernelInterfaceObstruction`
+gives a checked counterexample to the following **common-carrier shortcut**:
+after two candidate proofs from the same kernel have matching complete
+formula-status and conditional-demand tables, replace one printed formula
+by the other using symmetry and transitivity through that kernel, without
+losing any application where the printed formulas are supported.
+
+In the existing three-valued native fixture, put `K = P(empty | Z)`,
+`U = P(empty)` and `V = U * U`. Actual rule 1 gives `K -> U`; an actual
+empty-set chain step gives `U -> V`. The candidate proofs from `K` end in
+`U` and `V`. `unit_demand_always`, `product_demand_always`,
+`formula_statuses_agree` and `candidate_metadata_agree` prove that the two
+conditional demands are always true and their output statuses agree, for
+every reference of every native model on the declared signature. Therefore
+enlarging the supplied profile list to a complete one does not distinguish
+this metadata; the proof does not execute any complete catalogue.
+
+Both candidates also admit the same observable null-reference guard, and
+both printed formulas are available there. But `K` is undefined at that
+reference. Original source support stays an independent premise, so neither
+certificate may be used to assign a value to this original conditional query.
+This is not a flaw in the existing certificate checker or causal soundness.
+
+The direct proof `U -> V` passes its full native support check. Replacing it
+by `U -> K -> V` fails. `conditional_demand_does_not_compose` is stronger
+than merely observing that an endpoint-only support test can miss an
+intermediate: each of the two pieces passes the existing conditional demand
+test, while their composition fails it. The pieces are accepted vacuously
+because one endpoint is undefined. The composite has defined endpoints and
+must inspect its undefined carrier. `formulas_are_distinct` rules out a
+merely reflexive syntactic loop, and `supported_carrier_detour_passes` checks
+that the same detour succeeds at a reference where the carrier is supported.
+
+There is a restricted positive composition argument directly from the
+checker definitions. If the carrier and both printed formulas are supported
+at every **active** profile/reference, then accepted conditional demands
+provide accepted recursive checks for both pieces. Symmetry and transitivity
+then reconstruct the carrier detour's full support. Dropping the carrier
+premise is exactly the invalid step exposed above. This argument alone does
+not show that every usable original proof admits such supported carriers.
+
+Nor may a repair simply demand every syntactically mentioned carrier
+everywhere. `zero_weight_can_hide_detour` accepts the whole failed detour
+inside a defined zero-weight factor, while
+`positive_weight_cannot_hide_detour` rejects it under a positive weight.
+Marginal substitutions and fixed references must likewise be retained by any
+proposed active-interface discipline.
+
+**Scope of the negative result.** The common-carrier substitution rule is
+false, even with metadata agreement over every native model/reference. This
+does not prove that those keys are unusable in every possible algorithm:
+another proof reconstruction may avoid the carrier, as the supported direct
+chain proof does here. It does not refute every finite-key or context-indexed
+normal form, and it is not an impossibility result for goal 5. A general
+positive result still needs a support-preserving lifting theorem, not merely
+finite metadata or conditional-demand transitive closure. No solver or
+production proof interface was added during this bounded attempt.
+
+The example uses empty-outcome kernels, which the current checked language
+permits. It does not rule out a normal form that first proves a suitable
+unit-kernel elimination theorem, or a nonempty-interface restriction with a
+proved coverage guarantee. Such elimination must preserve supported
+applications: the partial conditional `K` and the always-defined `U` do not
+have identical availability. These are additional proof obligations, not a
+reason to treat the example as a general impossibility theorem.
 
 ## Fixed-law results beyond graph-level completeness
 
