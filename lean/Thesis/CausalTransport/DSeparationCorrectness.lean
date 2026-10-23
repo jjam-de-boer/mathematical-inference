@@ -592,16 +592,6 @@ theorem Consecutive.reverse {relation : α -> α -> Prop}
       cases olderLast
       exact symmetric previous next consecutive.1
 
-theorem Consecutive.mono {r s : α -> α -> Prop}
-    (included : forall left right, r left right -> s left right) :
-    forall nodes : List α,
-      Consecutive r nodes -> Consecutive s nodes
-  | [] => fun _ => by simp [Consecutive]
-  | [_] => fun _ => by simp [Consecutive]
-  | left :: right :: rest => fun consecutive =>
-      ⟨included left right consecutive.1,
-        Consecutive.mono included (right :: rest) consecutive.2⟩
-
 /-- Drop an internal vertex whose two neighbours are already related.
 Oxford uses this when a blocked non-collider sits between two DAG-adjacent
 vertices: the shorter walk remains a consecutive adjacency trail. -/

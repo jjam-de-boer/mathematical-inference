@@ -35,6 +35,22 @@ def Consecutive {X : Type u} (relation : X -> X -> Prop) : List X -> Prop
   | left :: right :: rest =>
       relation left right /\ Consecutive relation (right :: rest)
 
+/-- Widen the edge relation of a consecutive list without changing its
+vertices. This is relation-parametric list mathematics: hedge readout routes
+use it to pass from a directed edge to strict topological increase. Keeping
+the original proof beside `Consecutive` avoids importing active-path and
+moral-graph correctness merely to obtain this implication. The old
+`DSeparationCorrectness` import continues to expose the same declaration. -/
+theorem Consecutive.mono {r s : α -> α -> Prop}
+    (included : forall left right, r left right -> s left right) :
+    forall nodes : List α,
+      Consecutive r nodes -> Consecutive s nodes
+  | [] => fun _ => by simp [Consecutive]
+  | [_] => fun _ => by simp [Consecutive]
+  | left :: right :: rest => fun consecutive =>
+      ⟨included left right consecutive.1,
+        Consecutive.mono included (right :: rest) consecutive.2⟩
+
 end PathSpecification
 
 namespace FiniteReachability

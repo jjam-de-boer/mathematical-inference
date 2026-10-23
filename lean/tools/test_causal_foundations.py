@@ -29,6 +29,27 @@ class CausalFoundationTests(unittest.TestCase):
     def source(self, module):
         return (self.root / (module.replace(".", "/") + ".lean")).read_text()
 
+    def test_consecutive_implication_stays_in_the_generic_walk_foundation(self):
+        # The original recursive proof at maintenance baseline 4a29a2c is
+        # retained exactly. Source preservation and dependency ownership are
+        # distinct checks; neither establishes Lean elaboration by itself.
+        owner = "Thesis.Causality.ReachabilityCorrectness"
+        graph_layer = "Thesis.CausalTransport.DSeparationCorrectness"
+        source = self.source(owner)
+        start = source.index("theorem Consecutive.mono ")
+        block = source[start:source.index("end PathSpecification", start)].rstrip()
+        self.assertEqual(hashlib.sha256(block.encode()).hexdigest(),
+                         "7dc5b1d97c43c7cf7b96d7450457e95f5563574ab9997cb0bdfc5ff49fb66cce")
+        self.assertNotIn("theorem Consecutive.mono ", self.source(graph_layer))
+        self.assertIn(owner, reachable(self.graph, graph_layer))
+        for module in ("Hedge.ReadoutGeometry", "Hedge.Models", "Hedge.Parity",
+                       "HedgeChannelCharacters", "HedgeChannelCounterexample"):
+            with self.subTest(module=module):
+                dependencies = reachable(self.graph, "Thesis.CausalTransport." + module)
+                self.assertIn(owner, dependencies)
+                self.assertNotIn(graph_layer, dependencies)
+                self.assertNotIn("Thesis.CausalTransport.DSeparation", dependencies)
+
     def test_current_foundations_and_selected_clients_avoid_legacy_completeness(self):
         for module in ("Causality.TermSupport", "Causality.InterventionalCounterexample",
                        "Causality.IdentificationOutcomeTraces", "Causality.CForestConstruction",

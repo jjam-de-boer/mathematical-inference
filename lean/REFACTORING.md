@@ -152,3 +152,23 @@ documentation, native local builds, measurement claims and unrelated-work
 preservation. Report acceptance in the final response and goal status rather
 than editing this ledger during the read-only pass. A material failure leaves
 the goal incomplete and requires explicit authorization for another working pass.
+
+## New targeted maintenance goal, 2026-10-23
+
+This is a separately authorized follow-up, not a fourth pass of the preceding
+refactor. Its limits are two working passes plus frozen read-only acceptance,
+two performance pilots, one optional large-module split, and three repairs per
+validation failure. The user also requested consolidation of scattered Markdown.
+This temporary ledger will join the consolidated operating guide; no permanent
+additional progress document is intended.
+
+| Stage | Evidence / affected contract | Status |
+| --- | --- | --- |
+| 1. Baseline | `4a29a2c2b6cb92e70e7be5a031b15d3718df83fe`, complete CI run `39929974016`; complete 1010-module local/native build and general audit passed in `.lake/local-builds-v1/20261023-112903-8oi3hufx/`. Both specialized audits passed separately in `.lake/local-builds-v1/20261023-113031-mc9mmv2q/`; all 111 helper tests passed. Newer published analytic-value work is retained, not changed or attributed to maintenance. Only the pre-existing PDF was dirty. | Verified for this revision (`4a29a2c`). |
+| 2. Documentation | All five requested guides read. Proposed canonical layout: root README, `lean/AGENTS.md`, `lean/REFERENCE.md`, `lean/HISTORY.md`. The user authorized coordination with both ongoing agents; their documentation updates must be retained. | Pending. |
+| 3A. Walk foundation | Moved only `Consecutive.mono` beside `Consecutive`, preserving its exact original statement/proof hash. Readout geometry imports that owner directly; its closure is 20→18 project modules, not a timing claim. All five affected prerequisite/target rebuilds passed locally (generic owner 1.16 s / 675.2 MiB; d-separation correctness 5.87 s / 979.0 MiB; readout 1.24 s / 712.9 MiB). All 112 helper tests pass. Complete changed-source CI/audits remain required. | Implemented, awaiting review. |
+| 3B. Sampling helpers | Generic mass/count helpers in specialized reinforced-urn modules remain to be investigated and checked. | Pending. |
+| 4. Performance | The two approved example pilots remain unstarted; historical times are not a new controlled benchmark. | Pending. |
+| 5. Structure/sharing | No additional large-module split has been attempted. | Pending. |
+| 6. Comments/navigation | Reconcile after the selected changes; preserve mathematical explanations and exact proof guards. | Pending. |
+| 7. Verification/publication | Full changed-source gates and exact-commit CI remain required before publication. | Pending. |

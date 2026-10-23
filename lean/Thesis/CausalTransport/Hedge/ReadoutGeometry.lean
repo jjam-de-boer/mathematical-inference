@@ -1,6 +1,6 @@
 import Thesis.Causality.IdentificationSearch
 import Thesis.Causality.ComponentConnectivity
-import Thesis.CausalTransport.DSeparationCorrectness
+import Thesis.Causality.ReachabilityCorrectness
 
 namespace Thesis
 namespace Causality
@@ -26,6 +26,10 @@ These are graph and routing facts, not observational-law equality, positivity
 of a model or a semantic completeness theorem. They contain no legacy engine
 trace. `CompletenessFailureExtraction` retains its historical failure results
 and reexports this shared geometry for import compatibility.
+
+Consecutive-walk implication comes directly from the generic reachability
+foundation. No active-path or moral-graph correctness theorem is needed by
+these routes; in particular this layer does not import `DSeparationCorrectness`.
 -/
 
 /--
