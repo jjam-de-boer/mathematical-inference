@@ -21,11 +21,11 @@ The completed positive-class `PublishedCompleteness` package is constructed in
 `KernelFailureExtraction` prove their structural success and failure results;
 `ConditionalFailureExtraction` handles conditional exchange traces, and the
 channel countermodel modules establish original-query separation. Native hidden
-DAG transfer and supported-zero qualifications are described in
-`lean/REFERENCE.md#causal-results`; no local ready-case theorem silently replaces those
-published statements.
+DAG transfer and supported-zero qualifications are established separately in
+`HiddenDAGCorrespondence` and `HiddenDAGSupportedCorrespondence`; no local
+ready-case theorem silently replaces those published statements.
 
-The earlier detailed development inventory is preserved verbatim in
-`lean/HISTORY.md#archived-completeness-inventory`. Its historical obligations
-must not be read as current open gaps or a roadmap for deeper failure stacks.
+The earlier detailed development inventory is recoverable from Git history.
+Its historical obligations must not be read as current open gaps or a roadmap
+for deeper failure stacks.
 -/

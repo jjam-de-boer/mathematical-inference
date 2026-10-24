@@ -16,7 +16,6 @@ import re
 import unittest
 
 from test_example_coverage import initial_project_imports, reachable
-from test_documentation_consolidation import archived_text
 
 
 class CausalFoundationTests(unittest.TestCase):
@@ -280,24 +279,6 @@ class CausalFoundationTests(unittest.TestCase):
                        "CausalTransport.CompletenessLegacyNestedFailures"):
             with self.subTest(module=module):
                 self.assertIn("Thesis." + module, covered)
-
-    def test_historical_inventory_is_preserved_outside_the_public_facade(self):
-        history = archived_text(self.root, "lean/docs/history/completeness-development.md")
-        block = history.split("```text\n", 1)[1].split("\n```", 1)[0]
-        self.assertEqual(hashlib.sha256(block.encode()).hexdigest(),
-                         "68a789944a66b368811c0507d92d590ae85bc088efe3e9f79249b099d1ce25b7")
-        facade = self.source("Thesis.CausalTransport.Completeness")
-        self.assertNotIn("Detailed implementation inventory.", facade)
-        self.assertIn("HISTORY.md#archived-completeness-inventory", facade)
-
-    def test_pass_one_ledger_is_preserved_as_history_not_current_status(self):
-        history = archived_text(self.root, "lean/docs/history/refactoring-pass1.md").encode()
-        original = history.split(b"<!-- BEGIN PRESERVED PASS 1 LEDGER -->\n", 1)[1]
-        self.assertEqual(hashlib.sha256(original).hexdigest(),
-                         "bc0f06b5018e9ef3654502e64d63006388b4de2365cb67bb8684a99dd4f6959d")
-        current = (self.root / "AGENTS.md").read_text()
-        self.assertIn("HISTORY.md", current)
-        self.assertNotIn("Pass 2 has not started", current)
 
     def test_archived_failure_stacks_keep_every_original_declaration_and_proof(self):
         hashes = {
