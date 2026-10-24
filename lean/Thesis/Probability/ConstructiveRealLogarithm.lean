@@ -1,18 +1,6 @@
 import Thesis.Probability.RationalLogContinuity
 import Thesis.Probability.ConstructiveRealReciprocal
 
-namespace Thesis.Probability.PositiveRatio
-
-def unitPrecision (n : Nat) : PositiveRatio := ⟨1, n + 1, by decide, Nat.zero_lt_succ n⟩
-
-theorem unitPrecision_le (precision : PositiveRatio) (n : Nat) (later : precision.den ≤ n) :
-    LE (unitPrecision n) precision := by
-  change 1 * precision.den ≤ precision.num * (n + 1)
-  rw [Nat.one_mul]
-  exact Nat.le_trans (by omega) (Nat.le_mul_of_pos_left _ precision.num_pos)
-
-end Thesis.Probability.PositiveRatio
-
 namespace Thesis.Probability.ConstructiveReal
 
 theorem rationalLog2_congr {a b : PositiveRatio} (same : PositiveRatio.Equiv a b) : Equiv (rationalLog2 a) (rationalLog2 b) :=

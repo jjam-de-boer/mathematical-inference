@@ -1964,9 +1964,9 @@ positive-reference hypothesis.
 This initial value foundation is not the complete current analytic layer.
 The later sections now include effective real limits, real ring/order laws,
 product stability and logarithms on explicitly bounded positive domains.
-A general real exponential and differentiation still require separate proofs;
-the certified rational-series and rational-argument Taylor constructions are described
-below. No calculus, ideal optimizer existence,
+The later sections construct the general real exponential from certified
+rational Taylor approximations. Exponential identities and differentiation
+still require separate proofs. No calculus, ideal optimizer existence,
 rational feasible-polytope density, multiplier existence or physical entropy
 identification is claimed by this initial value foundation.
 
@@ -2110,13 +2110,25 @@ presentation invariance, agreement with `expSmall`, and the value at zero.
 Regressions compute enclosures at `1`, `−1` and `2` and preserve large unreduced
 presentations.
 
-General real arguments, exponential addition/inverse identities, the connection
-to the bit logarithm and differentiation remain separate proof obligations.
+`RationalSeriesNorm` and `RationalTaylorBounds` bound finite absolute sums
+uniformly over each bounded rational interval, including radius zero.
+`RationalExponentialContinuity` proves a Lipschitz estimate with an explicit
+natural constant from the finite Taylor recurrences, and passes it to the
+completed rational exponentials. These bounds do not assume derivatives.
+`ConstructiveRealExponential` uses this uniform continuity to construct the
+exponential of every constructive real. Its effective Cauchy sequence evaluates
+the certified rational exponential at computed rational approximants. It proves
+a tail estimate, agreement with every signed rational argument, the value at
+zero and independence from the real enclosure presentation. The natural bounds
+are explicit but coarse; no practical efficiency guarantee is claimed.
+
+Exponential addition/inverse identities, the connection to the bit logarithm
+and differentiation remain separate proof obligations.
 
 These newer results were combined from published auxiliary-value work through
 `8b1f99b`, `ca8d9cb`, `22fd3b9` and `dec7a44`, not proved by the maintenance refactor. The updated
 guide through `8b1f99b` is preserved in [history](HISTORY.md#archived-entropy-8b1f99b).
-General real exponentials, differentiation, constrained-optimizer convergence and the
+Exponential analytic identities, differentiation, constrained-optimizer convergence and the
 physical activities are not supplied by these interfaces. Probability atom
 weights remain finite and rational throughout.
 

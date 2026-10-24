@@ -37,5 +37,21 @@ theorem divide_mul (precision : PositiveRatio) (factor : Nat) (positive : 0 < fa
   simp only [QProb.Equiv, QProb.mul, toQProb, divideNat, QProb.ofNat, Nat.mul_one]
   ac_rfl
 
+
+/-- A decreasing rational accuracy schedule with an explicit index bound
+for every positive rational tolerance. -/
+def unitPrecision (n : Nat) : PositiveRatio := ⟨1, n + 1, by decide, Nat.zero_lt_succ n⟩
+
+theorem unitPrecision_le (precision : PositiveRatio) (n : Nat) (later : precision.den ≤ n) :
+    LE (unitPrecision n) precision := by
+  change 1 * precision.den ≤ precision.num * (n + 1)
+  rw [Nat.one_mul]
+  exact Nat.le_trans (by omega) (Nat.le_mul_of_pos_left _ precision.num_pos)
+
+
+theorem unitPrecision_le_one (n : Nat) : LE (unitPrecision n) one := by
+  change 1 ≤ 1 * (n + 1)
+  omega
+
 end Thesis.Probability.PositiveRatio
 
