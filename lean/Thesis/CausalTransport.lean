@@ -137,6 +137,7 @@ import Thesis.CausalTransport.ProjectedHiddenDAGModels
 import Thesis.CausalTransport.ProjectionTemplateRepresentation
 import Thesis.CausalTransport.SharedResponseNative
 import Thesis.CausalTransport.SharedResponseProblem
+import Thesis.CausalTransport.SharedResponseSupport
 import Thesis.CausalTransport.SharedResponseLinearBounds
 import Thesis.CausalTransport.BoundedNativeCatalogue
 import Thesis.CausalTransport.BoundedNativeRepresentation
@@ -365,6 +366,10 @@ class. `SharedResponseLinearBounds` uses the exact rational linear solver to
 return attained sharp unconditional event bounds with no denominator cap;
 point identification is equivalent to coincident endpoints. It does not
 remove independence constraints for sparser graphs or classify conditionals.
+`SharedResponseSupport` proves observational-support coverage of a filtered
+response grid, without changing that solver. Excluded occurrences have zero
+weight in every fitted law; retained tables keep all off-factual rows and
+declared intervention values. No computational speedup is asserted yet.
 `BoundedNativeCatalogue` adds an explicit rational denominator bound to the
 finite structural family. `BoundedNativeRepresentation` constructs listed
 representatives of arbitrary native models with bounded supplied alphabets,

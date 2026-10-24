@@ -191,6 +191,8 @@ jobs:
           Thesis.CausalTransport.SharedResponseProblem
           Thesis.CausalTransport.SharedResponseLinearBounds
           Thesis.Examples.SharedResponseLinearBounds
+          Thesis.CausalTransport.SharedResponseSupport
+          Thesis.Examples.SharedResponseSupport
       - name: Check exact expression support analysis
         working-directory: lean
         run: >-
