@@ -1,3 +1,5 @@
+import Thesis.Probability.ConstructiveRealExponential
+import Thesis.Probability.RationalExponential
 import Thesis.Probability.RationalTaylorExponential
 import Thesis.Probability.ConstructiveRealLogReciprocal
 import Thesis.Probability.ConstructiveRealLogOrder
