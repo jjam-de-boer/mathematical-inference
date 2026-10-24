@@ -135,6 +135,9 @@ import Thesis.CausalTransport.LatentRootNativeEvaluation
 import Thesis.CausalTransport.CliqueRootNative
 import Thesis.CausalTransport.ProjectedHiddenDAGModels
 import Thesis.CausalTransport.ProjectionTemplateRepresentation
+import Thesis.CausalTransport.SharedResponseNative
+import Thesis.CausalTransport.SharedResponseProblem
+import Thesis.CausalTransport.SharedResponseLinearBounds
 import Thesis.CausalTransport.BoundedNativeCatalogue
 import Thesis.CausalTransport.BoundedNativeRepresentation
 import Thesis.CausalTransport.BoundedNativeSearch
@@ -356,6 +359,12 @@ targets. This projection-wide structural catalogue is finite; its rational
 weights remain unbounded, and exact feasibility or complete search is not
 inferred. Supported conditional targets retain joint/evidence queries and
 the original positive causal conditioner.
+For the restricted complete-bidirected projection, `SharedResponseNative`
+constructs two-sided response-table coverage of the full original native
+class. `SharedResponseLinearBounds` uses the exact rational linear solver to
+return attained sharp unconditional event bounds with no denominator cap;
+point identification is equivalent to coincident endpoints. It does not
+remove independence constraints for sparser graphs or classify conditionals.
 `BoundedNativeCatalogue` adds an explicit rational denominator bound to the
 finite structural family. `BoundedNativeRepresentation` constructs listed
 representatives of arbitrary native models with bounded supplied alphabets,

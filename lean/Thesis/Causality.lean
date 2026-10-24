@@ -5,6 +5,8 @@ import Thesis.Causality.Derivation
 import Thesis.Causality.Model
 import Thesis.Causality.SelectedAssignment
 import Thesis.Causality.HardIntervention
+import Thesis.Causality.SharedResponseTables
+import Thesis.Causality.SharedResponseModel
 import Thesis.Causality.Identification
 import Thesis.Causality.HedgeQuery
 import Thesis.Causality.KernelConditioning
