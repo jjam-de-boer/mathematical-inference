@@ -1,4 +1,4 @@
-import Thesis.Probability.ConstructiveRealExponential
+import Thesis.Probability.ConstructiveRealExpLimits
 
 namespace Thesis.Examples.ConstructiveRealExponential
 open Probability
@@ -40,5 +40,18 @@ example : ConstructiveReal.Equiv (ConstructiveReal.exp (ConstructiveReal.ofSigne
     (Probability.RationalExponential.exp ⟨-1, 1, by decide⟩) :=
   ConstructiveReal.equiv_trans (ConstructiveReal.exp_ofSignedRatio _)
     (Probability.RationalExponential.exp_congr (by decide +kernel))
+
+/-- Exponential limits use an explicitly computed family bound rather than
+assuming boundedness of every input presentation. -/
+example (sequence : RealCauchySequence) : ConstructiveReal.Equiv
+    sequence.mapExp.limit sequence.limit.exp := sequence.mapExp_limit
+
+example (sequence : RealCauchySequence) (n : Nat) :
+    sequence.mapExp.value n = (sequence.value n).exp := rfl
+
+example (x y : ConstructiveReal) (error : QProb) (close : ConstructiveReal.Within error x y) :
+    ConstructiveReal.Within (QProb.mul error (QProb.ofNat (RationalTaylorExponential.uniformSumBound
+      (max x.rationalApproximation.magnitudeBound y.rationalApproximation.magnitudeBound)))) x.exp y.exp :=
+  ConstructiveReal.exp_within error close
 
 end Thesis.Examples.ConstructiveRealExponential

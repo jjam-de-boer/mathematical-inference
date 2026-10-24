@@ -2121,6 +2121,11 @@ the certified rational exponential at computed rational approximants. It proves
 a tail estimate, agreement with every signed rational argument, the value at
 zero and independence from the real enclosure presentation. The natural bounds
 are explicit but coarse; no practical efficiency guarantee is claimed.
+`ConstructiveRealExpContinuity` transfers the same Lipschitz bounds to real
+inputs. `ConstructiveRealExpLimits` proves that pointwise exponentials preserve
+effective real Cauchy convergence and that their limit is the exponential of
+the original limit. The family bound used in its modulus is derived from the
+already constructed original limit; it is not an added hypothesis.
 
 Exponential addition/inverse identities, the connection to the bit logarithm
 and differentiation remain separate proof obligations.
