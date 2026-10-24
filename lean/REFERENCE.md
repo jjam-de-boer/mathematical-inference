@@ -303,7 +303,7 @@ probability framework.
 | 2. Shared graph infrastructure | Connectivity, reachability and rank infrastructure extracted without changing public theorem names; current-engine dependency guards pass. Resource-driven soundness/completeness splits retain the original declaration text. | Further splitting should address a measured bottleneck; it is not itself a mathematical repair or a guarantee of full local feasibility. |
 | 3. Multivalued native example | Three declared observed values, an actual rational distribution, null intervention targets and supported conditionals checked through the native model. | The standalone-template regression now exercises the same boundary as well. |
 | 4. Support-pattern applicability | Exact undefined/zero/positive analysis and exhaustive comparison within supplied finite formula catalogues; complete native causal support profiles also preserve recursive derivation support. | This does not enumerate every possible certified formula; observed support alone need not determine causal support. |
-| 5. Universal alternative-formula coverage | Finite native support profiles, a serialized certificate checker, maximal proof-admissible guards, exact bounded enumeration, resource-admitted selection and a support-preserving elementary-path bridge constructed. A native counterexample refutes unconditional substitution through a common kernel. | Bounded selection is complete only for its admitted catalogue. A general support-preserving kernel normal form and universal stopping remain unresolved; the counterexample does not establish causal undecidability. |
+| 5. Universal alternative-formula coverage | Finite native support profiles, a serialized certificate checker, maximal proof-admissible guards, exact bounded enumeration, resource-admitted selection, a support-preserving elementary-path bridge and same-endpoint contextual proof replacement constructed. A native counterexample refutes unconditional substitution through a common kernel. | Bounded selection is complete only for its admitted catalogue. A general support-preserving kernel normal form and universal stopping remain unresolved; the counterexample does not establish causal undecidability. |
 | 6. Finite structural representation | Constructed standalone-template coverage both for a fixed full hidden DAG and across all finite hidden DAGs with a fixed observed projection. | Rational weight assignments remain infinite; compatibility, sharpness and complete search are separate obligations. |
 | 7. Fixed-observed-law procedures | Restricted results retained; exact compatibility and unconditional/conditional-target comparison for a full hidden DAG with declared finite alphabet and denominator bounds. Conditional support and positive-evidence values are reported separately. | Unrestricted rational feasibility remains separate; increasing bounds has no proved stopping rule. |
 
@@ -836,9 +836,11 @@ than merely observing that an endpoint-only support test can miss an
 intermediate: each of the two pieces passes the existing conditional demand
 test, while their composition fails it. The pieces are accepted vacuously
 because one endpoint is undefined. The composite has defined endpoints and
-must inspect its undefined carrier. `formulas_are_distinct` rules out a
-merely reflexive syntactic loop, and `supported_carrier_detour_passes` checks
-that the same detour succeeds at a reference where the carrier is supported.
+must inspect its undefined carrier. `formulas_are_distinct` distinguishes the
+printed syntax, but the rejected proof still contains a cancellable
+`U -> K -> U` detour. The direct source `U` is already action-free, so this is
+not a missed identification opportunity. `supported_carrier_detour_passes`
+checks that the same detour succeeds where the carrier is supported.
 
 There is a restricted positive composition argument directly from the
 checker definitions. If the carrier and both printed formulas are supported
@@ -872,6 +874,42 @@ proved coverage guarantee. Such elimination must preserve supported
 applications: the partial conditional `K` and the always-defined `U` do not
 have identical availability. These are additional proof obligations, not a
 reason to treat the example as a general impossibility theorem.
+
+### Same-endpoint contextual proof replacement
+
+`DerivationContext` records one distinguished subproof in the existing
+derivation language. Its hole has fixed literal source and target expressions;
+`DoCalculusDerivationContext.fill` retains all other proof data, including
+nonreflexive siblings. It rebuilds old constructors rather than adding a new
+causal equation or serialized certificate language.
+
+`NativeDerivationReplacement` proves
+`DoCalculusDerivationContext.check_mono`: if an actual replacement with those
+same endpoints passes the **full** support check wherever the old subproof
+passes, at every reference of a fixed native model, replacement preserves
+acceptance in every represented enclosing proof context. All references are
+needed for marginal substitutions and fixed evaluation. Literal endpoints
+also retain the source weight selecting a weighted congruence's positive
+branch; defined zero weights still skip their factors. The hypothesis is not
+conditional demand, which can pass vacuously at an undefined endpoint.
+
+`support_mono` reconstructs the established recursive support witnesses from
+the same model's actual values. Applying the theorem to each supplied profile
+retains one common replacement proof, not a separate proof chosen per hidden
+model. Matching status tables alone do not equate different endpoint terms,
+and taking the union of several proofs' acceptance tables does not construct
+one proof realizing that union.
+
+`Examples.NativeDerivationReplacement` exercises a genuine support improvement
+from the carrier detour to the direct chain proof. It retains a nonreflexive
+sibling and the zero/positive, marginal and fixed-reference boundaries;
+replacement does not repair an unrelated undefined sibling.
+
+This proves local support-preserving replacement, not an implemented pruning
+algorithm or a finite-key normal-form theorem. Finitely many support tables
+for each fixed endpoint pair do not bound the number of possible expressions.
+Universal alternative-formula coverage and a universal stopping argument
+therefore remain unresolved.
 
 ## Fixed-law results beyond graph-level completeness
 
@@ -2116,7 +2154,9 @@ questions are separate research, not missing premises to assume:
 - Universal coverage across every alternative formula's application domain.
   Bounded proof/catalogue selection is implemented, but increasing budgets has
   no proved universal stopping criterion. The common-kernel substitution
-  obstruction refutes one shortcut, not every finite-key strategy.
+  obstruction refutes one shortcut, not every finite-key strategy. The proved
+  same-endpoint replacement theorem does not bound the endpoint expressions
+  or implement a pruning algorithm.
 - Exact arbitrary-graph identification at one fixed observed distribution.
   Binary bow/IV and explicitly bounded native classes have their stated
   complete results; unrestricted rational polynomial feasibility remains a
