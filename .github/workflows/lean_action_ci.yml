@@ -181,6 +181,16 @@ jobs:
           Thesis.CausalTransport.ProjectedHiddenDAGModels
           Thesis.CausalTransport.ProjectionTemplateRepresentation
           Thesis.Examples.ProjectionTemplateRepresentation
+      - name: Check exact rational shared-root bounds
+        working-directory: lean
+        run: >-
+          lake build
+          Thesis.Causality.SharedResponseTables
+          Thesis.Causality.SharedResponseModel
+          Thesis.CausalTransport.SharedResponseNative
+          Thesis.CausalTransport.SharedResponseProblem
+          Thesis.CausalTransport.SharedResponseLinearBounds
+          Thesis.Examples.SharedResponseLinearBounds
       - name: Check exact expression support analysis
         working-directory: lean
         run: >-

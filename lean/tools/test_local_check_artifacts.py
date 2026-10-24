@@ -1,7 +1,6 @@
 """Exercise retained-artifact integrity and invalidation without invoking Lean.
 
-Current build policy is in AGENTS.md; retained compiler pilots are in HISTORY.md. Fake
-artifact bytes here test cache policy, not mathematical correctness. In
+Fake artifact bytes here test cache policy, not mathematical correctness. In
 particular a modified source, prerequisite, compiler profile or artifact must
 never acquire the status of a reusable successful check by accident.
 """

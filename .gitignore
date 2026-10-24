@@ -18,6 +18,10 @@
 # Generated local artifacts
 /tmp/
 
+# Agent notes stay local; only the repository README is published as Markdown.
+*.[mM][dD]
+!/README.md
+
 # LaTeX build products
 *.aux
 *.log

@@ -2,7 +2,7 @@
 
 The fresh and cache-aware paths must share the same monitor and compiler-slot
 policy. Mocked compilation here tests orchestration/refusal, not Lean proofs;
-actual bounded fresh-closure measurements are archived in HISTORY.md.
+actual compiler results remain separate evidence in the build logs.
 """
 
 from contextlib import nullcontext, redirect_stdout
