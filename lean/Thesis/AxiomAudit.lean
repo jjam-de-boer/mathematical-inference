@@ -1,3 +1,4 @@
+import Thesis.Examples.ConstructiveLogDerivative
 import Thesis.Examples.RationalLogVariation
 import Thesis.Examples.ConstructiveInverseDerivative
 import Thesis.Examples.ConstructiveProductDerivative
