@@ -1,3 +1,4 @@
+import Thesis.Probability.RationalLogVariation
 import Thesis.Probability.ConstructiveRealInverseDerivative
 import Thesis.Probability.ConstructiveDerivativeProduct
 import Thesis.Probability.ConstructiveDerivativeChain
