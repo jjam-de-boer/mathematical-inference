@@ -1,4 +1,4 @@
-import Thesis.Probability.ConstructiveDerivativeAlgebra
+import Thesis.Probability.ConstructiveDerivativeUniqueness
 import Thesis.Probability.ConstructiveRealExpDerivative
 
 namespace Thesis.Examples.ConstructiveDerivative
@@ -46,5 +46,18 @@ example (sequence : RealCauchySequence) : Equiv sequence.neg.limit (neg sequence
 example (a b error : RealCauchySequence)
     (bounded : ∀ n, WithinReal (error.value n) (a.value n) (b.value n)) :
     WithinReal error.limit a.limit b.limit := RealCauchySequence.limit_withinReal a b error bounded
+
+/-- Uniqueness excludes a wrong derivative even though the certificate uses
+only finite rational error radii. -/
+example (bad : HasDerivativeAt (fun x => x) zero zero) : False := by
+  have same := (HasDerivativeAt.identity zero).unique bad
+  have rational := (ofSignedRatio_equiv_iff SignedRatio.one SignedRatio.zero).mp same
+  exact (by decide +kernel : ¬ SignedRatio.Equiv SignedRatio.one SignedRatio.zero) rational
+
+example (x slope : ConstructiveReal) (derivative : HasDerivativeAt exp x slope) : Equiv slope x.exp :=
+  derivative.unique (exp_hasDerivativeAt x)
+
+example (x x' : ConstructiveReal) (same : Equiv x x') : HasDerivativeAt exp x' x.exp :=
+  (exp_hasDerivativeAt x).point_congr same (exp_congr same)
 
 end Thesis.Examples.ConstructiveDerivative
