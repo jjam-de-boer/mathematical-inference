@@ -1,0 +1,79 @@
+import Thesis.Probability.ConstructiveDerivativeWithin
+import Thesis.Probability.ConstructiveDerivativeScaling
+
+namespace Thesis.Probability.ConstructiveReal.HasDerivativeAt
+open ConstructiveReal
+
+private def commonLower (a b : PositiveRatio) : PositiveRatio := if PositiveRatio.LE a b then a else b
+private theorem commonLower_bounds (a b : PositiveRatio) :
+    PositiveRatio.LE (commonLower a b) a ∧ PositiveRatio.LE (commonLower a b) b := by
+  by_cases ordered : PositiveRatio.LE a b
+  · simp only [commonLower, if_pos ordered]
+    exact ⟨PositiveRatio.le_refl _, ordered⟩
+  · simp only [commonLower, if_neg ordered]
+    exact ⟨(PositiveRatio.le_total a b).resolve_left ordered, PositiveRatio.le_refl _⟩
+
+/-- Effective composition with a domain-relative outer derivative. The
+source domain explicitly records that the inner value is admitted. The inner
+local Lipschitz bound computes control of the outer accuracy radius. -/
+def chainWithin {f : ConstructiveReal → ConstructiveReal} {domain : ConstructiveReal → Prop}
+    {g : ∀ x, domain x → ConstructiveReal} {point sf sg : ConstructiveReal} {inside : domain (f point)}
+    (first : HasDerivativeAt f point sf) (second : HasDerivativeWithinAt domain g (f point) inside sg) :
+    HasDerivativeWithinAt (fun y => domain (f y)) (fun y admitted => g (f y) admitted) point inside (mul sf sg) where
+  modulus epsilon :=
+    let l := first.localLipschitzConstant
+    let m := sg.rationalApproximation.magnitudeBound
+    let inner := epsilon.half.divideNat m (by unfold m RegularRationalApproximation.magnitudeBound; omega)
+    let outer := epsilon.half.divideNat l first.localLipschitzConstant_pos
+    commonLower (first.modulus PositiveRatio.one)
+      (commonLower (first.modulus inner) ((second.modulus outer).divideNat l first.localLipschitzConstant_pos))
+  remainder epsilon radius small y admitted close := by
+    let l := first.localLipschitzConstant
+    let m := sg.rationalApproximation.magnitudeBound
+    have positiveM : 0 < m := by unfold m RegularRationalApproximation.magnitudeBound; omega
+    let inner := epsilon.half.divideNat m positiveM
+    let outer := epsilon.half.divideNat l first.localLipschitzConstant_pos
+    let rho := PositiveRatio.mul radius (PositiveRatio.ofNat l first.localLipschitzConstant_pos)
+    have outerBounds := commonLower_bounds (first.modulus PositiveRatio.one)
+      (commonLower (first.modulus inner) ((second.modulus outer).divideNat l first.localLipschitzConstant_pos))
+    have innerBounds := commonLower_bounds (first.modulus inner) ((second.modulus outer).divideNat l first.localLipschitzConstant_pos)
+    have threshold := PositiveRatio.le_trans small outerBounds.2
+    have inputChange := first.local_within radius (PositiveRatio.le_trans small outerBounds.1) y close
+    have imageSmall : PositiveRatio.LE rho (second.modulus outer) :=
+      QProb.le_congr (QProb.equiv_refl _) (PositiveRatio.divide_mul (second.modulus outer) l first.localLipschitzConstant_pos)
+        (QProb.mul_le_mul (PositiveRatio.le_trans threshold innerBounds.2) (QProb.le_refl (QProb.ofNat l)))
+    have outerRemainder := second.remainder outer rho imageSmall (f y) admitted (within_symm inputChange)
+    have innerRemainder := first.remainder inner radius (PositiveRatio.le_trans threshold innerBounds.1) y close
+    have increment := (within_congr (equiv_refl _) (add_sub_cancel (f point) (mul (sub y point) sf))).mp
+      ((within_sub_right_iff _ (f point) _ _).mpr innerRemainder)
+    have scaled := within_mul_right increment sg
+    have translated := (within_add_left_iff _ (g (f point) inside) _ _).mpr scaled
+    have linear : Equiv
+        (ConstructiveReal.add (g (f point) inside) (mul (mul (sub y point) sf) sg))
+        (ConstructiveReal.add (g (f point) inside) (mul (sub y point) (mul sf sg))) :=
+      add_congr (equiv_refl _) (mul_assoc _ _ _)
+    have compared := within_triangle outerRemainder ((within_congr (equiv_refl _) linear).mp translated)
+    have innerError : QProb.Equiv
+        (QProb.mul (QProb.mul inner.toQProb radius.toQProb) (QProb.ofNat m))
+        (QProb.mul epsilon.half.toQProb radius.toQProb) := by
+      simp only [inner, PositiveRatio.divideNat, PositiveRatio.toQProb, QProb.Equiv, QProb.mul, QProb.ofNat, Nat.mul_one]
+      ac_rfl
+    have outerError : QProb.Equiv (QProb.mul outer.toQProb rho.toQProb)
+        (QProb.mul epsilon.half.toQProb radius.toQProb) := by
+      simp only [outer, rho, PositiveRatio.mul, PositiveRatio.ofNat, PositiveRatio.divideNat,
+        PositiveRatio.toQProb, QProb.Equiv, QProb.mul, Nat.mul_one]
+      ac_rfl
+    have collected := QProb.equiv_trans (QProb.add_congr outerError innerError)
+      (QProb.equiv_trans (QProb.equiv_symm (QProb.add_mul_distrib _ _ _))
+        (QProb.mul_congr epsilon.half_sum (QProb.equiv_refl _)))
+    exact within_mono compared (QProb.le_congr (QProb.equiv_refl _) collected (QProb.le_refl _))
+
+/-- Full-space composition is the unrestricted case of the same computed
+chain rule. The public derivative statement and its effective guarantees are
+unchanged. -/
+def chain {f g : ConstructiveReal → ConstructiveReal} {point sf sg : ConstructiveReal}
+    (first : HasDerivativeAt f point sf) (second : HasDerivativeAt g (f point) sg) :
+    HasDerivativeAt (fun y => g (f y)) point (mul sf sg) :=
+  (first.chainWithin (second.restrict (fun _ => True) True.intro)).unrestrict (fun _ => True.intro)
+
+end Thesis.Probability.ConstructiveReal.HasDerivativeAt

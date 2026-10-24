@@ -1,3 +1,4 @@
+import Thesis.Probability.ConstructiveDerivativeChain
 import Thesis.Probability.ConstructiveDerivative
 import Thesis.Probability.ConstructiveRealExpDistanceVariation
 
@@ -32,5 +33,13 @@ def exp_hasDerivativeAt (x : ConstructiveReal) : HasDerivativeAt exp x x.exp whe
     have unit : PositiveRatio.LE radius PositiveRatio.one :=
       PositiveRatio.le_trans small (PositiveRatio.capOne_le_one _)
     exact within_mono (exp_first_variation_local x y radius unit close) (radius_error_le x epsilon radius small)
+
+/-- Exponentials of affine real functions have their expected derivative.
+This supplies the individual weight derivatives needed by finite partition
+functions; normalization and logarithmic partition identities are separate. -/
+def exp_affine_hasDerivativeAt (point factor offset : ConstructiveReal) :
+    HasDerivativeAt (fun y => exp (add (mul y factor) offset)) point
+      (mul factor (exp (add (mul point factor) offset))) :=
+  (HasDerivativeAt.affine point factor offset).chain (exp_hasDerivativeAt _)
 
 end Thesis.Probability.ConstructiveReal

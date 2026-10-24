@@ -1,3 +1,5 @@
+import Thesis.Examples.ConstructiveInverseDerivative
+import Thesis.Examples.ConstructiveProductDerivative
 import Thesis.Examples.ConstructiveDerivative
 import Thesis.Examples.RationalExponentialVariation
 import Thesis.Examples.ConstructiveRealExponential
