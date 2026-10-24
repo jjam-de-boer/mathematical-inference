@@ -1,3 +1,4 @@
+import Thesis.Probability.ConstructiveDerivativeChain
 import Thesis.Probability.ConstructiveDerivativeUniqueness
 import Thesis.Probability.ConstructiveRealExpDerivative
 import Thesis.Probability.ConstructiveDerivativeAlgebra

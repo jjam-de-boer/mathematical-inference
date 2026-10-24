@@ -60,4 +60,27 @@ example (x slope : ConstructiveReal) (derivative : HasDerivativeAt exp x slope) 
 example (x x' : ConstructiveReal) (same : Equiv x x') : HasDerivativeAt exp x' x.exp :=
   (exp_hasDerivativeAt x).point_congr same (exp_congr same)
 
+/-- Composition uses the derivative of the outer function at the actual
+image of the inner point. -/
+example (f g : ConstructiveReal → ConstructiveReal) (point sf sg : ConstructiveReal)
+    (first : HasDerivativeAt f point sf) (second : HasDerivativeAt g (f point) sg) :
+    HasDerivativeAt (fun y => g (f y)) point (mul sf sg) := first.chain second
+
+example (point factor offset : ConstructiveReal) :
+    HasDerivativeAt (fun y => exp (add (mul y factor) offset)) point
+      (mul factor (exp (add (mul point factor) offset))) := exp_affine_hasDerivativeAt point factor offset
+
+/-- Zero factors remain valid and give zero derivative. -/
+example (point offset : ConstructiveReal) :
+    HasDerivativeAt (fun y => exp (add (mul y zero) offset)) point zero :=
+  (exp_affine_hasDerivativeAt point zero offset).slope_congr (zero_mul _)
+
+/-- A negative affine coefficient gives the correct negative derivative. -/
+example : HasDerivativeAt (fun y => exp (add (mul y (neg one)) zero)) zero (neg one) := by
+  have argument : Equiv (add (mul zero (neg one)) zero) zero :=
+    equiv_trans (add_congr (zero_mul _) (equiv_refl _)) (zero_add zero)
+  have value := equiv_trans (exp_congr argument) exp_zero
+  exact (exp_affine_hasDerivativeAt zero (neg one) zero).slope_congr
+    (equiv_trans (mul_congr (equiv_refl _) value) (mul_one _))
+
 end Thesis.Examples.ConstructiveDerivative
