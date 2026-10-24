@@ -1,3 +1,5 @@
+import Thesis.Probability.ConstructiveRealExpDerivative
+import Thesis.Probability.ConstructiveDerivativeAlgebra
 import Thesis.Probability.RationalExponentialVariation
 import Thesis.Probability.ConstructiveRealExpLimits
 import Thesis.Probability.ConstructiveRealExponential
