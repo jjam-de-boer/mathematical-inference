@@ -1919,7 +1919,7 @@ An alternative justification through a sampling/allocation model requires that
 model and its asymptotic argument as additional premises. Neither the probability
 rules nor fixed averages alone silently supply this policy.
 
-Activity 2 now has the initial value foundation described below. Activities 3–6
+Activity 2 has the partial analytic development described below. Activities 3–6
 remain open: real feasible-law and optimizer bridges, multiplier necessity and
 interval/boundary qualifications, partition-function calculus, and the
 conditional physical correspondence.
@@ -1965,7 +1965,7 @@ This initial value foundation is not the complete current analytic layer.
 The later sections now include effective real limits, real ring/order laws,
 product stability and logarithms on explicitly bounded positive domains.
 A general real exponential and differentiation still require separate proofs;
-the certified rational-series and small-argument Taylor bounds are described
+the certified rational-series and rational-argument Taylor constructions are described
 below. No calculus, ideal optimizer existence,
 rational feasible-polytope density, multiplier existence or physical entropy
 identification is claimed by this initial value foundation.
@@ -2087,7 +2087,7 @@ its two inputs. `ConstructiveRealLogReciprocal` computes a lower bound for the
 constructed reciprocal and proves logarithm inverse and quotient laws, rather
 than leaving their domain certificates as extra unexplained premises.
 
-### Certified rational series and a small-argument exponential
+### Certified rational series and exponentials
 
 `RationalGeometricSeries` constructs effective limits of signed rational series
 with supplied bounds `|term n| ≤ C / 2ⁿ`, including `C = 0`, and proves the
@@ -2096,10 +2096,25 @@ explicit remainder bound `2C / 2ⁿ` at every truncation.
 rational input satisfying `|x| ≤ 1/2`, it constructs `expSmall`, proves
 presentation congruence and the value at zero, and certifies its remainder.
 Regressions compute enclosures for positive and negative half-arguments.
-This is not yet an exponential on every real input or a differentiation law.
+
+`RationalSeriesTail` extends the construction to a finite prefix followed by a
+dyadically bounded tail. It proves remainder estimates after that prefix and
+limit congruence for rational sequences even when their Cauchy moduli differ.
+`RationalNaturalBound` computes a positive natural bound from the represented
+rational quotient, avoiding a bound determined only by an unreduced numerator.
+`RationalExponential` uses these results to construct the Taylor exponential
+for every signed rational argument. It computes a finite prefix after which
+absolute coefficients shrink by at least one half, supplies an effective Cauchy
+modulus, proves the remainder bound at each later truncation, and establishes
+presentation invariance, agreement with `expSmall`, and the value at zero.
+Regressions compute enclosures at `1`, `−1` and `2` and preserve large unreduced
+presentations.
+
+General real arguments, exponential addition/inverse identities, the connection
+to the bit logarithm and differentiation remain separate proof obligations.
 
 These newer results were combined from published auxiliary-value work through
-`8b1f99b`, `ca8d9cb` and `22fd3b9`, not proved by the maintenance refactor. The updated
+`8b1f99b`, `ca8d9cb`, `22fd3b9` and `dec7a44`, not proved by the maintenance refactor. The updated
 guide through `8b1f99b` is preserved in [history](HISTORY.md#archived-entropy-8b1f99b).
 General real exponentials, differentiation, constrained-optimizer convergence and the
 physical activities are not supplied by these interfaces. Probability atom
