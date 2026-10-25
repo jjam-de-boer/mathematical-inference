@@ -138,7 +138,9 @@ import Thesis.CausalTransport.ProjectionTemplateRepresentation
 import Thesis.CausalTransport.SharedResponseNative
 import Thesis.CausalTransport.SharedResponseProblem
 import Thesis.CausalTransport.SharedResponseSupport
+import Thesis.CausalTransport.SharedResponseSupportedProblem
 import Thesis.CausalTransport.SharedResponseLinearBounds
+import Thesis.CausalTransport.SharedResponseSupportedBounds
 import Thesis.CausalTransport.BoundedNativeCatalogue
 import Thesis.CausalTransport.BoundedNativeRepresentation
 import Thesis.CausalTransport.BoundedNativeSearch
@@ -370,6 +372,11 @@ remove independence constraints for sparser graphs or classify conditionals.
 response grid, without changing that solver. Excluded occurrences have zero
 weight in every fitted law; retained tables keep all off-factual rows and
 declared intervention values. No computational speedup is asserted yet.
+`SharedResponseSupportedProblem` defines a separate filtered moment problem
+with exactly the same fitted laws. `SharedResponseSupportedBounds` proves
+agreement of sharp integer-response endpoints and transfers filtered event
+certificates to actual native models. The existing solver entry point stays
+unchanged; this bridge does not execute or benchmark a filtered optimizer.
 `BoundedNativeCatalogue` adds an explicit rational denominator bound to the
 finite structural family. `BoundedNativeRepresentation` constructs listed
 representatives of arbitrary native models with bounded supplied alphabets,
