@@ -1,3 +1,4 @@
+import Thesis.Probability.ConstructiveRealLogInverse
 import Thesis.Probability.ConstructiveRealExpPositive
 import Thesis.Probability.ConstructiveRealLogGeneralDerivative
 import Thesis.Probability.RationalLogVariation
