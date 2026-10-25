@@ -1,3 +1,4 @@
+import Thesis.Examples.ConstructiveLogExp
 import Thesis.Examples.ConstructiveExpAddition
 import Thesis.Examples.ConstructiveLogDerivative
 import Thesis.Examples.RationalLogVariation
