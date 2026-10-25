@@ -141,6 +141,7 @@ import Thesis.CausalTransport.SharedResponseSupport
 import Thesis.CausalTransport.SharedResponseSupportedProblem
 import Thesis.CausalTransport.SharedResponseLinearBounds
 import Thesis.CausalTransport.SharedResponseSupportedBounds
+import Thesis.CausalTransport.SharedResponseSupportedSolver
 import Thesis.CausalTransport.BoundedNativeCatalogue
 import Thesis.CausalTransport.BoundedNativeRepresentation
 import Thesis.CausalTransport.BoundedNativeSearch
@@ -377,6 +378,10 @@ with exactly the same fitted laws. `SharedResponseSupportedBounds` proves
 agreement of sharp integer-response endpoints and transfers filtered event
 certificates to actual native models. The existing solver entry point stays
 unchanged; this bridge does not execute or benchmark a filtered optimizer.
+`SharedResponseSupportedSolver` adds a separate opt-in solver on that grid,
+returning the same native result and identification interface. Its two
+outcomes and attained rational endpoints agree with the original solver;
+no causal execution pilot or running-time improvement is asserted here.
 `BoundedNativeCatalogue` adds an explicit rational denominator bound to the
 finite structural family. `BoundedNativeRepresentation` constructs listed
 representatives of arbitrary native models with bounded supplied alphabets,
