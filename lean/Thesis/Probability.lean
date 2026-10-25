@@ -1,3 +1,5 @@
+import Thesis.Probability.ConstructiveRealEntropyDerivative
+import Thesis.Probability.ConstructiveRealRationalConstraints
 import Thesis.Probability.ConstructiveRealEntropyCertificates
 import Thesis.Probability.ConstructiveRealEntropySum
 import Thesis.Probability.ConstructiveRealRelativeEntropy

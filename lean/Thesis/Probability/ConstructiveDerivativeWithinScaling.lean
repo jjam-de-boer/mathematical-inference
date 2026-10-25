@@ -27,4 +27,31 @@ def mul_constant {domain : ConstructiveReal → Prop} {f : ∀ x, domain x → C
     exact (within_congr (equiv_refl _) linear).mp
       (within_mono compared (QProb.le_congr (QProb.equiv_refl _) collected (QProb.le_refl _)))
 
+/-- A fixed local Lipschitz constant computed from the derivative's slope. -/
+def localLipschitzConstant {domain : ConstructiveReal → Prop} {f : ∀ x, domain x → ConstructiveReal} {point slope : ConstructiveReal} {inside : domain point}
+    (_derivative : HasDerivativeWithinAt domain f point inside slope) : Nat := slope.rationalApproximation.magnitudeBound + 1
+
+theorem localLipschitzConstant_pos {domain : ConstructiveReal → Prop} {f : ∀ x, domain x → ConstructiveReal} {point slope : ConstructiveReal} {inside : domain point}
+    (derivative : HasDerivativeWithinAt domain f point inside slope) : 0 < derivative.localLipschitzConstant := Nat.zero_lt_succ _
+
+/-- Differentiability supplies a local Lipschitz bound at the point, with an
+explicit radius threshold. This provides the domain control for composition. -/
+theorem local_within {domain : ConstructiveReal → Prop} {f : ∀ x, domain x → ConstructiveReal} {point slope : ConstructiveReal} {inside : domain point}
+    (derivative : HasDerivativeWithinAt domain f point inside slope) (radius : PositiveRatio)
+    (small : PositiveRatio.LE radius (derivative.modulus PositiveRatio.one)) (y : ConstructiveReal) (admitted : domain y)
+    (close : Within radius.toQProb point y) :
+    Within (QProb.mul radius.toQProb (QProb.ofNat derivative.localLipschitzConstant)) (f y admitted) (f point inside) := by
+  have product := (within_congr (equiv_refl _) (zero_mul slope)).mp (within_mul_right (within_increment close) slope)
+  have translated := (within_congr (equiv_refl _) (add_zero (f point inside))).mp
+    ((within_add_left_iff _ (f point inside) _ _).mpr product)
+  have compared := within_triangle (derivative.remainder PositiveRatio.one radius small y admitted close) translated
+  have collected : QProb.Equiv
+      (QProb.add (QProb.mul PositiveRatio.one.toQProb radius.toQProb)
+        (QProb.mul radius.toQProb (QProb.ofNat slope.rationalApproximation.magnitudeBound)))
+      (QProb.mul radius.toQProb (QProb.ofNat derivative.localLipschitzConstant)) := by
+    simp only [QProb.Equiv, QProb.mul, QProb.add, QProb.ofNat, PositiveRatio.one, PositiveRatio.toQProb,
+      localLipschitzConstant, Nat.mul_one, Nat.one_mul, Nat.mul_add, Nat.add_mul]
+    ac_rfl
+  exact within_mono compared (QProb.le_congr (QProb.equiv_refl _) collected (QProb.le_refl _))
+
 end Thesis.Probability.ConstructiveReal.HasDerivativeWithinAt
