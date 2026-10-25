@@ -1,3 +1,5 @@
+import Thesis.Examples.ConstructiveRealFeasibility
+import Thesis.Examples.ConstructiveRealEntropy
 import Thesis.Examples.ConstructiveLogExp
 import Thesis.Examples.ConstructiveExpAddition
 import Thesis.Examples.ConstructiveLogDerivative

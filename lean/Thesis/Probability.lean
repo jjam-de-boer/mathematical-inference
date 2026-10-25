@@ -1,3 +1,6 @@
+import Thesis.Probability.ConstructiveRealEntropyCertificates
+import Thesis.Probability.ConstructiveRealEntropySum
+import Thesis.Probability.ConstructiveRealRelativeEntropy
 import Thesis.Probability.ConstructiveRealLogInverse
 import Thesis.Probability.ConstructiveRealExpPositive
 import Thesis.Probability.ConstructiveRealLogGeneralDerivative
