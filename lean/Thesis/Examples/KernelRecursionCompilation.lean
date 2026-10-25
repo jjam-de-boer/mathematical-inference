@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.KernelRecursionCompilation
+import Thesis.Examples.FrontDoorCurrentIdentification
 import Thesis.Examples.ComponentCompilation
 
 namespace Thesis

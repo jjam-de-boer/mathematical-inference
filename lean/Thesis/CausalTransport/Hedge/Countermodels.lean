@@ -19,10 +19,8 @@ result is assembled separately in `HedgeChannelCompleteness`.
 Only the shared parity models, graph witness search and action/query geometry
 are needed here. In particular, positive carriers and outcome-flow support may
 use these results without importing the historical identification engine or its
-finite-depth failure stacks. The original `CompletenessHedgeCountermodels`
-path remains a compatibility facade for clients that need that broad interface.
-All existing declaration names, statements, computations and proof bodies are
-preserved; this boundary adds no soundness or completeness assumption.
+finite-depth failure stacks. These concrete constructions add no soundness
+or completeness assumption.
 -/
 
 /-! ### Observational equivalence of the unsoftened parity pair -/

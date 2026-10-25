@@ -752,9 +752,9 @@ def hedgePositiveCounterexample? (G : ObservedGraph S)
 /-! ## Biased defect softening of the general root-parity construction -/
 
 /-!
-The faithful large/small parity models in `Completeness` use an all-ones
-product prior and deterministic even-incidence equations.  They provide the
-general hedge separation, but their observational laws omit one parity class.
+The faithful large/small parity models in `Hedge.Models` use an all-ones
+product prior and deterministic even-incidence equations. They separate their
+root-parity query, but their observational laws omit one parity class.
 The definitions below add a private *defect bit* at one common root.  A biased,
 strictly positive private prior makes both defect values possible without
 making them equiprobable; XOR with an equiprobable defect would erase the
@@ -3645,7 +3645,7 @@ theorem hedgeDefectPrior_singleton_equiv_of_bit (G : ObservedGraph S)
 /-- Equal-length finite supports have equivalent singleton sums when the
 atom comparison is required only on values that actually occur in the two
 lists.  This is the weighted analogue of the uniform helper in
-`Completeness`; carrying membership hypotheses is essential because the
+`Hedge.Countermodels`; carrying membership hypotheses is essential because the
 biased defect prior has two distinct atom weights. -/
 theorem FiniteProbRecord.listSum_singletons_equiv_of_length_on
     {Ω : Type} [DecidableEq Ω]

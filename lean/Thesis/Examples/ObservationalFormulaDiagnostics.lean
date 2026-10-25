@@ -50,7 +50,7 @@ theorem selector_still_falls_back :
   have ready : readyPlan.available record requested = true := by
     rw [← ObservationalFormulaPlan.diagnose_isReady_eq_available, ready_value]
     rfl
-  simp only [ObservationalFormulaPlan.select, rejected, undefined, ready, Bool.false_eq_true, if_false, if_true]
+  simp only [ObservationalFormulaPlan.select, List.find?_cons, rejected, undefined, ready]
 
 end ObservationalFormulaDiagnostics
 end Examples

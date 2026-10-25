@@ -19,8 +19,8 @@ The search wrapper and its recognition/completeness lemmas are independent
 of which identification recursion produced that record. They do not assert
 that every failure supplies passing tests, nor that a hedge by itself already
 comes with semantic countermodels. Those are separate extractor and semantic
-theorems. `CompletenessFailureExtraction` reexports every unchanged declaration
-here while retaining the historical engine-specific failure proofs.
+theorems, supplied by current recursive failure extraction and countermodel
+construction.
 -/
 
 /-- Unpack the Boolean hedge tests into the `HedgeWitness` fields. -/

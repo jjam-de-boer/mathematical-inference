@@ -9,10 +9,10 @@ It deliberately imports only the current conditional engine, which in turn
 imports the current joint engine and their shared finite search data.  That
 ordinary dependency closure must not reintroduce the historical recursion.
 
-The front-door fixture in `IdentificationRegression` separately opts into
-the legacy implementation to retain its checked counterexample.  Preserving
-that fixture must not restore the old unqualified executable names or make
-modern clients depend on the obsolete program.
+`IdentificationRegression` defines the obsolete program only to retain its
+checked counterexample. The shared `Examples.Fixtures.FrontDoor` data and the
+current-engine tests do not import it. Preserving the negative example must
+not restore old unqualified names or make modern clients depend on that program.
 
 The checks inspect Lean's declaration environment at elaboration time.  They
 do not add logical axioms, decide an arbitrary proposition, or substitute a

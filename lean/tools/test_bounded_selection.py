@@ -24,10 +24,11 @@ class BoundedSelectionTests(unittest.TestCase):
 
     def test_scan_retains_actual_native_availability(self):
         source = (ROOT / "Thesis/CausalTransport/NativeFormulaSelection.lean").read_text()
-        # This recursive definition uses equation clauses, not a := body.
+        # Reuse the first-match list search without erasing native guards
+        # or converting the candidate into the weaker plan interface.
         body = source.split("def select ", 1)[1].split("\ntheorem ", 1)[0]
         self.assertIn("candidate.available record reference", body)
-        self.assertIn("some candidate", body)
+        self.assertIn("List.find?", body)
         self.assertNotIn("ObservationalFormulaPlan", body)
         self.assertNotIn("guard :=", body)
 

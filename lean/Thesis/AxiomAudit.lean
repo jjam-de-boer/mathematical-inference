@@ -91,8 +91,8 @@ open Lean Elab Command
 
 run_cmd do
   let env ← getEnv
-  -- Historical traces and the counterexample fixture deliberately retain
-  -- explicitly qualified Legacy declarations.  Their import must never
+  -- The negative counterexample deliberately retains explicitly qualified
+  -- Legacy declarations. Its import must never
   -- restore the removed unsafe ordinary API, even through a compatibility
   -- alias or a forwarding module elsewhere in the complete development.
   for removed in #[`Thesis.Causality.identifyFuel,

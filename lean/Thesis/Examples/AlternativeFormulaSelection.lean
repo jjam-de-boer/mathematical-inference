@@ -199,8 +199,8 @@ theorem small_available : smallCandidate.available model.observationalDist refer
 selection reaches the independently certified smaller adjustment formula. -/
 theorem selects_supported_alternative :
     GuardedObservationalFormula.select model.observationalDist reference catalogue = some smallCandidate := by
-  simp only [catalogue, GuardedObservationalFormula.select, id_unavailable, large_unavailable,
-    small_available, Bool.false_eq_true, if_false, if_true]
+  simp only [catalogue, GuardedObservationalFormula.select, List.find?_cons,
+    id_unavailable, large_unavailable, small_available]
 
 /-- Literal runtime plans contain only formula syntax and observable guards;
 the noncomputable semantic interpretation functions are not runtime inputs. -/

@@ -120,9 +120,8 @@ and `IdentificationSearch`; `HedgeSelectionSearch` exhaustively scans alternativ
 forest selections with an additional Boolean requirement tested before
 accepting a leaf.  Its candidate-completeness theorem is independent of
 countermodel semantics and does not assert universal geometric coverage.
-The quarantined `Legacy.IdentificationSearch` and
-`Legacy.IdentificationInduction` modules are not ordinary API imports; their
-refuted program and exact historical traces require an explicit legacy import.
+The refuted old recursion survives only in the checked negative example
+`Examples.IdentificationRegression`; it is not an ordinary identification API.
 `IdentificationKernel` provides the supported current-kernel recursion,
 separating ordinary ancestral pruning from action augmentation and retaining
 the actual recursive input when extracting chain factors; then

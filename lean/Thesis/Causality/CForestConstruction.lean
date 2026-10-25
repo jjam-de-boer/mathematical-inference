@@ -16,10 +16,8 @@ the inductive component proposition. The seed constructor uses the existing
 induced-child map, which drops extra edges rather than assuming a functional
 out-degree condition on the original graph.
 
-The declarations and proof bodies are unchanged from
-`CausalTransport.CompletenessCertificates`, which remains a compatibility
-import. This graph-only module is shared by current failure extraction and
-the retained historical trace arguments.
+This graph-only module supplies current failure extraction without importing
+an identification program or assuming that a semantic countermodel exists.
 -/
 
 /--

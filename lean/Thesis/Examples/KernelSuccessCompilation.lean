@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.CompletenessAssembly
+import Thesis.Examples.FrontDoorCurrentIdentification
 import Thesis.Examples.KernelProductCompilation
 
 namespace Thesis

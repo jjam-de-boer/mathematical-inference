@@ -20,11 +20,10 @@ completeness packages are assembled in `Thesis.CausalTransport`.
 
 The former `identifyFuel`, `identifyJoint`, and `identifyConditional`
 entry points do not belong to this module or its ordinary namespace.
-The refuted implementation is isolated in
-`Thesis.Causality.Legacy.IdentificationSearch`, where each executable name
-has the explicit `Legacy` prefix.  Its checked control-flow proofs and
-front-door counterexample are retained for historical regression, not as an
-alternative identification API.  In particular, syntactic action-freedom
+The refuted computation is isolated in the checked negative example
+`Thesis.Examples.IdentificationRegression`, where its executable names
+have the explicit `Legacy` prefix. It is not an alternative identification
+API. In particular, syntactic action-freedom
 or an `identified` constructor is not by itself a semantic certificate.
 
 All graph and candidate searches below use concrete finite enumerations and

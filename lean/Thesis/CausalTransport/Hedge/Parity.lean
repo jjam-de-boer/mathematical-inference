@@ -19,11 +19,9 @@ The one-anchor correction is a Boolean parity fact, not a positive-model
 construction. It is shared by partial-channel incidence and the older carrier
 models without requiring either client to import the other's development.
 
-This layer contains no legacy failure-stack proof and does not itself assemble
-published completeness. Its old `CompletenessHedgeParity` path reexports all
-original declarations and retains historical import compatibility. The final
-unrestricted channel counterexample and theorem packages remain in their
-dedicated current-engine modules.
+This layer does not itself assemble published completeness. The unrestricted
+channel counterexample and theorem packages remain in their dedicated
+current-engine modules.
 -/
 
 /-- Correct a Boolean incidence target at one anchor by its total selected

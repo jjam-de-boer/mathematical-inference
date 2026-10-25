@@ -23,9 +23,8 @@ that route, rather than splitting it between the original forest and readout.
 The common outcome-sink theorems retain precisely their original hypotheses.
 
 These are graph and routing facts, not observational-law equality, positivity
-of a model or a semantic completeness theorem. They contain no legacy engine
-trace. `CompletenessFailureExtraction` retains its historical failure results
-and reexports this shared geometry for import compatibility.
+of a model or a semantic completeness theorem. Current failure extraction
+and countermodel construction share them without importing program traces.
 
 Consecutive-walk implication comes directly from the generic reachability
 foundation. No active-path or moral-graph correctness theorem is needed by

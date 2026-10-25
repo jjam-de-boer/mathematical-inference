@@ -284,7 +284,7 @@ theorem selectWithPreferred_of_available (graph : ObservedGraph S) (query : Join
     (preferred : ObservationalFormulaPlan S) (record : FiniteProbRecord S.Assignment)
     (reference : S.Assignment) (accepted : preferred.available record reference = true) :
     selectWithPreferred graph query preferred record reference = some preferred := by
-  simp only [selectWithPreferred, ObservationalFormulaPlan.select, accepted, if_true]
+  simp only [selectWithPreferred, ObservationalFormulaPlan.select, List.find?_cons, accepted]
 
 /-- The preferred plan must itself have a certificate.  Acceptance alone is
 not a soundness proof for an arbitrary action-free expression. -/

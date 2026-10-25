@@ -15,8 +15,7 @@ does not select a new event or assume a countermodel exists.
 
 This lemma is independent of the particular hedge or parity circuit that
 supplies separated models. Keeping it here lets finite-alphabet refinements use
-the bridge without importing historical completeness constructions. The old
-`CompletenessHedgeParity` path still reexports the same declaration.
+the bridge without importing a particular completeness construction.
 -/
 
 /-- Event-level disagreement for a local interventional query refutes

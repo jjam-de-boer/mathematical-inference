@@ -22,8 +22,8 @@ Assignment-local sufficient support for such models remains in
 `Causality.ObservationalSupport`.
 
 These are shared semantic constructors, independent of identification engines,
-historical branch traces and the soundness/completeness assembly. Their original
-names and definitions remain available through `CompletenessCertificates`.
+program traces and the soundness/completeness assembly. Current joint and
+conditional compilation import them directly.
 -/
 
 /-- An empty-action unconditional kernel is always defined: its

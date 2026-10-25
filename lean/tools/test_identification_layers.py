@@ -67,31 +67,15 @@ class IdentificationLayerTests(unittest.TestCase):
         for name in ("Soundness", "SoundnessFoundations", "SoundnessRegions", "SoundnessRules"):
             self.assertIn("Thesis.CausalTransport." + name, covered)
 
-    def test_completeness_extraction_keeps_order_and_import_compatibility(self):
-        layers = ["CompletenessCertificates", "CompletenessFailureExtraction",
-            "CompletenessLegacyShrinkFailures", "CompletenessLegacyProductFailures",
-            "CompletenessLegacyNestedFailures", "CompletenessHedgeModels",
-            "CompletenessHedgeParity", "CompletenessHedgeCountermodels", "Completeness"]
-        prefix = "Thesis.CausalTransport."
-        for earlier, later in zip(layers, layers[1:]):
-            self.assertIn(prefix + earlier, self.graph[prefix + later])
-            self.assertNotIn(prefix + later, reachable(self.graph, prefix + earlier))
-        self.assertEqual(self.graph[prefix + "CompletenessHedgeModels"],
-                         [prefix + "CompletenessLegacyNestedFailures", prefix + "Hedge.Models"])
-        dependencies = reachable(self.graph, prefix + "Completeness")
-        self.assertTrue({prefix + layer for layer in layers} <= dependencies)
-        self.assertNotIn(prefix + "Soundness", dependencies)
-
-    def test_completeness_preserves_immediate_query_header_and_audit_coverage(self):
-        root = Path(__file__).resolve().parents[1]
-        nested = (root / "Thesis/CausalTransport/Historical/LegacyNestedFailures.lean").read_text()
-        self.assertIn("theorem identifyJoint_eq_failed_immediate_query_site", nested)
-        self.assertIn("def hedgeWitnessOfJoint", nested)
-        graph = self.graph | {"Thesis": initial_project_imports((root / "Thesis.lean").read_text())}
-        covered = reachable(graph, "Thesis.AxiomAudit")
-        for module in self.graph:
-            if module.startswith("Thesis.CausalTransport.Completeness"):
-                self.assertIn(module, covered)
+    def test_current_completeness_uses_the_current_engine_not_legacy_traces(self):
+        for local in ("KernelSuccessCompilation", "KernelFailureExtraction",
+                      "HedgeChannelCompleteness", "HiddenDAGCorrespondence",
+                      "HiddenDAGSupportedCorrespondence"):
+            with self.subTest(module=local):
+                dependencies = reachable(self.graph, "Thesis.CausalTransport." + local)
+                self.assertFalse(any(".Legacy." in name or ".Historical." in name
+                                     or ".CompletenessLegacy" in name for name in dependencies))
+                self.assertNotIn("Thesis.Examples.IdentificationRegression", dependencies)
 
     def test_observational_evaluator_stays_below_causal_completeness(self):
         module = "Thesis.Causality.ObservationalEvaluation"
@@ -103,19 +87,26 @@ class IdentificationLayerTests(unittest.TestCase):
         graph = self.graph | {"Thesis": initial_project_imports((root / "Thesis.lean").read_text())}
         self.assertIn(module, reachable(graph, "Thesis.AxiomAudit"))
 
-    def test_frontdoor_value_check_retains_exact_syntax_and_model_bridges(self):
+    def test_frontdoor_value_checks_retain_exact_syntax_model_and_branch_bridges(self):
         root = Path(__file__).resolve().parents[1]
-        source = (root / "Thesis/Examples/IdentificationRegression.lean").read_text()
-        self.assertIn("kernelEngineFormula = compactKernelEngineFormula", source)
-        self.assertIn("private theorem observedTable_agrees", source)
-        for name in ("sourceAtReferenceHalf", "legacyEngineAtReferenceNineSixteenths",
-                     "kernelEngineAtReferenceHalf", "mediatorSourceAtReferenceHalf",
+        current = (root / "Thesis/Examples/FrontDoorCurrentIdentification.lean").read_text()
+        fixture = (root / "Thesis/Examples/Fixtures/FrontDoor.lean").read_text()
+        negative = (root / "Thesis/Examples/IdentificationRegression.lean").read_text()
+        self.assertIn("kernelEngineFormula = compactKernelEngineFormula", current)
+        self.assertIn("private theorem observedTable_agrees", current)
+        for name in ("kernelEngineAtReferenceHalf", "mediatorSourceAtReferenceHalf",
                      "kernelMediatorAtReferenceHalf"):
-            self.assertIn("def " + name + " :", source)
-        value_check = source.split("def kernelEngineAtReferenceHalf :", 1)[1].split("/--", 1)[0]
+            self.assertIn("def " + name + " :", current)
+        self.assertIn("def sourceAtReferenceHalf :", fixture)
+        self.assertIn("theorem model_positive :", fixture)
+        self.assertIn("def legacyEngineAtReferenceNineSixteenths :", negative)
+        value_check = current.split("def kernelEngineAtReferenceHalf :", 1)[1].split("/--", 1)[0]
         self.assertIn("ProbabilityTerm.observationalDenote_congr", value_check)
         self.assertNotIn("publishedSoundness", value_check)
         self.assertNotIn("denotational_sound", value_check)
+        self.assertIn("theorem mediatorAdditionalAction_members", current)
+        self.assertNotIn("Legacy.", current)
+        self.assertNotIn("Legacy.", fixture)
 
 
 if __name__ == "__main__":

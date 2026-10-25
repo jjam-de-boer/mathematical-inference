@@ -22,8 +22,10 @@ specific candidate with a guard that is not silently dropped.
 
 Selection evaluates only the supplied observational probability record.
 It checks the guard and actual partial expression, then returns the first
-available candidate.  Undefined is never changed to zero.  For conditional
-targets, soundness still requests actual source support; observational tests
+available candidate using `List.find?`. The plan and certificate scans share
+the standard list-search proofs while retaining their distinct candidate data.
+Undefined is never changed to zero. For conditional targets, soundness still
+requests actual source support; observational tests
 do not manufacture a causal value at a null original conditioner.
 
 Soundness, agreement of available candidates, and completeness *within the
@@ -126,48 +128,25 @@ def available (plan : ObservationalFormulaPlan S) (record : FiniteProbRecord S.A
 /-- The data-only selector is computable independently of all proof-bearing
 candidate constructors.  Unsupported formula evaluation remains unavailable. -/
 def select (record : FiniteProbRecord S.Assignment) (reference : S.Assignment) :
-    List (ObservationalFormulaPlan S) → Option (ObservationalFormulaPlan S)
-  | [] => none
-  | plan :: plans => if plan.available record reference then some plan else select record reference plans
+    List (ObservationalFormulaPlan S) → Option (ObservationalFormulaPlan S) :=
+  List.find? (fun candidate => candidate.available record reference)
 
 /-- Runtime search cannot invent a plan absent from its input catalogue.
 This data-only statement is useful for generated catalogues: semantic proof
 functions need not be inputs of an executable adjustment search. -/
 theorem select_mem (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
     (plans : List (ObservationalFormulaPlan S)) (chosen : ObservationalFormulaPlan S)
-    (selected : select record reference plans = some chosen) : chosen ∈ plans := by
-  induction plans with
-  | nil => cases selected
-  | cons plan plans inductionHypothesis =>
-      cases accepted : plan.available record reference with
-      | false =>
-          exact List.mem_cons_of_mem plan
-            (inductionHypothesis (by
-              simpa only [select, accepted, Bool.false_eq_true, if_false] using selected))
-      | true =>
-          have same : plan = chosen := Option.some.inj
-            (by simpa only [select, accepted, if_true] using selected)
-          rw [← same]
-          exact List.mem_cons_self
+    (selected : select record reference plans = some chosen) : chosen ∈ plans :=
+  List.mem_of_find?_eq_some selected
 
 /-- The selected literal plan has a passing guard and a genuinely defined
 observational evaluation.  A defined zero remains an available value. -/
 theorem select_available (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
     (plans : List (ObservationalFormulaPlan S)) (chosen : ObservationalFormulaPlan S)
     (selected : select record reference plans = some chosen) :
-    chosen.available record reference = true := by
-  induction plans with
-  | nil => cases selected
-  | cons plan plans inductionHypothesis =>
-      cases accepted : plan.available record reference with
-      | false =>
-          exact inductionHypothesis (by
-            simpa only [select, accepted, Bool.false_eq_true, if_false] using selected)
-      | true =>
-          have same : plan = chosen := Option.some.inj
-            (by simpa only [select, accepted, if_true] using selected)
-          rw [← same]
-          exact accepted
+    chosen.available record reference = true :=
+  List.find?_some (p := fun plan : ObservationalFormulaPlan S =>
+    plan.available record reference) selected
 
 /-- Exact runtime failure is relative to the actual finite plan list.
 It says nothing about a formula outside that list or about graph failure. -/
@@ -175,33 +154,8 @@ theorem select_none_iff (record : FiniteProbRecord S.Assignment) (reference : S.
     (plans : List (ObservationalFormulaPlan S)) :
     select record reference plans = none ↔
       forall plan, plan ∈ plans → plan.available record reference = false := by
-  induction plans with
-  | nil =>
-      constructor
-      · intro _ plan member; cases member
-      · intro _; rfl
-  | cons plan plans inductionHypothesis =>
-      cases accepted : plan.available record reference with
-      | false =>
-          constructor
-          · intro failed chosen member
-            have tail : select record reference plans = none := by
-              simpa only [select, accepted, Bool.false_eq_true, if_false] using failed
-            rcases List.mem_cons.mp member with same | listed
-            · subst chosen; exact accepted
-            · exact inductionHypothesis.mp tail chosen listed
-          · intro unavailable
-            have tail := inductionHypothesis.mpr (fun chosen listed =>
-              unavailable chosen (List.mem_cons_of_mem plan listed))
-            simpa only [select, accepted, Bool.false_eq_true, if_false] using tail
-      | true =>
-          constructor
-          · intro failed
-            simp only [select, accepted, if_true, Option.some_ne_none] at failed
-          · intro unavailable
-            have impossible := unavailable plan List.mem_cons_self
-            rw [accepted] at impossible
-            cases impossible
+  simpa only [select, Bool.eq_false_iff] using
+    (List.find?_eq_none (p := fun candidate => candidate.available record reference) (l := plans))
 
 /-- An available listed plan forces the executable search to succeed.
 The result remains a computed option; no plan is chosen from a proposition. -/
@@ -343,25 +297,17 @@ noncomputable def ofActionOne (kernel : Kernel S) :
 /-- Deterministic finite search.  Its result contains an actual candidate,
 not a formula selected from an existential semantic theorem. -/
 def select (record : FiniteProbRecord S.Assignment) (reference : S.Assignment) :
-    List (GuardedObservationalFormula P source) → Option (GuardedObservationalFormula P source)
-  | [] => none
-  | candidate :: candidates =>
-      if candidate.available record reference then some candidate else select record reference candidates
+    List (GuardedObservationalFormula P source) → Option (GuardedObservationalFormula P source) :=
+  List.find? (fun candidate => candidate.available record reference)
 
 /-- Certified selection and the independently executable data-only search
 make exactly the same choice.  Proof fields are not needed by the runtime. -/
 theorem select_plan (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
     (candidates : List (GuardedObservationalFormula P source)) :
     (select record reference candidates).map plan =
-      ObservationalFormulaPlan.select record reference (candidates.map plan) := by
-  induction candidates with
-  | nil => rfl
-  | cons candidate candidates inductionHypothesis =>
-      have sameAvailability : candidate.plan.available record reference = candidate.available record reference := rfl
-      cases accepted : candidate.available record reference <;>
-        simp only [select, List.map_cons, ObservationalFormulaPlan.select,
-          sameAvailability, accepted, Bool.false_eq_true, if_false, if_true,
-          Option.map_some, inductionHypothesis]
+      ObservationalFormulaPlan.select record reference (candidates.map plan) :=
+  (List.find?_map (p := fun candidate : ObservationalFormulaPlan S =>
+    candidate.available record reference) (f := plan) (l := candidates)).symm
 
 /-- Putting an existing ID/IDC candidate first preserves every supported
 application it already handled.  Fallbacks cannot replace that accepted
@@ -371,42 +317,22 @@ theorem select_cons_of_available (record : FiniteProbRecord S.Assignment) (refer
     (candidates : List (GuardedObservationalFormula P source))
     (accepted : candidate.available record reference = true) :
     select record reference (candidate :: candidates) = some candidate := by
-  simp only [select, accepted, if_true]
+  simp only [select, List.find?_cons, accepted]
 
 /-- Search returns an actual member of the given finite catalogue; it does
 not construct a new unverified formula when all candidates are unavailable. -/
 theorem select_mem (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
     (candidates : List (GuardedObservationalFormula P source))
     (chosen : GuardedObservationalFormula P source)
-    (selected : select record reference candidates = some chosen) : chosen ∈ candidates := by
-  induction candidates with
-  | nil => cases selected
-  | cons candidate candidates inductionHypothesis =>
-      cases accepted : candidate.available record reference with
-      | false =>
-          exact List.mem_cons_of_mem candidate
-            (inductionHypothesis (by simpa only [select, accepted, Bool.false_eq_true, if_false] using selected))
-      | true =>
-          have same : candidate = chosen := Option.some.inj
-            (by simpa only [select, accepted, if_true] using selected)
-          rw [← same]
-          exact List.mem_cons_self
+    (selected : select record reference candidates = some chosen) : chosen ∈ candidates :=
+  List.mem_of_find?_eq_some selected
 
 theorem select_available (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
     (candidates : List (GuardedObservationalFormula P source))
     (chosen : GuardedObservationalFormula P source)
-    (selected : select record reference candidates = some chosen) : chosen.available record reference = true := by
-  induction candidates with
-  | nil => cases selected
-  | cons candidate candidates inductionHypothesis =>
-      cases accepted : candidate.available record reference with
-      | false =>
-          exact inductionHypothesis (by simpa only [select, accepted, Bool.false_eq_true, if_false] using selected)
-      | true =>
-          have same : candidate = chosen := Option.some.inj
-            (by simpa only [select, accepted, if_true] using selected)
-          rw [← same]
-          exact accepted
+    (selected : select record reference candidates = some chosen) : chosen.available record reference = true :=
+  List.find?_some (p := fun candidate : GuardedObservationalFormula P source =>
+    candidate.available record reference) selected
 
 /-- Exact relative failure: every listed candidate is unavailable.  This
 does not refute a missing candidate or a distribution-specific reduction. -/
@@ -414,33 +340,8 @@ theorem select_none_iff (record : FiniteProbRecord S.Assignment) (reference : S.
     (candidates : List (GuardedObservationalFormula P source)) :
     select record reference candidates = none ↔
       forall candidate, candidate ∈ candidates → candidate.available record reference = false := by
-  induction candidates with
-  | nil =>
-      constructor
-      · intro _ candidate member; cases member
-      · intro _; rfl
-  | cons candidate candidates inductionHypothesis =>
-      cases accepted : candidate.available record reference with
-      | false =>
-          constructor
-          · intro failed chosen member
-            have tail : select record reference candidates = none := by
-              simpa only [select, accepted, Bool.false_eq_true, if_false] using failed
-            rcases List.mem_cons.mp member with same | listed
-            · subst chosen; exact accepted
-            · exact inductionHypothesis.mp tail chosen listed
-          · intro unavailable
-            have tail := inductionHypothesis.mpr (fun chosen listed =>
-              unavailable chosen (List.mem_cons_of_mem candidate listed))
-            simpa only [select, accepted, Bool.false_eq_true, if_false] using tail
-      | true =>
-          constructor
-          · intro failed
-            simp only [select, accepted, if_true, Option.some_ne_none] at failed
-          · intro unavailable
-            have impossible := unavailable candidate List.mem_cons_self
-            rw [accepted] at impossible
-            cases impossible
+  simpa only [select, Bool.eq_false_iff] using
+    (List.find?_eq_none (p := fun candidate => candidate.available record reference) (l := candidates))
 
 /-- Completeness only within the supplied finite family: any available
 member forces search to return an available candidate. -/

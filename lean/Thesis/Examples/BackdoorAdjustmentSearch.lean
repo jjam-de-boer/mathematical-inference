@@ -47,7 +47,7 @@ theorem automatically_selects_small :
   have accepted : (Causality.BackdoorAdjustmentSearch.plan query small).available model.observationalDist reference = true :=
     small_available
   simp only [Causality.BackdoorAdjustmentSearch.select, Causality.BackdoorAdjustmentSearch.plans, generated_covariates_exact, List.map_cons,
-    List.map_nil, ObservationalFormulaPlan.select, accepted, if_true]
+    List.map_nil, ObservationalFormulaPlan.select, List.find?_cons, accepted]
 
 /-- Putting the existing certified ID plan first still falls back here,
 because its actual printed evaluator reports no value. -/
@@ -56,7 +56,7 @@ theorem id_then_automatic_fallback :
       model.observationalDist reference = some (Causality.BackdoorAdjustmentSearch.plan query small) := by
   have rejected : idCandidate.plan.available model.observationalDist reference = false := id_unavailable
   simpa only [Causality.BackdoorAdjustmentSearch.selectWithPreferred, ObservationalFormulaPlan.select,
-    rejected, Bool.false_eq_true, if_false] using automatically_selects_small
+    List.find?_cons, rejected] using automatically_selects_small
 
 /-- Soundness of the automatically selected literal plan is the universal
 native theorem, not equality of two numbers computed for this fixture. -/
@@ -93,7 +93,7 @@ theorem generated_search_accepts_zero_containing_record :
     Causality.BackdoorAdjustmentSearch.select projection.observedGraph query pointRecord reference =
       some (Causality.BackdoorAdjustmentSearch.plan query small) := by
   simp only [Causality.BackdoorAdjustmentSearch.select, Causality.BackdoorAdjustmentSearch.plans, generated_covariates_exact, List.map_cons,
-    List.map_nil, ObservationalFormulaPlan.select, zero_weight_cell_is_skipped, if_true]
+    List.map_nil, ObservationalFormulaPlan.select, List.find?_cons, zero_weight_cell_is_skipped]
 
 /-- Request the opposite action while keeping the observed law fixed.
 At its positive covariate cell, the actually used outcome conditioner is

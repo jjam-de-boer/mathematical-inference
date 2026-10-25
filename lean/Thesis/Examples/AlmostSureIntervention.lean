@@ -90,11 +90,11 @@ theorem conditional_available : conditionalCandidate.available model.observation
 invocation of the failed graph engine under a relabelled success predicate. -/
 theorem joint_selected : GuardedObservationalFormula.select model.observationalDist reference
     [jointCandidate] = some jointCandidate := by
-  simp only [GuardedObservationalFormula.select, joint_available, if_true]
+  simp only [GuardedObservationalFormula.select, List.find?_cons, joint_available]
 
 theorem conditional_selected : GuardedObservationalFormula.select model.observationalDist reference
     [conditionalCandidate] = some conditionalCandidate := by
-  simp only [GuardedObservationalFormula.select, conditional_available, if_true]
+  simp only [GuardedObservationalFormula.select, List.find?_cons, conditional_available]
 
 noncomputable def joint_native_sound : model.TermEquivalentAt
     HiddenDAGCompleteness.failedJointQuery.sourceTerm jointCandidate.formula reference :=
@@ -168,8 +168,8 @@ theorem opposite_formula_is_not_sound_without_guard : ¬ Nonempty
 
 theorem opposite_selection_empty : GuardedObservationalFormula.select model.observationalDist opposite
     [jointCandidate] = none := by
-  simp only [GuardedObservationalFormula.select, opposite_action_rejected,
-    Bool.false_eq_true, if_false]
+  simp only [GuardedObservationalFormula.select, List.find?_cons, List.find?_nil,
+    opposite_action_rejected]
 
 end AlmostSureIntervention
 end Examples

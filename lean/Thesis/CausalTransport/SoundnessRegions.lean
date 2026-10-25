@@ -13,10 +13,10 @@ arguments live here. They turn ancestry, open cores and conditioned regions
 into exact statements about which latent coordinates an event can inspect.
 
 The probability and enumeration foundations are imported, not restated.
-Declarations retain their existing Thesis.Causality.Kernel names and original
-proof bodies. No private helper crosses this module boundary. Keeping this
-region layer separate reduces local compilation state; it does not strengthen
-a graph assumption or restrict the model class certified by soundness.
+The `Thesis.Causality.Kernel` declarations expose the region facts needed by
+the rule proofs. Selected and unselected routing share the same evaluation
+argument through complementary Boolean masks. This layer does not strengthen
+graph assumptions or restrict the model class certified by soundness.
 -/
 
 namespace Kernel
@@ -1445,42 +1445,17 @@ theorem localConditionEvent_dependsOnUnselected
     CanonicalFactorization.DependsOnUnselected model.latent.count
       model.latent.Value selected
       (localConditionEvent model baseAction condition factors reference) := by
+  -- Complementing the Boolean mask changes only which side is called
+  -- selected. Reuse the evaluation/ancestry argument above rather than
+  -- proving it again for the false branch.
+  have complemented := localConditionEvent_dependsOnSelected model G
+    baseAction condition factors reference (fun root => !(selected root)) (by
+      intro child factor root relevantRoot
+      simp only [routes child factor root relevantRoot, Bool.not_false])
   intro left right rootsAgree
-  unfold localConditionEvent
-  apply finAll_congr
-  intro child
-  cases factorSelected : factors child with
-  | false => rfl
-  | true =>
-      simp only [↓reduceIte]
-      unfold localConditionFactor
-      let action := localConditionAction baseAction condition child
-      let intervention :=
-        (Kernel.mk NodeSet.empty action NodeSet.empty).intervention reference
-      let relevant :=
-        FiniteLatentSCM.ancestralInBar G action (NodeSet.singleton child)
-      have evaluated : model.evalUnder intervention left child =
-          model.evalUnder intervention right child := by
-        exact model.evalNodeUnder_eq_of_rootAgreement intervention relevant
-          (by
-            dsimp [intervention, relevant, action]
-            exact FiniteLatentSCM.observedAncestorOf_backwardClosedUnder
-              model G (localConditionAction baseAction condition child)
-                (NodeSet.singleton child) reference)
-          left right
-          (by
-            intro root relevantRoot
-            exact rootsAgree root (routes child factorSelected root (by
-              simpa [intervention, relevant, action] using relevantRoot)))
-          child
-          (by
-            dsimp [relevant, action]
-            exact FiniteLatentSCM.ancestralInBar_contains_targets G
-              (localConditionAction baseAction condition child)
-                (NodeSet.singleton child) child
-                ((NodeSet.singleton_eq_true_iff child child).mpr rfl))
-      simpa [intervention, action] using congrArg
-        (fun value => decide (value = reference child)) evaluated
+  apply complemented left right
+  intro root marked
+  exact rootsAgree root (by simpa only [Bool.not_eq_true'] using marked)
 
 /--
 On the cylinder where the added action already matches the reference,

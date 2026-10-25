@@ -20,9 +20,8 @@ source-support witness, rather than asking for all interventional denominator
 cells to be positive. It does not assume do-calculus soundness to establish
 that positivity and does not turn an undefined target into a defined answer.
 
-All statements and proof bodies are retained unchanged from
-`CompletenessCertificates`. Current completeness assembly imports this bridge
-directly; the historical certificate layer reexports it for compatibility.
+Current completeness assembly imports this source-local support bridge
+directly, independently of any obsolete identification recursion.
 -/
 
 /-- Bayes writes `P(Y | do(X), Z)` as `P(Y, Z | do(X)) / P(Z | do(X))`. -/

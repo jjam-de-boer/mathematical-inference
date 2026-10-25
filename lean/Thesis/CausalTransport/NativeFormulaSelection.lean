@@ -17,9 +17,10 @@ support tables must not be erased to coerce these certificates into that API.
 Instead this small scan retains each complete `CheckedNativeFormula` record.
 Proof fields are erased at execution; selection uses its observable data.
 
-Membership, availability, exact failure and finite-family completeness are
-separate theorems. Lists here need not share a source: generic soundness is
-about the selected record's actual source. The bounded adapter separately
+The scan reuses `List.find?` and its membership, acceptance and failure
+lemmas rather than duplicating list induction. Finite-family completeness
+remains a separate theorem. Lists here need not share a source: generic
+soundness concerns the selected record's actual source. The bounded adapter separately
 proves that every generated member retains the user's decoded source query.
 Conditional-source support and model/profile coverage remain explicit native
 soundness premises. An empty selection is not general non-identifiability.
@@ -66,56 +67,34 @@ namespace ProbabilityCode.CheckedNativeFormula
 /-- First available supplied certificate. All native guards are retained;
 this definition neither generates profiles nor admits a search budget. -/
 def select (record : FiniteProbRecord S.Assignment) (reference : S.Assignment) :
-    List (CheckedNativeFormula graph profiles) → Option (CheckedNativeFormula graph profiles)
-  | [] => none
-  | candidate :: candidates =>
-      if candidate.available record reference then some candidate else select record reference candidates
+    List (CheckedNativeFormula graph profiles) → Option (CheckedNativeFormula graph profiles) :=
+  List.find? (fun candidate => candidate.available record reference)
 
 theorem select_cons_of_available (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
     (candidate : CheckedNativeFormula graph profiles) (candidates : List (CheckedNativeFormula graph profiles))
     (accepted : candidate.available record reference = true) :
     select record reference (candidate :: candidates) = some candidate := by
-  simp only [select, accepted, if_true]
+  simp only [select, List.find?_cons, accepted]
 
 /-- A rejected first candidate cannot mask an available later candidate. -/
 theorem select_cons_of_unavailable (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
     (candidate : CheckedNativeFormula graph profiles) (candidates : List (CheckedNativeFormula graph profiles))
     (rejected : candidate.available record reference = false) :
     select record reference (candidate :: candidates) = select record reference candidates := by
-  simp only [select, rejected, Bool.false_eq_true, if_false]
+  simp only [select, List.find?_cons, rejected]
 
 /-- The scan cannot invent an unchecked fallback. It returns an actual
 member, including that member's original guard and native proof. -/
 theorem select_mem (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
     (candidates : List (CheckedNativeFormula graph profiles)) (chosen : CheckedNativeFormula graph profiles)
-    (selected : select record reference candidates = some chosen) : chosen ∈ candidates := by
-  induction candidates with
-  | nil => cases selected
-  | cons candidate candidates inductionHypothesis =>
-      cases accepted : candidate.available record reference with
-      | false =>
-          exact List.mem_cons_of_mem candidate
-            (inductionHypothesis (by simpa only [select, accepted, Bool.false_eq_true, if_false] using selected))
-      | true =>
-          have same : candidate = chosen := Option.some.inj
-            (by simpa only [select, accepted, if_true] using selected)
-          rw [← same]
-          exact List.mem_cons_self
+    (selected : select record reference candidates = some chosen) : chosen ∈ candidates :=
+  List.mem_of_find?_eq_some selected
 
 theorem select_available (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
     (candidates : List (CheckedNativeFormula graph profiles)) (chosen : CheckedNativeFormula graph profiles)
-    (selected : select record reference candidates = some chosen) : chosen.available record reference = true := by
-  induction candidates with
-  | nil => cases selected
-  | cons candidate candidates inductionHypothesis =>
-      cases accepted : candidate.available record reference with
-      | false =>
-          exact inductionHypothesis (by simpa only [select, accepted, Bool.false_eq_true, if_false] using selected)
-      | true =>
-          have same : candidate = chosen := Option.some.inj
-            (by simpa only [select, accepted, if_true] using selected)
-          rw [← same]
-          exact accepted
+    (selected : select record reference candidates = some chosen) : chosen.available record reference = true :=
+  List.find?_some (p := fun candidate : CheckedNativeFormula graph profiles =>
+    candidate.available record reference) selected
 
 /-- Exact failure only within this list. In particular, failure says nothing
 about a formula absent from the list or a larger serialized proof budget. -/
@@ -123,33 +102,8 @@ theorem select_none_iff (record : FiniteProbRecord S.Assignment) (reference : S.
     (candidates : List (CheckedNativeFormula graph profiles)) :
     select record reference candidates = none ↔
       ∀ candidate, candidate ∈ candidates → candidate.available record reference = false := by
-  induction candidates with
-  | nil =>
-      constructor
-      · intro _ candidate member; cases member
-      · intro _; rfl
-  | cons candidate candidates inductionHypothesis =>
-      cases accepted : candidate.available record reference with
-      | false =>
-          constructor
-          · intro failed chosen member
-            have tail : select record reference candidates = none := by
-              simpa only [select, accepted, Bool.false_eq_true, if_false] using failed
-            rcases List.mem_cons.mp member with same | listed
-            · subst chosen; exact accepted
-            · exact inductionHypothesis.mp tail chosen listed
-          · intro unavailable
-            have tail := inductionHypothesis.mpr (fun chosen listed =>
-              unavailable chosen (List.mem_cons_of_mem candidate listed))
-            simpa only [select, accepted, Bool.false_eq_true, if_false] using tail
-      | true =>
-          constructor
-          · intro failed
-            simp only [select, accepted, if_true, Option.some_ne_none] at failed
-          · intro unavailable
-            have impossible := unavailable candidate List.mem_cons_self
-            rw [accepted] at impossible
-            cases impossible
+  simpa only [select, Bool.eq_false_iff] using
+    (List.find?_eq_none (p := fun candidate => candidate.available record reference) (l := candidates))
 
 theorem select_complete (record : FiniteProbRecord S.Assignment) (reference : S.Assignment)
     (candidates : List (CheckedNativeFormula graph profiles))

@@ -20,7 +20,7 @@ increases free size and consumes the product bonus.  This gives one uniform
 argument for arbitrary nesting, without enumerating branch-name stacks.
 
 Only general graph and finite-list facts are reused from `IdentificationRank`
-and `ComponentConnectivity`, independently of the large `Completeness` module.
+and `ComponentConnectivity`, independently of semantic completeness assembly.
 No soundness theorem, completeness package, or semantic assumption is used
 to establish progress of the corrected program.
 -/

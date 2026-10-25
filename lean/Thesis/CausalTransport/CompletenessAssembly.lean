@@ -243,8 +243,8 @@ noncomputable def publishedConditionalCertificateOfJointCertificates
 The premise-free public form of support-sensitive Bayes assembly.  Soundness
 is not an additional completeness assumption: every finite observed graph
 already carries the constructive theorem `ObservedGraph.publishedSoundness`.
-Keeping this wrapper at the assembly boundary also prevents the core
-`Completeness` development from importing its sibling module.
+Keeping this wrapper at the assembly boundary lets the structural compilers
+and countermodel constructions remain independent of semantic soundness.
 -/
 noncomputable def PublishedConditionalCertificate.ofJointCertificates
     {S : ObservedSignature} {G : ObservedGraph S}

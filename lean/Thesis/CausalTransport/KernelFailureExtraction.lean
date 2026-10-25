@@ -26,8 +26,9 @@ that factor's hedge and reconnects it to the parent query.
 There is no fixed recursion-depth bound in this proof and no list of selected
 branch-name stacks.  The current expression is arbitrary: failure extraction
 uses only graph closure and well-formed query coordinates, not positivity,
-semantic soundness, or an assumed completeness theorem.  A general positive
-original-query countermodel is still needed for semantic completeness.
+semantic soundness, or an assumed completeness theorem. The unrestricted
+positive countermodel construction is connected to this extraction at the
+separate `HedgeChannelJointCompleteness` assembly boundary.
 -/
 
 /-! ## Failure coordinates retained throughout recursive transport -/

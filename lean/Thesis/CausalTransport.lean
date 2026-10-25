@@ -12,13 +12,13 @@ import Thesis.CausalTransport.ActivePathRootInputs
 import Thesis.CausalTransport.ActivePathDirection
 import Thesis.CausalTransport.ActivePathColliderRerouting
 import Thesis.CausalTransport.Certificates
+import Thesis.CausalTransport.ActionDeletionCertificates
 import Thesis.CausalTransport.SupportAwareProbability
 import Thesis.CausalTransport.SupportAwareChain
 import Thesis.CausalTransport.Correspondence
 import Thesis.CausalTransport.FiniteSource
 import Thesis.CausalTransport.Soundness
 import Thesis.CausalTransport.LocalSupportIdentification
-import Thesis.CausalTransport.Completeness
 import Thesis.CausalTransport.ChainCompilation
 import Thesis.CausalTransport.SupportAwareChainCompilation
 import Thesis.CausalTransport.SupportAwareKernelCompilation
@@ -1065,11 +1065,11 @@ partitions with d-separation correctness into the complete published record.
 The older hypothesis-bearing adapters remain useful as documented local
 interfaces, but they are no longer obligations of the public theorem.
 
-`Completeness` develops the executable ID side for the positive model class:
-successful special cases compile to supported certificates, the two terminal
-success-trace constructors compile to formula-aligned packages, finite search
-extracts hedge data from checked failures, and shared-switch hedge models
-provide positive counterexamples for the covered queries.  `HedgePositive`
+The current completeness path combines general recursive success compilation,
+failure extraction and original-query positive countermodels.
+`ActionDeletionCertificates` retains the useful separated-action certificate
+and its observational support argument without a legacy program or trace.
+`HedgePositive`
 uses finite marginalization to reduce full-query separation to one suitable
 outcome coordinate.  Its strongest localized mix selects a directed-and-
 bidirected action-parent bow and reads only that bow's pair-root.  This removes
@@ -1151,14 +1151,12 @@ or counterexample assumption; its graph argument is universe-polymorphic.
 `HedgeOutcomeFlow`
 proves exact finite support formulas for the general routed hedge models and
 packages an unrestricted original-query counterexample when readout routing
-does not re-enter `large \ small`; removing that geometric hypothesis and preserving
-strict positivity remain the countermodel obligations.  `IdentificationInduction`
-supplies exact legacy success, failure, and unfinished traces; the replacement
-success and failure inductions instead follow the changed program directly,
-not deeper legacy branch-name stacks.  `CompletenessAssembly` is the one-way
-integration layer:
-it imports the completed soundness theorem without creating a dependency from
-`Completeness` back to `Soundness`.  Its support-sensitive Bayes constructor
+does not re-enter `large \ small`. The unrestricted positive construction is
+provided separately by `HedgeChannelCounterexample`. Current success and
+failure inductions follow the program directly, not fixed-depth branch stacks.
+`CompletenessAssembly` imports completed soundness at the semantic integration
+boundary while the countermodel constructions remain independent of it.
+Its support-sensitive Bayes constructor
 now combines arbitrary joint certificates into a conditional certificate,
 requiring denominator positivity only where the source conditional is defined.
 It also proves correctness and identifiability of every successful replacement

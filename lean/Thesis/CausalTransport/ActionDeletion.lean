@@ -17,9 +17,8 @@ a host deletes only the action outside that host; the nested derivation still
 has to be supplied. Interpretation belongs to published soundness, and support
 of endpoints remains an independent obligation of certificate construction.
 
-The statements and proof bodies are unchanged from
-`CompletenessCertificates`. Both historical ready-case certificates and the
-current recursive compiler now use this common derivation layer.
+The current recursive compiler and `ActionDeletionCertificates` share this
+query-level derivation layer.
 -/
 
 /-- Outcome and action of a joint query are disjoint in either order. -/

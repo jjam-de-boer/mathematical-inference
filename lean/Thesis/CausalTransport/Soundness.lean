@@ -375,8 +375,9 @@ def PathDoRulePartitionWitnesses.ofPathProjected
 
 /--
 Compatibility assembler for the former rule-3 no-overlap premise.  New
-global-Markov work should target `ofPathFactorizedRule3`: path separation
-does not in general imply that `Y` and conditioned `W` share no latent root.
+clients should use `ofPathProjected`, which supplies all three rules without
+extra graph premises. Path separation does not in general imply that `Y`
+and conditioned `W` share no latent root.
 -/
 def PathDoRulePartitionWitnesses.ofPath
     (G : ObservedGraph S) (model : FiniteLatentSCM S)

@@ -6,7 +6,7 @@ The failure-core check normalizes only extra blank lines left by extraction.
 The countermodel check restores one precisely specified documentation
 clarification before comparing its original hash; no proof text is normalized.
 Import checks protect the smaller
-current interfaces while keeping historical imports and audit reachability.
+current interfaces while keeping the useful negative regression audited.
 Neither check replaces Lean elaboration or the transitive axiom audit.
 """
 
@@ -203,6 +203,13 @@ class CausalFoundationTests(unittest.TestCase):
             with self.subTest(module=module, start=start):
                 source = self.source("Thesis." + module)
                 block = source[source.index(start):source.index(end, source.index(start))].rstrip()
+                if module == "CausalTransport.Hedge.Models":
+                    # Correct one incomplete explanatory sentence while
+                    # continuing to compare every declaration/proof exactly.
+                    current = "The elementary `hedgeMixModel` reads every pair-root incident to a node. A"
+                    original = "The elementary `hedgeMixModel` above every pair-root incident to a node.  A"
+                    self.assertEqual(block.count(current), 1)
+                    block = block.replace(current, original, 1)
                 if module == "CausalTransport.Hedge.Parity" and start.startswith("/-!"):
                     # Only this exact stale positional reference changed.
                     # Restore it before applying the original whole-body hash;
@@ -244,26 +251,23 @@ class CausalFoundationTests(unittest.TestCase):
         self.assertEqual(hashlib.sha256(core.encode()).hexdigest(),
                          "46c954b9164640331989efc3b212d0cc06bfb021111a0781dfd1b818da47dff1")
 
-    def test_old_imports_reexport_the_new_foundations(self):
-        pairs = (("CompletenessCertificates", "Thesis.Causality.TermSupport"),
-                 ("CompletenessCertificates", "Thesis.Causality.CForestConstruction"),
-                 ("CompletenessCertificates", "Thesis.CausalTransport.ActionDeletion"),
-                 ("CompletenessCertificates", "Thesis.CausalTransport.ConditionalBayes"),
-                 ("CompletenessFailureExtraction", "Thesis.CausalTransport.Hedge.ReadoutGeometry"),
-                 ("CompletenessFailureExtraction", "Thesis.CausalTransport.Hedge.WitnessSearch"),
-                 ("ConditionalFailureExtraction", "Thesis.CausalTransport.ConditionalFailureCore"),
-                 ("ConditionalFailureExtraction", "Thesis.CausalTransport.ConditionalFailureCarrierCases"),
-                 ("CompletenessHedgeParity", "Thesis.Causality.InterventionalCounterexample"),
-                 ("CompletenessHedgeParity", "Thesis.CausalTransport.Hedge.Parity"),
-                 ("CompletenessHedgeCountermodels", "Thesis.CausalTransport.Hedge.Countermodels"),
-                 ("CompletenessHedgeModels", "Thesis.CausalTransport.Hedge.Models"))
-        for old, foundation in pairs:
-            with self.subTest(old=old):
-                self.assertIn(foundation, reachable(self.graph, "Thesis.CausalTransport." + old))
-        self.assertIn("Thesis.Causality.IdentificationOutcomeTraces",
-                      reachable(self.graph, "Thesis.Causality.Legacy.IdentificationInduction"))
+    def test_current_conditional_extraction_exposes_both_checked_interfaces(self):
+        for foundation in ("Thesis.CausalTransport.ConditionalFailureCore",
+                           "Thesis.CausalTransport.ConditionalFailureCarrierCases"):
+            self.assertIn(foundation, reachable(self.graph, "Thesis.CausalTransport.ConditionalFailureExtraction"))
 
-    def test_both_shared_and_historical_layers_remain_inside_full_axiom_audit(self):
+    def test_action_deletion_certificate_is_promoted_into_current_mathematics(self):
+        owner = "Thesis.CausalTransport.ActionDeletionCertificates"
+        dependencies = reachable(self.graph, owner)
+        self.assertFalse(any(".Legacy." in name or ".Historical." in name
+                             or name.startswith("Thesis.Examples.") for name in dependencies))
+        self.assertIn(owner, self.graph["Thesis.Examples.KernelCompilation"])
+        source = self.source(owner)
+        self.assertIn("PublishedJointCertificate C correct q", source)
+        self.assertIn("sourceSupported", source)
+        self.assertNotIn("positive : ObservationallyPositive", source)
+
+    def test_retained_foundations_and_frontdoor_examples_remain_audited(self):
         covered = reachable(self.graph, "Thesis.AxiomAudit")
         for module in ("Causality.TermSupport", "Causality.InterventionalCounterexample",
                        "Causality.IdentificationOutcomeTraces", "Causality.CForestConstruction",
@@ -274,29 +278,60 @@ class CausalFoundationTests(unittest.TestCase):
                        "CausalTransport.ConditionalBayes",
                        "CausalTransport.ConditionalFailureCore", "CausalTransport.ConditionalFailureCarrierCases",
                        "CausalTransport.Hedge.WitnessSearch",
-                       "CausalTransport.CompletenessLegacyShrinkFailures",
-                       "CausalTransport.CompletenessLegacyProductFailures",
-                       "CausalTransport.CompletenessLegacyNestedFailures"):
+                       "Examples.Fixtures.FrontDoor",
+                       "Examples.FrontDoorCurrentIdentification",
+                       "Examples.IdentificationRegression"):
             with self.subTest(module=module):
                 self.assertIn("Thesis." + module, covered)
 
-    def test_archived_failure_stacks_keep_every_original_declaration_and_proof(self):
-        hashes = {
-            "Shrink": "091e6b4864c4942638ce5bdbedace2b37b1cd829f7242285a4ef458a474d2677",
-            "Product": "8332c4cf0eae0dfee1e776cc407831472133405e29e96c02ceb59cc1da7bda7f",
-            "Nested": "147b9366088b80b3ffde953d3734730ed2db9e55563164ad1d0e3072e4041c00",
-        }
-        covered = reachable(self.graph, "Thesis.AxiomAudit")
-        for kind, expected in hashes.items():
-            with self.subTest(kind=kind):
-                archived = "Thesis.CausalTransport.Historical.Legacy" + kind + "Failures"
-                old = "Thesis.CausalTransport.CompletenessLegacy" + kind + "Failures"
-                source = self.source(archived)
-                body = source[source.index("namespace Thesis\n"):].rstrip()
-                self.assertEqual(hashlib.sha256(body.encode()).hexdigest(), expected)
-                self.assertIn(archived, reachable(self.graph, old))
-                self.assertIn(archived, covered)
-                self.assertIn(old, covered)
+    def test_retired_legacy_libraries_do_not_return_as_compatibility_imports(self):
+        # The project has no external import clients. These obsolete paths
+        # were retired, not replaced with another forwarding-file chain.
+        retired = (
+            "Causality.Legacy.IdentificationSearch", "Causality.Legacy.IdentificationInduction",
+            "CausalTransport.Historical.LegacyShrinkFailures",
+            "CausalTransport.Historical.LegacyProductFailures",
+            "CausalTransport.Historical.LegacyNestedFailures",
+            "CausalTransport.Completeness", "CausalTransport.CompletenessCertificates",
+            "CausalTransport.CompletenessFailureExtraction",
+            "CausalTransport.CompletenessHedgeModels", "CausalTransport.CompletenessHedgeParity",
+            "CausalTransport.CompletenessHedgeCountermodels",
+            "CausalTransport.CompletenessLegacyShrinkFailures",
+            "CausalTransport.CompletenessLegacyProductFailures",
+            "CausalTransport.CompletenessLegacyNestedFailures")
+        for local in retired:
+            with self.subTest(module=local):
+                name = "Thesis." + local
+                self.assertNotIn(name, self.graph)
+                self.assertFalse((self.root / (name.replace(".", "/") + ".lean")).exists())
+                self.assertFalse(any(name in imports for imports in self.graph.values()))
+
+    def test_modern_frontdoor_clients_do_not_import_the_negative_algorithm(self):
+        fixture = "Thesis.Examples.Fixtures.FrontDoor"
+        negative = "Thesis.Examples.IdentificationRegression"
+        for local in ("KernelCompilation", "ComponentCompilation", "ProductCompilation",
+                      "KernelRecursionCompilation", "KernelProductCompilation",
+                      "KernelSuccessCompilation", "ConditionalCompilation",
+                      "HedgeChannelCompleteness", "PositiveModal"):
+            with self.subTest(example=local):
+                dependencies = reachable(self.graph, "Thesis.Examples." + local)
+                self.assertIn(fixture, dependencies)
+                self.assertNotIn(negative, dependencies)
+
+    def test_negative_example_retains_the_actual_refuted_algorithm(self):
+        # Retain this exact old computation so the numerical bug is still
+        # demonstrated, rather than substituting a hand-written bad formula.
+        source = self.source("Thesis.Examples.IdentificationRegression")
+        fuel = source[source.index("def Legacy.identifyFuel"):
+                      source.index("def Legacy.identifyJoint")].rstrip()
+        joint = source[source.index("def Legacy.identifyJoint"):
+                       source.index("/-- A hypothetical certificate")].rstrip()
+        self.assertEqual(hashlib.sha256(fuel.encode()).hexdigest(),
+                         "b6226859062ea6869283ce4d94604b0798b6074b18b4f937a9b745feaf6aee63")
+        self.assertEqual(hashlib.sha256(joint.encode()).hexdigest(),
+                         "6aa6e34437ac2501d7e63a968f136d2448188e89583da4b3f52d5a4d27f02fd4")
+        self.assertIn("theorem legacyEngineFormula_not_equivalent", source)
+        self.assertIn("theorem legacyFormulaCompiler_is_uninhabited", source)
 
 
 if __name__ == "__main__":

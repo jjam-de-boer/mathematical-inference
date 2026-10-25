@@ -13,9 +13,8 @@ open Probability
 The finite latent extensions, pair-root assignments, Boolean incidence and
 routing-flow constructions below are shared mathematics, not properties of a
 particular identification program. Their explicit finite enumerations retain
-all observed labels, independent latent inputs and original readiness
-conditions. Every declaration and proof body is retained unchanged from
-`CompletenessHedgeModels`; that old path remains a compatibility facade.
+all observed labels, independent latent inputs and explicit readiness
+conditions.
 
 This module depends on graph readout geometry, pair-root semantics and finite
 constructive permutations. It does not import legacy recursion, failure-stack
@@ -1500,7 +1499,7 @@ theorem hedgeXorPairBits_of_pair_eq (G : ObservedGraph S) (child : Fin S.count)
 /-!
 ### Laws for parity restricted to a hedge forest
 
-The elementary `hedgeMixModel` above every pair-root incident to a node.  A
+The elementary `hedgeMixModel` reads every pair-root incident to a node. A
 general hedge needs a finer distinction: the large forest uses bidirected
 edges internal to `F`, whereas the small forest uses only edges internal to
 `F'`.  The latent extension itself is deliberately unchanged.  Roots outside

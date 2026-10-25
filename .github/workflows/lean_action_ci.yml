@@ -255,21 +255,20 @@ jobs:
           Thesis.Probability.Distros.RationalBetaBinomial
           Thesis.Probability.Distros.RationalUpdates
           Thesis.Examples.DistributionExtensions
-      # Historical cases and hedge-model proofs keep their original public
-      # names; verify each new compilation boundary before the broad clients.
-      - name: Check split completeness layers
+      # Verify the current general theorem and the compact old-engine
+      # counterexample, not the superseded fixed-depth failure library.
+      - name: Check current completeness and identification regressions
         working-directory: lean
         run: >-
           lake build
-          Thesis.CausalTransport.CompletenessCertificates
-          Thesis.CausalTransport.CompletenessFailureExtraction
-          Thesis.CausalTransport.CompletenessLegacyShrinkFailures
-          Thesis.CausalTransport.CompletenessLegacyProductFailures
-          Thesis.CausalTransport.CompletenessLegacyNestedFailures
-          Thesis.CausalTransport.CompletenessHedgeModels
-          Thesis.CausalTransport.CompletenessHedgeParity
-          Thesis.CausalTransport.CompletenessHedgeCountermodels
-          Thesis.CausalTransport.Completeness
+          Thesis.CausalTransport.ActionDeletionCertificates
+          Thesis.CausalTransport.KernelSuccessCompilation
+          Thesis.CausalTransport.KernelFailureExtraction
+          Thesis.CausalTransport.HedgeChannelCompleteness
+          Thesis.CausalTransport.HiddenDAGCorrespondence
+          Thesis.CausalTransport.HiddenDAGSupportedCorrespondence
+          Thesis.Examples.FrontDoorCurrentIdentification
+          Thesis.Examples.IdentificationRegression
       # Check the proof-preserving soundness boundaries explicitly before
       # their broad clients. The full build and axiom audit still follow.
       - name: Check split soundness layers

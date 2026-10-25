@@ -29,6 +29,17 @@ class ProbabilityLayerTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertNotIn(self.prefix + name, dependencies)
 
+    def test_general_record_interface_is_below_numeric_distribution_machinery(self):
+        dependencies = reachable(self.graph, self.prefix + "Record")
+        self.assertIn("Thesis.Probability.FiniteRecord", dependencies)
+        self.assertNotIn("Thesis.Probability.Combinatorics", dependencies)
+        self.assertNotIn(self.prefix + "Basic", dependencies)
+        for client in ("LawBasics", "Entropy", "FinitePresentation"):
+            with self.subTest(client=client):
+                closure = reachable(self.graph, self.prefix + client)
+                self.assertIn(self.prefix + "Record", closure)
+                self.assertNotIn(self.prefix + "Basic", closure)
+
     def test_entropy_does_not_reimport_moments_or_concentration_for_support(self):
         dependencies = reachable(self.graph, self.prefix + "Entropy")
         self.assertIn(self.prefix + "LawBasics", dependencies)
@@ -54,6 +65,7 @@ class ProbabilityLayerTests(unittest.TestCase):
 
     def test_new_foundations_remain_inside_the_complete_axiom_audit(self):
         self.assertIn(self.prefix + "LawBasics", reachable(self.graph, "Thesis.AxiomAudit"))
+        self.assertIn(self.prefix + "Record", reachable(self.graph, "Thesis.AxiomAudit"))
 
 
 if __name__ == "__main__":

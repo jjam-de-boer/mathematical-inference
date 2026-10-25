@@ -30,10 +30,10 @@ the same query.  This is a limitation of the compensated routing family,
 not proof that the query is identifiable or a refutation of the published
 hedge non-identifiability theorem.
 
-Keeping this negative regression prevents an impossible universal route-
-coverage lemma from becoming the next completeness milestone.  It points
-to the genuine remaining requirement: a positive countermodel construction
-that can handle this outer-only re-entry, or a different complete family.
+Keeping this negative regression prevents the refuted universal route-
+coverage claim from being reused as a completeness premise. The unrestricted
+channel countermodel construction handles the case without that premise;
+its published assembly is `HedgeChannelJointCompleteness`.
 The observed alphabets are three-valued, as in the positive regressions;
 the obstruction itself is purely finite graph data.
 -/

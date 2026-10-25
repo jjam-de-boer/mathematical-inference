@@ -1,4 +1,4 @@
-import Thesis.Probability.Distros.Basic
+import Thesis.Probability.Distros.Record
 
 namespace Thesis.Probability.Distros
 

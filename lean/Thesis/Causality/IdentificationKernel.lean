@@ -21,10 +21,10 @@ action block `W` in line 3.  That block is added to the action while the host
 and its current distribution are retained; it is not used to marginalize
 the input distribution.
 
-The old `Legacy.identifyFuel` and its exact trace library are isolated in
-`Legacy.IdentificationSearch` and `Legacy.IdentificationInduction`; neither
-module is imported here.  Their front-door counterexample is retained as a
-baseline, not accepted as a sound implementation.  This engine is general
+The old `Legacy.identifyFuel` survives only in
+`Examples.IdentificationRegression`, which this module does not import.
+Its front-door counterexample is retained as a negative regression, not
+accepted as a sound implementation. This engine is general
 over hosts and input terms, not a front-door shortcut.
 The definitions here supply the executable program.  Its support-carrying
 success compiler and constructive countermodels are proved in separate

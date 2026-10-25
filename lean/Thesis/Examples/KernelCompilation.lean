@@ -1,5 +1,7 @@
 import Thesis.CausalTransport.KernelCompilation
-import Thesis.Examples.IdentificationRegression
+import Thesis.CausalTransport.ActionDeletionCertificates
+import Thesis.CausalTransport.Soundness
+import Thesis.Examples.Fixtures.FrontDoor
 
 namespace Thesis
 namespace Causality
