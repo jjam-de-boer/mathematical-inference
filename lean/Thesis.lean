@@ -100,6 +100,7 @@ import Thesis.Examples.LatentRootGrouping
 import Thesis.Examples.ProjectionTemplateRepresentation
 import Thesis.Examples.SharedResponseLinearBounds
 import Thesis.Examples.SharedResponseSupport
+import Thesis.Examples.SharedResponseSupportedBounds
 import Thesis.Examples.BoundedNativeSearch
 import Thesis.Examples.BoundedNativeClassification
 import Thesis.Examples.BoundedNativeConditionals
