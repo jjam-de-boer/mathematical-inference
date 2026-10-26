@@ -1,3 +1,4 @@
+import Thesis.Probability.ConstructiveRealEntropyStrongConcavityClosed
 import Thesis.Probability.ConstructiveRealEntropyDerivative
 import Thesis.Probability.ConstructiveRealRationalConstraints
 import Thesis.Probability.ConstructiveRealEntropyCertificates
