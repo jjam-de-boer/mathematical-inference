@@ -28,6 +28,10 @@ The main implemented results are:
 - Auxiliary constructive analytic values, including real arithmetic,
   logarithms, exponentials and differentiation with explicit error control.
   Probability weights remain finite and rational.
+- Observational and interventional Shannon entropy of original hidden-DAG
+  assignment records: identifying an entire law identifies its entropy.
+  Shannon inequalities are used as sound exclusion tests, not as substitutes
+  for graph-uncertainty or Körner graph entropy.
 
 ## Living-document maintenance
 
