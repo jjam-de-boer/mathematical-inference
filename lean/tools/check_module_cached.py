@@ -7,8 +7,8 @@ permission to rebuild a missing dependency. Only the explicitly named modules
 are subsequently compiled, one at a time, into a disposable workspace. Neither
 the source checkout nor Lake's ordinary build cache is modified. With --retain,
 successful outputs enter a separate input-addressed local store and can serve
-as checked dependencies in later invocations. A held OS lock prevents two
-instances of this helper from launching compilers concurrently.
+as checked dependencies in later invocations. A repository-wide OS lock
+serializes updated checker/build helpers across linked worktrees.
 
 The supported configuration is deliberately narrow: this repository's plain
 TOML package, no external packages, and ordinary initial import headers. A

@@ -18,6 +18,9 @@ class ArtifactTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
+        lock_root = patch.object(artifacts, "COMPILER_LOCK_ROOT", self.root)
+        lock_root.start()
+        self.addCleanup(lock_root.stop)
         self.store = artifacts.ArtifactStore(self.root)
         self.output = self.root / "output.olean"
         self.output.write_bytes(b"fake successful compiler output")

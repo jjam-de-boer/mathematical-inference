@@ -12,6 +12,7 @@ A temporary TOML configuration adds only weak Lean resource arguments. Lake
 explicitly excludes weak arguments from mathematical build traces; thread and
 memory limits change neither the source nor its proof. The committed package
 configuration is never rewritten. Final gates also use the committed config.
+Updated helpers share one repository-wide compiler lock across worktrees.
 The full process group (Lake plus its compiler/linker descendants) is sampled,
 not just Lake's small parent process. This is still not a hard OS reservation.
 """

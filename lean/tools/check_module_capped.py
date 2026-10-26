@@ -5,9 +5,9 @@ Unlike the cache-aware checker, this helper imports no project build artifacts:
 every project prerequisite is compiled sequentially into a disposable snapshot.
 The installed pinned standard library remains trusted in both workflows.
 
-Resource policy is shared, not reimplemented: the named profile, global helper
-compiler-slot lock, sampled RSS monitor, CPU limit and wall timeout are exactly
-those used by check_module_cached. A refusal never retries with larger limits.
+Resource policy is shared, not reimplemented: the named profile, repository-wide
+helper compiler-slot lock, sampled RSS monitor, CPU limit and wall timeout are
+exactly those used by check_module_cached. A refusal never retries with larger limits.
 Only explicitly bounded source closures and the reviewed plain configuration
 are accepted. This is not permission to start an unrestricted local Lake build.
 """

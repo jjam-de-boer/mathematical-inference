@@ -10,6 +10,8 @@ The store is local build state, not a hostile-input proof-certificate format.
 Like an ordinary build cache, it trusts the installed pinned standard library
 and the local account that owns the artifacts. Missing entries are misses;
 malformed or modified entries are refused rather than silently trusted.
+Compiler coordination is shared across linked worktrees; artifacts remain
+local to the calling worktree.
 """
 
 from contextlib import contextmanager
@@ -20,11 +22,19 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
+import subprocess
 import tempfile
 
 
 class ArtifactError(RuntimeError):
     """A cache/locking refusal never counts as a successful proof check."""
+
+
+# TMPDIR may differ between workers or worktrees. The fixed Unix temporary
+# root gives updated helpers one host-wide location; the checked UID directory
+# below it is private. Build artifacts still use their worktree-local stores.
+COMPILER_LOCK_ROOT = Path("/tmp")
 
 
 def digest(path):
@@ -54,20 +64,68 @@ def store_directory(root):
     return checked_directory(root / ".lake" / "local-checks-v1")
 
 
-@contextmanager
-def exclusive_check(root):
-    """Fail fast if another helper owns the local compiler slot.
+def compiler_repository(root):
+    """Identify the shared repository without writing to any worktree.
 
-    The lock is held by an open descriptor, not inferred from a stale PID or
-    the mere existence of a file. A crash releases the OS lock automatically.
-    This serializes this helper's checks; it does not control unrelated manual
-    builds or promise a machine-wide memory reservation.
+    Linked worktrees have different .git files but one canonical common Git
+    directory. Git resolves that relationship; a broken Git identity is a
+    refusal rather than a fallback to separate, falsely independent slots.
+    Plain source archives and temporary non-Git fixtures retain a slot keyed
+    to their own canonical directory.
     """
-    lock = store_directory(root) / "check.lock"
+    root = Path(root).resolve()
+    if not any((parent / ".git").exists() or (parent / ".git").is_symlink()
+               for parent in (root, *root.parents)):
+        return "directory:" + str(root)
+    environment = {key: value for key, value in os.environ.items()
+                   if key not in {"GIT_DIR", "GIT_COMMON_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"}}
+    try:
+        result = subprocess.run(["git", "--no-optional-locks", "-C", str(root),
+            "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            env=environment, text=True, capture_output=True, timeout=5)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise ArtifactError("cannot determine the shared Git compiler slot") from error
+    identity = result.stdout.rstrip("\n")
+    if result.returncode or not identity or "\n" in identity:
+        raise ArtifactError("cannot determine the shared Git compiler slot")
+    common = Path(identity)
+    if not common.is_absolute() or not common.is_dir():
+        raise ArtifactError("invalid shared Git compiler-slot directory")
+    return "git:" + str(common.resolve())
+
+
+def compiler_lock_path(root):
+    """Keep one private, per-user OS lock per repository, outside its caches.
+
+    Worktrees keep their own artifacts. Only this empty coordination file is
+    shared; its existence is not evidence of a live build. The private parent
+    prevents another account from replacing lock files in a shared /tmp.
+    """
+    identity = compiler_repository(root)
+    directory = COMPILER_LOCK_ROOT / f"thesis-lean-compiler-{os.getuid()}"
+    try:
+        directory.mkdir(mode=0o700, exist_ok=True)
+        info = directory.lstat()
+    except OSError as error:
+        raise ArtifactError("cannot open the private compiler-slot directory") from error
+    if (not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid()
+            or (stat.S_IMODE(info.st_mode) & 0o777) != 0o700):
+        raise ArtifactError("compiler-slot directory must be private and not a symbolic link")
+    key = record_key({"format": 1, "repository": identity})
+    return directory / (key + ".lock")
+
+
+@contextmanager
+def held_compiler_lock(lock):
+    """Hold a descriptor lock; failure or process exit releases the slot."""
     if lock.is_symlink():
         raise ArtifactError("refusing a symbolic-link compiler-slot lock")
     flags = os.O_CREAT | os.O_RDWR | getattr(os, "O_NOFOLLOW", 0)
-    with os.fdopen(os.open(lock, flags, 0o600), "w") as handle:
+    try:
+        descriptor = os.open(lock, flags, 0o600)
+    except OSError as error:
+        raise ArtifactError("cannot open the compiler-slot lock") from error
+    with os.fdopen(descriptor, "w") as handle:
         try:
             fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as error:
@@ -76,6 +134,25 @@ def exclusive_check(root):
             yield
         finally:
             fcntl.flock(handle, fcntl.LOCK_UN)
+
+
+@contextmanager
+def exclusive_check(root):
+    """Serialize updated helpers across every worktree of this repository.
+
+    Keep the old local lock as well, so an older helper in this same worktree
+    still causes a refusal. Other worktrees must use this updated helper to
+    join the shared protocol; running old helpers and manual/editor builds
+    still require coordination. No process is killed, no cache is shared, and
+    no memory or time limit is changed by acquiring either lock.
+
+    Both locks belong to open descriptors, not PID files. A crash releases
+    them automatically; stale empty files never reserve the compiler slot.
+    """
+    shared = compiler_lock_path(root)
+    local = store_directory(root) / "check.lock"
+    with held_compiler_lock(shared), held_compiler_lock(local):
+        yield
 
 
 def toolchain_identity(toolchain):
