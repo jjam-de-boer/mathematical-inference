@@ -46,9 +46,8 @@ private theorem signedAtomMass_conditionalContrast (atoms : List (Ω × Nat))
       cases selectedEvidence : evidence outcome <;> cases selectedEvent : event outcome <;>
         simp only [conditionalContrast, eventMass, selectedEvidence, selectedEvent,
           Bool.false_and, Bool.true_and, Bool.false_eq_true, if_false, if_true,
-          Int.natCast_add, Int.natCast_zero, Int.mul_zero, Int.mul_one, Int.zero_sub, Int.sub_zero,
-          Int.zero_add, Int.add_zero,
-          Int.mul_add, Int.mul_sub, Int.sub_eq_add_neg, Int.mul_neg, Int.neg_add]
+          Int.natCast_add, Int.mul_zero, Int.mul_one, Int.zero_add,
+          Int.mul_add, Int.sub_eq_add_neg, Int.mul_neg, Int.neg_add]
       all_goals
         try simp only [Int.mul_comm]
         omega

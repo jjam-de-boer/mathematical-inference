@@ -74,10 +74,11 @@ theorem incorrect_signedMass : record.signedMass (conditionalContrast topEvent e
 theorem incorrect_mean_nonzero : ¬ SignedRatio.Equiv (contrastMean topEvent event incorrect) SignedRatio.zero := by
   intro zero
   have mean := record.rationalMean_conditionalContrast topEvent event incorrect
-  have massZero := (SignedRatio.equiv_zero_iff _).mp
+  have massZero : record.signedMass (conditionalContrast topEvent event incorrect) = 0 :=
+    (SignedRatio.equiv_zero_iff _).mp
     (SignedRatio.equiv_trans (SignedRatio.equiv_symm mean) zero)
   rw [incorrect_signedMass] at massZero
-  omega
+  exact (by decide +kernel : ¬ (4 : Int) = 0) massZero
 
 /-- The nonzero contrast supplies support without a conditional premise. -/
 theorem support_from_nonzero_contrast : record.EventPositive topEvent :=
