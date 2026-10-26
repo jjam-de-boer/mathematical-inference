@@ -252,9 +252,17 @@ class CausalFoundationTests(unittest.TestCase):
                          "46c954b9164640331989efc3b212d0cc06bfb021111a0781dfd1b818da47dff1")
 
     def test_current_conditional_extraction_exposes_both_checked_interfaces(self):
+        facade = reachable(self.graph, "Thesis.CausalTransport")
         for foundation in ("Thesis.CausalTransport.ConditionalFailureCore",
                            "Thesis.CausalTransport.ConditionalFailureCarrierCases"):
-            self.assertIn(foundation, reachable(self.graph, "Thesis.CausalTransport.ConditionalFailureExtraction"))
+            self.assertIn(foundation, facade)
+        completeness = reachable(self.graph, "Thesis.CausalTransport.HedgeChannelCompleteness")
+        self.assertIn("Thesis.CausalTransport.ConditionalFailureCore", completeness)
+        self.assertNotIn("Thesis.CausalTransport.ConditionalFailureCarrierCases", completeness)
+        self.assertNotIn("Thesis.CausalTransport.ConditionalFailureExtraction", self.graph)
+        example = reachable(self.graph, "Thesis.Examples.ConditionalFailureExtraction")
+        self.assertIn("Thesis.CausalTransport.ConditionalFailureCore", example)
+        self.assertIn("Thesis.CausalTransport.ConditionalFailureCarrierCases", example)
 
     def test_action_deletion_certificate_is_promoted_into_current_mathematics(self):
         owner = "Thesis.CausalTransport.ActionDeletionCertificates"
@@ -298,7 +306,8 @@ class CausalFoundationTests(unittest.TestCase):
             "CausalTransport.CompletenessHedgeCountermodels",
             "CausalTransport.CompletenessLegacyShrinkFailures",
             "CausalTransport.CompletenessLegacyProductFailures",
-            "CausalTransport.CompletenessLegacyNestedFailures")
+            "CausalTransport.CompletenessLegacyNestedFailures",
+            "CausalTransport.ConditionalFailureExtraction")
         for local in retired:
             with self.subTest(module=local):
                 name = "Thesis." + local
@@ -309,6 +318,7 @@ class CausalFoundationTests(unittest.TestCase):
     def test_modern_frontdoor_clients_do_not_import_the_negative_algorithm(self):
         fixture = "Thesis.Examples.Fixtures.FrontDoor"
         negative = "Thesis.Examples.IdentificationRegression"
+        current = "Thesis.Examples.FrontDoorCurrentIdentification"
         for local in ("KernelCompilation", "ComponentCompilation", "ProductCompilation",
                       "KernelRecursionCompilation", "KernelProductCompilation",
                       "KernelSuccessCompilation", "ConditionalCompilation",
@@ -317,6 +327,10 @@ class CausalFoundationTests(unittest.TestCase):
                 dependencies = reachable(self.graph, "Thesis.Examples." + local)
                 self.assertIn(fixture, dependencies)
                 self.assertNotIn(negative, dependencies)
+        negative_dependencies = reachable(self.graph, negative)
+        self.assertIn(fixture, negative_dependencies)
+        self.assertNotIn(current, negative_dependencies)
+        self.assertNotIn("Thesis.Causality.IdentificationKernel", negative_dependencies)
 
     def test_negative_example_retains_the_actual_refuted_algorithm(self):
         # Retain this exact old computation so the numerical bug is still

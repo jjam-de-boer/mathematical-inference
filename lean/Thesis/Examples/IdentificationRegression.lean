@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.Soundness
-import Thesis.Examples.FrontDoorCurrentIdentification
+import Thesis.Causality.IdentificationSearch
+import Thesis.Examples.Fixtures.FrontDoor
 
 namespace Thesis
 namespace Causality

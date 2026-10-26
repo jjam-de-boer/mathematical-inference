@@ -1,7 +1,7 @@
 import Thesis.CausalTransport.HedgeReadoutPreservation
 import Thesis.CausalTransport.HedgeCompensatedCounterexample
 import Thesis.CausalTransport.HedgeCompensatedMarginal
-import Thesis.CausalTransport.ConditionalFailureExtraction
+import Thesis.CausalTransport.ConditionalFailureCore
 
 namespace Thesis
 namespace Causality

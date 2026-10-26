@@ -107,6 +107,10 @@ class IdentificationLayerTests(unittest.TestCase):
         self.assertIn("theorem mediatorAdditionalAction_members", current)
         self.assertNotIn("Legacy.", current)
         self.assertNotIn("Legacy.", fixture)
+        negative_dependencies = reachable(self.graph, "Thesis.Examples.IdentificationRegression")
+        self.assertIn("Thesis.Examples.Fixtures.FrontDoor", negative_dependencies)
+        self.assertNotIn("Thesis.Examples.FrontDoorCurrentIdentification", negative_dependencies)
+        self.assertNotIn("Thesis.Causality.IdentificationKernel", negative_dependencies)
 
 
 if __name__ == "__main__":

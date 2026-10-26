@@ -15,8 +15,8 @@ conditional-failure theorem.
 
 The unchanged constructor is separated from `ConditionalFailureCore` so the
 general exchange trace and terminal assembly do not import carrier-model
-machinery. `ConditionalFailureExtraction` remains the compatibility import
-for both this local case and the general core.
+machinery. Callers that need only extraction import the core; this module
+is the qualified carrier case.
 -/
 
 /-- A positive conditional countermodel whenever every common root is a

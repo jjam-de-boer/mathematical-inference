@@ -192,21 +192,6 @@ leaves the mediator noise independent of `Y`; hence the requested conditional
 has value three quarters.  The computed IDC formula agrees exactly. -/
 def threeQuarters : QProb := ⟨3, 4, by decide⟩
 
-/-- Inspect the partial finite value before checking its rational
-cross-product.  As in the joint front-door regression, this avoids selecting
-a supported value from a proposition or deciding an evidence-carrying type. -/
-private def valueTest (result : ProbabilityResult.Result) (expected : QProb) : Bool :=
-  match result with
-  | none => false
-  | some value => decide (QProb.Equiv value expected)
-
-private def equivalentOfValueTest (result : ProbabilityResult.Result) (expected : QProb)
-    (checked : valueTest result expected = true) :
-    ProbabilityResult.Equivalent result (some expected) := by
-  cases result with
-  | none => cases checked
-  | some value => exact .value (of_decide_eq_true checked)
-
 set_option maxRecDepth 100000 in
 def frontDoor_conditional_source_value : ProbabilityResult.Equivalent
     (frontDoorConditionalQuery.sourceTerm.denote model reference) (some threeQuarters) :=

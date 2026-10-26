@@ -9,19 +9,18 @@ open Probability
 /-!
 # Executable c-components and inductive bidirected connectivity
 
-These are graph-only facts shared by the current identification engine and
-the historical completeness development. The finite search agrees with
-inductive connectivity; components are connected in their own host, partition
-their host, and embed in containing components under host inclusion.
+These are graph-only facts used by the current identification engine and by
+later semantic assemblies. The finite search agrees with inductive
+connectivity; components are connected in their own host, partition their
+host, and embed in containing components under host inclusion.
 
 Keeping these proofs below the causal transport layer lets structural
 progress and separation clients import them without importing countermodel
-constructions or legacy recursion proofs. Public theorem names and statements
-are retained. In particular, the historically named missing-host impossibility
-lemma has a graph-only type: it takes no unfinished trace or semantic premise.
+constructions or the checked obsolete recursion. Public theorem names and
+statements are retained. In particular, the missing-host impossibility lemma
+has a graph-only type: it takes no unfinished trace or semantic premise.
 
-The forest constructors and historical trace inductions stay in Completeness;
-this module imports only the intrinsic finite search and generic finite-walk
+This module imports only the intrinsic finite search and generic finite-walk
 correctness. The latter is shared with the d-separation development without
 importing that graph-specific transport layer.
 -/

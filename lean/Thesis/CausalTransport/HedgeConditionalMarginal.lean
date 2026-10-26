@@ -1,5 +1,5 @@
 import Thesis.CausalTransport.HedgeInterventionalMarginal
-import Thesis.CausalTransport.ConditionalFailureExtraction
+import Thesis.CausalTransport.ConditionalFailureCore
 
 namespace Thesis
 namespace Causality

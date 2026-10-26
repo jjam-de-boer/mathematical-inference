@@ -29,7 +29,7 @@ reader checking a transport theorem's parameters should begin with
 records are actually inhabited should follow `ObservedGraph.publishedSoundness`
 in `Soundness` and `ObservedGraph.publishedCompleteness` in
 `HedgeChannelCompleteness`.  The generic family-parametric assembler remains
-in `ConditionalFailureExtraction`, below this interface's dependency boundary.
+in `ConditionalFailureCore`, below this interface's dependency boundary.
 -/
 
 /-! ## Explicit theorem interfaces and checked transport -/

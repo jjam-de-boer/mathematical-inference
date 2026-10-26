@@ -107,7 +107,8 @@ import Thesis.CausalTransport.ValueRefinementCounterexample
 import Thesis.CausalTransport.ValueRefinementConditionalCounterexample
 import Thesis.CausalTransport.ConditionalCompilation
 import Thesis.CausalTransport.ConditionalCounterexampleFailure
-import Thesis.CausalTransport.ConditionalFailureExtraction
+import Thesis.CausalTransport.ConditionalFailureCore
+import Thesis.CausalTransport.ConditionalFailureCarrierCases
 import Thesis.CausalTransport.ConditionalFailurePaths
 import Thesis.CausalTransport.ConditionalFailureActivation
 import Thesis.CausalTransport.ConditionalCounterexampleNormalization
@@ -309,7 +310,8 @@ separation predicates defined by the causal foundations.
 
 `KernelSuccessCompilation` and `ConditionalCompilation` certify the literal
 joint-ID and IDC outputs. `KernelFailureExtraction` and
-`ConditionalFailureExtraction` recover original-query failure data.
+`ConditionalFailureCore` recover original-query failure data;
+`ConditionalFailureCarrierCases` is a separately qualified carrier constructor.
 `HedgeChannelCounterexample` and `ConditionalFailureTerminalCounterexample`
 construct positive countermodels; their cores do not assume success
 soundness. `HedgeChannelCompleteness` assembles

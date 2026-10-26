@@ -1,4 +1,5 @@
-import Thesis.CausalTransport.ConditionalFailureExtraction
+import Thesis.CausalTransport.ConditionalFailureCore
+import Thesis.CausalTransport.ConditionalFailureCarrierCases
 
 namespace Thesis
 namespace Causality
@@ -121,8 +122,17 @@ private theorem failureOfTest (result : IdentificationOutcome signature)
           cases small
           rfl
 
-theorem empty_failed : identifyConditionalKernel graph emptyQuery =
+theorem empty_no_exchange : conditionalExchangeStep? graph emptyQuery = none := rfl
+
+theorem empty_joint_failed : identifyJointKernel graph emptyQuery.jointNumerator =
     .failed ⟨forestHost, outcome⟩ := failureOfTest _ (by decide +kernel)
+
+/-- Empty conditioners take the terminal joint branch. Reuse that checked
+joint failure rather than evaluating the public IDC wrapper separately. -/
+theorem empty_failed : identifyConditionalKernel graph emptyQuery =
+    .failed ⟨forestHost, outcome⟩ := by
+  simpa only [identifyConditionalKernel, identifyConditionalKernelFuel, empty_no_exchange]
+    using empty_joint_failed
 
 theorem one_exchange_failed : identifyConditionalKernel graph oneExchangeQuery =
     .failed ⟨forestHost, outcome⟩ := failureOfTest _ (by decide +kernel)

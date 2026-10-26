@@ -10,10 +10,11 @@ variable {S : ObservedSignature.{0}}
 /-!
 # Exact evaluation from an observational table
 
-This is the existing observational evaluator extracted from formula selection.
-Its syntax, partial arithmetic and public name are unchanged. Keeping the
-evaluator beside the ordinary semantics avoids importing native hidden-DAG
-completeness merely to check an observational numerical example.
+Evaluate an action-free probability term against a finite observational
+record. Syntax, partial arithmetic and the public name are those of the
+ordinary term interpreter. Keeping the evaluator beside the ordinary
+semantics avoids importing native hidden-DAG completeness merely to check
+an observational numerical example.
 
 Two bridges justify reusable finite-table computations. Action-free syntax
 has literally the same result as ordinary SCM evaluation. Replacing a table
