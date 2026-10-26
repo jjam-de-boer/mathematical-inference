@@ -83,8 +83,8 @@ use examples as production foundations.
 Kernel axiom policy lives under `Thesis.AxiomPolicy.*` (audit-only; never
 import those modules from production or examples). Prefix wrappers walk
 `Thesis.Probability.Distros`, the rest of `Thesis.Probability`,
-`Thesis.Causality`, `Thesis.CausalTransport`, and `Thesis.Examples` plus
-coverage. `Thesis.AxiomAudit` collects those wrappers; it does not run a
+`Thesis.Causality`, `Thesis.CausalTransport`, and the root `Thesis`
+facade plus `Thesis.Examples` and coverage. `Thesis.AxiomAudit` collects those wrappers; it does not run a
 second full-tree axiom walk. Add a prefix audit only when a substack is
 independently imported and worth checking before the next layer. Every
 `Thesis.*` production or example module maps to exactly one owning prefix.
@@ -192,7 +192,7 @@ substack axiom prefix that is **not** a publish gate:
 
 ```sh
 python3 -B lean/tools/build_local_sequential.py --profile extended --phase lean --target Thesis.CausalTransport.Soundness --check
-python3 -B lean/tools/build_local_sequential.py --profile extended --target Thesis.AxiomPolicy.Distros --check
+python3 -B lean/tools/build_local_sequential.py --profile extended --phase lean --target Thesis.AxiomPolicy.Distros --check
 ```
 
 Replace `Thesis.AxiomPolicy.Distros` with `Thesis.AxiomPolicy.Probability`,
