@@ -1,3 +1,4 @@
+import Thesis.Examples.ConstructiveEntropyOptimizer
 import Thesis.Examples.ConstructiveEntropyCurvature
 import Thesis.Examples.ConstructiveEntropyDerivative
 import Thesis.Examples.RationalConstraintDensity
