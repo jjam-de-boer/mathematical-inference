@@ -181,6 +181,12 @@ jobs:
           Thesis.CausalTransport.ProjectedHiddenDAGModels
           Thesis.CausalTransport.ProjectionTemplateRepresentation
           Thesis.Examples.ProjectionTemplateRepresentation
+      - name: Check finite conditional contrast foundations
+        working-directory: lean
+        run: >-
+          lake build
+          Thesis.Probability.FiniteConditionalContrast
+          Thesis.Examples.FiniteConditionalContrast
       - name: Check exact rational shared-root bounds
         working-directory: lean
         run: >-

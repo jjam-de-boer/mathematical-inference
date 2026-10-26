@@ -66,6 +66,7 @@ import Thesis.Probability.FiniteProductSupportLaw
 import Thesis.Probability.FiniteRecordPerturbation
 import Thesis.Probability.FiniteLinearResponse
 import Thesis.Probability.FiniteSignedMass
+import Thesis.Probability.FiniteConditionalContrast
 import Thesis.Probability.FiniteSignedProduct
 import Thesis.Probability.FiniteProductBlocks
 import Thesis.Probability.FinitePowerProduct
@@ -136,6 +137,8 @@ feasibility and approximation hypotheses.
 modules supply finite sum, product and character identities for causal
 countermodels. `FiniteProbabilityPolynomialCertificates` checks supplied
 rational bounds against actual independent-source probabilities.
+`FiniteConditionalContrast` expresses supported conditional agreement as a
+zero integer mean and treats null evidence separately.
 `RationalSquareObstruction` and `IndependentBooleanObstruction` retain
 the checked fixed-mechanism rational obstruction and its precise scope.
 
