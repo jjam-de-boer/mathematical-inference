@@ -213,6 +213,101 @@ def interventionalValue (M : FiniteHiddenDAGSCM S projection)
     (event : S.Assignment -> Bool) : QProb :=
   (M.interventionalDist intervention).probVal event
 
+/-- Replace one node's mechanism, keeping types, noise, and the DAG.  Any
+Janzing-style arrow cut that does not need extra randomness is an instance. -/
+def withMechanism (M : FiniteHiddenDAGSCM S projection)
+    (child : Fin projection.hiddenDAG.count)
+    (newMechanism :
+      projection.hiddenDAG.ParentValues M.NodeValue child →
+        M.Noise child → M.NodeValue child) :
+    FiniteHiddenDAGSCM S projection :=
+  { M with
+    mechanism := fun node parents seed =>
+      if h : node = child then
+        h.symm ▸ newMechanism (h ▸ parents) (h ▸ seed)
+      else
+        M.mechanism node parents seed }
+
+/-- Ignore one incoming parent, substituting a supplied default.  This is
+always possible at the original noise type.  A stochastic cut that preserves
+`P(Y | PA \ {X})` needs extra randomness when the child's noise is degenerate. -/
+def cutIncoming (M : FiniteHiddenDAGSCM S projection)
+    (parent child : Fin projection.hiddenDAG.count)
+    (_edge : projection.hiddenDAG.edge parent child = true)
+    (default : M.NodeValue parent) :
+    FiniteHiddenDAGSCM S projection :=
+  M.withMechanism child fun parents seed =>
+    M.mechanism child
+      (fun predecessor edge =>
+        if h : predecessor = parent then h ▸ default else parents predecessor edge)
+      seed
+
+/-- The rewritten child mechanism is exactly the supplied function.  Noise,
+the prior, and every other mechanism stay the original ones. -/
+theorem withMechanism_at_child (M : FiniteHiddenDAGSCM S projection)
+    (child : Fin projection.hiddenDAG.count)
+    (newMechanism :
+      projection.hiddenDAG.ParentValues M.NodeValue child →
+        M.Noise child → M.NodeValue child)
+    (parents : projection.hiddenDAG.ParentValues M.NodeValue child)
+    (seed : M.Noise child) :
+    (M.withMechanism child newMechanism).mechanism child parents seed =
+      newMechanism parents seed := by
+  dsimp [withMechanism]
+  rw [if_pos rfl]
+
+theorem withMechanism_at_other (M : FiniteHiddenDAGSCM S projection)
+    (child node : Fin projection.hiddenDAG.count)
+    (newMechanism :
+      projection.hiddenDAG.ParentValues M.NodeValue child →
+        M.Noise child → M.NodeValue child)
+    (parents : projection.hiddenDAG.ParentValues M.NodeValue node)
+    (seed : M.Noise node) (different : node ≠ child) :
+    (M.withMechanism child newMechanism).mechanism node parents seed =
+      M.mechanism node parents seed := by
+  dsimp [withMechanism]
+  exact dif_neg different
+
+/-- Ignore every parent and emit a function of the child's own noise.
+This is a same-type randomized intervention; it cannot enlarge the noise
+alphabet or change `NodeValue`. -/
+def randomizeWith (M : FiniteHiddenDAGSCM S projection)
+    (child : Fin projection.hiddenDAG.count)
+    (emit : M.Noise child → M.NodeValue child) :
+    FiniteHiddenDAGSCM S projection :=
+  M.withMechanism child fun _parents seed => emit seed
+
+theorem randomizeWith_at_child (M : FiniteHiddenDAGSCM S projection)
+    (child : Fin projection.hiddenDAG.count)
+    (emit : M.Noise child → M.NodeValue child)
+    (parents : projection.hiddenDAG.ParentValues M.NodeValue child)
+    (seed : M.Noise child) :
+    (M.randomizeWith child emit).mechanism child parents seed = emit seed := by
+  simpa only [randomizeWith] using
+    M.withMechanism_at_child child (fun _parents seed => emit seed) parents seed
+
+/-- Same-type incoming cut at the child: the parent coordinate is replaced by
+the supplied default before the original mechanism runs. -/
+theorem cutIncoming_at_child (M : FiniteHiddenDAGSCM S projection)
+    (parent child : Fin projection.hiddenDAG.count)
+    (edge : projection.hiddenDAG.edge parent child = true)
+    (default : M.NodeValue parent)
+    (parents : projection.hiddenDAG.ParentValues M.NodeValue child)
+    (seed : M.Noise child) :
+    (M.cutIncoming parent child edge default).mechanism child parents seed =
+      M.mechanism child
+        (fun predecessor incident =>
+          if h : predecessor = parent then h ▸ default else parents predecessor incident)
+        seed := by
+  simpa only [cutIncoming] using
+    M.withMechanism_at_child child
+      (fun parents seed =>
+        M.mechanism child
+          (fun predecessor incident =>
+            if h : predecessor = parent then h ▸ default else parents predecessor incident)
+          seed)
+      parents seed
+
 end FiniteHiddenDAGSCM
 
 end Causality

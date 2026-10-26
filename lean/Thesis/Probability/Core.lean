@@ -905,6 +905,24 @@ theorem mul_one (value : QProb) :
     Equiv (mul value one) value := by
   simp [Equiv, mul, one]
 
+/-- Recovering a summand after dividing by a positive total mass. -/
+theorem mul_div_cancel (p q : QProb) (hq : 0 < q.num) :
+    Equiv (mul q (div p q hq)) p := by
+  simp only [Equiv, mul, div]
+  ac_rfl
+
+/-- A positive presentation divided by itself is one. -/
+theorem div_self (q : QProb) (hq : 0 < q.num) :
+    Equiv (div q q hq) one := by
+  simp only [Equiv, div, one]
+  ac_rfl
+
+/-- A ratio of ordered nonnegative presentations cannot exceed one. -/
+theorem div_le_one_of_le (p q : QProb) (hq : 0 < q.num) (ordered : LE p q) :
+    LE (div p q hq) one := by
+  simp only [LE, div, one, Nat.mul_one, Nat.one_mul]
+  simpa [Nat.mul_comm p.den q.num] using ordered
+
 theorem one_mul (value : QProb) :
     Equiv (mul one value) value := by
   exact equiv_trans (mul_comm one value) (mul_one value)

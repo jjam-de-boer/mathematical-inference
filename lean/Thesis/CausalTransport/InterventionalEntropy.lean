@@ -1,4 +1,4 @@
-import Thesis.CausalTransport.HiddenDAGModel
+import Thesis.CausalTransport.HiddenDAGSourceCompression
 import Thesis.Causality.SelectedEntropy
 
 namespace Thesis
@@ -112,6 +112,41 @@ theorem observationalEntropy_of_record_eq {left right : FiniteHiddenDAGSCM S pro
       (right.observationalDist.probVal event)
     rw [same]
     exact QProb.equiv_refl _)
+
+/-- Probability-preserving source recoding preserves observational entropy
+exactly when it preserves every observational event. -/
+theorem observationalEntropy_withSourceLaw (M : FiniteHiddenDAGSCM S projection)
+    (law : FiniteProduct.IndependentLaw M.Noise)
+    (preserved : ∀ event, QProb.Equiv
+      ((M.withSourceLaw law).observationalValue event)
+      (M.observationalValue event)) :
+    ExactLog.Equiv (M.withSourceLaw law).observationalEntropy M.observationalEntropy :=
+  observationalEntropy_of_agreement preserved
+
+/-- The same transport for a hard intervention whose events are all retained. -/
+theorem interventionalEntropy_withSourceLaw (M : FiniteHiddenDAGSCM S projection)
+    (law : FiniteProduct.IndependentLaw M.Noise) (intervention : HardIntervention S)
+    (preserved : ∀ event, QProb.Equiv
+      ((M.withSourceLaw law).interventionalValue intervention event)
+      (M.interventionalValue intervention event)) :
+    ExactLog.Equiv ((M.withSourceLaw law).interventionalEntropy intervention)
+      (M.interventionalEntropy intervention) :=
+  interventionalEntropy_of_agreement intervention preserved
+
+/-- Mechanism rewrite preserves observational entropy iff it preserves the
+observational law.  Cutting an arrow can change the law; that change is the
+Janzing disruption, not a recoding. -/
+theorem observationalEntropy_withMechanism (M : FiniteHiddenDAGSCM S projection)
+    (child : Fin projection.hiddenDAG.count)
+    (newMechanism :
+      projection.hiddenDAG.ParentValues M.NodeValue child →
+        M.Noise child → M.NodeValue child)
+    (preserved : ∀ event, QProb.Equiv
+      ((M.withMechanism child newMechanism).observationalValue event)
+      (M.observationalValue event)) :
+    ExactLog.Equiv (M.withMechanism child newMechanism).observationalEntropy
+      M.observationalEntropy :=
+  observationalEntropy_of_agreement preserved
 
 end FiniteHiddenDAGSCM
 

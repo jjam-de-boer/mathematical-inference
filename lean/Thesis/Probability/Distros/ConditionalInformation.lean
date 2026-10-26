@@ -48,6 +48,26 @@ theorem le_listSum_of_mem (masses : List QProb) {q : QProb} (member : q ∈ mass
       | inr later =>
           exact le_trans (ih later) (le_add_right (listSum rest) head)
 
+theorem listSum_num_eq_zero {masses : List QProb}
+    (vanished : (listSum masses).num = 0) : ∀ q ∈ masses, q.num = 0 := by
+  induction masses with
+  | nil => intro q member; cases member
+  | cons head rest ih =>
+      intro q member
+      have split : head.num * (listSum rest).den + (listSum rest).num * head.den = 0 := vanished
+      have headZero : head.num = 0 := by
+        have : head.num * (listSum rest).den = 0 := by omega
+        exact (Nat.mul_eq_zero.mp this).resolve_right (Nat.ne_of_gt (listSum rest).den_pos)
+      have restZero : (listSum rest).num = 0 := by
+        have : (listSum rest).num * head.den = 0 := by omega
+        exact (Nat.mul_eq_zero.mp this).resolve_right (Nat.ne_of_gt head.den_pos)
+      cases List.mem_cons.mp member with
+      | inl same =>
+          subst same
+          exact headZero
+      | inr later =>
+          exact ih restZero q later
+
 end QProb
 
 namespace ExactLog
@@ -61,6 +81,50 @@ theorem le_add_of_nonneg_right (x y : ExactLog) (nonnegative : LE zero y) :
   exact (le_congr (equiv_refl x) (add_comm y x)).mp lifted
 
 end ExactLog
+
+/-- Grouping inequality: merging cells cannot increase Shannon entropy. -/
+theorem entropySum_ge_term (masses : List QProb) :
+    ExactLog.LE (entropyTerm (QProb.listSum masses)) (entropySum masses) := by
+  by_cases positive : 0 < (QProb.listSum masses).num
+  · let weight := QProb.listSum masses
+    let conditionals := masses.map (fun mass => QProb.div mass weight positive)
+    have recovered : ∀ mass ∈ masses, QProb.Equiv (QProb.mul weight (QProb.div mass weight positive)) mass :=
+      fun mass _ => QProb.mul_div_cancel mass weight positive
+    have scaled :
+        ExactLog.Equiv (entropySum masses)
+          (entropySum (conditionals.map (QProb.mul weight))) := by
+      have rewritten :
+          ExactLog.Equiv
+            (entropySum (masses.map (fun mass => QProb.mul weight (QProb.div mass weight positive))))
+            (entropySum (masses.map fun mass => mass)) :=
+        entropySum_map_congr masses
+          (fun mass => QProb.mul weight (QProb.div mass weight positive)) (fun mass => mass)
+          (fun mass member => recovered mass member)
+      simpa only [conditionals, List.map_map, Function.comp_def, List.map_id_fun'] using
+        ExactLog.equiv_symm rewritten
+    have normalized : QProb.Equiv (QProb.listSum conditionals) QProb.one :=
+      QProb.equiv_trans (QProb.equiv_symm (QProb.div_listSum_same_denominator masses weight positive))
+        (QProb.div_self weight positive)
+    have grouped := entropySum_scale_normalized weight conditionals normalized
+    have innerNonneg : ExactLog.LE ExactLog.zero (entropySum conditionals) := by
+      apply ExactLog.listSum_map_nonnegative
+      intro mass member
+      rcases List.mem_map.mp member with ⟨source, sourceMember, same⟩
+      cases same
+      exact entropyTerm_nonnegative _
+        (QProb.div_le_one_of_le source weight positive (QProb.le_listSum_of_mem masses sourceMember))
+    have remainder :
+        ExactLog.LE ExactLog.zero (ExactLog.scaleRatio weight (entropySum conditionals)) :=
+      ExactLog.scaleRatio_nonnegative weight innerNonneg
+    exact (ExactLog.le_congr (ExactLog.equiv_refl _)
+      (ExactLog.equiv_trans scaled grouped)).mpr
+      (ExactLog.le_add_of_nonneg_right _ _ remainder)
+  · have vanished : (QProb.listSum masses).num = 0 := Nat.eq_zero_of_not_pos positive
+    rw [entropyTerm_zero_num _ vanished]
+    apply ExactLog.listSum_map_nonnegative
+    intro mass member
+    rw [entropyTerm_zero_num mass (QProb.listSum_num_eq_zero vanished mass member)]
+    exact ExactLog.le_refl _
 
 namespace ProbabilityVector
 

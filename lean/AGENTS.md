@@ -30,8 +30,11 @@ The main implemented results are:
   Probability weights remain finite and rational.
 - Observational and interventional Shannon entropy of original hidden-DAG
   assignment records: identifying an entire law identifies its entropy.
-  Shannon inequalities are used as sound exclusion tests, not as substitutes
-  for graph-uncertainty or Körner graph entropy.
+  Shannon inequalities are sound exclusion tests, not substitutes for a
+  Bayesian graph posterior or Körner graph entropy. Remaining uncertainty
+  among a finite catalogue of graph hypotheses, given data and supplied
+  identifiability, is Shannon entropy of that catalogue; it does not run
+  ID/IDC and is not a graph posterior.
 
 ## Living-document maintenance
 
@@ -133,6 +136,12 @@ consolidate overlaps, and request approval before changing this section.
   `no_outer_avoiding_routes_for_any_hedge_selection`. This limits that
   construction, not published completeness. Revisit only with a changed
   construction or coverage condition.
+
+- **Refuted — same-type incoming cut as independent fair noise.** On a
+  deterministic copy with degenerate child noise, `cutIncoming` yields
+  observational entropy 1, not 2. Evidence:
+  `Thesis.Examples.CausalEntropy.cutIncoming_not_independent_fair`. Extra
+  randomness requires a different noise type, not `withMechanism`.
 
 ## Builds and checks
 

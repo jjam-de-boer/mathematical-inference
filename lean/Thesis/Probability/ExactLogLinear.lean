@@ -121,4 +121,26 @@ theorem listSum_map_sub (values : List A) (f g : A → ExactLog) :
   rw [listSum_map_neg] at result
   exact result
 
+/-- `y + (x - y) = x`.  Conditional entropy is this cancelled remainder. -/
+theorem add_sub_cancel (x y : ExactLog) : Equiv (add y (sub x y)) x := by
+  unfold sub
+  have regrouped : Equiv (add y (add x (neg y))) (add x (add y (neg y))) := by
+    rw [← add_assoc, ← add_assoc]
+    exact add_congr (add_comm y x) (equiv_refl _)
+  refine equiv_trans regrouped ?_
+  exact equiv_trans (add_congr (equiv_refl x) (add_neg y)) (by rw [add_zero]; exact equiv_refl _)
+
+/-- If `x = y + z`, then `x - y = z`. -/
+theorem sub_eq_of_add {x y z : ExactLog} (split : Equiv x (add y z)) :
+    Equiv (sub x y) z := by
+  have rewritten : Equiv (sub x y) (sub (add y z) y) :=
+    add_congr split (neg_congr (equiv_refl y))
+  refine equiv_trans rewritten ?_
+  unfold sub
+  have regrouped : Equiv (add (add y z) (neg y)) (add z (add y (neg y))) := by
+    rw [add_assoc]
+    exact add_left_comm y z (neg y)
+  refine equiv_trans regrouped ?_
+  exact equiv_trans (add_congr (equiv_refl z) (add_neg y)) (by rw [add_zero]; exact equiv_refl _)
+
 end Thesis.Probability.ExactLog

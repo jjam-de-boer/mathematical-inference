@@ -56,6 +56,17 @@ theorem project_idempotent (S : ObservedSignature) (nodes : NodeSet S)
   cases selected : nodes i <;>
     simp [project, selected]
 
+/-- A smaller coordinate set reads the same values from a larger projection. -/
+theorem project_subset (S : ObservedSignature) {smaller larger : NodeSet S}
+    (included : NodeSet.Subset smaller larger) (assignment : S.Assignment) :
+    S.project smaller assignment = S.project smaller (S.project larger assignment) := by
+  funext i
+  cases selected : smaller i with
+  | false => simp [project, selected]
+  | true =>
+      have largerTrue : larger i = true := included i selected
+      simp [project, selected, largerTrue]
+
 end ObservedSignature
 
 /-- Latent roots and their directed incidence into observed mechanisms. -/

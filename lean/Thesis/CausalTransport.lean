@@ -116,6 +116,8 @@ import Thesis.CausalTransport.HedgeConditionalReadout
 import Thesis.CausalTransport.Counterfactual
 import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.CausalTransport.InterventionalEntropy
+import Thesis.CausalTransport.GraphQueryUncertainty
+import Thesis.CausalTransport.ShannonElimination
 import Thesis.CausalTransport.EntropyAssessment
 import Thesis.CausalTransport.LatentRootNativeModel
 import Thesis.CausalTransport.LatentRootNativeEvaluation
@@ -325,8 +327,11 @@ useful local results with their geometric hypotheses stated at their owners.
 assignment records as Shannon laws and proves that agreement of an entire
 law identifies its entropy. `EntropyAssessment` records which entropy
 projects are useful here: Shannon inequalities as sound exclusion tests,
-not graph-uncertainty entropy, Körner graph entropy, or loopy entropy
-message passing.
+not a Bayesian graph posterior, Körner graph entropy, or loopy entropy
+message passing. `GraphQueryUncertainty` is a finite catalogue of Markov
+hypotheses given data; it is not a graph posterior and is not a substitute
+for ID/IDC. `ShannonElimination` attempts Fourier–Motzkin hidden-variable
+elimination of elemental Shannon inequalities; it is sound and incomplete.
 
 `HiddenDAGCollapse`, `HiddenDAGProbability` and `HiddenDAGCountermodelLift`
 connect projected constructions to actual original finite hidden-DAG records.

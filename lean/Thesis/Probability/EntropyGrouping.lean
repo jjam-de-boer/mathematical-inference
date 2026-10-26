@@ -53,6 +53,14 @@ theorem entropySum_append (first second : List QProb) :
     entropySum (first ++ second) = ExactLog.add (entropySum first) (entropySum second) := by
   simp only [entropySum, List.map_append, ExactLog.listSum_append]
 
+theorem entropySum_flatMap (values : List A) (family : A → List QProb) :
+    entropySum (values.flatMap family) =
+      ExactLog.listSum (values.map (fun value => entropySum (family value))) := by
+  induction values with
+  | nil => rfl
+  | cons head rest ih =>
+      simp only [List.flatMap_cons, entropySum_append, List.map_cons, ExactLog.listSum, ih]
+
 theorem entropySum_perm {first second : List QProb} (same : first.Perm second) :
     ExactLog.Equiv (entropySum first) (entropySum second) :=
   ExactLog.listSum_perm (same.map entropyTerm)

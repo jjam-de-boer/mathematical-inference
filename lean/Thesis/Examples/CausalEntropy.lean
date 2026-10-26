@@ -115,6 +115,46 @@ def randomModel : FiniteHiddenDAGSCM signature projection := {
     else false
 }
 
+def copyFactors (node : Fin projection.hiddenDAG.count) : FiniteProbRecord Bool :=
+  if node.val = 0 then fairBit else pointFalse
+
+/-- Structural copy `Y = X` with fair exogenous `X`. -/
+def copyModel : FiniteHiddenDAGSCM signature projection := {
+  constantModel with
+  factor := copyFactors
+  prior := FiniteProduct.record 2 (fun _ => Bool) copyFactors
+  product_law := FiniteProduct.record_rectangular_probVal 2 (fun _ => Bool) copyFactors
+  mechanism := fun node parents seed =>
+    if atY : node.val = 1 then
+      parents x (by
+        simp [projection, FiniteHiddenDAG.computedLatentProjection, fullGraph, x, atY])
+    else seed
+}
+
+def copyParent : Fin projection.hiddenDAG.count := ⟨0, by decide⟩
+def copyChild : Fin projection.hiddenDAG.count := ⟨1, by decide⟩
+
+private theorem copy_edge : projection.hiddenDAG.edge copyParent copyChild = true := by
+  decide +kernel
+
+/-- Same-type Janzing cut: ignore `X` and substitute the default `false`.
+The child's noise remains a point mass, so `Y` becomes constant. -/
+def cutCopyModel : FiniteHiddenDAGSCM signature projection :=
+  copyModel.cutIncoming copyParent copyChild copy_edge false
+
+def independentFactors (_node : Fin projection.hiddenDAG.count) : FiniteProbRecord Bool :=
+  fairBit
+
+/-- Independent fair bits: the extra randomness the same-type cut cannot
+create when the child's noise is degenerate. -/
+def independentModel : FiniteHiddenDAGSCM signature projection := {
+  constantModel with
+  factor := independentFactors
+  prior := FiniteProduct.record 2 (fun _ => Bool) independentFactors
+  product_law := FiniteProduct.record_rectangular_probVal 2 (fun _ => Bool) independentFactors
+  mechanism := fun _node _parents seed => seed
+}
+
 def forceXTrue : HardIntervention signature :=
   (HardIntervention.empty signature).set x true
 
@@ -279,6 +319,143 @@ private def fairCompound : ProbabilityVector.Compound where
 
 example : ExactLog.LE fairCompound.outer.entropy fairCompound.refined.entropy :=
   fairCompound.outer_entropy_le_refined
+
+/-! ## Mechanism disruption versus extra noise -/
+
+theorem copy_observational_entropy_one :
+    ExactLog.Equiv copyModel.observationalEntropy oneBit := by
+  decide +kernel
+
+theorem cut_copy_observational_entropy_one :
+    ExactLog.Equiv cutCopyModel.observationalEntropy oneBit := by
+  decide +kernel
+
+theorem independent_observational_entropy_two :
+    ExactLog.Equiv independentModel.observationalEntropy
+      (ExactLog.ofSignedRatio ⟨2, 1, by decide⟩) := by
+  decide +kernel
+
+/-- Same-type randomized intervention: `Y` emits its own noise, which is a
+point mass, so the law is not independent fair bits. -/
+def randomizeCopyChild : FiniteHiddenDAGSCM signature projection :=
+  copyModel.randomizeWith copyChild id
+
+theorem randomize_copy_observational_entropy_one :
+    ExactLog.Equiv randomizeCopyChild.observationalEntropy oneBit := by
+  decide +kernel
+
+/-- Ignoring the parent at the original noise type does not produce the
+independent fair law.  The Janzing stochastic cut needs extra randomness. -/
+theorem cutIncoming_not_independent_fair :
+    ¬ ExactLog.Equiv cutCopyModel.observationalEntropy independentModel.observationalEntropy := by
+  intro same
+  have collapsed := ExactLog.equiv_trans (ExactLog.equiv_symm cut_copy_observational_entropy_one)
+    (ExactLog.equiv_trans same independent_observational_entropy_two)
+  exact (by decide : ¬ ExactLog.Equiv oneBit (ExactLog.ofSignedRatio ⟨2, 1, by decide⟩)) collapsed
+
+theorem randomizeWith_not_independent_fair :
+    ¬ ExactLog.Equiv randomizeCopyChild.observationalEntropy
+      independentModel.observationalEntropy := by
+  intro same
+  have collapsed := ExactLog.equiv_trans
+    (ExactLog.equiv_symm randomize_copy_observational_entropy_one)
+    (ExactLog.equiv_trans same independent_observational_entropy_two)
+  exact (by decide : ¬ ExactLog.Equiv oneBit (ExactLog.ofSignedRatio ⟨2, 1, by decide⟩)) collapsed
+
+/-- Full-DAG chain rule on the copy: `H(X,Y) = H(X) + H(Y|X)` with `H(Y|X)=0`. -/
+theorem copy_selected_chain :
+    ExactLog.Equiv (selectedEntropy copyModel.observationalLaw NodeSet.full) oneBit ∧
+      ExactLog.Equiv (selectedEntropy copyModel.observationalLaw (NodeSet.singleton x)) oneBit := by
+  decide +kernel
+
+private theorem copy_x_subset_full :
+    NodeSet.Subset (NodeSet.singleton x) NodeSet.full :=
+  fun _ _ => rfl
+
+theorem copy_selected_chain_rule :
+    ExactLog.Equiv (selectedEntropy copyModel.observationalLaw NodeSet.full)
+      (ExactLog.add
+        (selectedEntropy copyModel.observationalLaw (NodeSet.singleton x))
+        (selectedConditionalEntropy copyModel.observationalLaw
+          (NodeSet.singleton x) NodeSet.full)) :=
+  selectedEntropy_chain _ copy_x_subset_full
+
+/-- Structural copy has `H(Y|X) = 0` as a grouping remainder, not as an
+observed-parent sum. -/
+theorem copy_conditional_given_x_zero :
+    ExactLog.Equiv
+      (selectedConditionalEntropy copyModel.observationalLaw
+        (NodeSet.singleton x) NodeSet.full)
+      ExactLog.zero :=
+  ExactLog.equiv_trans
+    (selectedConditionalEntropy_eq_sub copyModel.observationalLaw copy_x_subset_full)
+    ((ExactLog.sub_equiv_zero_iff _ _).mpr
+      (ExactLog.equiv_trans copy_selected_chain.1
+        (ExactLog.equiv_symm copy_selected_chain.2)))
+
+/-- Copy has `I(X;Y) = 1`: the bits are identical, not independent. -/
+theorem copy_mutual_information_one :
+    ExactLog.Equiv
+      (selectedMutualInformation copyModel.observationalLaw
+        (NodeSet.singleton x) (NodeSet.singleton y))
+      oneBit := by
+  decide +kernel
+
+/-! ## Graph suitability given data -/
+
+def independenceHypothesis : QueryGraphCandidate signature where
+  independencies := [(NodeSet.singleton x, NodeSet.singleton y, NodeSet.empty)]
+  identifiesQuery := true
+
+def chainHypothesis : QueryGraphCandidate signature where
+  independencies := []
+  identifiesQuery := true
+
+def bowHypothesis : QueryGraphCandidate signature where
+  independencies := []
+  identifiesQuery := false
+
+def graphCatalogue : List (QueryGraphCandidate signature) :=
+  [independenceHypothesis, chainHypothesis, bowHypothesis]
+
+theorem independence_rejected_by_copy :
+    independenceHypothesis.compatible copyModel.observationalLaw = false := by
+  decide +kernel
+
+theorem chain_and_bow_survive_copy :
+    chainHypothesis.compatible copyModel.observationalLaw = true ∧
+      bowHypothesis.compatible copyModel.observationalLaw = true := by
+  decide +kernel
+
+theorem copy_graph_uncertainty_one_bit :
+    ∃ value, graphUncertaintyEntropy graphCatalogue copyModel.observationalLaw = some value ∧
+      ExactLog.Equiv value oneBit := by
+  have remaining :
+      (graphCatalogue.filter (fun candidate => candidate.compatible copyModel.observationalLaw)).length = 2 := by
+    decide +kernel
+  unfold graphUncertaintyEntropy
+  rw [remaining]
+  exact finiteCatalogueEntropy_pair
+
+theorem copy_query_suitability_zero :
+    ∃ value, querySuitabilityEntropy graphCatalogue copyModel.observationalLaw = some value ∧
+      ExactLog.Equiv value ExactLog.zero := by
+  have remaining :
+      (graphCatalogue.filter (fun candidate => candidate.suited copyModel.observationalLaw)).length = 1 := by
+    decide +kernel
+  unfold querySuitabilityEntropy
+  rw [remaining]
+  exact finiteCatalogueEntropy_singleton
+
+theorem copy_shannon_submodularity :
+    (⟨NodeSet.singleton x, NodeSet.singleton y⟩ : ShannonSubmodularityClaim signature).holds
+      copyModel.observationalLaw := by
+  decide +kernel
+
+theorem copy_elemental_cone :
+    ShannonCone.holdsOnDistro signature (elementalRows signature.count)
+      copyModel.observationalLaw := by
+  decide +kernel
 
 end CausalEntropy
 end Examples

@@ -1,4 +1,6 @@
 import Thesis.CausalTransport.InterventionalEntropy
+import Thesis.CausalTransport.GraphQueryUncertainty
+import Thesis.CausalTransport.ShannonElimination
 import Thesis.Probability.Distros.ConditionalInformation
 
 namespace Thesis
@@ -31,16 +33,18 @@ inductive EntropyProject where
   with a fixed causal structure. -/
   | compatibleShannonInequalities
 
-/-- Usefulness for *this* repository, as opposed to mere definability. -/
+/-- Usefulness for *this* repository, as opposed to mere definability.
+`graphUncertainty` is a Bayesian/ID posterior over graphs and stays unused:
+ID/IDC still run inside one graph class.  `GraphQueryUncertainty` is the
+approved finite-catalogue ranking given data and supplied identifiability;
+it is not that posterior and is not a substitute for ID/IDC. -/
 def EntropyProject.usefulHere : EntropyProject → Bool
   | .graphUncertainty => false
   | .structuralGraphEntropy => false
   | .compatibleShannonInequalities => true
 
-/-- Graph-uncertainty entropy would require a finite prior over graphs.
-The development identifies queries inside a *fixed* graph class; it does
-not maintain a posterior on graphs.  The quantity is definable on any
-finite `Distro` of labels, and is not used by ID/IDC. -/
+/-- Graph-uncertainty entropy as a posterior over graphs is not used by
+ID/IDC.  The quantity is definable on any finite `Distro` of labels. -/
 theorem EntropyProject.graphUncertainty_not_used :
     EntropyProject.graphUncertainty.usefulHere = false := rfl
 
@@ -53,10 +57,23 @@ theorem EntropyProject.structuralGraphEntropy_not_used :
 /-- Shannon-type inequalities on observable entropies are useful as *sound
 exclusion tests*: a violated inequality rejects a candidate structure.
 They are not a complete compatibility criterion, even after hidden-variable
-elimination.  This repository already has sharper complete answers for
-binary bow and binary IV laws. -/
+elimination.  They cannot reject the native binary-bow class, whose endpoint
+models realize every finite rational observed law, and they cannot identify
+interventional entropy from an observational law.  This repository already
+has sharper complete answers for binary bow and binary IV laws. -/
 theorem EntropyProject.compatibleInequalities_used :
     EntropyProject.compatibleShannonInequalities.usefulHere = true := rfl
+
+/-- Selected-coordinate chain rule `H(larger) = H(smaller) + H(larger|smaller)`
+is grouping of the canonical forgetful map.  It is not an observed-parent
+factorization after hidden vertices are marginalized. -/
+theorem selected_entropy_chain_is_grouping {S : ObservedSignature}
+    (μ : Distro S.Assignment)
+    {smaller larger : NodeSet S} (included : NodeSet.Subset smaller larger) :
+    ExactLog.Equiv (selectedEntropy μ larger)
+      (ExactLog.add (selectedEntropy μ smaller)
+        (selectedConditionalEntropy μ smaller larger)) :=
+  selectedEntropy_chain μ included
 
 /-- A supplied Shannon monotonicity claim on selected coordinates.  Checking
 is evaluation of the existing entropy functional; it does not search for
@@ -69,6 +86,28 @@ structure ShannonMonotonicityClaim (S : ObservedSignature) where
 def ShannonMonotonicityClaim.holds (claim : ShannonMonotonicityClaim S)
     (μ : Distro S.Assignment) : Prop :=
   ExactLog.LE (selectedEntropy μ claim.smaller) (selectedEntropy μ claim.larger)
+
+/-- Selected-coordinate monotonicity is a theorem, not a searched inequality. -/
+theorem ShannonMonotonicityClaim.verified (claim : ShannonMonotonicityClaim S)
+    (μ : Distro S.Assignment) : claim.holds μ :=
+  selectedEntropy_mono μ claim.included
+
+/-- Submodularity as a supplied certificate: checking is evaluation.  Hidden
+variable elimination of the elemental cone is sound and incomplete. -/
+structure ShannonSubmodularityClaim (S : ObservedSignature) where
+  first : NodeSet S
+  second : NodeSet S
+
+def ShannonSubmodularityClaim.holds (claim : ShannonSubmodularityClaim S)
+    (μ : Distro S.Assignment) : Prop :=
+  ExactLog.LE
+    (ExactLog.add (selectedEntropy μ (NodeSet.union claim.first claim.second))
+      (selectedEntropy μ (NodeSet.inter claim.first claim.second)))
+    (ExactLog.add (selectedEntropy μ claim.first) (selectedEntropy μ claim.second))
+
+instance (claim : ShannonSubmodularityClaim S) (μ : Distro S.Assignment) :
+    Decidable (claim.holds μ) :=
+  inferInstanceAs (Decidable (ExactLog.LE _ _))
 
 /-- Entropic CI as an information identity.  `I(X;Y|Z) = 0` is equivalent
 to `H(XZ)+H(YZ)-H(XYZ) = H(Z)`.  The identity is sound for d-separation on
@@ -129,6 +168,24 @@ def entropyBackpropStatus : EntropyBackpropStatus where
 
 theorem entropyBackpropStatus.no_mechanism_jacobian :
     entropyBackpropStatus.mechanismJacobian = false := rfl
+
+theorem entropyBackpropStatus.no_derivative_at_zero :
+    entropyBackpropStatus.derivativeAtZero = false := rfl
+
+theorem entropyBackpropStatus.no_rational_simplex_attainment :
+    entropyBackpropStatus.rationalSimplexAttainment = false := rfl
+
+/-- The constructive first variation of `-p log₂ p` is proved on every
+positive part of `[0,1]`.  It is not a Jacobian through SCM mechanisms, and a
+rational moment polytope need not contain a rational maximiser. -/
+theorem entropy_objective_has_positive_domain_derivative :
+    entropyBackpropStatus.positiveDomainDerivative = true := rfl
+
+/-- Hidden-variable Fourier–Motzkin on the elemental Shannon cone is available
+and incomplete. -/
+theorem hidden_variable_elimination_incomplete :
+    hiddenVariableEliminationComplete = false :=
+  hiddenVariableEliminationComplete_false
 
 end Causality
 end Thesis
