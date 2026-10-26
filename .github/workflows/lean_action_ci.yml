@@ -71,12 +71,12 @@ jobs:
       # These are the same targeted build, complete build and policy gates
       # previously run by the composite action.  No verification is replaced
       # by the runtime cache, and the optional test/lint detection is retained.
-      # Detect forbidden dependencies in new arithmetic foundations before
-      # rebuilding downstream causal modules.  The complete axiom gate below
-      # remains unchanged and mandatory after the full build.
-      - name: Check constructive arithmetic prerequisites
+      # Detect forbidden axioms in Distros and the rest of Probability before
+      # rebuilding downstream causal modules.  The collection gate
+      # Thesis.AxiomAudit remains mandatory after the full build.
+      - name: Check distribution and probability axiom prefixes
         working-directory: lean
-        run: lake build Thesis.ConstructiveAlgebraAudit
+        run: lake build Thesis.AxiomPolicy.Distros Thesis.AxiomPolicy.Probability
       # Exercise the class-indexed modal bridge before the broad regression
       # rebuild.  The full build and transitive axiom audit remain mandatory.
       - name: Check positive modal completeness and executed endpoints
@@ -250,9 +250,6 @@ jobs:
           Thesis.Examples.LocalCheckCoreImports
           Thesis.Examples.LocalCheckDefinition
           Thesis.Examples.LocalCheckFiniteDecision
-      - name: Check distribution axiom prerequisites
-        working-directory: lean
-        run: lake build Thesis.DistroAxiomAudit
       - name: Build distribution extensions
         working-directory: lean
         run: >-

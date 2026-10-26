@@ -40,6 +40,32 @@ def reachable(graph, root):
     return seen
 
 
+def is_policy_module(module):
+    return module == "Thesis.AxiomAudit" or module.startswith("Thesis.AxiomPolicy")
+
+
+def distros_module(module):
+    return (module == "Thesis.Probability.Distros" or
+            module.startswith("Thesis.Probability.Distros."))
+
+
+def prefix_owner(module):
+    """Match Thesis.AxiomPolicy.Elaborator.owner? on mathematical modules."""
+    if is_policy_module(module):
+        return None
+    if distros_module(module):
+        return "distros"
+    if module == "Thesis.Probability" or module.startswith("Thesis.Probability."):
+        return "probability"
+    if module == "Thesis.Causality" or module.startswith("Thesis.Causality."):
+        return "causality"
+    if module == "Thesis.CausalTransport" or module.startswith("Thesis.CausalTransport."):
+        return "causalTransport"
+    if module == "Thesis" or module == "Thesis.Examples" or module.startswith("Thesis.Examples."):
+        return "examples"
+    return None
+
+
 class ExampleCoverageTests(unittest.TestCase):
     def test_imports_ignore_body_comments_and_keep_root_facade(self):
         self.assertEqual(initial_project_imports(
@@ -62,6 +88,30 @@ class ExampleCoverageTests(unittest.TestCase):
                          if module.startswith("Thesis.Examples.") and module not in covered)
         self.assertFalse(missing, "Examples outside the full axiom-audit import closure: "
                          + ", ".join(missing))
+        self.assertIn("Thesis.AxiomPolicy.Coverage", covered)
+        self.assertIn("Thesis.AxiomPolicy.Distros", covered)
+        self.assertIn("Thesis.AxiomPolicy.IdentificationNames", covered)
+
+    def test_every_mathematical_module_has_exactly_one_axiom_prefix(self):
+        root = Path(__file__).resolve().parents[1]
+        sources = [root / "Thesis.lean", *(root / "Thesis").rglob("*.lean")]
+        unowned = []
+        for source in sources:
+            module = ".".join(source.relative_to(root).with_suffix("").parts)
+            if is_policy_module(module):
+                self.assertIsNone(prefix_owner(module), module)
+                continue
+            owner = prefix_owner(module)
+            if owner is None:
+                unowned.append(module)
+        self.assertFalse(unowned, "Thesis modules outside every axiom-policy prefix: "
+                         + ", ".join(unowned))
+        self.assertEqual(prefix_owner("Thesis.Probability.Distros.Entropy"), "distros")
+        self.assertEqual(prefix_owner("Thesis.Probability.Core"), "probability")
+        self.assertEqual(prefix_owner("Thesis.Causality.Graph"), "causality")
+        self.assertEqual(prefix_owner("Thesis.CausalTransport.Soundness"), "causalTransport")
+        self.assertEqual(prefix_owner("Thesis.Examples.IdentificationRegression"), "examples")
+        self.assertEqual(prefix_owner("Thesis"), "examples")
 
 
 if __name__ == "__main__":

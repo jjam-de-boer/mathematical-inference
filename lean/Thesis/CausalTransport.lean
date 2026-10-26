@@ -374,6 +374,7 @@ Search completeness concerns the supplied or generated finite family.
 `HiddenDAGPolynomialEvidence` checks supplied polynomial bound certificates
 for the stated structural templates.
 
-`Thesis.AxiomAudit` checks the complete project and its negative examples.
-The permitted transitive kernel axioms are `propext` and `Quot.sound`.
+`Thesis.AxiomAudit` is the collection gate for prefix axiom audits and the
+removed-identification name check. The permitted transitive kernel axioms
+are `propext` and `Quot.sound`.
 -/

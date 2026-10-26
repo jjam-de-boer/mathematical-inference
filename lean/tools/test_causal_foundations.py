@@ -143,7 +143,8 @@ class CausalFoundationTests(unittest.TestCase):
         # Full facades/policy gates deliberately assemble regression files.
         # Their convenience imports must not become a production dependency.
         for module, dependencies in self.graph.items():
-            if module == "Thesis" or module.startswith("Thesis.Examples.") or module.endswith("Audit"):
+            if (module == "Thesis" or module.startswith("Thesis.Examples.")
+                    or module.startswith("Thesis.AxiomPolicy") or module.endswith("Audit")):
                 continue
             with self.subTest(module=module):
                 self.assertFalse(any(name.startswith("Thesis.Examples.") for name in dependencies))
