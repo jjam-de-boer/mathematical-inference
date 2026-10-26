@@ -22,11 +22,11 @@ substituted for it.  Product factors are read from their computed outcomes.
 A successful collection proves that each listed factor identified; no witness
 is selected from a proposition to construct the family of formulas.
 
-This is the success side of completeness, not the final completeness theorem.
-Failure-to-hedge transport and a positive countermodel for the original query
-are still required to turn semantic identifiability into a successful run.
-Neither the soundness implementation nor an assumed completeness package is
-imported here.
+This supplies the success side of completeness. `KernelFailureExtraction`
+provides failure-to-hedge transport, and `HedgeChannelCounterexample` provides
+positive original-query countermodels; `HedgeChannelJointCompleteness`
+assembles the converse. This structural compiler imports neither soundness
+nor an assumed completeness package.
 -/
 
 /-! ## Finite branch alignment without selecting propositional witnesses -/

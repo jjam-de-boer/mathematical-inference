@@ -7,8 +7,8 @@ namespace Thesis.Probability.Distros
 
 These interfaces depend only on finite probability records, not on moments,
 covariance or concentration. They are shared by ordinary distribution clients
-and exact entropy. The existing `LawEquivalence` and `SignedConcentration`
-modules re-export the same public declarations for import compatibility.
+and exact entropy. `LawEquivalence` and `SignedConcentration` build their
+specialized results on this common interface and reexport its declarations.
 
 Law equality compares every Boolean event rather than record syntax: repeated
 labels, denominator rescaling and atom order may change the presentation
@@ -16,10 +16,10 @@ without changing the law. Almost-sure support deliberately ignores zero-weight
 occurrences, but retains every occurrence of positive weight. Neither interface
 requires a finite enumeration of the outcome type or global decidable equality.
 
-The declarations below are moved unchanged from those two older modules.
-Transport through moments remains in `LawEquivalence`; signed concentration
-theorems remain in `SignedConcentration`. Keeping that direction one-way lets
-support-only clients avoid importing those specialized proofs.
+`LawEquivalence` adds transport through moments; `SignedConcentration` adds
+signed concentration theorems. Dependencies flow from those specialized
+results to this layer, so support-only clients can import the common facts
+without importing the specialized proofs.
 -/
 
 /-- Agreement of all Boolean event probabilities, independent of the

@@ -12,11 +12,11 @@ This layer combines the imported kernel-region lemmas with independent-product
 identities. It retains conditional cross-product witnesses, the rule-specific
 latent-component arguments, and the supported ratio-algebra conversion.
 
-All original declarations and proof bodies are retained, including the three
-private Boolean rearrangement lemmas and every use of them. Those helpers
-stay private within this file. Soundness imports this completed layer and
-assembles the published interface, so existing clients need not change their
-imports and no new semantic premise is introduced by the compilation split.
+Private Boolean rearrangement lemmas support the partition calculations.
+`Soundness` assembles these rule-specific arguments into the published
+interface and discharges their partition obligations from projected-graph
+compatibility. This layer retains the explicit support conditions needed
+when converting product identities into conditional probability statements.
 -/
 
 namespace Kernel

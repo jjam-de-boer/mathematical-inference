@@ -18,9 +18,9 @@ failure extraction and the proved `ObservedGraph.publishedSoundness`. It
 connects inspectable derivations with their denotations; neither the soundness
 implementation nor the structural compiler/failure proofs import this file.
 The shared `ConditionalBayes` bridge supplies the precise source-local support
-argument without importing historical ready-case countermodels or legacy
-engine traces. Those older results remain verified through compatibility
-imports elsewhere, but are not prerequisites of this current theorem path.
+argument. Joint and conditional countermodel families are connected at the
+separate `HedgeChannelJointCompleteness` and `HedgeChannelCompleteness`
+boundaries; this assembler does not depend on an obsolete engine trace.
 
 The first application is conditional identification.  Bayes compilation
 needs a strictly positive identified denominator only at assignments where
@@ -32,8 +32,8 @@ it through the identified denominator using published soundness, and package
 arbitrary numerator and denominator certificates without imposing a special
 syntactic shape on either formula.
 
-The replacement engine's full structural success compiler is now available
-independently in `KernelSuccessCompilation`.  At this integration boundary,
+The current engine's structural success compiler is provided independently
+by `KernelSuccessCompilation`. At this integration boundary,
 published soundness turns its supported certificate into correctness and
 identifiability of every identified joint result.  These conclusions do not
 assert that every semantically identifiable query succeeds; that direction

@@ -394,33 +394,33 @@ jobs:
             Thesis.Causality.BinaryBowModel
             Thesis.Causality.BinaryBowEndpoints
             Thesis.Causality.BinaryBowMixture
-            Thesis.Causality.BinaryInstrumentalProfiles
-            Thesis.Causality.BinaryInstrumentalCoupling
-            Thesis.Causality.BinaryInstrumentalTransportation
-            Thesis.Causality.BinaryInstrumentalRiskEvents
-            Thesis.Causality.BinaryInstrumentalResponse
-            Thesis.Causality.BinaryInstrumentalModel
+            Thesis.Causality.BinaryInstrumental.Profiles
+            Thesis.Causality.BinaryInstrumental.Coupling
+            Thesis.Causality.BinaryInstrumental.Transportation
+            Thesis.Causality.BinaryInstrumental.RiskEvents
+            Thesis.Causality.BinaryInstrumental.Response
+            Thesis.Causality.BinaryInstrumental.Model
             Thesis.CausalTransport.HiddenDAGAlmostSureIntervention
             Thesis.CausalTransport.HiddenDAGConsistencyBounds
             Thesis.CausalTransport.BinaryBowBounds
             Thesis.CausalTransport.BinaryBowAttainable
-            Thesis.CausalTransport.BinaryInstrumentalRepresentation
-            Thesis.CausalTransport.BinaryInstrumentalFeasibility
-            Thesis.CausalTransport.BinaryInstrumentalCoupling
-            Thesis.CausalTransport.BinaryInstrumentalTransportation
-            Thesis.CausalTransport.BinaryInstrumentalObservedMargins
-            Thesis.CausalTransport.BinaryInstrumentalNativeTransportation
-            Thesis.CausalTransport.BinaryInstrumentalRiskBounds
-            Thesis.CausalTransport.BinaryInstrumentalRiskEndpoints
-            Thesis.CausalTransport.BinaryInstrumentalEffect
-            Thesis.CausalTransport.BinaryInstrumentalEffectBounds
-            Thesis.CausalTransport.BinaryInstrumentalSharpBounds
-            Thesis.CausalTransport.BinaryInstrumentalNullResponses
-            Thesis.CausalTransport.BinaryInstrumentalNullBounds
-            Thesis.CausalTransport.BinaryInstrumentalComputedBounds
-            Thesis.CausalTransport.BinaryInstrumentalIdentification
-            Thesis.CausalTransport.BinaryInstrumentalMixtures
-            Thesis.CausalTransport.BinaryInstrumentalAttainable
+            Thesis.CausalTransport.BinaryInstrumental.Representation
+            Thesis.CausalTransport.BinaryInstrumental.Feasibility
+            Thesis.CausalTransport.BinaryInstrumental.Coupling
+            Thesis.CausalTransport.BinaryInstrumental.Transportation
+            Thesis.CausalTransport.BinaryInstrumental.ObservedMargins
+            Thesis.CausalTransport.BinaryInstrumental.NativeTransportation
+            Thesis.CausalTransport.BinaryInstrumental.RiskBounds
+            Thesis.CausalTransport.BinaryInstrumental.RiskEndpoints
+            Thesis.CausalTransport.BinaryInstrumental.Effect
+            Thesis.CausalTransport.BinaryInstrumental.EffectBounds
+            Thesis.CausalTransport.BinaryInstrumental.SharpBounds
+            Thesis.CausalTransport.BinaryInstrumental.NullResponses
+            Thesis.CausalTransport.BinaryInstrumental.NullBounds
+            Thesis.CausalTransport.BinaryInstrumental.ComputedBounds
+            Thesis.CausalTransport.BinaryInstrumental.Identification
+            Thesis.CausalTransport.BinaryInstrumental.Mixtures
+            Thesis.CausalTransport.BinaryInstrumental.Attainable
             Thesis.CausalTransport.ObservationalFormulaSelection
             Thesis.CausalTransport.ObservationalFormulaDiagnostics
             Thesis.CausalTransport.BackdoorAdjustment
@@ -449,14 +449,14 @@ jobs:
             Thesis.Examples.BackdoorAdjustmentSearch
             Thesis.Examples.ConsistencyBounds
             Thesis.Examples.BinaryBowBounds
-            Thesis.Examples.BinaryInstrumentalRepresentation
-            Thesis.Examples.BinaryInstrumentalTransportation
-            Thesis.Examples.BinaryInstrumentalCompatibility
-            Thesis.Examples.BinaryInstrumentalRiskBounds
-            Thesis.Examples.BinaryInstrumentalEffectBounds
-            Thesis.Examples.BinaryInstrumentalNullBounds
-            Thesis.Examples.BinaryInstrumentalIdentification
-            Thesis.Examples.BinaryInstrumentalAttainable
+            Thesis.Examples.BinaryInstrumental.Representation
+            Thesis.Examples.BinaryInstrumental.Transportation
+            Thesis.Examples.BinaryInstrumental.Compatibility
+            Thesis.Examples.BinaryInstrumental.RiskBounds
+            Thesis.Examples.BinaryInstrumental.EffectBounds
+            Thesis.Examples.BinaryInstrumental.NullBounds
+            Thesis.Examples.BinaryInstrumental.Identification
+            Thesis.Examples.BinaryInstrumental.Attainable
             Thesis.Examples.FourLabelTransportation
             Thesis.Examples.FourLabelTransportationExtrema
             Thesis.Examples.FourLabelTransportationBatched

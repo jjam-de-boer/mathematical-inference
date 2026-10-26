@@ -22,8 +22,9 @@ interventional conditional kernel directly.
 This module is an integration boundary, like `CompletenessAssembly`: neither
 the main soundness development nor the joint compiler imports it.  Completed
 published soundness interprets the resulting derivations, but is not used as a
-substitute for the conditional non-identifiability argument.  In particular,
-the results below do not inhabit `PublishedCompleteness.conditional_complete`.
+substitute for conditional non-identifiability. `HedgeChannelCompleteness`
+combines this success direction with constructed failure countermodels to
+inhabit `PublishedCompleteness.conditional_complete`.
 -/
 
 /-! ## Termination from strict conditioner decrease -/
@@ -226,8 +227,8 @@ noncomputable def identifyConditionalKernel_identified_soundAt
     graph.publishedSoundness model member assignment sourceSupported
 
 /-- An identified public conditional run is semantically identifiable in the
-selected positive class.  This is the success direction, not the missing
-converse for arbitrary semantically identifiable conditional queries. -/
+selected positive class. The full positive-class converse is assembled in
+`HedgeChannelCompleteness`; a selected subclass may have extra identifications. -/
 theorem identifyConditionalKernel_identified_identifiable
     {S : ObservedSignature.{0}} {graph : ObservedGraph S} {C : GraphModelClass graph}
     (correct : DSeparationCorrectness graph)

@@ -95,182 +95,50 @@ import Thesis.Probability.FiniteProductBalance
 import Thesis.Probability.Distros
 
 /-!
-Stable facade for the finite constructive probability development.
+# Finite constructive probability and auxiliary analytic values
 
-This facade imports the complete public probability API, whose implementation
-is split by responsibility.
+This facade reexports the public probability development. Implementations
+should import focused owners; detailed hypotheses and proof explanations
+remain beside their declarations.
 
-`FiniteFunctionTables` enumerates all output vectors on explicitly supplied
-finite input codes and proves exact tabulation/lookup inverses. Its decidable
-proof-function slots handle absent native parents without dropping valid root
-rows or invoking general function equality, choice or excluded middle.
+## Records, events and independent products
 
-`FiniteProductResponse` includes exchange of finite matrix products;
-`FiniteProductAllocation` proves the law of one optionally allocated random
-channel, with deterministic absence elsewhere and normalization of unused
-channels.  Neither result requires positive event probabilities or division.
+Start with `Core`, `Urn`, `QualitativeUrn` and `FiniteRecord`: Boolean
+events, rational arithmetic, finite counting, weighted laws and supported
+conditioning. Records allow repeated labels and zero weights on arbitrary
+ambient outcome types. `FiniteRecordPresentation` distinguishes sampling
+codes from a declared observable domain retaining null values.
 
-`FiniteProductGrouping` constructs actual independent block factors for an
-explicit partition of the old source coordinates. Its proof-indexed blocks
-need no defaults at absent coordinates. The inverse assignment maps and full
-decoded event-law theorem justify grouping many sources at one owner while
-retaining independence across owners, including empty blocks and null cells.
+`Construction` and the `FiniteProduct*` modules construct actual independent
+product laws, reindex assignments and group independent source blocks.
+Their compression results preserve the stated finite target family and
+independence structure.
 
-`FiniteRecordCatalogue` enumerates normalized laws on a declared finite code
-alphabet below an explicit denominator bound. Singleton-mass aggregation
-covers records with repeated labels and zero weights without expanding unit
-cells, preserving their original denominator and every event probability.
-This bounded rational family is not an unrestricted feasibility procedure.
+## Distributions, information and finite constraints
 
-`FiniteSupportCatalogue` instead lists unit-weight representatives of every
-nonempty finite support mask, without bounding the original denominator.
-`FiniteProductSupportLaw` proves that factor support equality preserves every
-mixed-event positivity test in the actual independent product. Numerical
-probabilities need not agree after this support-only reweighting.
+`Distros.Record` owns the general distribution and relabelling interface;
+`Distros.Basic` adds natural-valued moments and generating functions.
+`Distros.LawBasics` supplies law equality and almost-sure support without
+those numeric dependencies. Named distribution families and their sampling,
+moment and concentration results live below `Distros`.
 
-`RationalSquareObstruction` proves by natural-number descent that a positive-
-denominator rational fraction cannot have square one half, without fraction
-normalization or real numbers. `IndependentBooleanObstruction` binds that
-obstruction to actual products of arbitrary Boolean source records and fixed
-readout mechanisms: their requested uniform observed law is impossible.
-This is fixed-mechanism rational incompatibility, not graph-wide failure or
-an impossibility theorem for a general rational feasibility algorithm.
+`ExactLog`, `EntropyValue` and `Distros.Entropy` provide exact finite
+information values and inequalities. `Distros.PartialMomentProblem`,
+`Distros.RationalLinearSolve` and `Distros.EntropyOptimize` own the finite
+constraint and certified optimization interfaces, with their explicit
+feasibility and approximation hypotheses.
 
-`FiniteProductSourceCompression` constructs bounded positive-atom source
-records while preserving a supplied finite family of mixed-event probabilities
-and full independence.  Its rational-moment bridge clears denominators
-explicitly; no normalized-rational representative or external source
-replacement axiom is used.  Native structural adapters live in causal transport.
+## Finite algebra and analytic values
 
-`FiniteProbabilityPolynomialCertificates` compiles actual independent-source
-event probabilities, constructs their finite variable encoding and source
-constraints, and proves soundness of supplied exact rational bound certificates.
-The underlying polynomial identity checker is proved sound for all signed
-rational assignments. No optimizer or complete certificate search is assumed.
+`Reindexing`, `FiniteBoolean*`, `BooleanChannel*` and the response/balance
+modules supply finite sum, product and character identities for causal
+countermodels. `FiniteProbabilityPolynomialCertificates` checks supplied
+rational bounds against actual independent-source probabilities.
+`RationalSquareObstruction` and `IndependentBooleanObstruction` retain
+the checked fixed-mechanism rational obstruction and its precise scope.
 
-Reading order:
-
-1. `Core` defines Boolean decidable events, finite inspection, elementary
-   finite counting, and the cross-multiplication order on `QProb`;
-2. `Combinatorics` records finite Nat identities used by named distros;
-3. `ConstructivePermutation` reconstructs list permutations from decidable
-   occurrence counts without choice;
-4. `Reindexing` records the additive-carrier finite-sum permutation theorem
-   and its `Nat` and `QProb` specializations;
-5. `FiniteCellProduct` constructs finite product cells and verifies rectangular
-   event counts;
-6. `Urn` presents probability as a finite urn and proves its elementary laws;
-7. `QualitativeUrn` derives the finite qualitative ratio representation from
-   an event-level plausibility interface;
-8. `FiniteRecord` gives weighted, common-denominator finite distributions and
-   conditioning; `FiniteProductReindex` swaps and reassociates independent
-   weighted records for arbitrary mixed events, not only rectangles;
-   `FiniteRecordSlicing` sums arbitrary events over a finite
-   projection's disjoint fibres without enumerating or selecting the source
-   values; `FiniteRecordPerturbation` builds strictly positive normalized
-   record pairs from raw balanced natural weights, including repeated labels;
-   `FiniteLinearResponse` proves exact cancellation and separation criteria
-   against a fixed finite rational environment without subtraction or division
-   by its coefficients; `FiniteSignedMass` provides exact integer-valued
-   integrands over the same nonnegative weighted atoms, and
-   `FiniteSignedProduct` expands complete finite products and integrates
-   rectangular integrands against the actual independent product record.
-   It also separates scalar coefficients from Boolean characters and relates
-   their complete product to an explicitly indexed finite XOR fold.
-   These auxiliary integer integrands do not introduce signed probability
-   records or replace natural-weight probability semantics;
-   `FiniteUniformProduct` identifies the literal unit-weight atoms and
-   denominators of independent products, and transports all mixed event
-   masses and signed integrands through explicit support permutations;
-   `FiniteProductSupport` characterizes membership in restricted dependent
-   choice products by their actual coordinate lists; `FiniteSupportedSum`
-   deletes only proved-zero integer terms after checking inclusion and
-   duplicate-freeness of the complete and canonical lists;
-   `FiniteBooleanCharacter` proves nonnegative projection of homogeneous
-   XOR-linear characters onto false-valued coordinate cylinders, using
-   symbolic coordinate induction.  Its constructive support permutation
-   relates the restricted product to filtering the complete enumeration;
-   `FiniteBooleanBlocks` explicitly joins and splits two assignment blocks,
-   and identifies their complete restricted Cartesian support with the same
-   single-cube cylinder.  Arbitrary mixed integrands retain every assignment
-   and every fixed coordinate; XOR and zero are respected by the same inverse;
-   `FiniteBooleanTranslation` pairs assignments by an explicit involutive
-   XOR translation and cancels signed sums on every preserved event cylinder.
-   It uses the supplied complete, duplicate-free enumeration rather than
-   choosing a permutation or expanding every concrete assignment;
-   `FiniteBooleanInteraction` carries explicit homogeneous phase proofs and
-   establishes nonnegative complete character moments under local interaction
-   products.  It retains every factor, proves the exact coefficients of two
-   XOR-related copies and derives strictness from a supplied complete expansion
-   selection, rather than from a single positive sample;
-   `FiniteBooleanBasis` proves that actual homogeneous phases match on a
-   complete false cylinder exactly when they match on each free coordinate
-   direction.  The explicit singleton directions respect both block
-   embeddings, and selected-row parity retains its actual finite fold.
-   This reduces phase conservation to coordinate tests, without selecting
-   a basis by choice or expanding an exponential assignment support;
-   `FiniteBooleanCovariance` proves the full two-copy covariance identity on
-   the unchanged false-cylinder support.  Its verified XOR reindexing gives
-   nonnegative homogeneous-character covariances and a strict criterion from
-   an explicit odd direction and matching interaction selection.  These are
-   finite inequalities, not an assumption that arbitrary active graph paths
-   already supply such local phases, directions or selections;
-   `FiniteBooleanCylinderCovariance` expands the complete original outcome
-   event into every outcome-subset character with an explicit positive scale.
-   It retains all other outcome coordinates and the conditioning-mass change;
-   nonnegative character covariances ensure that one supplied strict subset
-   separates the whole requested event.  An application must still identify
-   its actual model weights and prove its path-facing parity data;
-   `FiniteRatioPerturbation` characterizes cancellation of an actual joint-
-   and evidence-mass change after normalization, retaining both signed
-   changes without assuming equal conditioning masses;
-   `FiniteProductBlocks` splits literal numerator and denominator products
-   across an actual shared prefix and private suffix, retaining zero cells;
-   `FinitePowerProduct` identifies exact anchored and binary-mask natural
-   products with their finite powers, without choosing an anchor or assuming
-   a mask cardinal instead of counting its actual finite indices;
-   `ConditionalUniqueness` proves that positive joint laws
-   agreeing in both conditional directions agree on every joint event,
-   without assuming equal conditioning marginals; `FiniteProductConditionals`
-   proves the full-coordinate counterpart on arbitrary finite dependent
-   products and returns a separated coordinate conditional by finite search
-   whenever a joint event differs;
-9. `BooleanNoise` proves normalized complement equality for independently
-   presented records, finite biased XOR-channel injectivity, exact parity
-   bias through independent flips, and support restoration without real-valued
-   limiting arguments; `BooleanChannelTable` constructs positive normalized
-   rows from finitely many natural-weight channel signals, with a fixed
-   signal-independent capacity and exact two-sided deviation from a fair row;
-   `BooleanChannelExpansion` relates their complete character expansion to
-   actual row-product numerators, retaining interactions and respecting hard
-   interventions with their actual forced-value indicators;
-   its hidden-independent local coefficients retain forced zero terms before
-   the causal channel construction groups complete monomials;
-   `BooleanChannelReserve` includes old row terms once in an enlarged channel
-   alphabet without listing the reserved terminal slot.  Its literal record
-   and hard-intervention cell identities retain all old atoms and capacities;
-   a separate actual-prior proof supplies independence of the new latent input;
-   `ConditionalNoise` retains the full mixed-event law
-   after independent noise is conditioned on source-only evidence.  Its XOR
-   transport uses each source's actual evidence mass rather than a common
-   denominator; `ColliderChannel` constructs an independent fair parent
-   and noisy collider, proving exact posterior laws, full supported-noise
-   readout support, and bias-dependent gap preservation even when the two
-   source contexts have unequal conditioning probabilities;
-   `ColliderRealization` transports that calculation to an actual finite
-   record only after its all-event prior encoding and pointwise evidence and
-   readout equations have been proved.  It retains each record's own evidence
-   denominator and reflects source gaps through supported biased posteriors;
-10. `Construction` builds finite dependent products and the rational
-   constructions used by causal models; `FiniteProductResponse` isolates one
-   factor while retaining all other factors, including zeros;
-   `FiniteProductBalance` telescopes coordinated changes of several factors
-   in mixed old/new environments, retaining their interaction terms and
-   characterizing exact cancellation without dividing by old cells; and
-11. `Distros` packages named finite distros (Bernoulli, binomial, lattice
-    Gaussian, and the finite counterparts of the classical limiting
-    families).
-
-No result here concerns countable additivity or arbitrary propositions:
-events are explicit Boolean predicates on finite enumerations.
+The `ConstructiveReal*` modules develop auxiliary arithmetic, limits,
+logarithms, exponentials, differentiation and entropy with explicit error
+control. Their finite-constraint and certificate bridges state their domains
+locally. Causal probability records retain finite rational weights.
 -/
