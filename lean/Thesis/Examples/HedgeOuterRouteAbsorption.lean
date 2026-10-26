@@ -208,7 +208,24 @@ private def failed (result : IdentificationOutcome signature) : Bool :=
 
 theorem joint_program_failed : failed (identifyJointKernel graph query) = true := by decide +kernel
 theorem conditional_no_exchange : (conditionalExchangeStep? graph conditionalQuery).isNone = true := by decide +kernel
-theorem conditional_program_failed : failed (identifyConditionalKernel graph conditionalQuery) = true := by decide +kernel
+
+/-- The conditional numerator also includes the conditioner; it is not the
+joint query checked above. Keep its actual terminal ID failure as a separate
+kernel computation before reusing the exhausted exchange search. -/
+private theorem conditional_numerator_failed :
+    failed (identifyJointKernel graph conditionalQuery.jointNumerator) = true := by decide +kernel
+
+/-- Follow IDC's terminal branch using the two checked algorithm results.
+This avoids evaluating the same exchange search twice while retaining the
+failure assertion for the original conditional query. The semantic
+counterexample above is not used to infer what the program returns. -/
+theorem conditional_program_failed : failed (identifyConditionalKernel graph conditionalQuery) = true := by
+  have exhausted : conditionalExchangeStep? graph conditionalQuery = none :=
+    Option.eq_none_of_isNone conditional_no_exchange
+  unfold identifyConditionalKernel
+  rw [identifyConditionalKernelFuel, exhausted]
+  cases result : identifyJointKernel graph conditionalQuery.jointNumerator <;>
+    simpa only [result, failed] using conditional_numerator_failed
 
 end HedgeOuterRouteAbsorption
 end Examples

@@ -17,11 +17,9 @@ keeps both operations explicit, including all marginal assignments. It uses
 unconditional-kernel normalization, not a positivity assumption on observed
 cells or a causal soundness theorem to manufacture support.
 
-These general certificate constructors remain useful to modern current-input
-compilation examples. They therefore live in the current implementation,
-independently of the removed legacy engine and fixed-depth failure proofs.
-The retained names and theorem statements still cover arbitrary graph model
-classes; observational zeros are not excluded by this promotion.
+The base derivation writes an unconditional query as an observational
+marginal. The final certificate composes it with action deletion for
+arbitrary graph model classes; observed cells may have zero probability.
 -/
 
 /-- Marginalization writes the observational joint as
