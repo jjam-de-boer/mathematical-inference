@@ -1,4 +1,5 @@
 import Thesis.Probability.Distros.UncertaintyCharacterization
+import Thesis.Probability.Distros.ConditionalInformation
 import Thesis.Probability.Distros.EntropyHomogeneous
 import Thesis.Probability.Distros.LogLinearEntropy
 import Thesis.Probability.Distros.EntropyOptimize

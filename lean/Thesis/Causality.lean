@@ -4,6 +4,7 @@ import Thesis.Causality.NodeSetEnumeration
 import Thesis.Causality.Derivation
 import Thesis.Causality.Model
 import Thesis.Causality.SelectedAssignment
+import Thesis.Causality.SelectedEntropy
 import Thesis.Causality.HardIntervention
 import Thesis.Causality.SharedResponseTables
 import Thesis.Causality.SharedResponseModel
@@ -100,7 +101,7 @@ Implementations should import focused foundational modules.
 
 ## Queries and identification programs
 
-A useful reading order is `Graph`, `Derivation`, `Model`, `HardIntervention`,
+A useful reading order is `Graph`, `Derivation`, `Model`, `SelectedEntropy`, `HardIntervention`,
 `Semantics`, `SupportAwareSemantics` and `Identification`.
 These define graph operations, kernel queries, interventions, probability
 terms and their partial interpretation. Defined zero and an undefined

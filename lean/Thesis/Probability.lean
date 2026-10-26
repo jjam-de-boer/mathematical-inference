@@ -142,4 +142,7 @@ The `ConstructiveReal*` modules develop auxiliary arithmetic, limits,
 logarithms, exponentials, differentiation and entropy with explicit error
 control. Their finite-constraint and certificate bridges state their domains
 locally. Causal probability records retain finite rational weights.
+`Distros.ConditionalInformation` names the grouping remainder as
+conditional entropy and records Shannon monotonicity of two-stage
+refinement; mutual information is `H(X)+H(Y)-H(X,Y)` from those values.
 -/
