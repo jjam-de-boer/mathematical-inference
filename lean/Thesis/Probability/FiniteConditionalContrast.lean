@@ -49,7 +49,8 @@ private theorem signedAtomMass_conditionalContrast (atoms : List (Ω × Nat))
           Int.natCast_add, Int.natCast_zero, Int.mul_zero, Int.mul_one, Int.zero_sub, Int.sub_zero,
           Int.zero_add, Int.add_zero,
           Int.mul_add, Int.mul_sub, Int.sub_eq_add_neg, Int.mul_neg, Int.neg_add] <;>
-        ac_rfl
+        simp only [Int.mul_comm] <;>
+        omega
 
 /-- The unnormalized contrast is exactly the conditional cross-product.
 The equality holds even when the evidence mass is zero. -/
