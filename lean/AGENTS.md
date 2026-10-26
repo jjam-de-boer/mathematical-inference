@@ -80,6 +80,17 @@ The main entry points are `Thesis.Probability`, `Thesis.Causality` and
 keep graph/probability foundations below semantic proof assemblies, and do not
 use examples as production foundations.
 
+Kernel axiom policy lives under `Thesis.AxiomPolicy.*` (audit-only; never
+import those modules from production or examples). Prefix wrappers walk
+`Thesis.Probability.Distros`, the rest of `Thesis.Probability`,
+`Thesis.Causality`, `Thesis.CausalTransport`, and `Thesis.Examples` plus
+coverage. `Thesis.AxiomAudit` collects those wrappers; it does not run a
+second full-tree axiom walk. Add a prefix audit only when a substack is
+independently imported and worth checking before the next layer. Every
+`Thesis.*` production or example module maps to exactly one owning prefix.
+Do not add a prefix per long file or per theorem family, and do not add
+Entropy, Soundness, Completeness, or Hedge audits.
+
 Comment mathematical purpose, assumptions, support conditions and important
 constructive invariants clearly. Keep implementation details with the code;
 this file should summarize main results, not enumerate intermediate lemmas.
@@ -152,16 +163,22 @@ repository root, run the helper tests:
 python3 -B -m unittest discover -s lean/tools -p 'test_*.py'
 ```
 
-Ordinary native builds need no Python wrapper:
+Ordinary native builds need no Python wrapper. **Mandatory publish** is
+those tests plus two sequential Lake commands:
 
 ```sh
 cd lean
 export LEAN_NUM_THREADS=1
 lake build
 lake build Thesis.AxiomAudit
-lake build Thesis.ConstructiveAlgebraAudit
-lake build Thesis.DistroAxiomAudit
 ```
+
+`lake build` compiles the ordinary library (`Thesis`, `Main`, and the
+rest of the default Lake target). `Thesis.AxiomAudit` is the collection
+gate: it imports the prefix audits, extra coverage, and the removed-ID-name
+check. Kernel axiom policy is the union of those prefix scans (private
+proofs included). Distros is compiled as part of ordinary `lake build`;
+`Thesis.AxiomPolicy.Distros` only adds the axiom walk for that prefix.
 
 The optional monitored full build, from the repository root, is:
 
@@ -169,17 +186,24 @@ The optional monitored full build, from the repository root, is:
 python3 -B lean/tools/build_local_sequential.py --profile extended --check
 ```
 
-For a targeted check with its prerequisites:
+That helper still only final-gates `lake build` and `Thesis.AxiomAudit`.
+For a targeted check with its prerequisites, including an optional
+substack axiom prefix that is **not** a publish gate:
 
 ```sh
 python3 -B lean/tools/build_local_sequential.py --profile extended --phase lean --target Thesis.CausalTransport.Soundness --check
+python3 -B lean/tools/build_local_sequential.py --profile extended --target Thesis.AxiomPolicy.Distros --check
 ```
+
+Replace `Thesis.AxiomPolicy.Distros` with `Thesis.AxiomPolicy.Probability`,
+`Thesis.AxiomPolicy.Causality`, `Thesis.AxiomPolicy.CausalTransport`, or
+`Thesis.AxiomPolicy.Examples` as needed.
 
 Run one compiler family at a time. Use the existing resource limits; ask before
 raising them, clearing shared caches or stopping another agent's build. The
 monitored route adds memory/time safeguards that ordinary Lake does not.
 
-Check affected modules first. Before publishing Lean changes, run the complete
-build, helper tests and all three audit targets for the exact checkpoint.
-Compilation alone does not establish the axiom policy. Inspect the final diff
-and preserve concurrent work when committing or pushing.
+Check affected modules first. Before publishing Lean changes, run the helper
+tests, `lake build`, and `lake build Thesis.AxiomAudit` for the exact
+checkpoint. Compilation alone does not establish the axiom policy. Inspect
+the final diff and preserve concurrent work when committing or pushing.
