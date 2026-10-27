@@ -91,6 +91,7 @@ import Thesis.Causality.ModalRealization
 import Thesis.Causality.ModalCounterfactual
 import Thesis.Causality.EndpointAgreement
 import Thesis.Causality.ModeTheory
+import Thesis.Causality.ExtensionalMode
 
 /-!
 # Finite causal syntax, models and executed states
@@ -138,6 +139,8 @@ checking is supplied downstream.
 current beliefs and accumulated interventions. `ModalRealization`,
 `ModalCounterfactual` and `EndpointAgreement` connect executions to queries.
 `ModeTheory` packages the named states and paths.
+`ExtensionalMode` is the finished public mode (SCM and current belief);
+records remain the workspace for compact `do` and stack inverses.
 
 `Counterfactual`, `Multiworld` and `ExecutedMultiworld` own finite
 counterfactual and shared-noise world evaluation. Their model classes,
