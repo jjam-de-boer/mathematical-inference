@@ -1,3 +1,4 @@
+import Thesis.Probability.ConstructiveRealEntropyGibbsForm
 import Thesis.Probability.ConstructiveRealEntropyMultipliers
 import Thesis.Probability.ConstructiveRealEntropyStationarity
 import Thesis.Probability.ConstructiveRealRationalEntropyOptimizer
