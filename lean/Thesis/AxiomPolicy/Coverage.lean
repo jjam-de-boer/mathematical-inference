@@ -1,3 +1,4 @@
+import Thesis.Examples.AnalyticGibbs
 import Thesis.Examples.EntropyGibbsForm
 import Thesis.Examples.EntropyMultipliers
 import Thesis.Examples.EntropyStationarity

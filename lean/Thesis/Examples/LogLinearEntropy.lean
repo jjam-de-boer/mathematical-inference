@@ -1,4 +1,5 @@
 import Thesis.Probability.Distros.LogLinearEntropy
+import Thesis.Probability.ConstructiveRealLogLinearOptimality
 import Thesis.Probability.ExactLogPositiveEnclosure
 
 namespace Thesis.Examples.LogLinearEntropy
@@ -51,5 +52,26 @@ example (μ : Distro Nat) (valid : problem.Admissible μ) :
     ExactLog.LE (μ.entropy problem.entropyGrid valid.1) (candidate.entropy problem.entropyGrid candidateSupport) ∧
     (ExactLog.Equiv (μ.entropy problem.entropyGrid valid.1) (candidate.entropy problem.entropyGrid candidateSupport) ↔ μ.SameLaw candidate) :=
   reference.optimal candidateValid μ valid
+
+private def retainedCandidate : problem.CompatibleLaw :=
+  ⟨candidate, candidateSupport, candidateValid.2, by
+    intro cell member
+    change cell ∈ [0, 1, 2] at member
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+    rcases member with rfl | rfl | rfl
+    · exact ⟨1, by decide +kernel⟩
+    · exact ⟨1, by decide +kernel⟩
+    · exact ⟨2, by decide +kernel⟩⟩
+
+/-- The same signed-moment reference now certifies all ideal competitors;
+its explicit zero-weight outlier is still a presentation choice. -/
+example (law : problem.RealCompatibleLaw) : ConstructiveReal.LE law.entropy
+    (candidate.entropy problem.entropyGrid candidateSupport).interpret := reference.real_optimal candidateValid law
+
+example : retainedCandidate.toReal.Maximal := reference.real_maximal candidateValid retainedCandidate rfl
+
+example (law : problem.RealCompatibleLaw) (maximal : law.Maximal) (index : Fin problem.cells.length) :
+    ConstructiveReal.Equiv (law.mass index).value (retainedCandidate.toReal.mass index).value :=
+  reference.real_maximal_unique candidateValid retainedCandidate rfl law maximal index
 
 end Thesis.Examples.LogLinearEntropy

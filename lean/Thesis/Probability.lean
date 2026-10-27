@@ -1,3 +1,5 @@
+import Thesis.Probability.ConstructiveRealEntropyGlobalOptimality
+import Thesis.Probability.ConstructiveRealLogLinearOptimality
 import Thesis.Probability.ConstructiveRealEntropyGibbsForm
 import Thesis.Probability.ConstructiveRealEntropyMultipliers
 import Thesis.Probability.ConstructiveRealEntropyStationarity
