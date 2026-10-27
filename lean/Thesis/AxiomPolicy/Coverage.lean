@@ -1,3 +1,4 @@
+import Thesis.Examples.EntropyMultipliers
 import Thesis.Examples.EntropyStationarity
 import Thesis.Examples.RationalEntropyOptimizer
 import Thesis.Examples.ConstructiveEntropyOptimizer
