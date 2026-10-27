@@ -16,6 +16,8 @@ The binary bow fixture exercises two different supported-value answers:
   top event gives the same attained value one wherever evidence is positive.
 * Top evidence is always supported, but the outcome after a null factual
   action has genuinely different supported conditional values.
+* Complementing that outcome gives a reference value one and a negative
+  lower contrast endpoint, exercising the other ambiguity branch.
 
 Bounds in these regressions are supplied and proved analytically. No closed
 optimizer query is executed or trusted. In particular, the null endpoint in
@@ -190,6 +192,91 @@ theorem not_conditionally_identified :
   intro identified
   have kind := ambiguousReport.identified_iff.mpr identified
   rw [ambiguous_report_case] at kind
+  cases kind
+
+/-- Use the same null-action query with the complementary target. The old
+reference has outcome probability zero, so this supported target has value
+one. Its contrast is the negative of the preceding example's contrast. -/
+def negativeEvent : Event signature.Assignment := complement (fun values => values y)
+
+def negativeProposed := ConditionalValue.supportedValue signature observed (intervention true)
+  topEvent negativeEvent ambiguityReference
+
+private theorem negative_proposed_parts : negativeProposed.num = negativeProposed.den := by
+  let conditioned := (ambiguityReference.model.model.interventionalDist (intervention true)).conditionOn
+    topEvent ambiguityReference.positive
+  have originalZero := (QProb.equiv_num_zero_iff ambiguity_proposed_zero).mpr rfl
+  change FiniteProbRecord.eventMass conditioned.atoms (fun values => values y) = 0 at originalZero
+  have partition := FiniteProbRecord.eventMass_add_complement conditioned.atoms (fun values => values y)
+  have total := conditioned.total_mass
+  change FiniteProbRecord.eventMass conditioned.atoms (complement (fun values => values y)) = conditioned.den
+  rw [originalZero, Nat.zero_add, total] at partition
+  exact partition
+
+private theorem negative_response_eq_neg (table : Table signature) :
+    ConditionalValue.contrastResponse signature (intervention true) topEvent negativeEvent negativeProposed table =
+      -(ConditionalValue.contrastResponse signature (intervention true) topEvent (fun values => values y) ambiguityProposed table) := by
+  have numeratorZero := (QProb.equiv_num_zero_iff ambiguity_proposed_zero).mpr rfl
+  have sameDenominator : negativeProposed.den = ambiguityProposed.den := rfl
+  unfold ConditionalValue.contrastResponse FiniteProbRecord.conditionalContrast
+  rw [negative_proposed_parts, sameDenominator, numeratorZero]
+  cases selected : (eval signature (intervention true).value table) y <;>
+    simp only [topEvent, negativeEvent, complement, selected, Bool.true_and, Bool.not_false, Bool.not_true,
+      Bool.false_eq_true, if_true, if_false, Int.natCast_zero, Int.mul_zero, Int.mul_one,
+      Int.sub_zero, Int.sub_self, Int.zero_sub, Int.neg_zero]
+
+private theorem negative_mean (law : Distro (Table signature)) :
+    SignedRatio.Equiv (ConditionalValue.lawContrastMean signature (intervention true)
+      topEvent negativeEvent negativeProposed law.record)
+      (SignedRatio.neg (ConditionalValue.lawContrastMean signature (intervention true)
+        topEvent (fun values => values y) ambiguityProposed law.record)) := by
+  refine SignedRatio.equiv_trans (law.rationalExpectation_congr _
+    (fun table => SignedRatio.neg (integerResponse
+      (ConditionalValue.contrastResponse signature (intervention true) topEvent (fun values => values y) ambiguityProposed) table)) ?_)
+    (law.rationalExpectation_neg _)
+  intro table
+  change SignedRatio.Equiv ⟨_, 1, Nat.zero_lt_one⟩ (SignedRatio.neg ⟨_, 1, Nat.zero_lt_one⟩)
+  rw [negative_response_eq_neg]
+  exact SignedRatio.equiv_refl _
+
+/-- Negation reverses the attained endpoints and swaps their actual fitted
+laws. The negative endpoint is not a signed probability: only the auxiliary
+contrast is signed, and every witness remains an ordinary probability model. -/
+def negativeCertificate : (supportedProblem signature observed).SharpBounds
+    (ConditionalValue.contrastResponse signature (intervention true) topEvent negativeEvent negativeProposed) where
+  lower := SignedRatio.neg ambiguityCertificate.upper
+  upper := SignedRatio.neg ambiguityCertificate.lower
+  lowerLaw := ambiguityCertificate.upperLaw
+  upperLaw := ambiguityCertificate.lowerLaw
+  lower_attained := SignedRatio.equiv_trans (negative_mean _) (SignedRatio.neg_congr ambiguityCertificate.upper_attained)
+  upper_attained := SignedRatio.equiv_trans (negative_mean _) (SignedRatio.neg_congr ambiguityCertificate.lower_attained)
+  bounds := by
+    intro law support moments
+    have bounded := ambiguityCertificate.bounds law support moments
+    have lower := (SignedRatio.neg_le_neg_iff _ _).mpr bounded.2
+    have upper := (SignedRatio.neg_le_neg_iff _ _).mpr bounded.1
+    exact ⟨(SignedRatio.le_congr (SignedRatio.equiv_refl _) (SignedRatio.equiv_symm (negative_mean law))).mp lower,
+      (SignedRatio.le_congr (SignedRatio.equiv_symm (negative_mean law)) (SignedRatio.equiv_refl _)).mp upper⟩
+
+def negativeReport := ConditionalValue.ofBounds ambiguityReference negativeCertificate
+
+theorem negative_lower_endpoint_negative : negativeCertificate.lower.num < 0 := by
+  change -((ambiguityProposed.den : Int) * 1) < 0
+  have positive := ambiguityProposed.den_pos
+  omega
+
+/-- This forces the nonzero-lower-endpoint branch. The existing regression
+instead had zero lower contrast and a nonzero upper endpoint. -/
+theorem negative_report_case : negativeReport.kind = .ambiguous := by
+  have lowerNonzero : ¬ SignedRatio.Equiv negativeCertificate.lower SignedRatio.zero :=
+    fun zero => (Int.ne_of_lt negative_lower_endpoint_negative) ((SignedRatio.equiv_zero_iff _).mp zero)
+  simp only [negativeReport, ConditionalValue.ofBounds, dif_neg lowerNonzero, ConditionalValue.Report.kind]
+
+theorem complementary_target_not_identified :
+    ¬ ConditionalValue.PointIdentified signature observed (intervention true) topEvent negativeEvent := by
+  intro identified
+  have kind := negativeReport.identified_iff.mpr identified
+  rw [negative_report_case] at kind
   cases kind
 
 end Bow
