@@ -163,6 +163,9 @@ repository root, run the helper tests:
 python3 -B -m unittest discover -s lean/tools -p 'test_*.py'
 ```
 
+These Python tests do not run Lean. Update them only with the matching source
+or helper change; they are not a proof or axiom gate.
+
 Ordinary native builds need no Python wrapper. **Mandatory publish** is
 those tests plus two sequential Lake commands:
 
