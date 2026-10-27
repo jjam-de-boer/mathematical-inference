@@ -69,6 +69,7 @@ import Thesis.Probability.FiniteRecordPerturbation
 import Thesis.Probability.FiniteLinearResponse
 import Thesis.Probability.FiniteSignedMass
 import Thesis.Probability.FiniteConditionalContrast
+import Thesis.Probability.FiniteConditionalContrastPreservation
 import Thesis.Probability.FiniteSignedProduct
 import Thesis.Probability.FiniteProductBlocks
 import Thesis.Probability.FinitePowerProduct
@@ -141,6 +142,8 @@ countermodels. `FiniteProbabilityPolynomialCertificates` checks supplied
 rational bounds against actual independent-source probabilities.
 `FiniteConditionalContrast` expresses supported conditional agreement as a
 zero integer mean and treats null evidence separately.
+`FiniteConditionalContrastPreservation` transports its vanishing across records
+with matching evidence and joint-event probabilities.
 `RationalSquareObstruction` and `IndependentBooleanObstruction` retain
 the checked fixed-mechanism rational obstruction and its precise scope.
 

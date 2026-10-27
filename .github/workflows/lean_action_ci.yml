@@ -186,8 +186,9 @@ jobs:
         run: >-
           lake build
           Thesis.Probability.FiniteConditionalContrast
+          Thesis.Probability.FiniteConditionalContrastPreservation
           Thesis.Examples.FiniteConditionalContrast
-      - name: Check exact rational shared-root bounds
+      - name: Check exact rational shared-root bounds and conditional values
         working-directory: lean
         run: >-
           lake build
@@ -206,6 +207,10 @@ jobs:
           Thesis.Examples.SharedResponseSupportedSolver
           Thesis.CausalTransport.SharedResponseEvidenceSupport
           Thesis.Examples.SharedResponseEvidenceSupport
+          Thesis.CausalTransport.SharedResponseConditionalContrast
+          Thesis.CausalTransport.SharedResponseConditionalValues
+          Thesis.CausalTransport.SharedResponseConditionalSolver
+          Thesis.Examples.SharedResponseConditionalValues
       - name: Check exact expression support analysis
         working-directory: lean
         run: >-

@@ -132,6 +132,9 @@ import Thesis.CausalTransport.SharedResponseLinearBounds
 import Thesis.CausalTransport.SharedResponseSupportedBounds
 import Thesis.CausalTransport.SharedResponseSupportedSolver
 import Thesis.CausalTransport.SharedResponseEvidenceSupport
+import Thesis.CausalTransport.SharedResponseConditionalContrast
+import Thesis.CausalTransport.SharedResponseConditionalValues
+import Thesis.CausalTransport.SharedResponseConditionalSolver
 import Thesis.CausalTransport.BoundedNativeCatalogue
 import Thesis.CausalTransport.BoundedNativeRepresentation
 import Thesis.CausalTransport.BoundedNativeSearch
@@ -368,6 +371,9 @@ unconditional event bounds in the complete-bidirected native class;
 `SharedResponseSupportedSolver` is its separate support-filtered adapter.
 `SharedResponseEvidenceSupport` classifies causal evidence as universally null,
 universally positive or mixed, with fitted native witnesses and separate compatibility.
+`SharedResponseConditionalSolver` additionally classifies supported conditional
+values as absent, identified or ambiguous in that same native class, retaining
+the evidence report independently and supplying actual disagreement witnesses.
 
 `BoundedNativeClassification` and its conditional inspection/search companions
 classify their declared bounded native families.
