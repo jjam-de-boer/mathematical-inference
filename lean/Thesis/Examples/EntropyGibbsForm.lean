@@ -1,4 +1,5 @@
 import Thesis.Probability.ConstructiveRealEntropyGibbsForm
+import Thesis.Probability.ConstructiveRealEntropyInterior
 
 namespace Thesis.Examples.EntropyGibbsForm
 open Probability Probability.Distros ConstructiveReal
@@ -87,5 +88,33 @@ example : Equiv (certificate.partition.positiveLn certificate.partitionLower cer
     (add one certificate.offset) := partition_log_offset anchor (fun _ => floor) positive certificate
 
 example : LE (ofSignedRatio certificate.partitionLower.toSignedRatio) certificate.partition := certificate.partition_positive
+
+/-- Only positive feasibility is supplied here. The optimizer's positivity
+and its multipliers are obtained by the constructive maximum algorithm;
+the independently proved `maximal` certificate above is not an input. -/
+private opaque fitted : problem.LagrangeCoefficients (fun i =>
+    entropyNaturalGradient (anchor.maximize.mass i).value (interiorLower 2 floor)
+      (anchor.maximize_positive (fun _ => floor) positive i)) :=
+  anchor.fittedNaturalMultipliers (fun _ => floor) positive
+
+example (index : Fin 2) : LE (ofSignedRatio (interiorLower 2 floor).toSignedRatio)
+    (anchor.maximize.mass index).value := anchor.maximize_positive (fun _ => floor) positive index
+
+example (index : Fin 2) : Equiv (anchor.maximize.mass index).value
+    (mul (neg (fitted.score index)).exp fitted.partitionInverse) :=
+  gibbsForm_of_coefficients anchor.maximize (fun _ => interiorLower 2 floor)
+    (anchor.maximize_positive (fun _ => floor) positive) fitted index
+
+/-- The fitted analytic coefficients expose certified rational enclosures
+at any requested precision; no exact rational multiplier is asserted. -/
+example (row : Fin problem.rows.length) (precision : PositiveRatio) :
+    LE (ofSignedRatio ((fitted.coefficient row).enclose precision).lower) (fitted.coefficient row) ∧
+      LE (fitted.coefficient row) (ofSignedRatio ((fitted.coefficient row).enclose precision).upper) :=
+  (fitted.coefficient row).enclosure_bounds precision
+
+/-- The automatically constructed ideal law agrees with the independently
+verified nonuniform candidate. The original probabilities remain rational. -/
+example (index : Fin 2) : Equiv (anchor.maximize.mass index).value (anchor.mass index).value :=
+  anchor.maximize.maximal_unique anchor anchor.maximize_maximal maximal index
 
 end Thesis.Examples.EntropyGibbsForm
