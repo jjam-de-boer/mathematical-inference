@@ -1,3 +1,4 @@
+import Thesis.Probability.ConstructiveRealFittedGibbsCertificates
 import Thesis.Probability.ConstructiveRealFaceKKT
 import Thesis.Probability.ConstructiveRealFarkas
 import Thesis.Probability.ConstructiveRealEntropyVariational
