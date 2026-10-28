@@ -1,3 +1,4 @@
+import Thesis.Examples.FiniteStatisticalMechanics
 import Thesis.Examples.GibbsPartition
 import Thesis.Examples.AnalyticLinear
 import Thesis.Examples.EntropyKKT
