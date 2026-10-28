@@ -20,11 +20,16 @@ The main implemented results are:
   finite size.
 - Mode-indexed realizations connecting causal proofs to actual executions.
 - Extensions including binary bow/instrumental-variable sharp bounds,
-  fixed-law identification and attainable sets; finite model compression;
-  supplied polynomial-certificate checking; and bounded formula selection.
+  fixed-law identification and attainable sets; fixed-DAG and projection-wide
+  finite structural representation; and supplied polynomial-certificate checking.
+- Exact undefined/zero/positive support analysis for the current formula and
+  guard languages, finite causal support-profile coverage, and checked bounded
+  proof enumeration and formula selection.
 - Exact attained bounds and point-identification tests for unconditional
   intervention events in the complete-bidirected finite hidden-DAG class,
-  without fixed hidden-alphabet or rational-denominator bounds.
+  without fixed hidden-alphabet or rational-denominator bounds. Conditional
+  classification separately reports evidence support and agreement among
+  models with positive evidence.
 - Auxiliary constructive analytic values, including real arithmetic,
   logarithms, exponentials and differentiation with explicit error control.
   Probability weights remain finite and rational.
@@ -72,6 +77,8 @@ affected agents to reread this file.
 - Read the relevant implementation, question incorrect proposals, clarify
   genuinely unclear tasks, and double-check both changes and conclusions.
 - Preserve concurrent changes.
+- Distinguish completing an agreed investigation from proving its unresolved
+  mathematical claims. State open questions explicitly.
 
 ## Structure, comments and documentation
 
@@ -79,6 +86,8 @@ The main entry points are `Thesis.Probability`, `Thesis.Causality` and
 `Thesis.CausalTransport`. Use focused foundational imports in implementations;
 keep graph/probability foundations below semantic proof assemblies, and do not
 use examples as production foundations.
+Keep current identification implementations independent of historical
+completeness facades; reuse the extracted graph/search foundations.
 
 Kernel axiom policy lives under `Thesis.AxiomPolicy.*` (audit-only; never
 import those modules from production or examples). Prefix wrappers walk
@@ -153,6 +162,23 @@ consolidate overlaps, and request approval before changing this section.
   observational entropy 1, not 2. Evidence:
   `Thesis.Examples.CausalEntropy.cutIncoming_not_independent_fair`. Extra
   randomness requires a different noise type, not `withMechanism`.
+
+- **Unresolved — universal alternative-formula coverage and stopping.**
+  Checked search is complete within its declared expression/proof bounds.
+  Finite support profiles and local proof replacement do not yet supply a
+  universal bound or terminating saturation theorem. Evidence:
+  `Thesis.CausalTransport.NativeBoundedSelection` and
+  `Thesis.CausalTransport.NativeDerivationReplacement`. Revisit with a
+  support-preserving coverage and termination argument.
+
+- **Unresolved — unrestricted arbitrary-graph fixed-law rational identification.**
+  Projection-wide finite structural coverage leaves rational weights unbounded.
+  Restricted-class and bounded-model procedures do not decide the general case.
+  Evidence: `Thesis.CausalTransport.ProjectionTemplateRepresentation` and
+  `Thesis.Probability.IndependentBooleanObstruction`; the latter is a
+  fixed-mechanism obstruction, not graph-wide impossibility. Revisit with a
+  proved rational feasibility/uniqueness procedure or an impossibility reduction
+  for the stated causal model class.
 
 ## Builds and checks
 
