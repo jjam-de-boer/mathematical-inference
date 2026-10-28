@@ -8,12 +8,12 @@ open ConstructiveReal
 real assignments. No arbitrary real comparison is made decidable. -/
 def realInteger (factor : Int) : ConstructiveReal := ofSignedRatio ⟨factor, 1, Nat.zero_lt_one⟩
 
-private theorem realInteger_add (first second : Int) :
+theorem realInteger_add (first second : Int) :
     Equiv (add (realInteger first) (realInteger second)) (realInteger (first + second)) :=
   equiv_trans (ofSignedRatio_add _ _) ((ofSignedRatio_equiv_iff _ _).mpr (by
     simp only [SignedRatio.Equiv, SignedRatio.add, Nat.one_mul, Int.natCast_one, Int.mul_one]))
 
-private theorem realInteger_mul (first second : Int) :
+theorem realInteger_mul (first second : Int) :
     Equiv (mul (realInteger first) (realInteger second)) (realInteger (first * second)) :=
   equiv_trans (ofSignedRatio_mul _ _) ((ofSignedRatio_equiv_iff _ _).mpr (by
     simp only [SignedRatio.Equiv, SignedRatio.mul, Nat.one_mul, Int.natCast_one, Int.mul_one]))

@@ -1,4 +1,4 @@
-import Thesis.Probability.ConstructiveRealFaceMultipliers
+import Thesis.Probability.ConstructiveRealFaceKKT
 
 namespace Thesis.Examples.EntropySupportFace
 open Probability Probability.Distros ConstructiveReal
@@ -91,5 +91,20 @@ example (gradient : Fin 3 → ConstructiveReal) (certificate : problem.analyticP
     ¬ Equiv (law.mass 2).value (mul (neg (certificate.score 2)).exp certificate.partitionInverse) := by
   intro represented
   exact certificate.gibbs_not_zero 2 (equiv_trans (equiv_symm represented) (forced_zero law))
+
+/-- A boundary seed still yields signed natural multipliers on its computed
+face, including the duplicated exact constraints and their reversed rows. -/
+example (row : Fin boundarySeed.supportFace.analyticProblem.rows.length) :
+    LE zero (boundarySeed.faceKKTMultipliers.val.coefficient row) :=
+  boundarySeed.faceKKTMultipliers.property.nonnegative row
+
+example (row : Fin boundarySeed.supportFace.analyticProblem.rows.length) :
+    Equiv (mul (boundarySeed.faceKKTMultipliers.val.coefficient row) (boundarySeed.faceSeed.maximize.rowSlack row)) zero :=
+  boundarySeed.faceKKTMultipliers.property.complementary row
+
+example (index : Fin boundarySeed.supportFace.cells.length) :
+    let fitted := boundarySeed.faceKKTMultipliers.val
+    Equiv (boundarySeed.faceSeed.maximize.mass index).value (mul (neg (fitted.score index)).exp fitted.partitionInverse) :=
+  boundarySeed.faceKKT_gibbsForm index
 
 end Thesis.Examples.EntropySupportFace

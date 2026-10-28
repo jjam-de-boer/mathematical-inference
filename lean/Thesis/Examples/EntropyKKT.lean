@@ -1,4 +1,5 @@
-import Thesis.Probability.ConstructiveRealEntropyVariational
+import Thesis.Probability.ConstructiveRealFaceKKT
+import Thesis.Probability.ConstructiveRealPolynomialExpression
 
 namespace Thesis.Examples.EntropyKKT
 open Probability Probability.Distros ConstructiveReal
@@ -127,5 +128,50 @@ example : Equiv (certificate.coefficient (1 : Fin 3)) zero :=
 
 example (other : problem.RealLaw) (optimal : other.Maximal) (index : Fin 2) :
     Equiv (other.mass index).value (reference.mass index).value := other.maximal_unique reference optimal maximal index
+
+/-- The necessity theorem computes coefficients for the same redundant
+interval fixture; no multiplier certificate is passed to the constructor. -/
+private def computed := reference.kktMultipliers maximal (fun _ => floor) positive
+
+private theorem computed_inactive : Equiv (computed.val.coefficient (1 : Fin 3)) zero :=
+  computed.property.zero_of_positive_slack 1 ⟨1, 12, by decide, by decide⟩ inactiveMargin
+
+private abbrev MultiplierExpression := RationalPolynomial.Expression 4
+private def lambda0 : MultiplierExpression := .coordinate 0
+private def lambda1 : MultiplierExpression := .coordinate 1
+private def lambda2 : MultiplierExpression := .coordinate 2
+private def offset : MultiplierExpression := .coordinate 3
+private def affine0 : MultiplierExpression := .add offset
+  (.add (.mul (.constant SignedRatio.zero) lambda2) (.add (.mul (.constant SignedRatio.zero) lambda1)
+    (.add (.mul (.constant SignedRatio.zero) lambda0) (.constant SignedRatio.zero))))
+private def affine1 : MultiplierExpression := .add offset
+  (.add (.mul (.constant ⟨-1, 1, by decide⟩) lambda2) (.add (.mul (.constant SignedRatio.one) lambda1)
+    (.add (.mul (.constant ⟨-1, 1, by decide⟩) lambda0) (.constant SignedRatio.zero))))
+
+private theorem coefficient_gap (actual : problem.LagrangeCoefficients gradient) :
+    Equiv (sub (gradient 0) (gradient 1))
+      (sub (add (actual.coefficient (0 : Fin 3)) (actual.coefficient (2 : Fin 3))) (actual.coefficient (1 : Fin 3))) :=
+  equiv_trans (add_congr (actual.represents 0) (neg_congr (actual.represents 1)))
+    (RationalPolynomial.Expression.equalityCheck_sound_real (.sub affine0 affine1) (.sub (.add lambda0 lambda2) lambda1)
+      (by decide +kernel) (fun i => if i = 0 then actual.coefficient 0 else if i = 1 then actual.coefficient 1
+        else if i = 2 then actual.coefficient 2 else actual.offset))
+
+private theorem actual_gap : Equiv (sub (gradient 0) (gradient 1)) one :=
+  equiv_trans (add_congr (equiv_refl _) (neg_congr gradient_increment))
+    (RationalPolynomial.Expression.equalityCheck_sound_real
+      (.sub (.coordinate 0 : RationalPolynomial.Expression 1) (.add (.coordinate 0) (.constant ⟨-1, 1, by decide⟩)))
+      (.constant SignedRatio.one) (by decide +kernel) (fun _ => gradient 0))
+
+/-- Redundant active constraints need not have unique individual
+multipliers. Their returned total is independently recovered as one bit,
+and the genuinely inactive upper multiplier is proved zero above. -/
+example : Equiv (add (computed.val.coefficient (0 : Fin 3)) (computed.val.coefficient (2 : Fin 3))) one := by
+  have gap := equiv_trans (coefficient_gap computed.val)
+    (equiv_trans (add_congr (equiv_refl _) (neg_congr computed_inactive))
+      (equiv_trans (add_congr (equiv_refl _) (equiv_symm (ofSignedRatio_neg SignedRatio.zero))) (add_zero _)))
+  exact equiv_trans (equiv_symm gap) actual_gap
+
+example : reference.Maximal ↔ ∃ actual : problem.LagrangeCoefficients gradient, actual.KKTAt reference :=
+  reference.maximal_iff_kkt (fun _ => floor) positive
 
 end Thesis.Examples.EntropyKKT

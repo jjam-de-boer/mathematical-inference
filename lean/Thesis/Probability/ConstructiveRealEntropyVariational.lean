@@ -72,8 +72,8 @@ theorem RealLaw.maximum_variational {problem : RationalEntropyProblem variables}
 
 /-- Necessary and sufficient variational characterization of the entropy
 maximum for every original rational closed-row problem. This is a full
-normal-cone inequality; extracting signed KKT coefficients from it requires
-an additional constructive duality theorem. -/
+normal-cone inequality. `ConstructiveRealEntropyKKTNecessity` extracts signed
+KKT coefficients from it by constructive finite duality. -/
 theorem RealLaw.maximal_iff_variational {problem : RationalEntropyProblem variables} (reference : problem.RealLaw)
     (lower : Fin variables → PositiveRatio)
     (positive : ∀ i, LE (ofSignedRatio (lower i).toSignedRatio) (reference.mass i).value) :
