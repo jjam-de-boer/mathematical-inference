@@ -1,3 +1,4 @@
+import Thesis.Probability.ConstructiveRealEntropyVariational
 import Thesis.Probability.ConstructiveRealFaceMultipliers
 import Thesis.Probability.ConstructiveRealEntropyInterior
 import Thesis.Probability.ConstructiveRealEntropyGlobalOptimality
