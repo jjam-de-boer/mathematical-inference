@@ -1,3 +1,4 @@
+import Thesis.Examples.AnalyticLinear
 import Thesis.Examples.EntropyKKT
 import Thesis.Examples.EntropySupportFace
 import Thesis.Examples.AnalyticGibbs
