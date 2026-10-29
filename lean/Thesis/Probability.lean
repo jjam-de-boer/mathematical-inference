@@ -1,3 +1,4 @@
+import Thesis.Probability.FiniteGrandPhysicalFitting
 import Thesis.Probability.RationalThirteenSquareObstruction
 import Thesis.Probability.FiniteGrandThermodynamicIdentification
 import Thesis.Probability.FinitePhysicalDegeneracy
@@ -160,7 +161,13 @@ rational approximation, multiplier fitting, signed interval KKT and forced-zero
 face handling.
 
 `FinitePhysicalModel` and `FinitePhysicalEnsembles` treat declared microstates
-as physical modeling data. `FinitePhysicalDegeneracy` counts their actual fibers
+as physical modeling data. `FinitePhysicalFitting` and
+`FiniteGrandPhysicalFitting` compute named ensemble parameters from prescribed
+rational means and positive feasibility, prove exact target attainment, and
+identify the unique maximizing law. Signed parameters require separate
+physical temperature calibration; boundary problems use the general feasible
+face results without a finite full-grid parameter claim.
+`FinitePhysicalDegeneracy` counts their actual fibers
 and proves the entropy correction for grouped Gibbs laws; repeated record atoms
 remain presentation choices. Statistical physical entropy is kB*ln(2)*H_bits.
 The closed/open thermodynamic-identification theorems compare it with an

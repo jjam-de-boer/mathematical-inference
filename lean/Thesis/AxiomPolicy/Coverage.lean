@@ -1,3 +1,4 @@
+import Thesis.Examples.FiniteEnsembleFitting
 import Thesis.Examples.EntropyMeanHalfDiscriminant
 import Thesis.Examples.UniformEntropyPaths
 import Thesis.Examples.GibbsDegeneracy
