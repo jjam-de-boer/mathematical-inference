@@ -74,6 +74,7 @@ import Thesis.Examples.NativeDerivationReplacement
 import Thesis.Examples.IntegerLinearAlgebra
 import Thesis.Examples.IntegerNullspace
 import Thesis.Examples.FiniteRatioMinimum
+import Thesis.Examples.RationalLinearHomogenization
 import Thesis.Examples.AffineSupportReduction
 import Thesis.Examples.FiniteIntegerCompression
 import Thesis.Examples.FiniteRationalCompression
