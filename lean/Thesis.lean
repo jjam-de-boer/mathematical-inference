@@ -112,6 +112,7 @@ import Thesis.Examples.SharedResponseSupportedSolver
 import Thesis.Examples.SharedResponseEvidenceSupport
 import Thesis.Examples.SharedResponseConditionalValues
 import Thesis.Examples.SharedResponseConditionalRanges
+import Thesis.Examples.SupportOnlyIdentificationObstruction
 import Thesis.Examples.BoundedNativeSearch
 import Thesis.Examples.BoundedNativeClassification
 import Thesis.Examples.BoundedNativeConditionals
