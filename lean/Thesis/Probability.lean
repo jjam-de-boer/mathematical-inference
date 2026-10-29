@@ -1,3 +1,4 @@
+import Thesis.Probability.FiniteGrandThermodynamicIdentification
 import Thesis.Probability.FinitePhysicalDegeneracy
 import Thesis.Probability.ConstructivePotentialUniqueness
 import Thesis.Probability.FiniteStatisticalEntropy

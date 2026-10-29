@@ -1,3 +1,4 @@
+import Thesis.Examples.UniformEntropyPaths
 import Thesis.Examples.GibbsDegeneracy
 import Thesis.Examples.FiniteStatisticalMechanics
 import Thesis.Examples.GibbsPartition
