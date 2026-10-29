@@ -1,3 +1,4 @@
+import Thesis.Probability.RationalThirteenSquareObstruction
 import Thesis.Probability.FiniteGrandThermodynamicIdentification
 import Thesis.Probability.FinitePhysicalDegeneracy
 import Thesis.Probability.ConstructivePotentialUniqueness
@@ -147,6 +148,28 @@ information values and inequalities. `Distros.PartialMomentProblem`,
 `Distros.RationalLinearSolve` and `Distros.EntropyOptimize` own the finite
 constraint and certified optimization interfaces, with their explicit
 feasibility and approximation hypotheses.
+
+`Distros.UncertaintyCharacterization` derives Shannon entropy from explicit
+rational representation, permutation, null-outcome, grouping, uniform-order
+and fair-bit requirements. The implemented entropy inhabits that specification.
+Selecting the maximum is a further inference principle: it selects the
+admissible law with greatest uncertainty, rather than following from grouping
+consistency alone. The analytic optimization results prove the consequences
+of that selection, including constructive existence, uniqueness, exact feasible
+rational approximation, multiplier fitting, signed interval KKT and forced-zero
+face handling.
+
+`FinitePhysicalModel` and `FinitePhysicalEnsembles` treat declared microstates
+as physical modeling data. `FinitePhysicalDegeneracy` counts their actual fibers
+and proves the entropy correction for grouped Gibbs laws; repeated record atoms
+remain presentation choices. Statistical physical entropy is kB*ln(2)*H_bits.
+The closed/open thermodynamic-identification theorems compare it with an
+independent entropy satisfying a uniform Clausius law on explicitly admitted
+positive affine paths, under equilibrium and temperature calibration. They fix
+the additive constant by a reference convention and do not establish empirical
+adequacy or arbitrary-path connectivity. `EntropyMeanHalfDiscriminant` in the
+examples connects the original rational certificates to an attained irrational
+ideal law, its constructed multipliers and the exclusion of a rational maximum.
 
 ## Finite algebra and analytic values
 
