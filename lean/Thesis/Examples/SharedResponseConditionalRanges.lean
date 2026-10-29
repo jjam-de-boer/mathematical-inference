@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.SharedResponseConditionalRangeSolver
 import Thesis.Examples.SharedResponseConditionalValues
+import Thesis.Probability.FiniteProbabilityValueEscape
 
 namespace Thesis.Causality.Examples.SharedResponseConditionalRanges
 
@@ -66,6 +67,24 @@ def realizingNative (value : QProb) (bounded : QProb.LE value QProb.one) :
   computed.pointBetween value
     (QProb.le_congr (QProb.equiv_symm (full_interval computed).1) (QProb.equiv_refl _) (QProb.zero_le _))
     (QProb.le_congr (QProb.equiv_refl _) (QProb.equiv_symm (full_interval computed).2) bounded)
+
+/-- No finite list of fully weighted fitted models captures all attainable
+values, even at this single fixed observed law. This does not rule out finite
+parameterized templates, endpoint methods, or a decision procedure that needs
+only feasibility and disagreement witnesses rather than every target value. -/
+def outsideFiniteModelCatalogue
+    (catalogue : List (EvidenceSupport.SupportedModel signature observed (intervention true) topEvent)) :
+    {original : EvidenceSupport.SupportedModel signature observed (intervention true) topEvent //
+      ∀ listed ∈ catalogue, ¬ QProb.Equiv
+        (ConditionalValue.supportedValue signature observed (intervention true) topEvent (fun sample => sample y) original)
+        (ConditionalValue.supportedValue signature observed (intervention true) topEvent (fun sample => sample y) listed)} := by
+  let response := ConditionalValue.supportedValue signature observed (intervention true) topEvent (fun sample => sample y)
+  let escaped := QProb.outsideFiniteCatalogue (catalogue.map response)
+  let realized := realizingNative escaped.val escaped.property.1
+  refine ⟨realized.val, ?_⟩
+  intro listed member same
+  exact escaped.property.2 (response listed) (List.mem_map.mpr ⟨listed, member, rfl⟩)
+    (QProb.equiv_trans (QProb.equiv_symm realized.property) same)
 
 def mixedRange := ConditionalRange.ofReference signature observed (intervention true) (fun sample => sample y)
   topEvent SharedResponseConditionalValues.Bow.mixedReference

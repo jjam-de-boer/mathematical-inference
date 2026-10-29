@@ -55,6 +55,7 @@ import Thesis.Probability.EntropyTermBounds
 import Thesis.Probability.FiniteAMGM
 import Thesis.Probability.ExactLogEnclosure
 import Thesis.Probability.Core
+import Thesis.Probability.FiniteProbabilityValueEscape
 import Thesis.Probability.RationalSquareObstruction
 import Thesis.Probability.IndependentBooleanObstruction
 import Thesis.Probability.Combinatorics
