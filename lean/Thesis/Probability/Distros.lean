@@ -122,6 +122,7 @@ import Thesis.Probability.Distros.RationalSimplex
 import Thesis.Probability.Distros.RationalMassGrid
 import Thesis.Probability.Distros.PartialMomentProblem
 import Thesis.Probability.Distros.PartialMomentBounds
+import Thesis.Probability.Distros.PartialMomentConditionalBounds
 import Thesis.Probability.Distros.CovarianceRows
 import Thesis.Probability.Distros.RationalVectorSpace
 import Thesis.Probability.Distros.RationalCoordinateBasis
