@@ -77,6 +77,7 @@ import Thesis.Examples.FiniteRatioMinimum
 import Thesis.Examples.RationalLinearHomogenization
 import Thesis.Examples.RationalConditionalNormalization
 import Thesis.Examples.RationalConditionalBounds
+import Thesis.Examples.PartialMomentConditionalBounds
 import Thesis.Examples.AffineSupportReduction
 import Thesis.Examples.FiniteIntegerCompression
 import Thesis.Examples.FiniteRationalCompression
@@ -110,6 +111,7 @@ import Thesis.Examples.SharedResponseSupportedBounds
 import Thesis.Examples.SharedResponseSupportedSolver
 import Thesis.Examples.SharedResponseEvidenceSupport
 import Thesis.Examples.SharedResponseConditionalValues
+import Thesis.Examples.SharedResponseConditionalRanges
 import Thesis.Examples.BoundedNativeSearch
 import Thesis.Examples.BoundedNativeClassification
 import Thesis.Examples.BoundedNativeConditionals
