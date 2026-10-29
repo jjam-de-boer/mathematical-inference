@@ -132,6 +132,21 @@ structure SharpRange (others : Nat) (rows : List (Inequality (others + 1))) wher
   upper_valid : Satisfies rows upper
   bounds : ∀ values, Satisfies rows values → SignedRatio.LE (lower 0) (values 0) ∧ SignedRatio.LE (values 0) (upper 0)
 
+/-- Every rational value between the endpoints has an actual full feasible
+assignment. Lift the supplied value through the finite elimination trace;
+no convex-combination parameter, real interpolation or choice is required. -/
+def SharpRange.pointBetween (certificate : SharpRange others rows) (value : SignedRatio)
+    (between : SignedRatio.LE (certificate.lower 0) value ∧ SignedRatio.LE value (certificate.upper 0)) :
+    {values : Fin (others + 1) → SignedRatio // Satisfies rows values ∧ SignedRatio.Equiv (values 0) value} := by
+  let projected := projectToOne others rows
+  have lowValid := projectToOne_sound others rows certificate.lower certificate.lower_valid
+  have highValid := projectToOne_sound others rows certificate.upper certificate.upper_valid
+  have valid : Satisfies projected (oneValues value) :=
+    one_satisfies projected (certificate.lower 0) lowValid value
+      (fun bound member => SignedRatio.le_trans (one_lower_bound projected _ lowValid bound member) between.1)
+      (fun bound member => SignedRatio.le_trans between.2 (one_upper_bound projected _ highValid bound member))
+  exact liftFromOne others rows value valid
+
 def sharpRange (others : Nat) (rows : List (Inequality (others + 1)))
     (values : Fin (others + 1) → SignedRatio) (valid : Satisfies rows values)
     (lo hi : SignedRatio) (lowerMember : headRow others (-1) (SignedRatio.neg lo) ∈ rows)

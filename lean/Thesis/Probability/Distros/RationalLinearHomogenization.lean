@@ -68,6 +68,27 @@ private theorem appendCoefficient_castSucc (coefficients : Fin variables → Int
     appendCoefficient coefficients last i.castSucc = coefficients i := by
   simp only [appendCoefficient, Fin.val_castSucc, dif_pos i.isLt]
 
+/-- Retain an ordinary row while appending an unused final coordinate.
+Evidence normalization uses this for its two exact-value inequalities. -/
+def Inequality.extendZero (row : Inequality variables) : Inequality (variables + 1) where
+  coefficients := appendCoefficient row.coefficients 0
+  bound := row.bound
+
+theorem Inequality.extendZero_dot (row : Inequality variables)
+    (values : Fin variables → SignedRatio) (last : SignedRatio) :
+    SignedRatio.Equiv (dot (variables + 1) row.extendZero.coefficients (extend values last))
+      (dot variables row.coefficients values) := by
+  unfold Inequality.extendZero
+  rw [dot_extend]
+  simp only [appendCoefficient_last, appendCoefficient_castSucc]
+  exact SignedRatio.equiv_trans (SignedRatio.add_congr (SignedRatio.zero_scaleInt last) (SignedRatio.equiv_refl _))
+    (SignedRatio.zero_add _)
+
+theorem Inequality.extendZero_holds_iff (row : Inequality variables)
+    (values : Fin variables → SignedRatio) (last : SignedRatio) :
+    row.extendZero.Holds (extend values last) ↔ row.Holds values :=
+  SignedRatio.le_congr (row.extendZero_dot values last) (SignedRatio.equiv_refl _)
+
 /-- Append the scale coordinate and clear the row bound's positive natural
 denominator. The resulting inequality has a literal zero right-hand side. -/
 def Inequality.homogenize (row : Inequality variables) : Inequality (variables + 1) where
