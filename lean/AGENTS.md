@@ -12,10 +12,9 @@ The main implemented results are:
 - Finite probability laws, named distributions, moments and related inequalities.
 - Entropy and information inequalities and continuity; Shannon characterization
   from explicit uncertainty requirements on finite rational vectors in `ExactLog`.
-  Constructive ideal maximum-entropy existence and uniqueness, certified exactly
-  feasible rational approximation, multiplier fitting, signed interval KKT and
-  feasible-face handling. Selecting maximum entropy remains a further inference
-  principle.
+  Constructive ideal maximum-entropy existence and uniqueness, and certified
+  exactly feasible rational approximation. Selecting maximum entropy remains a
+  further inference principle.
 - Finite microcanonical, canonical and grand-canonical ensembles, physical
   degeneracy corrections and heat/work variation.
 - Under explicit equilibrium, temperature calibration and uniform Clausius
@@ -28,7 +27,9 @@ The main implemented results are:
   certificates on their explicit used-conditional domains. Observed domains
   supply two distinct values; hidden and private-noise alphabets may be any
   finite size.
-- Mode-indexed realizations connecting causal proofs to actual executions.
+- Public finished modes are an SCM plus current belief; compact `do` and the
+  modal stack stay on workspace records. Public 1-cells wrap existing edits.
+  Mode-indexed realizations connect causal proofs to actual executions.
 - Extensions including binary bow/instrumental-variable sharp bounds,
   fixed-law identification and attainable sets; fixed-DAG and projection-wide
   finite structural representation; and supplied polynomial-certificate checking.
@@ -46,31 +47,35 @@ The main implemented results are:
 - Observational and interventional Shannon entropy of original hidden-DAG
   assignment records: identifying an entire law identifies its entropy.
   Shannon inequalities are sound exclusion tests.
-- Finite Bayesian catalogue inference (`CatalogueInference`): a Distro prior on a
-  caller-declared or already enumerated template list; Regime A 0/1 whole-law
-  update, or Regime B Dirichlet–multinomial on a supplied observed table; then
-  `identifyJointKernel`, an override formula, or caller-supplied bounds per atom,
-  mixed without collapsing disagreement. Optional depth-capped Boolean modifier
-  trees (`CataloguePartition`) share strength on an already certified leaf
-  formula, or keep bounds if that formula is missing. Distinct from
-  `GraphQueryUncertainty`.
+- Finite Bayesian inference on a catalogue of templates: update a Distro prior
+  from data, then mix identified values and supplied bounds without collapsing
+  disagreement. This is not a graph posterior and is distinct from Shannon
+  remainder on the same catalogue.
 
 ## Living-document maintenance
 
 Keep this file concise and current when important results, useful lessons
 from unsuccessful approaches, or project instructions change. Consolidate
 or remove outdated entries rather than continually appending details.
+Results bullets are theorem-level claims and their qualifications, not
+module APIs. Pitfall entries are only approaches another agent might
+repeat: status, evidence module, and what would justify revisiting.
 
-**Every edit to this file requires prior explicit user approval.**
+**Every applied edit to this file requires prior explicit user approval.**
 Show the exact proposed changes in chat and wait for approval before
-applying them. This applies to all sections, including achieved results,
-failed approaches, build commands and working rules. Approval of a task
-does not constitute approval of future edits to this file.
+applying them. This applies to all sections. Approval of a task does not
+constitute approval of future edits to this file. Distinguish proposed
+changes from approved changes.
 
-When starting and finishing work that changes this file, notify the other
-active project agents. Distinguish proposed changes from approved changes.
-After applying approved changes, send the changed guidance and ask the
-affected agents to reread this file.
+**Before marking a `/goal` complete**, either show a short proposed diff
+for this file, or state `No AGENTS.md change.` Do not treat the goal as
+done until that proposal or that sentence is in the same turn. Propose
+an update when a main result, scoped refutation, superseded approach, or
+working rule changed; rewrite or merge an existing bullet rather than
+appending a sibling.
+
+Optional: if other project agents are active, after an approved edit tell
+them in chat to reread `lean/AGENTS.md` and quote the approved change.
 
 ## Mathematical and working principles
 
@@ -141,16 +146,14 @@ consolidate overlaps, and request approval before changing this section.
 
 - **Refuted — the old identification recursion.** On a positive front-door
   example, its returned formula evaluates to `9/16`, while the causal query
-  has value `1/2`. Evidence: `Thesis.Examples.IdentificationRegression`,
-  particularly `legacyEngineFormula_not_equivalent`. Revisit only after
-  changing the incorrect recursion.
+  has value `1/2`. Evidence: `Thesis.Examples.IdentificationRegression`.
+  Revisit only after changing the incorrect recursion.
 
 - **Refuted — unconditional composition from matching kernel metadata.**
   Matching formula-status and conditional-demand metadata does not justify
   a proof detour through an undefined conditional. Evidence:
-  `Thesis.Examples.NativeKernelInterfaceObstruction`,
-  particularly `conditional_demand_does_not_compose` and
-  `carrier_detour_rejected`. Revisit with an argument accounting for support
+  `Thesis.Examples.NativeKernelInterfaceObstruction`.
+  Revisit with an argument accounting for support
   at the active intermediate references; other reconstruction strategies
   are not ruled out.
 
@@ -165,17 +168,14 @@ consolidate overlaps, and request approval before changing this section.
 - **Refuted — universal coverage by the tested route-ready hedge family.**
   A valid hedge exists for which even the exhaustive alternative-route
   search finds no member of that family. Evidence:
-  `Thesis.Examples.HedgeCarrierRouteObstruction`,
-  particularly `no_carrier_route_coverage` and
-  `no_outer_avoiding_routes_for_any_hedge_selection`. This limits that
+  `Thesis.Examples.HedgeCarrierRouteObstruction`. This limits that
   construction, not published completeness. Revisit only with a changed
   construction or coverage condition.
 
 - **Refuted — same-type incoming cut as independent fair noise.** On a
   deterministic copy with degenerate child noise, `cutIncoming` yields
-  observational entropy 1, not 2. Evidence:
-  `Thesis.Examples.CausalEntropy.cutIncoming_not_independent_fair`. Extra
-  randomness requires a different noise type, not `withMechanism`.
+  observational entropy 1, not 2. Evidence: `Thesis.Examples.CausalEntropy`.
+  Extra randomness requires a different noise type, not `withMechanism`.
 
 - **Refuted — support-only fixed-law classification and finite concrete
   catalogues of every attainable value.** Compatible positive IV laws with
@@ -190,7 +190,7 @@ consolidate overlaps, and request approval before changing this section.
 - **Refuted — rational constraint data guarantee a rational ideal entropy
   optimizer.** The feasible three-state mean-½ problem has a unique auxiliary
   real optimum that no rational compatible law attains. Evidence:
-  `Thesis.Examples.EntropyMeanHalfDiscriminant.rational_not_maximal`.
+  `Thesis.Examples.EntropyMeanHalfDiscriminant`.
   Exactly feasible rational approximations and certificates remain available.
   Exact rational attainment requires additional proved hypotheses.
 
