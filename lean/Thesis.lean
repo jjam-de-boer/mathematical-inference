@@ -77,6 +77,7 @@ import Thesis.Examples.NativeTypedPrimitives
 import Thesis.Examples.NativePrimitiveAtoms
 import Thesis.Examples.NativeDemandEncoding
 import Thesis.Examples.NativeDemandFrames
+import Thesis.Examples.NativeDemandSteps
 import Thesis.Examples.IntegerLinearAlgebra
 import Thesis.Examples.IntegerNullspace
 import Thesis.Examples.FiniteRatioMinimum

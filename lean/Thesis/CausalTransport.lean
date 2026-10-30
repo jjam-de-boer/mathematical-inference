@@ -159,6 +159,8 @@ import Thesis.CausalTransport.NativePrimitiveAtoms
 import Thesis.CausalTransport.NativeTermAlphabet
 import Thesis.CausalTransport.NativeDemandEncoding
 import Thesis.CausalTransport.NativeDemandFrames
+import Thesis.CausalTransport.NativeDemandSteps
+import Thesis.CausalTransport.NativeStepEncoding
 import Thesis.CausalTransport.NativeCertificateCheck
 import Thesis.CausalTransport.NativeGuardCompilation
 import Thesis.CausalTransport.NativeProofEnumeration
