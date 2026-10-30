@@ -10,8 +10,18 @@ support for conditionals are part of the framework.
 The main implemented results are:
 
 - Finite probability laws, named distributions, moments and related inequalities.
-- Entropy and information inequalities, continuity, rational characterization
-  and certified finite optimization.
+- Entropy and information inequalities and continuity; Shannon characterization
+  from explicit uncertainty requirements on finite rational vectors in `ExactLog`.
+  Constructive ideal maximum-entropy existence and uniqueness, certified exactly
+  feasible rational approximation, multiplier fitting, signed interval KKT and
+  feasible-face handling. Selecting maximum entropy remains a further inference
+  principle.
+- Finite microcanonical, canonical and grand-canonical ensembles, physical
+  degeneracy corrections and heat/work variation. Under explicit equilibrium,
+  temperature calibration and uniform Clausius assumptions, independently
+  specified thermodynamic entropy agrees with statistical entropy up to a
+  reference constant along admitted quantitatively regular positive probability
+  paths.
 - Soundness of the three do-calculus rules and supported derivations.
 - Joint and conditional identification completeness for the stated positive
   model classes, original finite hidden-DAG transfer, and supported-zero
@@ -172,6 +182,13 @@ consolidate overlaps, and request approval before changing this section.
   `Thesis.Examples.SharedResponseConditionalRanges`. Parameterized structural
   catalogues, endpoint methods and general procedures using rational masses
   are not refuted. Revisit with numerical information or a weaker coverage claim.
+
+- **Refuted — rational constraint data guarantee a rational ideal entropy
+  optimizer.** The feasible three-state mean-½ problem has a unique auxiliary
+  real optimum that no rational compatible law attains. Evidence:
+  `Thesis.Examples.EntropyMeanHalfDiscriminant.rational_not_maximal`.
+  Exactly feasible rational approximations and certificates remain available.
+  Exact rational attainment requires additional proved hypotheses.
 
 - **Unresolved — universal alternative-formula coverage and stopping.**
   Checked search is complete within its declared expression/proof bounds.
