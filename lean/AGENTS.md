@@ -30,9 +30,10 @@ The main implemented results are:
 - Public finished modes are an SCM plus current belief; compact `do` and the
   modal stack stay on workspace records. Public 1-cells wrap existing edits.
   Mode-indexed realizations connect causal proofs to actual executions.
-- Extensions including binary bow/instrumental-variable sharp bounds,
-  fixed-law identification and attainable sets; fixed-DAG and projection-wide
-  finite structural representation; and supplied polynomial-certificate checking.
+- Sharp bounds for binary bow and instrumental-variable queries.
+- Finite structural representation of a fixed DAG or a projection, not a
+  general decision procedure for arbitrary rational weights.
+- Exact checking of supplied polynomial bound certificates.
 - Exact undefined/zero/positive support analysis for the current formula and
   guard languages, finite causal support-profile coverage, and checked bounded
   proof enumeration and formula selection.
@@ -67,12 +68,12 @@ applying them. This applies to all sections. Approval of a task does not
 constitute approval of future edits to this file. Distinguish proposed
 changes from approved changes.
 
-**Before marking a `/goal` complete**, either show a short proposed diff
-for this file, or state `No AGENTS.md change.` Do not treat the goal as
-done until that proposal or that sentence is in the same turn. Propose
-an update when a main result, scoped refutation, superseded approach, or
-working rule changed; rewrite or merge an existing bullet rather than
-appending a sibling.
+**Before treating landed work as done** (including marking a `/goal`
+complete), either show a short proposed diff for this file, or state
+`No AGENTS.md change.` Do not treat the work as done until that proposal
+or that sentence is in the same turn. Propose an update when a main
+result, scoped refutation, superseded approach, or working rule changed;
+rewrite or merge an existing bullet rather than appending a sibling.
 
 Optional: if other project agents are active, after an approved edit tell
 them in chat to reread `lean/AGENTS.md` and quote the approved change.
