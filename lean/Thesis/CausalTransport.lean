@@ -155,6 +155,8 @@ import Thesis.CausalTransport.NativeDemandTypes
 import Thesis.CausalTransport.NativeDerivationTyping
 import Thesis.CausalTransport.NativeTypePreservation
 import Thesis.CausalTransport.NativeTypedPrimitives
+import Thesis.CausalTransport.NativeTermAlphabet
+import Thesis.CausalTransport.NativeDemandEncoding
 import Thesis.CausalTransport.NativeCertificateCheck
 import Thesis.CausalTransport.NativeGuardCompilation
 import Thesis.CausalTransport.NativeProofEnumeration
