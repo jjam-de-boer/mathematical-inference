@@ -119,6 +119,8 @@ import Thesis.CausalTransport.InterventionalEntropy
 import Thesis.CausalTransport.GraphQueryUncertainty
 import Thesis.CausalTransport.ShannonElimination
 import Thesis.CausalTransport.EntropyAssessment
+import Thesis.CausalTransport.CatalogueInference
+import Thesis.CausalTransport.CataloguePartition
 import Thesis.CausalTransport.LatentRootNativeModel
 import Thesis.CausalTransport.LatentRootNativeEvaluation
 import Thesis.CausalTransport.CliqueRootNative
@@ -342,6 +344,10 @@ message passing. `GraphQueryUncertainty` is a finite catalogue of Markov
 hypotheses given data; it is not a graph posterior and is not a substitute
 for ID/IDC. `ShannonElimination` attempts Fourier–Motzkin hidden-variable
 elimination of elemental Shannon inequalities; it is sound and incomplete.
+`CatalogueInference` is the Bayesian finite-catalogue posterior: Pólya /
+Dirichlet–multinomial or 0/1 whole-law likelihood, then certified ID or
+sharp bounds per atom, mixed without collapsing disagreement.
+`CataloguePartition` is the optional depth-capped Boolean modifier tree.
 
 `HiddenDAGCollapse`, `HiddenDAGProbability` and `HiddenDAGCountermodelLift`
 connect projected constructions to actual original finite hidden-DAG records.
