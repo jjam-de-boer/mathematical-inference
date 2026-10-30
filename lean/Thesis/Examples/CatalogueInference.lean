@@ -110,13 +110,13 @@ def lawReport : Report 3 Item signature :=
       reportOf catalogue catalogue.prior lawWeights lawAnswer
 
 theorem independence_law_weight_zero : lawWeights ⟨0, by decide⟩ = 0 := by
-  native_decide
+  decide +kernel
 
 theorem chain_law_weight_one : lawWeights ⟨1, by decide⟩ = 1 := by
-  native_decide
+  decide +kernel
 
 theorem bow_law_weight_one : lawWeights ⟨2, by decide⟩ = 1 := by
-  native_decide
+  decide +kernel
 
 set_option maxRecDepth 100000
 
@@ -139,7 +139,7 @@ theorem bow_failed : bowFailed = true := by
 
 theorem law_posterior_exists :
     (posterior? catalogue.prior lawWeights).isSome = true := by
-  native_decide
+  decide +kernel
 
 def lawPosterior : Distro (Fin 3) :=
   match posterior? catalogue.prior lawWeights with
@@ -148,15 +148,15 @@ def lawPosterior : Distro (Fin 3) :=
 
 theorem independence_posterior_zero :
     (lawPosterior.pmf ⟨0, by decide⟩).num = 0 := by
-  native_decide
+  decide +kernel
 
 theorem chain_posterior_pos :
     0 < (lawPosterior.pmf ⟨1, by decide⟩).num := by
-  native_decide
+  decide +kernel
 
 theorem bow_posterior_pos :
     0 < (lawPosterior.pmf ⟨2, by decide⟩).num := by
-  native_decide
+  decide +kernel
 
 def chainValue : ProbabilityResult.Result :=
   match lawAnswer ⟨1, by decide⟩ with
@@ -190,13 +190,13 @@ def isIdentifiedLeaf : LeafAnswer → Bool
   | _ => false
 
 theorem chain_identified_answer : isIdentified (lawAnswer ⟨1, by decide⟩) = true := by
-  native_decide
+  decide +kernel
 
 theorem bow_bounded_answer : isBounded (lawAnswer ⟨2, by decide⟩) = true := by
-  native_decide
+  decide +kernel
 
 theorem law_mixture_spread : isSpread lawReport.mixture = true := by
-  native_decide
+  decide +kernel
 
 /-- Existing bow endpoint models are the bound witnesses. -/
 def bowLowerModel := BinaryBow.model correlated false
@@ -210,7 +210,7 @@ def lawOddsChainBow : Option (QProb × QProb) :=
     ⟨lawWeights ⟨2, by decide⟩, 1, Nat.succ_pos 0⟩
 
 theorem law_odds_defined : lawOddsChainBow.isSome = true := by
-  native_decide
+  decide +kernel
 
 /-! ## Regime B: Dirichlet–multinomial on the observed table -/
 
@@ -263,7 +263,7 @@ def countWeights : Fin 3 → Nat :=
 def countLaw : FiniteProbRecord signature.Assignment :=
   recordOfCounts labels bins
     (by simp [bins, labels, List.length_map])
-    (by native_decide)
+    (by decide +kernel)
 
 def countAnswer (i : Fin 3) : TemplateAnswer signature :=
   let item := catalogue.item i
@@ -276,15 +276,15 @@ def countReport : Report 3 Item signature :=
 
 theorem count_posterior_exists :
     (posterior? catalogue.prior countWeights).isSome = true := by
-  native_decide
+  decide +kernel
 
 theorem count_independence_pos :
     0 < (countReport.mass ⟨0, by decide⟩).num := by
-  native_decide
+  decide +kernel
 
 theorem count_mixture_keeps_disagreement :
     keepsDisagreement countReport.mixture = true := by
-  native_decide
+  decide +kernel
 
 /-! ## Layer 3: depth-capped Boolean `W`, identified leaf formula -/
 
@@ -295,7 +295,7 @@ def leafIdentified : LeafAnswer :=
   leafAnswer true pooled none
 
 theorem leaf_tau_defined : isIdentifiedLeaf leafIdentified = true := by
-  native_decide
+  decide +kernel
 
 def cap1Trees : List SplitTree := treesUpTo 1
 
@@ -313,7 +313,7 @@ def stumpWeights : Fin (treesUpTo 1).length → Nat :=
 
 theorem stump_posterior_exists :
     (posterior? (treePrior 1) stumpWeights).isSome = true := by
-  native_decide
+  decide +kernel
 
 def stumpPosterior : Distro (Fin (treesUpTo 1).length) :=
   match posterior? (treePrior 1) stumpWeights with
@@ -325,7 +325,7 @@ def stumpTau (cell : Cell) : Option SignedRatio :=
 
 theorem stump_tau_cell0 :
     (stumpTau ⟨0, by decide⟩).isSome = true := by
-  native_decide
+  decide +kernel
 
 def refinement : ObservationChain (discreteUniformDistro 4 (by decide)) 1 :=
   firstBitChain _
