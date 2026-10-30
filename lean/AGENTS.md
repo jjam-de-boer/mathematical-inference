@@ -17,11 +17,11 @@ The main implemented results are:
   feasible-face handling. Selecting maximum entropy remains a further inference
   principle.
 - Finite microcanonical, canonical and grand-canonical ensembles, physical
-  degeneracy corrections and heat/work variation. Under explicit equilibrium,
-  temperature calibration and uniform Clausius assumptions, independently
-  specified thermodynamic entropy agrees with statistical entropy up to a
-  reference constant along admitted quantitatively regular positive probability
-  paths.
+  degeneracy corrections and heat/work variation.
+- Under explicit equilibrium, temperature calibration and uniform Clausius
+  assumptions, independently specified thermodynamic entropy agrees with
+  statistical entropy up to a reference constant along admitted quantitatively
+  regular positive probability paths.
 - Soundness of the three do-calculus rules and supported derivations.
 - Joint and conditional identification completeness for the stated positive
   model classes, original finite hidden-DAG transfer, and supported-zero
@@ -45,18 +45,15 @@ The main implemented results are:
   Probability weights remain finite and rational.
 - Observational and interventional Shannon entropy of original hidden-DAG
   assignment records: identifying an entire law identifies its entropy.
-  Shannon inequalities are sound exclusion tests, not substitutes for a
-  Bayesian graph posterior or Körner graph entropy. Remaining uncertainty
-  among a finite catalogue of graph hypotheses, given data and supplied
-  identifiability, is Shannon entropy of that catalogue; it does not run
-  ID/IDC and is not a graph posterior.
-- Finite Bayesian catalogue inference: a Distro prior on a caller-declared
-  (or already enumerated) template list; 0/1 or Dirichlet–multinomial update;
-  then identifyJointKernel or caller-supplied sharp bounds per atom, mixed
-  without collapsing disagreement. Optional depth-capped Boolean modifier
-  trees share strength after identification; they do not search graphs.
-  This is distinct from GraphQueryUncertainty, which remains a Shannon
-  remainder and does not run ID/IDC.
+  Shannon inequalities are sound exclusion tests.
+- Finite Bayesian catalogue inference (`CatalogueInference`): a Distro prior on a
+  caller-declared or already enumerated template list; Regime A 0/1 whole-law
+  update, or Regime B Dirichlet–multinomial on a supplied observed table; then
+  `identifyJointKernel`, an override formula, or caller-supplied bounds per atom,
+  mixed without collapsing disagreement. Optional depth-capped Boolean modifier
+  trees (`CataloguePartition`) share strength on an already certified leaf
+  formula, or keep bounds if that formula is missing. Distinct from
+  `GraphQueryUncertainty`.
 
 ## Living-document maintenance
 
@@ -196,6 +193,13 @@ consolidate overlaps, and request approval before changing this section.
   `Thesis.Examples.EntropyMeanHalfDiscriminant.rational_not_maximal`.
   Exactly feasible rational approximations and certificates remain available.
   Exact rational attainment requires additional proved hypotheses.
+
+- **Refuted — unrestricted zero-class success equivalence.** Guarded joint ID
+  can succeed on an unconfounded `X -> Y` while `do(X)` at an unobserved action
+  value is not identified in `HiddenDAGModelClass.all`. Evidence:
+  `Thesis.Examples.GuardedHiddenDAGZeroBoundary`. The support-qualified
+  soundness/completeness package is unaffected. Revisit only with a changed
+  zero-class claim.
 
 - **Unresolved — universal alternative-formula coverage and stopping.**
   Checked search is complete within its declared expression/proof bounds.
