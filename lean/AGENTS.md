@@ -27,9 +27,9 @@ The main implemented results are:
   proof enumeration and formula selection.
 - Exact attained bounds and point-identification tests for unconditional
   intervention events in the complete-bidirected finite hidden-DAG class,
-  without fixed hidden-alphabet or rational-denominator bounds. Conditional
-  classification separately reports evidence support and agreement among
-  models with positive evidence.
+  without fixed hidden-alphabet or rational-denominator bounds. Supported
+  conditional queries also have exact attained ranges and witnesses for
+  every intermediate rational value; evidence support is reported separately.
 - Auxiliary constructive analytic values, including real arithmetic,
   logarithms, exponentials and differentiation with explicit error control.
   Probability weights remain finite and rational.
@@ -162,6 +162,16 @@ consolidate overlaps, and request approval before changing this section.
   observational entropy 1, not 2. Evidence:
   `Thesis.Examples.CausalEntropy.cutIncoming_not_independent_fair`. Extra
   randomness requires a different noise type, not `withMechanism`.
+
+- **Refuted — support-only fixed-law classification and finite concrete
+  catalogues of every attainable value.** Compatible positive IV laws with
+  identical observed support can disagree on point identification. At one
+  fixed bow law, an actual model realizes a target value outside any finite
+  list of fully weighted models. Evidence:
+  `Thesis.Examples.SupportOnlyIdentificationObstruction` and
+  `Thesis.Examples.SharedResponseConditionalRanges`. Parameterized structural
+  catalogues, endpoint methods and general procedures using rational masses
+  are not refuted. Revisit with numerical information or a weaker coverage claim.
 
 - **Unresolved — universal alternative-formula coverage and stopping.**
   Checked search is complete within its declared expression/proof bounds.

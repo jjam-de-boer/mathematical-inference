@@ -71,6 +71,7 @@ import Thesis.Examples.NativeBoundedSelection
 import Thesis.Examples.NativeDerivationLinearization
 import Thesis.Examples.NativeKernelInterfaceObstruction
 import Thesis.Examples.NativeDerivationReplacement
+import Thesis.Examples.NativeDemandTypes
 import Thesis.Examples.IntegerLinearAlgebra
 import Thesis.Examples.IntegerNullspace
 import Thesis.Examples.FiniteRatioMinimum

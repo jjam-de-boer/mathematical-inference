@@ -149,6 +149,8 @@ import Thesis.CausalTransport.NativeSupportProfiles
 import Thesis.CausalTransport.NativeDerivationSupportCheck
 import Thesis.CausalTransport.NativeDerivationReplacement
 import Thesis.CausalTransport.NativeSupportGuard
+import Thesis.CausalTransport.NativeDemandTypes
+import Thesis.CausalTransport.NativeDerivationTyping
 import Thesis.CausalTransport.NativeCertificateCheck
 import Thesis.CausalTransport.NativeGuardCompilation
 import Thesis.CausalTransport.NativeProofEnumeration
