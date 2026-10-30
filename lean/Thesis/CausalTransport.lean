@@ -161,6 +161,8 @@ import Thesis.CausalTransport.NativeDemandEncoding
 import Thesis.CausalTransport.NativeDemandFrames
 import Thesis.CausalTransport.NativeDemandSteps
 import Thesis.CausalTransport.NativeStepEncoding
+import Thesis.CausalTransport.NativeDemandPaths
+import Thesis.CausalTransport.NativePathEncoding
 import Thesis.CausalTransport.NativeCertificateCheck
 import Thesis.CausalTransport.NativeGuardCompilation
 import Thesis.CausalTransport.NativeProofEnumeration
