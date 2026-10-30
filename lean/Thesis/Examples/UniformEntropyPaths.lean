@@ -60,4 +60,22 @@ example (potential : ∀ t, unitDomain t → ConstructiveReal)
   exact equiv_trans agreement (equiv_trans (add_congr (one_mul one) (equiv_refl seven))
     (equiv_trans (ofSignedRatio_add _ _) ((ofSignedRatio_equiv_iff _ _).mpr (by decide +kernel))))
 
+
+/-- The comparison also works across a parameter interval of length two;
+the uniform certificate is transported to the unit interval rather than
+assuming the old auxiliary width restriction. -/
+example (potential : ∀ t : ConstructiveReal, True → ConstructiveReal)
+    (derivative : UniformDerivativeWithin (fun _ => True) potential (fun t _ => add t t))
+    (reference : Equiv (potential zero True.intro) seven) :
+    Equiv (potential two True.intro) (ofSignedRatio ⟨11, 1, by decide⟩) := by
+  have ordered : LE zero two := (ofSignedRatio_le_iff _ _).mpr (by decide +kernel)
+  have referenceValue : Equiv (add (mul zero zero) seven) seven :=
+    equiv_trans (add_congr (zero_mul zero) (equiv_refl seven)) (zero_add seven)
+  have agreement := derivative.agreement_of_reference_on_interval
+    (square_uniformDerivative (fun _ => True)) (fun _ _ => equiv_refl _)
+    zero two seven ordered (fun _ _ _ => True.intro)
+    (equiv_trans reference (equiv_symm referenceValue))
+  exact equiv_trans agreement (equiv_trans (add_congr (ofSignedRatio_mul _ _) (equiv_refl seven))
+    (equiv_trans (ofSignedRatio_add _ _) ((ofSignedRatio_equiv_iff _ _).mpr (by decide +kernel))))
+
 end Thesis.Examples.UniformEntropyPaths

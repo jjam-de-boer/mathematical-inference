@@ -1,3 +1,5 @@
+import Thesis.Probability.ConstructiveUniformElementary
+import Thesis.Probability.FiniteGrandThermodynamicCurve
 import Thesis.Probability.FiniteGrandPhysicalFitting
 import Thesis.Probability.RationalThirteenSquareObstruction
 import Thesis.Probability.FiniteGrandThermodynamicIdentification
@@ -172,12 +174,20 @@ face results without a finite full-grid parameter claim.
 and proves the entropy correction for grouped Gibbs laws; repeated record atoms
 remain presentation choices. Statistical physical entropy is kB*ln(2)*H_bits.
 The closed/open thermodynamic-identification theorems compare it with an
-independent entropy satisfying a uniform Clausius law on explicitly admitted
-positive affine paths, under equilibrium and temperature calibration. They fix
-the additive constant by a reference convention and do not establish empirical
-adequacy or arbitrary-path connectivity. `EntropyMeanHalfDiscriminant` in the
-examples connects the original rational certificates to an attained irrational
-ideal law, its constructed multipliers and the exclusion of a rational maximum.
+independent entropy satisfying a uniform Clausius law along admitted positive
+probability paths. `RegularProbabilityCurve` retains coordinate derivatives,
+shared remainder bounds and quantitative velocity/positivity bounds; the
+entropy certificate and normalization tangent are derived. Current energy
+levels may vary, with level-variation work kept separate from the probability
+contribution and chemical exchange. Equilibrium and temperature calibration
+remain explicit physical inputs. A reference convention fixes the additive
+constant; empirical adequacy and arbitrary-path connectivity are not asserted.
+`BinaryGibbsCurve` and `ThermodynamicGibbsCurve` in the examples construct an
+actual varying Gibbs path from exponential/reciprocal bounds and check both
+the closed and nonzero-chemical-potential entropy rates.
+`EntropyMeanHalfDiscriminant` connects the original rational certificates to
+an attained irrational ideal, its constructed multipliers and the exclusion
+of a rational maximum.
 
 ## Finite algebra and analytic values
 
