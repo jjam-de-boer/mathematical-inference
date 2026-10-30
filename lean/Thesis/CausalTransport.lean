@@ -347,10 +347,12 @@ message passing. `GraphQueryUncertainty` is a finite catalogue of Markov
 hypotheses given data; it is not a graph posterior and is not a substitute
 for ID/IDC. `ShannonElimination` attempts Fourier–Motzkin hidden-variable
 elimination of elemental Shannon inequalities; it is sound and incomplete.
-`CatalogueInference` is the Bayesian finite-catalogue posterior: Pólya /
-Dirichlet–multinomial or 0/1 whole-law likelihood, then certified ID or
-sharp bounds per atom, mixed without collapsing disagreement.
-`CataloguePartition` is the optional depth-capped Boolean modifier tree.
+`CatalogueInference` is the Bayesian finite-catalogue posterior: a Distro
+prior on a caller-declared or already enumerated list, 0/1 or
+Dirichlet–multinomial update, then `identifyJointKernel` or caller-supplied
+sharp bounds per atom, mixed without collapsing disagreement. It is
+distinct from `GraphQueryUncertainty`. `CataloguePartition` is the optional
+depth-capped Boolean modifier tree; it does not search graphs.
 
 `HiddenDAGCollapse`, `HiddenDAGProbability` and `HiddenDAGCountermodelLift`
 connect projected constructions to actual original finite hidden-DAG records.

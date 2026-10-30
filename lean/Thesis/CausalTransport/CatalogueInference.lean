@@ -12,7 +12,7 @@ namespace CatalogueInference
 open Probability Probability.Distros Probability.Combinatorics
 
 /-!
-# Bayesian posterior on a finite catalogue, with certified ID or bounds
+# Bayesian posterior on a finite catalogue, with kernel ID or bounds
 
 Layer 1 places a `Distro` prior on a finite list of hypotheses and updates
 it by supported reweighting. Layer 2 reuses `identifyJointKernel` and the

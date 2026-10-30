@@ -50,6 +50,13 @@ The main implemented results are:
   among a finite catalogue of graph hypotheses, given data and supplied
   identifiability, is Shannon entropy of that catalogue; it does not run
   ID/IDC and is not a graph posterior.
+- Finite Bayesian catalogue inference: a Distro prior on a caller-declared
+  (or already enumerated) template list; 0/1 or Dirichlet–multinomial update;
+  then identifyJointKernel or caller-supplied sharp bounds per atom, mixed
+  without collapsing disagreement. Optional depth-capped Boolean modifier
+  trees share strength after identification; they do not search graphs.
+  This is distinct from GraphQueryUncertainty, which remains a Shannon
+  remainder and does not run ID/IDC.
 
 ## Living-document maintenance
 
