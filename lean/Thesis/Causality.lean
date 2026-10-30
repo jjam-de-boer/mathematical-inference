@@ -73,6 +73,7 @@ import Thesis.Causality.ProbabilityTermEquality
 import Thesis.Causality.ProbabilityTermCode
 import Thesis.Causality.DerivationCode
 import Thesis.Causality.DerivationLinearization
+import Thesis.Causality.PrimitiveAtomCode
 import Thesis.Causality.ProbabilityTermEnumeration
 import Thesis.Causality.DerivationEnumeration
 import Thesis.Causality.CodeEnumerationCounts

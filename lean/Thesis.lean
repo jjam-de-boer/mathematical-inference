@@ -74,6 +74,7 @@ import Thesis.Examples.NativeKernelInterfaceObstruction
 import Thesis.Examples.NativeDerivationReplacement
 import Thesis.Examples.NativeDemandTypes
 import Thesis.Examples.NativeTypedPrimitives
+import Thesis.Examples.NativePrimitiveAtoms
 import Thesis.Examples.NativeDemandEncoding
 import Thesis.Examples.NativeDemandFrames
 import Thesis.Examples.IntegerLinearAlgebra
