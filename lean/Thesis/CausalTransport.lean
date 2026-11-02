@@ -167,6 +167,7 @@ import Thesis.CausalTransport.NativeStepPreservation
 import Thesis.CausalTransport.NativeRewriteOccurrences
 import Thesis.CausalTransport.NativeStepEncoding
 import Thesis.CausalTransport.NativeDemandPaths
+import Thesis.CausalTransport.NativeRewriteTraces
 import Thesis.CausalTransport.NativePathEncoding
 import Thesis.CausalTransport.NativeDerivationPaths
 import Thesis.CausalTransport.NativeGuardedPaths
