@@ -160,7 +160,9 @@ import Thesis.CausalTransport.NativeTermAlphabet
 import Thesis.CausalTransport.NativeDemandEncoding
 import Thesis.CausalTransport.NativeDemandFrames
 import Thesis.CausalTransport.NativeFramePreservation
+import Thesis.CausalTransport.NativeFrameRecovery
 import Thesis.CausalTransport.NativeDemandSteps
+import Thesis.CausalTransport.NativeStepPreservation
 import Thesis.CausalTransport.NativeStepEncoding
 import Thesis.CausalTransport.NativeDemandPaths
 import Thesis.CausalTransport.NativePathEncoding

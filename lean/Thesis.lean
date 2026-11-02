@@ -79,6 +79,7 @@ import Thesis.Examples.NativeDemandEncoding
 import Thesis.Examples.NativeDemandFrames
 import Thesis.Examples.NativeFramePreservation
 import Thesis.Examples.NativeDemandSteps
+import Thesis.Examples.NativeStepPreservation
 import Thesis.Examples.NativeDemandPaths
 import Thesis.Examples.NativeGuardedPaths
 import Thesis.Examples.IntegerLinearAlgebra
