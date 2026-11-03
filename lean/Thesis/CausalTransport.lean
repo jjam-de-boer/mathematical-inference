@@ -173,6 +173,8 @@ import Thesis.CausalTransport.NativeTargetRecognition
 import Thesis.CausalTransport.NativePathEncoding
 import Thesis.CausalTransport.NativeDerivationPaths
 import Thesis.CausalTransport.NativeGuardedPaths
+import Thesis.CausalTransport.NativeQueryDemand
+import Thesis.CausalTransport.NativeQueryPaths
 import Thesis.CausalTransport.NativeCertificateCheck
 import Thesis.CausalTransport.NativeGuardCompilation
 import Thesis.CausalTransport.NativeProofEnumeration
