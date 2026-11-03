@@ -28,6 +28,7 @@ import Thesis.Causality.ValueRefinementMarginal
 import Thesis.Causality.IdentificationSearch
 import Thesis.Causality.ComponentConnectivity
 import Thesis.Causality.ReachabilityCorrectness
+import Thesis.Causality.PetriNet
 import Thesis.Causality.IdentificationRank
 import Thesis.Causality.HedgeSelectionSearch
 import Thesis.Causality.ConditionalUniqueness
@@ -133,6 +134,10 @@ separate checked finite syntax from semantic interpretation.
 `DerivationLinearization` preserves an existing proof's endpoints.
 Admission checks retain their explicitly bounded catalogue; native support
 checking is supplied downstream.
+
+`PetriNet` supplies independent finite-counter execution semantics, exact
+checking of supplied transition words, and execution composition. Token
+counts are unbounded; this foundation does not decide general reachability.
 
 ## Modal, counterfactual and mode-theory interfaces
 

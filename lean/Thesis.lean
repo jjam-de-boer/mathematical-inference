@@ -87,6 +87,7 @@ import Thesis.Examples.NativeTargetRecognition
 import Thesis.Examples.NativeGuardedPaths
 import Thesis.Examples.NativeQueryPaths
 import Thesis.Examples.NativeTraceCertificates
+import Thesis.Examples.PetriNet
 import Thesis.Examples.IntegerLinearAlgebra
 import Thesis.Examples.IntegerNullspace
 import Thesis.Examples.FiniteRatioMinimum
