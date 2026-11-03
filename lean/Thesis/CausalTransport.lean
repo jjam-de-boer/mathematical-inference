@@ -368,10 +368,12 @@ for ID/IDC. `ShannonElimination` attempts Fourier–Motzkin hidden-variable
 elimination of elemental Shannon inequalities; it is sound and incomplete.
 `CatalogueInference` is the Bayesian finite-catalogue posterior: a Distro
 prior on a caller-declared or already enumerated list, 0/1 or
-Dirichlet–multinomial update, then `identifyJointKernel` or caller-supplied
-sharp bounds per atom, mixed without collapsing disagreement. It is
-distinct from `GraphQueryUncertainty`. `CataloguePartition` is the optional
-depth-capped Boolean modifier tree; it does not search graphs.
+Dirichlet–multinomial update from observational **or** interventional finite
+tables, then `identifyJointKernel` or caller-supplied sharp bounds per atom,
+mixed without collapsing disagreement. An exhausted catalogue is unsupported,
+not a unique DAG. It is distinct from `GraphQueryUncertainty`.
+`CataloguePartition` is the optional depth-capped Boolean modifier tree; it
+does not search graphs.
 
 `HiddenDAGCollapse`, `HiddenDAGProbability` and `HiddenDAGCountermodelLift`
 connect projected constructions to actual original finite hidden-DAG records.

@@ -1,5 +1,6 @@
 import Thesis.Causality.IdentificationKernel
 import Thesis.Causality.ObservationalEvaluation
+import Thesis.Causality.HardIntervention
 import Thesis.Probability.Distros.Categorical
 import Thesis.Probability.Distros.Reweight
 import Thesis.Probability.Distros.RationalPolya
@@ -25,23 +26,56 @@ of one hidden DAG share that DAG's observed graph, so Layer 2 is constant
 on such a list; Regime A/B still distinguish mechanism shapes.
 
 Regime A is a 0/1 whole-law likelihood: whether the hypothesis realizes the
-supplied observational record, including zeros. Regime B is Dirichlet–
-multinomial / Pólya on a table. The v1 default is the **observed** assignment
-table (caller-supplied Dirichlet parameters). Summing bounded hidden
-assignments is the same compound law on caller-enumerated hidden count
-tables; wiring `CodeNativeTemplate` source tables to those completions is
-the remaining native-template generalization.
+supplied record, including zeros, on each independent dataset. A dataset is
+observational (`do` empty) or a `HardIntervention`. Graphs-only atoms cannot
+generate \(P(\cdot\mid do(x))\); scoring an interventional table requires a
+realized SCM (or an explicit predicted table). Bounds-only atoms may
+**exclude** a query margin outside `[lo, hi]`; data inside the interval does
+not confirm the atom. Regime B is Dirichlet–multinomial / Pólya on that
+table, with hypothesis-specific predicted cell masses when the atom is not
+the saturated joint.
+
+Independent experiments multiply natural weights. If every positive-prior
+atom then has likelihood 0, `posterior?` / `infer` return `none` and the
+mixture is `empty`: the catalogue is **exhausted**, not replaced by a
+silent fallback graph. Complexity scores belong only as prior weights.
 
 Defined-zero and undefined formula values stay distinct. No `0/0`
-completion. Graph-query Shannon entropy remains a separate diagnostic.
+completion. Identified formulas remain action-free observational terms
+evaluated on observational tables. Interventional scoring is likelihood,
+not a second ID engine. Graph-query Shannon entropy remains a separate
+diagnostic.
 -/
 
 variable {α : Type} {S : ObservedSignature.{0}}
 
-/-- Observational input for a catalogue update. -/
+/-- One finite table: a whole law or a count word on observed assignments. -/
 inductive CatalogueData (S : ObservedSignature) where
   | law (record : FiniteProbRecord S.Assignment)
   | counts (labels : List S.Assignment) (bins : List Nat)
+
+/-- Empty `do` is observation; a nonempty `HardIntervention` is an experiment. -/
+inductive ExperimentTag (S : ObservedSignature) where
+  | observational
+  | intervene (action : HardIntervention S)
+
+/-- One independent dataset: a tag plus a law or count table. -/
+structure Experiment (S : ObservedSignature) where
+  tag : ExperimentTag S
+  data : CatalogueData S
+
+def observationalExperiment (data : CatalogueData S) : Experiment S :=
+  ⟨.observational, data⟩
+
+def interveneExperiment (action : HardIntervention S) (data : CatalogueData S) :
+    Experiment S :=
+  ⟨.intervene action, data⟩
+
+/-- The action used to generate a predictive table. Empty `do` is
+`HardIntervention.empty`. -/
+def ExperimentTag.action : ExperimentTag S → HardIntervention S
+  | .observational => HardIntervention.empty S
+  | .intervene action => action
 
 /-- Finite labelled catalogue with a categorical prior on its indices. -/
 structure Catalogue (n : Nat) (α : Type) where
@@ -73,6 +107,36 @@ def Catalogue.uniform (n : Nat) (item : Fin n → α) (nonempty : 0 < n) :
 def boolWeight : Bool → Nat
   | false => 0
   | true => 1
+
+/-- Simpler atoms get more prior mass: `budget + 1 - complexity`, zero if
+complexity exceeds the budget. This is a prior, not a data score. After
+observational likelihoods are equal, posterior odds equal these prior odds. -/
+def complexityWeight (budget complexity : Nat) : Nat :=
+  if complexity ≤ budget then budget + 1 - complexity else 0
+
+def ofListByComplexity (items : List α) (complexity : Fin items.length → Nat)
+    (budget : Nat)
+    (positive : 0 < natSum items.length
+      (finWeight (fun i => complexityWeight budget (complexity i)))) :
+    Catalogue items.length α :=
+  ofList items (fun i => complexityWeight budget (complexity i)) positive
+
+/-- Product of independent natural experiment weights. The empty list is
+likelihood 1 (no data). -/
+def mulNatList : List Nat → Nat
+  | [] => 1
+  | w :: rest => w * mulNatList rest
+
+def independentWeights (perExperiment : List Nat) : Nat :=
+  mulNatList perExperiment
+
+/-- Product of independent rational masses (Regime B across experiments). -/
+def mulQProbList : List QProb → QProb
+  | [] => QProb.one
+  | w :: rest => QProb.mul w (mulQProbList rest)
+
+def independentQProb (masses : List QProb) : QProb :=
+  mulQProbList masses
 
 /-- Product of natural coordinates, used to clear rational likelihood dens. -/
 def natProduct : (n : Nat) → (Fin n → Nat) → Nat
@@ -125,13 +189,18 @@ def sumHiddenCompletions (trials : Nat) (alphas : List QProb)
   QProb.listSum (completions.map (dirichletMultinomialMass trials alphas positive))
 
 /-- Bayes update: reweight the prior by a natural likelihood. `none` when
-every atom with positive prior mass has likelihood zero. -/
+every atom with positive prior mass has likelihood zero: the catalogue is
+exhausted, and no fallback graph is invented. -/
 def posterior? (prior : Distro (Fin n)) (weight : Fin n → Nat) :
     Option (Distro (Fin n)) :=
   if h : 0 < natIntegral prior.record.atoms weight then
     some (prior.reweightNat weight h)
   else
     none
+
+/-- `true` when `posterior?` is `none`. The listed hypotheses are exhausted. -/
+def catalogueExhausted (prior : Distro (Fin n)) (weight : Fin n → Nat) : Bool :=
+  (posterior? prior weight).isNone
 
 theorem natIntegral_singleton_weight_zero [DecidableEq Ω]
     (atoms : List (Ω × Nat)) (weight : Ω → Nat) (x : Ω) (hx : weight x = 0) :
@@ -295,12 +364,24 @@ def mixAnswers (μ : Distro (Fin n)) (answer : Fin n → TemplateAnswer S) :
           | none => .spread (atoms.map fun i => (i.val, answer i))
 
 /-- Evaluate an identified observational formula on a supplied table.
-Counts data yield `none` unless the caller first builds a predictive law. -/
+Counts data yield `none` unless the caller first builds a predictive law.
+Interventional tables are scored as likelihoods, not by running this
+action-free term under `do`. -/
 def interpretTerm (term : ProbabilityTerm S) (data : CatalogueData S)
     (reference : S.Assignment) : ProbabilityResult.Result :=
   match data with
   | .law record => term.observationalDenote record reference
   | .counts _ _ => none
+
+/-- First observational dataset, including an explicit empty `do`. -/
+def firstObservationalData : List (Experiment S) → Option (CatalogueData S)
+  | [] => none
+  | e :: rest =>
+      match e.tag with
+      | .observational => some e.data
+      | .intervene action =>
+          if finAll S.count (fun i => !(action.targets i)) then some e.data
+          else firstObservationalData rest
 
 /-- Layer 2: ID on the hypothesis graph, optional formula override (for
 mechanism restrictions on a shared host signature), and optional bounds
@@ -346,8 +427,8 @@ def reportOf (catalogue : Catalogue n α) (posterior : Distro (Fin n))
   answer := answer
   mixture := mixAnswers posterior answer
 
-/-- Layer 1+2 pipeline. Fails only when the likelihood vanishes on the
-whole prior support. -/
+/-- Layer 1+2 pipeline. `none` when the catalogue is exhausted (likelihood
+vanishes on the whole prior support). That is not a unique-graph answer. -/
 def infer (catalogue : Catalogue n α) (weight : Fin n → Nat)
     (answer : Fin n → TemplateAnswer S) : Option (Report n α S) :=
   match posterior? catalogue.prior weight with
@@ -384,6 +465,66 @@ def recordOfCounts (labels : List Ω) (counts : List Nat)
   den := counts.sum
   den_pos := positive
   total_mass := totalMass_weightedAtoms labels counts hlen
+
+/-- Whole-law agreement, including zeros. Undefined is not used here:
+both records always supply a singleton mass. -/
+def recordsAgree (predicted observed : FiniteProbRecord S.Assignment) : Bool :=
+  S.assignmentEnumeration.all fun assignment =>
+    decide (QProb.Equiv
+      (predicted.probVal (FiniteProbRecord.singletonEvent assignment))
+      (observed.probVal (FiniteProbRecord.singletonEvent assignment)))
+
+def dataAsRecord : CatalogueData S → Option (FiniteProbRecord S.Assignment)
+  | .law record => some record
+  | .counts labels bins =>
+      if hlen : labels.length = bins.length then
+        if hpos : 0 < bins.sum then
+          some (recordOfCounts labels bins hlen hpos)
+        else none
+      else none
+
+/-- Predicted table of a realized SCM. Empty `do` is
+`HardIntervention.empty`, whose pushforward is the observational law.
+Hidden-DAG or table SCMs feed `regimeAWeight` / `regimeBMass` the same
+way after computing their `interventionalDist`. -/
+def predictedTable (scm : ExactModel S) (tag : ExperimentTag S) :
+    FiniteProbRecord S.Assignment :=
+  scm.interventionalDist tag.action.value
+
+/-- Regime A: 0/1 whether `predicted` realizes the dataset, zeros included. -/
+def regimeAWeight (predicted : FiniteProbRecord S.Assignment)
+    (data : CatalogueData S) : Nat :=
+  match dataAsRecord data with
+  | none => 0
+  | some observed => boolWeight (recordsAgree predicted observed)
+
+/-- Independent Regime A weights of a generative SCM on a list of experiments. -/
+def regimeAModelWeight (scm : ExactModel S) (experiments : List (Experiment S)) : Nat :=
+  independentWeights (experiments.map fun e =>
+    regimeAWeight (predictedTable scm e.tag) e.data)
+
+/-- Predicted singleton masses in `assignmentEnumeration` order. -/
+def predictedAlphas (predicted : FiniteProbRecord S.Assignment) : List QProb :=
+  S.assignmentEnumeration.map fun assignment =>
+    predicted.probVal (FiniteProbRecord.singletonEvent assignment)
+
+/-- Regime B: Dirichlet–multinomial using the atom's predicted cell masses.
+Count words should follow `S.assignmentEnumeration` order. -/
+def regimeBMass (predicted : FiniteProbRecord S.Assignment) (bins : List Nat) : QProb :=
+  let alphas := predictedAlphas predicted
+  if h : 0 < (QProb.listSum alphas).num then
+    dirichletMultinomialMass bins.sum alphas h bins
+  else
+    QProb.zero
+
+def regimeBModelMass (scm : ExactModel S) (tag : ExperimentTag S)
+    (bins : List Nat) : QProb :=
+  regimeBMass (predictedTable scm tag) bins
+
+/-- Query margin strictly outside `[lo, hi]`. Inside the interval is not
+confirmation of a bounds-only atom. -/
+def boundsExclude (lo hi value : QProb) : Bool :=
+  decide (QProb.LT value lo) || decide (QProb.LT hi value)
 
 end CatalogueInference
 end Causality

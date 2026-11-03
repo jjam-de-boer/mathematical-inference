@@ -7,7 +7,7 @@ namespace Causality
 namespace Examples
 namespace CatalogueInference
 
-open Probability Probability.Distros
+open Probability Probability.Distros FiniteProduct
 open BinaryBow
 open Causality.CatalogueInference
 open Causality.CataloguePartition
@@ -210,6 +210,165 @@ def lawOddsChainBow : Option (QProb × QProb) :=
     ⟨lawWeights ⟨2, by decide⟩, 1, Nat.succ_pos 0⟩
 
 theorem law_odds_defined : lawOddsChainBow.isSome = true := by
+  decide +kernel
+
+/-! ## Generative atoms and `do(X)` experiments
+
+Observational \(P(V)\) already zeros independence and leaves chain vs bow
+tied (same factual law). Graphs are not generative, so interventional
+scoring uses realized SCMs: a copy-chain, an independent pair, and the
+bow *lower* endpoint (one SCM that realizes the same \(P(V)\)). A
+`do(X{=}true)` table equal to the chain's interventional law then excludes
+independence and that bow model. The bow *class* is not confirmed by
+landing inside `[lo, hi]`.
+-/
+
+def fairBit : FiniteProbRecord Bool where
+  atoms := [(false, 1), (true, 1)]
+  den := 2
+  den_pos := by decide
+  total_mass := rfl
+
+def chainLatent : LatentExtension signature where
+  count := 1
+  Value := fun _ => Bool
+  valueEnumeration := fun _ => [false, true]
+  value_complete := by intro _ value; cases value <;> simp
+  valueDecidableEq := fun _ => inferInstance
+  incident := fun _ child => decide (child.val = 0)
+
+def chainModel : ExactModel signature where
+  latent := chainLatent
+  factor := fun _ => fairBit
+  prior := record 1 (fun _ => Bool) (fun _ => fairBit)
+  product_law := record_rectangular_probVal 1 (fun _ => Bool) (fun _ => fairBit)
+  mechanism := fun child parents inputs =>
+    if hx : child = x then
+      inputs ⟨0, by decide⟩ (by simp [chainLatent, hx, x])
+    else
+      parents x (by
+        rcases node_cases child with same | same
+        · exact (hx same).elim
+        · simp [signature, x, y, same])
+
+def indepLatent : LatentExtension signature where
+  count := 2
+  Value := fun _ => Bool
+  valueEnumeration := fun _ => [false, true]
+  value_complete := by intro _ value; cases value <;> simp
+  valueDecidableEq := fun _ => inferInstance
+  incident := fun l child => decide (l.val = child.val)
+
+def independenceModel : ExactModel signature where
+  latent := indepLatent
+  factor := fun _ => fairBit
+  prior := record 2 (fun _ => Bool) (fun _ => fairBit)
+  product_law := record_rectangular_probVal 2 (fun _ => Bool) (fun _ => fairBit)
+  mechanism := fun child _parents inputs =>
+    inputs ⟨child.val, child.isLt⟩ (by simp [indepLatent])
+
+def bowLowerModelGen : ExactModel signature :=
+  BinaryBow.model correlated false
+
+def doX : HardIntervention signature :=
+  (HardIntervention.empty signature).set x true
+
+/-- Chain interventional law under `do(X = true)`: point mass on `(true, true)`. -/
+def chainDoLaw : FiniteProbRecord signature.Assignment :=
+  chainModel.interventionalDist doX.value
+
+def experiments : List (Experiment signature) :=
+  [observationalExperiment (.law correlated),
+    interveneExperiment doX (.law chainDoLaw)]
+
+/-- Complexity is prior mass only: independence 0, chain 1, bow 2. -/
+def itemComplexity : Fin 3 → Nat
+  | ⟨0, _⟩ => 0
+  | ⟨1, _⟩ => 1
+  | ⟨2, _⟩ => 2
+
+theorem complexity_prefers_chain :
+    complexityWeight 2 (itemComplexity ⟨1, by decide⟩) =
+      2 * complexityWeight 2 (itemComplexity ⟨2, by decide⟩) := by
+  decide
+
+def expWeights : Fin 3 → Nat
+  | ⟨0, _⟩ => regimeAModelWeight independenceModel experiments
+  | ⟨1, _⟩ => regimeAModelWeight chainModel experiments
+  | ⟨2, _⟩ => regimeAModelWeight bowLowerModelGen experiments
+
+def experimentReport : Report 3 Item signature :=
+  match infer catalogue expWeights lawAnswer with
+  | some r => r
+  | none => reportOf catalogue catalogue.prior expWeights lawAnswer
+
+theorem experiment_independence_weight_zero : expWeights ⟨0, by decide⟩ = 0 := by
+  decide +kernel
+
+theorem experiment_chain_weight_one : expWeights ⟨1, by decide⟩ = 1 := by
+  decide +kernel
+
+theorem experiment_bow_weight_zero : expWeights ⟨2, by decide⟩ = 0 := by
+  decide +kernel
+
+theorem experiment_posterior_exists :
+    (posterior? catalogue.prior expWeights).isSome = true := by
+  decide +kernel
+
+theorem experiment_not_exhausted :
+    catalogueExhausted catalogue.prior expWeights = false := by
+  decide +kernel
+
+def experimentPosterior : Distro (Fin 3) :=
+  match posterior? catalogue.prior expWeights with
+  | some μ => μ
+  | none => catalogue.prior
+
+theorem experiment_independence_posterior_zero :
+    (experimentPosterior.pmf ⟨0, by decide⟩).num = 0 := by
+  decide +kernel
+
+theorem experiment_chain_posterior_pos :
+    0 < (experimentPosterior.pmf ⟨1, by decide⟩).num := by
+  decide +kernel
+
+theorem experiment_bow_posterior_zero :
+    (experimentPosterior.pmf ⟨2, by decide⟩).num = 0 := by
+  decide +kernel
+
+/-- A `do(X{=}true)` table the chain cannot realize. All listed atoms then
+fail, so the catalogue is exhausted rather than replaced by a fallback. -/
+def impossibleDoLaw : FiniteProbRecord signature.Assignment where
+  atoms := [(xy true false, 1)]
+  den := 1
+  den_pos := by decide
+  total_mass := rfl
+
+def exhaustedExperiments : List (Experiment signature) :=
+  [observationalExperiment (.law correlated),
+    interveneExperiment doX (.law impossibleDoLaw)]
+
+def exhaustedWeights : Fin 3 → Nat
+  | ⟨0, _⟩ => regimeAModelWeight independenceModel exhaustedExperiments
+  | ⟨1, _⟩ => regimeAModelWeight chainModel exhaustedExperiments
+  | ⟨2, _⟩ => regimeAModelWeight bowLowerModelGen exhaustedExperiments
+
+theorem exhausted_catalogue :
+    catalogueExhausted catalogue.prior exhaustedWeights = true := by
+  decide +kernel
+
+theorem exhausted_infer_none :
+    (infer catalogue exhaustedWeights lawAnswer).isNone = true := by
+  decide +kernel
+
+/-- Regime B on the chain's `do` table, using each SCM's predicted masses.
+This is callable; it does not by itself zero the bow the way Regime A does. -/
+def chainDoBins : List Nat :=
+  signature.assignmentEnumeration.map fun a =>
+    if decide (a x = true) && decide (a y = true) then 6 else 0
+
+theorem chain_do_regimeB_pos :
+    0 < (regimeBModelMass chainModel (.intervene doX) chainDoBins).num := by
   decide +kernel
 
 /-! ## Regime B: Dirichlet–multinomial on the observed table -/
