@@ -30,6 +30,11 @@ The main implemented results are:
   certificates on their explicit used-conditional domains. Observed domains
   supply two distinct values; hidden and private-noise alphabets may be any
   finite size.
+- Finite causal coarse-graining with disjoint observed-node clusters and
+  declared intervention representatives. A two-cause AND-merge preserves
+  `P(Y=true | do(X_M=true))=1`; an observationally matched OR-merge gives
+  macro probability `1/3` versus micro double-surgery probability `1`.
+  These instances do not establish a general RG or scale theory.
 - Public finished modes are an SCM plus current belief; compact `do` and the
   modal stack stay on workspace records. Public 1-cells wrap existing edits.
   Mode-indexed realizations connect causal proofs to actual executions.
