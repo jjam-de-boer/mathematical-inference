@@ -36,7 +36,10 @@ The main implemented results are:
 - Sharp bounds for binary bow and instrumental-variable queries.
 - Finite structural representation of a fixed DAG or a projection, not a
   general decision procedure for arbitrary rational weights.
-- Exact checking of supplied polynomial bound certificates.
+- Exact checking of supplied polynomial bound certificates and exact
+  feasibility of integer linear equations over natural unknowns, with
+  computed solutions or proofs of infeasibility and no supplied cutoff.
+  Integer feasibility does not decide Petri-net reachability.
 - Exact undefined/zero/positive support analysis for the current formula and
   guard languages, finite causal support-profile coverage, and checked bounded
   proof enumeration and formula selection.
