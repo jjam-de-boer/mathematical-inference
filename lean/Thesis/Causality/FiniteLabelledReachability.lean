@@ -57,6 +57,19 @@ def run (advance : α → β → Option α) : α → List β → Option α
   | source, [] => some source
   | source, label :: rest => (advance source label).bind (fun next => run advance next rest)
 
+/-- Literal word concatenation composes partial executions. A rejected
+prefix stays rejected; no intermediate state is selected by an oracle. -/
+theorem run_append (advance : α → β → Option α) (source : α) (first second : List β) :
+    run advance source (first ++ second) =
+      (run advance source first).bind (fun middle => run advance middle second) := by
+  induction first generalizing source with
+  | nil => rfl
+  | cons label rest ih =>
+      cases computed : advance source label with
+      | none => simp only [List.cons_append, run, computed, Option.bind_none]
+      | some next =>
+          simpa only [List.cons_append, run, computed, Option.bind_some] using ih next
+
 /-- A supplied computed word yields an old finite-graph path. The list
 coverage premise concerns labels, not a choice of a path or intermediate. -/
 theorem reachable_of_run (states : FiniteWitness α) (labels : List β) (advance : α → β → Option α)

@@ -90,6 +90,7 @@ import Thesis.Examples.NativeQueryPaths
 import Thesis.Examples.NativeTraceCertificates
 import Thesis.Examples.PetriNet
 import Thesis.Examples.IntegerFeasibility
+import Thesis.Examples.IntegerCarryLoops
 import Thesis.Examples.IntegerLinearAlgebra
 import Thesis.Examples.IntegerNullspace
 import Thesis.Examples.FiniteRatioMinimum
