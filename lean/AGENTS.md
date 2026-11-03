@@ -49,8 +49,10 @@ The main implemented results are:
   assignment records: identifying an entire law identifies its entropy.
   Shannon inequalities are sound exclusion tests.
 - Finite Bayesian inference on a catalogue of templates: update a Distro prior
-  from data, then mix identified values and supplied bounds without collapsing
-  disagreement. This is not a graph posterior and is distinct from Shannon
+  from observational or interventional finite tables, then mix identified
+  values and supplied bounds without collapsing disagreement. An exhausted
+  catalogue is unsupported, not a unique DAG. Complexity scores are prior
+  mass only. This is not a graph posterior and is distinct from Shannon
   remainder on the same catalogue.
 
 ## Living-document maintenance
