@@ -1,3 +1,4 @@
+import Thesis.Examples.NodeLawRecipe
 import Thesis.Examples.ConstructiveInverseDerivative
 import Thesis.Examples.ConstructiveProductDerivative
 import Thesis.Examples.ConstructiveDerivative

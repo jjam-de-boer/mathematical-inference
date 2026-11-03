@@ -1,3 +1,4 @@
+import Thesis.Probability.Distros.NodeLawRecipe
 import Thesis.Probability.Distros.UncertaintyCharacterization
 import Thesis.Probability.Distros.ConditionalInformation
 import Thesis.Probability.Distros.EntropyDataProcessing
