@@ -175,6 +175,8 @@ import Thesis.CausalTransport.NativeDerivationPaths
 import Thesis.CausalTransport.NativeGuardedPaths
 import Thesis.CausalTransport.NativeQueryDemand
 import Thesis.CausalTransport.NativeQueryPaths
+import Thesis.CausalTransport.NativePointGuard
+import Thesis.CausalTransport.NativeTraceCertificates
 import Thesis.CausalTransport.NativeCertificateCheck
 import Thesis.CausalTransport.NativeGuardCompilation
 import Thesis.CausalTransport.NativeProofEnumeration
