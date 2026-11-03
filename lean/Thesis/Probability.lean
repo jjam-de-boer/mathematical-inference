@@ -72,6 +72,7 @@ import Thesis.Probability.FiniteRecordPresentation
 import Thesis.Probability.FiniteProductPresentation
 import Thesis.Probability.FiniteEnumerationBounds
 import Thesis.Probability.FiniteFunctionTables
+import Thesis.Probability.FiniteVectorWitness
 import Thesis.Probability.FiniteRecordAlmostSure
 import Thesis.Probability.FiniteRecordConsistencyBounds
 import Thesis.Probability.AffineInterval
