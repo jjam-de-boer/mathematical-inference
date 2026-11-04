@@ -10,9 +10,12 @@ support for conditionals are part of the framework.
 The main implemented results are:
 
 - Finite probability laws, named distributions, moments and related inequalities.
-  Explicit node-law recipes generate rational noise-factor or local-kernel tables;
-  constraint recipes return certified feasibility or refutation. Recipes do not
-  perform causal identification or construct a graph posterior.
+  Explicit node-law recipes generate rational tables. A table may be a node's
+  private noise, or one table at each parent configuration of a child, giving
+  the local kernel P(child | parents). Constraint recipes return certified
+  feasibility or refutation; if any parent configuration is infeasible there
+  is no kernel and no invented fallback row. Recipes do not identify a joint
+  from observations and do not construct a graph posterior.
 - Entropy and information inequalities and continuity; Shannon characterization
   from explicit uncertainty requirements on finite rational vectors in `ExactLog`.
   Constructive ideal maximum-entropy existence and uniqueness, and certified
