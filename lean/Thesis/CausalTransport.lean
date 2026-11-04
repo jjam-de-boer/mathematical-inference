@@ -350,8 +350,10 @@ separation predicates defined by the causal foundations.
 equivalence of supported kernel ratios; undefined conditionals stay
 undefined. The Pearl identities are theorems of the induced intervention
 scale, not urn axioms and not a second identification engine.
-`QualitativeCausalScale` adds Clayton-per-intervention comparisons with
-effectiveness, non-descendant invariance and parent modularity; it does
+`WorldTicket` names the existing SCM as a fixed world pile and skip-and-continue
+readings; Clayton compares that pile and the listings it prints. Listing-bag
+sentences are corollaries of those readings, not a basis for Pearl.
+`QualitativeCausalScale` records those bag-level sentences; it does
 not put the three do-rules or \(G_{\overline{X}}\) in the axiom list.
 
 `KernelSuccessCompilation` and `ConditionalCompilation` certify the literal

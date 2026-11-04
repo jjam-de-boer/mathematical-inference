@@ -335,6 +335,75 @@ theorem evalUnder_effectiveness (M : FiniteLatentSCM S)
   simp [equationUnder, selected]
 
 /--
+If a node is not forced, its reading is the print rule on the current parent
+readings and the incident hidden balls.  Downstream nodes therefore re-print
+from those writings; they do not keep an old listing and scribble one field.
+-/
+theorem evalNodeUnder_unforced (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (u : M.latent.Assignment) (child : Fin S.count)
+    (unforced : target child = none) :
+    M.evalNodeUnder target u child =
+      M.mechanism child
+        (fun parent _edge => M.evalNodeUnder target u parent)
+        (fun latent _ => u latent) := by
+  rw [evalNodeUnder]
+  simp [equationUnder, unforced]
+
+/-- The print rule of an unforced node ignores hidden balls that are not
+incident to it, given the same parent readings. -/
+theorem evalNodeUnder_unforced_congr_incident (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i))
+    (u v : M.latent.Assignment) (child : Fin S.count)
+    (unforced : target child = none)
+    (parentsAgree :
+      ∀ parent, S.directed parent child = true →
+        M.evalNodeUnder target u parent = M.evalNodeUnder target v parent)
+    (incidentAgree :
+      ∀ latent, M.latent.incident latent child = true →
+        u latent = v latent) :
+    M.evalNodeUnder target u child = M.evalNodeUnder target v child := by
+  rw [M.evalNodeUnder_unforced target u child unforced,
+    M.evalNodeUnder_unforced target v child unforced]
+  congr 1
+  · funext parent edge
+    exact parentsAgree parent edge
+  · funext latent inc
+    exact incidentAgree latent inc
+
+/--
+Skip-and-continue at one node: if the node is unforced and every parent is
+forced to the same value in two experiments, the node prints the same value
+on this world-ticket.
+-/
+theorem evalUnder_eq_of_same_forced_parents (M : FiniteLatentSCM S)
+    (I J : (i : Fin S.count) -> Option (S.Value i))
+    (u : M.latent.Assignment) (child : Fin S.count)
+    (unforcedI : I child = none) (unforcedJ : J child = none)
+    (parentsForced :
+      ∀ parent, S.directed parent child = true → (I parent).isSome = true)
+    (parentsAgree :
+      ∀ parent, S.directed parent child = true → I parent = J parent) :
+    M.evalUnder I u child = M.evalUnder J u child := by
+  unfold evalUnder
+  rw [M.evalNodeUnder_unforced I u child unforcedI,
+    M.evalNodeUnder_unforced J u child unforcedJ]
+  congr 1
+  · funext parent edge
+    cases hIv : I parent with
+    | none =>
+        have hsome : (I parent).isSome = true := parentsForced parent edge
+        simp [hIv] at hsome
+    | some value =>
+        have hJv : J parent = some value := by
+          have hagree := parentsAgree parent edge
+          simpa [hIv] using hagree.symm
+        have hIval := M.evalUnder_effectiveness I u parent value hIv
+        have hJval := M.evalUnder_effectiveness J u parent value hJv
+        change M.evalNodeUnder I u parent = M.evalNodeUnder J u parent
+        simpa [evalUnder] using hIval.trans hJval.symm
+
+/--
 Composition at one node: extending an intervention by values already produced
 under the base intervention does not change the resulting potential outcome.
 -/
@@ -401,6 +470,13 @@ def interventionalDist (M : FiniteLatentSCM S)
     (target : (i : Fin S.count) -> Option (S.Value i)) :
     FiniteProbRecord S.Assignment :=
   M.prior.map (M.evalUnder target)
+
+/-- Forcing knobs does not change the world pile: listings are a pushforward
+of the same prior through the reading map. -/
+theorem interventionalDist_same_worldPile (M : FiniteLatentSCM S)
+    (target : (i : Fin S.count) -> Option (S.Value i)) :
+    M.interventionalDist target = M.prior.map (M.evalUnder target) :=
+  rfl
 
 /-- Interventional pushforward through prefix evaluation is the same record. -/
 theorem interventionalDist_eq_prefixPushforward (M : FiniteLatentSCM S)

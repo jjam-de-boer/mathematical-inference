@@ -1,5 +1,4 @@
-import Thesis.Causality.QualitativeDoCalculus
-import Thesis.Causality.ReachabilityCorrectness
+import Thesis.Causality.WorldTicket
 
 namespace Thesis
 namespace Causality
@@ -8,6 +7,7 @@ open Probability
 open Probability.ClaytonWaddington
 open Probability.ClaytonWaddington.UrnRatio
 open QualitativeDoCalculus
+open WorldTicket
 
 /-!
 Qualitative comparisons of experiments, with a short list of causal sentences.
@@ -32,6 +32,9 @@ induced SCM scales, not of an arbitrary model of the sentences below.
 That gap is Unresolved, not a refutation of the sentences themselves.
 The thin 2b converse (no Clayton slice) is the Refuted fact.
 
+Listing-bag sentences are corollaries of ticketwise world-ticket readings
+(`Thesis.Causality.WorldTicket`), not a basis for Pearl.
+
 Representation of every finite model of this structure by an `ExactModel`
 is not proved.
 -/
@@ -46,150 +49,13 @@ def assignmentsAgreeOn (nodes : NodeSet S) (x y : S.Assignment) : Prop :=
 def dependsOnlyOn (nodes : NodeSet S) (event : Event S.Assignment) : Prop :=
   ∀ x y, assignmentsAgreeOn nodes x y → event x = event y
 
-/-- Directed reachability along `S.directed`, including the zero-length walk. -/
-def directedReachable (S : ObservedSignature) (source target : Fin S.count) :
-    Bool :=
-  FiniteReachability.within finBeq (NodeSet.enumerated S) S.directed S.count
-    source target
-
-/-- Nodes lying on a directed path from some member of `Z`, including `Z`. -/
-def descendantsOf (S : ObservedSignature) (Z : NodeSet S) : NodeSet S :=
-  fun i =>
-    (NodeSet.enumerated S).any (fun z => Z z && directedReachable S z i)
-
-/-- Nodes that are not effects of `Z` along `S.directed`. -/
-def nonDescendantsOf (S : ObservedSignature) (Z : NodeSet S) : NodeSet S :=
-  fun i => !(descendantsOf S Z i)
-
 /-- Direct causes of a node, read from `S.directed`. -/
 def parentsOf (S : ObservedSignature) (child : Fin S.count) : NodeSet S :=
   fun parent => S.directed parent child
 
-theorem directedReachable_self (S : ObservedSignature) (i : Fin S.count) :
-    directedReachable S i i = true :=
-  (FiniteReachability.within_eq_true_iff_boundedWalk finBeq
-      (NodeSet.enumerated S) S.directed finBeq_eq_true_iff
-      (NodeSet.mem_enumerated S) S.count i i).mpr
-    (FiniteReachability.BoundedWalk.refl S.directed S.count i)
-
-theorem ExactWalk.nonempty_snoc {α : Type _} {edge : α → α → Bool}
-    {length : Nat} {source middle target : α}
-    (walk : FiniteReachability.ExactWalk edge length source middle)
-    (last : edge middle target = true) :
-    Nonempty (FiniteReachability.ExactWalk edge (length + 1) source target) := by
-  induction walk with
-  | refl _node =>
-      exact ⟨.step last (.refl target)⟩
-  | @step _length _source _mid _middle first _rest ih =>
-      rcases ih last with ⟨extended⟩
-      exact ⟨.step first extended⟩
-
-theorem directedReachable_of_parent (S : ObservedSignature)
-    {z parent child : Fin S.count}
-    (hreach : directedReachable S z parent = true)
-    (hedge : S.directed parent child = true) :
-    directedReachable S z child = true := by
-  have bounded :
-      FiniteReachability.BoundedWalk S.directed S.count z parent :=
-    (FiniteReachability.within_eq_true_iff_boundedWalk finBeq
-        (NodeSet.enumerated S) S.directed finBeq_eq_true_iff
-        (NodeSet.mem_enumerated S) S.count z parent).mp hreach
-  rcases bounded with ⟨_length, _bound, ⟨walk⟩⟩
-  have reachable : FiniteReachability.Reachable S.directed z child :=
-    ⟨_length + 1, ExactWalk.nonempty_snoc walk hedge⟩
-  have rebound :=
-    FiniteReachability.boundedWalk_of_reachable finBeq
-      (NodeSet.enumerated S) S.directed finBeq_eq_true_iff
-      (NodeSet.mem_enumerated S) reachable
-  have boundedChild :
-      FiniteReachability.BoundedWalk S.directed S.count z child := by
-    simpa [NodeSet.length_enumerated] using rebound
-  exact (FiniteReachability.within_eq_true_iff_boundedWalk finBeq
-      (NodeSet.enumerated S) S.directed finBeq_eq_true_iff
-      (NodeSet.mem_enumerated S) S.count z child).mpr boundedChild
-
-theorem descendantsOf_of_mem (S : ObservedSignature) (Z : NodeSet S)
-    {i : Fin S.count} (hi : Z i = true) :
-    descendantsOf S Z i = true := by
-  refine List.any_eq_true.mpr ⟨i, NodeSet.mem_enumerated S i, ?_⟩
-  exact Bool.and_eq_true_iff.mpr ⟨hi, directedReachable_self S i⟩
-
-theorem descendantsOf_parent (S : ObservedSignature) (Z : NodeSet S)
-    {parent child : Fin S.count}
-    (hedge : S.directed parent child = true)
-    (hparent : descendantsOf S Z parent = true) :
-    descendantsOf S Z child = true := by
-  rcases List.any_eq_true.mp hparent with ⟨z, zMem, hz⟩
-  have hzZ : Z z = true := (Bool.and_eq_true_iff.mp hz).1
-  have hzR : directedReachable S z parent = true :=
-    (Bool.and_eq_true_iff.mp hz).2
-  refine List.any_eq_true.mpr ⟨z, zMem, ?_⟩
-  exact Bool.and_eq_true_iff.mpr
-    ⟨hzZ, directedReachable_of_parent S hzR hedge⟩
-
-theorem not_descendant_parent (S : ObservedSignature) (Z : NodeSet S)
-    {parent child : Fin S.count}
-    (hedge : S.directed parent child = true)
-    (hchild : descendantsOf S Z child = false) :
-    descendantsOf S Z parent = false := by
-  cases hparent : descendantsOf S Z parent with
-  | false => rfl
-  | true =>
-      have hcontra := descendantsOf_parent S Z hedge hparent
-      exact (Bool.false_ne_true (hchild.symm.trans hcontra)).elim
-
-theorem not_mem_of_not_descendant (S : ObservedSignature) (Z : NodeSet S)
-    {i : Fin S.count} (h : descendantsOf S Z i = false) :
-    Z i = false := by
-  cases hi : Z i with
-  | false => rfl
-  | true =>
-      have hdesc := descendantsOf_of_mem S Z hi
-      exact (Bool.false_ne_true (h.symm.trans hdesc)).elim
-
-theorem target_eq_none_of_not_descendant
-    (target : (i : Fin S.count) → Option (S.Value i)) {child : Fin S.count}
-    (hnd : descendantsOf S (fun i => (target i).isSome) child = false) :
-    target child = none := by
-  have hcut :
-      (target child).isSome = false :=
-    not_mem_of_not_descendant S (fun i => (target i).isSome) hnd
-  cases htarget : target child with
-  | none => rfl
-  | some _ =>
-      simp [htarget] at hcut
-
-/-- Evaluation off the effects of an intervention ignores that intervention. -/
-theorem evalNodeUnder_eq_of_not_descendant (M : ExactModel S)
-    (target : (i : Fin S.count) → Option (S.Value i))
-    (u : M.latent.Assignment) (child : Fin S.count)
-    (hnd : descendantsOf S (fun i => (target i).isSome) child = false) :
-    M.evalNodeUnder target u child =
-      M.evalNodeUnder (FiniteLatentSCM.noIntervention S) u child := by
-  rw [FiniteLatentSCM.evalNodeUnder, FiniteLatentSCM.evalNodeUnder]
-  have hnone := target_eq_none_of_not_descendant target hnd
-  simp only [FiniteLatentSCM.equationUnder, hnone,
-    FiniteLatentSCM.noIntervention]
-  congr 1
-  funext parent edge
-  exact evalNodeUnder_eq_of_not_descendant M target u parent
-    (not_descendant_parent S (fun i => (target i).isSome) edge hnd)
-termination_by child.val
-decreasing_by
-  exact S.directed_earlier edge
-
-theorem evalUnder_eq_on_nonDescendants (M : ExactModel S)
-    (target : (i : Fin S.count) → Option (S.Value i))
-    (u : M.latent.Assignment) {i : Fin S.count}
-    (hnd : descendantsOf S (fun i => (target i).isSome) i = false) :
-    M.evalUnder target u i =
-      M.evalUnder (FiniteLatentSCM.noIntervention S) u i :=
-  evalNodeUnder_eq_of_not_descendant M target u i hnd
-
-theorem sameRatio_of_probVal_equiv {X : Type _} (μ ν : UrnProb X)
-    (E F : Event X) (h : QProb.Equiv (μ.probVal E) (ν.probVal F)) :
-    sameRatio (ofUrnEvent μ E) (ofUrnEvent ν F) := by
-  simpa [sameRatio, ofUrnEvent, UrnProb.probVal, QProb.Equiv] using h
+export WorldTicket (directedReachable descendantsOf nonDescendantsOf
+  evalUnder_eq_on_nonDescendants reading_parent_modularity
+  listing_effectiveness listing_non_effect listing_parent_modularity)
 
 end QualitativeCausalScale
 
@@ -217,7 +83,7 @@ structure QualitativeCausalScale.{u} (S : ObservedSignature) where
   nonDescendantInvariance :
     ∀ (I : HardIntervention S) (E : Event S.Assignment),
       QualitativeCausalScale.dependsOnlyOn
-        (QualitativeCausalScale.nonDescendantsOf S I.targets) E →
+        (nonDescendantsOf S I.targets) E →
       sameRatio
         (ofUrnEvent (slice I) E)
         (ofUrnEvent (slice (HardIntervention.empty S)) E)
@@ -365,123 +231,27 @@ def ExactModelRepresentation (S : ObservedSignature) : Prop :=
     ∃ model : ExactModel S, RealizedBy C model
 
 /-- Every finite SCM, read through a qualitative urn scale, induces a
-qualitative causal scale.  Direct-cause sentences are proved from evaluation,
-not from Pearl's rules. -/
+qualitative causal scale.  Bag-level sentences are corollaries of the
+ticketwise world-ticket readings, not Pearl's rules. -/
 def inducedCausal (model : ExactModel S) (Q : QualitativeUrnScale) :
     QualitativeCausalScale S where
   urn := Q
   slice := interventionalUrn model
   effectiveness := by
     intro I i value hI
-    let μ := interventionalUrn model I
-    let forced : Event S.Assignment := fun a => decide (a i = value)
-    have agreesForced :=
-      (model.interventionalDist I.value).toUrn_agrees forced
-    have agreesTop :=
-      (model.interventionalDist I.value).toUrn_agrees topEvent
-    have hforced : QProb.Equiv (μ.probVal forced) QProb.one :=
-      QProb.equiv_trans (QProb.equiv_symm agreesForced)
-        (interventionalValue_effectiveness model I i value hI)
-    have htop : QProb.Equiv (μ.probVal topEvent) QProb.one :=
-      QProb.equiv_trans (QProb.equiv_symm agreesTop)
-        (model.interventionalDist I.value).normalization
-    have hk : μ.probNum forced = μ.n := by
-      simpa [QProb.Equiv, UrnProb.probVal, QProb.one] using hforced
-    have ht : μ.probNum topEvent = μ.n := μ.probNum_top
-    show sameRatio (ofUrnEvent μ forced) (ofUrnEvent μ topEvent)
-    simp [sameRatio, ofUrnEvent]
-    rw [hk, ht]
+    exact listing_effectiveness model I i value hI
   nonDescendantInvariance := by
     intro I E hE
-    have hpoint :
-        (fun u => E (model.evalUnder I.value u)) =
-          (fun u => E (model.evalUnder (FiniteLatentSCM.noIntervention S) u)) := by
-      funext u
-      apply hE
-      intro i hi
-      have hnd :
-          descendantsOf S (fun j => (I.value j).isSome) i = false := by
-        simpa [nonDescendantsOf, HardIntervention.targets] using hi
-      exact evalUnder_eq_on_nonDescendants model I.value u hnd
-    have hI :=
-      model.interventionalValue_eq I.value E
-    have hIdle :=
-      model.interventionalValue_eq (HardIntervention.empty S).value E
-    have hprior :
-        QProb.Equiv
-          (model.interventionalValue I.value E)
-          (model.interventionalValue (HardIntervention.empty S).value E) := by
-      refine QProb.equiv_trans hI (QProb.equiv_trans ?_ (QProb.equiv_symm hIdle))
-      simpa [hpoint] using QProb.equiv_refl
-        (model.prior.probVal (fun u => E (model.evalUnder I.value u)))
-    have agreesI :=
-      (model.interventionalDist I.value).toUrn_agrees E
-    have agreesIdle :=
-      (model.interventionalDist (HardIntervention.empty S).value).toUrn_agrees E
-    have hμ :
-        QProb.Equiv
-          ((interventionalUrn model I).probVal E)
-          ((interventionalUrn model (HardIntervention.empty S)).probVal E) :=
-      QProb.equiv_trans (QProb.equiv_symm agreesI)
-        (QProb.equiv_trans hprior agreesIdle)
-    exact sameRatio_of_probVal_equiv _ _ E E hμ
+    exact listing_non_effect model I E hE
   parentModularity := by
     intro child I J E agreeParents parentsSet hInone hJnone hE
-    have hpoint :
-        (fun u => E (model.evalUnder I.value u)) =
-          (fun u => E (model.evalUnder J.value u)) := by
-      funext u
-      apply hE
-      intro i hi
+    refine listing_parent_modularity model child I J E
+      agreeParents parentsSet hInone hJnone ?_
+    intro x y hxy
+    exact hE x y (fun i hi => by
       have hi' : i = child := (NodeSet.singleton_eq_true_iff child i).mp hi
       subst i
-      have hIeval :
-          model.evalUnder I.value u child =
-            model.evalNodeUnder I.value u child :=
-        rfl
-      have hJeval :
-          model.evalUnder J.value u child =
-            model.evalNodeUnder J.value u child :=
-        rfl
-      rw [hIeval, hJeval, FiniteLatentSCM.evalNodeUnder,
-        FiniteLatentSCM.evalNodeUnder]
-      simp only [FiniteLatentSCM.equationUnder, hInone, hJnone]
-      congr 1
-      funext parent edge
-      cases hIv : I.value parent with
-      | none =>
-          have hsome : (I.value parent).isSome = true :=
-            parentsSet parent edge
-          simp [hIv] at hsome
-      | some value =>
-          have hJv : J.value parent = some value := by
-            have hagree := agreeParents parent edge
-            simpa [hIv] using hagree.symm
-          have hIval :=
-            model.evalUnder_effectiveness I.value u parent value hIv
-          have hJval :=
-            model.evalUnder_effectiveness J.value u parent value hJv
-          change model.evalUnder I.value u parent =
-            model.evalUnder J.value u parent
-          exact hIval.trans hJval.symm
-    have hI := model.interventionalValue_eq I.value E
-    have hJ := model.interventionalValue_eq J.value E
-    have hprior :
-        QProb.Equiv
-          (model.interventionalValue I.value E)
-          (model.interventionalValue J.value E) := by
-      refine QProb.equiv_trans hI (QProb.equiv_trans ?_ (QProb.equiv_symm hJ))
-      simpa [hpoint] using QProb.equiv_refl
-        (model.prior.probVal (fun u => E (model.evalUnder I.value u)))
-    have agreesI := (model.interventionalDist I.value).toUrn_agrees E
-    have agreesJ := (model.interventionalDist J.value).toUrn_agrees E
-    have hμ :
-        QProb.Equiv
-          ((interventionalUrn model I).probVal E)
-          ((interventionalUrn model J).probVal E) :=
-      QProb.equiv_trans (QProb.equiv_symm agreesI)
-        (QProb.equiv_trans hprior agreesJ)
-    exact sameRatio_of_probVal_equiv _ _ E E hμ
+      exact hxy)
 
 theorem inducedCausal_slice (model : ExactModel S) (Q : QualitativeUrnScale)
     (I : HardIntervention S) :

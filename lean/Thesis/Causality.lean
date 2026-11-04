@@ -10,6 +10,7 @@ import Thesis.Causality.SelectedAssignment
 import Thesis.Causality.SelectedEntropy
 import Thesis.Causality.HardIntervention
 import Thesis.Causality.QualitativeDoCalculus
+import Thesis.Causality.WorldTicket
 import Thesis.Causality.QualitativeCausalScale
 import Thesis.Causality.SharedResponseTables
 import Thesis.Causality.SharedResponseModel
@@ -119,12 +120,13 @@ Implementations should import focused foundational modules.
 ## Queries and identification programs
 
 A useful reading order is `Graph`, `Derivation`, `Model`, `SelectedEntropy`, `HardIntervention`,
-`QualitativeDoCalculus`, `QualitativeCausalScale`, `Semantics`, `SupportAwareSemantics` and `Identification`.
+`QualitativeDoCalculus`, `WorldTicket`, `QualitativeCausalScale`, `Semantics`, `SupportAwareSemantics` and `Identification`.
 These define graph operations, kernel queries, interventions, probability
 terms and their partial interpretation. Defined zero and an undefined
 conditional remain distinct. Qualitative kernel comparisons transport existing
 do-calculus identities along the finite urn scale; they do not derive `do`
-from urn axioms.
+from urn axioms. `WorldTicket` names skip-and-continue readings of the
+existing SCM; listing-bag sentences are corollaries of those readings.
 
 `IdentificationKernel` implements current-kernel joint ID;
 `ConditionalIdentificationKernel` implements IDC by repeated conditioner
