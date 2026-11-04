@@ -30,11 +30,15 @@ The main implemented results are:
   certificates on their explicit used-conditional domains. Observed domains
   supply two distinct values; hidden and private-noise alphabets may be any
   finite size.
-- Finite causal coarse-graining with disjoint observed-node clusters and
-  declared intervention representatives. A two-cause AND-merge preserves
-  `P(Y=true | do(X_M=true))=1`; an observationally matched OR-merge gives
-  macro probability `1/3` versus micro double-surgery probability `1`.
-  These instances do not establish a general RG or scale theory.
+- Finite causal coarse-graining with partial intervention maps. In the explicit
+  AND/copy model, the entire unique-forced-cluster-preimage class preserves
+  the full finite law, with a merge constructed from AND/swap mechanism data.
+  Exact maps compose along a capped three-grain chain. A separate constructor
+  admits coarse-only coordinates while merged clusters remain nonempty.
+  A catalogue client compares actual fine/coarse SCMs with declared protocols
+  and complexity priors. The observationally matched OR macro still gives
+  `1/3` versus micro double-surgery probability `1`. These results do not
+  establish general RG or a physical length scale.
 - Public finished modes are an SCM plus current belief; compact `do` and the
   modal stack stay on workspace records. Public 1-cells wrap existing edits.
   Mode-indexed realizations connect causal proofs to actual executions.

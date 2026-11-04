@@ -350,7 +350,7 @@ def checkedAndParents : InterchangeableAndParents where
   operation := Bool.and
   child_is_and _ _ := rfl
   mechanism_agrees _ _ _ := rfl
-  swap := Bool.and_comm
+  swap first second := mechanism_swap first second (fun _ _ => false)
 
 theorem swap_constructs_existing_merge : checkedAndParents.merge = andFullCoarsening := rfl
 
