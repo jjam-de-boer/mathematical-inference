@@ -47,9 +47,26 @@ The main implemented results are:
   equalities of supported conditionals; d-separation is used in the
   proof, not as an assumption of the comparison, and not as a second
   identification engine. This is not causality from qualitative axioms
-  (Clayton recovers probability ratios from event comparisons; the
-  converse, that every such experimental comparison on two Boolean
-  nodes arises from some finite SCM, is not proved).
+  (Clayton recovers probability ratios from event comparisons). The
+  unrestricted converse, that every such thin comparison on two Boolean
+  nodes arises from some finite SCM, is false: an indiscrete scale
+  (everything equivalent) satisfies the thin axioms and cannot match
+  empty versus sure under any positive urn.
+- Qualitative causal comparisons reuse Clayton per hard intervention
+  (each fixed `do` is a finite urn of events) together with
+  effectiveness, non-descendant invariance, and parent modularity: once
+  every direct cause of a node is set, two experiments that set those
+  causes to the same values and do not set the node itself make the
+  same claims about that node. Direct causes are read from the
+  signature's directed relation; Pearl's three rules and the mutilated
+  graph are not axiom fields. Every finite SCM induces such a scale.
+  Supported kernel conditionals stay undefined when the conditioner has
+  zero mass, and are not completed to zero. The three do-rules are not
+  theorems of an arbitrary model of these sentences: transferring idle
+  screening-off to the defined mutilation after `do` is not proved from
+  them, and is not assumed. Completeness, that every finite model of
+  the scale is realized by some finite SCM, is not proved. This is not
+  causality from urn axioms.
 - Joint and conditional identification completeness for the stated positive
   model classes, original finite hidden-DAG transfer, and supported-zero
   certificates on each formula's used-conditional domain (the primitive
