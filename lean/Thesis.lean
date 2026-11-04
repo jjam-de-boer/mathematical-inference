@@ -98,6 +98,7 @@ import Thesis.Examples.NativeGuardedPaths
 import Thesis.Examples.NativeQueryPaths
 import Thesis.Examples.NativeTraceCertificates
 import Thesis.Examples.PetriNet
+import Thesis.Examples.PetriPredecessors
 import Thesis.Examples.IntegerFeasibility
 import Thesis.Examples.IntegerCarryLoops
 import Thesis.Examples.FiniteLabelledRepetition

@@ -33,6 +33,7 @@ import Thesis.Causality.ComponentConnectivity
 import Thesis.Causality.ReachabilityCorrectness
 import Thesis.Causality.FiniteLabelledRepetition
 import Thesis.Causality.PetriNet
+import Thesis.Causality.PetriPredecessors
 import Thesis.Causality.IntegerFeasibility
 import Thesis.Causality.IntegerCarryLoops
 import Thesis.Causality.IntegerLargeSolution
@@ -149,8 +150,11 @@ Admission checks retain their explicitly bounded catalogue; native support
 checking is supplied downstream.
 
 `PetriNet` supplies independent finite-counter execution semantics, exact
-checking of supplied transition words, and execution composition. Token
-counts are unbounded; this foundation does not decide general reachability.
+checking of supplied transition words, and execution composition.
+`PetriPredecessors` preserves those words at larger sources and computes
+the exact least source for one firing to cover a target. Token counts are
+unbounded; neither foundation supplies a general coverability or reachability
+solver.
 
 ## Modal, counterfactual and mode-theory interfaces
 
