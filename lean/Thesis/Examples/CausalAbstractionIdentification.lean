@@ -354,4 +354,3 @@ theorem illegal_or_CPT_disagrees :
     ¬ orCoarsening.PreservesEvent macroDoTrue rfl yTrue := or_merge_fails
 
 end Thesis.Examples.CausalAbstractionIdentification
-
