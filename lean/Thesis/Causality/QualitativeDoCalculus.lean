@@ -30,9 +30,12 @@ are recorded here:
   comparison, proved from SCM d-separation, not axiom fields of the
   abstract scale.
 
-The converse representation — every abstract finite scale on the two-node
-Boolean signature is realized by some `ExactModel` — is not proved.  The
-type of that missing construction is `TwoNodeBooleanRepresentation`.
+The unrestricted converse — every abstract finite scale on the two-node
+Boolean signature is realized by some `ExactModel` — is false.  An
+indiscrete comparison (everything equivalent) satisfies the thin axioms
+and cannot match the empty event against the sure event of any positive
+urn.  The type `TwoNodeBooleanRepresentation` is refuted by
+`not_twoNodeBooleanRepresentation`.
 -/
 
 namespace QualitativeDoCalculus
@@ -577,15 +580,81 @@ Converse representation on the two-node Boolean signature.
 
 Every finite SCM induces a qualitative intervention scale.  The converse —
 an arbitrary `QualitativeInterventionScale` on this signature, compared on
-the listed interventions, is realized by some `ExactModel` — is not proved.
-The axioms do not include Pearl's rules or mutilated-graph d-separation, so
-they do not force SCM mechanism constraints.  This is the type of the
-missing construction, not a theorem.
+the listed interventions, is realized by some `ExactModel` — is false.
+The thin axioms do not mention Pearl's rules or mutilated-graph
+d-separation, and they do not force empty to be strictly less plausible
+than sure.
 -/
 def TwoNodeBooleanRepresentation : Prop :=
   ∀ scale : QualitativeInterventionScale.{0} twoBoolSignature,
     ∃ model : ExactModel twoBoolSignature,
       ∃ Q : QualitativeUrnScale.{0}, Realizes scale model Q
+
+/-- Every pair of experimental claims is equivalent; nothing is strictly
+less plausible.  Effectiveness holds because it is an equivalence. -/
+def indiscreteScale : QualitativeInterventionScale.{0} twoBoolSignature where
+  Plaus := Unit
+  plaus := fun _ _ => ()
+  eqv := fun _ _ => True
+  lt := fun _ _ => False
+  eqv_refl := fun _ => trivial
+  eqv_symm := fun h => h
+  eqv_trans := fun _ _ => trivial
+  lt_irrefl := fun _ h => h
+  lt_trans := fun h _ => h
+  lt_respects_eqv := fun _ _ h => h
+  effectiveness := fun _ _ _ _ => trivial
+
+/-- On any nonempty urn, the empty event and the sure event are not the
+same cell-count ratio. -/
+theorem ofUrnEvent_not_sameRatio_bottom_top {X : Type _} (μ : UrnProb X) :
+    ¬ sameRatio (ofUrnEvent μ bottomEvent) (ofUrnEvent μ topEvent) := by
+  intro h
+  have hsame :
+      μ.probNum bottomEvent * μ.n = μ.probNum topEvent * μ.n := by
+    simpa [sameRatio, ofUrnEvent] using h
+  have hb : μ.probNum bottomEvent = 0 := by
+    simp [UrnProb.probNum, count_bottom]
+  have ht : μ.probNum topEvent = μ.n := μ.probNum_top
+  have hn : μ.n * μ.n = 0 := by
+    simpa [hb, ht] using hsame.symm
+  have hz : μ.n = 0 := by
+    cases Nat.mul_eq_zero.mp hn <;> assumption
+  exact Nat.lt_irrefl 0 (hz ▸ μ.pos)
+
+/-- Induced comparisons never equate the empty event with the sure event. -/
+theorem induced_not_eqv_bottom_top (model : ExactModel S)
+    (Q : QualitativeUrnScale) (I : HardIntervention S) :
+    ¬ Q.eqv (eventPlaus Q model I bottomEvent)
+        (eventPlaus Q model I topEvent) := by
+  intro h
+  exact ofUrnEvent_not_sameRatio_bottom_top
+    (interventionalUrn model I) (Q.eqv_implies_sameRatio h)
+
+/-- The indiscrete scale agrees on empty versus sure, so no finite SCM
+urn scale realizes it. -/
+theorem indiscrete_not_realizes (model : ExactModel twoBoolSignature)
+    (Q : QualitativeUrnScale) :
+    ¬ Realizes indiscreteScale model Q := by
+  intro realizes
+  have left :
+      indiscreteScale.eqv
+        (indiscreteScale.plaus ListedTwoNodeIntervention.idle.toHard
+          bottomEvent)
+        (indiscreteScale.plaus ListedTwoNodeIntervention.idle.toHard
+          topEvent) :=
+    trivial
+  have right :=
+    (realizes .idle .idle bottomEvent topEvent).mp left
+  exact induced_not_eqv_bottom_top model Q
+    ListedTwoNodeIntervention.idle.toHard (by simpa [induced] using right)
+
+/-- Unrestricted representation on the thin two-node scale is false. -/
+theorem not_twoNodeBooleanRepresentation :
+    ¬ TwoNodeBooleanRepresentation := by
+  intro hrep
+  rcases hrep indiscreteScale with ⟨model, Q, realizes⟩
+  exact indiscrete_not_realizes model Q realizes
 
 end QualitativeDoCalculus
 

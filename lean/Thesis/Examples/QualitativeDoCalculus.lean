@@ -202,12 +202,32 @@ theorem induced_effectiveness_first_false :
     twoBoolFirst false
     (HardIntervention.set_at_target _ _ _)
 
-/-- Soundness of representation on the listed two-node experiments.  The
-converse `TwoNodeBooleanRepresentation` is not inhabited. -/
+/-- Soundness of representation on the listed two-node experiments. -/
 theorem listed_realization :
     Realizes (induced twoBoolIndependentModel rationalScale)
       twoBoolIndependentModel rationalScale :=
   induced_realizes_listed twoBoolIndependentModel rationalScale
+
+/-- Empty versus sure is not an induced equivalence: cell counts `0` and
+`n` are different ratios. -/
+theorem induced_empty_not_sure :
+    ¬ rationalScale.eqv
+        (eventPlaus rationalScale twoBoolIndependentModel
+          (HardIntervention.empty twoBoolSignature) bottomEvent)
+        (eventPlaus rationalScale twoBoolIndependentModel
+          (HardIntervention.empty twoBoolSignature) topEvent) :=
+  induced_not_eqv_bottom_top twoBoolIndependentModel rationalScale
+    (HardIntervention.empty twoBoolSignature)
+
+/-- The indiscrete comparison equates every pair, including empty versus
+sure, so it is not realized by any finite SCM. -/
+theorem indiscrete_not_realized :
+    ¬ Realizes indiscreteScale twoBoolIndependentModel rationalScale :=
+  indiscrete_not_realizes twoBoolIndependentModel rationalScale
+
+/-- Unrestricted thin-scale representation is false. -/
+theorem converse_refuted : ¬ TwoNodeBooleanRepresentation :=
+  not_twoNodeBooleanRepresentation
 
 end QualitativeDoCalculus
 end Examples
