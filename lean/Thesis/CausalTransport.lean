@@ -120,6 +120,7 @@ import Thesis.CausalTransport.GraphQueryUncertainty
 import Thesis.CausalTransport.ShannonElimination
 import Thesis.CausalTransport.EntropyAssessment
 import Thesis.CausalTransport.CatalogueInference
+import Thesis.CausalTransport.CausalEquivalence
 import Thesis.CausalTransport.CataloguePartition
 import Thesis.CausalTransport.LatentRootNativeModel
 import Thesis.CausalTransport.LatentRootNativeEvaluation
@@ -376,6 +377,15 @@ separated by those experiments; a supplied assignment or graph permutation
 may gate Regime A or filter `nativeTemplateCatalogue`. It is distinct from
 `GraphQueryUncertainty`. `CataloguePartition` is the optional depth-capped
 Boolean modifier tree; it does not search graphs.
+
+`CausalEquivalence` records three nested support-aware relations on
+`ExactModel`s: observational agreement of the actual finite joints
+(including zeros; undefined versus defined-zero conditionals disagree),
+interventional agreement on a declared family of `HardIntervention`s, and
+exact abstraction by an existing `CausalInterventionMap.Exact`. Exact ω
+implies interventional agreement on the image of ω; empty `do` recovers
+observational agreement. Converses fail (OR; chain versus bow). This is
+not classical Markov equivalence and does not recover a unique DAG.
 
 `HiddenDAGCollapse`, `HiddenDAGProbability` and `HiddenDAGCountermodelLift`
 connect projected constructions to actual original finite hidden-DAG records.

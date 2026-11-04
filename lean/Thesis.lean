@@ -42,6 +42,7 @@ import Thesis.Examples.GuardedConditionalCompilation
 import Thesis.Examples.GuardedHiddenDAGZeroBoundary
 import Thesis.Examples.CausalEntropy
 import Thesis.Examples.CatalogueInference
+import Thesis.Examples.CausalEquivalence
 import Thesis.Examples.ConditionalPromotionSupport
 import Thesis.Examples.ConditionalPromotionCompilation
 import Thesis.Examples.GuardedPrintedSoundness
