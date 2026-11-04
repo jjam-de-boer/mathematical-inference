@@ -88,18 +88,25 @@ The main implemented results are:
   countermodels (Pearl–Shpitser forest obstructions); a restricted
   route-ready hedge family is not universal. Observed domains supply two
   distinct values; hidden and private-noise alphabets may be any finite size.
-- Finite causal coarse-graining: merge disjoint observed-node clusters, with
-  a partial map from micro to macro interventions that may be undefined.
-  In an explicit AND/copy model, every unique-preimage surgery preserves
-  the full finite law; the merge is built from AND/swap mechanism data.
-  Exact maps compose along a three-grain chain (fine, merged, collapsed)
-  with an input depth cap. A separate constructor adds a coarse-only
-  coordinate while ordinary merged clusters stay nonempty. A catalogue
-  client compares actual fine/coarse SCMs with declared observation
-  protocols and complexity priors. The observationally matched OR macro
-  still gives `1/3` versus micro double-surgery probability `1`. These
-  results do not establish a general renormalization-group flow or a
-  physical length scale.
+- Finite causal coarse-graining merges disjoint observed-node clusters with
+  explicit, possibly partial, intervention maps. The AND/copy example
+  preserves full laws on every unique-preimage surgery; AND/swap data
+  construct the merge. Exact maps compose along a depth-capped three-grain
+  chain. An event-wise rational remainder compares declared interventional
+  laws: exact comparisons have zero remainder on every event; the matched
+  OR macro has remainder `2/3` (micro probability `1`, macro `1/3`).
+  A separate constructor adds coarse-only coordinates. Forcing the new
+  coordinate has no representative under its declared micro lift, although
+  either coordinate value can occur. Model-pair exactness alone does not
+  transfer identification between whole graph model classes. A positive
+  Boolean copy-aggregation is exact on every micro intervention, with
+  representatives on whole clusters for every macro action, yet the fine
+  query is identified and the merged confounded-arrow graph has a hedge
+  (a forest witness of non-identifiability). This example permits declared
+  shared noise ignored by the actual equations. A catalogue client compares
+  actual fine/coarse SCMs with declared protocols and complexity priors.
+  These results do not establish a general renormalization-group flow or
+  a physical length scale.
 - Three nested support-aware relations on finite SCMs. Observational
   agreement is equality of the actual joints, zeros included: a
   conditioner undefined in one joint and defined-zero in the other
