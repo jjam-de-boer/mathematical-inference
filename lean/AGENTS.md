@@ -18,8 +18,22 @@ The main implemented results are:
   child, giving the local kernel P(child | parents). Constraint recipes
   return certified feasibility or refutation. If any listed parent
   configuration is infeasible there is no kernel and no invented fallback
-  row. Recipes do not identify a joint from observations and do not
-  construct a graph posterior.
+  row. When every graph parent configuration of a child is listed and the
+  tables exist, those rows become the child's structural mechanism
+  (independent private noise per node, no extra latent confounding): given
+  parents = pa, the child's law is that row, zeros included. A missing
+  graph parent configuration yields no model, not a uniform or
+  maximum-entropy default. Recipes do not identify a joint from observations
+  and do not construct a graph posterior. A supplied partition of a child's
+  labels on which that kernel is constant equates those singleton
+  probabilities. Dropping a conditioner that the kernel does not distinguish
+  is a rewrite of the query, licensed by that same-kernel fact; if the
+  existing identification procedure (graph to formula) succeeds on both the
+  original and the rewritten query, the identified values agree. Failure of
+  the original is not rewritten into success. The partition is supplied, not
+  inferred from data. Completeness still needs two observed values per node
+  and support of used conditionals; merging equivalent labels does not
+  transfer those hypotheses. This rewrite does not select a unique DAG.
 - Entropy and information inequalities and continuity; Shannon characterization
   from explicit uncertainty requirements on finite rational vectors, recorded
   in exact logarithms (`ExactLog`).

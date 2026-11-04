@@ -232,6 +232,29 @@ def unitAt (table : FiniteProbRecord Child) (i : Fin table.den) : Child :=
 def unitAtNat (table : FiniteProbRecord Child) (u : Nat) : Child :=
   unitAt table ⟨u % table.den, Nat.mod_lt u table.den_pos⟩
 
+namespace KernelTable
+variable {spec : ParentIndexedRecipe Parent Child}
+
+/-- Inverse-CDF draw from a listed row. Unlisted parents stay `none`; no
+default table is inserted. -/
+def sample? [DecidableEq Parent] (kernel : KernelTable spec) (parent : Parent)
+    (u : Nat) : Option Child :=
+  (kernel.row? parent).map fun table => unitAtNat table u
+
+theorem sample?_none_of_unlisted [DecidableEq Parent]
+    (kernel : KernelTable spec) (parent : Parent) (u : Nat)
+    (missing : parent ∉ spec.parents) : kernel.sample? parent u = none := by
+  simp [sample?, kernel.row?_none_of_unlisted parent missing]
+
+theorem sample?_some_of_listed [DecidableEq Parent]
+    (kernel : KernelTable spec) (parent : Parent)
+    (listed : parent ∈ spec.parents) (u : Nat) :
+    kernel.sample? parent u =
+      some (unitAtNat (kernel.row parent listed) u) := by
+  simp [sample?, row?, listed]
+
+end KernelTable
+
 omit [DecidableEq Child] in
 private theorem countP_eq_natSum_get (xs : List Child) (event : Event Child) :
     xs.countP event =

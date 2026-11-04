@@ -2,6 +2,8 @@ import Thesis.Probability.Distros.NodeLawRecipe
 import Thesis.Probability.Distros.ParentIndexedRecipe
 import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.Probability.Construction
+import Thesis.Causality.KernelTableSCM
+import Thesis.Causality.KernelOrbitRewrite
 
 namespace Thesis.Examples.NodeLawRecipe
 open Probability Probability.Distros Causality
@@ -364,5 +366,251 @@ example : QProb.Equiv (handKernelModel.interventionalValue (setX true) yTrue)
     ⟨3, 4, by decide⟩ := by decide +kernel
 example : QProb.Equiv (recipeKernelModel.observationalValue yTrue)
     ⟨7, 12, by decide⟩ := by decide +kernel
+
+/-! ## Production adapter: covering kernels become a Markovian SCM -/
+
+def xNode : Fin signature.count := ⟨0, by decide⟩
+def yNode : Fin signature.count := ⟨1, by decide⟩
+
+private theorem y_has_x_parent :
+    signature.directed xNode yNode = true := by decide
+
+def yParentBit (pa : signature.ParentValues yNode) : Bool :=
+  pa xNode y_has_x_parent
+
+def rootParentSpec : ParentIndexedRecipe (signature.ParentValues xNode) Bool where
+  parents := parentTuples signature xNode
+  parents_nodup := by decide +kernel
+  recipe _ := rootRecipe
+
+def yCoveringSpec : ParentIndexedRecipe (signature.ParentValues yNode) Bool where
+  parents := parentTuples signature yNode
+  parents_nodup := by decide +kernel
+  recipe pa := scmKernelSpec.recipe (yParentBit pa)
+
+theorem rootParentSpec_installed :
+    (InstalledChildKernel.tryInstall xNode rootParentSpec).isSome = true := by
+  decide +kernel
+
+theorem yCoveringSpec_installed :
+    (InstalledChildKernel.tryInstall yNode yCoveringSpec).isSome = true := by
+  decide +kernel
+
+def rootInstalled : InstalledChildKernel signature xNode :=
+  (InstalledChildKernel.tryInstall xNode rootParentSpec).get
+    (of_decide_eq_true rootParentSpec_installed)
+
+def yInstalled : InstalledChildKernel signature yNode :=
+  (InstalledChildKernel.tryInstall yNode yCoveringSpec).get
+    (of_decide_eq_true yCoveringSpec_installed)
+
+def installedKernels : (child : Fin signature.count) → InstalledChildKernel signature child
+  | ⟨0, _⟩ => rootInstalled
+  | ⟨1, _⟩ => yInstalled
+
+def recipeKernelSCM : FiniteLatentSCM signature := toSCM installedKernels
+
+def setXLatent (value : Bool) : HardIntervention signature :=
+  (HardIntervention.empty signature).set xNode value
+
+example : QProb.Equiv (recipeKernelSCM.interventionalValue (setXLatent false).value yTrue)
+    ⟨1, 4, by decide⟩ := by decide +kernel
+example : QProb.Equiv (recipeKernelSCM.interventionalValue (setXLatent true).value yTrue)
+    ⟨3, 4, by decide⟩ := by decide +kernel
+
+/-- A missing parent tuple yields no installed kernel and no default row. -/
+def incompleteYSpec : ParentIndexedRecipe (signature.ParentValues yNode) Bool where
+  parents := []
+  parents_nodup := by decide
+  recipe _ := .named (.bernoulli 1 1 (by decide) id)
+
+example : InstalledChildKernel.tryInstall yNode incompleteYSpec = none := by
+  decide +kernel
+example : (scmKernel.sample? (true : Bool) 0).isSome = true := by decide +kernel
+example : scmKernel.sample? (true : Bool) 0 =
+    some (ParentIndexedRecipe.unitAtNat
+      (scmKernel.row true scm_true_listed) 0) :=
+  scmKernel.sample?_some_of_listed true scm_true_listed 0
+example : failedKernelSpec.compileKernel.kernel? = none := by decide +kernel
+
+/-- Child-alphabet orbit: both Boolean labels share one supplied class, and
+the feasible mean `1/2` makes the masses equal. -/
+def orbitConstraints : NodeLawConstraints Bool := {
+  bitConstraints ⟨1, 2, by decide⟩ with partition := some fun _ => 0 }
+
+def orbitYSpec : ParentIndexedRecipe (signature.ParentValues yNode) Bool where
+  parents := parentTuples signature yNode
+  parents_nodup := by decide +kernel
+  recipe _ := .constraints orbitConstraints
+
+theorem orbitY_compiles : orbitYSpec.compileKernel.succeeded = true := by
+  decide +kernel
+
+def orbitYKernel : orbitYSpec.KernelTable :=
+  orbitYSpec.compileKernel.kernel orbitY_compiles
+
+theorem orbitY_covers : covers signature yNode orbitYSpec = true := by
+  decide +kernel
+
+example : ∀ pa : signature.ParentValues yNode,
+    (listed : pa ∈ orbitYSpec.parents) →
+      QProb.Equiv (orbitYKernel.prob pa listed false)
+        (orbitYKernel.prob pa listed true) := by
+  intro pa listed
+  exact kernel_orbit_prob orbitYKernel pa listed orbitConstraints rfl
+    (fun _ => 0) rfl false true (by decide) (by decide) rfl
+
+def orbitYInstalled : InstalledChildKernel signature yNode :=
+  { spec := orbitYSpec
+    kernel := orbitYKernel
+    cover := (covers_iff signature yNode orbitYSpec).mp orbitY_covers }
+
+def orbitKernels :
+    (child : Fin signature.count) → InstalledChildKernel signature child
+  | ⟨0, _⟩ => rootInstalled
+  | ⟨1, _⟩ => orbitYInstalled
+
+def orbitSCM : FiniteLatentSCM signature := toSCM orbitKernels
+
+example : ∀ pa : signature.ParentValues yNode,
+    QProb.Equiv
+      (((ofInstalled orbitKernels).factor yNode).probVal
+        (fun seed =>
+          FiniteProbRecord.singletonEvent false
+            ((ofInstalled orbitKernels).mechanism yNode pa seed)))
+      (((ofInstalled orbitKernels).factor yNode).probVal
+        (fun seed =>
+          FiniteProbRecord.singletonEvent true
+            ((ofInstalled orbitKernels).mechanism yNode pa seed))) := by
+  intro pa
+  exact mechanism_orbit_prob orbitKernels yNode pa orbitConstraints rfl
+    (fun _ => 0) rfl false true (by decide) (by decide) rfl
+
+example : QProb.Equiv
+    (orbitSCM.observationalValue (fun a => decide (a yNode = false)))
+    (orbitSCM.observationalValue (fun a => decide (a yNode = true))) := by
+  decide +kernel
+
+def yGivenX : ConditionalKernelQuery signature where
+  outcome := NodeSet.singleton yNode
+  action := NodeSet.empty
+  condition := NodeSet.singleton xNode
+  action_outcome_disjoint := by
+    intro i hi
+    simp [NodeSet.empty] at hi
+  action_condition_disjoint := by
+    intro i hi
+    simp [NodeSet.empty] at hi
+  outcome_condition_disjoint := by
+    intro i hy
+    have : i = yNode := (NodeSet.singleton_eq_true_iff yNode i).mp hy
+    subst this
+    simp [NodeSet.singleton, xNode, yNode]
+
+def yMarginal : JointKernelQuery signature := dropConditioner yGivenX
+
+def markovGraph : ObservedGraph signature where
+  bidirected := fun _ _ => false
+  bidirected_symmetric := by intro _ _ h; cases h
+  bidirected_irreflexive := fun _ => rfl
+
+def yGivenXFormula : ProbabilityTerm signature :=
+  match identifyConditionalKernel markovGraph yGivenX with
+  | .identified term => term
+  | _ => .zero
+
+def yMarginalFormula : ProbabilityTerm signature :=
+  match identifyJointKernel markovGraph yMarginal with
+  | .identified term => term
+  | _ => .zero
+
+theorem yGivenX_identified :
+    identifyConditionalKernel markovGraph yGivenX =
+      .identified yGivenXFormula := by
+  rfl
+
+theorem yMarginal_identified :
+    identifyJointKernel markovGraph yMarginal =
+      .identified yMarginalFormula := by
+  rfl
+
+theorem yGivenX_identifiedPair :
+    identifiedAfterDrop? markovGraph yGivenX =
+      some (yGivenXFormula, yMarginalFormula) := by
+  simp [identifiedAfterDrop?, identifyDroppedConditioner, yGivenX_identified]
+  rw [show dropConditioner yGivenX = yMarginal from rfl, yMarginal_identified]
+
+/-- Equal compiled rows license dropping `X` as a conditioner: the two
+source kernels agree on this SCM. Identification of the rewritten query is
+not claimed from a failed original; both calls succeeded. -/
+def equalRowSpec : ParentIndexedRecipe (signature.ParentValues yNode) Bool where
+  parents := parentTuples signature yNode
+  parents_nodup := by decide +kernel
+  recipe _ := .named (.bernoulli 1 1 (by decide) id)
+
+def equalRowInstalled : InstalledChildKernel signature yNode :=
+  (InstalledChildKernel.tryInstall yNode equalRowSpec).get (by decide +kernel)
+
+def equalKernels : (child : Fin signature.count) → InstalledChildKernel signature child
+  | ⟨0, _⟩ => rootInstalled
+  | ⟨1, _⟩ => equalRowInstalled
+
+def equalRowSCM : FiniteLatentSCM signature := toSCM equalKernels
+
+def equalRef : signature.Assignment := fun _ => false
+
+private def valueTest (result : ProbabilityResult.Result) (expected : QProb) : Bool :=
+  match result with
+  | none => false
+  | some value => decide (QProb.Equiv value expected)
+
+private def equivalentOfValueTest (result : ProbabilityResult.Result) (expected : QProb)
+    (checked : valueTest result expected = true) :
+    ProbabilityResult.Equivalent result (some expected) := by
+  cases result with
+  | none => cases checked
+  | some value => exact .value (of_decide_eq_true checked)
+
+def half : QProb := ⟨1, 2, by decide⟩
+
+def yGivenX_at_ref :
+    ProbabilityResult.Equivalent (yGivenX.sourceTerm.denote equalRowSCM equalRef)
+      (some half) :=
+  equivalentOfValueTest _ _ (by decide +kernel)
+
+def yMarginal_at_ref :
+    ProbabilityResult.Equivalent (yMarginal.sourceTerm.denote equalRowSCM equalRef)
+      (some half) :=
+  equivalentOfValueTest _ _ (by decide +kernel)
+
+def yGivenXFormula_at_ref :
+    ProbabilityResult.Equivalent (yGivenXFormula.denote equalRowSCM equalRef)
+      (some half) :=
+  equivalentOfValueTest _ _ (by decide +kernel)
+
+def yMarginalFormula_at_ref :
+    ProbabilityResult.Equivalent (yMarginalFormula.denote equalRowSCM equalRef)
+      (some half) :=
+  equivalentOfValueTest _ _ (by decide +kernel)
+
+def equal_rows_license :
+    ProbabilityTerm.EquivalentAt equalRowSCM yGivenX.sourceTerm
+      yMarginal.sourceTerm equalRef :=
+  ProbabilityResult.trans yGivenX_at_ref (ProbabilityResult.symm yMarginal_at_ref)
+
+def drop_identified_values_agree :
+    ProbabilityTerm.EquivalentAt equalRowSCM yGivenXFormula yMarginalFormula
+      equalRef :=
+  dropConditioner_identified_equiv markovGraph yGivenX equalRowSCM equalRef
+    yGivenX_identifiedPair equal_rows_license
+    (ProbabilityResult.trans yGivenX_at_ref (ProbabilityResult.symm yGivenXFormula_at_ref))
+    (ProbabilityResult.trans yMarginal_at_ref (ProbabilityResult.symm yMarginalFormula_at_ref))
+
+def drop_identified_qprob : QProb.Equiv half half :=
+  dropConditioner_identified_qprob markovGraph yGivenX equalRowSCM equalRef
+    yGivenX_identifiedPair equal_rows_license
+    (ProbabilityResult.trans yGivenX_at_ref (ProbabilityResult.symm yGivenXFormula_at_ref))
+    (ProbabilityResult.trans yMarginal_at_ref (ProbabilityResult.symm yMarginalFormula_at_ref))
+    yGivenXFormula_at_ref yMarginalFormula_at_ref
 
 end Thesis.Examples.NodeLawRecipe

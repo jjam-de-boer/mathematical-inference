@@ -43,6 +43,8 @@ import Thesis.Causality.ConditionalUniqueness
 import Thesis.Causality.IdentificationKernel
 import Thesis.Causality.ConditionalIdentificationKernel
 import Thesis.Causality.Reductions
+import Thesis.Causality.KernelTableSCM
+import Thesis.Causality.KernelOrbitRewrite
 import Thesis.Causality.HiddenPathSearch
 import Thesis.Causality.HiddenCommonCauseSearch
 import Thesis.Causality.LatentRationalCPT
