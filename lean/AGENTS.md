@@ -63,8 +63,12 @@ The main implemented results are:
   from observational or interventional finite tables, then mix identified
   values and supplied bounds without collapsing disagreement. An exhausted
   catalogue is unsupported, not a unique DAG. Complexity scores are prior
-  mass only. This is not a graph posterior and is distinct from Shannon
-  remainder on the same catalogue.
+  mass only. A supplied invariance constraint may zero an atom that would
+  otherwise match those tables. A finite list of mutually disagreeing
+  generative SCMs is separated by those experiments.
+  `nativeTemplateCatalogue` may be filtered by a supplied graph permutation.
+  This is not a graph posterior and is distinct from Shannon remainder on
+  the same catalogue.
 
 ## Living-document maintenance
 
