@@ -47,8 +47,13 @@ not a unique DAG of the world. A supplied assignment permutation may be
 ANDed into Regime A as an invariance constraint on the **hypothesis**
 (not inferred from data, not PC). `nativeTemplateCatalogue` may be
 filtered by a supplied node permutation of the host observed graph;
-templates of one hidden DAG share that graph, so the filter is
-all-or-nothing.
+templates of one hidden DAG share that graph, so that filter is
+all-or-nothing. Observational-only gating remains
+`regimeAInvariantModelWeight`; per-experiment gating also requires the
+predicted `do` table to be invariant. A list of graph-tagged atoms may
+keep some graphs and drop others. A bounded search of this signature's
+finite hard interventions returns a shortest separating experiment list,
+or an inseparable pair; it does not claim a unique DAG.
 
 Defined-zero and undefined formula values stay distinct. No `0/0`
 completion. Identified formulas remain action-free observational terms
@@ -840,6 +845,360 @@ theorem filterInvariantTemplates_not
     (h : observedGraphInvariant G perm = false) :
     filterInvariantTemplates G perm templates = [] := by
   simp [filterInvariantTemplates, h]
+
+/-- Keep those graph-tagged atoms whose observed graph is invariant under
+the supplied node permutation. Identity keeps every atom; a permutation
+may keep one graph and drop another. This is not graph search. -/
+def filterInvariantGraphItems (perm : Fin S.count → Fin S.count)
+    (items : List (ObservedGraph S × α)) : List (ObservedGraph S × α) :=
+  items.filter fun pair => observedGraphInvariant pair.1 perm
+
+theorem filterInvariantGraphItems_id (items : List (ObservedGraph S × α)) :
+    filterInvariantGraphItems (fun i => i) items = items := by
+  refine List.filter_eq_self.mpr ?_
+  intro pair _
+  exact observedGraphInvariant_id pair.1
+
+theorem filterInvariantGraphItems_kept (perm : Fin S.count → Fin S.count)
+    (G : ObservedGraph S) (item : α) (rest : List (ObservedGraph S × α))
+    (h : observedGraphInvariant G perm = true) :
+    filterInvariantGraphItems perm ((G, item) :: rest) =
+      (G, item) :: filterInvariantGraphItems perm rest := by
+  simp [filterInvariantGraphItems, List.filter, h]
+
+theorem filterInvariantGraphItems_dropped (perm : Fin S.count → Fin S.count)
+    (G : ObservedGraph S) (item : α) (rest : List (ObservedGraph S × α))
+    (h : observedGraphInvariant G perm = false) :
+    filterInvariantGraphItems perm ((G, item) :: rest) =
+      filterInvariantGraphItems perm rest := by
+  simp [filterInvariantGraphItems, List.filter, h]
+
+/-- Invariance of this experiment's predicted table, observational or `do`. -/
+def experimentInvariant (scm : ExactModel S) (σ : S.Assignment → S.Assignment)
+    (e : Experiment S) : Bool :=
+  assignmentLawInvariant (predictedTable scm e.tag) σ
+
+def experimentsInvariant (scm : ExactModel S) (σ : S.Assignment → S.Assignment)
+    (experiments : List (Experiment S)) : Bool :=
+  experiments.all (experimentInvariant scm σ)
+
+/-- Regime A on every tagged table, each gated by the same supplied `σ`. -/
+def regimeAInvariantExperimentWeight (scm : ExactModel S)
+    (σ : S.Assignment → S.Assignment)
+    (experiments : List (Experiment S)) : Nat :=
+  independentWeights (experiments.map fun e =>
+    regimeAInvariantWeight (predictedTable scm e.tag) σ e.data)
+
+theorem regimeAInvariantExperimentWeight_eq (scm : ExactModel S)
+    (σ : S.Assignment → S.Assignment)
+    (experiments : List (Experiment S)) :
+    regimeAInvariantExperimentWeight scm σ experiments =
+      andWeight (experimentsInvariant scm σ experiments)
+        (regimeAModelWeight scm experiments) := by
+  induction experiments with
+  | nil => rfl
+  | cons e rest ih =>
+      have lhs :
+          regimeAInvariantExperimentWeight scm σ (e :: rest) =
+            regimeAInvariantWeight (predictedTable scm e.tag) σ e.data *
+              regimeAInvariantExperimentWeight scm σ rest :=
+        rfl
+      have rhs :
+          andWeight (experimentsInvariant scm σ (e :: rest))
+              (regimeAModelWeight scm (e :: rest)) =
+            andWeight (experimentInvariant scm σ e &&
+                experimentsInvariant scm σ rest)
+              (regimeAWeight (predictedTable scm e.tag) e.data *
+                regimeAModelWeight scm rest) :=
+        rfl
+      rw [lhs, rhs, ih]
+      simp only [regimeAInvariantWeight, andWeight, boolWeight_and]
+      ac_rfl
+
+theorem recordsAgree_self (predicted : FiniteProbRecord S.Assignment) :
+    recordsAgree predicted predicted = true := by
+  refine List.all_eq_true.mpr ?_
+  intro assignment _
+  exact decide_eq_true (QProb.equiv_refl _)
+
+theorem recordsAgree_comm (p q : FiniteProbRecord S.Assignment) :
+    recordsAgree p q = recordsAgree q p := by
+  simp only [recordsAgree]
+  induction S.assignmentEnumeration with
+  | nil => rfl
+  | cons assignment rest ih =>
+      simp only [List.all_cons, ih]
+      have :
+          decide (QProb.Equiv
+              (p.probVal (FiniteProbRecord.singletonEvent assignment))
+              (q.probVal (FiniteProbRecord.singletonEvent assignment))) =
+            decide (QProb.Equiv
+              (q.probVal (FiniteProbRecord.singletonEvent assignment))
+              (p.probVal (FiniteProbRecord.singletonEvent assignment))) := by
+        cases h : decide (QProb.Equiv
+            (p.probVal (FiniteProbRecord.singletonEvent assignment))
+            (q.probVal (FiniteProbRecord.singletonEvent assignment))) with
+        | true =>
+            exact (decide_eq_true
+              (QProb.equiv_symm (of_decide_eq_true h))).symm
+        | false =>
+            have :
+                ¬ QProb.Equiv
+                    (q.probVal (FiniteProbRecord.singletonEvent assignment))
+                    (p.probVal (FiniteProbRecord.singletonEvent assignment)) :=
+              fun same => of_decide_eq_false h (QProb.equiv_symm same)
+            exact (decide_eq_false this).symm
+      rw [this]
+
+theorem recordsAgree_trans (p q r : FiniteProbRecord S.Assignment)
+    (hpq : recordsAgree p q = true) (hqr : recordsAgree q r = true) :
+    recordsAgree p r = true := by
+  refine List.all_eq_true.mpr ?_
+  intro assignment hmem
+  have hpq_cell := of_decide_eq_true (List.all_eq_true.mp hpq assignment hmem)
+  have hqr_cell := of_decide_eq_true (List.all_eq_true.mp hqr assignment hmem)
+  exact decide_eq_true (QProb.equiv_trans hpq_cell hqr_cell)
+
+private theorem all_eq_false_mem {α : Type} (p : α → Bool) :
+    ∀ xs : List α, xs.all p = false → ∃ x ∈ xs, p x = false
+  | [], h => by simp at h
+  | x :: xs, h => by
+      simp only [List.all_cons, Bool.and_eq_false_iff] at h
+      rcases h with hx | hxs
+      · exact ⟨x, List.mem_cons_self, hx⟩
+      · rcases all_eq_false_mem p xs hxs with ⟨y, hym, hy⟩
+        exact ⟨y, List.mem_cons.mpr (Or.inr hym), hy⟩
+
+theorem recordsAgree_neq_of_unique (p q r : FiniteProbRecord S.Assignment)
+    (hpq : recordsAgree p q = true) (hpr : recordsAgree p r = false) :
+    recordsAgree q r = false := by
+  rcases all_eq_false_mem _ _ hpr with ⟨assignment, hmem, hcell⟩
+  have hpq_cell := of_decide_eq_true (List.all_eq_true.mp hpq assignment hmem)
+  have npr := of_decide_eq_false hcell
+  have nqr : ¬ QProb.Equiv
+      (q.probVal (FiniteProbRecord.singletonEvent assignment))
+      (r.probVal (FiniteProbRecord.singletonEvent assignment)) :=
+    fun qer => npr (QProb.equiv_trans hpq_cell qer)
+  have cell_false :
+      decide (QProb.Equiv
+        (q.probVal (FiniteProbRecord.singletonEvent assignment))
+        (r.probVal (FiniteProbRecord.singletonEvent assignment))) = false :=
+    decide_eq_false nqr
+  cases hall : recordsAgree q r with
+  | false => rfl
+  | true =>
+      exact Bool.noConfusion
+        ((List.all_eq_true.mp hall assignment hmem).symm.trans cell_false)
+
+/-- Finite option alphabets: unset, or one enumerated value. -/
+def optionValues (S : ObservedSignature) (i : Fin S.count) :
+    List (Option (S.Value i)) :=
+  none :: (S.valueEnumeration i).map some
+
+/-- Every hard intervention on this finite signature. The list is finite
+because each coordinate alphabet is finite. -/
+def hardInterventionEnumeration (S : ObservedSignature) :
+    List (HardIntervention S) :=
+  (FiniteProduct.enumeration S.count (fun i => Option (S.Value i))
+    (fun i => optionValues S i)).map fun value => ⟨value⟩
+
+def interventionTargetCount (I : HardIntervention S) : Nat :=
+  (List.finRange S.count).filter (fun i => (I.value i).isSome) |>.length
+
+def interventionIsEmpty (I : HardIntervention S) : Bool :=
+  finAll S.count fun i => (I.value i).isNone
+
+/-- Observational empty `do`, then every nonempty intervention with at most
+`maxTargets` coordinates set. The cap is an input, not an inferred bound. -/
+def candidateTags (S : ObservedSignature) (maxTargets : Nat) :
+    List (ExperimentTag S) :=
+  .observational ::
+    ((hardInterventionEnumeration S).filter fun I =>
+      !interventionIsEmpty I &&
+        decide (interventionTargetCount I ≤ maxTargets)).map
+      ExperimentTag.intervene
+
+def modelsDisagreeOn {n : Nat} (models : Fin n → ExactModel S)
+    (i j : Fin n) (tag : ExperimentTag S) : Bool :=
+  !recordsAgree (predictedTable (models i) tag) (predictedTable (models j) tag)
+
+def pairSeparated {n : Nat} (models : Fin n → ExactModel S)
+    (tags : List (ExperimentTag S)) (i j : Fin n) : Bool :=
+  tags.any (modelsDisagreeOn models i j)
+
+def allPairsSeparated {n : Nat} (models : Fin n → ExactModel S)
+    (tags : List (ExperimentTag S)) : Bool :=
+  (List.finRange n).all fun i =>
+    (List.finRange n).all fun j =>
+      decide (i = j) || pairSeparated models tags i j
+
+def combinations {α : Type} : List α → Nat → List (List α)
+  | _, 0 => [[]]
+  | [], Nat.succ _ => []
+  | x :: rest, Nat.succ k =>
+      (combinations rest k).map (fun ys => x :: ys) ++ combinations rest (k + 1)
+
+theorem combinations_length {α : Type} (xs : List α) :
+    ∀ k ys, ys ∈ combinations xs k → ys.length = k := by
+  induction xs with
+  | nil =>
+      intro k ys hys
+      cases k with
+      | zero =>
+          simp [combinations] at hys
+          cases hys
+          rfl
+      | succ k =>
+          simp [combinations] at hys
+  | cons x rest ih =>
+      intro k ys hys
+      cases k with
+      | zero =>
+          simp [combinations] at hys
+          cases hys
+          rfl
+      | succ k =>
+          simp only [combinations, List.mem_append, List.mem_map] at hys
+          rcases hys with ⟨ys', hmem, hcons⟩ | hrest
+          · cases hcons
+            simp [ih k ys' hmem]
+          · exact ih (k + 1) ys hrest
+
+def combinationsBySize {α : Type} (xs : List α) : List (List α) :=
+  (List.range (xs.length + 1)).flatMap (fun k => combinations xs k)
+
+def firstSatisfying {α : Type} (p : α → Bool) : List α → Option α
+  | [] => none
+  | x :: xs => if p x then some x else firstSatisfying p xs
+
+theorem firstSatisfying_some {α : Type} {p : α → Bool} :
+    ∀ xs x, firstSatisfying p xs = some x → p x = true
+  | [], _, h => by simp [firstSatisfying] at h
+  | x :: xs, y, h => by
+      simp only [firstSatisfying] at h
+      split at h
+      · cases h
+        assumption
+      · exact firstSatisfying_some xs y h
+
+theorem firstSatisfying_none_mem {α : Type} {p : α → Bool} :
+    ∀ xs, firstSatisfying p xs = none → ∀ x ∈ xs, p x = false
+  | [], _, x, hx => by cases hx
+  | y :: ys, h, x, hx => by
+      cases hy : p y
+      · simp [firstSatisfying, hy] at h
+        simp only [List.mem_cons] at hx
+        rcases hx with rfl | hx
+        · exact hy
+        · exact firstSatisfying_none_mem ys h x hx
+      · simp [firstSatisfying, hy] at h
+
+theorem firstSatisfying_app {α : Type} (p : α → Bool) :
+    ∀ xs ys,
+      firstSatisfying p (xs ++ ys) =
+        match firstSatisfying p xs with
+        | some a => some a
+        | none => firstSatisfying p ys
+  | [], ys => by simp [firstSatisfying]
+  | x :: xs, ys => by
+      simp only [List.cons_append, firstSatisfying]
+      split <;> simp [firstSatisfying_app p xs ys]
+
+/-- Shortest sublist of `candidates`, by increasing length, that pairwise
+Regime-A-separates the listed SCMs. `none` means some pair agrees on every
+searched tag. -/
+def shortestSeparatingTags {n : Nat} (models : Fin n → ExactModel S)
+    (candidates : List (ExperimentTag S)) : Option (List (ExperimentTag S)) :=
+  firstSatisfying (allPairsSeparated models) (combinationsBySize candidates)
+
+theorem shortestSeparatingTags_separated {n : Nat}
+    (models : Fin n → ExactModel S)
+    (candidates tags : List (ExperimentTag S))
+    (h : shortestSeparatingTags models candidates = some tags) :
+    allPairsSeparated models tags = true :=
+  firstSatisfying_some _ _ h
+
+def noShorterSeparator {n : Nat} (models : Fin n → ExactModel S)
+    (candidates : List (ExperimentTag S)) (k : Nat) : Bool :=
+  (List.range k).all fun j =>
+    (combinations candidates j).all fun tags =>
+      !allPairsSeparated models tags
+
+theorem mem_combinations_self {α : Type} : ∀ xs : List α, xs ∈ combinations xs xs.length
+  | [] => by simp [combinations]
+  | x :: rest => by
+      change x :: rest ∈ combinations (x :: rest) (rest.length + 1)
+      simp only [combinations, List.mem_append, List.mem_map]
+      exact Or.inl ⟨rest, mem_combinations_self rest, rfl⟩
+
+theorem mem_combinationsBySize_self {α : Type} (xs : List α) :
+    xs ∈ combinationsBySize xs := by
+  refine List.mem_flatMap.mpr ?_
+  exact ⟨xs.length, List.mem_range.mpr (Nat.lt_succ_self _), mem_combinations_self xs⟩
+
+theorem shortestSeparatingTags_none_not_all {n : Nat}
+    (models : Fin n → ExactModel S) (candidates : List (ExperimentTag S))
+    (h : shortestSeparatingTags models candidates = none) :
+    allPairsSeparated models candidates = false :=
+  firstSatisfying_none_mem _ h _ (mem_combinationsBySize_self _)
+
+def inseparablePair? {n : Nat} (models : Fin n → ExactModel S)
+    (candidates : List (ExperimentTag S)) : Option (Fin n × Fin n) :=
+  (List.finRange n).findSome? fun i =>
+    (List.finRange n).findSome? fun j =>
+      if i.val < j.val && !pairSeparated models candidates i j then
+        some (i, j)
+      else
+        none
+
+/-- Experiments whose data tables are this SCM's own predictions. -/
+def predictedExperiments (scm : ExactModel S) (tags : List (ExperimentTag S)) :
+    List (Experiment S) :=
+  tags.map fun tag => ⟨tag, .law (predictedTable scm tag)⟩
+
+theorem experimentAgrees_own (scm : ExactModel S) (tag : ExperimentTag S) :
+    experimentAgrees scm ⟨tag, .law (predictedTable scm tag)⟩ = true := by
+  simp [experimentAgrees, dataAsRecord, recordsAgree_self]
+
+theorem realizes_predictedExperiments (scm : ExactModel S)
+    (tags : List (ExperimentTag S)) :
+    realizesExperiments scm (predictedExperiments scm tags) = true := by
+  refine List.all_eq_true.mpr ?_
+  intro e he
+  rcases List.mem_map.mp he with ⟨tag, _, rfl⟩
+  exact experimentAgrees_own scm tag
+
+theorem uniquelyRealizes_of_allPairsSeparated {n : Nat}
+    (models : Fin n → ExactModel S) (tags : List (ExperimentTag S))
+    (i : Fin n) (hsep : allPairsSeparated models tags = true) :
+    uniquelyRealizes models (predictedExperiments (models i) tags) i := by
+  refine ⟨realizes_predictedExperiments (models i) tags, ?_⟩
+  intro j hne
+  have pair :
+      (decide (i = j) || pairSeparated models tags i j) = true :=
+    List.all_eq_true.mp
+      (List.all_eq_true.mp hsep i (List.mem_finRange i)) j (List.mem_finRange j)
+  have disagrees : pairSeparated models tags i j = true := by
+    have : decide (i = j) = false := decide_eq_false hne.symm
+    simpa [this] using pair
+  cases hall : realizesExperiments (models j) (predictedExperiments (models i) tags) with
+  | false => rfl
+  | true =>
+      rcases List.any_eq_true.mp disagrees with ⟨tag, htag, hdis⟩
+      have agrees :
+          experimentAgrees (models j)
+            ⟨tag, .law (predictedTable (models i) tag)⟩ = true :=
+        (List.all_eq_true.mp hall) _ (List.mem_map.mpr ⟨tag, htag, rfl⟩)
+      have same :
+          recordsAgree (predictedTable (models i) tag)
+            (predictedTable (models j) tag) = true := by
+        rw [recordsAgree_comm]
+        simpa [experimentAgrees, dataAsRecord] using agrees
+      have differ :
+          recordsAgree (predictedTable (models i) tag)
+            (predictedTable (models j) tag) = false := by
+        simpa [modelsDisagreeOn] using hdis
+      exact Bool.noConfusion (same.symm.trans differ)
 
 end CatalogueInference
 end Causality

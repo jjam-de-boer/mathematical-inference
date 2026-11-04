@@ -563,6 +563,443 @@ theorem stump_tau_cell0 :
 def refinement : ObservationChain (discreteUniformDistro 4 (by decide)) 1 :=
   firstBitChain _
 
+/-- Flip both observed bits. The copy-chain observational law is supported
+on `X = Y`, so this supplied map preserves `P(V)` and fails on `do(X{=}true)`. -/
+def flipXYAssign (a : signature.Assignment) : signature.Assignment :=
+  fun i => !a i
+
+theorem chain_obs_flipXY_invariant :
+    assignmentLawInvariant (predictedTable chainModel .observational) flipXYAssign =
+      true := by
+  decide +kernel
+
+theorem chain_do_flipXY_not_invariant :
+    assignmentLawInvariant (predictedTable chainModel (.intervene doX)) flipXYAssign =
+      false := by
+  decide +kernel
+
+theorem observational_invariance_keeps_chain :
+    regimeAInvariantModelWeight chainModel flipXYAssign experiments = 1 := by
+  decide +kernel
+
+theorem per_experiment_invariance_zeros_do :
+    regimeAInvariantExperimentWeight chainModel flipXYAssign experiments = 0 := by
+  decide +kernel
+
+def twoCauseSig : ObservedSignature where
+  count := 3
+  Value _ := Bool
+  valueEnumeration _ := [false, true]
+  value_complete := by intro _ value; cases value <;> simp
+  value_nodup := by intro _; simp
+  defaultValue _ := false
+  valueDecidableEq _ := inferInstance
+  directed parent child := decide (parent.val < 2 ∧ child.val = 2)
+  directed_earlier := by decide +kernel
+
+def swapCauses : Fin 3 → Fin 3
+  | ⟨0, _⟩ => ⟨1, by decide⟩
+  | ⟨1, _⟩ => ⟨0, by decide⟩
+  | ⟨n + 2, h⟩ => ⟨n + 2, h⟩
+
+def pairEdge (a b i j : Fin 3) : Bool :=
+  decide ((i = a ∧ j = b) ∨ (i = b ∧ j = a))
+
+theorem pairEdge_symm (a b i j : Fin 3)
+    (h : pairEdge a b i j = true) : pairEdge a b j i = true := by
+  simp only [pairEdge, decide_eq_true_eq] at h ⊢
+  rcases h with ⟨hi, hj⟩ | ⟨hi, hj⟩
+  · exact Or.inr ⟨hj, hi⟩
+  · exact Or.inl ⟨hj, hi⟩
+
+theorem pairEdge_irrefl (a b i : Fin 3) (hne : a ≠ b) :
+    pairEdge a b i i = false := by
+  refine decide_eq_false ?_
+  intro h
+  rcases h with ⟨sameA, sameB⟩ | ⟨sameB, sameA⟩
+  · exact hne (sameA.symm.trans sameB)
+  · exact hne (sameA.symm.trans sameB)
+
+def graphPair (a b : Fin 3) (hne : a ≠ b) : ObservedGraph twoCauseSig where
+  bidirected := pairEdge a b
+  bidirected_symmetric := fun {_ _} h => pairEdge_symm a b _ _ h
+  bidirected_irreflexive := fun i => pairEdge_irrefl a b i hne
+
+def graphNone : ObservedGraph twoCauseSig where
+  bidirected := fun _ _ => false
+  bidirected_symmetric := by intro _ _ h; cases h
+  bidirected_irreflexive := fun _ => rfl
+
+def n0 : Fin 3 := ⟨0, by decide⟩
+def n1 : Fin 3 := ⟨1, by decide⟩
+def n2 : Fin 3 := ⟨2, by decide⟩
+
+def graphX1Y : ObservedGraph twoCauseSig := graphPair n0 n2 (by decide)
+def graphX2Y : ObservedGraph twoCauseSig := graphPair n1 n2 (by decide)
+
+def graphAtoms : List (ObservedGraph twoCauseSig × Nat) :=
+  [(graphX1Y, 0), (graphX2Y, 1), (graphNone, 2)]
+
+theorem multi_graph_filter_id :
+    filterInvariantGraphItems (fun i : Fin 3 => i) graphAtoms = graphAtoms :=
+  filterInvariantGraphItems_id graphAtoms
+
+theorem swap_drops_x1y :
+    observedGraphInvariant graphX1Y swapCauses = false := by decide +kernel
+theorem swap_drops_x2y :
+    observedGraphInvariant graphX2Y swapCauses = false := by decide +kernel
+theorem swap_keeps_none :
+    observedGraphInvariant graphNone swapCauses = true := by decide +kernel
+
+theorem multi_graph_filter_swap :
+    filterInvariantGraphItems swapCauses graphAtoms = [(graphNone, 2)] := by
+  rw [graphAtoms]
+  rw [filterInvariantGraphItems_dropped swapCauses graphX1Y 0
+    [(graphX2Y, 1), (graphNone, 2)] swap_drops_x1y]
+  rw [filterInvariantGraphItems_dropped swapCauses graphX2Y 1
+    [(graphNone, 2)] swap_drops_x2y]
+  rw [filterInvariantGraphItems_kept swapCauses graphNone 2 [] swap_keeps_none]
+  rfl
+
+def tinyTags : List (ExperimentTag signature) :=
+  [.observational, .intervene doX]
+
+def indepDoLaw : FiniteProbRecord signature.Assignment where
+  atoms := [(xy true false, 1), (xy true true, 1)]
+  den := 2
+  den_pos := by decide
+  total_mass := rfl
+
+theorem boolWeight_eq_zero {b : Bool} (h : boolWeight b = 0) : b = false := by
+  cases b with
+  | false => rfl
+  | true => cases h
+
+theorem boolWeight_eq_one {b : Bool} (h : boolWeight b = 1) : b = true := by
+  cases b with
+  | true => rfl
+  | false => cases h
+
+theorem recordsAgree_of_weight_zero
+    (predicted observed : FiniteProbRecord signature.Assignment)
+    (h : regimeAWeight predicted (.law observed) = 0) :
+    recordsAgree predicted observed = false := by
+  simp only [regimeAWeight, dataAsRecord] at h
+  exact boolWeight_eq_zero h
+
+theorem recordsAgree_of_weight_one
+    (predicted observed : FiniteProbRecord signature.Assignment)
+    (h : regimeAWeight predicted (.law observed) = 1) :
+    recordsAgree predicted observed = true := by
+  simp only [regimeAWeight, dataAsRecord] at h
+  exact boolWeight_eq_one h
+
+theorem chain_do_agrees_self :
+    recordsAgree (predictedTable chainModel (.intervene doX)) chainDoLaw = true :=
+  recordsAgree_self _
+
+theorem indep_do_weight_zero :
+    regimeAWeight (predictedTable independenceModel (.intervene doX))
+      (.law chainDoLaw) = 0 := by decide +kernel
+
+theorem bow_do_weight_zero :
+    regimeAWeight (predictedTable bowLowerModelGen (.intervene doX))
+      (.law chainDoLaw) = 0 := by decide +kernel
+
+theorem indep_do_weight_one :
+    regimeAWeight (predictedTable independenceModel (.intervene doX))
+      (.law indepDoLaw) = 1 := by decide +kernel
+
+theorem bow_do_cell (xv yv : Bool) :
+    QProb.Equiv
+      ((predictedTable bowLowerModelGen (.intervene doX)).probVal
+        (FiniteProbRecord.singletonEvent (xy xv yv)))
+      (indepDoLaw.probVal (FiniteProbRecord.singletonEvent (xy xv yv))) := by
+  cases xv <;> cases yv <;> decide +kernel
+
+private theorem assignment_eq_xy (assignment : signature.Assignment)
+    {xv yv : Bool} (hx : assignment x = xv) (hy : assignment y = yv) :
+    assignment = xy xv yv := by
+  funext i
+  rcases node_cases i with hi | hi
+  · rw [hi]; simp [xy, x]; exact hx
+  · rw [hi]; simp [xy, y]; exact hy
+
+theorem bow_do_agrees_indep_table :
+    recordsAgree (predictedTable bowLowerModelGen (.intervene doX)) indepDoLaw =
+      true := by
+  refine List.all_eq_true.mpr ?_
+  intro assignment _
+  have hx : assignment x = false ∨ assignment x = true := by cases assignment x <;> simp
+  have hy : assignment y = false ∨ assignment y = true := by cases assignment y <;> simp
+  rcases hx with hx | hx <;> rcases hy with hy | hy
+  · have := assignment_eq_xy assignment hx hy
+    subst this
+    exact decide_eq_true (bow_do_cell false false)
+  · have := assignment_eq_xy assignment hx hy
+    subst this
+    exact decide_eq_true (bow_do_cell false true)
+  · have := assignment_eq_xy assignment hx hy
+    subst this
+    exact decide_eq_true (bow_do_cell true false)
+  · have := assignment_eq_xy assignment hx hy
+    subst this
+    exact decide_eq_true (bow_do_cell true true)
+
+theorem indep_do_misses_chain :
+    recordsAgree (predictedTable independenceModel (.intervene doX)) chainDoLaw =
+      false :=
+  recordsAgree_of_weight_zero _ _ indep_do_weight_zero
+
+theorem bow_do_misses_chain :
+    recordsAgree (predictedTable bowLowerModelGen (.intervene doX)) chainDoLaw =
+      false :=
+  recordsAgree_of_weight_zero _ _ bow_do_weight_zero
+
+theorem indep_do_agrees_self :
+    recordsAgree (predictedTable independenceModel (.intervene doX)) indepDoLaw =
+      true :=
+  recordsAgree_of_weight_one _ _ indep_do_weight_one
+
+theorem indep_bow_agree_doX :
+    recordsAgree (predictedTable independenceModel (.intervene doX))
+      (predictedTable bowLowerModelGen (.intervene doX)) = true :=
+  recordsAgree_trans
+    (predictedTable independenceModel (.intervene doX))
+    indepDoLaw
+    (predictedTable bowLowerModelGen (.intervene doX))
+    indep_do_agrees_self
+    (by
+      rw [recordsAgree_comm]
+      exact bow_do_agrees_indep_table)
+
+theorem indep_obs_weight_zero :
+    regimeAWeight (predictedTable independenceModel .observational)
+      (.law correlated) = 0 := by decide +kernel
+
+theorem indep_obs_misses_correlated :
+    recordsAgree (predictedTable independenceModel .observational) correlated =
+      false :=
+  recordsAgree_of_weight_zero _ _ indep_obs_weight_zero
+
+theorem chain_obs_weight_one :
+    regimeAWeight (predictedTable chainModel .observational) (.law correlated) = 1 := by
+  decide +kernel
+
+theorem bow_obs_weight_one :
+    regimeAWeight (predictedTable bowLowerModelGen .observational) (.law correlated) =
+      1 := by decide +kernel
+
+theorem observational_chain_bow_agree :
+    recordsAgree (predictedTable chainModel .observational)
+      (predictedTable bowLowerModelGen .observational) = true :=
+  recordsAgree_trans
+    (predictedTable chainModel .observational)
+    correlated
+    (predictedTable bowLowerModelGen .observational)
+    (recordsAgree_of_weight_one
+      (predictedTable chainModel .observational) correlated chain_obs_weight_one)
+    (by
+      rw [recordsAgree_comm]
+      exact recordsAgree_of_weight_one
+        (predictedTable bowLowerModelGen .observational) correlated bow_obs_weight_one)
+
+private theorem not_allPairsSeparated_of_pair
+    (tags : List (ExperimentTag signature)) (i j : Fin 3) (hne : i ≠ j)
+    (hpair : pairSeparated generators tags i j = false) :
+    allPairsSeparated generators tags = false := by
+  cases h : allPairsSeparated generators tags with
+  | false => rfl
+  | true =>
+    have pair :
+        (decide (i = j) || pairSeparated generators tags i j) = true :=
+      List.all_eq_true.mp
+        (List.all_eq_true.mp h i (List.mem_finRange i))
+        j (List.mem_finRange j)
+    have : pairSeparated generators tags i j = true := by
+      simpa [decide_eq_false hne] using pair
+    rw [hpair] at this
+    cases this
+
+theorem empty_tags_do_not_separate :
+    allPairsSeparated generators [] = false :=
+  not_allPairsSeparated_of_pair [] (0 : Fin 3) (1 : Fin 3) (by decide) rfl
+
+theorem observational_tags_do_not_separate :
+    allPairsSeparated generators [.observational] = false :=
+  not_allPairsSeparated_of_pair [.observational] (1 : Fin 3) (2 : Fin 3)
+    (by decide) <| by
+    simp [pairSeparated, modelsDisagreeOn, generators, List.any_cons, List.any_nil,
+      observational_chain_bow_agree]
+
+theorem doX_tags_do_not_separate :
+    allPairsSeparated generators [.intervene doX] = false :=
+  not_allPairsSeparated_of_pair [.intervene doX] (0 : Fin 3) (2 : Fin 3)
+    (by decide) <| by
+    simp [pairSeparated, modelsDisagreeOn, generators, List.any_cons, List.any_nil,
+      indep_bow_agree_doX]
+
+theorem tiny_separates_indep_chain :
+    pairSeparated generators tinyTags (0 : Fin 3) (1 : Fin 3) = true := by
+  have hobs :
+      recordsAgree (predictedTable independenceModel .observational)
+        (predictedTable chainModel .observational) = false :=
+    Eq.trans (recordsAgree_comm _ _)
+      (recordsAgree_neq_of_unique correlated
+        (predictedTable chainModel .observational)
+        (predictedTable independenceModel .observational)
+        (by
+          rw [recordsAgree_comm]
+          exact recordsAgree_of_weight_one
+            (predictedTable chainModel .observational) correlated
+            chain_obs_weight_one)
+        (Eq.trans (recordsAgree_comm _ _) indep_obs_misses_correlated))
+  simp [pairSeparated, modelsDisagreeOn, generators, tinyTags, List.any_cons,
+    List.any_nil, hobs]
+
+theorem tiny_separates_indep_bow :
+    pairSeparated generators tinyTags (0 : Fin 3) (2 : Fin 3) = true := by
+  have hobs :
+      recordsAgree (predictedTable independenceModel .observational)
+        (predictedTable bowLowerModelGen .observational) = false :=
+    Eq.trans (recordsAgree_comm _ _)
+      (recordsAgree_neq_of_unique correlated
+        (predictedTable bowLowerModelGen .observational)
+        (predictedTable independenceModel .observational)
+        (by
+          rw [recordsAgree_comm]
+          exact recordsAgree_of_weight_one
+            (predictedTable bowLowerModelGen .observational) correlated
+            bow_obs_weight_one)
+        (Eq.trans (recordsAgree_comm _ _) indep_obs_misses_correlated))
+  simp [pairSeparated, modelsDisagreeOn, generators, tinyTags, List.any_cons,
+    List.any_nil, hobs]
+
+theorem tiny_separates_chain_bow :
+    pairSeparated generators tinyTags (1 : Fin 3) (2 : Fin 3) = true := by
+  have hdo :
+      recordsAgree (predictedTable chainModel (.intervene doX))
+        (predictedTable bowLowerModelGen (.intervene doX)) = false :=
+    recordsAgree_neq_of_unique chainDoLaw
+      (predictedTable chainModel (.intervene doX))
+      (predictedTable bowLowerModelGen (.intervene doX))
+      (Eq.trans (recordsAgree_comm _ _) chain_do_agrees_self)
+      (Eq.trans (recordsAgree_comm _ _) bow_do_misses_chain)
+  simp [pairSeparated, modelsDisagreeOn, generators, tinyTags, List.any_cons,
+    List.any_nil, hdo]
+
+private theorem pairSeparated_comm {n : Nat}
+    (models : Fin n → ExactModel signature)
+    (tags : List (ExperimentTag signature)) (i j : Fin n) :
+    pairSeparated models tags i j = pairSeparated models tags j i := by
+  induction tags with
+  | nil => rfl
+  | cons tag rest ih =>
+      simp only [pairSeparated, List.any_cons] at ih ⊢
+      have htag :
+          modelsDisagreeOn models i j tag = modelsDisagreeOn models j i tag := by
+        simp [modelsDisagreeOn, recordsAgree_comm]
+      rw [htag, ih]
+
+private theorem fin3_eq_of_val (i : Fin 3) :
+    i = (0 : Fin 3) ∨ i = (1 : Fin 3) ∨ i = (2 : Fin 3) := by
+  have : i.val = 0 ∨ i.val = 1 ∨ i.val = 2 := by omega
+  rcases this with h | h | h
+  · exact Or.inl (Fin.ext h)
+  · exact Or.inr (Or.inl (Fin.ext h))
+  · exact Or.inr (Or.inr (Fin.ext h))
+
+theorem tinyTags_separate :
+    allPairsSeparated generators tinyTags = true := by
+  refine List.all_eq_true.mpr ?_
+  intro i _
+  refine List.all_eq_true.mpr ?_
+  intro j _
+  rcases fin3_eq_of_val i with hi | hi | hi <;>
+    rcases fin3_eq_of_val j with hj | hj | hj
+  · simp [hi, hj]
+  · rw [hi, hj]; simp [tiny_separates_indep_chain]
+  · rw [hi, hj]; simp [tiny_separates_indep_bow]
+  · rw [hi, hj, pairSeparated_comm]; simp [tiny_separates_indep_chain]
+  · simp [hi, hj]
+  · rw [hi, hj]; simp [tiny_separates_chain_bow]
+  · rw [hi, hj, pairSeparated_comm]; simp [tiny_separates_indep_bow]
+  · rw [hi, hj, pairSeparated_comm]; simp [tiny_separates_chain_bow]
+  · simp [hi, hj]
+
+theorem combinations_tiny_zero : combinations tinyTags 0 = [[]] := rfl
+
+theorem combinations_tiny_one :
+    combinations tinyTags 1 = [[.observational], [.intervene doX]] := rfl
+
+theorem combinations_tiny_two : combinations tinyTags 2 = [tinyTags] := rfl
+
+theorem combinationsBySize_tiny :
+    combinationsBySize tinyTags =
+      [[], [.observational], [.intervene doX], tinyTags] := by
+  have hlen : tinyTags.length = 2 := rfl
+  have hrange : List.range 3 = [0, 1, 2] := rfl
+  unfold combinationsBySize
+  rw [hlen, hrange]
+  change
+      combinations tinyTags 0 ++ combinations tinyTags 1 ++ combinations tinyTags 2 =
+        [[], [.observational], [.intervene doX], tinyTags]
+  rw [combinations_tiny_zero, combinations_tiny_one, combinations_tiny_two]
+  rfl
+
+theorem shortest_separator_is_obs_and_doX :
+    shortestSeparatingTags generators tinyTags = some tinyTags := by
+  simp [shortestSeparatingTags, combinationsBySize_tiny, firstSatisfying,
+    empty_tags_do_not_separate, observational_tags_do_not_separate,
+    doX_tags_do_not_separate, tinyTags_separate]
+
+theorem shortest_separator_minimal :
+    noShorterSeparator generators tinyTags 2 = true := by
+  have hrange : List.range 2 = [0, 1] := rfl
+  simp [noShorterSeparator, hrange, List.all_cons, List.all_nil,
+    combinations_tiny_zero, combinations_tiny_one,
+    empty_tags_do_not_separate, observational_tags_do_not_separate,
+    doX_tags_do_not_separate]
+
+theorem shortest_separator_realizes_chain :
+    uniquelyRealizes generators (predictedExperiments chainModel tinyTags)
+      ⟨1, by decide⟩ :=
+  uniquelyRealizes_of_allPairsSeparated generators tinyTags
+    ⟨1, by decide⟩ tinyTags_separate
+
+def twinChain : Fin 2 → ExactModel signature
+  | ⟨0, _⟩ => chainModel
+  | ⟨1, _⟩ => chainModel
+
+private theorem not_twins_separated (tags : List (ExperimentTag signature)) :
+    allPairsSeparated twinChain tags = false := by
+  have hpair : pairSeparated twinChain tags (0 : Fin 2) (1 : Fin 2) = false := by
+    simp [pairSeparated, modelsDisagreeOn, twinChain, recordsAgree_self]
+  cases h : allPairsSeparated twinChain tags with
+  | false => rfl
+  | true =>
+    have pair :
+        (decide ((0 : Fin 2) = (1 : Fin 2)) ||
+          pairSeparated twinChain tags (0 : Fin 2) (1 : Fin 2)) = true :=
+      List.all_eq_true.mp
+        (List.all_eq_true.mp h (0 : Fin 2) (List.mem_finRange _))
+        (1 : Fin 2) (List.mem_finRange _)
+    have : pairSeparated twinChain tags (0 : Fin 2) (1 : Fin 2) = true := by
+      simpa using pair
+    rw [hpair] at this
+    cases this
+
+theorem twins_inseparable_search :
+    shortestSeparatingTags twinChain tinyTags = none := by
+  simp [shortestSeparatingTags, combinationsBySize_tiny, firstSatisfying,
+    not_twins_separated]
+
+theorem twins_inseparable_pair :
+    inseparablePair? twinChain tinyTags =
+      some ((0 : Fin 2), (1 : Fin 2)) := by
+  simp [inseparablePair?, twinChain, tinyTags, pairSeparated, modelsDisagreeOn,
+    List.finRange, recordsAgree_self]
+
 end CatalogueInference
 end Examples
 end Causality
