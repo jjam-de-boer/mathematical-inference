@@ -371,9 +371,11 @@ prior on a caller-declared or already enumerated list, 0/1 or
 Dirichlet–multinomial update from observational **or** interventional finite
 tables, then `identifyJointKernel` or caller-supplied sharp bounds per atom,
 mixed without collapsing disagreement. An exhausted catalogue is unsupported,
-not a unique DAG. It is distinct from `GraphQueryUncertainty`.
-`CataloguePartition` is the optional depth-capped Boolean modifier tree; it
-does not search graphs.
+not a unique DAG. A listed set of mutually disagreeing generative SCMs is
+separated by those experiments; a supplied assignment or graph permutation
+may gate Regime A or filter `nativeTemplateCatalogue`. It is distinct from
+`GraphQueryUncertainty`. `CataloguePartition` is the optional depth-capped
+Boolean modifier tree; it does not search graphs.
 
 `HiddenDAGCollapse`, `HiddenDAGProbability` and `HiddenDAGCountermodelLift`
 connect projected constructions to actual original finite hidden-DAG records.

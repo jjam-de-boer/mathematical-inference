@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.CatalogueInference
 import Thesis.CausalTransport.CataloguePartition
+import Thesis.CausalTransport.HiddenDAGNativeTemplates
 import Thesis.Causality.BinaryBowEndpoints
 
 namespace Thesis
@@ -334,6 +335,79 @@ theorem experiment_chain_posterior_pos :
 
 theorem experiment_bow_posterior_zero :
     (experimentPosterior.pmf ⟨2, by decide⟩).num = 0 := by
+  decide +kernel
+
+def generators : Fin 3 → ExactModel signature
+  | ⟨0, _⟩ => independenceModel
+  | ⟨1, _⟩ => chainModel
+  | ⟨2, _⟩ => bowLowerModelGen
+
+theorem experiment_uniquely_realizes_bool :
+    uniquelyRealizesBool generators experiments ⟨1, by decide⟩ = true := by
+  decide +kernel
+
+theorem experiment_uniquely_realizes_chain :
+    uniquelyRealizes generators experiments ⟨1, by decide⟩ :=
+  uniquelyRealizes_of_bool generators experiments ⟨1, by decide⟩
+    experiment_uniquely_realizes_bool
+
+theorem experiment_prior_chain_pos :
+    0 < (catalogue.prior.pmf ⟨1, by decide⟩).num := by
+  decide +kernel
+
+theorem experiment_list_separated :
+    catalogueExhausted catalogue.prior
+        (fun j => regimeAModelWeight (generators j) experiments) = false ∧
+      ∃ μ, posterior? catalogue.prior
+          (fun j => regimeAModelWeight (generators j) experiments) = some μ ∧
+        0 < (μ.pmf ⟨1, by decide⟩).num ∧
+        ∀ j : Fin 3, j ≠ ⟨1, by decide⟩ → (μ.pmf j).num = 0 :=
+  posterior_of_unique_realizer catalogue.prior generators experiments
+    ⟨1, by decide⟩ experiment_uniquely_realizes_chain experiment_prior_chain_pos
+
+/-- Flip the `Y` label. The chain's observational law is supported on
+`X = Y`, so this supplied permutation is not an invariance of the
+hypothesis; the filter is not inferred from data. -/
+def flipYAssign (a : signature.Assignment) : signature.Assignment :=
+  fun i => if i.val = 1 then !a i else a i
+
+theorem chain_matches_without_invariance :
+    regimeAModelWeight chainModel experiments = 1 :=
+  experiment_chain_weight_one
+
+theorem chain_not_flipY_invariant :
+    assignmentLawInvariant (predictedTable chainModel .observational) flipYAssign =
+      false := by
+  decide +kernel
+
+theorem invariance_zeros_matching_chain :
+    regimeAInvariantModelWeight chainModel flipYAssign experiments = 0 := by
+  decide +kernel
+
+def tinyHidden : FiniteHiddenDAG signature where
+  count := 2
+  observedNode := id
+  observedNode_injective := fun _ _ same => same
+  hidden := fun _ => false
+  observed_not_hidden := fun _ => rfl
+  node_classified := fun node => Or.inr ⟨node, rfl⟩
+  edge := signature.directed
+  rank := Fin.val
+  edge_rank_lt := fun selected => signature.directed_earlier selected
+
+def swapNodes (i : Fin signature.count) : Fin signature.count :=
+  if i.val = 0 then ⟨1, by decide⟩ else ⟨0, by decide⟩
+
+theorem native_filter_id :
+    filterInvariantTemplates chainGraph (fun i => i)
+      (tinyHidden.nativeTemplateCatalogue 1 1) =
+      tinyHidden.nativeTemplateCatalogue 1 1 :=
+  filterInvariantTemplates_id _ _
+
+theorem native_filter_swap_empty :
+    filterInvariantTemplates chainGraph swapNodes
+      (tinyHidden.nativeTemplateCatalogue 1 1) = [] := by
+  refine filterInvariantTemplates_not _ _ _ ?_
   decide +kernel
 
 /-- A `do(X{=}true)` table the chain cannot realize. All listed atoms then

@@ -4,6 +4,7 @@ import Thesis.Causality.HardIntervention
 import Thesis.Probability.Distros.Categorical
 import Thesis.Probability.Distros.Reweight
 import Thesis.Probability.Distros.RationalPolya
+import Thesis.Probability.Distros.Moments
 import Thesis.Probability.QProbOrder
 
 namespace Thesis
@@ -39,6 +40,15 @@ Independent experiments multiply natural weights. If every positive-prior
 atom then has likelihood 0, `posterior?` / `infer` return `none` and the
 mixture is `empty`: the catalogue is **exhausted**, not replaced by a
 silent fallback graph. Complexity scores belong only as prior weights.
+
+A finite list of mutually disagreeing generative SCMs is **separated** by
+those experiments: Regime A is then a point mass on the unique realizer,
+not a unique DAG of the world. A supplied assignment permutation may be
+ANDed into Regime A as an invariance constraint on the **hypothesis**
+(not inferred from data, not PC). `nativeTemplateCatalogue` may be
+filtered by a supplied node permutation of the host observed graph;
+templates of one hidden DAG share that graph, so the filter is
+all-or-nothing.
 
 Defined-zero and undefined formula values stay distinct. No `0/0`
 completion. Identified formulas remain action-free observational terms
@@ -525,6 +535,311 @@ def regimeBModelMass (scm : ExactModel S) (tag : ExperimentTag S)
 confirmation of a bounds-only atom. -/
 def boundsExclude (lo hi value : QProb) : Bool :=
   decide (QProb.LT value lo) || decide (QProb.LT hi value)
+
+/-- Conjunction of a Boolean 0/1 gate with a natural weight. -/
+def andWeight (flag : Bool) (weight : Nat) : Nat :=
+  boolWeight flag * weight
+
+theorem boolWeight_and (b c : Bool) :
+    boolWeight (b && c) = boolWeight b * boolWeight c := by
+  cases b <;> cases c <;> rfl
+
+theorem mulNatList_map_boolWeight :
+    ∀ bs : List Bool,
+      mulNatList (bs.map boolWeight) = boolWeight (bs.all fun b => b)
+  | [] => rfl
+  | b :: rest => by
+      simp only [List.map_cons, mulNatList, List.all_cons, boolWeight_and]
+      rw [mulNatList_map_boolWeight rest]
+
+/-- Whether this SCM's predicted table realizes one tagged dataset. -/
+def experimentAgrees (scm : ExactModel S) (e : Experiment S) : Bool :=
+  match dataAsRecord e.data with
+  | none => false
+  | some observed => recordsAgree (predictedTable scm e.tag) observed
+
+theorem regimeAWeight_experimentAgrees (scm : ExactModel S) (e : Experiment S) :
+    regimeAWeight (predictedTable scm e.tag) e.data =
+      boolWeight (experimentAgrees scm e) := by
+  simp only [regimeAWeight, experimentAgrees]
+  cases dataAsRecord e.data with
+  | none => rfl
+  | some _ => rfl
+
+/-- Whole-list Regime A agreement, including zeros, on every experiment. -/
+def realizesExperiments (scm : ExactModel S) (experiments : List (Experiment S)) : Bool :=
+  experiments.all (experimentAgrees scm)
+
+theorem regimeAModelWeight_eq_realizes (scm : ExactModel S)
+    (experiments : List (Experiment S)) :
+    regimeAModelWeight scm experiments =
+      boolWeight (realizesExperiments scm experiments) := by
+  induction experiments with
+  | nil => rfl
+  | cons e rest ih =>
+      simp only [regimeAModelWeight, independentWeights, mulNatList, List.map_cons]
+      rw [regimeAWeight_experimentAgrees]
+      change boolWeight (experimentAgrees scm e) * regimeAModelWeight scm rest =
+        boolWeight (realizesExperiments scm (e :: rest))
+      rw [ih, ← boolWeight_and]
+      simp [realizesExperiments]
+
+theorem regimeAModelWeight_of_realizes (scm : ExactModel S)
+    (experiments : List (Experiment S))
+    (agree : realizesExperiments scm experiments = true) :
+    regimeAModelWeight scm experiments = 1 := by
+  simp [regimeAModelWeight_eq_realizes, agree, boolWeight]
+
+theorem regimeAModelWeight_of_not_realizes (scm : ExactModel S)
+    (experiments : List (Experiment S))
+    (disagree : realizesExperiments scm experiments = false) :
+    regimeAModelWeight scm experiments = 0 := by
+  simp [regimeAModelWeight_eq_realizes, disagree, boolWeight]
+
+/-- The listed generative SCMs are separated by these experiments when
+exactly one index realizes every tagged table. Graphs-only atoms are not
+this theorem's objects. Markov-equivalent models with the same predicted
+tables do not separate. -/
+def uniquelyRealizes {n : Nat} (models : Fin n → ExactModel S)
+    (experiments : List (Experiment S)) (i : Fin n) : Prop :=
+  realizesExperiments (models i) experiments = true ∧
+    ∀ j : Fin n, j ≠ i → realizesExperiments (models j) experiments = false
+
+/-- Executable form of `uniquelyRealizes`. -/
+def uniquelyRealizesBool {n : Nat} [DecidableEq (Fin n)]
+    (models : Fin n → ExactModel S) (experiments : List (Experiment S))
+    (i : Fin n) : Bool :=
+  realizesExperiments (models i) experiments &&
+    (List.finRange n).all fun j =>
+      decide (j = i) || !realizesExperiments (models j) experiments
+
+theorem uniquelyRealizes_of_bool {n : Nat} [DecidableEq (Fin n)]
+    (models : Fin n → ExactModel S) (experiments : List (Experiment S))
+    (i : Fin n) (h : uniquelyRealizesBool models experiments i = true) :
+    uniquelyRealizes models experiments i := by
+  have parts := Bool.and_eq_true_iff.mp h
+  refine ⟨parts.1, ?_⟩
+  intro j hne
+  have hj : (decide (j = i) ||
+      !realizesExperiments (models j) experiments) = true :=
+    (List.all_eq_true.mp parts.2) j (List.mem_finRange j)
+  have ne : decide (j = i) = false := decide_eq_false hne
+  simp [ne] at hj
+  cases hr : realizesExperiments (models j) experiments with
+  | false => rfl
+  | true => simp [hr] at hj
+
+theorem uniquelyRealizes_weight_one {n : Nat} (models : Fin n → ExactModel S)
+    (experiments : List (Experiment S)) (i : Fin n)
+    (h : uniquelyRealizes models experiments i) :
+    regimeAModelWeight (models i) experiments = 1 :=
+  regimeAModelWeight_of_realizes _ _ h.1
+
+theorem uniquelyRealizes_weight_zero {n : Nat} (models : Fin n → ExactModel S)
+    (experiments : List (Experiment S)) (i j : Fin n)
+    (h : uniquelyRealizes models experiments i) (hne : j ≠ i) :
+    regimeAModelWeight (models j) experiments = 0 :=
+  regimeAModelWeight_of_not_realizes _ _ (h.2 j hne)
+
+theorem eventMass_eq_natIntegral_indicator (atoms : List (Ω × Nat))
+    (event : Event Ω) :
+    FiniteProbRecord.eventMass atoms event =
+      natIntegral atoms (fun x => if event x then 1 else 0) := by
+  induction atoms with
+  | nil => rfl
+  | cons atom rest ih =>
+      simp only [FiniteProbRecord.eventMass, natIntegral]
+      cases event atom.1 <;> simp [ih]
+
+theorem singletonEvent_self [DecidableEq Ω] (x : Ω) :
+    FiniteProbRecord.singletonEvent x x = true := by
+  simp [FiniteProbRecord.singletonEvent]
+
+theorem natIntegral_singleton_mul [DecidableEq Ω]
+    (atoms : List (Ω × Nat)) (weight : Ω → Nat) (x : Ω) :
+    natIntegral atoms
+        (fun y => if FiniteProbRecord.singletonEvent x y then weight y else 0) =
+      weight x * FiniteProbRecord.eventMass atoms
+        (FiniteProbRecord.singletonEvent x) := by
+  induction atoms with
+  | nil => simp [natIntegral, FiniteProbRecord.eventMass]
+  | cons atom rest ih =>
+      simp only [natIntegral, FiniteProbRecord.eventMass]
+      by_cases hx : atom.1 = x
+      · subst hx
+        simp [singletonEvent_self, ih, Nat.mul_add, Nat.mul_comm]
+      · have miss : FiniteProbRecord.singletonEvent x atom.1 = false := by
+          simp [FiniteProbRecord.singletonEvent, hx]
+        simp [miss, ih]
+
+theorem natIntegral_singleton_le [DecidableEq Ω]
+    (atoms : List (Ω × Nat)) (weight : Ω → Nat) (x : Ω) :
+    natIntegral atoms
+        (fun y => if FiniteProbRecord.singletonEvent x y then weight x else 0) ≤
+      natIntegral atoms weight := by
+  induction atoms with
+  | nil => simp [natIntegral]
+  | cons atom rest ih =>
+      simp only [natIntegral]
+      by_cases hx : atom.1 = x
+      · subst hx
+        simp [singletonEvent_self]
+        exact ih
+      · have miss : FiniteProbRecord.singletonEvent x atom.1 = false := by
+          simp [FiniteProbRecord.singletonEvent, hx]
+        simp [miss]
+        exact Nat.le_trans ih (Nat.le_add_left _ _)
+
+theorem natIntegral_pos_of_pmf_pos [DecidableEq Ω]
+    (μ : Distro Ω) (weight : Ω → Nat) (x : Ω)
+    (hμ : 0 < (μ.pmf x).num) (hw : 0 < weight x) :
+    0 < natIntegral μ.record.atoms weight := by
+  have mass_pos :
+      0 < FiniteProbRecord.eventMass μ.record.atoms
+        (FiniteProbRecord.singletonEvent x) := by
+    simpa [Distro.pmf, FiniteProbRecord.probVal] using hμ
+  have scaled := natIntegral_singleton_mul μ.record.atoms weight x
+  have pos_scaled :
+      0 < natIntegral μ.record.atoms
+        (fun y => if FiniteProbRecord.singletonEvent x y then weight y else 0) :=
+    by
+      have : 0 < weight x *
+          FiniteProbRecord.eventMass μ.record.atoms
+            (FiniteProbRecord.singletonEvent x) :=
+        Nat.mul_pos hw mass_pos
+      simpa [scaled] using this
+  have bound := natIntegral_singleton_le μ.record.atoms weight x
+  have rewrite :
+      natIntegral μ.record.atoms
+          (fun y => if FiniteProbRecord.singletonEvent x y then weight y else 0) =
+        natIntegral μ.record.atoms
+          (fun y => if FiniteProbRecord.singletonEvent x y then weight x else 0) := by
+    apply natIntegral_congr
+    intro y
+    by_cases hy : y = x
+    · subst hy
+      simp [singletonEvent_self]
+    · have miss : FiniteProbRecord.singletonEvent x y = false := by
+        simp [FiniteProbRecord.singletonEvent, hy]
+      simp [miss]
+  exact Nat.lt_of_lt_of_le (rewrite ▸ pos_scaled) bound
+
+theorem posterior_pmf_pos_of_likelihood_pos [DecidableEq Ω]
+    (μ : Distro Ω) (weight : Ω → Nat)
+    (positive : 0 < natIntegral μ.record.atoms weight) (x : Ω)
+    (hμ : 0 < (μ.pmf x).num) (hw : 0 < weight x) :
+    0 < ((μ.reweightNat weight positive).pmf x).num := by
+  have mass :=
+    eventMass_reweight μ.record.atoms weight (FiniteProbRecord.singletonEvent x)
+  have rewritten := natIntegral_singleton_mul μ.record.atoms weight x
+  have mass_pos :
+      0 < FiniteProbRecord.eventMass μ.record.atoms
+        (FiniteProbRecord.singletonEvent x) := by
+    simpa [Distro.pmf, FiniteProbRecord.probVal] using hμ
+  simp only [Distro.pmf, FiniteProbRecord.probVal, Distro.reweightNat,
+    ofWeightedAtoms, mass, rewritten]
+  exact Nat.mul_pos hw mass_pos
+
+/-- If exactly one listed SCM realizes the experiments and the prior puts
+mass on that index, the posterior is a point mass there. This is
+consistency of a **list**, not uniqueness of a DAG. -/
+theorem posterior_of_unique_realizer {n : Nat} [DecidableEq (Fin n)]
+    (prior : Distro (Fin n)) (models : Fin n → ExactModel S)
+    (experiments : List (Experiment S)) (i : Fin n)
+    (separated : uniquelyRealizes models experiments i)
+    (prior_pos : 0 < (prior.pmf i).num) :
+    catalogueExhausted prior
+        (fun j => regimeAModelWeight (models j) experiments) = false ∧
+      ∃ μ, posterior? prior
+          (fun j => regimeAModelWeight (models j) experiments) = some μ ∧
+        0 < (μ.pmf i).num ∧
+        ∀ j : Fin n, j ≠ i → (μ.pmf j).num = 0 := by
+  have wi : regimeAModelWeight (models i) experiments = 1 :=
+    uniquelyRealizes_weight_one models experiments i separated
+  have integral_pos :
+      0 < natIntegral prior.record.atoms
+        (fun j => regimeAModelWeight (models j) experiments) :=
+    natIntegral_pos_of_pmf_pos prior
+      (fun j => regimeAModelWeight (models j) experiments) i prior_pos
+      (by simp [wi])
+  have not_exhausted :
+      catalogueExhausted prior
+        (fun j => regimeAModelWeight (models j) experiments) = false := by
+    unfold catalogueExhausted posterior?
+    simp [integral_pos]
+  refine ⟨not_exhausted, ?_⟩
+  refine ⟨prior.reweightNat _ integral_pos, ?_, ?_, ?_⟩
+  · unfold posterior?
+    simp [integral_pos]
+  · exact posterior_pmf_pos_of_likelihood_pos prior _ integral_pos i
+      prior_pos (by simp [wi])
+  · intro j hne
+    have wj : regimeAModelWeight (models j) experiments = 0 :=
+      uniquelyRealizes_weight_zero models experiments i j separated hne
+    exact posterior_pmf_zero_of_likelihood_zero prior _ integral_pos j wj
+
+/-- Hypothesis-law invariance under a **supplied** assignment map. The map
+is data (typically from a coordinate or value permutation); it is not
+inferred from the dataset. If the *data* table fails the same test, that
+is the caller's record, not this filter. -/
+def assignmentLawInvariant (predicted : FiniteProbRecord S.Assignment)
+    (σ : S.Assignment → S.Assignment) : Bool :=
+  recordsAgree predicted (predicted.map σ)
+
+/-- Regime A on one table, gated by hypothesis invariance. -/
+def regimeAInvariantWeight (predicted : FiniteProbRecord S.Assignment)
+    (σ : S.Assignment → S.Assignment) (data : CatalogueData S) : Nat :=
+  andWeight (assignmentLawInvariant predicted σ) (regimeAWeight predicted data)
+
+/-- Observational predicted law must be invariant; experiments still use
+unchanged `regimeAModelWeight`. -/
+def regimeAInvariantModelWeight (scm : ExactModel S)
+    (σ : S.Assignment → S.Assignment)
+    (experiments : List (Experiment S)) : Nat :=
+  andWeight
+    (assignmentLawInvariant (predictedTable scm .observational) σ)
+    (regimeAModelWeight scm experiments)
+
+/-- Directed and bidirected tables are unchanged after relabelling nodes
+by a **supplied** permutation. Directed lives on the signature. -/
+def edgesInvariant (n : Nat) (edge : Fin n → Fin n → Bool)
+    (perm : Fin n → Fin n) : Bool :=
+  finAll n fun i =>
+    finAll n fun j => decide (edge i j = edge (perm i) (perm j))
+
+def observedGraphInvariant (G : ObservedGraph S) (perm : Fin S.count → Fin S.count) :
+    Bool :=
+  edgesInvariant S.count S.directed perm &&
+    edgesInvariant S.count G.bidirected perm
+
+theorem edgesInvariant_id (n : Nat) (edge : Fin n → Fin n → Bool) :
+    edgesInvariant n edge (fun i => i) = true := by
+  refine (finAll_eq_true_iff _).mpr ?_
+  intro i
+  refine (finAll_eq_true_iff _).mpr ?_
+  intro j
+  simp
+
+theorem observedGraphInvariant_id (G : ObservedGraph S) :
+    observedGraphInvariant G (fun i => i) = true := by
+  simp [observedGraphInvariant, edgesInvariant_id]
+
+/-- Templates of one hidden DAG share its observed graph, so invariance of
+that graph keeps the whole `nativeTemplateCatalogue` and a violating
+permutation drops it. This is not graph search. -/
+def filterInvariantTemplates (G : ObservedGraph S)
+    (perm : Fin S.count → Fin S.count) (templates : List α) : List α :=
+  if observedGraphInvariant G perm then templates else []
+
+theorem filterInvariantTemplates_id (G : ObservedGraph S) (templates : List α) :
+    filterInvariantTemplates G (fun i => i) templates = templates := by
+  simp [filterInvariantTemplates, observedGraphInvariant_id]
+
+theorem filterInvariantTemplates_not
+    (G : ObservedGraph S) (perm : Fin S.count → Fin S.count) (templates : List α)
+    (h : observedGraphInvariant G perm = false) :
+    filterInvariantTemplates G perm templates = [] := by
+  simp [filterInvariantTemplates, h]
 
 end CatalogueInference
 end Causality
