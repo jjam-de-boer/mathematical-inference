@@ -52,16 +52,22 @@ The main implemented results are:
   still gives `1/3` versus micro double-surgery probability `1`. These
   results do not establish a general renormalization-group flow or a
   physical length scale.
-- Three nested support-aware equivalences of finite SCMs: observational
-  agreement of the actual joints including zeros (undefined versus
-  defined-zero conditionals disagree), interventional agreement on a
-  declared family of hard interventions, and exact abstraction by an
-  existing partial ω. Exact ω implies interventional agreement on the
-  image of ω; empty `do` recovers observational agreement. Converses
-  fail: an observationally matched OR macro still disagrees under double
-  surgery (`1` versus `1/3`), and a copy-chain can share `P(V)` with a
-  bow endpoint while disagreeing on `P(Y | do(X))`. This is not
-  classical Markov equivalence and does not recover a unique DAG.
+- Three nested support-aware relations on finite SCMs. Observational
+  agreement is equality of the actual joints, zeros included: a
+  conditioner undefined in one joint and defined-zero in the other
+  already disagrees. Interventional agreement is equality of
+  `P(· | do(a))` on a declared family of hard interventions. Exact
+  abstraction is a (possibly one-way) preservation of the full finite
+  law along an assignment map, using a partial map ω from micro to
+  macro interventions; a `none` entry excludes that micro surgery.
+  Exact ω implies interventional agreement on the image of ω; empty
+  `do` is observational agreement when it is in that image. Converses
+  fail: a Boolean-OR merge of two parents can match the coarse
+  observational joint and still give `1/3` versus micro double-surgery
+  (`do` both parents) probability `1`; a copy-chain (`Y` copies `X`)
+  can share the observational joint with a bow (confounded `X→Y`) and
+  still disagree on `P(Y | do(X))`. This is not classical Markov
+  equivalence and does not recover a unique DAG.
 - Public finished modes are an SCM plus current belief. Compact `do` (the
   workspace intervention field) and the modal stack live only on workspace
   records. Public 1-cells (edit morphisms) wrap existing operations that
