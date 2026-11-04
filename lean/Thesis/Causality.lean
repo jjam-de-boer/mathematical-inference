@@ -29,6 +29,7 @@ import Thesis.Causality.ValueRefinementMarginal
 import Thesis.Causality.IdentificationSearch
 import Thesis.Causality.ComponentConnectivity
 import Thesis.Causality.ReachabilityCorrectness
+import Thesis.Causality.FiniteLabelledRepetition
 import Thesis.Causality.PetriNet
 import Thesis.Causality.IntegerFeasibility
 import Thesis.Causality.IntegerCarryLoops
