@@ -18,6 +18,10 @@
 # Generated local artifacts
 /tmp/
 
+# Python helper bytecode (lean/tools orchestration; not proofs)
+__pycache__/
+*.py[cod]
+
 # Publish the README and shared agent instructions; ignore other Markdown.
 *.[mM][dD]
 !/README.md

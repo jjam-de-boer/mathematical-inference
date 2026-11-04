@@ -62,11 +62,15 @@ The main implemented results are:
   risks and the signed average treatment effect.
 - Finite structural representation of a fixed DAG or a projection, not a
   general decision procedure for arbitrary rational weights.
-- Exact checking of supplied polynomial bound certificates and exact
-  feasibility of integer linear equations over natural unknowns, with
-  computed solutions or proofs of infeasibility and no supplied cutoff.
-  A supplied carry loop yields a homogeneous null direction. Integer
-  feasibility does not decide Petri-net reachability.
+- Exact checking of supplied polynomial bound certificates, and exact
+  feasibility and coordinate classification for integer linear equations
+  over natural unknowns, with no supplied cutoff. Feasibility computes a
+  solution or proves infeasibility. If there is no natural solution, that
+  is reported first. Otherwise each selected coordinate is either bounded,
+  with a computed solution and an explicit (not necessarily least) bound,
+  or unbounded, with a computed base and a nonnegative homogeneous
+  direction positive at that coordinate. These integer procedures do not
+  decide Petri-net reachability.
 - Exact undefined/zero/positive support analysis for the current formula and
   guard languages, finite causal support-profile coverage, and checked bounded
   proof enumeration and formula selection. A supplied checked query trace
