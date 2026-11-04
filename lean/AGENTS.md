@@ -2,79 +2,100 @@
 
 ## Scope and main results
 
-This project develops an MLTT-inspired finitary probability theory based on
-Clayton, Pearl-style causality, and their integration in a simple mode theory.
-Probability laws use finite rational weights; zero probabilities and explicit
-support for conditionals are part of the framework.
+This Lean 4 library is a constructive (Martin-Löf type theory) finitary
+probability theory: finite rational weights, explicit zeros, and
+support-aware conditionals. Qualitative probability follows
+Clayton–Waddington finite-urn ratios; causality follows Pearl (structural
+causal models and the three do-calculus rules). A finished public mode is
+an SCM plus current belief; compact intervention and the modal stack stay
+on workspace records.
 
 The main implemented results are:
 
 - Finite probability laws, named distributions, moments and related inequalities.
   Explicit node-law recipes generate rational tables. A table may be a node's
-  private noise, or one table at each parent configuration of a child, giving
-  the local kernel P(child | parents). Constraint recipes return certified
-  feasibility or refutation; if any parent configuration is infeasible there
-  is no kernel and no invented fallback row. Recipes do not identify a joint
-  from observations and do not construct a graph posterior.
+  independent noise, or one table at each listed parent configuration of a
+  child, giving the local kernel P(child | parents). Constraint recipes
+  return certified feasibility or refutation. If any listed parent
+  configuration is infeasible there is no kernel and no invented fallback
+  row. Recipes do not identify a joint from observations and do not
+  construct a graph posterior.
 - Entropy and information inequalities and continuity; Shannon characterization
-  from explicit uncertainty requirements on finite rational vectors in `ExactLog`.
+  from explicit uncertainty requirements on finite rational vectors, recorded
+  in exact logarithms (`ExactLog`).
   Constructive ideal maximum-entropy existence and uniqueness, and certified
   exactly feasible rational approximation. Selecting maximum entropy remains a
   further inference principle.
 - Finite microcanonical, canonical and grand-canonical ensembles, physical
   degeneracy corrections and heat/work variation.
-- Under explicit equilibrium, temperature calibration and uniform Clausius
-  assumptions, independently specified thermodynamic entropy agrees with
-  statistical entropy up to a reference constant along admitted quantitatively
-  regular positive probability paths.
+- Under explicit equilibrium, temperature calibration and a uniform Clausius
+  heat-temperature law, independently specified thermodynamic entropy agrees
+  with statistical entropy up to a reference constant along admitted
+  quantitatively regular positive probability paths.
 - Soundness of the three do-calculus rules and supported derivations.
 - Joint and conditional identification completeness for the stated positive
   model classes, original finite hidden-DAG transfer, and supported-zero
-  certificates on their explicit used-conditional domains. Observed domains
-  supply two distinct values; hidden and private-noise alphabets may be any
-  finite size.
-- Finite causal coarse-graining with partial intervention maps. In the explicit
-  AND/copy model, the entire unique-forced-cluster-preimage class preserves
-  the full finite law, with a merge constructed from AND/swap mechanism data.
-  Exact maps compose along a capped three-grain chain. A separate constructor
-  admits coarse-only coordinates while merged clusters remain nonempty.
-  A catalogue client compares actual fine/coarse SCMs with declared protocols
-  and complexity priors. The observationally matched OR macro still gives
-  `1/3` versus micro double-surgery probability `1`. These results do not
-  establish general RG or a physical length scale.
-- Public finished modes are an SCM plus current belief; compact `do` and the
-  modal stack stay on workspace records. Public 1-cells wrap existing edits.
-  Mode-indexed realizations connect causal proofs to actual executions.
-- Sharp bounds for binary bow and instrumental-variable queries.
+  certificates on each formula's used-conditional domain (the primitive
+  tests that formula actually performs). Completeness uses hedge
+  countermodels (Pearl–Shpitser forest obstructions); a restricted
+  route-ready hedge family is not universal. Observed domains supply two
+  distinct values; hidden and private-noise alphabets may be any finite size.
+- Finite causal coarse-graining: merge disjoint observed-node clusters, with
+  a partial map from micro to macro interventions that may be undefined.
+  In an explicit AND/copy model, every unique-preimage surgery preserves
+  the full finite law; the merge is built from AND/swap mechanism data.
+  Exact maps compose along a three-grain chain (fine, merged, collapsed)
+  with an input depth cap. A separate constructor adds a coarse-only
+  coordinate while ordinary merged clusters stay nonempty. A catalogue
+  client compares actual fine/coarse SCMs with declared observation
+  protocols and complexity priors. The observationally matched OR macro
+  still gives `1/3` versus micro double-surgery probability `1`. These
+  results do not establish a general renormalization-group flow or a
+  physical length scale.
+- Public finished modes are an SCM plus current belief. Compact `do` (the
+  workspace intervention field) and the modal stack live only on workspace
+  records. Public 1-cells (edit morphisms) wrap existing operations that
+  keep compact `do` empty. Mode-indexed realizations connect identification
+  proofs to those executions.
+- Sharp bounds for binary bow queries (confounded `X→Y`), and complete
+  rational attainable sets for binary instrumental-variable treatment
+  risks and the signed average treatment effect.
 - Finite structural representation of a fixed DAG or a projection, not a
   general decision procedure for arbitrary rational weights.
 - Exact checking of supplied polynomial bound certificates and exact
   feasibility of integer linear equations over natural unknowns, with
   computed solutions or proofs of infeasibility and no supplied cutoff.
-  Integer feasibility does not decide Petri-net reachability.
+  A supplied carry loop yields a homogeneous null direction. Integer
+  feasibility does not decide Petri-net reachability.
 - Exact undefined/zero/positive support analysis for the current formula and
   guard languages, finite causal support-profile coverage, and checked bounded
-  proof enumeration and formula selection.
+  proof enumeration and formula selection. A supplied checked query trace
+  reconstructs an existing certificate; it does not decide that a witness
+  exists.
 - Exact attained bounds and point-identification tests for unconditional
-  intervention events in the complete-bidirected finite hidden-DAG class,
-  without fixed hidden-alphabet or rational-denominator bounds. Supported
-  conditional queries also have exact attained ranges and witnesses for
-  every intermediate rational value; evidence support is reported separately.
+  intervention events in the complete-bidirected finite hidden-DAG class
+  (every pair of distinct observed nodes is confounded), without fixed
+  hidden-alphabet or rational-denominator bounds. Supported conditional
+  queries also have exact attained ranges and witnesses for every
+  intermediate rational value; evidence support is reported separately.
 - Auxiliary constructive analytic values, including real arithmetic,
   logarithms, exponentials and differentiation with explicit error control.
   Probability weights remain finite and rational.
 - Observational and interventional Shannon entropy of original hidden-DAG
   assignment records: identifying an entire law identifies its entropy.
   Shannon inequalities are sound exclusion tests.
-- Finite Bayesian inference on a catalogue of templates: update a Distro prior
-  from observational or interventional finite tables, then mix identified
-  values and supplied bounds without collapsing disagreement. An exhausted
-  catalogue is unsupported, not a unique DAG. Complexity scores are prior
-  mass only. A supplied invariance constraint may zero an atom that would
-  otherwise match those tables. A finite list of mutually disagreeing
-  generative SCMs is separated by those experiments.
-  `nativeTemplateCatalogue` may be filtered by a supplied graph permutation.
-  This is not a graph posterior and is distinct from Shannon remainder on
+- Finite Bayesian inference on a catalogue of templates: update a named
+  finite-law (`Distro`) prior from observational or interventional finite
+  tables, then mix identified values and supplied bounds without collapsing
+  disagreement. An exhausted catalogue is unsupported, not a unique DAG.
+  Complexity scores are prior mass only. A supplied invariance constraint
+  may zero an atom that would otherwise match those tables. A finite list
+  of mutually disagreeing generative SCMs is separated by those experiments.
+  The native finite-template list may be filtered by a supplied graph
+  permutation. An optional depth-capped Boolean partition tree mixes
+  already-certified answers; it does not search graphs or identify a query
+  left unidentified. This is not a Bayesian posterior over graphs, and it
+  is distinct from Shannon entropy of the remaining compatible graphs on
   the same catalogue.
 
 ## Living-document maintenance
@@ -85,6 +106,12 @@ or remove outdated entries rather than continually appending details.
 Results bullets are theorem-level claims and their qualifications, not
 module APIs. Pitfall entries are only approaches another agent might
 repeat: status, evidence module, and what would justify revisiting.
+
+This file must stay self-contained. A new agent on a new task should
+understand the results, pitfalls and working rules from these pages
+alone, without the Lean facades, the thesis text, or extra Markdown.
+When a name is required, gloss it in the same bullet (what it is, and
+what it is not). Do not add a glossary, a diary, or a second brief.
 
 **Every applied edit to this file requires prior explicit user approval.**
 Show the exact proposed changes in chat and wait for approval before
@@ -98,6 +125,11 @@ complete), either show a short proposed diff for this file, or state
 or that sentence is in the same turn. Propose an update when a main
 result, scoped refutation, superseded approach, or working rule changed;
 rewrite or merge an existing bullet rather than appending a sibling.
+Add or rewrite a results bullet only for a theorem-level claim and its
+qualifications. Add a pitfall only for a substantive approach another
+agent might repeat: one status, one evidence module, and what would
+justify revisiting. If the finding is a limit of a published result,
+merge it into that result rather than opening a sibling pitfall.
 
 Optional: if other project agents are active, after an approved edit tell
 them in chat to reread `lean/AGENTS.md` and quote the approved change.
@@ -158,6 +190,9 @@ completed-task ledgers.**
 Record substantive approaches that future agents might otherwise repeat,
 not individual failed tactics or temporary compiler errors. Each entry
 should state its scope, evidence and what would justify revisiting it.
+State each claim so a new agent can check it directly against the cited
+module. Gloss any name the claim needs; do not rely on another document
+or on undeclared identifiers to explain the obstruction.
 
 Use the appropriate status:
 - **Refuted:** a checked counterexample disproves the stated claim.
@@ -170,14 +205,15 @@ construction does not refute the broader theorem. Keep entries concise,
 consolidate overlaps, and request approval before changing this section.
 
 - **Refuted — the old identification recursion.** On a positive front-door
-  example, its returned formula evaluates to `9/16`, while the causal query
-  has value `1/2`. Evidence: `Thesis.Examples.IdentificationRegression`.
+  graph (`X→M→Y` with confounding of `X,Y`), its returned formula evaluates
+  to `9/16`, while the causal query has value `1/2`. Evidence:
+  `Thesis.Examples.IdentificationRegression`.
   Revisit only after changing the incorrect recursion.
 
 - **Refuted — unconditional composition from matching kernel metadata.**
-  Matching formula-status and conditional-demand metadata does not justify
-  a proof detour through an undefined conditional. Evidence:
-  `Thesis.Examples.NativeKernelInterfaceObstruction`.
+  Matching formula-status (undefined/zero/positive) and conditional-demand
+  tables does not justify a proof detour through an undefined conditional.
+  Evidence: `Thesis.Examples.NativeKernelInterfaceObstruction`.
   Revisit with an argument accounting for support
   at the active intermediate references; other reconstruction strategies
   are not ruled out.
@@ -191,16 +227,28 @@ consolidate overlaps, and request approval before changing this section.
   still be useful when required by a concrete caller.
 
 - **Refuted — universal coverage by the tested route-ready hedge family.**
-  A valid hedge exists for which even the exhaustive alternative-route
-  search finds no member of that family. Evidence:
-  `Thesis.Examples.HedgeCarrierRouteObstruction`. This limits that
-  construction, not published completeness. Revisit only with a changed
-  construction or coverage condition.
+  A hedge is a Pearl–Shpitser forest witness of non-identifiability. The
+  tested family requires extra routing hypotheses. A valid hedge exists
+  for which even exhaustive alternative-route search finds no member of
+  that family. Evidence: `Thesis.Examples.HedgeCarrierRouteObstruction`.
+  This limits that construction, not published completeness. Revisit only
+  with a changed construction or coverage condition.
+
+- **Refuted — directed-parent channel family as universal conditional
+  countermodels.** Every typed small/background parent signal of the
+  independent-channel installation can agree on a conditional kernel,
+  while a shared-latent pair on the same graph refutes identifiability.
+  Evidence: `Thesis.Examples.HedgeChannelLatentBoundary`.
+  This limits that construction, not published completeness. Revisit only
+  with a changed signal family or coverage condition.
 
 - **Refuted — same-type incoming cut as independent fair noise.** On a
-  deterministic copy with degenerate child noise, `cutIncoming` yields
-  observational entropy 1, not 2. Evidence: `Thesis.Examples.CausalEntropy`.
-  Extra randomness requires a different noise type, not `withMechanism`.
+  deterministic copy with degenerate child noise, cutting one parent at
+  the same noise type (`cutIncoming`) yields observational entropy 1, not 2.
+  Same-type randomization (`randomizeWith`) stays at 1 bit as well.
+  Evidence: `Thesis.Examples.CausalEntropy`.
+  Extra randomness requires a different noise type, not a same-type
+  mechanism rewrite.
 
 - **Refuted — support-only fixed-law classification and finite concrete
   catalogues of every attainable value.** Compatible positive IV laws with
@@ -221,10 +269,19 @@ consolidate overlaps, and request approval before changing this section.
 
 - **Refuted — unrestricted zero-class success equivalence.** Guarded joint ID
   can succeed on an unconfounded `X -> Y` while `do(X)` at an unobserved action
-  value is not identified in `HiddenDAGModelClass.all`. Evidence:
-  `Thesis.Examples.GuardedHiddenDAGZeroBoundary`. The support-qualified
-  soundness/completeness package is unaffected. Revisit only with a changed
-  zero-class claim.
+  value is not identified in the class of all finite hidden-DAG models (zeros
+  allowed). Evidence: `Thesis.Examples.GuardedHiddenDAGZeroBoundary`. The
+  support-qualified soundness/completeness package is unaffected. Revisit
+  only with a changed zero-class claim.
+
+- **Refuted — primitive/external action tests as a zero-class repair.**
+  Guarded joint ID can succeed on a front-door graph where both models
+  have positive observed action probability everywhere, yet `do(X)` is
+  still not identified. Evidence:
+  `Thesis.Examples.AdmissibleFrontDoorBoundary`.
+  Used-conditional qualifications of the printed formula remain essential.
+  The support-qualified package is unaffected. Revisit only with a changed
+  admissible-domain claim.
 
 - **Unresolved — universal alternative-formula coverage and stopping.**
   Checked search is complete within its declared expression/proof bounds.
