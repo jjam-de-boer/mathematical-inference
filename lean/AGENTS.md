@@ -48,25 +48,25 @@ The main implemented results are:
   proof, not as an assumption of the comparison, and not as a second
   identification engine. This is not causality from qualitative axioms
   (Clayton recovers probability ratios from event comparisons). The
-  unrestricted converse, that every such thin comparison on two Boolean
+  unrestricted converse, that every such comparison on two Boolean
   nodes arises from some finite SCM, is false: an indiscrete scale
-  (everything equivalent) satisfies the thin axioms and cannot match
-  empty versus sure under any positive urn.
-- Qualitative causal comparisons reuse Clayton per hard intervention
-  (each fixed `do` is a finite urn of events) together with
-  effectiveness, non-descendant invariance, and parent modularity: once
-  every direct cause of a node is set, two experiments that set those
-  causes to the same values and do not set the node itself make the
-  same claims about that node. Direct causes are read from the
-  signature's directed relation; Pearl's three rules and the mutilated
-  graph are not axiom fields. Every finite SCM induces such a scale.
-  Supported kernel conditionals stay undefined when the conditioner has
-  zero mass, and are not completed to zero. The three do-rules are not
-  theorems of an arbitrary model of these sentences: transferring idle
-  screening-off to the defined mutilation after `do` is not proved from
-  them, and is not assumed. Completeness, that every finite model of
-  the scale is realized by some finite SCM, is not proved. This is not
-  causality from urn axioms.
+  (everything equivalent) satisfies those order and effectiveness
+  axioms and cannot match empty versus sure under any positive urn.
+- Qualitative causal comparisons reuse Clayton at each hard intervention
+  (each fixed `do` is a finite urn of events), together with
+  effectiveness; invariance of claims that mention only non-effects of
+  the knobs being set; and the sentence that once every direct cause of
+  a node is set, two experiments that set those causes to the same
+  values and do not set the node itself make the same claims about that
+  node. Direct causes are the signature's directed edges. The three
+  do-rules are not assumptions of this comparison. Every finite SCM
+  induces such a scale. Supported kernel conditionals stay undefined
+  when the conditioner has zero mass, and are not completed to zero.
+  The three do-rules are not proved from these sentences for an
+  arbitrary model of them; they remain theorems of an inducing SCM, as
+  above. Completeness, that every finite model of the scale is realized
+  by some finite SCM, is not proved. This is not causality from urn
+  axioms.
 - Joint and conditional identification completeness for the stated positive
   model classes, original finite hidden-DAG transfer, and supported-zero
   certificates on each formula's used-conditional domain (the primitive
