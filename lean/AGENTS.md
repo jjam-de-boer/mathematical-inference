@@ -18,22 +18,13 @@ The main implemented results are:
   child, giving the local kernel P(child | parents). Constraint recipes
   return certified feasibility or refutation. If any listed parent
   configuration is infeasible there is no kernel and no invented fallback
-  row. When every graph parent configuration of a child is listed and the
-  tables exist, those rows become the child's structural mechanism
-  (independent private noise per node, no extra latent confounding): given
-  parents = pa, the child's law is that row, zeros included. A missing
-  graph parent configuration yields no model, not a uniform or
-  maximum-entropy default. Recipes do not identify a joint from observations
-  and do not construct a graph posterior. A supplied partition of a child's
-  labels on which that kernel is constant equates those singleton
-  probabilities. Dropping a conditioner that the kernel does not distinguish
-  is a rewrite of the query, licensed by that same-kernel fact; if the
-  existing identification procedure (graph to formula) succeeds on both the
-  original and the rewritten query, the identified values agree. Failure of
-  the original is not rewritten into success. The partition is supplied, not
-  inferred from data. Completeness still needs two observed values per node
-  and support of used conditionals; merging equivalent labels does not
-  transfer those hypotheses. This rewrite does not select a unique DAG.
+  row. Recipes do not identify a joint from observations and do not
+  construct a graph posterior.
+- When every graph parent configuration of a child is listed and the
+  tables exist, those rows are the child's mechanism: independent noise
+  per node, no extra confounding. Given parents = pa, the child's law
+  is that row, zeros included. A missing graph parent configuration
+  yields no model, not a uniform or maximum-entropy default.
 - Entropy and information inequalities and continuity; Shannon characterization
   from explicit uncertainty requirements on finite rational vectors, recorded
   in exact logarithms (`ExactLog`).
@@ -50,9 +41,7 @@ The main implemented results are:
   Once those identities hold numerically for a finite SCM, they also hold
   as qualitative equality of supported interventional conditionals, by
   the Clayton–Waddington fact that finite-urn comparisons are cell-count
-  ratios. An undefined numerical conditional stays undefined and is not
-  completed to zero. This rereads Pearl; it does not derive `do` from
-  urn axioms.
+  ratios.
 - Number-free comparison of experimental claims (a hard intervention
   together with an observed event), with order axioms and effectiveness:
   after `do(X{=}x)`, the event `X{=}x` matches every-outcome. Every
@@ -88,6 +77,16 @@ The main implemented results are:
   countermodels (Pearl–Shpitser forest obstructions); a restricted
   route-ready hedge family is not universal. Observed domains supply two
   distinct values; hidden and private-noise alphabets may be any finite size.
+- A supplied partition of a child's labels on which that kernel is
+  constant equates those singleton probabilities. Dropping a conditioner
+  the kernel does not distinguish is a rewrite of the query, licensed by
+  that same-kernel fact. If identification succeeds on both the original
+  and the rewritten query, then on any model and reference where that
+  same-kernel license holds, the identified values agree. Failure of the
+  original is not rewritten into success. The partition is supplied, not
+  inferred from data. Completeness still needs two observed values per
+  node and support of used conditionals; merging equivalent labels does
+  not transfer those hypotheses. This rewrite does not select a unique DAG.
 - Finite causal coarse-graining merges disjoint observed-node clusters with
   explicit, possibly partial, intervention maps. The AND/copy example
   preserves full laws on every unique-preimage surgery; AND/swap data
@@ -117,11 +116,10 @@ The main implemented results are:
   macro interventions; a `none` entry excludes that micro surgery.
   Exact ω implies interventional agreement on the image of ω; empty
   `do` is observational agreement when it is in that image. Converses
-  fail: a Boolean-OR merge of two parents can match the coarse
-  observational joint and still give `1/3` versus micro double-surgery
-  (`do` both parents) probability `1`; a copy-chain (`Y` copies `X`)
-  can share the observational joint with a bow (confounded `X→Y`) and
-  still disagree on `P(Y | do(X))`. This is not classical Markov
+  fail: an observationally matched OR merge of two parents still gives
+  macro `1/3` versus micro double-surgery `1`; a copy-chain (`Y` copies
+  `X`) can share the observational joint with a bow (confounded `X→Y`)
+  and still disagree on `P(Y | do(X))`. This is not classical Markov
   equivalence and does not recover a unique DAG.
 - Public finished modes are an SCM plus current belief. Compact `do` (the
   workspace intervention field) and the modal stack live only on workspace
@@ -146,9 +144,15 @@ The main implemented results are:
   solution or proves infeasibility. If there is no natural solution, that
   is reported first. Otherwise each selected coordinate is either bounded,
   with a computed solution and an explicit (not necessarily least) bound,
-  or unbounded, with a computed base and a nonnegative homogeneous
-  direction positive at that coordinate. These integer procedures do not
-  decide Petri-net reachability.
+  or unbounded, with a computed base and a nonnegative integer solution
+  `h` of the homogeneous equations `A h = 0` that increases that
+  coordinate. A successful supplied Petri-net firing word still runs from
+  any source with at least as many tokens in each place, reaching the old
+  endpoint plus those extra tokens. For each transition and target there
+  is a least one-step source that can cover the target; overshoot is
+  allowed, exact arrival is not claimed. These procedures do not decide
+  Petri-net reachability: firing counts may solve the token-balance
+  equations while no actual firing word exists from that marking.
 - Exact undefined/zero/positive support analysis for the current formula and
   guard languages, finite causal support-profile coverage, and checked bounded
   proof enumeration and formula selection. A supplied checked query trace
@@ -179,19 +183,19 @@ The main implemented results are:
   at a time under a supplied node permutation; templates of one hidden DAG
   still share that graph, so that filter is all-or-nothing. Swapping the
   two nodes of a binary bow (confounded `X→Y`) is not a directed-graph
-  permutation. A declared finite family of hard interventions (set some
-  coordinates to a value; empty `do` is observation), optionally the
-  host's full finite list with an explicit cap on number of targets,
-  can be searched by increasing subset size. That returns a shortest
-  subset that pairwise separates listed generative SCMs, with no shorter
-  subset of the same family, or reports an inseparable pair with the same
-  predicted laws on that family. This is not a unique DAG and not
-  constraint-based graph search from conditional independences. An
-  optional depth-capped Boolean partition tree mixes already-certified
-  answers; it does not search graphs or identify a query left
-  unidentified. This is not a Bayesian posterior over graphs, and it is
-  distinct from Shannon entropy of the remaining compatible graphs on
+  permutation. An optional depth-capped Boolean partition tree mixes
+  already-certified answers; it does not search graphs or identify a query
+  left unidentified. This is not a Bayesian posterior over graphs, and it
+  is distinct from Shannon entropy of the remaining compatible graphs on
   the same catalogue.
+- A declared finite family of hard interventions (set some coordinates
+  to a value; empty `do` is observation), optionally the host's full
+  finite list with an explicit cap on number of targets, can be searched
+  by increasing subset size. That returns a shortest subset that pairwise
+  separates listed generative SCMs, with no shorter subset of the same
+  family, or reports an inseparable pair with the same predicted laws on
+  that family. This is not a unique DAG and not constraint-based graph
+  search from conditional independences.
 
 ## Living-document maintenance
 
