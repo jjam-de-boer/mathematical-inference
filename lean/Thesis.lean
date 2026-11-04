@@ -98,6 +98,7 @@ import Thesis.Examples.IntegerFeasibility
 import Thesis.Examples.IntegerCarryLoops
 import Thesis.Examples.FiniteLabelledRepetition
 import Thesis.Examples.IntegerLargeSolution
+import Thesis.Examples.IntegerCoordinateClassification
 import Thesis.Examples.IntegerLinearAlgebra
 import Thesis.Examples.IntegerNullspace
 import Thesis.Examples.FiniteRatioMinimum
