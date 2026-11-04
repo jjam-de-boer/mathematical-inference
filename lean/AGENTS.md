@@ -33,6 +33,21 @@ The main implemented results are:
   with statistical entropy up to a reference constant along admitted
   quantitatively regular positive probability paths.
 - Soundness of the three do-calculus rules and supported derivations.
+  The same identities hold as qualitative comparisons of supported
+  interventional conditionals, read as finite-urn cell-count ratios
+  (the Clayton–Waddington representation already used for qualitative
+  probability). An undefined numerical conditional stays undefined and
+  is not completed to zero. This does not derive `do` from those urn
+  axioms.
+- Number-free comparison of experimental claims: a hard intervention
+  together with an observed event, ordered with effectiveness of a
+  forced coordinate (after `do(X{=}x)`, the event `X{=}x` matches the
+  sure event). Every finite SCM with a qualitative urn comparison
+  induces such a structure. The three do-calculus rules are theorems of
+  that induced comparison; d-separation is used in the proof, not as an
+  assumption of the comparison, and not as a second identification
+  engine. Completeness — every such comparison on two Boolean nodes
+  arises from some finite SCM — is not proved.
 - Joint and conditional identification completeness for the stated positive
   model classes, original finite hidden-DAG transfer, and supported-zero
   certificates on each formula's used-conditional domain (the primitive
