@@ -18,6 +18,7 @@ import Thesis.CausalTransport.SupportAwareChain
 import Thesis.CausalTransport.Correspondence
 import Thesis.CausalTransport.FiniteSource
 import Thesis.CausalTransport.Soundness
+import Thesis.CausalTransport.QualitativeDoCalculus
 import Thesis.CausalTransport.LocalSupportIdentification
 import Thesis.CausalTransport.ChainCompilation
 import Thesis.CausalTransport.SupportAwareChainCompilation
@@ -344,6 +345,10 @@ hypotheses and proof explanations remain in the named implementation modules.
 do-calculus derivations preserve interpreted causal values in compatible
 finite models. Its partition proofs use the actual graph mutilations and
 separation predicates defined by the causal foundations.
+`QualitativeDoCalculus` transports those three rules to qualitative urn
+equivalence of supported kernel ratios; undefined conditionals stay
+undefined. The Pearl identities are theorems of the induced intervention
+scale, not urn axioms and not a second identification engine.
 
 `KernelSuccessCompilation` and `ConditionalCompilation` certify the literal
 joint-ID and IDC outputs. `KernelFailureExtraction` and
