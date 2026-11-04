@@ -107,6 +107,52 @@ def chainModel : ExactModel signature where
         · exact (hx same).elim
         · simp [signature, x, y, same])
 
+private def degenerateFalse : FiniteProbRecord Bool where
+  atoms := [(false, 1)]
+  den := 1
+  den_pos := by decide
+  total_mass := rfl
+
+/-- Same copy mechanism as the chain, but `X` is supported only at `false`.
+Then `P(Y | X{=}true)` is undefined, not defined-zero. -/
+def unsupportedXModel : ExactModel signature where
+  latent := chainLatent
+  factor := fun _ => degenerateFalse
+  prior := record 1 (fun _ => Bool) (fun _ => degenerateFalse)
+  product_law := record_rectangular_probVal 1 (fun _ => Bool) (fun _ => degenerateFalse)
+  mechanism := fun child parents inputs =>
+    if hx : child = x then
+      inputs ⟨0, by decide⟩ (by simp [chainLatent, hx, x])
+    else
+      parents x (by
+        rcases node_cases child with same | same
+        · exact (hx same).elim
+        · simp [signature, x, y, same])
+
+private def xTrue : Event signature.Assignment := fun assignment => assignment x
+private def yFalse : Event signature.Assignment := fun assignment => !assignment y
+
+theorem chain_x_supported :
+    chainModel.observationalDist.EventPositive xTrue := by
+  decide +kernel
+
+theorem chain_yFalse_given_xTrue_defined_zero :
+    QProb.Equiv
+      ((chainModel.observationalDist.conditionOn xTrue chain_x_supported).probVal yFalse)
+      QProb.zero := by
+  decide +kernel
+
+theorem unsupportedX_undefined :
+    ¬ unsupportedXModel.observationalDist.EventPositive xTrue := by
+  decide +kernel
+
+/-- Undefined versus defined-zero: the same conditioner is null in one
+joint and positive with a zero cell in the other. -/
+theorem undefined_vs_defined_zero_not_observational :
+    ¬ ObservationalEquiv chainModel unsupportedXModel :=
+  not_observationalEquiv_of_undefined_vs_defined xTrue chain_x_supported
+    unsupportedX_undefined
+
 /-- Bow lower endpoint at the chain's actual observational law. -/
 def bowLowerModel : ExactModel signature :=
   model chainModel.observationalDist false
