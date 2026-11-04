@@ -100,6 +100,7 @@ import Thesis.Causality.ModalCounterfactual
 import Thesis.Causality.EndpointAgreement
 import Thesis.Causality.ModeTheory
 import Thesis.Causality.ExtensionalMode
+import Thesis.Causality.ModeIndexedIdentification
 
 /-!
 # Finite causal syntax, models and executed states
@@ -153,6 +154,10 @@ current beliefs and accumulated interventions. `ModalRealization`,
 `ModeTheory` packages the named states and paths.
 `ExtensionalMode` is the finished public mode (SCM and current belief);
 records remain the workspace for compact `do` and stack inverses.
+`ModeIndexedIdentification` restricts the query language to a mode's declared
+allowed interventions, then dispatches to `identifyJointKernel`. A
+graph-identified query may be mode-unsupported. Compact workspace `do` is not
+that allowed family.
 
 `Counterfactual`, `Multiworld` and `ExecutedMultiworld` own finite
 counterfactual and shared-noise world evaluation. Their model classes,
