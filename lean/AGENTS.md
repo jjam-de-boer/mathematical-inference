@@ -130,15 +130,25 @@ The main implemented results are:
   finite-law (`Distro`) prior from observational or interventional finite
   tables, then mix identified values and supplied bounds without collapsing
   disagreement. An exhausted catalogue is unsupported, not a unique DAG.
-  Complexity scores are prior mass only. A supplied invariance constraint
-  may zero an atom that would otherwise match those tables. A finite list
-  of mutually disagreeing generative SCMs is separated by those experiments.
-  The native finite-template list may be filtered by a supplied graph
-  permutation. An optional depth-capped Boolean partition tree mixes
-  already-certified answers; it does not search graphs or identify a query
-  left unidentified. This is not a Bayesian posterior over graphs, and it
-  is distinct from Shannon entropy of the remaining compatible graphs on
-  the same catalogue.
+  Complexity scores are prior mass only. A supplied map of assignments may
+  zero an atom that would otherwise match those tables. Gating only the
+  observational joint still accepts a copy-chain whose `P(V)` is invariant
+  under flipping both bits; requiring the same map on every experiment,
+  including `do(X)`, rejects that chain. Graph-tagged atoms may be kept or
+  dropped one observed graph at a time under a supplied node permutation;
+  templates of one hidden DAG still share that graph, so that filter is
+  all-or-nothing. Swapping the two nodes of a binary bow (confounded `X→Y`)
+  is not a directed-graph permutation. A bounded search of the host's
+  finite hard interventions (set some coordinates to a value; empty `do`
+  is observation), optionally capped by number of targets, returns a
+  shortest list of experiments that pairwise separate listed generative
+  SCMs, or reports an inseparable pair with the same predicted laws on
+  the searched family. This is not a unique DAG and not constraint-based
+  graph search from conditional independences. An optional depth-capped
+  Boolean partition tree mixes already-certified answers; it does not
+  search graphs or identify a query left unidentified. This is not a
+  Bayesian posterior over graphs, and it is distinct from Shannon entropy
+  of the remaining compatible graphs on the same catalogue.
 
 ## Living-document maintenance
 
