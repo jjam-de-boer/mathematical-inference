@@ -29,6 +29,7 @@ import Thesis.Examples.TenureTrack
 import Thesis.Examples.IdentificationRegression
 import Thesis.Examples.IdentificationAPIIsolation
 import Thesis.Examples.QualitativeDoCalculus
+import Thesis.Examples.QualitativeCausalScale
 import Thesis.Examples.SupportAwareSemantics
 import Thesis.Examples.SupportAwareChain
 import Thesis.Examples.LocalSupportIdentification

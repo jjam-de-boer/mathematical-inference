@@ -8,6 +8,7 @@ import Thesis.Causality.SelectedAssignment
 import Thesis.Causality.SelectedEntropy
 import Thesis.Causality.HardIntervention
 import Thesis.Causality.QualitativeDoCalculus
+import Thesis.Causality.QualitativeCausalScale
 import Thesis.Causality.SharedResponseTables
 import Thesis.Causality.SharedResponseModel
 import Thesis.Causality.Identification
@@ -113,7 +114,7 @@ Implementations should import focused foundational modules.
 ## Queries and identification programs
 
 A useful reading order is `Graph`, `Derivation`, `Model`, `SelectedEntropy`, `HardIntervention`,
-`QualitativeDoCalculus`, `Semantics`, `SupportAwareSemantics` and `Identification`.
+`QualitativeDoCalculus`, `QualitativeCausalScale`, `Semantics`, `SupportAwareSemantics` and `Identification`.
 These define graph operations, kernel queries, interventions, probability
 terms and their partial interpretation. Defined zero and an undefined
 conditional remain distinct. Qualitative kernel comparisons transport existing
