@@ -1,5 +1,8 @@
 import Thesis.Examples.CausalAbstraction
 import Thesis.Examples.CausalAbstractionExtension
+import Thesis.Examples.CausalAbstractionScale
+import Thesis.Examples.CausalAbstractionEmergence
+import Thesis.Examples.CausalAbstractionCatalogue
 import Thesis.Examples.NodeLawRecipe
 import Thesis.Examples.ConstructiveInverseDerivative
 import Thesis.Examples.ConstructiveProductDerivative
