@@ -150,7 +150,9 @@ moment and concentration results live below `Distros`.
 
 `Distros.NodeLawRecipe` compiles raw records, explicit named-family
 parameters, or finite-grid moment/partition constraints into actual rational
-noise-factor or local-kernel tables. Constraint compilation certifies a
+noise-factor or local-kernel tables. `ParentIndexedRecipe` compiles one
+recipe at each listed parent tuple into a full kernel, or a per-tuple
+refutation with no fallback CPT row. Constraint compilation certifies a
 feasible law or refutes feasibility. Mechanisms and graphs remain separate
 model data; the recipes perform neither causal identification nor a graph
 posterior update. Maximum entropy is a separate selection principle, and
