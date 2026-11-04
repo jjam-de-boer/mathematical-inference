@@ -66,7 +66,14 @@ The main implemented results are:
   workspace intervention field) and the modal stack live only on workspace
   records. Public 1-cells (edit morphisms) wrap existing operations that
   keep compact `do` empty. Mode-indexed realizations connect identification
-  proofs to those executions.
+  proofs to those executions: the proof can be run; they do not say which
+  interventions the mode may perform. Identification of a query may also be
+  restricted to a mode's declared allowed interventions, supplied as data,
+  not read off the belief table and not taken from compact `do`. A query
+  can be identified from the graph and still unaskable in that mode. That
+  restriction of the query language is not a hedge (a Pearl–Shpitser
+  non-identifiability witness), not a completeness theorem for all modes,
+  and not a posterior over graphs.
 - Sharp bounds for binary bow queries (confounded `X→Y`), and complete
   rational attainable sets for binary instrumental-variable treatment
   risks and the signed average treatment effect.
