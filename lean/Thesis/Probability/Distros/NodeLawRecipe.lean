@@ -9,9 +9,9 @@ import Thesis.Probability.Distros.HypergeometricUrn
 
 A recipe generates an actual rational table. An SCM may use that table as
 its private-noise factor, or a modeller may supply one recipe at each parent
-tuple for a local kernel. The structural mechanism and graph remain separate
-model data. This module performs neither causal identification nor Bayesian
-updating of an identified table.
+tuple for a local kernel (`ParentIndexedRecipe`). The structural mechanism
+and graph remain separate model data. This module performs neither causal
+identification nor Bayesian updating of an identified table.
 
 Constraint recipes decide feasibility. Their success certificate proves
 support, moments and the supplied partition equalities; it does not assert
@@ -229,6 +229,20 @@ theorem Result.table_accepts {recipe : NodeLawRecipe A} (result : recipe.Result)
   cases result with
   | success _ certificate => exact certificate
   | infeasible _ => exact False.elim (Bool.noConfusion success)
+
+theorem Result.table?_eq_some_table {recipe : NodeLawRecipe A}
+    (result : recipe.Result) (success : result.succeeded = true) :
+    result.table? = some (result.table success) := by
+  cases result with
+  | success _ _ => rfl
+  | infeasible _ => exact False.elim (Bool.noConfusion success)
+
+theorem Result.table?_none_of_not_succeeded {recipe : NodeLawRecipe A}
+    (result : recipe.Result) (failed : result.succeeded = false) :
+    result.table? = none := by
+  cases result with
+  | success _ _ => exact Bool.noConfusion failed
+  | infeasible _ => rfl
 
 /-- Success is equivalent to realizability of the stated recipe. This is a
 feasibility equivalence, not an identifiability or unique-law theorem. -/
