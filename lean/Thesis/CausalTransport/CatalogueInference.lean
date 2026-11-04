@@ -1067,6 +1067,28 @@ theorem combinations_length {α : Type} (xs : List α) :
 def combinationsBySize {α : Type} (xs : List α) : List (List α) :=
   (List.range (xs.length + 1)).flatMap (fun k => combinations xs k)
 
+theorem combinationsBySize_split {α : Type} (xs : List α) (k : Nat)
+    (hk : k ≤ xs.length + 1) :
+    combinationsBySize xs =
+      (List.range k).flatMap (combinations xs) ++
+        (List.range' k (xs.length + 1 - k)).flatMap (combinations xs) := by
+  unfold combinationsBySize
+  have hsum : k + (xs.length + 1 - k) = xs.length + 1 :=
+    Nat.add_sub_of_le hk
+  have hrange :
+      List.range (xs.length + 1) =
+        List.range k ++ List.range' k (xs.length + 1 - k) := by
+    rw [List.range_eq_range' (n := xs.length + 1), List.range_eq_range' (n := k)]
+    calc
+      List.range' 0 (xs.length + 1) =
+          List.range' 0 (k + (xs.length + 1 - k)) := by rw [hsum]
+      _ = List.range' 0 k ++ List.range' (0 + k) (xs.length + 1 - k) :=
+            (List.range'_append_1 (s := 0) (m := k)
+              (n := xs.length + 1 - k)).symm
+      _ = List.range' 0 k ++ List.range' k (xs.length + 1 - k) := by
+            rw [Nat.zero_add]
+  rw [hrange, List.flatMap_append]
+
 def firstSatisfying {α : Type} (p : α → Bool) : List α → Option α
   | [] => none
   | x :: xs => if p x then some x else firstSatisfying p xs
@@ -1104,6 +1126,16 @@ theorem firstSatisfying_app {α : Type} (p : α → Bool) :
       simp only [List.cons_append, firstSatisfying]
       split <;> simp [firstSatisfying_app p xs ys]
 
+theorem firstSatisfying_mem {α : Type} {p : α → Bool} :
+    ∀ xs x, firstSatisfying p xs = some x → x ∈ xs
+  | [], _, h => by simp [firstSatisfying] at h
+  | y :: ys, x, h => by
+      simp only [firstSatisfying] at h
+      split at h
+      · cases h
+        exact List.mem_cons_self
+      · exact List.mem_cons_of_mem _ (firstSatisfying_mem ys x h)
+
 /-- Shortest sublist of `candidates`, by increasing length, that pairwise
 Regime-A-separates the listed SCMs. `none` means some pair agrees on every
 searched tag. -/
@@ -1123,6 +1155,60 @@ def noShorterSeparator {n : Nat} (models : Fin n → ExactModel S)
   (List.range k).all fun j =>
     (combinations candidates j).all fun tags =>
       !allPairsSeparated models tags
+
+theorem shortestSeparatingTags_minimal {n : Nat}
+    (models : Fin n → ExactModel S)
+    (candidates tags : List (ExperimentTag S))
+    (h : shortestSeparatingTags models candidates = some tags) :
+    noShorterSeparator models candidates tags.length = true := by
+  have hmem : tags ∈ combinationsBySize candidates :=
+    firstSatisfying_mem _ _ h
+  rcases List.mem_flatMap.mp hmem with ⟨k, hkRange, hcomb⟩
+  have hk : k < candidates.length + 1 := List.mem_range.mp hkRange
+  have hlen : tags.length = k := combinations_length _ _ _ hcomb
+  have hkLe : k ≤ candidates.length + 1 := Nat.le_of_lt hk
+  rw [hlen]
+  have hsplit := combinationsBySize_split candidates k hkLe
+  have hsearch :
+      firstSatisfying (allPairsSeparated models)
+        ((List.range k).flatMap (combinations candidates) ++
+          (List.range' k (candidates.length + 1 - k)).flatMap
+            (combinations candidates)) = some tags := by
+    unfold shortestSeparatingTags at h
+    rwa [hsplit] at h
+  have hnone :
+      firstSatisfying (allPairsSeparated models)
+        ((List.range k).flatMap (combinations candidates)) = none := by
+    cases hp :
+        firstSatisfying (allPairsSeparated models)
+          ((List.range k).flatMap (combinations candidates)) with
+    | none => rfl
+    | some z =>
+        have heq :
+            firstSatisfying (allPairsSeparated models)
+              ((List.range k).flatMap (combinations candidates) ++
+                (List.range' k (candidates.length + 1 - k)).flatMap
+                  (combinations candidates)) = some z := by
+          rw [firstSatisfying_app, hp]
+        have hz : some tags = some z := hsearch.symm.trans heq
+        cases hz
+        have hzmem :
+            tags ∈ (List.range k).flatMap (combinations candidates) :=
+          firstSatisfying_mem _ _ hp
+        rcases List.mem_flatMap.mp hzmem with ⟨j, hjRange, hjcomb⟩
+        have hj : j < k := List.mem_range.mp hjRange
+        have hjlen : tags.length = j := combinations_length _ _ _ hjcomb
+        exact absurd (hjlen.symm.trans hlen) (Nat.ne_of_lt hj)
+  refine List.all_eq_true.mpr ?_
+  intro j hj
+  refine List.all_eq_true.mpr ?_
+  intro ys hys
+  have hysP :
+      ys ∈ (List.range k).flatMap (combinations candidates) :=
+    List.mem_flatMap.mpr ⟨j, hj, hys⟩
+  have hyfalse : allPairsSeparated models ys = false :=
+    firstSatisfying_none_mem _ hnone ys hysP
+  simp [hyfalse]
 
 theorem mem_combinations_self {α : Type} : ∀ xs : List α, xs ∈ combinations xs xs.length
   | [] => by simp [combinations]

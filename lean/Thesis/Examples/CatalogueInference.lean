@@ -664,6 +664,68 @@ theorem multi_graph_filter_swap :
 def tinyTags : List (ExperimentTag signature) :=
   [.observational, .intervene doX]
 
+private theorem optionValues_complete (i : Fin signature.count)
+    (v : Option (signature.Value i)) :
+    v ∈ optionValues signature i := by
+  cases v with
+  | none => simp [optionValues]
+  | some b =>
+      simp [optionValues]
+      exact signature.value_complete i b
+
+theorem observational_mem_candidateTags :
+    ExperimentTag.observational ∈ candidateTags signature 1 :=
+  List.mem_cons_self
+
+theorem doX_value_x : doX.value x = some true :=
+  HardIntervention.set_at_target _ _ _
+
+theorem doX_value_y : doX.value y = none := by
+  unfold doX
+  have hne : y ≠ x := by
+    intro h
+    cases congrArg Fin.val h
+  rw [HardIntervention.set_away_from_target _ x y true hne]
+  rfl
+
+theorem doX_not_empty : interventionIsEmpty doX = false := by
+  unfold interventionIsEmpty
+  cases h : finAll signature.count (fun i => (doX.value i).isNone) with
+  | false => rfl
+  | true =>
+      have hx := (finAll_eq_true_iff _).mp h x
+      simp [doX_value_x] at hx
+
+theorem doX_target_count : interventionTargetCount doX = 1 := by
+  have hfin : List.finRange signature.count = [x, y] := rfl
+  have hx : (doX.value x).isSome = true := by rw [doX_value_x]; rfl
+  have hy : (doX.value y).isSome = false := by rw [doX_value_y]; rfl
+  simp [interventionTargetCount, hfin, List.filter, hx, hy]
+
+theorem doX_mem_hardInterventionEnumeration :
+    doX ∈ hardInterventionEnumeration signature := by
+  have hmk : ({ value := doX.value } : HardIntervention signature) = doX := by
+    cases doX
+    rfl
+  rw [← hmk]
+  refine List.mem_map.mpr ⟨doX.value, ?_, rfl⟩
+  exact FiniteProduct.enumeration_complete
+    signature.count
+    (fun i => Option (signature.Value i))
+    (fun i => optionValues signature i)
+    (fun i v => optionValues_complete i v)
+    doX.value
+
+theorem doX_mem_candidateTags :
+    ExperimentTag.intervene doX ∈ candidateTags signature 1 := by
+  refine List.mem_cons_of_mem _ ?_
+  refine List.mem_map.mpr ⟨doX, ?_, rfl⟩
+  refine List.mem_filter.mpr ⟨doX_mem_hardInterventionEnumeration, ?_⟩
+  change (!interventionIsEmpty doX &&
+      decide (interventionTargetCount doX ≤ 1)) = true
+  rw [doX_not_empty, doX_target_count]
+  rfl
+
 def indepDoLaw : FiniteProbRecord signature.Assignment where
   atoms := [(xy true false, 1), (xy true true, 1)]
   den := 2
@@ -955,11 +1017,10 @@ theorem shortest_separator_is_obs_and_doX :
 
 theorem shortest_separator_minimal :
     noShorterSeparator generators tinyTags 2 = true := by
-  have hrange : List.range 2 = [0, 1] := rfl
-  simp [noShorterSeparator, hrange, List.all_cons, List.all_nil,
-    combinations_tiny_zero, combinations_tiny_one,
-    empty_tags_do_not_separate, observational_tags_do_not_separate,
-    doX_tags_do_not_separate]
+  have hlen : tinyTags.length = 2 := rfl
+  have h := shortestSeparatingTags_minimal generators tinyTags tinyTags
+    shortest_separator_is_obs_and_doX
+  rwa [hlen] at h
 
 theorem shortest_separator_realizes_chain :
     uniquelyRealizes generators (predictedExperiments chainModel tinyTags)
