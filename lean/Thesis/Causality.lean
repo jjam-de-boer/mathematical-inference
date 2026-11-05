@@ -39,6 +39,7 @@ import Thesis.Causality.FiniteListReplacement
 import Thesis.Causality.PetriNet
 import Thesis.Causality.PetriPredecessors
 import Thesis.Causality.CoordinateBoxes
+import Thesis.Causality.PetriCoverability
 import Thesis.Causality.IntegerFeasibility
 import Thesis.Causality.IntegerCarryLoops
 import Thesis.Causality.IntegerLargeSolution
@@ -162,7 +163,10 @@ the exact least source for one firing to cover a target. Token counts are
 unbounded. `FiniteListReplacement` and `CoordinateBoxes` prove well-founded
 splitting of finite work lists and preservation of uncovered-point coverage,
 including overlapping boxes. These foundations supply no backward search
-or general coverability or reachability solver.
+or general coverability or reachability solver. `PetriCoverability` retains
+actual execution witnesses under predecessor extension and proves exact
+coverability from a supplied saturated witnessed basis. Constructing that
+basis remains separate work.
 
 ## Modal, counterfactual and mode-theory interfaces
 
