@@ -56,20 +56,25 @@ The main implemented results are:
   (everything equivalent) satisfies those order and effectiveness
   axioms and cannot match empty versus sure under any positive urn.
 - Qualitative causal comparisons reuse Clayton at each hard intervention
-  (each fixed `do` is a finite urn of events), together with
-  effectiveness; invariance of claims that mention only non-effects of
-  the knobs being set; and the sentence that once every direct cause of
-  a node is set, two experiments that set those causes to the same
+  (each fixed `do` is a finite urn of observed assignments), together
+  with effectiveness; invariance of claims that mention only non-effects
+  of the knobs being set; and the sentence that once every direct cause
+  of a node is set, two experiments that set those causes to the same
   values and do not set the node itself make the same claims about that
-  node. Direct causes are the signature's directed edges. The three
-  do-rules are not assumptions of this comparison. Every finite SCM
+  node. Direct causes are the signature's directed edges. For a finite
+  SCM those sentences are corollaries of the existing evaluation, not a
+  new calculus: `do` keeps the hidden prior and skips a forced node's
+  mechanism; an unforced node prints from current parent values and the
+  hidden factors wired to it, so children are recomputed from those
+  writings. The three do-rules are not assumptions of this comparison
+  and are not proved from these sentences for an arbitrary model of
+  them; they remain theorems of an inducing SCM, as qualitative
+  equalities of supported conditionals, as above. Every finite SCM
   induces such a scale. Supported kernel conditionals stay undefined
   when the conditioner has zero mass, and are not completed to zero.
-  The three do-rules are not proved from these sentences for an
-  arbitrary model of them; they remain theorems of an inducing SCM, as
-  above. Completeness, that every finite model of the scale is realized
-  by some finite SCM, is not proved. This is not causality from urn
-  axioms.
+  Completeness, that every finite model of the scale is realized by
+  some finite SCM, is not proved. This is not causality from urn
+  axioms, and not a new identification engine.
 - Joint and conditional identification completeness for the stated positive
   model classes, original finite hidden-DAG transfer, and supported-zero
   certificates on each formula's used-conditional domain (the primitive
