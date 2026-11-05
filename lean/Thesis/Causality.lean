@@ -35,8 +35,10 @@ import Thesis.Causality.IdentificationSearch
 import Thesis.Causality.ComponentConnectivity
 import Thesis.Causality.ReachabilityCorrectness
 import Thesis.Causality.FiniteLabelledRepetition
+import Thesis.Causality.FiniteListReplacement
 import Thesis.Causality.PetriNet
 import Thesis.Causality.PetriPredecessors
+import Thesis.Causality.CoordinateBoxes
 import Thesis.Causality.IntegerFeasibility
 import Thesis.Causality.IntegerCarryLoops
 import Thesis.Causality.IntegerLargeSolution
@@ -157,8 +159,10 @@ checking is supplied downstream.
 checking of supplied transition words, and execution composition.
 `PetriPredecessors` preserves those words at larger sources and computes
 the exact least source for one firing to cover a target. Token counts are
-unbounded; neither foundation supplies a general coverability or reachability
-solver.
+unbounded. `FiniteListReplacement` and `CoordinateBoxes` prove well-founded
+splitting of finite work lists and preservation of uncovered-point coverage,
+including overlapping boxes. These foundations supply no backward search
+or general coverability or reachability solver.
 
 ## Modal, counterfactual and mode-theory interfaces
 
