@@ -42,6 +42,7 @@ import Thesis.Causality.CoordinateBoxes
 import Thesis.Causality.CoordinateBoxScan
 import Thesis.Causality.PetriCoverability
 import Thesis.Causality.PetriCoverabilityScan
+import Thesis.Causality.PetriCoverabilitySearch
 import Thesis.Causality.IntegerFeasibility
 import Thesis.Causality.IntegerCarryLoops
 import Thesis.Causality.IntegerLargeSolution
@@ -164,16 +165,21 @@ checking of supplied transition words, and execution composition.
 the exact least source for one firing to cover a target. Token counts are
 unbounded. `FiniteListReplacement` and `CoordinateBoxes` prove well-founded
 splitting of finite work lists and preservation of uncovered-point coverage,
-including overlapping boxes. These foundations supply no backward search
-or general coverability or reachability solver. `PetriCoverability` retains
-actual execution witnesses under predecessor extension and proves exact
-coverability from a supplied saturated witnessed basis. Constructing that
-basis remains separate work.
+including overlapping boxes. `PetriCoverability` retains actual execution
+witnesses under predecessor extension and proves exact coverability from a
+supplied saturated witnessed basis.
 
 `CoordinateBoxScan` and `PetriCoverabilityScan` check finite supplied lists
 with exact success and failure statements. Hits retain literal box contexts
 or actual execution data; predecessor-scan failure certifies current basis
 saturation. They do not iterate basis updates.
+
+`PetriCoverabilitySearch` performs those updates by well-founded recursion,
+computing a saturated witnessed basis and returning an actual covering
+execution or a proof of non-coverability. There is no supplied token or word
+cutoff. This solves coverability for finite Petri nets, with unbounded
+natural markings; exact reachability and its causal-search integration
+remain separate work.
 
 ## Modal, counterfactual and mode-theory interfaces
 
