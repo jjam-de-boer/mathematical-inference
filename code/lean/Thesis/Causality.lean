@@ -38,11 +38,13 @@ import Thesis.Causality.FiniteLabelledRepetition
 import Thesis.Causality.FiniteListReplacement
 import Thesis.Causality.PetriNet
 import Thesis.Causality.PetriPredecessors
+import Thesis.Causality.PetriReversal
 import Thesis.Causality.CoordinateBoxes
 import Thesis.Causality.CoordinateBoxScan
 import Thesis.Causality.PetriCoverability
 import Thesis.Causality.PetriCoverabilityScan
 import Thesis.Causality.PetriCoverabilitySearch
+import Thesis.Causality.PetriPumping
 import Thesis.Causality.IntegerFeasibility
 import Thesis.Causality.IntegerCarryLoops
 import Thesis.Causality.IntegerLargeSolution
@@ -180,6 +182,15 @@ execution or a proof of non-coverability. There is no supplied token or word
 cutoff. This solves coverability for finite Petri nets, with unbounded
 natural markings; exact reachability and its causal-search integration
 remain separate work.
+
+`PetriReversal` exchanges consumption and production and reverses actual
+execution words. `PetriPumping` decides whether a word can preserve an
+entire finite source marking while increasing every selected coordinate,
+using one coverability call. Its witnesses repeat with exact affine
+endpoints; reverse-net witnesses also give original-net backward executions.
+A negative answer does not establish boundedness of the selected places.
+Finite control, partial endpoints and general reachability refinement are
+not supplied by these tests.
 
 ## Modal, counterfactual and mode-theory interfaces
 
