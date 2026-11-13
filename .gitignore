@@ -1,13 +1,18 @@
 # Lean
 /.lake/
-/lean/.lake/
-/lean/lake-packages/
+/code/lean/.lake/
+/code/lean/lake-packages/
+
+# Agda build interfaces
+*.agdai
+_build/
 
 # LaTeX workspace: keep local sources/build products, track only the final PDFs.
-/latex/*
-!/latex/Thesis_Jelmer_de_Boer.pdf
-!/latex/mathematical_inference.pdf
-!/latex/story.txt
+/documents/thesis/*
+!/documents/thesis/Thesis_Jelmer_de_Boer.pdf
+!/documents/thesis/story.txt
+/documents/book/*
+!/documents/book/mathematical_inference.pdf
 
 # Paper library
 /papers/
@@ -18,14 +23,14 @@
 # Generated local artifacts
 /tmp/
 
-# Python helper bytecode (lean/tools orchestration; not proofs)
+# Python helper bytecode (code/lean/tools orchestration; not proofs)
 __pycache__/
 *.py[cod]
 
 # Publish the README and shared agent instructions; ignore other Markdown.
 *.[mM][dD]
 !/README.md
-!/lean/AGENTS.md
+!/code/lean/AGENTS.md
 
 # LaTeX build products
 *.aux

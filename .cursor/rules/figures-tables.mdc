@@ -1,6 +1,6 @@
 ---
 description: Thesis figures and tables — one idea, cite or introduce
-globs: latex/**/*.{tex,sty}
+globs: documents/**/*.{tex,sty}
 alwaysApply: false
 ---
 

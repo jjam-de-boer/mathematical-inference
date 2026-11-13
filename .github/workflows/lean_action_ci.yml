@@ -12,25 +12,25 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Verify committed Lean dependency manifest
-        run: test -f lean/lake-manifest.json
+        run: test -f code/lean/lake-manifest.json
       # These inexpensive tests inspect example import coverage and exercise
       # helper safety with temporary fixtures and fake child processes. They
       # never run Lean or weaken the actual proof and axiom-policy gates below.
       - name: Check regression coverage and resource-capped helper safety
-        run: python3 -B -m unittest discover -s lean/tools -p 'test_*.py'
+        run: python3 -B -m unittest discover -s code/lean/tools -p 'test_*.py'
       # The composite lean action reinstalls Elan unconditionally through a
       # floating latest-download URL.  Reuse only a toolchain installation
       # saved after all verification gates passed, and use a digest-checked
       # official installer on misses.  The project still selects its exact
-      # Lean version through lean/lean-toolchain; this cache proves nothing
+      # Lean version through code/lean/lean-toolchain; this cache proves nothing
       # about the current source or its axioms.
       - uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
         id: lean-toolchain-cache
         with:
           path: ~/.elan
-          key: elan-v4.2.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain') }}
+          key: elan-v4.2.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('code/lean/lean-toolchain') }}
       - name: Install or reuse the pinned Lean toolchain
-        working-directory: lean
+        working-directory: code/lean
         env:
           TOOLCHAIN_CACHE_HIT: ${{ steps.lean-toolchain-cache.outputs.cache-hit }}
         run: |
@@ -65,9 +65,9 @@ jobs:
       # treated as evidence that this commit built or passed the axiom audit.
       - uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
-          path: lean/.lake
-          key: lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain') }}-${{ hashFiles('lean/lake-manifest.json') }}-${{ github.sha }}
-          restore-keys: lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain') }}-${{ hashFiles('lean/lake-manifest.json') }}-
+          path: code/lean/.lake
+          key: lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('code/lean/lean-toolchain') }}-${{ hashFiles('code/lean/lake-manifest.json') }}-${{ github.sha }}
+          restore-keys: lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('code/lean/lean-toolchain') }}-${{ hashFiles('code/lean/lake-manifest.json') }}-
       # These are the same targeted build, complete build and policy gates
       # previously run by the composite action.  No verification is replaced
       # by the runtime cache, and the optional test/lint detection is retained.
@@ -75,26 +75,26 @@ jobs:
       # rebuilding downstream causal modules.  The collection gate
       # Thesis.AxiomAudit remains mandatory after the full build.
       - name: Check distribution and probability axiom prefixes
-        working-directory: lean
+        working-directory: code/lean
         run: lake build Thesis.AxiomPolicy.Distros Thesis.AxiomPolicy.Probability
       # Exercise the class-indexed modal bridge before the broad regression
       # rebuild.  The full build and transitive axiom audit remain mandatory.
       - name: Check positive modal completeness and executed endpoints
-        working-directory: lean
+        working-directory: code/lean
         run: lake build Thesis.CausalTransport.PositiveModal Thesis.Examples.PositiveModal
       - name: Check supported-zero modal completeness and executed endpoints
-        working-directory: lean
+        working-directory: code/lean
         run: lake build Thesis.CausalTransport.SupportedModal Thesis.Examples.SupportedModal
       # Diagnose graph-layer extraction errors before rebuilding the larger
       # native causal clients. The complete build and axiom gate still follow.
       - name: Check independent source grouping
-        working-directory: lean
+        working-directory: code/lean
         run: lake build Thesis.Probability.FiniteProductGrouping Thesis.Examples.FiniteProductGrouping
       - name: Check rational template obstructions
-        working-directory: lean
+        working-directory: code/lean
         run: lake build Thesis.Probability.RationalSquareObstruction Thesis.Probability.IndependentBooleanObstruction Thesis.Examples.IndependentBooleanObstruction
       - name: Check bounded rational source catalogues
-        working-directory: lean
+        working-directory: code/lean
         run: >-
           lake build
           Thesis.Probability.FiniteRecordCatalogue
@@ -111,7 +111,7 @@ jobs:
           Thesis.Examples.BoundedNativeConditionalSearch
           Thesis.Examples.BoundedNativeMixedConditionals
       - name: Check finite support-law foundations
-        working-directory: lean
+        working-directory: code/lean
         run: >-
           lake build
           Thesis.Probability.FiniteSupportCatalogue
@@ -122,7 +122,7 @@ jobs:
           Thesis.Examples.FiniteSupportCatalogue
           Thesis.Examples.NativeSupportProfiles
       - name: Check serialized causal proof data
-        working-directory: lean
+        working-directory: code/lean
         run: >-
           lake build
           Thesis.Causality.ProbabilityTermCode
@@ -156,7 +156,7 @@ jobs:
           Thesis.Examples.NativeKernelInterfaceObstruction
           Thesis.Examples.NativeDerivationReplacement
       - name: Check graph-only identification layers
-        working-directory: lean
+        working-directory: code/lean
         run: >-
           lake build
           Thesis.Causality.ReachabilityCorrectness
@@ -168,10 +168,10 @@ jobs:
           Thesis.CausalTransport.KernelIdentification
           Thesis.CausalTransport.KernelSeparation
       - name: Check clique-root causal grouping
-        working-directory: lean
+        working-directory: code/lean
         run: lake build Thesis.Causality.LatentRootGrouping Thesis.Examples.LatentRootGrouping
       - name: Check native root realization
-        working-directory: lean
+        working-directory: code/lean
         run: >-
           lake build
           Thesis.Causality.LatentRootProjection
@@ -182,14 +182,14 @@ jobs:
           Thesis.CausalTransport.ProjectionTemplateRepresentation
           Thesis.Examples.ProjectionTemplateRepresentation
       - name: Check finite conditional contrast foundations
-        working-directory: lean
+        working-directory: code/lean
         run: >-
           lake build
           Thesis.Probability.FiniteConditionalContrast
           Thesis.Probability.FiniteConditionalContrastPreservation
           Thesis.Examples.FiniteConditionalContrast
       - name: Check exact rational shared-root bounds and conditional values
-        working-directory: lean
+        working-directory: code/lean
         run: >-
           lake build
           Thesis.Causality.SharedResponseTables
@@ -212,7 +212,7 @@ jobs:
           Thesis.CausalTransport.SharedResponseConditionalSolver
           Thesis.Examples.SharedResponseConditionalValues
       - name: Check exact expression support analysis
-        working-directory: lean
+        working-directory: code/lean
         run: >-
           lake build
           Thesis.Causality.ProbabilityStatus
@@ -221,7 +221,7 @@ jobs:
           Thesis.CausalTransport.FormulaSupportCatalogue
           Thesis.Examples.ObservationalFormulaSupport
       - name: Check finite-presentation adapters
-        working-directory: lean
+        working-directory: code/lean
         run: >-
           lake build
           Thesis.Probability.FiniteRecordPresentation
@@ -258,7 +258,7 @@ jobs:
           Thesis.Examples.LocalCheckDefinition
           Thesis.Examples.LocalCheckFiniteDecision
       - name: Build distribution extensions
-        working-directory: lean
+        working-directory: code/lean
         run: >-
           lake build
           Thesis.Probability.Distros.ReinforcedVariance
@@ -268,7 +268,7 @@ jobs:
       # Verify the current general theorem and the compact old-engine
       # counterexample, not the superseded fixed-depth failure library.
       - name: Check current completeness and identification regressions
-        working-directory: lean
+        working-directory: code/lean
         run: >-
           lake build
           Thesis.CausalTransport.ActionDeletionCertificates
@@ -282,7 +282,7 @@ jobs:
       # Check the proof-preserving soundness boundaries explicitly before
       # their broad clients. The full build and axiom audit still follow.
       - name: Check split soundness layers
-        working-directory: lean
+        working-directory: code/lean
         run: >-
           lake build
           Thesis.CausalTransport.SoundnessFoundations
@@ -290,7 +290,7 @@ jobs:
           Thesis.CausalTransport.SoundnessRules
           Thesis.CausalTransport.Soundness
       - name: Build load-bearing Lean modules
-        working-directory: lean
+        working-directory: code/lean
         run: >-
             lake build
             Thesis.Probability.FiniteProductAllocation
@@ -502,29 +502,29 @@ jobs:
             Thesis.Examples.HiddenDAGCompleteness
             Thesis.Examples.HiddenDAGKernelCompilation
       - name: Build complete Lean project
-        working-directory: lean
+        working-directory: code/lean
         run: lake build
       - name: Enforce kernel-axiom policy
-        working-directory: lean
+        working-directory: code/lean
         run: lake build Thesis.AxiomAudit
       - name: Run declared Lean tests
-        working-directory: lean
+        working-directory: code/lean
         run: |
           if lake check-test >/dev/null 2>&1; then lake test; fi
       - name: Run declared Lean lint driver
-        working-directory: lean
+        working-directory: code/lean
         run: |
           if lake check-lint >/dev/null 2>&1; then lake lint; fi
       - uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
         if: success() && steps.lean-toolchain-cache.outputs.cache-hit != 'true'
         with:
           path: ~/.elan
-          key: elan-v4.2.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain') }}
+          key: elan-v4.2.4-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('code/lean/lean-toolchain') }}
       # Save partial *compiled* progress after failure as well as a complete
       # verified build after success.  No failing check is silenced, and every
       # new run must still pass both full-project and transitive-axiom gates.
       - uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
         if: always()
         with:
-          path: lean/.lake
-          key: lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('lean/lean-toolchain') }}-${{ hashFiles('lean/lake-manifest.json') }}-${{ github.sha }}
+          path: code/lean/.lake
+          key: lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('code/lean/lean-toolchain') }}-${{ hashFiles('code/lean/lake-manifest.json') }}-${{ github.sha }}

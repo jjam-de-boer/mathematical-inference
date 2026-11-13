@@ -235,8 +235,12 @@ agent might repeat: one status, one evidence module, and what would
 justify revisiting. If the finding is a limit of a published result,
 merge it into that result rather than opening a sibling pitfall.
 
-Optional: if other project agents are active, after an approved edit tell
-them in chat to reread `lean/AGENTS.md` and quote the approved change.
+Before changing shared directory paths, notify reachable active project
+agents of the old and new paths and coordinate a pause in affected writes
+and builds. Preserve their pending changes. After the move, announce the
+new paths and ask them to reread `code/lean/AGENTS.md` before resuming.
+After other approved edits to this file, notify reachable active project
+agents and quote the approved change.
 
 ## Mathematical and working principles
 
@@ -261,6 +265,10 @@ them in chat to reread `lean/AGENTS.md` and quote the approved change.
   mathematical claims. State open questions explicitly.
 
 ## Structure, comments and documentation
+
+The Lean Lake project lives in `code/lean/`. Repository-root commands
+below use that path; module names and paths within the Lake project
+remain `Thesis.*` and `Thesis/...`. Keep Lean-specific instructions here.
 
 The main entry points are `Thesis.Probability`, `Thesis.Causality` and
 `Thesis.CausalTransport`. Use focused foundational imports in implementations;
@@ -406,11 +414,11 @@ consolidate overlaps, and request approval before changing this section.
 
 ## Builds and checks
 
-Use the installed toolchain pinned by `lean/lean-toolchain`. From the
+Use the installed toolchain pinned by `code/lean/lean-toolchain`. From the
 repository root, run the helper tests:
 
 ```sh
-python3 -B -m unittest discover -s lean/tools -p 'test_*.py'
+python3 -B -m unittest discover -s code/lean/tools -p 'test_*.py'
 ```
 
 These Python tests do not run Lean. Update them only with the matching source
@@ -420,7 +428,7 @@ Ordinary native builds need no Python wrapper. **Mandatory publish** is
 those tests plus two sequential Lake commands:
 
 ```sh
-cd lean
+cd code/lean
 export LEAN_NUM_THREADS=1
 lake build
 lake build Thesis.AxiomAudit
@@ -436,7 +444,7 @@ proofs included). Distros is compiled as part of ordinary `lake build`;
 The optional monitored full build, from the repository root, is:
 
 ```sh
-python3 -B lean/tools/build_local_sequential.py --profile extended --check
+python3 -B code/lean/tools/build_local_sequential.py --profile extended --check
 ```
 
 That helper still only final-gates `lake build` and `Thesis.AxiomAudit`.
@@ -444,8 +452,8 @@ For a targeted check with its prerequisites, including an optional
 substack axiom prefix that is **not** a publish gate:
 
 ```sh
-python3 -B lean/tools/build_local_sequential.py --profile extended --phase lean --target Thesis.CausalTransport.Soundness --check
-python3 -B lean/tools/build_local_sequential.py --profile extended --phase lean --target Thesis.AxiomPolicy.Distros --check
+python3 -B code/lean/tools/build_local_sequential.py --profile extended --phase lean --target Thesis.CausalTransport.Soundness --check
+python3 -B code/lean/tools/build_local_sequential.py --profile extended --phase lean --target Thesis.AxiomPolicy.Distros --check
 ```
 
 Replace `Thesis.AxiomPolicy.Distros` with `Thesis.AxiomPolicy.Probability`,

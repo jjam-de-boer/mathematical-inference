@@ -10,8 +10,20 @@ changes. Selected constructions and proofs are checked in Lean 4.
 
 ## Read the texts
 
-- [Submitted thesis](latex/Thesis_Jelmer_de_Boer.pdf)
-- [Book manuscript](latex/mathematical_inference.pdf)
+- [Submitted thesis](documents/thesis/Thesis_Jelmer_de_Boer.pdf)
+- [Book manuscript](documents/book/mathematical_inference.pdf)
+
+## Repository layout
+
+```text
+code/
+  lean/               Lean formalisation and build tools
+  agda/               Reserved for future Agda development
+documents/
+  thesis/             Submitted Master's thesis
+  book/               Mathematical inference book manuscript
+  papers/             Reserved for future papers
+```
 
 ## Lean development
 
@@ -24,32 +36,31 @@ integration. Auxiliary analytic values do not change the probability weights.
 Public entry points are `Thesis.Probability`, `Thesis.Causality` and
 `Thesis.CausalTransport`. The tenure-track example combines these components.
 
-There are three canonical Lean documents, kept together:
-
-- [Agent and build instructions](lean/AGENTS.md): policy, safe local commands,
-  verification and the current maintenance ledger.
-- [Mathematical reference](lean/REFERENCE.md): theorem coverage, assumptions,
-  distribution/entropy details, research boundaries and source reading order.
-- [Historical evidence](lean/HISTORY.md): preserved development records and
-  measurements, clearly separated from current instructions.
+The [Lean project instructions](code/lean/AGENTS.md) describe the current
+results, assumptions, research boundaries and safe build commands. Source
+reading guidance is also provided in the public entry-point modules.
 
 ## Build and verify
 
-Use the installed toolchain selected by `lean/lean-toolchain`. There are no
-third-party Lake dependencies. Ordinary native builds need no Python wrapper:
+Use the installed toolchain selected by `code/lean/lean-toolchain`. There are no
+third-party Lake dependencies. From the repository root, run the helper tests:
 
 ```sh
-cd lean
+python3 -B -m unittest discover -s code/lean/tools -p 'test_*.py'
+```
+
+Then build and audit the Lean project:
+
+```sh
+cd code/lean
 export LEAN_NUM_THREADS=1
 lake build
 lake build Thesis.AxiomAudit
-lake build Thesis.ConstructiveAlgebraAudit
-lake build Thesis.DistroAxiomAudit
 ```
 
 Run only one build at a time. The native route has the committed per-compiler
 limits, not an aggregate-memory or wall-time watchdog; the
-[operating guide](lean/AGENTS.md#builds-and-checks) documents the monitored option.
+[operating guide](code/lean/AGENTS.md#builds-and-checks) documents the monitored option.
 
 The transitive axiom policy permits only `propext` and `Quot.sound`.
 Compilation alone does not establish that policy. CI checks complete builds,
@@ -69,4 +80,4 @@ assigning `0 / 0 = 0`.
 
 These results do not assert universal alternative-formula applicability,
 unrestricted fixed-observed-law identification, or general multiworld
-counterfactual completeness. See the [precise theorem coverage](lean/REFERENCE.md#causal-results).
+counterfactual completeness. See the [current results and qualifications](code/lean/AGENTS.md#scope-and-main-results).
