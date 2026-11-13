@@ -104,6 +104,7 @@ import Thesis.Examples.PetriNet
 import Thesis.Examples.PetriPredecessors
 import Thesis.Examples.CoordinateBoxes
 import Thesis.Examples.PetriCoverability
+import Thesis.Examples.PetriCoverabilityScan
 import Thesis.Examples.IntegerFeasibility
 import Thesis.Examples.IntegerCarryLoops
 import Thesis.Examples.FiniteLabelledRepetition

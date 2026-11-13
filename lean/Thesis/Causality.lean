@@ -39,7 +39,9 @@ import Thesis.Causality.FiniteListReplacement
 import Thesis.Causality.PetriNet
 import Thesis.Causality.PetriPredecessors
 import Thesis.Causality.CoordinateBoxes
+import Thesis.Causality.CoordinateBoxScan
 import Thesis.Causality.PetriCoverability
+import Thesis.Causality.PetriCoverabilityScan
 import Thesis.Causality.IntegerFeasibility
 import Thesis.Causality.IntegerCarryLoops
 import Thesis.Causality.IntegerLargeSolution
@@ -167,6 +169,11 @@ or general coverability or reachability solver. `PetriCoverability` retains
 actual execution witnesses under predecessor extension and proves exact
 coverability from a supplied saturated witnessed basis. Constructing that
 basis remains separate work.
+
+`CoordinateBoxScan` and `PetriCoverabilityScan` check finite supplied lists
+with exact success and failure statements. Hits retain literal box contexts
+or actual execution data; predecessor-scan failure certifies current basis
+saturation. They do not iterate basis updates.
 
 ## Modal, counterfactual and mode-theory interfaces
 
