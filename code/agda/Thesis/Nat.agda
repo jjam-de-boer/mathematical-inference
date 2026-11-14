@@ -64,6 +64,11 @@ suc-≰ {zero}  ()
 <-irrefl : ∀ {n} → n < n → ⊥
 <-irrefl p = suc-≰ p
 
+-- Strict order composes. The middle value sits strictly below its successor,
+-- so the two successor steps join into one.
+<-trans : ∀ {m n p} → m < n → n < p → m < p
+<-trans {n = n} mn np = ≤-trans mn (≤-trans (≤-step (≤-refl n)) np)
+
 -- Once `n` is known to be at most `m`, a strict descent from `m` to `n` is
 -- impossible.
 ≰-of-≥ : ∀ {m n} → n ≤ m → m < n → ⊥
