@@ -381,7 +381,8 @@ bayes R E F hE hF =
           (mul-comm (probVal R E) condF)))
 
 open import Thesis.Probability.QProb using
-  (Equiv; equiv-refl; equiv-sym; equiv-trans; mul; mul-congr; one-mul)
+  (Equiv; equiv-refl; equiv-sym; equiv-trans; mul; mul-congr; one-mul;
+   add; add-cong; listSum; listSum-map-congr)
 
 -- Conditioning does not change the certain event. The retained atoms still
 -- exhaust the new denominator.
@@ -803,3 +804,244 @@ product-map-left-probVal {Ω} left right encode event =
           w * eventMass (atoms right) (λ x → event (encode ω , x))) support)
   slice-sum [] = refl
   slice-sum ((ω , w) ∷ xs) rewrite slice-sum xs = refl
+
+-- `if b then w else 0` adds the same weight as `add-if`. The Boolean is an
+-- argument, so the two forms agree before it is inspected.
+add-if-shift : (b : Bool) (w m : ℕ) → (if b then w else 0) + m ≡ add-if b w m
+add-if-shift true  w m = refl
+add-if-shift false w m = refl
+
+-- Replace each weight by that many copies of its label. The listing has one
+-- cell per unit of mass, and a zero weight contributes no cell.
+expand : {Ω : Set} → List (Ω × ℕ) → List Ω
+expand []             = []
+expand ((ω , w) ∷ xs) = replicate w ω ++ expand xs
+
+length-expand : {Ω : Set} (atoms : List (Ω × ℕ)) →
+  length (expand atoms) ≡ totalMass atoms
+length-expand []             = refl
+length-expand ((ω , w) ∷ xs) =
+  begin
+    length (replicate w ω ++ expand xs)
+  ≡⟨ length-++ (replicate w ω) (expand xs) ⟩
+    length (replicate w ω) + length (expand xs)
+  ≡⟨ cong₂ _+_ (length-replicate w ω) (length-expand xs) ⟩
+    w + totalMass xs
+  ∎
+
+count-expand : {Ω : Set} (atoms : List (Ω × ℕ)) (E : Event Ω) →
+  count (expand atoms) E ≡ eventMass atoms E
+count-expand []             E = refl
+count-expand ((ω , w) ∷ xs) E =
+  begin
+    count (replicate w ω ++ expand xs) E
+  ≡⟨ countP-++ E (replicate w ω) (expand xs) ⟩
+    count (replicate w ω) E + count (expand xs) E
+  ≡⟨ cong₂ _+_ (countP-replicate E w ω) (count-expand xs E) ⟩
+    (if E ω then w else 0) + eventMass xs E
+  ≡⟨ add-if-shift (E ω) w (eventMass xs E) ⟩
+    eventMass ((ω , w) ∷ xs) E
+  ∎
+
+-- Unit weights make the total mass the length of the label list.
+totalMass-unit : {Ω : Set} (xs : List Ω) →
+  totalMass (map (λ ω → (ω , 1)) xs) ≡ length xs
+totalMass-unit []       = refl
+totalMass-unit (_ ∷ xs) rewrite totalMass-unit xs = refl
+
+-- And the event mass is the number of accepted labels.
+eventMass-unit : {Ω : Set} (xs : List Ω) (E : Event Ω) →
+  eventMass (map (λ ω → (ω , 1)) xs) E ≡ count xs E
+eventMass-unit []       E = refl
+eventMass-unit (x ∷ xs) E with E x
+... | true  rewrite eventMass-unit xs E = refl
+... | false rewrite eventMass-unit xs E = refl
+
+-- A singleton event accepts exactly the sample identified with `value`.
+-- The decision procedure is part of the data: the sample type need not
+-- carry a canonical equality of its own.
+singletonEvent : {Ω : Set} (eq : (x y : Ω) → Dec (x ≡ y)) → Ω → Event Ω
+singletonEvent eq value candidate = fromDec (eq candidate value)
+
+-- Membership accepts a sample when the procedure finds it in the list.
+membershipEvent : {Ω : Set} (eq : (x y : Ω) → Dec (x ≡ y)) →
+                  List Ω → Event Ω
+membershipEvent eq values candidate = fromDec (∈-dec eq candidate values)
+
+singleton-holds : {Ω : Set} (eq : (x y : Ω) → Dec (x ≡ y))
+  (value candidate : Ω) →
+  singletonEvent eq value candidate ≡ true → candidate ≡ value
+singleton-holds eq value candidate h = fromDec-yes (eq candidate value) h
+
+membership-holds : {Ω : Set} (eq : (x y : Ω) → Dec (x ≡ y))
+  (values : List Ω) (candidate : Ω) →
+  membershipEvent eq values candidate ≡ true → candidate ∈ values
+membership-holds eq values candidate h =
+  fromDec-yes (∈-dec eq candidate values) h
+
+-- Extending the list by one head is the union of that singleton with
+-- membership in the tail, at every candidate.
+membership-cons : {Ω : Set} (eq : (x y : Ω) → Dec (x ≡ y))
+  (value : Ω) (values : List Ω) (candidate : Ω) →
+  membershipEvent eq (value ∷ values) candidate ≡
+  union (singletonEvent eq value) (membershipEvent eq values) candidate
+membership-cons eq value values candidate
+  with eq candidate value | ∈-dec eq candidate values
+... | yes _ | _       = refl
+... | no  _ | yes _   = refl
+... | no  _ | no  _   = refl
+
+-- The finite union of the singletons is membership in the list, at every
+-- candidate. No identification of the two events as functions is required.
+unionList-singletons : {Ω : Set} (eq : (x y : Ω) → Dec (x ≡ y))
+  (values : List Ω) (candidate : Ω) →
+  unionList (map (singletonEvent eq) values) candidate ≡
+  membershipEvent eq values candidate
+unionList-singletons eq []             candidate = refl
+unionList-singletons eq (value ∷ values) candidate =
+  begin
+    singletonEvent eq value candidate ∨
+      unionList (map (singletonEvent eq) values) candidate
+  ≡⟨ cong (singletonEvent eq value candidate ∨_)
+       (unionList-singletons eq values candidate) ⟩
+    singletonEvent eq value candidate ∨ membershipEvent eq values candidate
+  ≡⟨ sym (membership-cons eq value values candidate) ⟩
+    membershipEvent eq (value ∷ values) candidate
+  ∎
+
+-- A sample of the head singleton and of a later singleton would identify
+-- the head with that later entry.
+fresh-disjoint : {Ω : Set} (eq : (x y : Ω) → Dec (x ≡ y))
+  (head : Ω) (tail : List Ω) →
+  All (head ≢_) tail →
+  All (disjoint (singletonEvent eq head)) (map (singletonEvent eq) tail)
+fresh-disjoint eq head []             []           = []
+fresh-disjoint eq head (y ∷ ys) (y≠ ∷ rest) =
+  (λ candidate hHead hY →
+     y≠ (trans (sym (singleton-holds eq head candidate hHead))
+               (singleton-holds eq y candidate hY)))
+  ∷ fresh-disjoint eq head ys rest
+
+-- Distinct entries have pairwise disjoint singletons.
+singleton-pairwise : {Ω : Set} (eq : (x y : Ω) → Dec (x ≡ y))
+  {values : List Ω} → Pairwise _≢_ values →
+  Pairwise disjoint (map (singletonEvent eq) values)
+singleton-pairwise eq []                    = []
+singleton-pairwise eq {value ∷ values} (fresh ∷ nodup) =
+  fresh-disjoint eq value values fresh ∷ singleton-pairwise eq nodup
+
+-- A value absent from the list has a singleton disjoint from membership.
+singleton-membership-disjoint : {Ω : Set} (eq : (x y : Ω) → Dec (x ≡ y))
+  {value : Ω} {values : List Ω} → value ∉ values →
+  disjoint (singletonEvent eq value) (membershipEvent eq values)
+singleton-membership-disjoint eq {value} {values} absent candidate hValue hMember =
+  absent (subst (_∈ values) (singleton-holds eq value candidate hValue)
+           (membership-holds eq values candidate hMember))
+
+-- Membership in a repetition-free list is the sum of its singleton
+-- probabilities. Each label is counted once.
+probVal-membership-sum : {Ω : Set} (eq : (x y : Ω) → Dec (x ≡ y))
+  (R : FiniteProbRecord Ω) (values : List Ω) → Pairwise _≢_ values →
+  Equiv (probVal R (membershipEvent eq values))
+        (listSum (map (λ value → probVal R (singletonEvent eq value)) values))
+probVal-membership-sum eq R [] [] =
+  equiv-trans
+    {p = probVal R (membershipEvent eq [])}
+    {q = probVal R (λ _ → false)}
+    {r = listSum []}
+    (probVal-cong R (membershipEvent eq []) (λ _ → false) (λ _ → refl))
+    (probVal-false R)
+probVal-membership-sum eq R (value ∷ values) (fresh ∷ nodup) =
+  equiv-trans
+    {p = probVal R (membershipEvent eq (value ∷ values))}
+    {q = probVal R (union (singletonEvent eq value) (membershipEvent eq values))}
+    {r = add (probVal R (singletonEvent eq value))
+             (listSum (map (λ v → probVal R (singletonEvent eq v)) values))}
+    (probVal-cong R _ _
+      (membership-cons eq value values))
+    (equiv-trans
+      {p = probVal R (union (singletonEvent eq value) (membershipEvent eq values))}
+      {q = add (probVal R (singletonEvent eq value))
+               (probVal R (membershipEvent eq values))}
+      {r = add (probVal R (singletonEvent eq value))
+               (listSum (map (λ v → probVal R (singletonEvent eq v)) values))}
+      (probVal-union-disjoint R _ _
+        (singleton-membership-disjoint eq (∉-of-all fresh)))
+      (add-cong
+        {p = probVal R (singletonEvent eq value)}
+        {p' = probVal R (singletonEvent eq value)}
+        {q = probVal R (membershipEvent eq values)}
+        {q' = listSum (map (λ v → probVal R (singletonEvent eq v)) values)}
+        (equiv-refl (probVal R (singletonEvent eq value)))
+        (probVal-membership-sum eq R values nodup)))
+
+-- Filtering a complete listing by an event recovers that event at every
+-- candidate. A rejected candidate is absent from the filtered list, and an
+-- accepted candidate occurs because the listing was complete.
+membership-filter : {Ω : Set} (eq : (x y : Ω) → Dec (x ≡ y))
+  (values : List Ω) (complete : ∀ value → value ∈ values)
+  (event : Event Ω) (candidate : Ω) →
+  membershipEvent eq (filter event values) candidate ≡ event candidate
+membership-filter eq values complete event candidate =
+  step (event candidate) refl
+  where
+  step : (b : Bool) → event candidate ≡ b →
+         membershipEvent eq (filter event values) candidate ≡ b
+  step true e =
+    fromDec-of-proof (∈-dec eq candidate (filter event values))
+      (∈-filter-complete event values e (complete candidate))
+  step false e =
+    fromDec-false (∈-dec eq candidate (filter event values))
+      (λ mem → false≢true (trans (sym e) (∈-filter-sound event values mem)))
+
+-- On a complete repetition-free listing, an event probability is the sum of
+-- the singleton probabilities the event accepts.
+probVal-filtered-sum : {Ω : Set} (eq : (x y : Ω) → Dec (x ≡ y))
+  (R : FiniteProbRecord Ω) (values : List Ω) →
+  Pairwise _≢_ values → (∀ value → value ∈ values) → (event : Event Ω) →
+  Equiv (probVal R event)
+        (listSum (map (λ value → probVal R (singletonEvent eq value))
+                      (filter event values)))
+probVal-filtered-sum eq R values nodup complete event =
+  equiv-trans
+    {p = probVal R event}
+    {q = probVal R (membershipEvent eq (filter event values))}
+    {r = listSum (map (λ value → probVal R (singletonEvent eq value))
+                      (filter event values))}
+    (probVal-cong R event (membershipEvent eq (filter event values))
+      (λ candidate → sym (membership-filter eq values complete event candidate)))
+    (probVal-membership-sum eq R (filter event values)
+      (pairwise-filter event nodup))
+
+-- Singleton probabilities determine every event probability. The two records
+-- may use different atoms; only the singleton masses are compared.
+probVal-determined-by-singletons : {Ω : Set}
+  (eq : (x y : Ω) → Dec (x ≡ y))
+  (left right : FiniteProbRecord Ω) (values : List Ω) →
+  Pairwise _≢_ values → (∀ value → value ∈ values) →
+  (∀ value → Equiv (probVal left (singletonEvent eq value))
+                   (probVal right (singletonEvent eq value))) →
+  (event : Event Ω) →
+  Equiv (probVal left event) (probVal right event)
+probVal-determined-by-singletons eq left right values nodup complete singletons event =
+  equiv-trans
+    {p = probVal left event}
+    {q = listSum (map (λ value → probVal left (singletonEvent eq value))
+                      (filter event values))}
+    {r = probVal right event}
+    (probVal-filtered-sum eq left values nodup complete event)
+    (equiv-trans
+      {p = listSum (map (λ value → probVal left (singletonEvent eq value))
+                        (filter event values))}
+      {q = listSum (map (λ value → probVal right (singletonEvent eq value))
+                        (filter event values))}
+      {r = probVal right event}
+      (listSum-map-congr (filter event values)
+        (λ value → probVal left (singletonEvent eq value))
+        (λ value → probVal right (singletonEvent eq value))
+        singletons)
+      (equiv-sym
+        {p = probVal right event}
+        {q = listSum (map (λ value → probVal right (singletonEvent eq value))
+                          (filter event values))}
+        (probVal-filtered-sum eq right values nodup complete event)))

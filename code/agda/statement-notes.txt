@@ -16,3 +16,6 @@ telescope equality. These notes are not part of the checked development.
   constructors.
 - product_probVal_equiv_of_slices is product-probVal-slices: each common
   value has an Equiv of its two slices.
+- membershipEvent_cons, unionList_map_singletonEvent, and
+  membershipEvent_filter hold at each candidate. Identity of samples is
+  an explicit decision procedure.

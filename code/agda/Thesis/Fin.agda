@@ -97,13 +97,6 @@ fin-≟ (suc i) (suc j) with fin-≟ i j
 ... | yes eq = yes (cong suc eq)
 ... | no  ne = no λ eq → ne (suc-injective eq)
 
--- Membership is the inductive path from the head of a list down to an entry.
-data _∈_ {A : Set} (x : A) : List A → Set where
-  here  : ∀ {xs} → x ∈ x ∷ xs
-  there : ∀ {y xs} → x ∈ xs → x ∈ y ∷ xs
-
-infix 4 _∈_
-
 -- No coordinate occurs twice. The tail of a cons is duplicate-free, and the
 -- head does not occur in that tail.
 data Nodup {A : Set} : List A → Set where
