@@ -9,3 +9,4 @@ telescope equality. These notes are not part of the checked development.
   (finRange-nodup, occurrences-finRange, ofFn-get, ofFn-cong).
 - Rational magnitude is Equiv, the cross-multiplication relation.
 - Adding a witnessed difference back to the subtrahend is restore-sub.
+- Dividing by a presentation equivalent to the unit is div-by-unit.
