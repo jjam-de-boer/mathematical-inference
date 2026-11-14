@@ -34,12 +34,16 @@ flatMap : {A B : Set} → (A → List B) → List A → List B
 flatMap f []       = []
 flatMap f (x ∷ xs) = f x ++ flatMap f xs
 
+-- Attach an entry only when the test accepts it. The Boolean is an argument,
+-- so a later case analysis computes.
+cons-if : {A : Set} → Bool → A → List A → List A
+cons-if true  x xs = x ∷ xs
+cons-if false _ xs = xs
+
 -- Keep the entries accepted by a Boolean test, in their original order.
 filter : {A : Set} → (A → Bool) → List A → List A
 filter _ []       = []
-filter p (x ∷ xs) with p x
-... | true  = x ∷ filter p xs
-... | false = filter p xs
+filter p (x ∷ xs) = cons-if (p x) x (filter p xs)
 
 sum : List ℕ → ℕ
 sum []       = zero
