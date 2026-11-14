@@ -11,6 +11,7 @@ open Q using (QProb; Equiv; equiv-refl; equiv-sym; equiv-trans; mul;
               mul-congr; mul-one; one-mul; one)
 open import Thesis.Probability.FiniteRecord
 open FiniteProbRecord
+import Thesis.Probability.Urn as Urn
 
 -- A dependent assignment is a telescope of coordinates. The empty telescope
 -- is the unit. A longer telescope is the assignment to the earlier
@@ -113,15 +114,20 @@ assign-≟ {suc n} {V} eq (ae , ah) (be , bh)
 
 -- Every way of choosing one listed value at each coordinate. The last
 -- coordinate varies in the outer list, and each choice extends an assignment
--- to the earlier coordinates.
-enumerate : {n : ℕ} {V : Fin n → Set} →
-  (∀ i → List (V i)) → List (Assign n V)
-enumerate {zero}  _ = unit ∷ []
-enumerate {suc n} {V} values =
-  flatMap (λ final →
+-- to the earlier coordinates. The row map is named so membership can be
+-- inverted without rebuilding the family.
+mutual
+  enumerate : {n : ℕ} {V : Fin n → Set} →
+    (∀ i → List (V i)) → List (Assign n V)
+  enumerate {zero}  _ = unit ∷ []
+  enumerate {suc n} {V} values =
+    flatMap (enum-row {n = n} {V = V} values) (values last)
+
+  enum-row : {n : ℕ} {V : Fin (suc n) → Set} →
+    (∀ i → List (V i)) → V last → List (Assign (suc n) V)
+  enum-row {n} {V} values final =
     map (λ front → (front , final))
-      (enumerate {V = earlier V} (λ i → values (castSucc i))))
-    (values last)
+      (enumerate {n = n} {V = earlier V} (λ i → values (castSucc i)))
 
 -- If every coordinate list contains every value of that coordinate, every
 -- assignment appears in the enumeration.
@@ -507,17 +513,607 @@ record-rect {suc n} {V} factors tests =
   coupled = mul (probVal (factors last) (tests last))
                 (probVal (productRecord prefixFactors) (rect prefixTests))
 
--- Apply a coordinate decision. A positive decision transports the value
--- along the coordinate identity and reads the selected test. A negative
--- decision accepts the value. The decision is an argument, so each case
--- computes.
-coordTest : {n : ℕ} {V : Fin n → Set} (chosen : Fin n)
-  (event : V chosen → Bool) (i : Fin n) →
-  Dec (i ≡ chosen) → V i → Bool
-coordTest {V = V} chosen event i (yes eq) value = event (subst V eq value)
-coordTest chosen event i (no _) _ = true
+-- Invert a mapped list: the image came from one listed source, and the
+-- mapping equation is data.
+record MapHit {A B : Set} (f : A → B) (y : B) (xs : List A) : Set where
+  constructor mapped
+  field
+    source : A
+    member : source ∈ xs
+    image  : f source ≡ y
 
--- The test that reads one coordinate and accepts every value at the others.
-atCoord : {n : ℕ} {V : Fin n → Set} (chosen : Fin n) →
+∈-map-inv : {A B : Set} (f : A → B) {y : B} {xs : List A} →
+  y ∈ map f xs → MapHit f y xs
+∈-map-inv f {xs = []} ()
+∈-map-inv f {xs = x ∷ _} here = mapped x here refl
+∈-map-inv f {xs = _ ∷ xs} (there mem) with ∈-map-inv f mem
+... | mapped source member image = mapped source (there member) image
+
+record FlatHit {A B : Set} (f : A → List B) (y : B) (xs : List A) : Set where
+  constructor flattened
+  field
+    source : A
+    member : source ∈ xs
+    inner  : y ∈ f source
+
+∈-flatMap-inv : {A B : Set} (f : A → List B) {y : B} {xs : List A} →
+  y ∈ flatMap f xs → FlatHit f y xs
+∈-flatMap-inv f {xs = []} ()
+∈-flatMap-inv f {xs = x ∷ xs} mem with ∈-++ (f x) (flatMap f xs) mem
+... | inl inHead = flattened x here inHead
+... | inr later with ∈-flatMap-inv f later
+... | flattened source member inner = flattened source (there member) inner
+
+-- A listed successor assignment is one last-coordinate value from that
+-- coordinate's list, paired with a listed earlier assignment. Both positions
+-- are data, so a later coordinate is read from those positions rather than
+-- from an existence proof.
+record EnumParts {n : ℕ} {V : Fin (suc n) → Set}
+    (values : ∀ i → List (V i)) (a : Assign (suc n) V) : Set where
+  constructor parts
+  field
+    front  : Assign n (earlier V)
+    final  : V last
+    path   : a ≡ (front , final)
+    front∈ : front ∈ enumerate {n = n} {V = earlier V} (λ i → values (castSucc i))
+    final∈ : final ∈ values last
+
+enum-parts : {n : ℕ} {V : Fin (suc n) → Set}
+  (values : ∀ i → List (V i)) (a : Assign (suc n) V) →
+  a ∈ enumerate values → EnumParts values a
+enum-parts {n} {V} values a mem =
+  from-flat (∈-flatMap-inv (enum-row {n = n} {V = V} values)
+    {xs = values last} mem)
+  where
+  from-flat : FlatHit (enum-row {n = n} {V = V} values) a (values last) →
+              EnumParts values a
+  from-flat (flattened final final∈ inRow) =
+    from-map (∈-map-inv (λ front → (front , final)) inRow)
+    where
+    from-map : MapHit (λ front → (front , final)) a
+                 (enumerate {n = n} {V = earlier V} (λ i → values (castSucc i))) →
+               EnumParts values a
+    from-map (mapped front front∈ image) =
+      parts front final (sym image) front∈ final∈
+
+-- Every coordinate of a listed assignment comes from that coordinate's list.
+enum-coord : {n : ℕ} {V : Fin n → Set}
+  (values : ∀ i → List (V i)) (a : Assign n V) →
+  a ∈ enumerate values → (i : Fin n) → lookup a i ∈ values i
+enum-coord {zero} _ _ _ ()
+enum-coord {suc n} {V} values a mem i =
+  from-parts (enum-parts {n = n} {V = V} values a mem) i
+  where
+  from-parts : EnumParts values a → (i : Fin (suc n)) → lookup a i ∈ values i
+  from-parts (parts front final path front∈ final∈) i =
+    subst (λ a₀ → lookup a₀ i ∈ values i) (sym path) (at (prefix i))
+    where
+    at : Prefix i → lookup (front , final) i ∈ values i
+    at end =
+      subst (_∈ values last) (sym (lookup-last {V = V} front final)) final∈
+    at (before j) =
+      subst (_∈ values (castSucc j))
+        (sym (lookup-castSucc {V = V} front final j))
+        (enum-coord {n = n} {V = earlier V}
+          (λ k → values (castSucc k)) front front∈ j)
+
+-- The Boolean that is true exactly at the last coordinate, or exactly at an
+-- earlier coordinate, is computed by classifying both places. No value is
+-- transported along a coordinate identity: when both classifications are
+-- `end`, the stored value already has the last-coordinate type.
+oneCoord : {n : ℕ} {V : Fin n → Set} (chosen : Fin n) →
   (V chosen → Bool) → ∀ i → V i → Bool
-atCoord chosen event i value = coordTest chosen event i (fin-≟ i chosen) value
+oneCoord {zero} chosen event i value = ⊥-elim (no-fin chosen)
+oneCoord {suc n} {V} chosen event i value with prefix chosen | prefix i
+... | end       | end       = event value
+... | end       | before _  = true
+... | before _  | end       = true
+... | before j  | before k  = oneCoord {V = earlier V} j event k value
+
+∧-true : ∀ b → b ∧ true ≡ b
+∧-true true  = refl
+∧-true false = refl
+
+-- The last-coordinate classification is `end`, so the one-coordinate test
+-- reads the last value there and accepts every earlier value.
+one-last-here : {n : ℕ} {V : Fin (suc n) → Set}
+  (event : V last → Bool) (value : V last) →
+  oneCoord {n = suc n} {V = V} last event last value ≡ event value
+one-last-here {n} {V} event value rewrite prefix-last {n} = refl
+
+one-last-else : {n : ℕ} {V : Fin (suc n) → Set}
+  (event : V last → Bool) (j : Fin n) (value : V (castSucc j)) →
+  oneCoord {n = suc n} {V = V} last event (castSucc j) value ≡ true
+one-last-else {n} {V} event j value rewrite prefix-last {n} | prefix-castSucc j = refl
+
+one-cast-last : {n : ℕ} {V : Fin (suc n) → Set} (j : Fin n)
+  (event : V (castSucc j) → Bool) (value : V last) →
+  oneCoord {n = suc n} {V = V} (castSucc j) event last value ≡ true
+one-cast-last {n} {V} j event value rewrite prefix-castSucc j | prefix-last {n} = refl
+
+one-cast-cast : {n : ℕ} {V : Fin (suc n) → Set} (j k : Fin n)
+  (event : V (castSucc j) → Bool) (value : V (castSucc k)) →
+  oneCoord {n = suc n} {V = V} (castSucc j) event (castSucc k) value ≡
+  oneCoord {n = n} {V = earlier V} j event k value
+one-cast-cast {n} {V} j k event value
+  rewrite prefix-castSucc j | prefix-castSucc k = refl
+
+-- A one-coordinate rectangle is the test at that coordinate of the telescope.
+rect-one : {n : ℕ} {V : Fin n → Set} (chosen : Fin n)
+  (event : V chosen → Bool) (a : Assign n V) →
+  rect (oneCoord chosen event) a ≡ event (lookup a chosen)
+rect-one {zero} ()
+rect-one {suc n} {V} chosen event (front , final) = step (prefix chosen)
+  where
+  step : (p : Prefix chosen) →
+    rect (oneCoord chosen event) (front , final) ≡
+    event (lookup (front , final) chosen)
+  step end =
+    begin
+      oneCoord {n = suc n} {V = V} last event last final ∧
+        rect {n = n} {V = earlier V}
+          (λ i → oneCoord {n = suc n} {V = V} last event (castSucc i)) front
+    ≡⟨ cong₂ _∧_
+         (one-last-here {n} {V} event final)
+         (trans (rect-tests {n = n} {V = earlier V}
+                  (λ i v → one-last-else {n} {V} event i v) front)
+                (rect-top {n = n} {V = earlier V} front)) ⟩
+      event final ∧ true
+    ≡⟨ ∧-true (event final) ⟩
+      event final
+    ≡⟨ cong event (sym (lookup-last {n} {V} front final)) ⟩
+      event (lookup {n = suc n} {V = V} (front , final) (last {n}))
+    ∎
+  step (before j) =
+    begin
+      oneCoord {n = suc n} {V = V} (castSucc j) event last final ∧
+        rect {n = n} {V = earlier V}
+          (λ i → oneCoord {n = suc n} {V = V} (castSucc j) event (castSucc i))
+          front
+    ≡⟨ cong₂ _∧_
+         (one-cast-last {n} {V} j event final)
+         (rect-tests {n = n} {V = earlier V}
+           (λ i v → one-cast-cast {n} {V} j i event v) front) ⟩
+      true ∧ rect {n = n} {V = earlier V}
+        (oneCoord {n = n} {V = earlier V} j event) front
+    ≡⟨ rect-one {n = n} {V = earlier V} j event front ⟩
+      event (lookup front j)
+    ≡⟨ cong event (sym (lookup-castSucc {n} {V} front final j)) ⟩
+      event (lookup {n = suc n} {V = V} (front , final) (castSucc j))
+    ∎
+
+-- The product of coordinate probabilities for a one-coordinate family is the
+-- chosen coordinate's probability. Earlier (or later) coordinates contribute
+-- the certain event, hence the unit presentation, which multiplication
+-- cancels.
+qProduct-oneCoord : {n : ℕ} {V : Fin n → Set}
+  (factors : ∀ i → FiniteProbRecord (V i))
+  (chosen : Fin n) (event : V chosen → Bool) →
+  Equiv (qProduct {n = n}
+          (λ i → probVal (factors i) (oneCoord {n = n} {V = V} chosen event i)))
+        (probVal (factors chosen) event)
+qProduct-oneCoord {zero} _ () _
+qProduct-oneCoord {suc n} {V} factors chosen event = step (prefix chosen)
+  where
+  tests = oneCoord {n = suc n} {V = V} chosen event
+  step : (p : Prefix chosen) →
+    Equiv (qProduct {n = suc n}
+            (λ i → probVal (factors i) (tests i)))
+          (probVal (factors chosen) event)
+  step end =
+    equiv-trans
+      {p = qProduct {n = suc n}
+            (λ i → probVal (factors i)
+              (oneCoord {n = suc n} {V = V} last event i))}
+      {q = mul (probVal (factors last) event)
+               (qProduct {n = n} (λ _ → one))}
+      {r = probVal (factors last) event}
+      (mul-congr
+        {p = probVal (factors last)
+              (oneCoord {n = suc n} {V = V} last event last)}
+        {p' = probVal (factors last) event}
+        {q = qProduct {n = n}
+              (λ i → probVal (factors (castSucc i))
+                (oneCoord {n = suc n} {V = V} last event (castSucc i)))}
+        {q' = qProduct {n = n} (λ _ → one)}
+        (probVal-cong (factors last)
+          (oneCoord {n = suc n} {V = V} last event last) event
+          (λ v → one-last-here {n} {V} event v))
+        (qProduct-cong {n = n}
+          {left = λ i → probVal (factors (castSucc i))
+                          (oneCoord {n = suc n} {V = V} last event (castSucc i))}
+          {right = λ _ → one}
+          (λ i →
+            equiv-trans
+              {p = probVal (factors (castSucc i))
+                    (oneCoord {n = suc n} {V = V} last event (castSucc i))}
+              {q = probVal (factors (castSucc i)) topEvent}
+              {r = one}
+              (probVal-cong (factors (castSucc i))
+                (oneCoord {n = suc n} {V = V} last event (castSucc i))
+                topEvent
+                (λ v → one-last-else {n} {V} event i v))
+              (normalization (factors (castSucc i))))))
+      (equiv-trans
+        {p = mul (probVal (factors last) event)
+                 (qProduct {n = n} (λ _ → one))}
+        {q = mul (probVal (factors last) event) one}
+        {r = probVal (factors last) event}
+        (mul-congr {p = probVal (factors last) event}
+                   {p' = probVal (factors last) event}
+                   {q = qProduct {n = n} (λ _ → one)} {q' = one}
+          (equiv-refl (probVal (factors last) event)) (qProduct-one n))
+        (mul-one (probVal (factors last) event)))
+  step (before j) =
+    equiv-trans
+      {p = qProduct {n = suc n}
+            (λ i → probVal (factors i)
+              (oneCoord {n = suc n} {V = V} (castSucc j) event i))}
+      {q = mul one
+            (qProduct {n = n}
+              (λ i → probVal (factors (castSucc i))
+                (oneCoord {n = n} {V = earlier V} j event i)))}
+      {r = probVal (factors (castSucc j)) event}
+      (mul-congr
+        {p = probVal (factors last)
+              (oneCoord {n = suc n} {V = V} (castSucc j) event last)}
+        {p' = one}
+        {q = qProduct {n = n}
+              (λ i → probVal (factors (castSucc i))
+                (oneCoord {n = suc n} {V = V} (castSucc j) event (castSucc i)))}
+        {q' = qProduct {n = n}
+              (λ i → probVal (factors (castSucc i))
+                (oneCoord {n = n} {V = earlier V} j event i))}
+        (equiv-trans
+          {p = probVal (factors last)
+                (oneCoord {n = suc n} {V = V} (castSucc j) event last)}
+          {q = probVal (factors last) topEvent}
+          {r = one}
+          (probVal-cong (factors last)
+            (oneCoord {n = suc n} {V = V} (castSucc j) event last)
+            topEvent
+            (λ v → one-cast-last {n} {V} j event v))
+          (normalization (factors last)))
+        (qProduct-cong {n = n}
+          {left = λ i → probVal (factors (castSucc i))
+                          (oneCoord {n = suc n} {V = V}
+                            (castSucc j) event (castSucc i))}
+          {right = λ i → probVal (factors (castSucc i))
+                           (oneCoord {n = n} {V = earlier V} j event i)}
+          (λ i →
+            probVal-cong (factors (castSucc i))
+              (oneCoord {n = suc n} {V = V} (castSucc j) event (castSucc i))
+              (oneCoord {n = n} {V = earlier V} j event i)
+              (λ v → one-cast-cast {n} {V} j i event v))))
+      (equiv-trans
+        {p = mul one
+              (qProduct {n = n}
+                (λ i → probVal (factors (castSucc i))
+                  (oneCoord {n = n} {V = earlier V} j event i)))}
+        {q = qProduct {n = n}
+              (λ i → probVal (factors (castSucc i))
+                (oneCoord {n = n} {V = earlier V} j event i))}
+        {r = probVal (factors (castSucc j)) event}
+        (one-mul (qProduct {n = n}
+                   (λ i → probVal (factors (castSucc i))
+                     (oneCoord {n = n} {V = earlier V} j event i))))
+        (qProduct-oneCoord {n = n} {V = earlier V}
+          (λ i → factors (castSucc i)) j event))
+
+-- A coordinate of the independent product has the marginal law declared by
+-- that coordinate's record.
+coordinate-prob : {n : ℕ} {V : Fin n → Set}
+  (factors : ∀ i → FiniteProbRecord (V i))
+  (chosen : Fin n) (event : V chosen → Bool) →
+  Equiv (probVal (productRecord factors) (λ a → event (lookup a chosen)))
+        (probVal (factors chosen) event)
+coordinate-prob {n} {V} factors chosen event =
+  equiv-trans
+    {p = probVal (productRecord factors) (λ a → event (lookup a chosen))}
+    {q = probVal (productRecord factors)
+          (rect (oneCoord {n = n} {V = V} chosen event))}
+    {r = probVal (factors chosen) event}
+    (probVal-cong (productRecord factors)
+      (λ a → event (lookup a chosen))
+      (rect (oneCoord {n = n} {V = V} chosen event))
+      (λ a → sym (rect-one {n = n} {V = V} chosen event a)))
+    (equiv-trans
+      {p = probVal (productRecord factors)
+            (rect (oneCoord {n = n} {V = V} chosen event))}
+      {q = qProduct {n = n}
+            (λ i → probVal (factors i)
+              (oneCoord {n = n} {V = V} chosen event i))}
+      {r = probVal (factors chosen) event}
+      (record-rect {n = n} {V = V} factors
+        (oneCoord {n = n} {V = V} chosen event))
+      (qProduct-oneCoord {n = n} {V = V} factors chosen event))
+
+-- The homogeneous specialisation: every coordinate shares one outcome type.
+coordinate-prob-const : {n : ℕ} {A : Set}
+  (factors : Fin n → FiniteProbRecord A)
+  (chosen : Fin n) (event : A → Bool) →
+  Equiv (probVal (productRecord {V = λ _ → A} factors)
+          (λ a → event (lookup a chosen)))
+        (probVal (factors chosen) event)
+coordinate-prob-const {A = A} factors chosen event =
+  coordinate-prob {V = λ _ → A} factors chosen event
+
+-- Keep the first occurrence of each value. Later copies are dropped, so the
+-- resulting list has no duplicates and still contains every original value.
+dedup : {A : Set} (eq : (x y : A) → Dec (x ≡ y)) → List A → List A
+dedup eq [] = []
+dedup eq (x ∷ xs) with ∈-dec eq x (dedup eq xs)
+... | yes _ = dedup eq xs
+... | no  _ = x ∷ dedup eq xs
+
+mem-dedup-to : {A : Set} (eq : (x y : A) → Dec (x ≡ y))
+  (x : A) (xs : List A) → x ∈ dedup eq xs → x ∈ xs
+mem-dedup-to eq x (y ∷ ys) mem with ∈-dec eq y (dedup eq ys)
+... | yes _ = there (mem-dedup-to eq x ys mem)
+... | no _ = cons-case mem
+  where
+  cons-case : x ∈ y ∷ dedup eq ys → x ∈ y ∷ ys
+  cons-case here        = here
+  cons-case (there later) = there (mem-dedup-to eq x ys later)
+
+mem-dedup-from : {A : Set} (eq : (x y : A) → Dec (x ≡ y))
+  (x : A) (xs : List A) → x ∈ xs → x ∈ dedup eq xs
+mem-dedup-from eq x (y ∷ ys) mem with ∈-dec eq y (dedup eq ys)
+... | yes y∈ = from-tail mem
+  where
+  from-tail : x ∈ y ∷ ys → x ∈ dedup eq ys
+  from-tail here        = y∈
+  from-tail (there later) = mem-dedup-from eq x ys later
+... | no y∉ = from-cons mem
+  where
+  from-cons : x ∈ y ∷ ys → x ∈ y ∷ dedup eq ys
+  from-cons here        = here
+  from-cons (there later) = there (mem-dedup-from eq x ys later)
+
+dedup-nodup : {A : Set} (eq : (x y : A) → Dec (x ≡ y)) (xs : List A) →
+  Nodup (dedup eq xs)
+dedup-nodup eq [] = Nodup.[]
+dedup-nodup eq (x ∷ xs) with ∈-dec eq x (dedup eq xs)
+... | yes _ = dedup-nodup eq xs
+... | no x∉ = x∉ ∷ dedup-nodup eq xs
+
+-- The first occurrence of a listed value, as a position below the length.
+idxOf : {A : Set} (eq : (x y : A) → Dec (x ≡ y)) (x : A) (xs : List A) → ℕ
+idxOf eq x [] = 0
+idxOf eq x (y ∷ ys) with eq x y
+... | yes _ = 0
+... | no  _ = suc (idxOf eq x ys)
+
+-- A listed head that differs from the needle is not the occurrence; the
+-- search continues in the tail.
+drop-here : {A : Set} {x y : A} {ys : List A} → x ≢ y → x ∈ y ∷ ys → x ∈ ys
+drop-here ne here        = ⊥-elim (ne refl)
+drop-here _  (there later) = later
+
+idxOf-< : {A : Set} (eq : (x y : A) → Dec (x ≡ y))
+  (x : A) (xs : List A) → x ∈ xs → idxOf eq x xs < length xs
+idxOf-< eq x (y ∷ ys) mem with eq x y
+... | yes _ = s≤s z≤n
+... | no ne = s≤s (idxOf-< eq x ys (drop-here ne mem))
+
+get-idxOf : {A : Set} (eq : (x y : A) → Dec (x ≡ y))
+  (x : A) (xs : List A) (mem : x ∈ xs) →
+  get xs (fromℕ< (idxOf eq x xs) (idxOf-< eq x xs mem)) ≡ x
+get-idxOf eq x (y ∷ ys) mem with eq x y
+... | yes p = sym p
+... | no ne = get-idxOf eq x ys (drop-here ne mem)
+
+get-∈ : {A : Set} (xs : List A) (i : Fin (length xs)) → get xs i ∈ xs
+get-∈ (x ∷ xs) fzero    = here
+get-∈ (x ∷ xs) (fsuc i) = there (get-∈ xs i)
+
+-- On a duplicate-free list, the position of the value stored at a coordinate
+-- is that coordinate's underlying natural number.
+idxOf-get : {A : Set} (eq : (x y : A) → Dec (x ≡ y))
+  (xs : List A) → Nodup xs → (i : Fin (length xs)) →
+  idxOf eq (get xs i) xs ≡ toℕ i
+idxOf-get eq (x ∷ xs) (x∉ ∷ nd) fzero with eq x x
+... | yes _ = refl
+... | no ne = ⊥-elim (ne refl)
+idxOf-get eq (x ∷ xs) (x∉ ∷ nd) (fsuc i) with eq (get xs i) x
+... | yes p = ⊥-elim (x∉ (subst (_∈ xs) p (get-∈ xs i)))
+... | no  _ = cong suc (idxOf-get eq xs nd i)
+
+-- An explicit finite presentation: every value has a coordinate code, and
+-- every coordinate decodes to a value, as inverse constructions. The
+-- membership proof used to build a code is not part of the identity of the
+-- value.
+record FiniteWitness (X : Set) : Set where
+  field
+    card          : ℕ
+    encode        : X → Fin card
+    decode        : Fin card → X
+    decode-encode : ∀ x → decode (encode x) ≡ x
+    encode-decode : ∀ i → encode (decode i) ≡ i
+
+open FiniteWitness public
+
+-- A duplicate-free exhaustive listing is such a presentation. The encoder
+-- stores the first occurrence; the decoder reads that cell.
+ofList : {X : Set} (eq : (x y : X) → Dec (x ≡ y))
+  (values : List X) → (∀ x → x ∈ values) → Nodup values → FiniteWitness X
+ofList eq values complete nodup = record
+  { card = length values
+  ; encode = λ x → fromℕ< (idxOf eq x values) (idxOf-< eq x values (complete x))
+  ; decode = get values
+  ; decode-encode = λ x → get-idxOf eq x values (complete x)
+  ; encode-decode = λ i →
+      toℕ-injective (trans (toℕ-fromℕ< (idxOf eq (get values i) values)
+                                      (idxOf-< eq (get values i) values
+                                        (complete (get values i))))
+                           (idxOf-get eq values nodup i))
+  }
+
+-- The dependent assignment type has an explicit finite presentation: list
+-- every telescope, drop later copies of the same telescope, and use that
+-- duplicate-free listing as the codes.
+assign-witness : {n : ℕ} {V : Fin n → Set}
+  (values : ∀ i → List (V i)) →
+  (∀ i (x : V i) → x ∈ values i) →
+  (∀ i (x y : V i) → Dec (x ≡ y)) →
+  FiniteWitness (Assign n V)
+assign-witness values complete eq =
+  ofList (assign-≟ eq)
+    (dedup (assign-≟ eq) (enumerate values))
+    (λ a → mem-dedup-from (assign-≟ eq) a (enumerate values)
+      (enum-complete values complete a))
+    (dedup-nodup (assign-≟ eq) (enumerate values))
+
+-- Put every listed rational mass over the product of all listed denominators.
+-- A non-selected entry contributes a zero with that entry's own denominator,
+-- so the resulting denominator is the product independently of the event.
+zero-den : QProb → QProb
+zero-den p = Q.qprob 0 (Q.den p) (Q.den-pos p)
+
+commonDen : {Ω : Set} → List Ω → (Ω → QProb) → ℕ
+commonDen []       _    = 1
+commonDen (ω ∷ ωs) mass = Q.den (mass ω) * commonDen ωs mass
+
+commonDen-pos : {Ω : Set} (values : List Ω) (mass : Ω → QProb) →
+  0 < commonDen values mass
+commonDen-pos []       _    = s≤s z≤n
+commonDen-pos (ω ∷ ωs) mass =
+  *-pos (Q.den-pos (mass ω)) (commonDen-pos ωs mass)
+
+massAtoms : {Ω : Set} → List Ω → (Ω → QProb) → List (Ω × ℕ)
+massAtoms []       _    = []
+massAtoms (ω ∷ ωs) mass =
+  (ω , Q.num (mass ω) * commonDen ωs mass) ∷
+  map (λ (x , w) → (x , Q.den (mass ω) * w)) (massAtoms ωs mass)
+
+eventSum : {Ω : Set} → List Ω → (Ω → QProb) → Event Ω → QProb
+eventSum []       _    _     = Q.zero
+eventSum (ω ∷ ωs) mass event =
+  Q.add (if event ω then mass ω else zero-den (mass ω))
+      (eventSum ωs mass event)
+
+eventSum-den : {Ω : Set} (values : List Ω) (mass : Ω → QProb)
+  (event : Event Ω) →
+  Q.den (eventSum values mass event) ≡ commonDen values mass
+eventSum-den []       _    _     = refl
+eventSum-den (ω ∷ ωs) mass event with event ω
+... | true  rewrite eventSum-den ωs mass event = refl
+... | false rewrite eventSum-den ωs mass event = refl
+
+eventMass-atoms : {Ω : Set} (values : List Ω) (mass : Ω → QProb)
+  (event : Event Ω) →
+  eventMass (massAtoms values mass) event ≡ Q.num (eventSum values mass event)
+eventMass-atoms []       _    _     = refl
+eventMass-atoms (ω ∷ ωs) mass event with event ω in eq
+... | true =
+  begin
+    Q.num (mass ω) * commonDen ωs mass +
+      eventMass (map (λ (x , w) → (x , Q.den (mass ω) * w)) rest) event
+  ≡⟨ cong (Q.num (mass ω) * commonDen ωs mass +_)
+       (eventMass-scale rest (Q.den (mass ω)) event) ⟩
+    Q.num (mass ω) * commonDen ωs mass +
+      Q.den (mass ω) * eventMass rest event
+  ≡⟨ cong (Q.num (mass ω) * commonDen ωs mass +_)
+       (cong (Q.den (mass ω) *_) (eventMass-atoms ωs mass event)) ⟩
+    Q.num (mass ω) * commonDen ωs mass +
+      Q.den (mass ω) * Q.num (eventSum ωs mass event)
+  ≡⟨ cong (λ d → Q.num (mass ω) * d +
+                 Q.den (mass ω) * Q.num (eventSum ωs mass event))
+       (sym (eventSum-den ωs mass event)) ⟩
+    Q.num (mass ω) * Q.den (eventSum ωs mass event) +
+      Q.den (mass ω) * Q.num (eventSum ωs mass event)
+  ≡⟨ cong (Q.num (mass ω) * Q.den (eventSum ωs mass event) +_)
+       (*-comm (Q.den (mass ω)) (Q.num (eventSum ωs mass event))) ⟩
+    Q.num (mass ω) * Q.den (eventSum ωs mass event) +
+      Q.num (eventSum ωs mass event) * Q.den (mass ω)
+  ∎
+  where
+  rest = massAtoms ωs mass
+... | false =
+  begin
+    eventMass (map (λ (x , w) → (x , Q.den (mass ω) * w)) rest) event
+  ≡⟨ eventMass-scale rest (Q.den (mass ω)) event ⟩
+    Q.den (mass ω) * eventMass rest event
+  ≡⟨ cong (Q.den (mass ω) *_) (eventMass-atoms ωs mass event) ⟩
+    Q.den (mass ω) * Q.num (eventSum ωs mass event)
+  ≡⟨ *-comm (Q.den (mass ω)) (Q.num (eventSum ωs mass event)) ⟩
+    Q.num (eventSum ωs mass event) * Q.den (mass ω)
+  ≡⟨ cong (λ n → n + Q.num (eventSum ωs mass event) * Q.den (mass ω))
+       (sym (*-zeroˡ (Q.den (eventSum ωs mass event)))) ⟩
+    0 * Q.den (eventSum ωs mass event) +
+      Q.num (eventSum ωs mass event) * Q.den (mass ω)
+  ∎
+  where
+  rest = massAtoms ωs mass
+  *-zeroˡ : ∀ n → 0 * n ≡ 0
+  *-zeroˡ n = refl
+
+-- A finite rational mass table before a common denominator has been chosen.
+-- The listing is exhaustive and duplicate-free, and the masses of the total
+-- event are equivalent to the unit presentation.
+record FiniteQMass (Ω : Set) : Set where
+  field
+    values     : List Ω
+    nodup      : Nodup values
+    complete   : ∀ ω → ω ∈ values
+    mass       : Ω → QProb
+    normalized : Equiv (eventSum values mass topEvent) one
+
+open FiniteQMass public
+
+common-total : {Ω : Set} (M : FiniteQMass Ω) →
+  totalMass (massAtoms (values M) (mass M)) ≡ commonDen (values M) (mass M)
+common-total M =
+  begin
+    totalMass (massAtoms (values M) (mass M))
+  ≡⟨ sym (eventMass-top (massAtoms (values M) (mass M))) ⟩
+    eventMass (massAtoms (values M) (mass M)) topEvent
+  ≡⟨ eventMass-atoms (values M) (mass M) topEvent ⟩
+    Q.num (eventSum (values M) (mass M) topEvent)
+  ≡⟨ trans (sym (*-idʳ (Q.num (eventSum (values M) (mass M) topEvent))))
+           (trans (normalized M) (*-idˡ (Q.den (eventSum (values M) (mass M) topEvent)))) ⟩
+    Q.den (eventSum (values M) (mass M) topEvent)
+  ≡⟨ eventSum-den (values M) (mass M) topEvent ⟩
+    commonDen (values M) (mass M)
+  ∎
+  where
+  *-idˡ : ∀ n → 1 * n ≡ n
+  *-idˡ n = +-idʳ n
+
+-- Convert to a common-denominator record. Zero masses stay zero, and a
+-- missing listed outcome is not invented.
+toRecord : {Ω : Set} → FiniteQMass Ω → FiniteProbRecord Ω
+toRecord M = finiteRecord
+  (massAtoms (values M) (mass M))
+  (commonDen (values M) (mass M))
+  (commonDen-pos (values M) (mass M))
+  (common-total M)
+
+toRecord-preserves : {Ω : Set} (M : FiniteQMass Ω) (event : Event Ω) →
+  Equiv (probVal (toRecord M) event) (eventSum (values M) (mass M) event)
+toRecord-preserves M event =
+  begin
+    eventMass (massAtoms (values M) (mass M)) event *
+      Q.den (eventSum (values M) (mass M) event)
+  ≡⟨ cong (eventMass (massAtoms (values M) (mass M)) event *_)
+       (eventSum-den (values M) (mass M) event) ⟩
+    eventMass (massAtoms (values M) (mass M)) event *
+      commonDen (values M) (mass M)
+  ≡⟨ cong (_* commonDen (values M) (mass M))
+       (eventMass-atoms (values M) (mass M) event) ⟩
+    Q.num (eventSum (values M) (mass M) event) *
+      commonDen (values M) (mass M)
+  ∎
+
+toUrn-preserves : {Ω : Set} (M : FiniteQMass Ω) (event : Event Ω) →
+  Equiv (Urn.probVal (toUrn (toRecord M)) event)
+        (eventSum (values M) (mass M) event)
+toUrn-preserves M event =
+  equiv-trans
+    {p = Urn.probVal (toUrn (toRecord M)) event}
+    {q = probVal (toRecord M) event}
+    {r = eventSum (values M) (mass M) event}
+    (equiv-sym {p = probVal (toRecord M) event}
+               {q = Urn.probVal (toUrn (toRecord M)) event}
+      (toUrn-agrees (toRecord M) event))
+    (toRecord-preserves M event)

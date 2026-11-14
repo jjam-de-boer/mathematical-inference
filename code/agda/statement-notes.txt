@@ -36,3 +36,15 @@ telescope equality. These notes are not part of the checked development.
   Zero-weight atoms are kept.
 - qProduct_singleton selects with pick, the Boolean of coordinate identity.
   The two families are not equated; the product is compared pointwise.
+- enumeration_coordinate_mem is enum-coord. The listed telescope is inverted
+  into an earlier assignment and a last value, both as data.
+- singletonEvents is oneCoord. Both places are classified; a value is never
+  transported along a coordinate identity.
+- rectangularEvent_singleton_dependent is rect-one.
+- rectangularEvent_singleton compared two event families by function
+  identity. The homogeneous marginal is coordinate-prob-const, which uses
+  oneCoord directly.
+- record_coordinate_probVal_dependent is coordinate-prob.
+- FiniteWitness.ofList keeps the value and its coordinate code. The
+  membership proof used to bound idxOf is not part of the identity.
+- CommonDenominator.probVal is eventSum. toRecord_preserves compares by Equiv.
