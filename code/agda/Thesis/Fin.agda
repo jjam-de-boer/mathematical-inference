@@ -21,6 +21,42 @@ toℕ : ∀ {n} → Fin n → ℕ
 toℕ zero    = ℕ0
 toℕ (suc i) = ℕs (toℕ i)
 
+-- Every coordinate is strictly below its bound.
+toℕ-< : ∀ {n} (i : Fin n) → toℕ i < n
+toℕ-< {ℕs n} zero    = s≤s z≤n
+toℕ-< {ℕs n} (suc i) = s≤s (toℕ-< i)
+
+-- The coordinate whose position is `m`, using a proof that `m` lies below
+-- the bound. The proof is data, so the construction does not search.
+fromℕ< : ∀ {n} (m : ℕ) → m < n → Fin n
+fromℕ< {ℕ0}   m ()
+fromℕ< {ℕs n} ℕ0     _        = zero
+fromℕ< {ℕs n} (ℕs m) (s≤s h) = suc (fromℕ< m h)
+
+-- The bound proof is not part of the coordinate. Any two proofs that `m`
+-- lies below `n` build the same coordinate.
+fromℕ<-cong : ∀ {n m} (h₁ h₂ : m < n) → fromℕ< m h₁ ≡ fromℕ< m h₂
+fromℕ<-cong h₁ h₂ rewrite ≤-unique h₁ h₂ = refl
+
+toℕ-fromℕ< : ∀ {n} (m : ℕ) (h : m < n) → toℕ (fromℕ< m h) ≡ m
+toℕ-fromℕ< {ℕs n} ℕ0     _        = refl
+toℕ-fromℕ< {ℕs n} (ℕs m) (s≤s h) = cong ℕs (toℕ-fromℕ< m h)
+
+fromℕ<-toℕ : ∀ {n} (i : Fin n) → fromℕ< (toℕ i) (toℕ-< i) ≡ i
+fromℕ<-toℕ zero    = refl
+fromℕ<-toℕ (suc i) = cong suc (fromℕ<-toℕ i)
+
+ℕs-injective : ∀ {m n} → ℕs m ≡ ℕs n → m ≡ n
+ℕs-injective refl = refl
+
+-- Positions determine coordinates. Distinct constructions sit at distinct
+-- positions, so an equality of positions is an equality of coordinates.
+toℕ-injective : ∀ {n} {i j : Fin n} → toℕ i ≡ toℕ j → i ≡ j
+toℕ-injective {i = zero}  {j = zero}  _  = refl
+toℕ-injective {i = zero}  {j = suc j} ()
+toℕ-injective {i = suc i} {j = zero}  ()
+toℕ-injective {i = suc i} {j = suc j} eq = cong suc (toℕ-injective (ℕs-injective eq))
+
 -- Embed a coordinate into a one-step larger index by keeping its position.
 -- The new last place is not in the image.
 castSucc : ∀ {n} → Fin n → Fin (ℕs n)
