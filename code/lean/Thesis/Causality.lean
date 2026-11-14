@@ -52,6 +52,8 @@ import Thesis.Causality.PetriCoverabilityScan
 import Thesis.Causality.PetriCoverabilitySearch
 import Thesis.Causality.PetriControlCoverability
 import Thesis.Causality.PetriPumping
+import Thesis.Causality.PetriControlReversal
+import Thesis.Causality.PetriControlPumping
 import Thesis.Causality.IntegerFeasibility
 import Thesis.Causality.IntegerCarryLoops
 import Thesis.Causality.IntegerLargeSolution
@@ -196,8 +198,8 @@ entire finite source marking while increasing every selected coordinate,
 using one coverability call. Its witnesses repeat with exact affine
 endpoints; reverse-net witnesses also give original-net backward executions.
 A negative answer does not establish boundedness of the selected places.
-Controlled classifier adapters, partial endpoints and general reachability
-refinement are not supplied by these tests.
+Partial endpoints and general reachability refinement are not supplied by
+these tests.
 
 `PetriControl` compiles a finite transition graph by adding one control
 place per state, while retaining unbounded counter values. From a single
@@ -212,7 +214,16 @@ bridge, without a new search.
 original controlled counter space: the same word, an actual counter
 endpoint and its exact target-state execution, or a proof excluding every
 covering word. Its conversion decodes the arbitrary compiled endpoint.
-Controlled pumping and partial-endpoint query adapters remain separate work.
+
+`PetriControlReversal` reverses both the counter tables and the control edges,
+commuting with compilation and retaining exact reversed words and endpoints.
+`PetriControlPumping` decides returning growth at a supplied control state,
+with original counter witnesses, exact affine repetition and backward words
+obtained from the reversed system. Every counter must be preserved; only the
+selected ones must strictly grow. An empty selection permits the empty word.
+Failure still does not bound later reachable counters: moving once to another
+state may enable unlimited growth without a returning pump. Partial-endpoint
+queries and general exact reachability remain separate work.
 
 ## Modal, counterfactual and mode-theory interfaces
 

@@ -160,12 +160,15 @@ The main implemented results are:
   endpoint. For encoded targets, coverability fixes the target control
   state exactly. Markings with several control tokens are outside this
   correspondence. At a supplied finite marking, a separate test decides
-  whether a word preserves every coordinate and strictly increases every
-  selected coordinate. Positive words repeat with exact affine endpoints;
-  reversing consumption, production and word order supplies backward
-  executions and tests. A negative pumping answer does not bound selected
-  coordinates: a one-time switch can enable unbounded later growth without
-  restoring the original source (`Thesis.Examples.PetriPumping`). These
+  whether a word preserves every counter and strictly increases every
+  selected counter. For finite control the word must also return to the
+  supplied control state. Positive words repeat with exact affine endpoints;
+  reversing the counter tables, control edges and word order supplies
+  backward executions and tests. A negative pumping answer does not bound
+  selected counters: a one-time switch can enable unbounded later growth
+  without restoring the source marking or control state
+  (`Thesis.Examples.PetriPumping` and
+  `Thesis.Examples.PetriControlPumping`). These
   results do not decide exact reachability. Token-balance equations can be
   feasible while no execution reaches the requested marking.
 - Exact undefined/zero/positive support analysis for the current formula and

@@ -189,12 +189,36 @@ theorem controlRun_cons_iff (system : ControlledPetriNet places states transitio
       · intro impossible; cases impossible
       · intro accepted; exact False.elim (wrong accepted.1)
 
+/-- Concatenation retains the actual intermediate state. A rejected first
+word cannot become an accepted path by appending another word. -/
+theorem controlRun_append (system : ControlledPetriNet places states transitions)
+    (state : Fin states) (first second : List (Fin transitions)) :
+    system.controlRun state (first ++ second) =
+      (system.controlRun state first).bind (fun next => system.controlRun next second) := by
+  induction first generalizing state with
+  | nil => rfl
+  | cons edge rest ih =>
+      simp only [List.cons_append, controlRun]
+      split
+      · exact ih (system.target edge)
+      · rfl
+
 /-- The independent control and counter semantics share the very same
 word. In particular an empty word retains both complete endpoints. -/
 def Execution (system : ControlledPetriNet places states transitions)
     (state : Fin states) (before : Marking places) (word : List (Fin transitions))
     (next : Fin states) (after : Marking places) : Prop :=
   system.controlRun state word = some next ∧ system.net.Execution before word after
+
+/-- Both halves join at the same control state and counter marking. This
+is also the composition used when a returning pump is repeated. -/
+theorem Execution.append {state middleState next : Fin states} {before middle after : Marking places}
+    {first second : List (Fin transitions)} (left : system.Execution state before first middleState middle)
+    (right : system.Execution middleState middle second next after) :
+    system.Execution state before (first ++ second) next after := by
+  refine ⟨?_, left.2.append right.2⟩
+  rw [controlRun_append, left.1, Option.bind_some]
+  exact right.1
 
 theorem Execution.compile {state next : Fin states} {before after : Marking places}
     {word : List (Fin transitions)} (execution : system.Execution state before word next after) :
