@@ -44,6 +44,7 @@ import Thesis.Causality.FiniteListReplacement
 import Thesis.Causality.PetriNet
 import Thesis.Causality.PetriControl
 import Thesis.Causality.PetriPredecessors
+import Thesis.Causality.PetriWordRequirements
 import Thesis.Causality.PetriReversal
 import Thesis.Causality.CoordinateBoxes
 import Thesis.Causality.CoordinateBoxScan
@@ -179,6 +180,15 @@ splitting of finite work lists and preservation of uncovered-point coverage,
 including overlapping boxes. `PetriCoverability` retains actual execution
 witnesses under predecessor extension and proves exact coverability from a
 supplied saturated witnessed basis.
+
+`PetriWordRequirements` computes the least enabled counter source and its
+actual endpoint for a supplied finite word. Every execution along that word
+adds the same nonnegative surplus to both endpoints, so their unknown
+coordinates cannot be filled independently. Prefix consumption guards are
+retained even for zero overall effect. A separate regression distinguishes
+a fresh finite resource supply for each repetition from one finite supply
+that enables all repetitions. No partial-endpoint classifier or word search
+is added by this exact supplied-word calculation.
 
 `CoordinateBoxScan` and `PetriCoverabilityScan` check finite supplied lists
 with exact success and failure statements. Hits retain literal box contexts
