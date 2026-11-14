@@ -27,3 +27,5 @@ telescope equality. These notes are not part of the checked development.
   conditionalIndependent_iff_condVal are pairs of the two directions.
 - assignmentDecidableEq is assign-≟. An assignment is a telescope, and
   assign-ext rebuilds it from agreement at each coordinate.
+- rectangularEvent_eq_true_iff is the pair rect-holds. Enumeration is a
+  sequence one universe above ordinary lists, because the telescope is.
