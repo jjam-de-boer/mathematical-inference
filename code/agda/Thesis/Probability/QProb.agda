@@ -551,3 +551,248 @@ listSum-flatMap (x ∷ xs) family =
               {q = listSum (flatMap family xs)}
               {q' = listSum (map (λ y → listSum (family y)) xs)}
               (equiv-refl (listSum (family x))) (listSum-flatMap xs family))
+
+-- Multiplying by the divisor after division recovers the dividend. The
+-- divisor numerator is positive, so the resulting denominator is legal.
+mul-div-cancel : ∀ p q → (q>0 : 0 < num q) → Equiv (mul q (div p q q>0)) p
+mul-div-cancel p q q>0 = trans from-left (sym from-right)
+  where
+  pN = num p
+  pD = den p
+  qN = num q
+  qD = den q
+  common = (pN * qN) * (pD * qD)
+  from-left : (qN * (pN * qD)) * pD ≡ common
+  from-left =
+    begin
+      (qN * (pN * qD)) * pD
+    ≡⟨ *-assoc qN (pN * qD) pD ⟩
+      qN * ((pN * qD) * pD)
+    ≡⟨ cong (qN *_) (*-assoc pN qD pD) ⟩
+      qN * (pN * (qD * pD))
+    ≡⟨ sym (*-assoc qN pN (qD * pD)) ⟩
+      (qN * pN) * (qD * pD)
+    ≡⟨ cong₂ _*_ (*-comm qN pN) (*-comm qD pD) ⟩
+      (pN * qN) * (pD * qD)
+    ∎
+  from-right : pN * (qD * (pD * qN)) ≡ common
+  from-right =
+    begin
+      pN * (qD * (pD * qN))
+    ≡⟨ sym (*-assoc pN qD (pD * qN)) ⟩
+      (pN * qD) * (pD * qN)
+    ≡⟨ cong ((pN * qD) *_) (*-comm pD qN) ⟩
+      (pN * qD) * (qN * pD)
+    ≡⟨ sym (*-assoc (pN * qD) qN pD) ⟩
+      ((pN * qD) * qN) * pD
+    ≡⟨ cong (_* pD) (*-assoc pN qD qN) ⟩
+      (pN * (qD * qN)) * pD
+    ≡⟨ cong (_* pD) (cong (pN *_) (*-comm qD qN)) ⟩
+      (pN * (qN * qD)) * pD
+    ≡⟨ cong (_* pD) (sym (*-assoc pN qN qD)) ⟩
+      ((pN * qN) * qD) * pD
+    ≡⟨ *-assoc (pN * qN) qD pD ⟩
+      (pN * qN) * (qD * pD)
+    ≡⟨ cong ((pN * qN) *_) (*-comm qD pD) ⟩
+      (pN * qN) * (pD * qD)
+    ∎
+
+-- A positive presentation divided by itself is the unit presentation.
+div-self : ∀ q → (q>0 : 0 < num q) → Equiv (div q q q>0) one
+div-self q q>0 =
+  begin
+    (num q * den q) * 1
+  ≡⟨ *-idʳ (num q * den q) ⟩
+    num q * den q
+  ≡⟨ *-comm (num q) (den q) ⟩
+    den q * num q
+  ≡⟨ sym (*-idʳ (den q * num q)) ⟩
+    (den q * num q) * 1
+  ≡⟨ *-comm (den q * num q) 1 ⟩
+    1 * (den q * num q)
+  ∎
+
+-- A ratio of ordered presentations does not exceed the unit. The comparison
+-- is the given order after the unit denominator is cleared.
+div-le-one : ∀ p q → (q>0 : 0 < num q) → LE p q → LE (div p q q>0) one
+div-le-one p q q>0 ordered =
+  ≤-cong (sym (*-idʳ (num p * den q)))
+         (sym (+-idʳ (den p * num q)))
+         (≤-cong refl (*-comm (num q) (den p)) ordered)
+
+-- Division respects equivalence of the dividend and of the positive divisor.
+div-congr : ∀ {p p' q q'} → Equiv p p' → Equiv q q' →
+            (q>0 : 0 < num q) → (q'>0 : 0 < num q') →
+            Equiv (div p q q>0) (div p' q' q'>0)
+div-congr {p} {p'} {q} {q'} hp hq q>0 q'>0 =
+  begin
+    (num p * den q) * (den p' * num q')
+  ≡⟨ *-reorder₄ (num p) (den q) (den p') (num q') ⟩
+    (num p * den p') * (den q * num q')
+  ≡⟨ cong (_* (den q * num q')) hp ⟩
+    (num p' * den p) * (den q * num q')
+  ≡⟨ cong ((num p' * den p) *_) den-cross ⟩
+    (num p' * den p) * (den q' * num q)
+  ≡⟨ *-reorder₄ (num p') (den p) (den q') (num q) ⟩
+    (num p' * den q') * (den p * num q)
+  ∎
+  where
+  den-cross : den q * num q' ≡ den q' * num q
+  den-cross =
+    begin
+      den q * num q'
+    ≡⟨ *-comm (den q) (num q') ⟩
+      num q' * den q
+    ≡⟨ sym hq ⟩
+      num q * den q'
+    ≡⟨ *-comm (num q) (den q') ⟩
+      den q' * num q
+    ∎
+
+-- If the cross product of two numerators with the opposite denominators
+-- agrees, the two ratios agree. Both divisors have positive numerators.
+div-equiv-of-cross : ∀ ln ld rn rd →
+  (ld>0 : 0 < num ld) → (rd>0 : 0 < num rd) →
+  Equiv (mul ln rd) (mul rn ld) →
+  Equiv (div ln ld ld>0) (div rn rd rd>0)
+div-equiv-of-cross ln ld rn rd ld>0 rd>0 cross =
+  begin
+    (num ln * den ld) * (den rn * num rd)
+  ≡⟨ cong ((num ln * den ld) *_) (*-comm (den rn) (num rd)) ⟩
+    (num ln * den ld) * (num rd * den rn)
+  ≡⟨ *-reorder₄ (num ln) (den ld) (num rd) (den rn) ⟩
+    (num ln * num rd) * (den ld * den rn)
+  ≡⟨ cong ((num ln * num rd) *_) (*-comm (den ld) (den rn)) ⟩
+    (num ln * num rd) * (den rn * den ld)
+  ≡⟨ cross ⟩
+    (num rn * num ld) * (den ln * den rd)
+  ≡⟨ cong ((num rn * num ld) *_) (*-comm (den ln) (den rd)) ⟩
+    (num rn * num ld) * (den rd * den ln)
+  ≡⟨ *-reorder₄ (num rn) (num ld) (den rd) (den ln) ⟩
+    (num rn * den rd) * (num ld * den ln)
+  ≡⟨ cong ((num rn * den rd) *_) (*-comm (num ld) (den ln)) ⟩
+    (num rn * den rd) * (den ln * num ld)
+  ∎
+
+-- Dividing by a presentation equivalent to the unit does not change the
+-- dividend. The divisor's numerator and denominator are the same number.
+div-by-unit : ∀ n d → (d>0 : 0 < num d) → Equiv d one →
+              Equiv (div n d d>0) n
+div-by-unit n d d>0 normalized =
+  begin
+    (num n * den d) * den n
+  ≡⟨ cong (λ k → (num n * k) * den n) parts ⟩
+    (num n * num d) * den n
+  ≡⟨ *-reorder₃ (num n) (num d) (den n) ⟩
+    (num n * den n) * num d
+  ≡⟨ *-assoc (num n) (den n) (num d) ⟩
+    num n * (den n * num d)
+  ∎
+  where
+  parts : den d ≡ num d
+  parts =
+    begin
+      den d
+    ≡⟨ sym (*-idʳ (den d)) ⟩
+      den d * 1
+    ≡⟨ *-comm (den d) 1 ⟩
+      1 * den d
+    ≡⟨ sym normalized ⟩
+      num d * 1
+    ≡⟨ *-idʳ (num d) ⟩
+      num d
+    ∎
+
+-- Scaling a presentation by N yields the unit only when the presentation is
+-- the reciprocal of N.
+scale-forced-unit : ∀ {N} → (hN : 0 < N) → (cell : QProb) →
+                    Equiv (scale N cell) one →
+                    Equiv cell (qprob 1 N hN)
+scale-forced-unit {N} hN cell hwhole =
+  begin
+    num cell * N
+  ≡⟨ *-comm (num cell) N ⟩
+    N * num cell
+  ≡⟨ sym (*-idʳ (N * num cell)) ⟩
+    (N * num cell) * 1
+  ≡⟨ hwhole ⟩
+    1 * den cell
+  ∎
+
+-- The same unit equation scales to the ratio k / N.
+scale-forced-ratio : ∀ {N k} → (hN : 0 < N) → (cell : QProb) →
+                     Equiv (scale N cell) one →
+                     Equiv (scale k cell) (qprob k N hN)
+scale-forced-ratio {N} {k} hN cell hwhole =
+  begin
+    (k * num cell) * N
+  ≡⟨ *-assoc k (num cell) N ⟩
+    k * (num cell * N)
+  ≡⟨ cong (k *_) (*-comm (num cell) N) ⟩
+    k * (N * num cell)
+  ≡⟨ cong (k *_) (trans (sym (*-idʳ (N * num cell))) hwhole) ⟩
+    k * (1 * den cell)
+  ≡⟨ cong (k *_) (+-idʳ (den cell)) ⟩
+    k * den cell
+  ∎
+
+-- Difference of presentations, defined only when the subtrahend does not
+-- exceed the minuend. The numerator is a natural difference of cleared
+-- products, so no signed value is introduced. The inequality stays with the
+-- caller: this is an inverse of addition only up to equivalence.
+sub : (p q : QProb) → LE q p → QProb
+sub p q q≤p =
+  qprob (num p * den q - num q * den p)
+        (den p * den q)
+        (*-pos (den-pos p) (den-pos q))
+
+-- Adding back the subtracted presentation recovers the original magnitude.
+restore-sub : ∀ p q → (q≤p : LE q p) → Equiv (add (sub p q q≤p) q) p
+restore-sub p q q≤p = trans (cong (_* den p) summed) tail
+  where
+  m = num p * den q
+  s = num q * den p
+  summed : (m - s) * den q + num q * (den p * den q) ≡ m * den q
+  summed =
+    begin
+      (m - s) * den q + num q * (den p * den q)
+    ≡⟨ cong (_+ num q * (den p * den q))
+         (*-sub-distribʳ {m = m} {n = s} (den q) q≤p) ⟩
+      (m * den q - s * den q) + num q * (den p * den q)
+    ≡⟨ cong (λ k → (m * den q - s * den q) + k)
+         (sym (*-assoc (num q) (den p) (den q))) ⟩
+      (m * den q - s * den q) + s * den q
+    ≡⟨ sub-add (*-monoˡ q≤p (den q)) ⟩
+      m * den q
+    ∎
+  tail : (m * den q) * den p ≡ num p * ((den p * den q) * den q)
+  tail =
+    begin
+      (m * den q) * den p
+    ≡⟨ cong (_* den p) (*-assoc (num p) (den q) (den q)) ⟩
+      (num p * (den q * den q)) * den p
+    ≡⟨ *-assoc (num p) (den q * den q) (den p) ⟩
+      num p * ((den q * den q) * den p)
+    ≡⟨ cong (num p *_) (*-comm (den q * den q) (den p)) ⟩
+      num p * (den p * (den q * den q))
+    ≡⟨ cong (num p *_) (sym (*-assoc (den p) (den q) (den q))) ⟩
+      num p * ((den p * den q) * den q)
+    ∎
+
+-- Equivalent minuends and subtrahends give equivalent differences. Both
+-- inequalities are required so each natural subtraction is the witnessed one.
+sub-congr : ∀ {p p' q q'} → Equiv p p' → Equiv q q' →
+            (q≤p : LE q p) → (q'≤p' : LE q' p') →
+            Equiv (sub p q q≤p) (sub p' q' q'≤p')
+sub-congr {p} {p'} {q} {q'} hp hq q≤p q'≤p' =
+  begin
+    (num p * den q - num q * den p) * (den p' * den q')
+  ≡⟨ *-sub-distribʳ {m = num p * den q} {n = num q * den p}
+       (den p' * den q') q≤p ⟩
+    num p * den q * (den p' * den q') - num q * den p * (den p' * den q')
+  ≡⟨ cong₂ _-_ (cross-num p p' q q' hp) (cross-den p p' q q' hq) ⟩
+    num p' * den q' * (den p * den q) - num q' * den p' * (den p * den q)
+  ≡⟨ sym (*-sub-distribʳ {m = num p' * den q'} {n = num q' * den p'}
+       (den p * den q) q'≤p') ⟩
+    (num p' * den q' - num q' * den p') * (den p * den q)
+  ∎
