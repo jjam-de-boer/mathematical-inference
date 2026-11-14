@@ -1,5 +1,8 @@
 import Thesis.Causality.CausalAbstraction
 import Thesis.Causality.CausalUrnTickets
+import Thesis.Causality.CausalUrnFreshness
+import Thesis.Causality.CausalUrnConditioning
+import Thesis.Causality.CausalUrnRenaming
 import Thesis.Causality.CausalRemainder
 import Thesis.Causality.CausalAbstractionQuery
 import Thesis.Causality.Graph

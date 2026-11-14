@@ -151,5 +151,27 @@ theorem read_eq_of_solution (game : CausalUrnGame S P) (setting) (ticket)
 termination_by P.hiddenDAG.rank node
 decreasing_by exact P.hiddenDAG.edge_rank_lt edge
 
+/-- A completed run assigns one value to each urn. There is no overwrite
+operation in this interface. The local equation says that the value is either
+its declared setting or its one prescribed draw on the same source ticket. -/
+structure Run (game : CausalUrnGame S P) (setting : HardIntervention S) (ticket : game.Ticket) where
+  value : (node : Fin P.hiddenDAG.count) → game.Value node
+  follows : ∀ node, value node = match game.forcedAt setting node with
+    | some forced => forced
+    | none => game.draw node (fun parent _ => value parent) (ticket node)
+
+/-- Existence is an explicit interpreter, not a selection of a solution. -/
+def execute (game : CausalUrnGame S P) (setting) (ticket) : game.Run setting ticket where
+  value := game.read setting ticket
+  follows := by intro node; rw [read]
+
+/-- Every compatible sequential schedule that produces a completed run has
+this same value assignment. The result depends on declared influences and
+instructions, rather than a chosen scheduling rank. -/
+theorem run_unique (game : CausalUrnGame S P) (setting) (ticket) (run : game.Run setting ticket) :
+    run.value = (game.execute setting ticket).value := by
+  funext node
+  exact (game.read_eq_of_solution setting ticket run.value run.follows node).symm
+
 end CausalUrnGame
 end Thesis.Causality
