@@ -55,26 +55,24 @@ The main implemented results are:
   nodes arises from some finite SCM, is false: an indiscrete scale
   (everything equivalent) satisfies those order and effectiveness
   axioms and cannot match empty versus sure under any positive urn.
-- Qualitative causal comparisons reuse Clayton at each hard intervention
-  (each fixed `do` is a finite urn of observed assignments), together
-  with effectiveness; invariance of claims that mention only non-effects
-  of the knobs being set; and the sentence that once every direct cause
-  of a node is set, two experiments that set those causes to the same
-  values and do not set the node itself make the same claims about that
-  node. Direct causes are the signature's directed edges. For a finite
-  SCM those sentences are corollaries of the existing evaluation, not a
-  new calculus: `do` keeps the hidden prior and skips a forced node's
-  mechanism; an unforced node prints from current parent values and the
-  hidden factors wired to it, so children are recomputed from those
-  writings. The three do-rules are not assumptions of this comparison
-  and are not proved from these sentences for an arbitrary model of
-  them; they remain theorems of an inducing SCM, as qualitative
-  equalities of supported conditionals, as above. Every finite SCM
-  induces such a scale. Supported kernel conditionals stay undefined
-  when the conditioner has zero mass, and are not completed to zero.
-  Completeness, that every finite model of the scale is realized by
-  some finite SCM, is not proved. This is not causality from urn
-  axioms, and not a new identification engine.
+- Finite causal urn games have recorded and unrecorded urns, nonempty
+  recipes for every parent configuration, explicit acyclic influences
+  and fresh uniform draws. One common finite ticket urn serves all
+  settings; setting skips only selected draws and preserves other
+  instructions. An independent interpreter agrees with a constructed
+  full hidden-DAG SCM on every recorded hard intervention and event,
+  zeros included. Clayton's qualitative comparisons and supported
+  conditioning apply to the records. All three do-calculus rules follow
+  under their graphical and local support conditions, without the caller
+  supplying an SCM or soundness certificate. Consistent renaming preserves
+  full laws. For fixed tickets and settings, every completed execution
+  satisfying the local instructions gives the same assignment. Response
+  tables choose a joint assignment of random choices across hypothetical
+  experiments; they do not establish a uniquely determined counterfactual
+  law. The weaker comparison structure supplying a separate urn for each
+  intervention still lacks a proved general SCM representation. These
+  games give a finite acyclic operational foundation, not causal structure
+  from event comparisons alone.
 - Joint and conditional identification completeness for the stated positive
   model classes, original finite hidden-DAG transfer, and supported-zero
   certificates on each formula's used-conditional domain (the primitive
