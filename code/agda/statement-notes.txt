@@ -27,5 +27,12 @@ telescope equality. These notes are not part of the checked development.
   conditionalIndependent_iff_condVal are pairs of the two directions.
 - assignmentDecidableEq is assign-≟. An assignment is a telescope, and
   assign-ext rebuilds it from agreement at each coordinate.
-- rectangularEvent_eq_true_iff is the pair rect-holds. Enumeration is a
-  sequence one universe above ordinary lists, because the telescope is.
+- rectangularEvent_eq_true_iff is the pair rect-holds. Enumeration is an
+  ordinary list: the telescope is a nested pair in the universe of the
+  coordinate types.
+- rectangularEvent_assignment_congr is rect-agree. Coordinatewise agreement
+  is telescope equality, and the rectangle is unchanged by that equality.
+- FiniteProduct.atoms is jointAtoms. FiniteProduct.record is productRecord.
+  Zero-weight atoms are kept.
+- qProduct_singleton selects with pick, the Boolean of coordinate identity.
+  The two families are not equated; the product is compared pointwise.
