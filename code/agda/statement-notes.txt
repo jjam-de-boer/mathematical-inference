@@ -19,3 +19,6 @@ telescope equality. These notes are not part of the checked development.
 - membershipEvent_cons, unionList_map_singletonEvent, and
   membershipEvent_filter hold at each candidate. Identity of samples is
   an explicit decision procedure.
+- perm_of_nodup_mem_iff is perm-of-same-members: each entry has a function
+  from membership on the left to membership on the right and a function in
+  the other direction. Occurrence counts use that same decision procedure.

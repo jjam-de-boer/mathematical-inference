@@ -279,3 +279,68 @@ pairwise-filter p {x ∷ xs} (all ∷ rest) with p x
 ∈-filter-complete p (y ∷ ys) px (there mem) with p y
 ... | true  = there (∈-filter-complete p ys px mem)
 ... | false = ∈-filter-complete p ys px mem
+
+-- A permutation read backwards is a permutation. A common head stays, a swap
+-- is its own inverse, and a composite reverses the order of the steps.
+perm-sym : {A : Set} {xs ys : List A} → Perm xs ys → Perm ys xs
+perm-sym refl        = refl
+perm-sym (prep p)    = prep (perm-sym p)
+perm-sym swap        = swap
+perm-sym (comp p q)  = comp (perm-sym q) (perm-sym p)
+
+-- Move the first occurrence of an entry to the front. The decision procedure
+-- chooses which cell is the first match.
+erase : {A : Set} (eq : (x y : A) → Dec (x ≡ y)) → A → List A → List A
+erase eq x []       = []
+erase eq x (y ∷ ys) with eq x y
+... | yes _ = ys
+... | no  _ = y ∷ erase eq x ys
+
+-- Where an entry sits in a concatenation.
+∈-++ˡ : {A : Set} {x : A} {xs ys : List A} → x ∈ xs → x ∈ xs ++ ys
+∈-++ˡ here        = here
+∈-++ˡ (there mem) = there (∈-++ˡ mem)
+
+∈-++ʳ : {A : Set} {x : A} (xs : List A) {ys : List A} → x ∈ ys → x ∈ xs ++ ys
+∈-++ʳ []       mem = mem
+∈-++ʳ (_ ∷ xs) mem = there (∈-++ʳ xs mem)
+
+∈-++ : {A : Set} {x : A} (xs ys : List A) → x ∈ xs ++ ys → x ∈ xs ⊎ x ∈ ys
+∈-++ []       ys mem = inr mem
+∈-++ (x ∷ xs) ys here        = inl here
+∈-++ (x ∷ xs) ys (there mem) with ∈-++ xs ys mem
+... | inl inXs = inl (there inXs)
+... | inr inYs = inr inYs
+
+-- Inserting one entry does not drop any entry that was already present.
+∈-insert : {A : Set} {a x : A} (before after : List A) →
+  a ∈ before ++ after → a ∈ before ++ x ∷ after
+∈-insert []             after mem        = there mem
+∈-insert (_ ∷ before)   after here       = here
+∈-insert (y ∷ before)   after (there mem) = there (∈-insert before after mem)
+
+-- One explicit position of an entry, as a prefix, the entry, and a suffix.
+record Split {A : Set} (x : A) (xs : List A) : Set where
+  constructor located
+  field
+    before : List A
+    after  : List A
+    path   : xs ≡ before ++ x ∷ after
+
+split-∈ : {A : Set} {x : A} {xs : List A} → x ∈ xs → Split x xs
+split-∈ {xs = x ∷ ys} here = located [] ys refl
+split-∈ (there {y} mem) with split-∈ mem
+... | located before after path = located (y ∷ before) after (cong (y ∷_) path)
+
+-- Slide an entry from the middle of a list to the front by swapping it
+-- forward one cell at a time.
+perm-middle : {A : Set} {x : A} (before after : List A) →
+  Perm (before ++ x ∷ after) (x ∷ before ++ after)
+perm-middle []           after = refl
+perm-middle {x = x} (y ∷ before) after =
+  comp (prep (perm-middle before after)) (swap {x = y} {y = x})
+
+length-map : {A B : Set} (f : A → B) (xs : List A) →
+  length (map f xs) ≡ length xs
+length-map f []       = refl
+length-map f (_ ∷ xs) rewrite length-map f xs = refl
