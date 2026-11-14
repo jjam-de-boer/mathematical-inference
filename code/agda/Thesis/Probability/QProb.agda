@@ -796,3 +796,182 @@ sub-congr {p} {p'} {q} {q'} hp hq q≤p q'≤p' =
        (den p * den q) q'≤p') ⟩
     (num p' * den q' - num q' * den p') * (den p * den q)
   ∎
+
+-- One cleared summand of a product distributes across the two denominators
+-- of an added pair. The factors are the same on both sides.
+distrib-summand : ∀ u v e f d →
+  (u * (v * e)) * ((f * d) * (f * e)) ≡ ((u * v) * (f * e)) * (f * (d * e))
+distrib-summand u v e f d =
+  begin
+    (u * (v * e)) * ((f * d) * (f * e))
+  ≡⟨ cong (_* ((f * d) * (f * e))) (sym (*-assoc u v e)) ⟩
+    ((u * v) * e) * ((f * d) * (f * e))
+  ≡⟨ *-assoc (u * v) e ((f * d) * (f * e)) ⟩
+    (u * v) * (e * ((f * d) * (f * e)))
+  ≡⟨ cong ((u * v) *_) (sym (*-assoc e (f * d) (f * e))) ⟩
+    (u * v) * ((e * (f * d)) * (f * e))
+  ≡⟨ cong ((u * v) *_) (cong (_* (f * e)) (sym (*-assoc e f d))) ⟩
+    (u * v) * (((e * f) * d) * (f * e))
+  ≡⟨ cong ((u * v) *_) (cong (_* (f * e)) (cong (_* d) (*-comm e f))) ⟩
+    (u * v) * (((f * e) * d) * (f * e))
+  ≡⟨ cong ((u * v) *_) (*-assoc (f * e) d (f * e)) ⟩
+    (u * v) * ((f * e) * (d * (f * e)))
+  ≡⟨ cong ((u * v) *_) (cong ((f * e) *_) (sym (*-assoc d f e))) ⟩
+    (u * v) * ((f * e) * ((d * f) * e))
+  ≡⟨ cong ((u * v) *_) (cong ((f * e) *_) (cong (_* e) (*-comm d f))) ⟩
+    (u * v) * ((f * e) * ((f * d) * e))
+  ≡⟨ cong ((u * v) *_) (sym (*-assoc (f * e) (f * d) e)) ⟩
+    (u * v) * (((f * e) * (f * d)) * e)
+  ≡⟨ sym (*-assoc (u * v) ((f * e) * (f * d)) e) ⟩
+    ((u * v) * ((f * e) * (f * d))) * e
+  ≡⟨ cong (_* e) (sym (*-assoc (u * v) (f * e) (f * d))) ⟩
+    (((u * v) * (f * e)) * (f * d)) * e
+  ≡⟨ *-assoc ((u * v) * (f * e)) (f * d) e ⟩
+    ((u * v) * (f * e)) * ((f * d) * e)
+  ≡⟨ cong (((u * v) * (f * e)) *_) (*-assoc f d e) ⟩
+    ((u * v) * (f * e)) * (f * (d * e))
+  ∎
+
+-- Multiplication on the left distributes over addition, up to equivalence.
+-- Each added presentation contributes one summand, and the factor's
+-- denominator is shared.
+mul-add-distrib : ∀ f a b →
+  Equiv (mul f (add a b)) (add (mul f a) (mul f b))
+mul-add-distrib f a b =
+  begin
+    (Nf * (Na * Db + Nb * Da)) * rightDen
+  ≡⟨ cong (_* rightDen) split ⟩
+    (Nf * (Na * Db) + Nf * (Nb * Da)) * rightDen
+  ≡⟨ *-distribʳ-+ (Nf * (Na * Db)) (Nf * (Nb * Da)) rightDen ⟩
+    (Nf * (Na * Db)) * rightDen + (Nf * (Nb * Da)) * rightDen
+  ≡⟨ cong₂ _+_ first second ⟩
+    ((Nf * Na) * (Df * Db)) * leftDen + ((Nf * Nb) * (Df * Da)) * leftDen
+  ≡⟨ sym (*-distribʳ-+ ((Nf * Na) * (Df * Db)) ((Nf * Nb) * (Df * Da)) leftDen) ⟩
+    ((Nf * Na) * (Df * Db) + (Nf * Nb) * (Df * Da)) * leftDen
+  ∎
+  where
+  Nf = num f
+  Df = den f
+  Na = num a
+  Da = den a
+  Nb = num b
+  Db = den b
+  leftDen = Df * (Da * Db)
+  rightDen = (Df * Da) * (Df * Db)
+  split : Nf * (Na * Db + Nb * Da) ≡ Nf * (Na * Db) + Nf * (Nb * Da)
+  split = *-distribˡ-+ Nf (Na * Db) (Nb * Da)
+  first : (Nf * (Na * Db)) * rightDen ≡ ((Nf * Na) * (Df * Db)) * leftDen
+  first = distrib-summand Nf Na Db Df Da
+  second : (Nf * (Nb * Da)) * rightDen ≡ ((Nf * Nb) * (Df * Da)) * leftDen
+  second =
+    trans (cong ((Nf * (Nb * Da)) *_) (*-comm (Df * Da) (Df * Db)))
+      (trans (distrib-summand Nf Nb Da Df Db)
+        (cong (((Nf * Nb) * (Df * Da)) *_) (cong (Df *_) (*-comm Db Da))))
+
+-- Multiplication on the right distributes by commuting to the left-hand law.
+add-mul-distrib : ∀ a b f →
+  Equiv (mul (add a b) f) (add (mul a f) (mul b f))
+add-mul-distrib a b f =
+  equiv-trans {p = mul (add a b) f} {q = mul f (add a b)} {r = add (mul a f) (mul b f)}
+    (mul-comm (add a b) f)
+    (equiv-trans {p = mul f (add a b)} {q = add (mul f a) (mul f b)} {r = add (mul a f) (mul b f)}
+      (mul-add-distrib f a b)
+      (add-cong {p = mul f a} {p' = mul a f} {q = mul f b} {q' = mul b f}
+        (mul-comm f a) (mul-comm f b)))
+
+-- Multiplication by zero on the left is zero by the recursion on the left factor.
+*-zeroˡ : ∀ n → 0 * n ≡ 0
+*-zeroˡ n = refl
+
+-- A factor passes inside a finite sum, one summand at a time.
+mul-listSum : ∀ f → (xs : List QProb) →
+  Equiv (mul f (listSum xs)) (listSum (map (mul f) xs))
+mul-listSum f [] =
+  begin
+    (num f * 0) * 1
+  ≡⟨ cong (_* 1) (*-zeroʳ (num f)) ⟩
+    0 * 1
+  ≡⟨⟩
+    0
+  ≡⟨ sym (*-zeroˡ (den f * 1)) ⟩
+    0 * (den f * 1)
+  ∎
+mul-listSum f (v ∷ xs) =
+  equiv-trans
+    {p = mul f (add v (listSum xs))}
+    {q = add (mul f v) (mul f (listSum xs))}
+    {r = add (mul f v) (listSum (map (mul f) xs))}
+    (mul-add-distrib f v (listSum xs))
+    (add-cong {p = mul f v} {p' = mul f v}
+              {q = mul f (listSum xs)} {q' = listSum (map (mul f) xs)}
+              (equiv-refl (mul f v)) (mul-listSum f xs))
+
+-- The same passage when the finite sum is the left factor.
+listSum-mul : ∀ xs f →
+  Equiv (mul (listSum xs) f) (listSum (map (λ v → mul v f) xs))
+listSum-mul [] f =
+  begin
+    (0 * num f) * 1
+  ≡⟨ cong (_* 1) (*-zeroˡ (num f)) ⟩
+    0 * 1
+  ≡⟨⟩
+    0
+  ≡⟨ sym (*-zeroˡ (1 * den f)) ⟩
+    0 * (1 * den f)
+  ∎
+listSum-mul (v ∷ xs) f =
+  equiv-trans
+    {p = mul (add v (listSum xs)) f}
+    {q = add (mul v f) (mul (listSum xs) f)}
+    {r = add (mul v f) (listSum (map (λ w → mul w f) xs))}
+    (add-mul-distrib v (listSum xs) f)
+    (add-cong {p = mul v f} {p' = mul v f}
+              {q = mul (listSum xs) f} {q' = listSum (map (λ w → mul w f) xs)}
+              (equiv-refl (mul v f)) (listSum-mul xs f))
+
+-- The product of two finite sums is the sum of the pairwise products.
+listSum-mul-listSum : ∀ xs ys →
+  Equiv (mul (listSum xs) (listSum ys))
+        (listSum (map (λ x → listSum (map (mul x) ys)) xs))
+listSum-mul-listSum [] ys = listSum-mul [] (listSum ys)
+listSum-mul-listSum (v ∷ xs) ys =
+  equiv-trans
+    {p = mul (add v (listSum xs)) (listSum ys)}
+    {q = add (mul v (listSum ys)) (mul (listSum xs) (listSum ys))}
+    {r = add (listSum (map (mul v) ys))
+             (listSum (map (λ x → listSum (map (mul x) ys)) xs))}
+    (add-mul-distrib v (listSum xs) (listSum ys))
+    (add-cong {p = mul v (listSum ys)} {p' = listSum (map (mul v) ys)}
+              {q = mul (listSum xs) (listSum ys)}
+              {q' = listSum (map (λ x → listSum (map (mul x) ys)) xs)}
+              (mul-listSum v ys) (listSum-mul-listSum xs ys))
+
+-- Division by a fixed positive numerator is multiplication by the swapped
+-- presentation, so it distributes over addition.
+div-add : ∀ a b d → (d>0 : 0 < num d) →
+  Equiv (div (add a b) d d>0) (add (div a d d>0) (div b d d>0))
+div-add a b d d>0 = add-mul-distrib a b (qprob (den d) (num d) d>0)
+
+-- The same division passes inside a finite sum.
+div-listSum : ∀ xs d → (d>0 : 0 < num d) →
+  Equiv (div (listSum xs) d d>0) (listSum (map (λ v → div v d d>0) xs))
+div-listSum [] d d>0 =
+  begin
+    (0 * den d) * 1
+  ≡⟨ cong (_* 1) (*-zeroˡ (den d)) ⟩
+    0 * 1
+  ≡⟨⟩
+    0
+  ≡⟨ sym (*-zeroˡ (1 * num d)) ⟩
+    0 * (1 * num d)
+  ∎
+div-listSum (v ∷ xs) d d>0 =
+  equiv-trans
+    {p = div (add v (listSum xs)) d d>0}
+    {q = add (div v d d>0) (div (listSum xs) d d>0)}
+    {r = add (div v d d>0) (listSum (map (λ w → div w d d>0) xs))}
+    (div-add v (listSum xs) d d>0)
+    (add-cong {p = div v d d>0} {p' = div v d d>0}
+              {q = div (listSum xs) d d>0}
+              {q' = listSum (map (λ w → div w d d>0) xs)}
+              (equiv-refl (div v d d>0)) (div-listSum xs d d>0))

@@ -12,6 +12,42 @@ data Fin : ℕ → Set where
   zero : ∀ {n} → Fin (ℕs n)
   suc  : ∀ {n} → Fin n → Fin (ℕs n)
 
+-- There is no coordinate strictly below zero.
+no-fin : Fin ℕ0 → ⊥
+no-fin ()
+
+-- The underlying natural position of a coordinate, counting from zero.
+toℕ : ∀ {n} → Fin n → ℕ
+toℕ zero    = ℕ0
+toℕ (suc i) = ℕs (toℕ i)
+
+-- Embed a coordinate into a one-step larger index by keeping its position.
+-- The new last place is not in the image.
+castSucc : ∀ {n} → Fin n → Fin (ℕs n)
+castSucc zero    = zero
+castSucc (suc i) = suc (castSucc i)
+
+-- The greatest coordinate below a successor bound.
+last : ∀ {n} → Fin (ℕs n)
+last {ℕ0}   = zero
+last {ℕs n} = suc last
+
+-- A coordinate below a successor is either an earlier coordinate, embedded
+-- by castSucc, or the new last place.
+data Prefix {n : ℕ} : Fin (ℕs n) → Set where
+  before : (j : Fin n) → Prefix (castSucc j)
+  end    : Prefix last
+
+-- Compute that classification. The recursion follows the coordinate, so the
+-- result is data, not an appeal to excluded middle.
+prefix : ∀ {n} (i : Fin (ℕs n)) → Prefix i
+prefix {ℕ0}   zero    = end
+prefix {ℕ0}   (suc ())
+prefix {ℕs n} zero    = before zero
+prefix {ℕs n} (suc i) with prefix i
+... | before j = before (suc j)
+... | end      = end
+
 -- The canonical listing of every coordinate, in increasing order, with each
 -- coordinate once. The successor listing is the old listing shifted by one,
 -- placed after the new zero.

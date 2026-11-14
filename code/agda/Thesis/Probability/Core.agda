@@ -14,6 +14,144 @@ open import Thesis.Fin hiding (zero; suc)
 -- is not given a value.
 
 ------------------------------------------------------------------------
+-- Boolean folds over a finite index
+------------------------------------------------------------------------
+
+-- Compare two natural numbers by recursion on their unary structure.
+natBeq : ℕ → ℕ → Bool
+natBeq zero zero       = true
+natBeq zero (suc _)    = false
+natBeq (suc _) zero    = false
+natBeq (suc m) (suc n) = natBeq m n
+
+-- The comparison does not depend on which argument is written first.
+natBeq-comm : ∀ m n → natBeq m n ≡ natBeq n m
+natBeq-comm zero zero       = refl
+natBeq-comm zero (suc _)    = refl
+natBeq-comm (suc _) zero    = refl
+natBeq-comm (suc m) (suc n) = natBeq-comm m n
+
+-- A number compares equal to itself.
+natBeq-refl : ∀ n → natBeq n n ≡ true
+natBeq-refl zero    = refl
+natBeq-refl (suc n) = natBeq-refl n
+
+-- Two coordinates agree when their positions do.
+finBeq : ∀ {n} → Fin n → Fin n → Bool
+finBeq i j = natBeq (toℕ i) (toℕ j)
+
+-- Conjunction of a Boolean family over every coordinate below n. The empty
+-- family is true. A larger family is the earlier conjunction together with
+-- the value at the last coordinate.
+finAll : ∀ n → (Fin n → Bool) → Bool
+finAll zero     _ = true
+finAll (suc n) p = finAll n (λ i → p (castSucc i)) ∧ p last
+
+-- Disjunction of the same kind of family. The empty family is false.
+finAny : ∀ n → (Fin n → Bool) → Bool
+finAny zero     _ = false
+finAny (suc n) p = finAny n (λ i → p (castSucc i)) ∨ p last
+
+-- A constantly true family is accepted at every finite length.
+finAll-true : ∀ n → finAll n (λ _ → true) ≡ true
+finAll-true zero     = refl
+finAll-true (suc n) rewrite finAll-true n = refl
+
+-- Families that agree at every coordinate have the same conjunction. The
+-- agreement is used at each coordinate; the two families are not identified.
+finAll-cong : ∀ n {p q : Fin n → Bool} → (∀ i → p i ≡ q i) → finAll n p ≡ finAll n q
+finAll-cong zero     _ = refl
+finAll-cong (suc n) h rewrite finAll-cong n (λ i → h (castSucc i)) | h last = refl
+
+∧-true : ∀ b c → b ∧ c ≡ true → (b ≡ true) × (c ≡ true)
+∧-true true  true  refl = refl , refl
+∧-true true  false ()
+∧-true false _     ()
+
+∧-intro : ∀ {b c} → b ≡ true → c ≡ true → b ∧ c ≡ true
+∧-intro {true} {true} _ _ = refl
+∧-intro {true} {false} _ ()
+∧-intro {false} {_} () _
+
+-- The conjunction is true exactly when every coordinate is true.
+finAll-of-all : ∀ n (p : Fin n → Bool) → (∀ i → p i ≡ true) → finAll n p ≡ true
+finAll-of-all zero     p _ = refl
+finAll-of-all (suc n) p h =
+  ∧-intro (finAll-of-all n (λ j → p (castSucc j)) (λ j → h (castSucc j))) (h last)
+
+finAll-at : ∀ n (p : Fin n → Bool) → finAll n p ≡ true → ∀ i → p i ≡ true
+finAll-at zero     p _ i = ⊥-elim (no-fin i)
+finAll-at (suc n) p h i with ∧-true _ _ h
+... | earlier-true , last-true with prefix i
+...   | before j = finAll-at n (λ k → p (castSucc k)) earlier-true j
+...   | end      = last-true
+
+finAny-cong : ∀ n {p q : Fin n → Bool} → (∀ i → p i ≡ q i) → finAny n p ≡ finAny n q
+finAny-cong zero     _ = refl
+finAny-cong (suc n) h rewrite finAny-cong n (λ i → h (castSucc i)) | h last = refl
+
+∨-false : ∀ b c → b ∨ c ≡ false → (b ≡ false) × (c ≡ false)
+∨-false false false refl = refl , refl
+∨-false false true  ()
+∨-false true  _     ()
+
+-- Both bits of a false disjunction are false.
+∨-false-intro : ∀ {b c} → b ≡ false → c ≡ false → b ∨ c ≡ false
+∨-false-intro {false} {false} _ _ = refl
+∨-false-intro {false} {true}  _ ()
+∨-false-intro {true}  {_}    () _
+
+-- A true right bit makes the disjunction true, whatever the left bit is.
+∨-true-right : ∀ b → b ∨ true ≡ true
+∨-true-right true  = refl
+∨-true-right false = refl
+
+-- The disjunction is false exactly when every coordinate is false.
+finAny-of-none : ∀ n (p : Fin n → Bool) → (∀ i → p i ≡ false) → finAny n p ≡ false
+finAny-of-none zero     p _ = refl
+finAny-of-none (suc n) p h =
+  ∨-false-intro (finAny-of-none n (λ j → p (castSucc j)) (λ j → h (castSucc j))) (h last)
+
+finAny-at-false : ∀ n (p : Fin n → Bool) → finAny n p ≡ false → ∀ i → p i ≡ false
+finAny-at-false zero     p _ i = ⊥-elim (no-fin i)
+finAny-at-false (suc n) p h i with ∨-false _ _ h
+... | earlier-false , last-false with prefix i
+...   | before j = finAny-at-false n (λ k → p (castSucc k)) earlier-false j
+...   | end      = last-false
+
+-- One true coordinate makes the disjunction true.
+finAny-true-of : ∀ n (p : Fin n → Bool) i → p i ≡ true → finAny n p ≡ true
+finAny-true-of (suc n) p i hi with prefix i
+... | before j rewrite finAny-true-of n (λ k → p (castSucc k)) j hi = refl
+... | end      = trans (cong (finAny n (λ k → p (castSucc k)) ∨_) hi) (∨-true-right _)
+
+-- A coordinate at which a family holds. The index is data recovered from the
+-- finite fold.
+record Holds {n : ℕ} (p : Fin n → Bool) : Set where
+  constructor hold
+  field
+    index : Fin n
+    holds : p index ≡ true
+
+open Holds
+
+-- The disjunction is true exactly when some coordinate holds.
+finAny-holds : ∀ n (p : Fin n → Bool) → finAny n p ≡ true → Holds p
+finAny-holds zero     p ()
+finAny-holds (suc n) p h with finAny n (λ j → p (castSucc j)) in earlier | p last in at-last
+... | true  | _     =
+  let found = finAny-holds n (λ j → p (castSucc j)) earlier
+  in hold (castSucc (index found)) (holds found)
+... | false | true  = hold last at-last
+... | false | false = ⊥-elim (true≢false h)
+  where
+  true≢false : false ≡ true → ⊥
+  true≢false ()
+
+finAny-of-holds : ∀ n (p : Fin n → Bool) → Holds p → finAny n p ≡ true
+finAny-of-holds n p (hold i hi) = finAny-true-of n p i hi
+
+------------------------------------------------------------------------
 -- Boolean events
 ------------------------------------------------------------------------
 
