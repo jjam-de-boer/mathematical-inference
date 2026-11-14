@@ -25,3 +25,5 @@ telescope equality. These notes are not part of the checked development.
 - independent_iff_condVal_left, independent_iff_condVal_right,
   conditionalIndependent_iff_condProduct, and
   conditionalIndependent_iff_condVal are pairs of the two directions.
+- assignmentDecidableEq is assign-≟. An assignment is a telescope, and
+  assign-ext rebuilds it from agreement at each coordinate.
