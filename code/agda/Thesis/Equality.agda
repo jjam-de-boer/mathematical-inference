@@ -35,6 +35,16 @@ cong₂ f refl refl = refl
 subst : {A : Set} (P : A → Set) {x y : A} → x ≡ y → P x → P y
 subst P refl px = px
 
+-- A pair of independent constructions. Each component is retained.
+record _×_ (A B : Set) : Set where
+  constructor _,_
+  field
+    fst : A
+    snd : B
+
+infixr 4 _,_
+infixr 2 _×_
+
 -- A claim is decided when a proof or a refutation is supplied as data.
 -- No general excluded middle is assumed; only the procedures below decide
 -- the relations they are written for.
