@@ -22,3 +22,7 @@ telescope equality. These notes are not part of the checked development.
 - perm_of_nodup_mem_iff is perm-of-same-members: each entry has a function
   from membership on the left to membership on the right and a function in
   the other direction. Occurrence counts use that same decision procedure.
+- independent_iff_condVal_left and independent_iff_condVal_right are pairs
+  of the two directions. conditionalIndependent_iff_condProduct and
+  conditionalIndependent_iff_condVal are the same positive-factor
+  cancellation and are not yet stated.

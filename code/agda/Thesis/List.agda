@@ -344,3 +344,34 @@ length-map : {A B : Set} (f : A → B) (xs : List A) →
   length (map f xs) ≡ length xs
 length-map f []       = refl
 length-map f (_ ∷ xs) rewrite length-map f xs = refl
+
+-- Filtering keeps one cell for each accepted entry, so the length is the count.
+length-filter : {A : Set} (p : A → Bool) (xs : List A) →
+  length (filter p xs) ≡ countP p xs
+length-filter p []       = refl
+length-filter p (x ∷ xs) with p x
+... | true  = cong suc (length-filter p xs)
+... | false = length-filter p xs
+
+-- A second test on the retained cells is the conjunction with the filter.
+count-filter : {A : Set} (p q : A → Bool) (xs : List A) →
+  countP q (filter p xs) ≡ countP (λ x → p x ∧ q x) xs
+count-filter p q [] = refl
+count-filter p q (x ∷ xs) with p x | q x in eq
+... | true  | true =
+  begin
+    extra (q x) + countP q (filter p xs)
+  ≡⟨ cong (λ b → extra b + countP q (filter p xs)) eq ⟩
+    suc (countP q (filter p xs))
+  ≡⟨ cong suc (count-filter p q xs) ⟩
+    suc (countP (λ y → p y ∧ q y) xs)
+  ∎
+... | true  | false =
+  begin
+    extra (q x) + countP q (filter p xs)
+  ≡⟨ cong (λ b → extra b + countP q (filter p xs)) eq ⟩
+    countP q (filter p xs)
+  ≡⟨ count-filter p q xs ⟩
+    countP (λ y → p y ∧ q y) xs
+  ∎
+... | false | _ = count-filter p q xs
