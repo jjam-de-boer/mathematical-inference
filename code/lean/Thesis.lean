@@ -107,6 +107,7 @@ import Thesis.Examples.PetriCoverability
 import Thesis.Examples.PetriCoverabilityScan
 import Thesis.Examples.PetriCoverabilitySearch
 import Thesis.Examples.PetriPumping
+import Thesis.Examples.PetriControl
 import Thesis.Examples.IntegerFeasibility
 import Thesis.Examples.IntegerCarryLoops
 import Thesis.Examples.FiniteLabelledRepetition

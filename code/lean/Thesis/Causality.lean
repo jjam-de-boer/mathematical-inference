@@ -37,6 +37,7 @@ import Thesis.Causality.ReachabilityCorrectness
 import Thesis.Causality.FiniteLabelledRepetition
 import Thesis.Causality.FiniteListReplacement
 import Thesis.Causality.PetriNet
+import Thesis.Causality.PetriControl
 import Thesis.Causality.PetriPredecessors
 import Thesis.Causality.PetriReversal
 import Thesis.Causality.CoordinateBoxes
@@ -189,8 +190,17 @@ entire finite source marking while increasing every selected coordinate,
 using one coverability call. Its witnesses repeat with exact affine
 endpoints; reverse-net witnesses also give original-net backward executions.
 A negative answer does not establish boundedness of the selected places.
-Finite control, partial endpoints and general reachability refinement are
-not supplied by these tests.
+Controlled classifier adapters, partial endpoints and general reachability
+refinement are not supplied by these tests.
+
+`PetriControl` compiles a finite transition graph by adding one control
+place per state, while retaining unbounded counter values. From a single
+encoded control token, it preserves and reflects exact enabled executions
+with the same word and decodes every reachable compiled endpoint. Its
+coverability correspondence fixes the target control state exactly and
+allows only counter overshoot. Arbitrary markings with several control
+tokens have no claimed single-state meaning. This is a semantic compiler
+bridge, without a new search or controlled pumping/classifier interface.
 
 ## Modal, counterfactual and mode-theory interfaces
 
