@@ -1,4 +1,5 @@
 import Thesis.CausalTransport.DSeparation
+import Thesis.CausalTransport.CausalUrnDoCalculus
 import Thesis.CausalTransport.DSeparationCorrectness
 import Thesis.CausalTransport.DSeparationWitness
 import Thesis.CausalTransport.ActivePathNormalization
