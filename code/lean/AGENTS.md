@@ -151,13 +151,18 @@ The main implemented results are:
   with a computed solution and an explicit (not necessarily least) bound,
   or unbounded, with a computed base and a nonnegative integer solution
   `h` of the homogeneous equations `A h = 0` that increases that
-  coordinate. A successful supplied Petri-net firing word still runs from
-  any source with at least as many tokens in each place, reaching the old
-  endpoint plus those extra tokens. For each transition and target there
-  is a least one-step source that can cover the target; overshoot is
-  allowed, exact arrival is not claimed. These procedures do not decide
-  Petri-net reachability: firing counts may solve the token-balance
-  equations while no actual firing word exists from that marking.
+  coordinate. Finite Petri-net coverability has a terminating constructive
+  procedure with unbounded natural token counts and no supplied word
+  cutoff, returning an actual covering execution or a proof of
+  non-coverability. At a supplied finite marking, a separate test decides
+  whether a word preserves every coordinate and strictly increases every
+  selected coordinate. Positive words repeat with exact affine endpoints;
+  reversing consumption, production and word order supplies backward
+  executions and tests. A negative pumping answer does not bound selected
+  coordinates: a one-time switch can enable unbounded later growth without
+  restoring the original source (`Thesis.Examples.PetriPumping`). These
+  results do not decide exact reachability. Token-balance equations can be
+  feasible while no execution reaches the requested marking.
 - Exact undefined/zero/positive support analysis for the current formula and
   guard languages, finite causal support-profile coverage, and checked bounded
   proof enumeration and formula selection. A supplied checked query trace
