@@ -154,7 +154,12 @@ The main implemented results are:
   coordinate. Finite Petri-net coverability has a terminating constructive
   procedure with unbounded natural token counts and no supplied word
   cutoff, returning an actual covering execution or a proof of
-  non-coverability. At a supplied finite marking, a separate test decides
+  non-coverability. Finite control compiles to one extra place per state.
+  From encoded sources with one control token, compilation preserves and
+  reflects executions with the same word and decodes every reachable
+  endpoint. For encoded targets, coverability fixes the target control
+  state exactly. Markings with several control tokens are outside this
+  correspondence. At a supplied finite marking, a separate test decides
   whether a word preserves every coordinate and strictly increases every
   selected coordinate. Positive words repeat with exact affine endpoints;
   reversing consumption, production and word order supplies backward
