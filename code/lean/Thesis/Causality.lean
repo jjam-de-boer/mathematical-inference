@@ -1,6 +1,7 @@
 import Thesis.Causality.CausalAbstraction
 import Thesis.Causality.CausalRemainder
 import Thesis.Causality.CausalAbstractionQuery
+import Thesis.Causality.CausalAbstractionValue
 import Thesis.Causality.Graph
 import Thesis.Causality.NodeSetCardinality
 import Thesis.Causality.NodeSetEnumeration

@@ -1,4 +1,6 @@
 import Thesis.Causality.CausalAbstractionQuery
+import Thesis.Causality.CausalAbstractionValue
+import Thesis.CausalTransport.CompletenessAssembly
 import Thesis.CausalTransport.HedgeChannelCompleteness
 import Thesis.CausalTransport.Hedge.WitnessSearch
 import Thesis.Examples.CausalAbstractionRemainder
@@ -331,6 +333,109 @@ theorem no_exact_only_ID_transfer :
       (GraphModelClass.positive coarseGraph).identifiable coarseQuery) := by
   intro transfer
   exact coarse_not_identifiable (transfer copy_exact query_is_cluster_local fine_identifiable)
+
+/-! The identified fine formula still denotes the coarse interventional
+mass of a pulled-back Y-cylinder on this exact pair. Y is a singleton copy,
+so the event equation is a coordinate identity, not a fibre sum. -/
+
+/-- `A=false`, `X=true`, `Y=true`. The pullback action is `do(A,X)`. -/
+def fineRef : fineSignature.Assignment := fun node => decide (node.val ≠ 0)
+
+/-- Coarse cylinder `{Y = true}`; `Z` is unread. -/
+def coarseCylinder : Event macroSignature.Assignment :=
+  Kernel.agreesOn coarseQuery.outcome (fun _ => true)
+
+def fineSourceIntervention : HardIntervention fineSignature :=
+  fineQuery.sourceIntervention fineRef
+
+/-- Matching coarse surgery: `do(Z = true)`. -/
+def coarseDoZ : HardIntervention macroSignature :=
+  coarseAction (some true) none
+
+theorem coarseCylinder_local :
+    EventDependsOnlyOn coarseQuery.outcome coarseCylinder :=
+  Kernel.agreesOn_dependsOnlyOn _ _
+
+private theorem fineQuery_outcome_Y :
+    fineQuery.outcome = NodeSet.singleton (2 : Fin 3) := by decide +kernel
+
+theorem copy_event_pullback :
+    Kernel.agreesOn fineQuery.outcome fineRef =
+      (fun s => coarseCylinder (copyMap.assignmentMap s)) := by
+  funext sample
+  rw [fineQuery_outcome_Y, Kernel.agreesOn_singleton]
+  change decide (sample (2 : Fin 3) = fineRef (2 : Fin 3)) =
+    Kernel.agreesOn coarseQuery.outcome (fun _ => true) (copyMap.assignmentMap sample)
+  rw [show coarseQuery.outcome = NodeSet.singleton (1 : Fin 2) from rfl,
+    Kernel.agreesOn_singleton]
+  change decide (sample (2 : Fin 3) = true) =
+    decide (copyMap.assignmentMap sample (1 : Fin 2) = true)
+  rfl
+
+private theorem fineQuery_action_X : fineQuery.action (1 : Fin 3) = true := by
+  decide +kernel
+private theorem fineQuery_action_Y : fineQuery.action (2 : Fin 3) = false := by
+  decide +kernel
+
+theorem copy_omega_fine_query :
+    copyMap.omega fineSourceIntervention = some coarseDoZ := by
+  have hX : fineSourceIntervention.value (1 : Fin 3) = some true := by
+    change (if fineQuery.action (1 : Fin 3) then some (fineRef (1 : Fin 3)) else none) =
+      some true
+    rw [fineQuery_action_X]
+    rfl
+  have hY : fineSourceIntervention.value (2 : Fin 3) = none := by
+    change (if fineQuery.action (2 : Fin 3) then some (fineRef (2 : Fin 3)) else none) =
+      none
+    rw [fineQuery_action_Y]
+    rfl
+  change some (coarseAction (fineSourceIntervention.value (1 : Fin 3))
+      (fineSourceIntervention.value (2 : Fin 3))) =
+    some coarseDoZ
+  rw [hX, hY]
+  rfl
+
+noncomputable def fine_identified_soundAt :
+    ProbabilityTerm.EquivalentAt fineModel fineQuery.sourceTerm fineFormula fineRef :=
+  identifyJointKernel_identified_soundAt (C := GraphModelClass.positive fineGraph)
+    fineGraph.dSeparationCorrectness (fun member => member.2) fineQuery
+    fine_id_succeeds fineModel ⟨fine_compatible, fine_positive⟩ fineRef
+
+noncomputable def copy_identified_exact_value :
+    copyMap.IdentifiedExactJointValue fineQuery fineFormula fineRef coarseDoZ
+      coarseCylinder :=
+  CausalInterventionMap.identifiedExactJointValue copyMap copy_exact copyCoarsening
+    coarseQuery fineQuery query_is_cluster_local fineRef fineSourceIntervention
+    rfl coarseDoZ copy_omega_fine_query coarseCylinder coarseCylinder_local
+    copy_event_pullback fineGraph fine_id_succeeds fine_identified_soundAt
+
+/-- Exact + pullback query + fine ID success + soundness transport the
+identified value on this pair; the coarse positive class is still a hedge. -/
+structure ExactCopyIdentifiedValueTransport where
+  exact : copyMap.Exact
+  localQuery : copyCoarsening.PullsBackQuery fineQuery coarseQuery
+  identified : identifyJointKernel fineGraph fineQuery = .identified fineFormula
+  sound :
+    ProbabilityTerm.EquivalentAt fineModel fineQuery.sourceTerm fineFormula fineRef
+  values :
+    ProbabilityResult.Equivalent
+      (fineFormula.denote fineModel fineRef)
+      (some (coarseModel.interventionalValue coarseDoZ.value coarseCylinder))
+  observational_eq :
+    fineFormula.observationalDenote fineModel.observationalDist fineRef =
+      fineFormula.denote fineModel fineRef
+  coarse_class_not_identifiable :
+    ¬ (GraphModelClass.positive coarseGraph).identifiable coarseQuery
+
+noncomputable def exact_copy_transports_identified_value_not_graph_class :
+    ExactCopyIdentifiedValueTransport where
+  exact := copy_exact
+  localQuery := query_is_cluster_local
+  identified := fine_id_succeeds
+  sound := copy_identified_exact_value.source_equivalent
+  values := copy_identified_exact_value.formula_value
+  observational_eq := copy_identified_exact_value.observational_eq
+  coarse_class_not_identifiable := coarse_not_identifiable
 
 /-! The older illegal OR aggregation gives a different phenomenon:
 its fine query has a successful ID run, but substituting the observational
