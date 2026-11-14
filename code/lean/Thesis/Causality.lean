@@ -45,6 +45,7 @@ import Thesis.Causality.CoordinateBoxScan
 import Thesis.Causality.PetriCoverability
 import Thesis.Causality.PetriCoverabilityScan
 import Thesis.Causality.PetriCoverabilitySearch
+import Thesis.Causality.PetriControlCoverability
 import Thesis.Causality.PetriPumping
 import Thesis.Causality.IntegerFeasibility
 import Thesis.Causality.IntegerCarryLoops
@@ -200,7 +201,13 @@ with the same word and decodes every reachable compiled endpoint. Its
 coverability correspondence fixes the target control state exactly and
 allows only counter overshoot. Arbitrary markings with several control
 tokens have no claimed single-state meaning. This is a semantic compiler
-bridge, without a new search or controlled pumping/classifier interface.
+bridge, without a new search.
+
+`PetriControlCoverability` returns the existing classifier's result in the
+original controlled counter space: the same word, an actual counter
+endpoint and its exact target-state execution, or a proof excluding every
+covering word. Its conversion decodes the arbitrary compiled endpoint.
+Controlled pumping and partial-endpoint query adapters remain separate work.
 
 ## Modal, counterfactual and mode-theory interfaces
 
