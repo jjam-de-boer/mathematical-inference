@@ -20,7 +20,7 @@ record Urn (X : Set) : Set where
     cells    : List X
     occupied : 0 < length cells
 
-open Urn
+open Urn public
 
 -- The number of cells. It is positive by the occupancy witness.
 size : {X : Set} → Urn X → ℕ
@@ -483,4 +483,115 @@ independent-right μ A B hA =
       (cB * cA) * n
     ≡⟨ cong (_* n) (*-comm cB cA) ⟩
       (cA * cB) * n
+    ∎
+
+-- Conditional independence as a product of conditional values is the same
+-- fact as the joint counts satisfying the corresponding product, once the
+-- conditioning count is positive. Multiplying or cancelling that count, and
+-- the square of the urn size, passes between the two forms.
+cond-product : {X : Set} (μ : Urn X) (A B C : Event X) (hC : 0 < probNum μ C) →
+  let joint = mul (probVal μ (inter (inter A B) C)) (probVal μ C)
+      sides = mul (probVal μ (inter A C)) (probVal μ (inter B C))
+      conds = mul (condVal μ A C hC) (condVal μ B C hC)
+  in (Equiv joint sides → Equiv (condVal μ (inter A B) C hC) conds)
+   × (Equiv (condVal μ (inter A B) C hC) conds → Equiv joint sides)
+cond-product μ A B C hC =
+  to-cond , from-cond
+  where
+  cABC = probNum μ (inter (inter A B) C)
+  cAC = probNum μ (inter A C)
+  cBC = probNum μ (inter B C)
+  cC = probNum μ C
+  n = size μ
+  nn>0 = *-pos (occupied μ) (occupied μ)
+  to-cond :
+    Equiv (mul (probVal μ (inter (inter A B) C)) (probVal μ C))
+          (mul (probVal μ (inter A C)) (probVal μ (inter B C))) →
+    Equiv (condVal μ (inter A B) C hC)
+          (mul (condVal μ A C hC) (condVal μ B C hC))
+  to-cond h =
+    begin
+      cABC * (cC * cC)
+    ≡⟨ sym (*-assoc cABC cC cC) ⟩
+      (cABC * cC) * cC
+    ≡⟨ cong (_* cC) (*-cancel-≡-right {m = cABC * cC} {n = cAC * cBC} {c = n * n} nn>0
+         (begin
+           (cABC * cC) * (n * n)
+         ≡⟨ h ⟩
+           (cAC * cBC) * (n * n)
+         ∎)) ⟩
+      (cAC * cBC) * cC
+    ∎
+  from-cond :
+    Equiv (condVal μ (inter A B) C hC)
+          (mul (condVal μ A C hC) (condVal μ B C hC)) →
+    Equiv (mul (probVal μ (inter (inter A B) C)) (probVal μ C))
+          (mul (probVal μ (inter A C)) (probVal μ (inter B C)))
+  from-cond h =
+    begin
+      (cABC * cC) * (n * n)
+    ≡⟨ cong (_* (n * n))
+         (*-cancel-≡-right {m = cABC * cC} {n = cAC * cBC} {c = cC} hC
+           (begin
+             (cABC * cC) * cC
+           ≡⟨ *-assoc cABC cC cC ⟩
+             cABC * (cC * cC)
+           ≡⟨ h ⟩
+             (cAC * cBC) * cC
+           ∎)) ⟩
+      (cAC * cBC) * (n * n)
+    ∎
+
+-- The same product of counts is also the equality of the conditional value
+-- given `B` and `C` with the conditional value given only `C`. Conjunction
+-- associates, so the triple intersection can be grouped either way.
+cond-given : {X : Set} (μ : Urn X) (A B C : Event X)
+  (hC : 0 < probNum μ C) (hBC : 0 < probNum μ (inter B C)) →
+  let joint = mul (probVal μ (inter (inter A B) C)) (probVal μ C)
+      sides = mul (probVal μ (inter A C)) (probVal μ (inter B C))
+  in (Equiv joint sides →
+      Equiv (condVal μ A (inter B C) hBC) (condVal μ A C hC))
+   × (Equiv (condVal μ A (inter B C) hBC) (condVal μ A C hC) →
+      Equiv joint sides)
+cond-given μ A B C hC hBC =
+  to-cond , from-cond
+  where
+  cABC = probNum μ (inter (inter A B) C)
+  cJoin = probNum μ (inter A (inter B C))
+  cAC = probNum μ (inter A C)
+  cBC = probNum μ (inter B C)
+  cC = probNum μ C
+  n = size μ
+  nn>0 = *-pos (occupied μ) (occupied μ)
+  grouped : cJoin ≡ cABC
+  grouped = count-cong {xs = cells μ}
+    (λ x → sym (∧-assoc (A x) (B x) (C x)))
+  to-cond :
+    Equiv (mul (probVal μ (inter (inter A B) C)) (probVal μ C))
+          (mul (probVal μ (inter A C)) (probVal μ (inter B C))) →
+    Equiv (condVal μ A (inter B C) hBC) (condVal μ A C hC)
+  to-cond h =
+    begin
+      cJoin * cC
+    ≡⟨ cong (_* cC) grouped ⟩
+      cABC * cC
+    ≡⟨ *-cancel-≡-right nn>0
+         (begin
+           (cABC * cC) * (n * n)
+         ≡⟨ h ⟩
+           (cAC * cBC) * (n * n)
+         ∎) ⟩
+      cAC * cBC
+    ∎
+  from-cond :
+    Equiv (condVal μ A (inter B C) hBC) (condVal μ A C hC) →
+    Equiv (mul (probVal μ (inter (inter A B) C)) (probVal μ C))
+          (mul (probVal μ (inter A C)) (probVal μ (inter B C)))
+  from-cond h =
+    begin
+      (cABC * cC) * (n * n)
+    ≡⟨ cong (λ k → (k * cC) * (n * n)) (sym grouped) ⟩
+      (cJoin * cC) * (n * n)
+    ≡⟨ cong (_* (n * n)) h ⟩
+      (cAC * cBC) * (n * n)
     ∎

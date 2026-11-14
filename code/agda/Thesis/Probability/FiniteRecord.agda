@@ -5,6 +5,7 @@ open import Thesis.Bool
 open import Thesis.Nat
 open import Thesis.List
 open import Thesis.Probability.Core
+import Thesis.Probability.Urn as Urn
 open import Thesis.Probability.QProb using (QProb; qprob; one; LE; zero-le; ≤-cong)
 
 -- A finite probability record is a list of weighted outcomes sharing one
@@ -1045,3 +1046,58 @@ probVal-determined-by-singletons eq left right values nodup complete singletons 
         {q = listSum (map (λ value → probVal right (singletonEvent eq value))
                           (filter event values))}
         (probVal-filtered-sum eq right values nodup complete event)))
+
+-- Expand each weight into that many unit cells. A zero weight contributes
+-- no cell, and the resulting urn is occupied because the record denominator
+-- is positive.
+toUrn : {Ω : Set} → FiniteProbRecord Ω → Urn.Urn Ω
+toUrn R = Urn.ofList (expand (atoms R))
+  (subst (0 <_) (sym (length-expand (atoms R)))
+    (subst (0 <_) (sym (total R)) (den-pos R)))
+
+-- A record and its unit-cell urn assign the same probability to every event.
+-- The cell count is the event mass, and the number of cells is the denominator.
+toUrn-agrees : {Ω : Set} (R : FiniteProbRecord Ω) (E : Event Ω) →
+  Equiv (probVal R E) (Urn.probVal (toUrn R) E)
+toUrn-agrees R E =
+  begin
+    eventMass (atoms R) E * length (expand (atoms R))
+  ≡⟨ cong (_* length (expand (atoms R))) (sym (count-expand (atoms R) E)) ⟩
+    count (expand (atoms R)) E * length (expand (atoms R))
+  ≡⟨ cong (count (expand (atoms R)) E *_)
+       (trans (length-expand (atoms R)) (total R)) ⟩
+    count (expand (atoms R)) E * den R
+  ∎
+
+-- The unit-weight record of an urn. Each cell becomes an atom of weight one,
+-- so the denominator is the number of cells.
+ofUrn : {Ω : Set} → Urn.Urn Ω → FiniteProbRecord Ω
+ofUrn μ = finiteRecord (map (λ ω → (ω , 1)) (Urn.cells μ))
+  (Urn.size μ) (Urn.occupied μ) (totalMass-unit (Urn.cells μ))
+
+ofUrn-agrees : {Ω : Set} (μ : Urn.Urn Ω) (E : Event Ω) →
+  Equiv (probVal (ofUrn μ) E) (Urn.probVal μ E)
+ofUrn-agrees μ E =
+  cong (_* Urn.size μ) (eventMass-unit (Urn.cells μ) E)
+
+-- A pairwise disjoint family adds in the record because it adds in the
+-- unit-cell urn, and the two presentations agree on every event.
+record-additive-family : {Ω : Set} (R : FiniteProbRecord Ω)
+  (events : List (Event Ω)) → Pairwise disjoint events →
+  Equiv (probVal R (unionList events))
+        (listSum (map (probVal R) events))
+record-additive-family R events pw =
+  equiv-trans
+    {p = probVal R (unionList events)}
+    {q = Urn.probVal (toUrn R) (unionList events)}
+    {r = listSum (map (probVal R) events)}
+    (toUrn-agrees R (unionList events))
+    (equiv-trans
+      {p = Urn.probVal (toUrn R) (unionList events)}
+      {q = listSum (map (Urn.probVal (toUrn R)) events)}
+      {r = listSum (map (probVal R) events)}
+      (Urn.additive-family (toUrn R) events pw)
+      (listSum-map-congr events
+        (Urn.probVal (toUrn R)) (probVal R)
+        (λ event → equiv-sym {p = probVal R event}
+          {q = Urn.probVal (toUrn R) event} (toUrn-agrees R event))))
