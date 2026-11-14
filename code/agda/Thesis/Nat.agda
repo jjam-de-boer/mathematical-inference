@@ -334,6 +334,13 @@ cancel-sub {x} {y} {z} y≤z eq =
     (a * c) * (b * d)
   ∎
 
+-- An inequality has at most one proof. The constructors record the exact
+-- chain of successors, so two chains between the same endpoints agree step
+-- by step.
+≤-unique : ∀ {m n} (p q : m ≤ n) → p ≡ q
+≤-unique z≤n     z≤n     = refl
+≤-unique (s≤s p) (s≤s q) = cong s≤s (≤-unique p q)
+
 -- Decide equality by recursion on the unary structure. The negative branch
 -- is a refutation, so a later use can derive ⊥ from an identification of
 -- distinct numbers.

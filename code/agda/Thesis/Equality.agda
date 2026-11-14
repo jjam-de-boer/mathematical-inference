@@ -45,6 +45,8 @@ record _×_ (A B : Set) : Set where
 infixr 4 _,_
 infixr 2 _×_
 
+open _×_ public
+
 -- A claim is decided when a proof or a refutation is supplied as data.
 -- No general excluded middle is assumed; only the procedures below decide
 -- the relations they are written for.
@@ -76,3 +78,64 @@ _ ≡⟨⟩ q = q
 
 _∎ : {A : Set} (x : A) → x ≡ x
 x ∎ = refl
+
+-- Hedberg's theorem. When identity of a type is decided, any two proofs of
+-- the same identity are themselves identical. The decision procedure picks
+-- one canonical proof; every other proof is shown equal to that one by
+-- transporting the reflexive case along the identity. This is used for
+-- equations between natural numbers, Booleans, and finite coordinates, where
+-- a decision procedure is written by recursion. It is not assumed for an
+-- arbitrary identity.
+uip : {A : Set} (decide : (x y : A) → Dec (x ≡ y)) →
+      {x y : A} (p q : x ≡ y) → p ≡ q
+uip {A} decide {x} {y} p q =
+  begin
+    p
+  ≡⟨ path p ⟩
+    trans (sym (canonical refl)) (canonical p)
+  ≡⟨ cong (trans (sym (canonical refl))) (canonical-constant p q) ⟩
+    trans (sym (canonical refl)) (canonical q)
+  ≡⟨ sym (path q) ⟩
+    q
+  ∎
+  where
+  canonical : {z : A} → x ≡ z → x ≡ z
+  canonical {z} r with decide x z
+  ... | yes s = s
+  ... | no ns = ⊥-elim (ns r)
+
+  canonical-constant : {z : A} (r s : x ≡ z) → canonical r ≡ canonical s
+  canonical-constant {z} r s with decide x z
+  ... | yes _ = refl
+  ... | no ns = ⊥-elim (ns r)
+
+  subst-refl : {z : A} (r : x ≡ z) →
+               subst (λ w → x ≡ w) r refl ≡ r
+  subst-refl refl = refl
+
+  cancel : {y : A} (c : x ≡ y) → trans (sym c) c ≡ refl
+  cancel refl = refl
+
+  slide : {z : A} (r : x ≡ z) (q c : x ≡ x) →
+          subst (λ w → x ≡ w) r (trans q c) ≡
+          trans q (subst (λ w → x ≡ w) r c)
+  slide refl q c = refl
+
+  follow : {z : A} (r : x ≡ z) →
+           subst (λ w → x ≡ w) r (canonical refl) ≡ canonical r
+  follow refl = refl
+
+  path : {z : A} (r : x ≡ z) →
+         r ≡ trans (sym (canonical refl)) (canonical r)
+  path r =
+    begin
+      r
+    ≡⟨ sym (subst-refl r) ⟩
+      subst (λ w → x ≡ w) r refl
+    ≡⟨ cong (subst (λ w → x ≡ w) r) (sym (cancel (canonical refl))) ⟩
+      subst (λ w → x ≡ w) r (trans (sym (canonical refl)) (canonical refl))
+    ≡⟨ slide r (sym (canonical refl)) (canonical refl) ⟩
+      trans (sym (canonical refl)) (subst (λ w → x ≡ w) r (canonical refl))
+    ≡⟨ cong (trans (sym (canonical refl))) (follow r) ⟩
+      trans (sym (canonical refl)) (canonical r)
+    ∎

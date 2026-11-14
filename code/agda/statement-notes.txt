@@ -10,3 +10,9 @@ telescope equality. These notes are not part of the checked development.
 - Rational magnitude is Equiv, the cross-multiplication relation.
 - Adding a witnessed difference back to the subtrahend is restore-sub.
 - Dividing by a presentation equivalent to the unit is div-by-unit.
+- FiniteProbRecord.map is pushforward. map_id and map_comp are equality of
+  records. The denominator equation has a unique proof because natural-number
+  identity is decided, and the positivity witness is unique by the order
+  constructors.
+- product_probVal_equiv_of_slices is product-probVal-slices: each common
+  value has an Equiv of its two slices.
