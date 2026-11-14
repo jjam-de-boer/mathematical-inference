@@ -34,6 +34,13 @@ flatMap : {A B : Set} → (A → List B) → List A → List B
 flatMap f []       = []
 flatMap f (x ∷ xs) = f x ++ flatMap f xs
 
+-- Keep the entries accepted by a Boolean test, in their original order.
+filter : {A : Set} → (A → Bool) → List A → List A
+filter _ []       = []
+filter p (x ∷ xs) with p x
+... | true  = x ∷ filter p xs
+... | false = filter p xs
+
 sum : List ℕ → ℕ
 sum []       = zero
 sum (n ∷ ns) = n + sum ns
