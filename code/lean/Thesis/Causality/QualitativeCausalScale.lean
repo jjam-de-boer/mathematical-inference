@@ -24,10 +24,12 @@ causes (idle experiment) together with non-descendant invariance and
 parent-modularity does not yield a proof, in this library, that an abstract
 `do(X)` slice is Markov on the *defined* mutilation `mutilatedDirected S X`.
 Moving screening-off from the idle graph to that mutilation is the usual
-truncated-factorization / global-Markov argument.  Local Markov does not
-give global d-separation without positivity (intersection), and putting
-“Markov on \(G_{\overline{X}}\)” or Rules 1–3 into the structure would
-collapse the crown into 2a.  Those identities therefore remain theorems of
+truncated-factorization / global-Markov argument. For DAGs, equivalence of
+local and global Markov properties does not require strict positivity. The
+unresolved step here is coherence of the different intervention slices,
+rather than a positivity requirement. Putting “Markov on
+\(G_{\overline{X}}\)” or Rules 1–3 into the structure would assume the
+intended conclusion. Those identities therefore remain theorems of
 induced SCM scales, not of an arbitrary model of the sentences below.
 That gap is Unresolved, not a refutation of the sentences themselves.
 The thin 2b converse (no Clayton slice) is the Refuted fact.
@@ -37,6 +39,11 @@ Listing-bag sentences are corollaries of ticketwise world-ticket readings
 
 Representation of every finite model of this structure by an `ExactModel`
 is not proved.
+
+The stronger operational game in `CausalUrnGame` supplies nonempty local urn
+instructions and fresh source cells. Its separate representation and
+`CausalUrnDoCalculus` derive all three rules for those games. That does not
+settle the representation problem for arbitrary models of this weaker scale.
 -/
 
 namespace QualitativeCausalScale

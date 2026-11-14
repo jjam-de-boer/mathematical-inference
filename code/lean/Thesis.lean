@@ -1,4 +1,6 @@
 import Thesis.Examples.CausalAbstraction
+import Thesis.Examples.CausalUrnGame
+import Thesis.Examples.CausalUrnRenaming
 import Thesis.Examples.CausalAbstractionExtension
 import Thesis.Examples.CausalAbstractionScale
 import Thesis.Examples.CausalAbstractionEmergence
