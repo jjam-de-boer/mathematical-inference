@@ -1,0 +1,10 @@
+Statement ledger
+
+Notes for identities whose Agda statement is a pointwise product or a
+telescope equality. These notes are not part of the checked development.
+
+- union-complement holds at every sample:
+  union E (complement E) x ≡ topEvent x.
+- Finite coordinate listings and their round trip live in Thesis.Fin
+  (finRange-nodup, occurrences-finRange, ofFn-get, ofFn-cong).
+- Rational magnitude is Equiv, the cross-multiplication relation.
