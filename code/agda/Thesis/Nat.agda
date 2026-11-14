@@ -149,6 +149,22 @@ lt-or-ge m n with compare≤ (suc m) n
 ≤-+ˡ zero m = ≤-refl m
 ≤-+ˡ (suc n) m = ≤-trans (≤-+ˡ n m) (≤-step (≤-refl (n + m)))
 
+-- Adding on the right cannot make a number smaller.
+≤-+ʳ : ∀ m n → m ≤ m + n
+≤-+ʳ m n rewrite +-comm m n = ≤-+ˡ n m
+
+-- The amount by which the larger number exceeds the smaller one.
+record Diff (m n : ℕ) : Set where
+  constructor diff
+  field
+    gap  : ℕ
+    path : n ≡ m + gap
+
+≤-diff : ∀ {m n} → m ≤ n → Diff m n
+≤-diff {n = n} z≤n = diff n refl
+≤-diff (s≤s p) with ≤-diff p
+... | diff k eq = diff k (cong suc eq)
+
 *-zeroʳ : ∀ m → m * zero ≡ zero
 *-zeroʳ zero    = refl
 *-zeroʳ (suc m) rewrite *-zeroʳ m = refl
@@ -334,6 +350,13 @@ cancel-sub {x} {y} {z} y≤z eq =
     (a * c) * (b * d)
   ∎
 
+-- An inequality has at most one proof. The constructors record the exact
+-- chain of successors, so two chains between the same endpoints agree step
+-- by step.
+≤-unique : ∀ {m n} (p q : m ≤ n) → p ≡ q
+≤-unique z≤n     z≤n     = refl
+≤-unique (s≤s p) (s≤s q) = cong s≤s (≤-unique p q)
+
 -- Decide equality by recursion on the unary structure. The negative branch
 -- is a refutation, so a later use can derive ⊥ from an identification of
 -- distinct numbers.
@@ -344,4 +367,100 @@ suc m ≟ zero   = no λ ()
 suc m ≟ suc n with m ≟ n
 ... | yes eq = yes (cong suc eq)
 ... | no  ne = no λ { refl → ne refl }
+
+-- Quotient and remainder for a positive divisor. The remainder is strictly
+-- below the divisor, and the dividend is recovered as quotient times divisor
+-- plus remainder. The recursion consumes the dividend one unit at a time and
+-- carries the remainder; when the remainder would reach the divisor it wraps
+-- and the quotient increases by one.
+record Division (m d : ℕ) : Set where
+  constructor division
+  field
+    quot  : ℕ
+    rem   : ℕ
+    rem-< : rem < d
+    path  : m ≡ quot * d + rem
+
+divide : (m d : ℕ) → 0 < d → Division m d
+divide zero    d d>0 = division zero zero d>0 refl
+divide (suc m) d d>0 with divide m d d>0
+... | division q r r<d m≡ with lt-or-ge (suc r) d
+... | inl sr<d = division q (suc r) sr<d
+    (begin
+      suc m
+    ≡⟨ cong suc m≡ ⟩
+      suc (q * d + r)
+    ≡⟨ sym (+-suc (q * d) r) ⟩
+      q * d + suc r
+    ∎)
+... | inr d≤sr = division (suc q) zero d>0
+    (begin
+      suc m
+    ≡⟨ cong suc m≡ ⟩
+      suc (q * d + r)
+    ≡⟨ sym (+-suc (q * d) r) ⟩
+      q * d + suc r
+    ≡⟨ cong (q * d +_) (≤-antisym r<d d≤sr) ⟩
+      q * d + d
+    ≡⟨ +-comm (q * d) d ⟩
+      suc q * d
+    ≡⟨ sym (+-idʳ (suc q * d)) ⟩
+      suc q * d + zero
+    ∎)
+
+-- A positive multiple of the divisor cannot fit in a remainder. The zero
+-- multiple is the only one that stays strictly below the divisor.
+gap-zero : ∀ {r₁} k r d → k * d + r ≡ r₁ → r₁ < d → k ≡ zero
+gap-zero zero    r d eq _ = refl
+gap-zero {r₁} (suc k) r d eq r₁<d = ⊥-elim (≰-of-≥ lower r₁<d)
+  where
+  lower : d ≤ r₁
+  lower =
+    subst (d ≤_) eq
+      (subst (d ≤_) (sym (+-assoc d (k * d) r)) (≤-+ʳ d (k * d + r)))
+
+-- When the first quotient does not exceed the second, the two writings agree.
+scale-le : ∀ q₁ r₁ q₂ r₂ d → q₁ ≤ q₂ → r₁ < d → r₂ < d →
+  q₁ * d + r₁ ≡ q₂ * d + r₂ → q₁ ≡ q₂ × r₁ ≡ r₂
+scale-le q₁ r₁ q₂ r₂ d le r₁<d r₂<d eq with ≤-diff le
+... | diff k path =
+  let reduced = +-cancelˡ-≡ (q₁ * d)
+        (begin
+          q₁ * d + r₁
+        ≡⟨ eq ⟩
+          q₂ * d + r₂
+        ≡⟨ cong (λ z → z * d + r₂) path ⟩
+          (q₁ + k) * d + r₂
+        ≡⟨ cong (_+ r₂) (*-distribʳ-+ q₁ k d) ⟩
+          (q₁ * d + k * d) + r₂
+        ≡⟨ +-assoc (q₁ * d) (k * d) r₂ ⟩
+          q₁ * d + (k * d + r₂)
+        ∎)
+      k≡0 = gap-zero k r₂ d (sym reduced) r₁<d
+  in sym (trans path (trans (cong (q₁ +_) k≡0) (+-idʳ q₁)))
+   , subst (λ z → r₁ ≡ z * d + r₂) k≡0 reduced
+
+-- A predecessor of a weak comparison is still a weak comparison.
+≤-weaken-suc : ∀ {m n} → suc m ≤ n → m ≤ n
+≤-weaken-suc {m} m<n = ≤-trans (≤-step (≤-refl m)) m<n
+
+-- Two writings of the same dividend with remainders below the divisor use
+-- the same quotient and the same remainder.
+scale-unique : ∀ q₁ r₁ q₂ r₂ d → r₁ < d → r₂ < d →
+  q₁ * d + r₁ ≡ q₂ * d + r₂ → q₁ ≡ q₂ × r₁ ≡ r₂
+scale-unique q₁ r₁ q₂ r₂ d r₁<d r₂<d eq with compare≤ q₁ q₂
+... | inl q₁≤q₂ = scale-le q₁ r₁ q₂ r₂ d q₁≤q₂ r₁<d r₂<d eq
+... | inr q₂<q₁ =
+  let swapped = scale-le q₂ r₂ q₁ r₁ d (≤-weaken-suc q₂<q₁) r₂<d r₁<d (sym eq)
+  in sym (fst swapped) , sym (snd swapped)
+
+-- A sum that is already written as quotient times divisor plus a small
+-- remainder is recovered by the division algorithm.
+divide-scale : ∀ q r d (r<d : r < d) (d>0 : 0 < d) →
+  Division.quot (divide (q * d + r) d d>0) ≡ q ×
+  Division.rem (divide (q * d + r) d d>0) ≡ r
+divide-scale q r d r<d d>0 =
+  scale-unique (Division.quot Δ) (Division.rem Δ) q r d
+    (Division.rem-< Δ) r<d (sym (Division.path Δ))
+  where Δ = divide (q * d + r) d d>0
 

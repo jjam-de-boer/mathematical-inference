@@ -141,3 +141,237 @@ countP-perm p refl           = refl
 countP-perm p (prep perm)    rewrite countP-perm p perm = refl
 countP-perm p (swap {x} {y} {xs}) = countP-swap p x y xs
 countP-perm p (comp π ρ)     = trans (countP-perm p π) (countP-perm p ρ)
+
+-- `n` copies of one entry. A weight later becomes this many unit cells.
+replicate : {A : Set} → ℕ → A → List A
+replicate zero    _ = []
+replicate (suc n) x = x ∷ replicate n x
+
+length-replicate : {A : Set} (n : ℕ) (x : A) → length (replicate n x) ≡ n
+length-replicate zero    x = refl
+length-replicate (suc n) x rewrite length-replicate n x = refl
+
+length-++ : {A : Set} (xs ys : List A) →
+            length (xs ++ ys) ≡ length xs + length ys
+length-++ []       ys = refl
+length-++ (_ ∷ xs) ys rewrite length-++ xs ys = refl
+
+countP-++ : {A : Set} (p : A → Bool) (xs ys : List A) →
+            countP p (xs ++ ys) ≡ countP p xs + countP p ys
+countP-++ p []       ys = refl
+countP-++ p (x ∷ xs) ys =
+  begin
+    extra (p x) + countP p (xs ++ ys)
+  ≡⟨ cong (extra (p x) +_) (countP-++ p xs ys) ⟩
+    extra (p x) + (countP p xs + countP p ys)
+  ≡⟨ sym (+-assoc (extra (p x)) (countP p xs) (countP p ys)) ⟩
+    (extra (p x) + countP p xs) + countP p ys
+  ∎
+
+-- Copies of one value contribute its test once for each copy.
+countP-replicate : {A : Set} (p : A → Bool) (n : ℕ) (value : A) →
+  countP p (replicate n value) ≡ (if p value then n else 0)
+countP-replicate p zero    value with p value
+... | true  = refl
+... | false = refl
+countP-replicate p (suc n) value with p value in eq
+... | true =
+  begin
+    suc (countP p (replicate n value))
+  ≡⟨ cong suc (countP-replicate p n value) ⟩
+    suc (if p value then n else 0)
+  ≡⟨ cong suc (cong (λ b → if b then n else 0) eq) ⟩
+    suc n
+  ∎
+... | false =
+  begin
+    countP p (replicate n value)
+  ≡⟨ countP-replicate p n value ⟩
+    if p value then n else 0
+  ≡⟨ cong (λ b → if b then n else 0) eq ⟩
+    0
+  ∎
+
+-- The Boolean chosen by a decision. `true` means a proof was produced.
+fromDec : {P : Set} → Dec P → Bool
+fromDec (yes _) = true
+fromDec (no  _) = false
+
+fromDec-of-proof : {P : Set} (d : Dec P) → P → fromDec d ≡ true
+fromDec-of-proof (yes _) _ = refl
+fromDec-of-proof (no ¬p) p = ⊥-elim (¬p p)
+
+fromDec-false : {P : Set} (d : Dec P) → (P → ⊥) → fromDec d ≡ false
+fromDec-false (yes p) ¬p = ⊥-elim (¬p p)
+fromDec-false (no _)  _  = refl
+
+fromDec-yes : {P : Set} (d : Dec P) → fromDec d ≡ true → P
+fromDec-yes (yes p) _  = p
+fromDec-yes (no _)  ()
+
+-- Membership is a finite disjunction of identities. It carries the position
+-- as data: the head, or a later cell.
+data _∈_ {A : Set} (x : A) : List A → Set where
+  here  : ∀ {xs} → x ∈ x ∷ xs
+  there : ∀ {y xs} → x ∈ xs → x ∈ y ∷ xs
+
+-- Absence is a refutation of membership.
+_∉_ : {A : Set} → A → List A → Set
+x ∉ xs = x ∈ xs → ⊥
+
+infix 4 _∈_ _∉_
+
+-- A head that differs from every later entry does not occur later.
+∉-of-all : {A : Set} {x : A} {xs : List A} → All (x ≢_) xs → x ∈ xs → ⊥
+∉-of-all []             ()
+∉-of-all (x≠ ∷ _)  here        = x≠ refl
+∉-of-all (_  ∷ rest) (there mem) = ∉-of-all rest mem
+
+-- One cell of a membership search. A proof that the head matches is turned
+-- into membership at the head; otherwise the search continues down the tail.
+∈-cons : {A : Set} {x y : A} {ys : List A} →
+  Dec (x ≡ y) → Dec (x ∈ ys) → Dec (x ∈ y ∷ ys)
+∈-cons {x = x} {ys = ys} (yes p) _ = yes (subst (λ z → x ∈ z ∷ ys) p here)
+∈-cons (no _)  (yes m) = yes (there m)
+∈-cons (no ¬p) (no ¬m) = no λ where
+  here        → ¬p refl
+  (there mem) → ¬m mem
+
+-- Search for an entry using a decision procedure for identity. The refusal
+-- is a proof that no cell matches.
+∈-dec : {A : Set} (eq : (x y : A) → Dec (x ≡ y)) (x : A) (xs : List A) →
+        Dec (x ∈ xs)
+∈-dec eq x []       = no λ ()
+∈-dec eq x (y ∷ ys) = ∈-cons (eq x y) (∈-dec eq x ys)
+
+-- A property of every entry survives deletion. The retained cells are a
+-- sublist of the original ones.
+All-filter : {A : Set} {P : A → Set} (p : A → Bool) {xs : List A} →
+  All P xs → All P (filter p xs)
+All-filter p {[]}     []         = []
+All-filter p {x ∷ xs} (px ∷ pxs) with p x
+... | true  = px ∷ All-filter p pxs
+... | false = All-filter p pxs
+
+-- A pairwise relation survives deletion for the same reason.
+pairwise-filter : {A : Set} {R : A → A → Set} (p : A → Bool) {xs : List A} →
+  Pairwise R xs → Pairwise R (filter p xs)
+pairwise-filter p {[]}     []           = []
+pairwise-filter p {x ∷ xs} (all ∷ rest) with p x
+... | true  = All-filter p all ∷ pairwise-filter p rest
+... | false = pairwise-filter p rest
+
+∈-filter-sound : {A : Set} {x : A} (p : A → Bool) (xs : List A) →
+  x ∈ filter p xs → p x ≡ true
+∈-filter-sound p [] ()
+∈-filter-sound {x = x} p (y ∷ ys) mem with p y in eq
+... | true  = kept eq mem
+  where
+  kept : p y ≡ true → x ∈ y ∷ filter p ys → p x ≡ true
+  kept eq here          = eq
+  kept eq (there later) = ∈-filter-sound p ys later
+... | false = ∈-filter-sound p ys mem
+
+∈-filter-complete : {A : Set} {x : A} (p : A → Bool) (xs : List A) →
+  p x ≡ true → x ∈ xs → x ∈ filter p xs
+∈-filter-complete p []       _  ()
+∈-filter-complete p (y ∷ ys) px here rewrite px = here
+∈-filter-complete p (y ∷ ys) px (there mem) with p y
+... | true  = there (∈-filter-complete p ys px mem)
+... | false = ∈-filter-complete p ys px mem
+
+-- A permutation read backwards is a permutation. A common head stays, a swap
+-- is its own inverse, and a composite reverses the order of the steps.
+perm-sym : {A : Set} {xs ys : List A} → Perm xs ys → Perm ys xs
+perm-sym refl        = refl
+perm-sym (prep p)    = prep (perm-sym p)
+perm-sym swap        = swap
+perm-sym (comp p q)  = comp (perm-sym q) (perm-sym p)
+
+-- Move the first occurrence of an entry to the front. The decision procedure
+-- chooses which cell is the first match.
+erase : {A : Set} (eq : (x y : A) → Dec (x ≡ y)) → A → List A → List A
+erase eq x []       = []
+erase eq x (y ∷ ys) with eq x y
+... | yes _ = ys
+... | no  _ = y ∷ erase eq x ys
+
+-- Where an entry sits in a concatenation.
+∈-++ˡ : {A : Set} {x : A} {xs ys : List A} → x ∈ xs → x ∈ xs ++ ys
+∈-++ˡ here        = here
+∈-++ˡ (there mem) = there (∈-++ˡ mem)
+
+∈-++ʳ : {A : Set} {x : A} (xs : List A) {ys : List A} → x ∈ ys → x ∈ xs ++ ys
+∈-++ʳ []       mem = mem
+∈-++ʳ (_ ∷ xs) mem = there (∈-++ʳ xs mem)
+
+∈-++ : {A : Set} {x : A} (xs ys : List A) → x ∈ xs ++ ys → x ∈ xs ⊎ x ∈ ys
+∈-++ []       ys mem = inr mem
+∈-++ (x ∷ xs) ys here        = inl here
+∈-++ (x ∷ xs) ys (there mem) with ∈-++ xs ys mem
+... | inl inXs = inl (there inXs)
+... | inr inYs = inr inYs
+
+-- Inserting one entry does not drop any entry that was already present.
+∈-insert : {A : Set} {a x : A} (before after : List A) →
+  a ∈ before ++ after → a ∈ before ++ x ∷ after
+∈-insert []             after mem        = there mem
+∈-insert (_ ∷ before)   after here       = here
+∈-insert (y ∷ before)   after (there mem) = there (∈-insert before after mem)
+
+-- One explicit position of an entry, as a prefix, the entry, and a suffix.
+record Split {A : Set} (x : A) (xs : List A) : Set where
+  constructor located
+  field
+    before : List A
+    after  : List A
+    path   : xs ≡ before ++ x ∷ after
+
+split-∈ : {A : Set} {x : A} {xs : List A} → x ∈ xs → Split x xs
+split-∈ {xs = x ∷ ys} here = located [] ys refl
+split-∈ (there {y} mem) with split-∈ mem
+... | located before after path = located (y ∷ before) after (cong (y ∷_) path)
+
+-- Slide an entry from the middle of a list to the front by swapping it
+-- forward one cell at a time.
+perm-middle : {A : Set} {x : A} (before after : List A) →
+  Perm (before ++ x ∷ after) (x ∷ before ++ after)
+perm-middle []           after = refl
+perm-middle {x = x} (y ∷ before) after =
+  comp (prep (perm-middle before after)) (swap {x = y} {y = x})
+
+length-map : {A B : Set} (f : A → B) (xs : List A) →
+  length (map f xs) ≡ length xs
+length-map f []       = refl
+length-map f (_ ∷ xs) rewrite length-map f xs = refl
+
+-- Filtering keeps one cell for each accepted entry, so the length is the count.
+length-filter : {A : Set} (p : A → Bool) (xs : List A) →
+  length (filter p xs) ≡ countP p xs
+length-filter p []       = refl
+length-filter p (x ∷ xs) with p x
+... | true  = cong suc (length-filter p xs)
+... | false = length-filter p xs
+
+-- A second test on the retained cells is the conjunction with the filter.
+count-filter : {A : Set} (p q : A → Bool) (xs : List A) →
+  countP q (filter p xs) ≡ countP (λ x → p x ∧ q x) xs
+count-filter p q [] = refl
+count-filter p q (x ∷ xs) with p x | q x in eq
+... | true  | true =
+  begin
+    extra (q x) + countP q (filter p xs)
+  ≡⟨ cong (λ b → extra b + countP q (filter p xs)) eq ⟩
+    suc (countP q (filter p xs))
+  ≡⟨ cong suc (count-filter p q xs) ⟩
+    suc (countP (λ y → p y ∧ q y) xs)
+  ∎
+... | true  | false =
+  begin
+    extra (q x) + countP q (filter p xs)
+  ≡⟨ cong (λ b → extra b + countP q (filter p xs)) eq ⟩
+    countP q (filter p xs)
+  ≡⟨ count-filter p q xs ⟩
+    countP (λ y → p y ∧ q y) xs
+  ∎
+... | false | _ = count-filter p q xs

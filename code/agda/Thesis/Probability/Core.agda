@@ -225,6 +225,12 @@ count-reindex π E = countP-perm E π
 ∧-comm true  false = refl
 ∧-comm true  true  = refl
 
+-- Conjunction associates. A true left factor disappears, and a false one
+-- makes both associations false.
+∧-assoc : ∀ a b c → (a ∧ b) ∧ c ≡ a ∧ (b ∧ c)
+∧-assoc true  b c = refl
+∧-assoc false b c = refl
+
 count-inter-comm : {X : Set} (xs : List X) (E F : Event X) →
                    count xs (inter E F) ≡ count xs (inter F E)
 count-inter-comm xs E F =

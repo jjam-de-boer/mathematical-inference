@@ -10,3 +10,41 @@ telescope equality. These notes are not part of the checked development.
 - Rational magnitude is Equiv, the cross-multiplication relation.
 - Adding a witnessed difference back to the subtrahend is restore-sub.
 - Dividing by a presentation equivalent to the unit is div-by-unit.
+- FiniteProbRecord.map is pushforward. map_id and map_comp are equality of
+  records. The denominator equation has a unique proof because natural-number
+  identity is decided, and the positivity witness is unique by the order
+  constructors.
+- product_probVal_equiv_of_slices is product-probVal-slices: each common
+  value has an Equiv of its two slices.
+- membershipEvent_cons, unionList_map_singletonEvent, and
+  membershipEvent_filter hold at each candidate. Identity of samples is
+  an explicit decision procedure.
+- perm_of_nodup_mem_iff is perm-of-same-members: each entry has a function
+  from membership on the left to membership on the right and a function in
+  the other direction. Occurrence counts use that same decision procedure.
+- independent_iff_condVal_left, independent_iff_condVal_right,
+  conditionalIndependent_iff_condProduct, and
+  conditionalIndependent_iff_condVal are pairs of the two directions.
+- assignmentDecidableEq is assign-≟. An assignment is a telescope, and
+  assign-ext rebuilds it from agreement at each coordinate.
+- rectangularEvent_eq_true_iff is the pair rect-holds. Enumeration is an
+  ordinary list: the telescope is a nested pair in the universe of the
+  coordinate types.
+- rectangularEvent_assignment_congr is rect-agree. Coordinatewise agreement
+  is telescope equality, and the rectangle is unchanged by that equality.
+- FiniteProduct.atoms is jointAtoms. FiniteProduct.record is productRecord.
+  Zero-weight atoms are kept.
+- qProduct_singleton selects with pick, the Boolean of coordinate identity.
+  The two families are not equated; the product is compared pointwise.
+- enumeration_coordinate_mem is enum-coord. The listed telescope is inverted
+  into an earlier assignment and a last value, both as data.
+- singletonEvents is oneCoord. Both places are classified; a value is never
+  transported along a coordinate identity.
+- rectangularEvent_singleton_dependent is rect-one.
+- rectangularEvent_singleton compared two event families by function
+  identity. The homogeneous marginal is coordinate-prob-const, which uses
+  oneCoord directly.
+- record_coordinate_probVal_dependent is coordinate-prob.
+- FiniteWitness.ofList keeps the value and its coordinate code. The
+  membership proof used to bound idxOf is not part of the identity.
+- CommonDenominator.probVal is eventSum. toRecord_preserves compares by Equiv.
