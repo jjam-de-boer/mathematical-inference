@@ -105,6 +105,7 @@ import Thesis.Probability.FiniteBooleanCovariance
 import Thesis.Probability.FiniteBooleanCylinderCovariance
 import Thesis.Probability.FiniteRatioPerturbation
 import Thesis.Probability.ConditionalUniqueness
+import Thesis.Probability.OrderedConditionals
 import Thesis.Probability.FiniteProductConditionals
 import Thesis.Probability.BooleanNoise
 import Thesis.Probability.BooleanChannelTable

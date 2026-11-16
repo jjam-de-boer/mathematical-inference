@@ -69,10 +69,8 @@ The main implemented results are:
   satisfying the local instructions gives the same assignment. Response
   tables choose a joint assignment of random choices across hypothetical
   experiments; they do not establish a uniquely determined counterfactual
-  law. The weaker comparison structure supplying a separate urn for each
-  intervention still lacks a proved general SCM representation. These
-  games give a finite acyclic operational foundation, not causal structure
-  from event comparisons alone.
+  law. These games give a finite acyclic operational foundation, not causal
+  structure from event comparisons alone.
 - Joint and conditional identification completeness for the stated positive
   model classes, original finite hidden-DAG transfer, and supported-zero
   certificates on each formula's used-conditional domain (the primitive
@@ -336,6 +334,15 @@ Use the appropriate status:
 An unfinished proof or timeout is not a disproof. A counterexample to one
 construction does not refute the broader theorem. Keep entries concise,
 consolidate overlaps, and request approval before changing this section.
+
+- **Refuted — separate experimental urns as a causal foundation.** The older
+  requirements on separately supplied experimental urns are insufficient:
+  a Boolean fork satisfies them and observational screening-off but violates
+  supported Rule 1 (`1` versus `1/2`). A Boolean chain satisfies them and
+  screening-off in every experiment but violates supported Rule 2 (`0` versus
+  `1/2`). Evidence: `Thesis.Examples.QualitativeCausalObstruction` and
+  `Thesis.Examples.QualitativeExperimentalDrift`. Revisit with strengthened
+  coherence requirements and a proved representation theorem.
 
 - **Refuted — the old identification recursion.** On a positive front-door
   graph (`X→M→Y` with confounding of `X,Y`), its returned formula evaluates
