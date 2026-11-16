@@ -166,9 +166,14 @@ The main implemented results are:
   selected counters: a one-time switch can enable unbounded later growth
   without restoring the source marking or control state
   (`Thesis.Examples.PetriPumping` and
-  `Thesis.Examples.PetriControlPumping`). These
-  results do not decide exact reachability. Token-balance equations can be
-  feasible while no execution reaches the requested marking.
+  `Thesis.Examples.PetriControlPumping`). For any supplied finite transition
+  word, the least enabled counter source and its actual endpoint are
+  computed. Every execution along that word adds the same nonnegative
+  surplus to both endpoints, retaining consumption guards. A finite supply
+  for each repetition need not give one finite supply for all repetitions
+  (`Thesis.Examples.PetriWordRequirements`). These results do not decide
+  exact reachability. Token-balance equations can be feasible while no
+  execution reaches the requested marking.
 - Exact undefined/zero/positive support analysis for the current formula and
   guard languages, finite causal support-profile coverage, and checked bounded
   proof enumeration and formula selection. A supplied checked query trace
