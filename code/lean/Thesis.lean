@@ -35,6 +35,8 @@ import Thesis.Examples.IdentificationAPIIsolation
 import Thesis.Examples.QualitativeDoCalculus
 import Thesis.Examples.WorldTicket
 import Thesis.Examples.QualitativeCausalScale
+import Thesis.Examples.QualitativeCausalObstruction
+import Thesis.Examples.QualitativeExperimentalDrift
 import Thesis.Examples.SupportAwareSemantics
 import Thesis.Examples.SupportAwareChain
 import Thesis.Examples.LocalSupportIdentification

@@ -19,20 +19,21 @@ which knobs are set and which nodes are direct causes along `S.directed`.
 They do not mention Pearl's three rules, path d-separation, or the mutilated
 graph \(G_{\overline{X}}\) as structure fields.
 
-Investigation of the load-bearing step.  Local screening-off by direct
-causes (idle experiment) together with non-descendant invariance and
-parent-modularity does not yield a proof, in this library, that an abstract
-`do(X)` slice is Markov on the *defined* mutilation `mutilatedDirected S X`.
-Moving screening-off from the idle graph to that mutilation is the usual
-truncated-factorization / global-Markov argument. For DAGs, equivalence of
-local and global Markov properties does not require strict positivity. The
-unresolved step here is coherence of the different intervention slices,
-rather than a positivity requirement. Putting “Markov on
-\(G_{\overline{X}}\)” or Rules 1–3 into the structure would assume the
-intended conclusion. Those identities therefore remain theorems of
-induced SCM scales, not of an arbitrary model of the sentences below.
-That gap is Unresolved, not a refutation of the sentences themselves.
-The thin 2b converse (no Clayton slice) is the Refuted fact.
+The proposed transfer from observational screening-off to every intervened
+slice is false. `Thesis.Examples.QualitativeCausalObstruction` supplies three
+Boolean nodes A → B, A → C satisfying all fields below and observational
+screening-off. Setting A=false alone correlates the two individually fair
+children. Supported Rule 1 values are then one and one-half, despite the
+required graphical separation. That example proves the negation of the
+named `MutilatedMarkovFromAxioms` proposition below.
+
+The obstruction is coherence of the different intervention slices, not a
+positivity requirement. `Thesis.Examples.QualitativeExperimentalDrift`
+additionally satisfies local screening-off in every slice but violates
+supported action/observation exchange. Thus separate per-experiment Markov
+properties alone cannot replace stability across experiments. These are
+counterexamples to sufficient *abstract requirements*, not counterexamples
+to Pearl or to the stronger stable operational game.
 
 Listing-bag sentences are corollaries of ticketwise world-ticket readings
 (`Thesis.Causality.WorldTicket`), not a basis for Pearl.
@@ -218,7 +219,9 @@ def MutilatedIdleScreeningOff (C : QualitativeCausalScale S)
         C.kernelPlausOf right reference = some b →
           C.urn.eqv a b
 
-/-- The load-bearing implication, as a named proposition.  Unresolved. -/
+/-- Historical transfer conjecture. Its negation is proved by the finite
+fork in `Thesis.Examples.QualitativeCausalObstruction`; it is not a theorem
+available to callers of this weaker structure. -/
 def MutilatedMarkovFromAxioms : Prop :=
   ∀ {S : ObservedSignature.{0}} (C : QualitativeCausalScale.{0} S),
     IdleScreeningOff C →
