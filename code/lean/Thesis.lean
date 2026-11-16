@@ -105,6 +105,7 @@ import Thesis.Examples.NativeTraceCertificates
 import Thesis.Examples.PetriNet
 import Thesis.Examples.PetriPredecessors
 import Thesis.Examples.PetriWordRequirements
+import Thesis.Examples.PetriWordCompletion
 import Thesis.Examples.CoordinateBoxes
 import Thesis.Examples.PetriCoverability
 import Thesis.Examples.PetriCoverabilityScan

@@ -45,6 +45,7 @@ import Thesis.Causality.PetriNet
 import Thesis.Causality.PetriControl
 import Thesis.Causality.PetriPredecessors
 import Thesis.Causality.PetriWordRequirements
+import Thesis.Causality.PetriWordCompletion
 import Thesis.Causality.PetriReversal
 import Thesis.Causality.CoordinateBoxes
 import Thesis.Causality.CoordinateBoxScan
@@ -189,6 +190,13 @@ retained even for zero overall effect. A separate regression distinguishes
 a fresh finite resource supply for each repetition from one finite supply
 that enables all repetitions. No partial-endpoint classifier or word search
 is added by this exact supplied-word calculation.
+
+`PetriWordCompletion` checks partially specified endpoints for that same
+supplied word. Fixed coordinates are exact values, including zero. It returns
+actual matching endpoints and their enabled execution, or refutes every
+completion for the word. Source and target share one nonnegative surplus
+per coordinate. Finite-control validation and searching for a word remain
+separate.
 
 `CoordinateBoxScan` and `PetriCoverabilityScan` check finite supplied lists
 with exact success and failure statements. Hits retain literal box contexts
