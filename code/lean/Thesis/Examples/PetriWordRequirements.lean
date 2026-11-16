@@ -72,6 +72,14 @@ theorem draining_pair :
       draining.run (tokens 5) [0] = some (tokens 3) :=
   ⟨rfl, rfl, ((draining.wordRequirements [0]).run_exact _ _).mpr ⟨tokens 2, rfl, rfl⟩⟩
 
+/-- A paired query retains the second firing's prefix guard: an overall
+loss of four tokens still requires five initially, not merely four. -/
+theorem paired_draining_prefix_guards :
+    draining.wordRequirementsAt [0, 0] 0 = (5, 1) ∧
+      draining.run (tokens 4) [0, 0] = none ∧
+      draining.run (tokens 5) [0, 0] = some (tokens 1) :=
+  ⟨rfl, by decide +kernel, rfl⟩
+
 theorem empty_word_preserves_endpoint (net : Thesis.Causality.PetriNet places transitions)
     (before after : Marking places) :
     net.Execution before [] after ↔ before = after := by
