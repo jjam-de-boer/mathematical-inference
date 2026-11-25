@@ -170,11 +170,14 @@ The main implemented results are:
   surplus to both endpoints, retaining consumption guards. For the same supplied
   word, an exact partial-endpoint checker returns actual matching endpoints
   and an enabled execution or proves no completion exists. A fixed zero is
-  distinct from an unspecified coordinate; finite-control validation remains
-  separate. A finite supply
+  distinct from an unspecified coordinate. For fixed initial and final control
+  states, the controlled checker also validates the whole literal control path
+  and retains actual counter endpoints. State-changing paths are allowed.
+  A finite supply
   for each repetition need not give one finite supply for all repetitions
-  (`Thesis.Examples.PetriWordRequirements` and
-  `Thesis.Examples.PetriWordCompletion`). These results do not decide
+  (`Thesis.Examples.PetriWordRequirements`,
+  `Thesis.Examples.PetriWordCompletion` and
+  `Thesis.Examples.PetriControlWordCompletion`). These results do not decide
   exact reachability. Token-balance equations can be feasible while no
   execution reaches the requested marking.
 - Exact undefined/zero/positive support analysis for the current formula and
