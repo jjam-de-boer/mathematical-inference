@@ -47,6 +47,7 @@ import Thesis.Causality.PetriControl
 import Thesis.Causality.PetriPredecessors
 import Thesis.Causality.PetriWordRequirements
 import Thesis.Causality.PetriWordCompletion
+import Thesis.Causality.PetriControlWordCompletion
 import Thesis.Causality.PetriReversal
 import Thesis.Causality.CoordinateBoxes
 import Thesis.Causality.CoordinateBoxScan
@@ -198,6 +199,12 @@ actual matching endpoints and their enabled execution, or refutes every
 completion for the word. Source and target share one nonnegative surplus
 per coordinate. Finite-control validation and searching for a word remain
 separate.
+
+`PetriControlWordCompletion` checks the whole literal control path before
+completing counters, with fixed initial and final control states. It retains
+the actual counter endpoints and their exact compiled execution. State-changing
+paths are allowed; invalid paths or incompatible counters refute every
+completion for that word. Searching for a word remains separate.
 
 `CoordinateBoxScan` and `PetriCoverabilityScan` check finite supplied lists
 with exact success and failure statements. Hits retain literal box contexts

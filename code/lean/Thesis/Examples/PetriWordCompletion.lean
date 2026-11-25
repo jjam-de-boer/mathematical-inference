@@ -101,6 +101,16 @@ theorem mixed_coordinates_have_actual_execution :
     transfer.WordCompletable [0, 0] mixedSource mixedTarget :=
   (classifyWordCompletion_exact transfer [0, 0] mixedSource mixedTarget).mp rfl
 
+def lateSource : PartialMarking 2 := fun place => if place = 0 then some 3 else some 5
+
+def lateTarget : PartialMarking 2 := fun place => if place = 0 then some 5 else some 4
+
+/-- The first coordinate accepts surplus 3 at both ends. The second needs
+surplus 3 at the source but 4 at the target, so rejection must propagate from
+the recursive tail after the head has passed. The actual endpoint is (5,3). -/
+theorem later_coordinate_rejection : ¬ transfer.WordCompletable [0, 0] lateSource lateTarget :=
+  (classifyWordCompletion_negative_iff transfer [0, 0] lateSource lateTarget).mp rfl
+
 /-- No canonical-coordinate evaluation is required when there are no
 places. The supplied transitions still constitute the literal word. -/
 theorem zero_places_accept_every_supplied_word (net : Thesis.Causality.PetriNet 0 transitions)
