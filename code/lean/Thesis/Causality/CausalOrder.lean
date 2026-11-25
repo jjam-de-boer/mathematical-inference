@@ -75,6 +75,35 @@ theorem mem_earlier_iff (order : CausalOrder H) (node child : Fin H.count) :
 private def rankedNodes (H : FiniteHiddenDAG S) : List (Fin H.count) :=
   (List.finRange H.count).mergeSort (fun first second => decide (H.rank first ≤ H.rank second))
 
+/-- An actual prefix immediately before a node is exactly its complete
+earlier history. Distinctness prevents an earlier repeated occurrence from
+changing the position returned by the finite lookup. -/
+theorem earlier_eq_of_split (order : CausalOrder H) (past : List (Fin H.count))
+    (child : Fin H.count) (future : List (Fin H.count))
+    (same : order.nodes = past ++ child :: future) : order.earlier child = past := by
+  have unique : (past ++ child :: future).Nodup := same ▸ order.distinct
+  have absent : child ∉ past := by
+    intro listed
+    exact (List.nodup_append.mp unique).2.2 child listed child (List.mem_cons_self) rfl
+  -- The general append lemma reaches a classical arithmetic simplifier in
+  -- this compiler's library. Decidable finite prefix induction suffices.
+  have position : ∀ leading : List (Fin H.count), child ∉ leading →
+      (leading ++ child :: future).idxOf child = leading.length := by
+    intro leading
+    induction leading with
+    | nil => intro _; exact List.idxOf_cons_self
+    | cons first rest inductionHypothesis =>
+        intro notListed
+        have unequal : first ≠ child := by
+          intro equal
+          exact notListed (equal ▸ List.mem_cons_self)
+        have notRest : child ∉ rest := fun listed => notListed (List.mem_cons_of_mem first listed)
+        simp only [List.cons_append, List.idxOf_cons, cond_eq_ite, beq_iff_eq, unequal, if_false,
+          inductionHypothesis notRest, List.length_cons]
+  unfold earlier
+  rw [same, position past absent]
+  exact List.take_left
+
 private theorem ranked_complete (H : FiniteHiddenDAG S) (node : Fin H.count) : node ∈ rankedNodes H :=
   (List.mergeSort_perm _ _).mem_iff.mpr (List.mem_finRange node)
 
