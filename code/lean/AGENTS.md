@@ -124,7 +124,13 @@ The main implemented results are:
   equivalence and does not recover a unique DAG.
 - Public finished modes are an SCM plus current belief. Compact `do` (the
   workspace intervention field) and the modal stack live only on workspace
-  records. Public 1-cells (edit morphisms) wrap existing operations that
+  records. Population query adapters read the generative prior and retain
+  model-class and local-domain certificates for formulas and bounds;
+  raw overrides cannot certify an answer. Any current belief has a
+  shared-response SCM preserving every hard-intervention event law,
+  with a complete bidirected projection. Direct evaluation under that
+  belief is distinguished from identification in the represented class.
+  Public 1-cells (edit morphisms) wrap existing operations that
   keep compact `do` empty. Mode-indexed realizations connect identification
   proofs to those executions: the proof can be run; they do not say which
   interventions the mode may perform. Identification of a query may also be

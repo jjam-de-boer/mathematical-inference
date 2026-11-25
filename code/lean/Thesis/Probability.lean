@@ -1,3 +1,4 @@
+import Thesis.Probability.IndependentConditioning
 import Thesis.Probability.ConstructiveUniformElementary
 import Thesis.Probability.FiniteGrandThermodynamicCurve
 import Thesis.Probability.FiniteGrandPhysicalFitting

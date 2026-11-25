@@ -1,3 +1,4 @@
+import Thesis.Examples.CurrentBeliefInference
 import Thesis.Examples.CausalAbstraction
 import Thesis.Examples.CausalUrnGame
 import Thesis.Examples.CausalUrnRenaming

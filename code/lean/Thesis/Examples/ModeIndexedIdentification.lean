@@ -1,4 +1,4 @@
-import Thesis.Causality.ModeIndexedIdentification
+import Thesis.CausalTransport.CertifiedModeInference
 import Thesis.Causality.BinaryBowModel
 import Thesis.Causality.ProbabilityTermEquality
 
@@ -139,12 +139,13 @@ theorem chain_identified :
     identifyJointKernel policyA.graph query = .identified chainFormula := by
   rfl
 
+set_option maxHeartbeats 1000000 in
+/-- The population policy returns a class certificate, not a bare formula
+and a table lookup. The certificate's local support is checked by the actual
+partial evaluator before this numerical branch is accepted. -/
 theorem policyA_identified :
-    policyA.identifyJoint query reference none none =
-      .identified chainFormula
-        (policyA.interpretIdentified chainFormula reference) :=
-  policyA.identifyJoint_identified_of_kernel query reference none
-    policyA_admissible chain_identified
+    (policyA.identifyJoint query reference none none).isIdentified = true := by
+  decide +kernel
 
 theorem assignment_eq (a : signature.Assignment) : a = xy (a x) (a y) := by
   funext i
@@ -220,15 +221,12 @@ theorem policyBOpened_admissible :
     policyBOpened.jointAdmissible query = true := by
   decide
 
+set_option maxHeartbeats 1000000 in
+/-- Widening access permits the same population query. It does not use
+mode B's changed belief as though it were the original population law. -/
 theorem policyBOpened_identified :
-    (policyBOpened.identifyJoint query reference none none).isIdentified =
-      true := by
-  have kernel :
-      identifyJointKernel policyBOpened.graph query = .identified chainFormula :=
-    chain_identified
-  rw [policyBOpened.identifyJoint_identified_of_kernel query reference none
-        policyBOpened_admissible kernel]
-  rfl
+    (policyBOpened.identifyJoint query reference none none).isIdentified = true := by
+  decide +kernel
 
 def lockedState : ModeTheory.CurrentState signature where
   model := chainModel

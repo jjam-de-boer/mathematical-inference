@@ -1,3 +1,4 @@
+import Thesis.CausalTransport.CertifiedModeInference
 import Thesis.CausalTransport.DSeparation
 import Thesis.CausalTransport.CausalUrnDoCalculus
 import Thesis.CausalTransport.DSeparationCorrectness

@@ -3,6 +3,7 @@ import Thesis.Causality.ModeTheory
 import Thesis.Causality.IdentificationKernel
 import Thesis.Causality.ConditionalIdentificationKernel
 import Thesis.Causality.ObservationalEvaluation
+import Thesis.Causality.CertifiedQuery
 
 namespace Thesis
 namespace Causality
@@ -15,10 +16,12 @@ Identification indexed by a mode's declared experimental access.
 Pearl ID is graph-indexed: it answers which observational functionals equal
 `P(Y | do(X))` if every `do` in the query language is available. A mode
 answers which interventions this epistemic position actually has. This module
-restricts the query language to an explicit allowed family, then dispatches
-to `identifyJointKernel` / `identifyConditionalKernel`. It does not
-reimplement identification, infer access from a belief table, or treat
-compact workspace `do` as that family.
+supplies an explicit allowed query family and a presentation of results.
+`CausalTransport.CertifiedModeInference` supplies the public engine adapters:
+they retain class-indexed certificates and interpret population formulas
+on the generative prior. Current-belief queries have a separate represented
+SCM and entry point. Neither access nor the represented graph is inferred
+from the compact workspace `do` field.
 
 `modeUnsupported` is a permission miss. It is not a hedge (`failed`) and not
 an identified value. Completeness countermodels remain about the model class.
@@ -96,13 +99,14 @@ theorem empty_set_targets (node : Fin S.count) (value : S.Value node) :
     simp
   · simp [same]
 
-/-- Graph-indexed identification, interpreted on a mode's observational law,
-or rejected as a permission miss. `failed` is the hedge engine; bounds are
-kept only when the caller supplies them. -/
+/-- Display of a class-certified population answer or a diagnostic,
+or rejected as a permission miss. `failed` is the hedge engine; certified bounds retain their
+proof in the indexed answer before this presentation-only projection. -/
 inductive ModeIndexedAnswer (S : ObservedSignature) where
   | identified (formula : ProbabilityTerm S) (value : ProbabilityResult.Result)
   | failed (fail : IdentificationFail S)
   | unfinished
+  | undefined
   | bounded (lower upper : QProb)
   | modeUnsupported
 
@@ -157,9 +161,16 @@ namespace ModeQueryPolicy
 def graph (π : ModeQueryPolicy S) : ObservedGraph S :=
   π.mode.model.observedGraph
 
-/-- Observational law induced by current belief. Compact workspace `do` is
-not applied: public modes already interpret under an empty lock. -/
+/-- Population observational law of the stored generative SCM. Graphical
+identification reads this law. A current belief has a separate interpretation
+and may correlate source variables that the population model keeps independent. -/
 def observationalLaw (π : ModeQueryPolicy S) :
+    FiniteProbRecord S.Assignment :=
+  π.mode.model.observationalDist
+
+/-- Updated observational predictions are available explicitly, without
+claiming that they satisfy the original graph's independence assumptions. -/
+def currentObservationalLaw (π : ModeQueryPolicy S) :
     FiniteProbRecord S.Assignment :=
   π.mode.belief.map π.mode.model.eval
 
@@ -217,7 +228,7 @@ theorem ofWorkspace_drops_lock (σ : ModeTheory.CurrentState S)
 
 theorem observationalLaw_eq_observedValue (π : ModeQueryPolicy S)
     (event : S.Assignment → Bool) :
-    π.observationalLaw.probVal event = π.mode.observedValue event :=
+    π.currentObservationalLaw.probVal event = π.mode.observedValue event :=
   rfl
 
 def jointAdmissible (π : ModeQueryPolicy S) (q : JointKernelQuery S) : Bool :=
@@ -288,124 +299,21 @@ def interpretIdentified (π : ModeQueryPolicy S) (term : ProbabilityTerm S)
     (reference : S.Assignment) : ProbabilityResult.Result :=
   term.observationalDenote π.observationalLaw reference
 
-/-- Convert a graph-indexed kernel outcome. Permission misses never arrive
-here; a hedge stays `failed` unless the caller supplies bounds. -/
-def ofKernelOutcome (π : ModeQueryPolicy S) (outcome : IdentificationOutcome S)
-    (reference : S.Assignment) (bounds : Option (QProb × QProb)) :
-    ModeIndexedAnswer S :=
-  match outcome with
-  | .identified term =>
-      .identified term (π.interpretIdentified term reference)
-  | .failed fail =>
-      match bounds with
-      | some ⟨lo, hi⟩ => .bounded lo hi
-      | none => .failed fail
+/-- Forget proof data only for presentation. The public inference functions
+in `CausalTransport.CertifiedModeInference` return the indexed certificate
+itself; this display cannot be passed back as an identification certificate. -/
+def displayAnswer {source : ProbabilityTerm S} {model : ExactModel S}
+    {reference : S.Assignment}
+    (answer : CertifiedQuery.Answer source model reference) : ModeIndexedAnswer S :=
+  match answer with
+  | .identified evidence =>
+      .identified evidence.certificate.formula evidence.value
+  | .bounded evidence =>
+      .bounded evidence.certificate.lower evidence.certificate.upper
+  | .undefined => .undefined
+  | .failed failure => .failed failure
   | .unfinished => .unfinished
-
-theorem ofKernelOutcome_ne_modeUnsupported (π : ModeQueryPolicy S)
-    (outcome : IdentificationOutcome S) (reference : S.Assignment)
-    (bounds : Option (QProb × QProb)) :
-    π.ofKernelOutcome outcome reference bounds ≠ .modeUnsupported := by
-  cases outcome with
-  | identified term => intro h; cases h
-  | failed fail =>
-      cases bounds with
-      | none => intro h; cases h
-      | some bounds =>
-          cases bounds
-          intro h
-          cases h
-  | unfinished => intro h; cases h
-
-def kernelOutcome (π : ModeQueryPolicy S) (q : JointKernelQuery S)
-    (override : Option (ProbabilityTerm S)) : IdentificationOutcome S :=
-  match override with
-  | some term => .identified term
-  | none => identifyJointKernel π.graph q
-
-/-- Dispatch: if the query action is allowed, run the existing kernel and
-interpret an identified action-free term on the observational belief law. -/
-def identifyJoint (π : ModeQueryPolicy S) (q : JointKernelQuery S)
-    (reference : S.Assignment) (bounds : Option (QProb × QProb))
-    (override : Option (ProbabilityTerm S)) : ModeIndexedAnswer S :=
-  if π.jointAdmissible q then
-    π.ofKernelOutcome (π.kernelOutcome q override) reference bounds
-  else
-    .modeUnsupported
-
-def identifyConditional (π : ModeQueryPolicy S)
-    (q : ConditionalKernelQuery S) (reference : S.Assignment)
-    (bounds : Option (QProb × QProb)) : ModeIndexedAnswer S :=
-  if π.conditionalAdmissible q then
-    π.ofKernelOutcome (identifyConditionalKernel π.graph q) reference bounds
-  else
-    .modeUnsupported
-
-theorem identifyJoint_modeUnsupported (π : ModeQueryPolicy S)
-    (q : JointKernelQuery S) (reference : S.Assignment)
-    (bounds : Option (QProb × QProb)) (override : Option (ProbabilityTerm S))
-    (denied : π.jointAdmissible q = false) :
-    π.identifyJoint q reference bounds override = .modeUnsupported := by
-  simp [identifyJoint, denied]
-
-theorem identifyConditional_modeUnsupported (π : ModeQueryPolicy S)
-    (q : ConditionalKernelQuery S) (reference : S.Assignment)
-    (bounds : Option (QProb × QProb))
-    (denied : π.conditionalAdmissible q = false) :
-    π.identifyConditional q reference bounds = .modeUnsupported := by
-  simp [identifyConditional, denied]
-
-theorem identifyJoint_of_admissible (π : ModeQueryPolicy S)
-    (q : JointKernelQuery S) (reference : S.Assignment)
-    (bounds : Option (QProb × QProb)) (override : Option (ProbabilityTerm S))
-    (ok : π.jointAdmissible q = true) :
-    π.identifyJoint q reference bounds override =
-      π.ofKernelOutcome (π.kernelOutcome q override) reference bounds := by
-  simp [identifyJoint, ok]
-
-theorem identifyConditional_of_admissible (π : ModeQueryPolicy S)
-    (q : ConditionalKernelQuery S) (reference : S.Assignment)
-    (bounds : Option (QProb × QProb))
-    (ok : π.conditionalAdmissible q = true) :
-    π.identifyConditional q reference bounds =
-      π.ofKernelOutcome (identifyConditionalKernel π.graph q) reference bounds := by
-  simp [identifyConditional, ok]
-
-theorem identifyJoint_ne_modeUnsupported_of_admissible (π : ModeQueryPolicy S)
-    (q : JointKernelQuery S) (reference : S.Assignment)
-    (bounds : Option (QProb × QProb)) (override : Option (ProbabilityTerm S))
-    (ok : π.jointAdmissible q = true) :
-    π.identifyJoint q reference bounds override ≠ .modeUnsupported := by
-  rw [π.identifyJoint_of_admissible q reference bounds override ok]
-  exact π.ofKernelOutcome_ne_modeUnsupported _ _ _
-
-theorem identifyJoint_identified_of_kernel (π : ModeQueryPolicy S)
-    (q : JointKernelQuery S) (reference : S.Assignment)
-    (bounds : Option (QProb × QProb)) {term : ProbabilityTerm S}
-    (ok : π.jointAdmissible q = true)
-    (kernel : identifyJointKernel π.graph q = .identified term) :
-    π.identifyJoint q reference bounds none =
-      .identified term (π.interpretIdentified term reference) := by
-  rw [π.identifyJoint_of_admissible q reference bounds none ok]
-  simp [kernelOutcome, ofKernelOutcome, kernel]
-
-theorem identifyJoint_failed_of_kernel (π : ModeQueryPolicy S)
-    (q : JointKernelQuery S) (reference : S.Assignment)
-    {fail : IdentificationFail S}
-    (ok : π.jointAdmissible q = true)
-    (kernel : identifyJointKernel π.graph q = .failed fail) :
-    π.identifyJoint q reference none none = .failed fail := by
-  rw [π.identifyJoint_of_admissible q reference none none ok]
-  simp [kernelOutcome, ofKernelOutcome, kernel]
-
-theorem identifyJoint_bounded_of_kernel (π : ModeQueryPolicy S)
-    (q : JointKernelQuery S) (reference : S.Assignment)
-    (lo hi : QProb) {fail : IdentificationFail S}
-    (ok : π.jointAdmissible q = true)
-    (kernel : identifyJointKernel π.graph q = .failed fail) :
-    π.identifyJoint q reference (some ⟨lo, hi⟩) none = .bounded lo hi := by
-  rw [π.identifyJoint_of_admissible q reference (some ⟨lo, hi⟩) none ok]
-  simp [kernelOutcome, ofKernelOutcome, kernel]
+  | .modeUnsupported => .modeUnsupported
 
 end ModeQueryPolicy
 
@@ -427,11 +335,6 @@ theorem toQueryPolicy_ignores_lock (π : WorkspaceQueryPolicy S) :
     (ExtensionalMode.embed π.toQueryPolicy.mode).record.intervention =
       HardIntervention.empty S :=
   rfl
-
-def identifyJoint (π : WorkspaceQueryPolicy S) (q : JointKernelQuery S)
-    (reference : S.Assignment) (bounds : Option (QProb × QProb))
-    (override : Option (ProbabilityTerm S)) : ModeIndexedAnswer S :=
-  π.toQueryPolicy.identifyJoint q reference bounds override
 
 end WorkspaceQueryPolicy
 

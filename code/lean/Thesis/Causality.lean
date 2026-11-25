@@ -1,3 +1,6 @@
+import Thesis.Causality.CertifiedQuery
+import Thesis.Causality.CurrentBelief
+import Thesis.Causality.IndependentBeliefUpdate
 import Thesis.Causality.CausalAbstraction
 import Thesis.Causality.CausalUrnTickets
 import Thesis.Causality.CausalUrnFreshness
@@ -259,10 +262,18 @@ current beliefs and accumulated interventions. `ModalRealization`,
 `ModeTheory` packages the named states and paths.
 `ExtensionalMode` is the finished public mode (SCM and current belief);
 records remain the workspace for compact `do` and stack inverses.
-`ModeIndexedIdentification` restricts the query language to a mode's declared
-allowed interventions, then dispatches to `identifyJointKernel`. A
-graph-identified query may be mode-unsupported. Compact workspace `do` is not
-that allowed family.
+`ModeIndexedIdentification` separates the population observational law from
+the current-belief law and restricts queries to declared interventions.
+`CertifiedQuery` retains the actual source, model class and local support
+domain. `Thesis.CausalTransport.CertifiedModeInference` connects these
+certificates to guarded graphical identification; a graph-identified query
+may still be mode-unsupported. `CurrentBelief` constructs a shared-response
+SCM preserving every hard-intervention event law of any current belief.
+Its complete bidirected projection makes the possible loss of source
+independence explicit. `IndependentBeliefUpdate` proves a narrower update
+class that does preserve independent sources: rectangular evidence, with
+positive support in every factor. Compact workspace `do` does not declare
+the allowed query family.
 
 `Counterfactual`, `Multiworld` and `ExecutedMultiworld` own finite
 counterfactual and shared-noise world evaluation. Their model classes,
