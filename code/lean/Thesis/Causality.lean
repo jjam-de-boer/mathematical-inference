@@ -56,6 +56,7 @@ import Thesis.Causality.PetriPredecessors
 import Thesis.Causality.PetriWordRequirements
 import Thesis.Causality.PetriWordCompletion
 import Thesis.Causality.PetriControlWordCompletion
+import Thesis.Causality.PetriExactEndpointReduction
 import Thesis.Causality.PetriReversal
 import Thesis.Causality.CoordinateBoxes
 import Thesis.Causality.CoordinateBoxScan
@@ -215,6 +216,11 @@ completing counters, with fixed initial and final control states. It retains
 the actual counter endpoints and their exact compiled execution. State-changing
 paths are allowed; invalid paths or incompatible counters refute every
 completion for that word. Searching for a word remains separate.
+
+`PetriExactEndpointReduction` reduces partial exact endpoint reachability
+to ordinary exact reachability. Setup and cleanup change only unspecified
+counters. Constructing the compiled execution and decoding any successful
+compiled word preserve actual original words and matching endpoints.
 
 `CoordinateBoxScan` and `PetriCoverabilityScan` check finite supplied lists
 with exact success and failure statements. Hits retain literal box contexts
