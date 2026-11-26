@@ -1,3 +1,4 @@
+import Thesis.Examples.CatalogueSampling
 import Thesis.Examples.CurrentBeliefInference
 import Thesis.Examples.CausalAbstraction
 import Thesis.Examples.CausalUrnGame

@@ -1,3 +1,4 @@
+import Thesis.CausalTransport.CatalogueSampling
 import Thesis.CausalTransport.CertifiedModeInference
 import Thesis.CausalTransport.DSeparation
 import Thesis.CausalTransport.CausalUrnDoCalculus
@@ -381,16 +382,16 @@ message passing. `GraphQueryUncertainty` is a finite catalogue of Markov
 hypotheses given data; it is not a graph posterior and is not a substitute
 for ID/IDC. `ShannonElimination` attempts Fourier–Motzkin hidden-variable
 elimination of elemental Shannon inequalities; it is sound and incomplete.
-`CatalogueInference` is the Bayesian finite-catalogue posterior: a Distro
-prior on a caller-declared or already enumerated list, 0/1 or
-Dirichlet–multinomial update from observational **or** interventional finite
-tables, then `identifyJointKernel` or caller-supplied sharp bounds per atom,
-mixed without collapsing disagreement. An exhausted catalogue is unsupported,
-not a unique DAG. A listed set of mutually disagreeing generative SCMs is
-separated by those experiments; a supplied assignment or graph permutation
-may gate Regime A or filter `nativeTemplateCatalogue`. It is distinct from
-`GraphQueryUncertainty`. `CataloguePartition` is the optional depth-capped
-Boolean modifier tree; it does not search graphs.
+`CatalogueInference` updates a Distro prior over supplied hypotheses.
+Exact-law compatibility compares entire predicted laws. `CatalogueSampling`
+assigns likelihoods to a common complete histogram under an explicit fixed
+IID model or a declared parameter prior. Supported predictions update the
+parameter prior before predicting another draw. Posterior readouts retain
+causal disagreements and accept numerical identification or bounds only
+with evidence for the source and application. An exhausted catalogue has
+no posterior. The optional `CataloguePartition` pools leaf readouts as
+estimates and can score proposed trees. `GraphQueryUncertainty` separately
+studies the entropy of the surviving compatible hypotheses.
 
 `CausalEquivalence` records three nested support-aware relations on
 `ExactModel`s: observational agreement of the actual finite joints

@@ -6,6 +6,8 @@ import Thesis.Probability.Distros.Reweight
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.Moments
 import Thesis.Probability.QProbOrder
+import Thesis.Causality.CertifiedQuery
+import Thesis.Probability.Distros.PairedCountSampling
 
 namespace Thesis
 namespace Causality
@@ -17,9 +19,11 @@ open Probability Probability.Distros Probability.Combinatorics
 # Bayesian posterior on a finite catalogue, with kernel ID or bounds
 
 Layer 1 places a `Distro` prior on a finite list of hypotheses and updates
-it by supported reweighting. Layer 2 reuses `identifyJointKernel` and the
-existing bound solvers; it does not reimplement ID and does not rank graphs
-by Shannon inequalities or mutual information.
+it by supported reweighting. Layer 2 can display syntax from `identifyJointKernel`
+and proposed bounds, but a displayed graph/table candidate has no causal
+certificate. Accepted numerical identification and bounds instead retain
+`CertifiedQuery` evidence for the actual source, model class and application.
+The query-indexed statistical interface lives in `CatalogueSampling`.
 
 Hypotheses are caller-declared, or any already enumerated finite list
 including `nativeTemplateCatalogue` at explicit node/source bounds. Templates
@@ -32,9 +36,11 @@ observational (`do` empty) or a `HardIntervention`. Graphs-only atoms cannot
 generate \(P(\cdot\mid do(x))\); scoring an interventional table requires a
 realized SCM (or an explicit predicted table). Bounds-only atoms may
 **exclude** a query margin outside `[lo, hi]`; data inside the interval does
-not confirm the atom. Regime B is Dirichlet–multinomial / Pólya on that
-table, with hypothesis-specific predicted cell masses when the atom is not
-the saturated joint.
+not confirm the atom. Exact-law compatibility accepts only exact-law data.
+Statistical counts use the explicit IID or Dirichlet/Pólya sampling interfaces
+in `CatalogueSampling`; empirical frequencies are not substituted for the
+unknown true table. The legacy `regimeBMass` is an explicitly concentration-one
+table-prior construction around predicted masses, not a fixed-SCM IID law.
 
 Independent experiments multiply natural weights. If every positive-prior
 atom then has likelihood 0, `posterior?` / `infer` return `none` and the
@@ -43,17 +49,19 @@ silent fallback graph. Complexity scores belong only as prior weights.
 
 A finite list of mutually disagreeing generative SCMs is **separated** by
 those experiments: Regime A is then a point mass on the unique realizer,
-not a unique DAG of the world. A supplied assignment permutation may be
+not a unique DAG of the world. A supplied assignment self-map may be
 ANDed into Regime A as an invariance constraint on the **hypothesis**
 (not inferred from data, not PC). `nativeTemplateCatalogue` may be
-filtered by a supplied node permutation of the host observed graph;
+filtered by a supplied node self-map of the host observed graph;
 templates of one hidden DAG share that graph, so that filter is
 all-or-nothing. Observational-only gating remains
 `regimeAInvariantModelWeight`; per-experiment gating also requires the
 predicted `do` table to be invariant. A list of graph-tagged atoms may
 keep some graphs and drop others. A bounded search of this signature's
 finite hard interventions returns a shortest separating experiment list,
-or an inseparable pair; it does not claim a unique DAG.
+or an inseparable pair; it does not claim a unique DAG. These raw self-map
+checks establish neither invertibility nor coherent symmetry. The typed
+finite-group interface in `CatalogueSymmetry` supplies those guarantees.
 
 Defined-zero and undefined formula values stay distinct. No `0/0`
 completion. Identified formulas remain action-free observational terms
@@ -62,7 +70,8 @@ not a second ID engine. Graph-query Shannon entropy remains a separate
 diagnostic.
 -/
 
-variable {α : Type} {S : ObservedSignature.{0}}
+universe u
+variable {α : Type u} {S : ObservedSignature.{0}}
 
 /-- One finite table: a whole law or a count word on observed assignments. -/
 inductive CatalogueData (S : ObservedSignature) where
@@ -79,9 +88,12 @@ structure Experiment (S : ObservedSignature) where
   tag : ExperimentTag S
   data : CatalogueData S
 
+/-- Attach the observation tag without changing the supplied data object. -/
 def observationalExperiment (data : CatalogueData S) : Experiment S :=
   ⟨.observational, data⟩
 
+/-- Record which hard intervention generated this dataset. Every hypothesis is scored
+using the same tag. -/
 def interveneExperiment (action : HardIntervention S) (data : CatalogueData S) :
     Experiment S :=
   ⟨.intervene action, data⟩
@@ -92,8 +104,10 @@ def ExperimentTag.action : ExperimentTag S → HardIntervention S
   | .observational => HardIntervention.empty S
   | .intervene action => action
 
-/-- Finite labelled catalogue with a categorical prior on its indices. -/
-structure Catalogue (n : Nat) (α : Type) where
+/-- Finite labelled catalogue with a categorical prior on its indices.
+The item universe is independent of the finite index universe, so atoms may
+be full generative SCM records as well as small graph or template labels. -/
+structure Catalogue (n : Nat) (α : Type u) where
   item : Fin n → α
   prior : Distro (Fin n)
 
@@ -113,6 +127,8 @@ def uniformOfList (items : List α) (nonempty : 0 < items.length) :
         items.length := finWeight_one items.length
     simpa [h] using nonempty)
 
+/-- Equip an explicitly indexed nonempty family with equal prior mass. Duplicate indices
+remain separate atoms. -/
 def Catalogue.uniform (n : Nat) (item : Fin n → α) (nonempty : 0 < n) :
     Catalogue n α where
   item := item
@@ -129,6 +145,7 @@ observational likelihoods are equal, posterior odds equal these prior odds. -/
 def complexityWeight (budget complexity : Nat) : Nat :=
   if complexity ≤ budget then budget + 1 - complexity else 0
 
+/-- Normalize the declared complexity weights. Supplied positivity prevents an all-zero prior. -/
 def ofListByComplexity (items : List α) (complexity : Fin items.length → Nat)
     (budget : Nat)
     (positive : 0 < natSum items.length
@@ -142,6 +159,7 @@ def mulNatList : List Nat → Nat
   | [] => 1
   | w :: rest => w * mulNatList rest
 
+/-- Combine independent experiment weights, with neutral weight one for no experiments. -/
 def independentWeights (perExperiment : List Nat) : Nat :=
   mulNatList perExperiment
 
@@ -150,6 +168,8 @@ def mulQProbList : List QProb → QProb
   | [] => QProb.one
   | w :: rest => QProb.mul w (mulQProbList rest)
 
+/-- Combine rational experiment probabilities under conditional independence. Shared
+unknown parameters instead need a joint sampling model. -/
 def independentQProb (masses : List QProb) : QProb :=
   mulQProbList masses
 
@@ -159,6 +179,7 @@ def natProduct : (n : Nat) → (Fin n → Nat) → Nat
   | n + 1, values =>
       values (Fin.last n) * natProduct n (fun i => values i.castSucc)
 
+/-- Positive factors give a positive common scale, including the empty product. -/
 theorem natProduct_pos (n : Nat) (values : Fin n → Nat)
     (positive : ∀ i, 0 < values i) : 0 < natProduct n values := by
   induction n with
@@ -167,12 +188,81 @@ theorem natProduct_pos (n : Nat) (values : Fin n → Nat)
       exact Nat.mul_pos (positive (Fin.last n))
         (ih (fun i => values i.castSucc) (fun i => positive i.castSucc))
 
+/-- Changing the presentation of each factor without changing its value
+does not change the common scale. This helper uses only finite recursion. -/
+theorem natProduct_congr (n : Nat) (left right : Fin n → Nat)
+    (same : ∀ i, left i = right i) : natProduct n left = natProduct n right := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+      simp only [natProduct]
+      rw [same (Fin.last n), ih (fun i => left i.castSucc)
+        (fun i => right i.castSucc) (fun i => same i.castSucc)]
+
+/-- Removing a supplied coordinate and multiplying it back restores the
+full product. The identity needs no division and therefore preserves zeros
+in general natural families; likelihood denominators are positive separately. -/
+theorem natProduct_remove (n : Nat) (values : Fin n → Nat) (chosen : Fin n) :
+    values chosen * natProduct n (fun i => if i = chosen then 1 else values i) =
+      natProduct n values := by
+  induction n with
+  | zero => exact Fin.elim0 chosen
+  | succ n ih =>
+      refine Fin.lastCases ?_ (fun earlier => ?_) chosen
+      · simp only [natProduct, ite_true, Nat.one_mul]
+        congr 1
+        apply natProduct_congr
+        intro i
+        have different : i.castSucc ≠ Fin.last n := by
+          intro same
+          have coordinate := congrArg Fin.val same
+          exact Nat.ne_of_lt i.isLt coordinate
+        exact if_neg different
+      · change values earlier.castSucc *
+          ((if Fin.last n = earlier.castSucc then 1 else values (Fin.last n)) *
+            natProduct n (fun i => if i.castSucc = earlier.castSucc then 1
+              else values i.castSucc)) =
+          values (Fin.last n) * natProduct n (fun i => values i.castSucc)
+        have different : Fin.last n ≠ earlier.castSucc := by
+          intro same
+          have coordinate := congrArg Fin.val same
+          exact Nat.ne_of_lt earlier.isLt coordinate.symm
+        rw [if_neg different]
+        have precedingProduct := natProduct_congr n
+          (fun i => if i.castSucc = earlier.castSucc then 1 else values i.castSucc)
+          (fun i => if i = earlier then 1 else values i.castSucc)
+          (fun i => by simp only [Fin.castSucc_inj])
+        rw [precedingProduct]
+        calc
+          _ = values (Fin.last n) *
+              (values earlier.castSucc * natProduct n
+                (fun i => if i = earlier then 1 else values i.castSucc)) := by ac_rfl
+          _ = _ := by rw [ih (fun i => values i.castSucc) earlier]
+
 /-- Exact natural weights for a tuple of rational likelihoods: atom `i`
 receives `num_i * ∏_{j ≠ i} den_j`. -/
 def qprobWeights (n : Nat) (like : Fin n → QProb) : Fin n → Nat :=
   fun i =>
     (like i).num * natProduct n (fun j => if j = i then 1 else (like j).den)
 
+/-- Denominator clearing preserves every likelihood with one common scale.
+This is the mathematical reason that natural reweighting performs the same
+Bayesian update as the supplied rational probabilities; the scale is shared
+by every hypothesis, rather than chosen independently for each atom. -/
+theorem qprobWeights_represents (n : Nat) (like : Fin n → QProb) (i : Fin n) :
+    QProb.Equiv
+      ⟨qprobWeights n like i, natProduct n (fun j => (like j).den),
+        natProduct_pos n _ (fun j => (like j).den_pos)⟩
+      (like i) := by
+  change ((like i).num * natProduct n (fun j => if j = i then 1 else (like j).den)) *
+      (like i).den = (like i).num * natProduct n (fun j => (like j).den)
+  calc
+    _ = (like i).num * ((like i).den *
+        natProduct n (fun j => if j = i then 1 else (like j).den)) := by ac_rfl
+    _ = _ := by rw [natProduct_remove n (fun j => (like j).den) i]
+
+/-- Denominator clearing preserves zero likelihoods exactly: its positive factors
+neither create nor remove support. -/
 theorem qprobWeights_eq_zero_iff (n : Nat) (like : Fin n → QProb) (i : Fin n) :
     qprobWeights n like i = 0 ↔ (like i).num = 0 := by
   simp only [qprobWeights, Nat.mul_eq_zero]
@@ -195,13 +285,18 @@ def dirichletMultinomialMass (trials : Nat) (alphas : List QProb)
     (positive : 0 < (QProb.listSum alphas).num) (counts : List Nat) : QProb :=
   (rationalDirichletMultinomialDistro trials alphas positive).pmf counts
 
-/-- Sum Dirichlet–multinomial masses over a bounded list of hidden count
-tables. Each completion is a full (observed+hidden) word; the caller
-enumerates only assignments inside the stated alphabet bound. -/
+/-- Probability of the union of the supplied complete-count events.
+Duplicate completion entries do not count an event twice. Each completion
+is a full count word in the declared parameter alphabet; using this event
+as a hidden-data marginal additionally requires that the list contain
+exactly the completions of the observed object under every hypothesis.
+This constructor does not certify such a coverage claim or impose a hidden
+alphabet bound on a larger causal model class. -/
 def sumHiddenCompletions (trials : Nat) (alphas : List QProb)
     (positive : 0 < (QProb.listSum alphas).num)
     (completions : List (List Nat)) : QProb :=
-  QProb.listSum (completions.map (dirichletMultinomialMass trials alphas positive))
+  (rationalDirichletMultinomialDistro trials alphas positive).record.probVal
+    (fun counts => decide (counts ∈ completions))
 
 /-- Bayes update: reweight the prior by a natural likelihood. `none` when
 every atom with positive prior mass has likelihood zero: the catalogue is
@@ -217,6 +312,8 @@ def posterior? (prior : Distro (Fin n)) (weight : Fin n → Nat) :
 def catalogueExhausted (prior : Distro (Fin n)) (weight : Fin n → Nat) : Bool :=
   (posterior? prior weight).isNone
 
+/-- A zero likelihood at a label gives zero restricted integral, even when the record
+repeats that label. -/
 theorem natIntegral_singleton_weight_zero [DecidableEq Ω]
     (atoms : List (Ω × Nat)) (weight : Ω → Nat) (x : Ω) (hx : weight x = 0) :
     natIntegral atoms
@@ -302,26 +399,43 @@ theorem posterior_odds_ge_scaled (C : Nat) (Cpos : 0 < C)
       (QProb.mul (QProb.div like_i like_j hj) (QProb.div prior_i prior_j hpj)) :=
   mul_le_of_le _ _ _ bounded
 
-/-- Per-template Layer 2 answer. `identified` keeps the action-free formula
-and its partial value (`none` is undefined, `some 0` is defined zero). -/
-inductive TemplateAnswer (S : ObservedSignature) where
-  | identified (formula : ProbabilityTerm S) (value : ProbabilityResult.Result)
-  | bounded (lower upper : QProb)
+/-- Per-template answers distinguish mathematical evidence from a displayed
+candidate. An identified formula or bound carries its actual source query,
+model-class membership, and local application data. A graph and an arbitrary
+input table alone supply none of those application proofs. Such displays stay
+`candidate`/`candidateBounds`, even if a graph program printed the formula.
+`none` remains undefined and `some 0` remains a supported numerical zero. -/
+inductive TemplateAnswer (S : ObservedSignature.{0}) where
+  | identified {source : ProbabilityTerm S} {model : ExactModel S}
+      {reference : S.Assignment}
+      (evidence : CertifiedQuery.FormulaCertificate.At source model reference)
+  | bounded {source : ProbabilityTerm S} {model : ExactModel S}
+      {reference : S.Assignment}
+      (evidence : CertifiedQuery.BoundsCertificate.At source model reference)
+  | candidate (formula : ProbabilityTerm S) (value : ProbabilityResult.Result)
+  | candidateBounds (lower upper : QProb)
   | unsupported
 
-/-- Mixture over positive-mass atoms. A point requires every such atom to
-identify and agree. Identified disagreement is reported with witnesses. -/
+/-- Presentation-only agreement summary over positive-mass atoms. A point
+requires every displayed certified atom to have the same number. The legacy
+container is existential in the source query, so this numerical coincidence
+alone is not a certificate for one common causal target. Query-indexed
+posterior reports in `CatalogueSampling` retain that additional invariant.
+Identified disagreement is reported with explicit indices and values. -/
 inductive Mixture (S : ObservedSignature) where
   | empty
   | point (value : QProb)
   | disagree (i : Nat) (left : QProb) (j : Nat) (right : QProb)
   | spread (atoms : List (Nat × TemplateAnswer S))
 
+/-- Expose numbers only from applied formula certificates. Candidate values and proposed
+intervals remain outside this projection. -/
 def TemplateAnswer.identifiedValue {S : ObservedSignature} :
     TemplateAnswer S → Option QProb
-  | .identified _ (some value) => some value
+  | .identified evidence => evidence.value
   | _ => none
 
+/-- Recognize the actual posterior support, including zeros in unreduced rational presentations. -/
 def hasMass (μ : Distro (Fin n)) (i : Fin n) : Bool :=
   decide (0 < (μ.pmf i).num)
 
@@ -361,6 +475,8 @@ def agreedPoint {S : ObservedSignature} :
                 | none => false
           if agrees rest then some v else none
 
+/-- Summarize positive-mass atoms only. Missing certificates prevent a point summary;
+certified disagreement retains witness indices. -/
 def mixAnswers (μ : Distro (Fin n)) (answer : Fin n → TemplateAnswer S) :
     Mixture S :=
   let atoms := (List.finRange n).filter (fun i => hasMass μ i)
@@ -398,11 +514,12 @@ def firstObservationalData : List (Experiment S) → Option (CatalogueData S)
           if finAll S.count (fun i => !(action.targets i)) then some e.data
           else firstObservationalData rest
 
-/-- Layer 2: ID on the hypothesis graph, optional formula override (for
-mechanism restrictions on a shared host signature), and optional bounds
-when ID fails. Adjustment set `Z` is whatever the existing engine printed;
-modifier set `W` is not inferred here. -/
-def answerOf (G : ObservedGraph S) (q : JointKernelQuery S)
+/-- Inspect graph-generated or caller-proposed syntax on an input table.
+This is explicitly a candidate/plug-in calculation. Graph-only atoms and
+empirical tables cannot manufacture model membership, mechanism restrictions,
+or support certificates. In particular an arbitrary `.zero` proposal remains
+a candidate and never contributes to a certified point mixture. -/
+def candidateAnswerOf (G : ObservedGraph S) (q : JointKernelQuery S)
     (data : CatalogueData S) (reference : S.Assignment)
     (bounds : Option (QProb × QProb))
     (override : Option (ProbabilityTerm S)) : TemplateAnswer S :=
@@ -411,23 +528,63 @@ def answerOf (G : ObservedGraph S) (q : JointKernelQuery S)
     | some term => .identified term
     | none => identifyJointKernel G q
   match outcome with
-  | .identified term => .identified term (interpretTerm term data reference)
+  | .identified term => .candidate term (interpretTerm term data reference)
   | .failed _ =>
       match bounds with
-      | some ⟨lo, hi⟩ => .bounded lo hi
+      | some ⟨lo, hi⟩ => .candidateBounds lo hi
       | none => .unsupported
   | .unfinished => .unsupported
 
-structure Report (n : Nat) (α : Type) (S : ObservedSignature) where
+/-- Public certified formula adapter. The query, concrete model and reference
+are carried by the certificate; a bare formula override is not accepted. -/
+def answerOf {source : ProbabilityTerm S} {model : ExactModel S}
+    {reference : S.Assignment}
+    (evidence : CertifiedQuery.FormulaCertificate.At source model reference) :
+    TemplateAnswer S :=
+  .identified evidence
+
+/-- Public certified interval adapter. Raw endpoints are useful display
+candidates, but only a class-wide enclosure with supported application data
+can enter this constructor. -/
+def boundedAnswerOf {source : ProbabilityTerm S} {model : ExactModel S}
+    {reference : S.Assignment}
+    (evidence : CertifiedQuery.BoundsCertificate.At source model reference) :
+    TemplateAnswer S :=
+  .bounded evidence
+
+/-- Candidate computations, including arbitrary proposed expressions, have
+no certified value. This small boundary lemma prevents later mixture code
+from silently reinterpreting a plug-in calculation as an identified point. -/
+theorem candidateAnswerOf_not_certified (G : ObservedGraph S) (q : JointKernelQuery S)
+    (data : CatalogueData S) (reference : S.Assignment)
+    (bounds : Option (QProb × QProb)) (proposal : Option (ProbabilityTerm S)) :
+    (candidateAnswerOf G q data reference bounds proposal).identifiedValue = none := by
+  simp only [candidateAnswerOf]
+  cases proposal with
+  | some term => rfl
+  | none =>
+    cases identifyJointKernel G q with
+    | identified term => rfl
+    | failed failure => cases bounds <;> rfl
+    | unfinished => rfl
+
+/-- Legacy catalogue display. The per-atom answer keeps its own certificate,
+but the existential `TemplateAnswer` does not force all atoms to ask the same
+query. New certified inference clients use `CertifiedPosteriorQuery`, whose
+type fixes one source query and reference across the complete model family. -/
+structure Report (n : Nat) (α : Type u) (S : ObservedSignature) where
   catalogue : Catalogue n α
   posterior : Distro (Fin n)
   likelihood : Fin n → Nat
   answer : Fin n → TemplateAnswer S
   mixture : Mixture S
 
+/-- Read an index's posterior mass separately from its stored likelihood. -/
 def Report.mass (R : Report n α S) (i : Fin n) : QProb :=
   R.posterior.pmf i
 
+/-- Display an interval conditional on a supplied prior-odds bound. The report itself
+does not establish that bound. -/
 def Report.oddsInterval (_R : Report n α S) (C : Nat) (Cpos : 0 < C)
     (i j : Fin n) (like : Fin n → QProb) : Option (QProb × QProb) :=
   posteriorOddsInterval C Cpos (like i) (like j)
@@ -455,6 +612,8 @@ def weightedAtoms : List Ω → List Nat → List (Ω × Nat)
   | l :: ls, c :: cs => (l, c) :: weightedAtoms ls cs
   | _, _ => []
 
+/-- Equal-length label and count lists preserve the entire count total, without
+discarding a trailing count. -/
 theorem totalMass_weightedAtoms (labels : List Ω) (counts : List Nat)
     (hlen : labels.length = counts.length) :
     FiniteProbRecord.totalMass (weightedAtoms labels counts) = counts.sum := by
@@ -471,15 +630,21 @@ theorem totalMass_weightedAtoms (labels : List Ω) (counts : List Nat)
           simpa [weightedAtoms, FiniteProbRecord.totalMass, List.sum_cons] using
             ih cs tail
 
-/-- Posterior-predictive table from counts, for interpreting identified
-formulas in Regime B. Zeros in the count word remain zeros. -/
-def recordOfCounts (labels : List Ω) (counts : List Nat)
+/-- Empirical frequencies of observed counts. This is a plug-in statistic,
+not a Dirichlet posterior-predictive table: no prior parameters occur here.
+Zeros in the count word remain zeros. -/
+def empiricalRecordOfCounts (labels : List Ω) (counts : List Nat)
     (hlen : labels.length = counts.length)
     (positive : 0 < counts.sum) : FiniteProbRecord Ω where
   atoms := weightedAtoms labels counts
   den := counts.sum
   den_pos := positive
   total_mass := totalMass_weightedAtoms labels counts hlen
+
+/-- Compatibility spelling for the explicitly empirical constructor. New
+statistical code should use `empiricalRecordOfCounts`, and predictive code
+should use the actual supported Pólya continuation defined below. -/
+abbrev recordOfCounts := @empiricalRecordOfCounts
 
 /-- Whole-law agreement, including zeros. Undefined is not used here:
 both records always supply a singleton mass. -/
@@ -489,14 +654,11 @@ def recordsAgree (predicted observed : FiniteProbRecord S.Assignment) : Bool :=
       (predicted.probVal (FiniteProbRecord.singletonEvent assignment))
       (observed.probVal (FiniteProbRecord.singletonEvent assignment)))
 
+/-- Only an exact-law datum is an exact-law observation. Sample frequencies
+are never silently promoted to the true law for a compatibility test. -/
 def dataAsRecord : CatalogueData S → Option (FiniteProbRecord S.Assignment)
   | .law record => some record
-  | .counts labels bins =>
-      if hlen : labels.length = bins.length then
-        if hpos : 0 < bins.sum then
-          some (recordOfCounts labels bins hlen hpos)
-        else none
-      else none
+  | .counts _ _ => none
 
 /-- Predicted table of a realized SCM. Empty `do` is
 `HardIntervention.empty`, whose pushforward is the observational law.
@@ -513,6 +675,12 @@ def regimeAWeight (predicted : FiniteProbRecord S.Assignment)
   | none => 0
   | some observed => boolWeight (recordsAgree predicted observed)
 
+/-- A finite sample requires a sampling likelihood. It cannot be accepted
+or rejected by testing whether its frequencies equal a proposed true law. -/
+theorem regimeAWeight_counts (predicted : FiniteProbRecord S.Assignment)
+    (labels : List S.Assignment) (bins : List Nat) :
+    regimeAWeight predicted (.counts labels bins) = 0 := rfl
+
 /-- Independent Regime A weights of a generative SCM on a list of experiments. -/
 def regimeAModelWeight (scm : ExactModel S) (experiments : List (Experiment S)) : Nat :=
   independentWeights (experiments.map fun e =>
@@ -523,8 +691,11 @@ def predictedAlphas (predicted : FiniteProbRecord S.Assignment) : List QProb :=
   S.assignmentEnumeration.map fun assignment =>
     predicted.probVal (FiniteProbRecord.singletonEvent assignment)
 
-/-- Regime B: Dirichlet–multinomial using the atom's predicted cell masses.
-Count words should follow `S.assignmentEnumeration` order. -/
+/-- Legacy concentration-one Dirichlet/Pólya table prior centred at the
+supplied prediction. This is an additional parameter-uncertainty model, not
+the IID sampling law of that fixed prediction. Count words follow the full
+`S.assignmentEnumeration` order. `CountSamplingLaw` exposes the distinction
+explicitly and also records shape and parameter evidence. -/
 def regimeBMass (predicted : FiniteProbRecord S.Assignment) (bins : List Nat) : QProb :=
   let alphas := predictedAlphas predicted
   if h : 0 < (QProb.listSum alphas).num then
@@ -532,6 +703,10 @@ def regimeBMass (predicted : FiniteProbRecord S.Assignment) (bins : List Nat) : 
   else
     QProb.zero
 
+/-- Apply the explicitly extra table prior to one SCM prediction. Separate
+uses for different intervention tags do not assert that these priors derive
+from a single common structural parameter distribution. Fixed-SCM data use
+`iidModelCountLikelihood` instead. -/
 def regimeBModelMass (scm : ExactModel S) (tag : ExperimentTag S)
     (bins : List Nat) : QProb :=
   regimeBMass (predictedTable scm tag) bins
@@ -545,10 +720,13 @@ def boundsExclude (lo hi value : QProb) : Bool :=
 def andWeight (flag : Bool) (weight : Nat) : Nat :=
   boolWeight flag * weight
 
+/-- Conjunction of exact compatibility gates becomes multiplication of zero/one weights. -/
 theorem boolWeight_and (b c : Bool) :
     boolWeight (b && c) = boolWeight b * boolWeight c := by
   cases b <;> cases c <;> rfl
 
+/-- A product of compatibility gates accepts exactly when every gate accepts; the empty
+list is accepted. -/
 theorem mulNatList_map_boolWeight :
     ∀ bs : List Bool,
       mulNatList (bs.map boolWeight) = boolWeight (bs.all fun b => b)
@@ -563,6 +741,7 @@ def experimentAgrees (scm : ExactModel S) (e : Experiment S) : Bool :=
   | none => false
   | some observed => recordsAgree (predictedTable scm e.tag) observed
 
+/-- Relate one tagged numerical compatibility weight to its executable exact-law agreement test. -/
 theorem regimeAWeight_experimentAgrees (scm : ExactModel S) (e : Experiment S) :
     regimeAWeight (predictedTable scm e.tag) e.data =
       boolWeight (experimentAgrees scm e) := by
@@ -575,6 +754,8 @@ theorem regimeAWeight_experimentAgrees (scm : ExactModel S) (e : Experiment S) :
 def realizesExperiments (scm : ExactModel S) (experiments : List (Experiment S)) : Bool :=
   experiments.all (experimentAgrees scm)
 
+/-- Simultaneous exact-law compatibility gives a zero/one gate, rather than a
+finite-sample likelihood. -/
 theorem regimeAModelWeight_eq_realizes (scm : ExactModel S)
     (experiments : List (Experiment S)) :
     regimeAModelWeight scm experiments =
@@ -589,12 +770,14 @@ theorem regimeAModelWeight_eq_realizes (scm : ExactModel S)
       rw [ih, ← boolWeight_and]
       simp [realizesExperiments]
 
+/-- A model realizing every exact-law requirement receives compatibility weight one. -/
 theorem regimeAModelWeight_of_realizes (scm : ExactModel S)
     (experiments : List (Experiment S))
     (agree : realizesExperiments scm experiments = true) :
     regimeAModelWeight scm experiments = 1 := by
   simp [regimeAModelWeight_eq_realizes, agree, boolWeight]
 
+/-- Any failed exact-law requirement annihilates the compatibility weight. -/
 theorem regimeAModelWeight_of_not_realizes (scm : ExactModel S)
     (experiments : List (Experiment S))
     (disagree : realizesExperiments scm experiments = false) :
@@ -618,6 +801,8 @@ def uniquelyRealizesBool {n : Nat} [DecidableEq (Fin n)]
     (List.finRange n).all fun j =>
       decide (j = i) || !realizesExperiments (models j) experiments
 
+/-- Extract unique-realizer evidence by finite Boolean analysis, without unrestricted
+excluded middle. -/
 theorem uniquelyRealizes_of_bool {n : Nat} [DecidableEq (Fin n)]
     (models : Fin n → ExactModel S) (experiments : List (Experiment S))
     (i : Fin n) (h : uniquelyRealizesBool models experiments i = true) :
@@ -634,18 +819,23 @@ theorem uniquelyRealizes_of_bool {n : Nat} [DecidableEq (Fin n)]
   | false => rfl
   | true => simp [hr] at hj
 
+/-- The selected realizer survives exact-law compatibility. -/
 theorem uniquelyRealizes_weight_one {n : Nat} (models : Fin n → ExactModel S)
     (experiments : List (Experiment S)) (i : Fin n)
     (h : uniquelyRealizes models experiments i) :
     regimeAModelWeight (models i) experiments = 1 :=
   regimeAModelWeight_of_realizes _ _ h.1
 
+/-- Every competing listed index is excluded. The conclusion concerns the supplied
+catalogue only. -/
 theorem uniquelyRealizes_weight_zero {n : Nat} (models : Fin n → ExactModel S)
     (experiments : List (Experiment S)) (i j : Fin n)
     (h : uniquelyRealizes models experiments i) (hne : j ≠ i) :
     regimeAModelWeight (models j) experiments = 0 :=
   regimeAModelWeight_of_not_realizes _ _ (h.2 j hne)
 
+/-- Express event mass as an integral of its indicator, preserving repeated atoms and
+zero weights. -/
 theorem eventMass_eq_natIntegral_indicator (atoms : List (Ω × Nat))
     (event : Event Ω) :
     FiniteProbRecord.eventMass atoms event =
@@ -656,10 +846,12 @@ theorem eventMass_eq_natIntegral_indicator (atoms : List (Ω × Nat))
       simp only [FiniteProbRecord.eventMass, natIntegral]
       cases event atom.1 <;> simp [ih]
 
+/-- The equality event recognizes its supplied label. -/
 theorem singletonEvent_self [DecidableEq Ω] (x : Ω) :
     FiniteProbRecord.singletonEvent x x = true := by
   simp [FiniteProbRecord.singletonEvent]
 
+/-- A likelihood is constant on one equality class and factors out of that singleton integral. -/
 theorem natIntegral_singleton_mul [DecidableEq Ω]
     (atoms : List (Ω × Nat)) (weight : Ω → Nat) (x : Ω) :
     natIntegral atoms
@@ -677,6 +869,7 @@ theorem natIntegral_singleton_mul [DecidableEq Ω]
           simp [FiniteProbRecord.singletonEvent, hx]
         simp [miss, ih]
 
+/-- Restricting a nonnegative integral to one label cannot increase it. -/
 theorem natIntegral_singleton_le [DecidableEq Ω]
     (atoms : List (Ω × Nat)) (weight : Ω → Nat) (x : Ω) :
     natIntegral atoms
@@ -695,6 +888,8 @@ theorem natIntegral_singleton_le [DecidableEq Ω]
         simp [miss]
         exact Nat.le_trans ih (Nat.le_add_left _ _)
 
+/-- One positive-prior, positive-likelihood atom suffices for supported normalization.
+Global positivity is unnecessary. -/
 theorem natIntegral_pos_of_pmf_pos [DecidableEq Ω]
     (μ : Distro Ω) (weight : Ω → Nat) (x : Ω)
     (hμ : 0 < (μ.pmf x).num) (hw : 0 < weight x) :
@@ -729,6 +924,7 @@ theorem natIntegral_pos_of_pmf_pos [DecidableEq Ω]
       simp [miss]
   exact Nat.lt_of_lt_of_le (rewrite ▸ pos_scaled) bound
 
+/-- An atom survives updating when its prior mass and likelihood are both positive. -/
 theorem posterior_pmf_pos_of_likelihood_pos [DecidableEq Ω]
     (μ : Distro Ω) (weight : Ω → Nat)
     (positive : 0 < natIntegral μ.record.atoms weight) (x : Ω)
@@ -806,17 +1002,22 @@ def regimeAInvariantModelWeight (scm : ExactModel S)
     (regimeAModelWeight scm experiments)
 
 /-- Directed and bidirected tables are unchanged after relabelling nodes
-by a **supplied** permutation. Directed lives on the signature. -/
+by a **supplied** node self-map. Directed lives on the signature.
+The test supplies no inverse or coherent action; permutation clients use
+the typed finite-symmetry interface. -/
 def edgesInvariant (n : Nat) (edge : Fin n → Fin n → Bool)
     (perm : Fin n → Fin n) : Bool :=
   finAll n fun i =>
     finAll n fun j => decide (edge i j = edge (perm i) (perm j))
 
+/-- Check both edge tables under a supplied node self-map. This Boolean result does not
+prove that the map is a permutation. -/
 def observedGraphInvariant (G : ObservedGraph S) (perm : Fin S.count → Fin S.count) :
     Bool :=
   edgesInvariant S.count S.directed perm &&
     edgesInvariant S.count G.bidirected perm
 
+/-- Identity preserves every supplied finite edge table. -/
 theorem edgesInvariant_id (n : Nat) (edge : Fin n → Fin n → Bool) :
     edgesInvariant n edge (fun i => i) = true := by
   refine (finAll_eq_true_iff _).mpr ?_
@@ -825,6 +1026,7 @@ theorem edgesInvariant_id (n : Nat) (edge : Fin n → Fin n → Bool) :
   intro j
   simp
 
+/-- Identity preserves the directed and bidirected parts of every graph. -/
 theorem observedGraphInvariant_id (G : ObservedGraph S) :
     observedGraphInvariant G (fun i => i) = true := by
   simp [observedGraphInvariant, edgesInvariant_id]
@@ -836,10 +1038,13 @@ def filterInvariantTemplates (G : ObservedGraph S)
     (perm : Fin S.count → Fin S.count) (templates : List α) : List α :=
   if observedGraphInvariant G perm then templates else []
 
+/-- Identity keeps every template of the fixed graph. -/
 theorem filterInvariantTemplates_id (G : ObservedGraph S) (templates : List α) :
     filterInvariantTemplates G (fun i => i) templates = templates := by
   simp [filterInvariantTemplates, observedGraphInvariant_id]
 
+/-- Failure of the fixed-graph gate drops the entire template list, without searching
+for another graph. -/
 theorem filterInvariantTemplates_not
     (G : ObservedGraph S) (perm : Fin S.count → Fin S.count) (templates : List α)
     (h : observedGraphInvariant G perm = false) :
@@ -847,18 +1052,21 @@ theorem filterInvariantTemplates_not
   simp [filterInvariantTemplates, h]
 
 /-- Keep those graph-tagged atoms whose observed graph is invariant under
-the supplied node permutation. Identity keeps every atom; a permutation
-may keep one graph and drop another. This is not graph search. -/
+the supplied node self-map. Identity keeps every atom; another map
+may keep one graph and drop another. The filter does not prove invertibility
+or establish a coherent graph symmetry. -/
 def filterInvariantGraphItems (perm : Fin S.count → Fin S.count)
     (items : List (ObservedGraph S × α)) : List (ObservedGraph S × α) :=
   items.filter fun pair => observedGraphInvariant pair.1 perm
 
+/-- Identity keeps every graph-tagged item, including repeated representations. -/
 theorem filterInvariantGraphItems_id (items : List (ObservedGraph S × α)) :
     filterInvariantGraphItems (fun i => i) items = items := by
   refine List.filter_eq_self.mpr ?_
   intro pair _
   exact observedGraphInvariant_id pair.1
 
+/-- Retain an item when its graph passes the supplied self-map test. -/
 theorem filterInvariantGraphItems_kept (perm : Fin S.count → Fin S.count)
     (G : ObservedGraph S) (item : α) (rest : List (ObservedGraph S × α))
     (h : observedGraphInvariant G perm = true) :
@@ -866,6 +1074,7 @@ theorem filterInvariantGraphItems_kept (perm : Fin S.count → Fin S.count)
       (G, item) :: filterInvariantGraphItems perm rest := by
   simp [filterInvariantGraphItems, List.filter, h]
 
+/-- Drop an item when its graph fails the supplied self-map test. -/
 theorem filterInvariantGraphItems_dropped (perm : Fin S.count → Fin S.count)
     (G : ObservedGraph S) (item : α) (rest : List (ObservedGraph S × α))
     (h : observedGraphInvariant G perm = false) :
@@ -878,6 +1087,8 @@ def experimentInvariant (scm : ExactModel S) (σ : S.Assignment → S.Assignment
     (e : Experiment S) : Bool :=
   assignmentLawInvariant (predictedTable scm e.tag) σ
 
+/-- Check every experiment with its intervention fixed. This differs from equivariance
+when interventions transform too. -/
 def experimentsInvariant (scm : ExactModel S) (σ : S.Assignment → S.Assignment)
     (experiments : List (Experiment S)) : Bool :=
   experiments.all (experimentInvariant scm σ)
@@ -889,6 +1100,8 @@ def regimeAInvariantExperimentWeight (scm : ExactModel S)
   independentWeights (experiments.map fun e =>
     regimeAInvariantWeight (predictedTable scm e.tag) σ e.data)
 
+/-- Factor experiment-wise gates into compatibility times fixed-experiment invariance.
+No coherent group action is inferred. -/
 theorem regimeAInvariantExperimentWeight_eq (scm : ExactModel S)
     (σ : S.Assignment → S.Assignment)
     (experiments : List (Experiment S)) :
@@ -915,12 +1128,14 @@ theorem regimeAInvariantExperimentWeight_eq (scm : ExactModel S)
       simp only [regimeAInvariantWeight, andWeight, boolWeight_and]
       ac_rfl
 
+/-- Exact singleton agreement is reflexive on the complete observed alphabet. -/
 theorem recordsAgree_self (predicted : FiniteProbRecord S.Assignment) :
     recordsAgree predicted predicted = true := by
   refine List.all_eq_true.mpr ?_
   intro assignment _
   exact decide_eq_true (QProb.equiv_refl _)
 
+/-- Whole-law agreement is symmetric despite the orientation of rational cross-multiplication. -/
 theorem recordsAgree_comm (p q : FiniteProbRecord S.Assignment) :
     recordsAgree p q = recordsAgree q p := by
   simp only [recordsAgree]
@@ -950,6 +1165,7 @@ theorem recordsAgree_comm (p q : FiniteProbRecord S.Assignment) :
             exact (decide_eq_false this).symm
       rw [this]
 
+/-- Singleton rational equivalence composes to yield whole-law agreement. -/
 theorem recordsAgree_trans (p q r : FiniteProbRecord S.Assignment)
     (hpq : recordsAgree p q = true) (hqr : recordsAgree q r = true) :
     recordsAgree p r = true := by
@@ -959,6 +1175,7 @@ theorem recordsAgree_trans (p q r : FiniteProbRecord S.Assignment)
   have hqr_cell := of_decide_eq_true (List.all_eq_true.mp hqr assignment hmem)
   exact decide_eq_true (QProb.equiv_trans hpq_cell hqr_cell)
 
+/-- Constructively locate a false member of a failed finite conjunction by list induction. -/
 private theorem all_eq_false_mem {α : Type} (p : α → Bool) :
     ∀ xs : List α, xs.all p = false → ∃ x ∈ xs, p x = false
   | [], h => by simp at h
@@ -969,6 +1186,7 @@ private theorem all_eq_false_mem {α : Type} (p : α → Bool) :
       · rcases all_eq_false_mem p xs hxs with ⟨y, hym, hy⟩
         exact ⟨y, List.mem_cons.mpr (Or.inr hym), hy⟩
 
+/-- An agreeing law presentation preserves witnessed disagreement with a third law. -/
 theorem recordsAgree_neq_of_unique (p q r : FiniteProbRecord S.Assignment)
     (hpq : recordsAgree p q = true) (hpr : recordsAgree p r = false) :
     recordsAgree q r = false := by
@@ -1002,9 +1220,11 @@ def hardInterventionEnumeration (S : ObservedSignature) :
   (FiniteProduct.enumeration S.count (fun i => Option (S.Value i))
     (fun i => optionValues S i)).map fun value => ⟨value⟩
 
+/-- Count exactly the assigned intervention coordinates. -/
 def interventionTargetCount (I : HardIntervention S) : Nat :=
   (List.finRange S.count).filter (fun i => (I.value i).isSome) |>.length
 
+/-- Recognize observation by checking that every intervention coordinate is unset. -/
 def interventionIsEmpty (I : HardIntervention S) : Bool :=
   finAll S.count fun i => (I.value i).isNone
 
@@ -1018,26 +1238,34 @@ def candidateTags (S : ObservedSignature) (maxTargets : Nat) :
         decide (interventionTargetCount I ≤ maxTargets)).map
       ExperimentTag.intervene
 
+/-- Compare the full predicted laws of two actual SCMs at one experiment, zeros included. -/
 def modelsDisagreeOn {n : Nat} (models : Fin n → ExactModel S)
     (i j : Fin n) (tag : ExperimentTag S) : Bool :=
   !recordsAgree (predictedTable (models i) tag) (predictedTable (models j) tag)
 
+/-- A supplied experiment family separates a pair if at least one predicted full law differs. -/
 def pairSeparated {n : Nat} (models : Fin n → ExactModel S)
     (tags : List (ExperimentTag S)) (i j : Fin n) : Bool :=
   tags.any (modelsDisagreeOn models i j)
 
+/-- Require pairwise separation of distinct indices. Repeated equivalent model
+representations therefore obstruct separation. -/
 def allPairsSeparated {n : Nat} (models : Fin n → ExactModel S)
     (tags : List (ExperimentTag S)) : Bool :=
   (List.finRange n).all fun i =>
     (List.finRange n).all fun j =>
       decide (i = j) || pairSeparated models tags i j
 
+/-- Enumerate positional sublists of the requested length. Order is inherited; repeated
+candidates remain distinct positional choices. -/
 def combinations {α : Type} : List α → Nat → List (List α)
   | _, 0 => [[]]
   | [], Nat.succ _ => []
   | x :: rest, Nat.succ k =>
       (combinations rest k).map (fun ys => x :: ys) ++ combinations rest (k + 1)
 
+/-- Every enumerated sublist has the requested size, supplying the measure in the
+minimality proof. -/
 theorem combinations_length {α : Type} (xs : List α) :
     ∀ k ys, ys ∈ combinations xs k → ys.length = k := by
   induction xs with
@@ -1064,9 +1292,12 @@ theorem combinations_length {α : Type} (xs : List α) :
             simp [ih k ys' hmem]
           · exact ih (k + 1) ys hrest
 
+/-- Enumerate all sublists in increasing cardinality, starting with the empty experiment family. -/
 def combinationsBySize {α : Type} (xs : List α) : List (List α) :=
   (List.range (xs.length + 1)).flatMap (fun k => combinations xs k)
 
+/-- Isolate all smaller-cardinality candidates from the search suffix. A first success
+excludes precisely that prefix. -/
 theorem combinationsBySize_split {α : Type} (xs : List α) (k : Nat)
     (hk : k ≤ xs.length + 1) :
     combinationsBySize xs =
@@ -1089,10 +1320,12 @@ theorem combinationsBySize_split {α : Type} (xs : List α) (k : Nat)
             rw [Nat.zero_add]
   rw [hrange, List.flatMap_append]
 
+/-- Return the first passing member or explicit failure after exhausting the finite list. -/
 def firstSatisfying {α : Type} (p : α → Bool) : List α → Option α
   | [] => none
   | x :: xs => if p x then some x else firstSatisfying p xs
 
+/-- Every returned member satisfies the searched Boolean predicate. -/
 theorem firstSatisfying_some {α : Type} {p : α → Bool} :
     ∀ xs x, firstSatisfying p xs = some x → p x = true
   | [], _, h => by simp [firstSatisfying] at h
@@ -1103,6 +1336,7 @@ theorem firstSatisfying_some {α : Type} {p : α → Bool} :
         assumption
       · exact firstSatisfying_some xs y h
 
+/-- An exhausted search refutes the predicate for every supplied member. -/
 theorem firstSatisfying_none_mem {α : Type} {p : α → Bool} :
     ∀ xs, firstSatisfying p xs = none → ∀ x ∈ xs, p x = false
   | [], _, x, hx => by cases hx
@@ -1115,6 +1349,8 @@ theorem firstSatisfying_none_mem {α : Type} {p : α → Bool} :
         · exact firstSatisfying_none_mem ys h x hx
       · simp [firstSatisfying, hy] at h
 
+/-- Searching a concatenation first exhausts its prefix; this traversal law supports
+cardinality minimality. -/
 theorem firstSatisfying_app {α : Type} (p : α → Bool) :
     ∀ xs ys,
       firstSatisfying p (xs ++ ys) =
@@ -1126,6 +1362,7 @@ theorem firstSatisfying_app {α : Type} (p : α → Bool) :
       simp only [List.cons_append, firstSatisfying]
       split <;> simp [firstSatisfying_app p xs ys]
 
+/-- A returned witness belongs to the searched list. No new experiment family is invented. -/
 theorem firstSatisfying_mem {α : Type} {p : α → Bool} :
     ∀ xs x, firstSatisfying p xs = some x → x ∈ xs
   | [], _, h => by simp [firstSatisfying] at h
@@ -1143,6 +1380,7 @@ def shortestSeparatingTags {n : Nat} (models : Fin n → ExactModel S)
     (candidates : List (ExperimentTag S)) : Option (List (ExperimentTag S)) :=
   firstSatisfying (allPairsSeparated models) (combinationsBySize candidates)
 
+/-- A returned experiment family really separates all distinct listed models. -/
 theorem shortestSeparatingTags_separated {n : Nat}
     (models : Fin n → ExactModel S)
     (candidates tags : List (ExperimentTag S))
@@ -1150,12 +1388,15 @@ theorem shortestSeparatingTags_separated {n : Nat}
     allPairsSeparated models tags = true :=
   firstSatisfying_some _ _ h
 
+/-- Check that every candidate sublist of strictly smaller cardinality fails pairwise separation. -/
 def noShorterSeparator {n : Nat} (models : Fin n → ExactModel S)
     (candidates : List (ExperimentTag S)) (k : Nat) : Bool :=
   (List.range k).all fun j =>
     (combinations candidates j).all fun tags =>
       !allPairsSeparated models tags
 
+/-- Prove minimal cardinality among sublists of the supplied candidates. Experiments
+outside that family are outside the claim. -/
 theorem shortestSeparatingTags_minimal {n : Nat}
     (models : Fin n → ExactModel S)
     (candidates tags : List (ExperimentTag S))
@@ -1210,6 +1451,7 @@ theorem shortestSeparatingTags_minimal {n : Nat}
     firstSatisfying_none_mem _ hnone ys hysP
   simp [hyfalse]
 
+/-- The complete list occurs among its full-size positional combinations. -/
 theorem mem_combinations_self {α : Type} : ∀ xs : List α, xs ∈ combinations xs xs.length
   | [] => by simp [combinations]
   | x :: rest => by
@@ -1217,17 +1459,22 @@ theorem mem_combinations_self {α : Type} : ∀ xs : List α, xs ∈ combination
       simp only [combinations, List.mem_append, List.mem_map]
       exact Or.inl ⟨rest, mem_combinations_self rest, rfl⟩
 
+/-- The cardinality search includes the complete supplied experiment family. -/
 theorem mem_combinationsBySize_self {α : Type} (xs : List α) :
     xs ∈ combinationsBySize xs := by
   refine List.mem_flatMap.mpr ?_
   exact ⟨xs.length, List.mem_range.mpr (Nat.lt_succ_self _), mem_combinations_self xs⟩
 
+/-- Search failure implies the whole supplied family also fails to separate; it cannot
+have been omitted. -/
 theorem shortestSeparatingTags_none_not_all {n : Nat}
     (models : Fin n → ExactModel S) (candidates : List (ExperimentTag S))
     (h : shortestSeparatingTags models candidates = none) :
     allPairsSeparated models candidates = false :=
   firstSatisfying_none_mem _ h _ (mem_combinationsBySize_self _)
 
+/-- Search distinct index pairs agreeing on all supplied experiments. The result names
+catalogue indices, not possible worlds outside the catalogue. -/
 def inseparablePair? {n : Nat} (models : Fin n → ExactModel S)
     (candidates : List (ExperimentTag S)) : Option (Fin n × Fin n) :=
   (List.finRange n).findSome? fun i =>
@@ -1242,10 +1489,12 @@ def predictedExperiments (scm : ExactModel S) (tags : List (ExperimentTag S)) :
     List (Experiment S) :=
   tags.map fun tag => ⟨tag, .law (predictedTable scm tag)⟩
 
+/-- A model agrees exactly with its own predicted table for each experiment. -/
 theorem experimentAgrees_own (scm : ExactModel S) (tag : ExperimentTag S) :
     experimentAgrees scm ⟨tag, .law (predictedTable scm tag)⟩ = true := by
   simp [experimentAgrees, dataAsRecord, recordsAgree_self]
 
+/-- A model realizes every tagged prediction it generated, including the empty family. -/
 theorem realizes_predictedExperiments (scm : ExactModel S)
     (tags : List (ExperimentTag S)) :
     realizesExperiments scm (predictedExperiments scm tags) = true := by
@@ -1254,6 +1503,8 @@ theorem realizes_predictedExperiments (scm : ExactModel S)
   rcases List.mem_map.mp he with ⟨tag, _, rfl⟩
   exact experimentAgrees_own scm tag
 
+/-- Exact-law data from one member of a pairwise separated catalogue exclude every other
+index. This is finite-list consistency, not global causal discovery. -/
 theorem uniquelyRealizes_of_allPairsSeparated {n : Nat}
     (models : Fin n → ExactModel S) (tags : List (ExperimentTag S))
     (i : Fin n) (hsep : allPairsSeparated models tags = true) :
