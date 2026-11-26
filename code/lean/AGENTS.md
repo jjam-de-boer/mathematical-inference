@@ -353,8 +353,12 @@ consolidate overlaps, and request approval before changing this section.
   supported Rule 1 (`1` versus `1/2`). A Boolean chain satisfies them and
   screening-off in every experiment but violates supported Rule 2 (`0` versus
   `1/2`). Evidence: `Thesis.Examples.QualitativeCausalObstruction` and
-  `Thesis.Examples.QualitativeExperimentalDrift`. Revisit with strengthened
-  coherence requirements and a proved representation theorem.
+  `Thesis.Examples.QualitativeExperimentalDrift`. The stronger requirements
+  are Effectiveness, Parent sufficiency and Experimental stability on a
+  shared faithful Clayton scale. The theorem
+  `Thesis.Causality.CausalExperimentData.qualitativeRules_iff_realization`
+  proves that these requirements hold exactly when the reconstructed urn
+  game preserves every full experimental law on the supplied graph.
 
 - **Refuted — the old identification recursion.** On a positive front-door
   graph (`X→M→Y` with confounding of `X,Y`), its returned formula evaluates
