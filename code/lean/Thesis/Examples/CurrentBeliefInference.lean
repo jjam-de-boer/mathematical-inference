@@ -1,5 +1,6 @@
 import Thesis.CausalTransport.CertifiedModeInference
 import Thesis.Causality.BinaryBowModel
+import Thesis.Causality.CurrentBeliefCounterfactual
 
 namespace Thesis.Examples.CurrentBeliefInference
 open Probability Causality Causality.BinaryBow
@@ -150,5 +151,28 @@ theorem no_zero_certificate :
   rw [zeroValue] at agreement
   cases agreement with
   | value impossible => cases impossible
+
+/-! ## The same belief also keeps cross-world dependence -/
+
+/-- Ask whether the outcome is true when X is forced to the specified bit. -/
+def potentialY (setting : Bool) : CounterfactualEvent signature :=
+  .atom ⟨((HardIntervention.empty signature).set x setting).value, y, true⟩
+
+/-- The two hypothetical outcomes are complements at every source unit.
+Conditioning on one true outcome makes the other a defined zero. -/
+def exclusiveQuery : CounterfactualQuery signature :=
+  ⟨potentialY false, potentialY true⟩
+
+theorem current_counterfactual_zero :
+    valueIs (policy.mode.currentCounterfactual exclusiveQuery) 0 1 = true := by
+  decide +kernel
+
+/-- Conditioning on both outcomes being true has no supporting source unit. -/
+def unsupportedQuery : CounterfactualQuery signature :=
+  ⟨.truth, .conj (potentialY false) (potentialY true)⟩
+
+theorem unsupported_cross_world_condition :
+    (policy.mode.currentCounterfactual unsupportedQuery).isNone = true := by
+  decide +kernel
 
 end Thesis.Examples.CurrentBeliefInference

@@ -1,3 +1,6 @@
+import Thesis.CausalTransport.CertifiedModeComputation
+import Thesis.CausalTransport.CatalogueSymmetry
+import Thesis.CausalTransport.CausalAbstractionSynthesis
 import Thesis.CausalTransport.CatalogueSampling
 import Thesis.CausalTransport.CertifiedModeInference
 import Thesis.CausalTransport.DSeparation
@@ -392,6 +395,21 @@ with evidence for the source and application. An exhausted catalogue has
 no posterior. The optional `CataloguePartition` pools leaf readouts as
 estimates and can score proposed trees. `GraphQueryUncertainty` separately
 studies the entropy of the surviving compatible hypotheses.
+
+`CatalogueSymmetry` proves that jointly transforming likelihoods and
+hypotheses transports the posterior, including exhaustion. Invariant
+complexity weights preserve invariant prior knowledge. Equivalent
+representations can be aggregated by summing their assigned mass, with
+Bayesian updating commuting with the aggregation when the likelihood
+depends only on the chosen class.
+
+`CausalAbstractionSynthesis` takes a fixed coarse signature, local
+aggregation and a partial intervention correspondence. It checks observation,
+forced-value compatibility and required action coverage, then solves exact
+rational equations on the complete finite response-table carrier. For
+arbitrary shared noise it returns an actual exact macro model or refutes
+every model on that signature. Invalid protocols have their own result.
+The synthesis does not infer the aggregation or recover discarded detail.
 
 `CausalEquivalence` records three nested support-aware relations on
 `ExactModel`s: observational agreement of the actual finite joints
