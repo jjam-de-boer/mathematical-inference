@@ -108,6 +108,12 @@ The main implemented results are:
   (a forest witness of non-identifiability). This example permits declared
   shared noise ignored by the actual equations. A catalogue client compares
   actual fine/coarse SCMs with declared protocols and complexity priors.
+  For a supplied finite target signature, aggregation and intervention
+  protocol, exact rational response-table feasibility constructs a macro
+  SCM or refutes every model of that signature. Invalid protocols have a
+  separate result. Coverage requires observation and a representative for
+  each required macro action. The target allows arbitrary shared latent
+  dependence with no hidden-alphabet or rational-denominator cutoff.
   These results do not establish a general renormalization-group flow or
   a physical length scale.
 - Three nested support-aware relations on finite SCMs. Observational
@@ -131,8 +137,10 @@ The main implemented results are:
   model-class and local-domain certificates for formulas and bounds;
   raw overrides cannot certify an answer. Any current belief has a
   shared-response SCM preserving every hard-intervention event law,
-  with a complete bidirected projection. Direct evaluation under that
-  belief is distinguished from identification in the represented class.
+  with a complete bidirected projection. The representation also preserves
+  the supplied shared-unit coupling for finite counterfactual queries,
+  including undefined conditions. Direct evaluation under that belief is
+  distinguished from identification in the represented class.
   Public 1-cells (edit morphisms) wrap existing operations that
   keep compact `do` empty. Mode-indexed realizations connect identification
   proofs to those executions: the proof can be run; they do not say which
@@ -209,24 +217,25 @@ The main implemented results are:
 - Observational and interventional Shannon entropy of original hidden-DAG
   assignment records: identifying an entire law identifies its entropy.
   Shannon inequalities are sound exclusion tests.
-- Finite Bayesian inference on a catalogue of templates: update a named
-  finite-law (`Distro`) prior from observational or interventional finite
-  tables, then mix identified values and supplied bounds without collapsing
-  disagreement. An exhausted catalogue is unsupported, not a unique DAG.
-  Complexity scores are prior mass only. A supplied map of assignments may
-  zero an atom (a catalogue hypothesis) that would otherwise match those
-  tables. Gating only the observational joint still accepts a copy-chain
-  (`Y` copies `X`) whose `P(V)` is invariant under flipping both bits;
-  requiring the same map on every experiment, including `do(X)`, rejects
-  that chain. Graph-tagged atoms may be kept or dropped one observed graph
-  at a time under a supplied node permutation; templates of one hidden DAG
-  still share that graph, so that filter is all-or-nothing. Swapping the
-  two nodes of a binary bow (confounded `X→Y`) is not a directed-graph
-  permutation. An optional depth-capped Boolean partition tree mixes
-  already-certified answers; it does not search graphs or identify a query
-  left unidentified. This is not a Bayesian posterior over graphs, and it
-  is distinct from Shannon entropy of the remaining compatible graphs on
-  the same catalogue.
+- Finite Bayesian inference updates a declared catalogue prior. Exact laws
+  use compatibility, while sampled counts use a declared fixed-SCM IID
+  law or an integrated parameter prior. Competing priors score the same
+  joint histogram, including zero cells. Supported Dirichlet predictions
+  use prior parameters plus counts. An exhausted catalogue returns no
+  posterior. Posterior laws retain disagreement over model-conditional
+  causal values and preserve the query and model indices of certified
+  formulas or bounds. Raw proposals and pooled tree scores are estimates
+  or diagnostics. Complexity scores affect prior mass. Separate raw
+  invariance screens may exclude a hypothesis on declared experiments.
+  This procedure ranges over the supplied catalogue and does not discover
+  or select a unique causal graph of the world.
+  Supplied finite group actions coherently relabel hypotheses, graph and
+  value labels, latent inputs and interventions. Local mechanism and prior
+  transport give equivariance of every interventional event law. Invariant
+  complexity weights preserve invariant priors. Transforming the data and
+  hypotheses together transports the posterior, even when a fixed dataset
+  breaks symmetry. Aggregating equivalent encodings sums their prior mass
+  and commutes with updating when likelihoods depend only on the class.
 - A declared finite family of hard interventions (set some coordinates
   to a value; empty `do` is observation), optionally the host's full
   finite list with an explicit cap on number of targets, can be searched

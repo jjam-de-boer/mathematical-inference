@@ -5,6 +5,17 @@ import Thesis.Probability.Construction
 import Thesis.Causality.KernelTableSCM
 import Thesis.Causality.KernelOrbitRewrite
 
+/-!
+# Regression fixtures for declared node laws and parent-indexed kernels
+
+Named finite recipes and exact mean constraints are compiled to actual
+node tables. The examples keep null cells and distinguish an infeasible
+symmetry or moment specification from an undetermined feasible law.
+Parent-indexed compilation checks every declared configuration before
+installing its rows as an SCM mechanism. The later orbit examples
+require supplied kernel equality to justify changing a causal query.
+-/
+
 namespace Thesis.Examples.NodeLawRecipe
 open Probability Probability.Distros Causality
 

@@ -2,6 +2,27 @@ import Thesis.Probability.RationalPolynomialFinite
 import Thesis.Probability.RationalValues
 import Thesis.Probability.FiniteProductReplacement
 
+/-!
+# Compile finite independent-source event probabilities into polynomials
+
+Each coordinate state is assigned a polynomial variable.  A joint assignment
+contributes the product of its coordinate variables; the event polynomial is
+the sum of those products over all selected assignments.  The supplied finite
+coordinate lists are deduplicated at joint-assignment level, so repeated
+enumeration labels cannot multiply a probability accidentally.
+
+The semantic theorem uses the actual independent prior and coordinate records.
+It proves equality with their ordinary event probability for every parameter
+assignment binding variables to the respective singleton probabilities.  It
+does not assume a symbolic likelihood interface or trust a producer's claim
+that the printed polynomial represents a causal query.  A native adapter must
+construct the variable encoding and binding and supply the structural readout.
+
+Zero-probability states, repeated record atoms, heterogeneous finite coordinate
+types and an empty source family are permitted.  No conditional is evaluated
+or divided out by this unconditional event compiler.
+-/
+
 namespace Thesis
 namespace Probability
 
@@ -51,26 +72,7 @@ open FiniteProduct RationalPolynomial
 universe u
 variable {sources variables : Nat} {Value : Fin sources → Type u}
 
-/-!
-# Compile finite independent-source event probabilities into polynomials
 
-Each coordinate state is assigned a polynomial variable.  A joint assignment
-contributes the product of its coordinate variables; the event polynomial is
-the sum of those products over all selected assignments.  The supplied finite
-coordinate lists are deduplicated at joint-assignment level, so repeated
-enumeration labels cannot multiply a probability accidentally.
-
-The semantic theorem uses the actual independent prior and coordinate records.
-It proves equality with their ordinary event probability for every parameter
-assignment binding variables to the respective singleton probabilities.  It
-does not assume a symbolic likelihood interface or trust a producer's claim
-that the printed polynomial represents a causal query.  A native adapter must
-construct the variable encoding and binding and supply the structural readout.
-
-Zero-probability states, repeated record atoms, heterogeneous finite coordinate
-types and an empty source family are permitted.  No conditional is evaluated
-or divided out by this unconditional event compiler.
--/
 
 def assignments (values : (index : Fin sources) → List (Value index)) (decEq : (index : Fin sources) → DecidableEq (Value index)) :
     List (Assignment sources Value) :=

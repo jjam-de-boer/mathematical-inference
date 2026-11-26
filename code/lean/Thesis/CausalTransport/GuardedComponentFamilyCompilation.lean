@@ -2,6 +2,30 @@ import Thesis.CausalTransport.GuardedHostChainCompilation
 import Thesis.CausalTransport.SupportAwareComponentCompilation
 import Thesis.CausalTransport.KernelPartition
 
+/-!
+# Whole-host assembly from independently compiled component inputs
+
+Each actual c-component supplies its own current-kernel reduction under
+actions on its host complement.  No reduction of the whole host is assumed:
+the reverse graph bridge derives each needed host factor from that component
+input, and the shared guarded host chain assembles the joint in topological
+order.  Thus components may interleave, with no extra ordering premise.
+
+The formula deliberately retains the component inputs' prefix quotients in
+host order.  It is not the old strict product of their complete formulas.
+Those two partial expressions can differ at zeros: a zero host prefix may
+skip an undefined component input, while the strict product stays undefined.
+There is consequently no unproved commutation, regrouping or cancellation
+step disguised as formula alignment.
+
+Local branch conditions supply only the current component's conditional
+support, observable host-predecessor overlap, its two finite input-subtree
+families and its displayed quotient denominator.  The complete host support
+tree is constructed from them, including the genuinely skipped branches.
+These are sufficient local conditions, not global observational positivity
+or a zero-unrestricted engine-success equivalence.
+-/
+
 namespace Thesis
 namespace Causality
 
@@ -26,29 +50,7 @@ theorem guardedComponentFamilyTerm_actionFree (G : ObservedGraph S) (remaining :
   GuardedHostChain.term_actionFree remaining _ (fun node selected => chainFactorFrom_actionFree _ _ node
     (free _ (G.componentAt_spec remaining node selected).1))
 
-/-!
-# Whole-host assembly from independently compiled component inputs
 
-Each actual c-component supplies its own current-kernel reduction under
-actions on its host complement.  No reduction of the whole host is assumed:
-the reverse graph bridge derives each needed host factor from that component
-input, and the shared guarded host chain assembles the joint in topological
-order.  Thus components may interleave, with no extra ordering premise.
-
-The formula deliberately retains the component inputs' prefix quotients in
-host order.  It is not the old strict product of their complete formulas.
-Those two partial expressions can differ at zeros: a zero host prefix may
-skip an undefined component input, while the strict product stays undefined.
-There is consequently no unproved commutation, regrouping or cancellation
-step disguised as formula alignment.
-
-Local branch conditions supply only the current component's conditional
-support, observable host-predecessor overlap, its two finite input-subtree
-families and its displayed quotient denominator.  The complete host support
-tree is constructed from them, including the genuinely skipped branches.
-These are sufficient local conditions, not global observational positivity
-or a zero-unrestricted engine-success equivalence.
--/
 
 /-- Syntactic reductions for exactly the graph's actual component partition.
 The total formula function supports the executable component lookup; values

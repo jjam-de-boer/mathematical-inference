@@ -1,5 +1,15 @@
 import Thesis.Probability.RationalMixture
 
+/-!
+# Exact mixtures with unrelated denominators and zero endpoints
+
+The two input records have denominators three and five.  Their mixture
+retains a zero atom and repeated labels, and uses the natural mixing masses
+two and one.  The resulting event probability is exactly nineteen over
+forty-five.  The zero-weight and collapsed-interval checks ensure that the
+general interpolation theorem does not require strict endpoint separation.
+-/
+
 namespace Thesis
 namespace Probability
 namespace Examples
@@ -11,15 +21,7 @@ private instance probabilityOrderDecidable (left right : QProb) : Decidable (QPr
   unfold QProb.LE
   infer_instance
 
-/-!
-# Exact mixtures with unrelated denominators and zero endpoints
 
-The two input records have denominators three and five.  Their mixture
-retains a zero atom and repeated labels, and uses the natural mixing masses
-two and one.  The resulting event probability is exactly nineteen over
-forty-five.  The zero-weight and collapsed-interval checks ensure that the
-general interpolation theorem does not require strict endpoint separation.
--/
 
 def left : FiniteProbRecord Bool := ⟨[(false, 2), (true, 1), (true, 0)], 3, by decide, rfl⟩
 def right : FiniteProbRecord Bool := ⟨[(true, 3), (false, 2)], 5, by decide, rfl⟩

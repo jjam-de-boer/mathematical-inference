@@ -1,17 +1,6 @@
 import Thesis.CausalTransport.BinaryInstrumental.Attainable
 import Thesis.Examples.BinaryInstrumental.Identification
 
-namespace Thesis
-namespace Causality
-namespace Examples
-namespace BinaryInstrumentalAttainable
-
-open Probability BinaryInstrumental
-
-private instance probabilityOrderDecidable (left right : QProb) : Decidable (QProb.LE left right) := by
-  unfold QProb.LE
-  infer_instance
-
 /-!
 # Native rational interior witnesses and exact rejection boundaries
 
@@ -25,6 +14,19 @@ sign.  Perfect compliance tests collapsed intervals at both ATE signs.
 Finally an incompatible observed law and an out-of-bounds request are rejected
 by the complete attainable-set iff, not by incomplete numerical search.
 -/
+
+namespace Thesis
+namespace Causality
+namespace Examples
+namespace BinaryInstrumentalAttainable
+
+open Probability BinaryInstrumental
+
+private instance probabilityOrderDecidable (left right : QProb) : Decidable (QProb.LE left right) := by
+  unfold QProb.LE
+  infer_instance
+
+
 
 abbrev projection := BinaryInstrumentalCompatibility.projection
 theorem projected_iv_graph : HasIVProjection projection := BinaryInstrumentalCompatibility.projected_iv_graph

@@ -1,6 +1,14 @@
 import Thesis.Causality.HardIntervention
 import Thesis.Causality.Reductions
 
+/-!
+An executable finite SCM record over a full finite hidden DAG.
+
+Every node has private exogenous noise. Shared observed dependence is induced
+by directed paths through explicit hidden nodes, not by arbitrary probability
+tables attached after projection.
+-/
+
 namespace Thesis
 namespace Causality
 
@@ -25,13 +33,7 @@ structure ValueEquivalence (left : Type u) (right : Type v) where
   forward_backward : forall value, forward (backward value) = value
   backward_forward : forall value, backward (forward value) = value
 
-/-!
-An executable finite SCM record over a full finite hidden DAG.
 
-Every node has private exogenous noise. Shared observed dependence is induced
-by directed paths through explicit hidden nodes, not by arbitrary probability
-tables attached after projection.
--/
 structure FiniteHiddenDAGSCM.{u} (S : ObservedSignature.{u})
     (projection : FiniteLatentProjection S) where
   NodeValue : Fin projection.hiddenDAG.count -> Type u
