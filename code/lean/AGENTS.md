@@ -159,7 +159,10 @@ The main implemented results are:
   coordinate. Finite Petri-net coverability has a terminating constructive
   procedure with unbounded natural token counts and no supplied word
   cutoff, returning an actual covering execution or a proof of
-  non-coverability. Finite control compiles to one extra place per state.
+  non-coverability. Coverability also accepts partially specified sources.
+  It preserves fixed counter values and returns completed counters and a
+  covering word, or proves that no completion works. Controlled queries
+  fix both endpoint states. Finite control compiles to one extra place per state.
   From encoded sources with one control token, compilation preserves and
   reflects executions with the same word and decodes every reachable
   endpoint. For encoded targets, coverability fixes the target control
