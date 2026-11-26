@@ -55,22 +55,25 @@ The main implemented results are:
   nodes arises from some finite SCM, is false: an indiscrete scale
   (everything equivalent) satisfies those order and effectiveness
   axioms and cannot match empty versus sure under any positive urn.
-- Finite causal urn games have recorded and unrecorded urns, nonempty
-  recipes for every parent configuration, explicit acyclic influences
-  and fresh uniform draws. One common finite ticket urn serves all
-  settings; setting skips only selected draws and preserves other
-  instructions. An independent interpreter agrees with a constructed
-  full hidden-DAG SCM on every recorded hard intervention and event,
-  zeros included. Clayton's qualitative comparisons and supported
-  conditioning apply to the records. All three do-calculus rules follow
-  under their graphical and local support conditions, without the caller
-  supplying an SCM or soundness certificate. Consistent renaming preserves
-  full laws. For fixed tickets and settings, every completed execution
-  satisfying the local instructions gives the same assignment. Response
-  tables choose a joint assignment of random choices across hypothetical
-  experiments; they do not establish a uniquely determined counterfactual
-  law. These games give a finite acyclic operational foundation, not causal
-  structure from event comparisons alone.
+- Finite causal urn games have recorded and unrecorded variables, nonempty
+  recipes, acyclic influences and fresh uniform draws. One common finite
+  ticket urn serves every recorded hard setting; setting skips selected
+  draws and preserves other instructions. Their recorded laws agree with
+  a constructed full hidden-DAG SCM. On supplied finite alphabets, the full
+  acyclic graph and ordinary finite rational experimental urns, Effectiveness,
+  Parent sufficiency and Experimental stability characterize representation
+  by such games on a shared faithful Clayton scale. Supported rows are
+  extracted by finite search; arbitrary completions of rows never exercised
+  by a draw preserve every admitted experimental law. Both representation
+  round trips, full interventional factorization and independence of the
+  compatible evaluation order hold at the level of full laws, including
+  hidden values, zeros and support-aware conditionals. Pearl's three rules
+  follow for the abstract interface under their graphical and local support
+  conditions, without a supplied game, SCM or soundness certificate.
+  Consistent renaming preserves laws; fixed tickets and settings determine
+  a unique completed assignment. Response tables choose a coupling across
+  hypothetical experiments, without determining a unique counterfactual law
+  or reconstructing the graph.
 - Joint and conditional identification completeness for the stated positive
   model classes, original finite hidden-DAG transfer, and supported-zero
   certificates on each formula's used-conditional domain (the primitive
