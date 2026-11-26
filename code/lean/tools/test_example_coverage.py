@@ -1,9 +1,10 @@
-"""Keep standalone examples inside the full proof-policy gate's imports.
+"""Keep each mathematical module inside the imports of its axiom scan.
 
 Importing a library theorem does not elaborate a separate regression file
-that exercises it. This inexpensive source-graph check protects against that
-coverage gap recurring. It never invokes Lean, and is not itself a proof or
-axiom check: the complete build and Thesis.AxiomAudit remain authoritative.
+that exercises it. Similarly, a module visible to one audit wrapper may be
+filtered out by that wrapper's ownership predicate. These source-graph
+checks verify both import boundaries. The complete build and
+Thesis.AxiomAudit remain authoritative for the proofs and their axioms.
 """
 
 from pathlib import Path
@@ -112,6 +113,25 @@ class ExampleCoverageTests(unittest.TestCase):
         self.assertEqual(prefix_owner("Thesis.CausalTransport.Soundness"), "causalTransport")
         self.assertEqual(prefix_owner("Thesis.Examples.IdentificationRegression"), "examples")
         self.assertEqual(prefix_owner("Thesis"), "examples")
+
+    def test_every_mathematical_module_is_imported_by_its_own_audit(self):
+        root = Path(__file__).resolve().parents[1]
+        sources = [root / "Thesis.lean", *(root / "Thesis").rglob("*.lean")]
+        graph = {".".join(source.relative_to(root).with_suffix("").parts):
+                 initial_project_imports(source.read_text()) for source in sources}
+        wrappers = {"distros": "Distros", "probability": "Probability",
+                    "causality": "Causality", "causalTransport": "CausalTransport",
+                    "examples": "Examples"}
+        full_audit = reachable(graph, "Thesis.AxiomAudit")
+        for owner, wrapper in wrappers.items():
+            with self.subTest(owner=owner):
+                audit = f"Thesis.AxiomPolicy.{wrapper}"
+                self.assertIn(audit, full_audit)
+                imported = reachable(graph, audit)
+                missing = sorted(module for module in graph
+                                 if prefix_owner(module) == owner and module not in imported)
+                self.assertFalse(missing, "Modules invisible to their owning axiom scan: "
+                                 + ", ".join(missing))
 
 
 if __name__ == "__main__":
