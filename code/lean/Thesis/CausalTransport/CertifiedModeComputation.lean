@@ -31,10 +31,11 @@ def jointPresentation (policy : ModeQueryPolicy S) (query : JointKernelQuery S)
   if policy.jointAdmissible query then
     match identifyGuardedJointKernel policy.graph query with
     | .identified term =>
-        match term.supported? policy.mode.model reference with
-        | none => .undefined
-        | some _ => .identified term
+        match query.sourceTerm.supported? policy.mode.model reference,
+          term.supported? policy.mode.model reference with
+        | some _, some _ => .identified term
             (term.observationalDenote policy.mode.model.observationalDist reference)
+        | _, _ => .undefined
     | .failed failure => .failed failure
     | .unfinished => .unfinished
   else .modeUnsupported

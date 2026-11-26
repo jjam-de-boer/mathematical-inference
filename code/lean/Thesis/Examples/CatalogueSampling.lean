@@ -314,7 +314,8 @@ noncomputable def chainCertificate :
     CertifiedQuery.FormulaCertificate.At query.sourceTerm chainModel reference where
   certificate := jointFormulaCertificate chainModel.observedGraph query guarded_chain_success
   member := fun _ _ => rfl
-  application := chainPrintedSupport
+  sourceSupported := ⟨QProb.one, equivalentOfMassTest _ _ (by decide +kernel)⟩
+  formulaSupported := chainPrintedSupport
 
 /-- Enter the public certified adapter using the full applied certificate, rather than a
 caller-proposed numerical formula. -/
@@ -333,5 +334,47 @@ theorem zero_proposal_is_not_a_certificate :
     (candidateAnswerOf chainGraph query (.law correlated) reference none (some .zero)).identifiedValue =
       none :=
   candidateAnswerOf_not_certified _ _ _ _ _ _
+
+/-! ## A pointwise fact cannot stand in for projected-graph certification -/
+
+/-- The fair independent model shares the declared graph with the copy
+model, but evaluates the requested intervention to one half. -/
+private theorem independentInCopyClass :
+    HasProjectedGraph independenceModel chainModel.observedGraph := by
+  unfold HasProjectedGraph
+  decide +kernel
+
+private def independentQuerySupport :
+    query.sourceTerm.SupportedAt independenceModel reference :=
+  ⟨⟨1, 2, by decide⟩, equivalentOfMassTest _ _ (by decide +kernel)⟩
+
+/-- The value one is correct in the copy model at the requested reference.
+It cannot certify a constant replacement over the policy's supported domain. -/
+theorem no_constant_one_replacement :
+    ¬ ∃ replacement : CertifiedQuery.FormulaCertificate.Total query.sourceTerm
+        (fun model => HasProjectedGraph model chainModel.observedGraph),
+      replacement.certificate.formula = .one := by
+  rintro ⟨replacement, constant⟩
+  have agreement := replacement.certificate.sound independenceModel independentInCopyClass
+    reference independentQuerySupport
+    (replacement.defined independenceModel independentInCopyClass reference independentQuerySupport)
+  have impossible := ProbabilityResult.trans (ProbabilityResult.symm independentQuerySupport.2) agreement
+  rw [constant] at impossible
+  change ProbabilityResult.Equivalent (some ⟨1, 2, by decide⟩) (some QProb.one) at impossible
+  cases impossible with
+  | value falseEquality => cases falseEquality
+
+/-- The same scope applies to enclosures. The correct singleton interval at
+the copy model cannot be supplied as a bound for the entire class. -/
+theorem no_point_one_bound :
+    ¬ ∃ bounds : CertifiedQuery.BoundsCertificate query.sourceTerm
+        (fun model => HasProjectedGraph model chainModel.observedGraph),
+      bounds.lower = QProb.one ∧ bounds.upper = QProb.one := by
+  rintro ⟨bounds, lower, _⟩
+  have impossible := (bounds.valid independenceModel independentInCopyClass reference
+    independentQuerySupport.1 independentQuerySupport.2).1
+  rw [lower] at impossible
+  change 2 ≤ 1 at impossible
+  omega
 
 end Thesis.Causality.Examples.CatalogueSampling

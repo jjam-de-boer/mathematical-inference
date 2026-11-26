@@ -303,8 +303,8 @@ def interpretIdentified (π : ModeQueryPolicy S) (term : ProbabilityTerm S)
 in `CausalTransport.CertifiedModeInference` return the indexed certificate
 itself; this display cannot be passed back as an identification certificate. -/
 def displayAnswer {source : ProbabilityTerm S} {model : ExactModel S}
-    {reference : S.Assignment}
-    (answer : CertifiedQuery.Answer source model reference) : ModeIndexedAnswer S :=
+    {reference : S.Assignment} {models : ExactModel S → Prop}
+    (answer : CertifiedQuery.Answer source model reference models) : ModeIndexedAnswer S :=
   match answer with
   | .identified evidence =>
       .identified evidence.certificate.formula evidence.value
