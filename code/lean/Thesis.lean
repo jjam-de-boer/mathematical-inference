@@ -118,6 +118,7 @@ import Thesis.Examples.PetriCoverabilitySearch
 import Thesis.Examples.PetriPumping
 import Thesis.Examples.PetriControl
 import Thesis.Examples.PetriControlCoverability
+import Thesis.Examples.PetriPartialCoverability
 import Thesis.Examples.PetriControlWordCompletion
 import Thesis.Examples.PetriControlPumping
 import Thesis.Examples.IntegerFeasibility

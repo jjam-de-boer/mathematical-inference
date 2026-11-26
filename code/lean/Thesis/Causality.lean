@@ -59,7 +59,9 @@ import Thesis.Causality.CoordinateBoxScan
 import Thesis.Causality.PetriCoverability
 import Thesis.Causality.PetriCoverabilityScan
 import Thesis.Causality.PetriCoverabilitySearch
+import Thesis.Causality.PetriPartialCoverability
 import Thesis.Causality.PetriControlCoverability
+import Thesis.Causality.PetriControlPartialCoverability
 import Thesis.Causality.PetriPumping
 import Thesis.Causality.PetriControlReversal
 import Thesis.Causality.PetriControlPumping
@@ -245,6 +247,12 @@ bridge, without a new search.
 original controlled counter space: the same word, an actual counter
 endpoint and its exact target-state execution, or a proof excluding every
 covering word. Its conversion decodes the arbitrary compiled endpoint.
+
+`PetriPartialCoverability` finds a covering word from a partially specified
+source by scanning the existing witnessed basis. Fixed source counters are
+preserved exactly. A successful scan supplies finite values for the remaining
+counters, a word and an actual endpoint. `PetriControlPartialCoverability`
+uses the same procedure with exact initial and final control states.
 
 `PetriControlReversal` reverses both the counter tables and the control edges,
 commuting with compilation and retaining exact reversed words and endpoints.
