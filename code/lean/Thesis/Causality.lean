@@ -1,3 +1,6 @@
+import Thesis.Causality.FiniteSymmetry
+import Thesis.Causality.ModelSymmetry
+import Thesis.Causality.CurrentBeliefCounterfactual
 import Thesis.Causality.CertifiedQuery
 import Thesis.Causality.CurrentBelief
 import Thesis.Causality.IndependentBeliefUpdate
@@ -280,7 +283,9 @@ certificates to guarded graphical identification; a graph-identified query
 may still be mode-unsupported. `CurrentBelief` constructs a shared-response
 SCM preserving every hard-intervention event law of any current belief.
 Its complete bidirected projection makes the possible loss of source
-independence explicit. `IndependentBeliefUpdate` proves a narrower update
+independence explicit. `CurrentBeliefCounterfactual` also preserves the
+coupling across worlds supplied by that belief and those mechanisms, with
+undefined conditioning retained. `IndependentBeliefUpdate` proves a narrower update
 class that does preserve independent sources: rectangular evidence, with
 positive support in every factor. Compact workspace `do` does not declare
 the allowed query family.
@@ -288,4 +293,11 @@ the allowed query family.
 `Counterfactual`, `Multiworld` and `ExecutedMultiworld` own finite
 counterfactual and shared-noise world evaluation. Their model classes,
 support conditions and world-family hypotheses are stated at those owners.
+
+`FiniteSymmetry` supplies finite group actions and their inverse-bearing
+relabelings. `ModelSymmetry` checks coherence on node and value names,
+latent inputs, and local structural equations. It derives interventional
+equivariance after transforming both the forced values and the outcome
+event. Invariance of a particular fixed experiment requires an additional
+condition on that experiment.
 -/
