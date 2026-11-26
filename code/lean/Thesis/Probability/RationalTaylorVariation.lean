@@ -1,6 +1,20 @@
 import Thesis.Probability.RationalExponentialContinuity
 import Thesis.Probability.RationalPolynomialExpression
 
+/-!
+# Differentiating certified rational exponential approximants
+
+These estimates compare a Taylor approximation at nearby rational arguments
+with its expected first-order exponential change. Finite block identities
+separate the linear term from the remainder. A quadratic displacement bound
+controls each coefficient and its finite partial sum on an explicitly bounded
+argument domain.
+
+All approximation orders, tolerances and remainder estimates remain finite
+rational data. These are quantitative inputs to the later constructive-real
+derivative proofs; a limiting analytic derivative is not assumed here.
+-/
+
 namespace Thesis.Probability.RationalTaylorExponential
 open SignedRatio RationalGeometricSeries
 

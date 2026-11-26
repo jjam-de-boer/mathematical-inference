@@ -4,6 +4,21 @@ import Thesis.Probability.ConstructiveRealFiniteLinear
 import Thesis.Probability.ConstructiveRealEntropyOptimizer
 import Thesis.Probability.Construction
 
+/-!
+# Restricting feasible analytic laws to their actual support face
+
+A law on the declared finite cells is read as individual unit-interval masses
+through explicit coordinate indices. Its normalization, moment bounds and
+entropy can then be compared with the problem obtained by removing cells
+proved to have zero mass in every feasible law.
+
+The two conversion directions transport feasible laws between the original
+grid and the support face. Removing proved-zero summands preserves the full
+finite entropy sum and the corresponding maximality statement. No arbitrary
+real positivity test or decision of a real equality is introduced to select
+which cells survive; the rational support-hull construction supplies them.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A finite sum loses no value when only proved-zero summands are removed. -/

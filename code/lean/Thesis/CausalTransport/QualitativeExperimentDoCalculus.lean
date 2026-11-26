@@ -1,6 +1,21 @@
 import Thesis.Causality.QualitativeExperimentRoundTrip
 import Thesis.CausalTransport.CausalUrnDoCalculus
 
+/-!
+# Pearl's three rules from the approved qualitative requirements
+
+The public kernels below use the supplied experimental urns. The proof
+constructs a game from Effectiveness, Parent sufficiency and Experimental
+stability. Full-law preservation transports the actual partial conditionals,
+including failed support and defined zeros, to that game. Existing game
+soundness proves the three rules and transports their conclusions back.
+
+The caller supplies graphical tests and local support witnesses, but no
+game, recipes, factorization, SCM or soundness certificate. The observed
+projection is the supplied checked projection: unrecorded common causes
+are retained internally throughout reconstruction.
+-/
+
 namespace Thesis.Causality.QualitativeDoCalculus
 
 private theorem partial_none_iff {left right : ProbabilityResult.Result}
@@ -31,20 +46,7 @@ open Probability Probability.ClaytonWaddington Probability.ClaytonWaddington.Urn
 universe u v
 variable {S : ObservedSignature.{u}} {P : FiniteLatentProjection S}
 
-/-!
-# Pearl's three rules from the approved qualitative requirements
 
-The public kernels below use the supplied experimental urns. The proof
-constructs a game from Effectiveness, Parent sufficiency and Experimental
-stability. Full-law preservation transports the actual partial conditionals,
-including failed support and defined zeros, to that game. Existing game
-soundness proves the three rules and transports their conclusions back.
-
-The caller supplies graphical tests and local support witnesses, but no
-game, recipes, factorization, SCM or soundness certificate. The observed
-projection is the supplied checked projection: unrecorded common causes
-are retained internally throughout reconstruction.
--/
 
 /-- Select the declared hard experiment and then project to recorded
 outcomes. An empty action selects observation. Hidden values remain present

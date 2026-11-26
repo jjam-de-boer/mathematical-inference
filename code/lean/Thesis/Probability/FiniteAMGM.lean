@@ -1,5 +1,21 @@
 import Thesis.Probability.Combinatorics
 
+/-!
+# Denominator-cleared finite arithmetic–geometric mean bounds
+
+The natural-number inequality n^n times the product is at most the nth
+power of the sum. The proof first doubles lengths using the two-coordinate
+inequality, then applies Cauchy's descending padding argument to reach every
+finite length from a sufficiently large power of two. Thus no square roots,
+real extrema, or choice of an optimizing tuple enter the construction.
+
+Weighted versions expand an entry into its declared number of copies and
+reuse the unweighted inequality. Zero factors and zero multiplicities are
+retained. The strict downstream bound keeps an explicit strict bound on
+the weighted arithmetic mean; it requires neither positive individual
+entries nor positive individual multiplicities.
+-/
+
 namespace Thesis.Probability.FiniteAMGM
 
 /-- An explicit natural product, including zero factors. -/

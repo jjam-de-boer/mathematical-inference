@@ -1,5 +1,19 @@
 import Thesis.Probability.ConstructiveRealAdditionLimits
 
+/-!
+# Completing real-valued Cauchy sequences with explicit moduli
+
+Every requested precision is converted into a rational enclosure centre of
+a sufficiently late sequence value. The supplied Cauchy modulus makes these
+centres a regular rational approximation, whose existing constructive limit
+then supplies the real-valued sequence's limit.
+
+Tail estimates and uniqueness retain explicit convergence moduli; no index
+is selected from a merely propositional eventual-convergence assertion.
+Constant sequences, sums and finite list sums preserve the corresponding
+limits, and rational Cauchy sequences embed through the same construction.
+-/
+
 namespace Thesis.Probability.PositiveRatio
 
 theorem half_sum (precision : PositiveRatio) :

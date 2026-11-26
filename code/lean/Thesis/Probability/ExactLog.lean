@@ -1,5 +1,22 @@
 import Thesis.Probability.PositiveRatio
 
+/-!
+# Exact logarithmic values without rationalizing logarithms
+
+A value records log₂ of a positive rational argument divided by a positive
+natural degree. Order and equivalence clear the two degrees and compare
+positive rational powers, so they are decidable without choosing a real
+logarithm or approximating an entropy value. The argument may be below one;
+negative logarithmic values are represented by reciprocals rather than by
+negative probability masses.
+
+Addition multiplies appropriately powered arguments, while natural scaling
+and positive natural division change the presentation directly. The order
+and congruence lemmas show that these operations respect magnitude rather
+than the chosen unreduced argument/degree pair. The analytic interpretation
+is supplied downstream and is not assumed in these algebraic proofs.
+-/
+
 namespace Thesis.Probability
 
 /-- An exact symbolic value `log₂(argument) / degree`. Arguments and all

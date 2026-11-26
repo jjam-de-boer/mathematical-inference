@@ -3,6 +3,21 @@ import Thesis.Probability.ExactLogEnclosure
 import Thesis.Probability.ExactLogRationalArithmetic
 import Thesis.Probability.ExactLogSeparation
 
+/-!
+# Interpreting exact logarithms as constructive analytic values
+
+Certified rational enclosures of an exact logarithmic presentation define a
+constructive real. Their width and coherence provide the computational data
+for this interpretation; no real value is chosen from an existence theorem.
+The rational-error separation argument then reflects order back to the
+original exact-logarithm comparison, so the interpretation both preserves
+and detects equality of magnitudes.
+
+The remaining bridges show that addition, negation, finite sums and rational
+scaling have the expected analytic values. These auxiliary real values do
+not change any finite probability weight into an irrational mass.
+-/
+
 namespace Thesis.Probability.ExactLog
 
 private theorem rational_order {a b : SignedRatio} (bounded : LE (ofSignedRatio a) (ofSignedRatio b)) : SignedRatio.LE a b :=

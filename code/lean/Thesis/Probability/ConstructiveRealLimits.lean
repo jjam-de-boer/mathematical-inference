@@ -1,5 +1,20 @@
 import Thesis.Probability.ConstructiveRealAdditive
 
+/-!
+# Explicit completion of rational approximations
+
+A regular rational approximation provides a centre at each positive rational
+precision together with a compatibility bound between any two centres.
+Intervals around half-precision centres define a coherent constructive real
+and certify its proximity to every supplied approximant.
+
+A rational Cauchy sequence becomes such an approximation using its explicit
+modulus. Comparing two requested precisions uses a common later index, so
+monotonicity of the modulus is unnecessary. Uniqueness is extensional equality
+of the resulting real values, rather than equality of their enclosure data.
+The final canonical approximation recovers any already supplied real.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 theorem sub_half_add (value : SignedRatio) (precision : PositiveRatio) :

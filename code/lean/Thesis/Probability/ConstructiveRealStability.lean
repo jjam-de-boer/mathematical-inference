@@ -1,6 +1,21 @@
 import Thesis.Probability.ConstructiveRealCauchy
 import Thesis.Probability.ConstructiveRealMultiplication
 
+/-!
+# Transporting quantitative error bounds through limits and products
+
+Uniform rational estimates on regular approximations pass to their completed
+real values by allowing and then eliminating arbitrary positive rational
+slack. The constants and argument bounds remain explicit throughout this
+passage to the limit.
+
+For products, the proof first records magnitude bounds on the relevant
+approximants. It then separates the two first-order perturbations and their
+interaction. The resulting stability lemmas support later reciprocal and
+analytic constructions without deciding real equality or assuming a
+qualitative continuity theorem with no computable modulus.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A closed rational error bound follows from bounds with every positive

@@ -1,5 +1,21 @@
 import Thesis.Probability.EntropyIncrement
 
+/-!
+# Quantitative continuity of one finite entropy contribution
+
+`EntropyWithin` compares -p log₂ p and -q log₂ q symmetrically using an exact
+additive logarithmic error. A common-denominator argument first bounds the
+change by a dyadic distance threshold; clearing denominators extends the
+bound to independently presented rational probabilities.
+
+The final threshold is computed from a positive rational tolerance. Both
+arguments are required to lie in the unit interval, but either may be zero:
+the small-mass estimates account for the endpoint instead of introducing an
+undefined logarithm of zero. This is a quantitative modulus for the scalar
+contribution; whole-law entropy continuity is assembled from finite sums
+in the downstream modules.
+-/
+
 namespace Thesis.Probability
 
 /-- Additive, symmetric comparison of exact entropy contributions. -/

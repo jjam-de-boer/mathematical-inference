@@ -1,6 +1,23 @@
 import Thesis.Causality.QualitativeExperiments
 import Thesis.Causality.CausalUrnTickets
 
+/-!
+# Recipes from supported experimental contexts
+
+Search every recorded hard setting for a supported parent configuration in
+which the child is NOT set. The ordinary conditional urn, projected to the
+child value, is a local recipe. Experimental stability makes its law
+independent of which eligible setting the finite search encounters first.
+Parent sufficiency will connect that row to complete earlier histories.
+
+A row occurring only while the child is forced does not determine drawing
+instructions. Such rows get an explicit completion. The public realization
+constructs a one-cell completion itself: callers supply neither kernels nor
+noise. An auxiliary completion parameter permits the general proof that all
+these choices preserve exactly the same admitted experimental laws. No
+conditional probability on null evidence is created by this construction.
+-/
+
 namespace Thesis.Causality
 open Probability Probability.ClaytonWaddington
 universe u v
@@ -31,22 +48,7 @@ end HardIntervention
 namespace CausalExperimentData
 variable {S : ObservedSignature.{u}} {P : FiniteLatentProjection S}
 
-/-!
-# Recipes from supported experimental contexts
 
-Search every recorded hard setting for a supported parent configuration in
-which the child is NOT set. The ordinary conditional urn, projected to the
-child value, is a local recipe. Experimental stability makes its law
-independent of which eligible setting the finite search encounters first.
-Parent sufficiency will connect that row to complete earlier histories.
-
-A row occurring only while the child is forced does not determine drawing
-instructions. Such rows get an explicit completion. The public realization
-constructs a one-cell completion itself: callers supply neither kernels nor
-noise. An auxiliary completion parameter permits the general proof that all
-these choices preserve exactly the same admitted experimental laws. No
-conditional probability on null evidence is created by this construction.
--/
 
 def RowSupported (data : CausalExperimentData S P) (child) (parents : data.Parents child)
     (setting : HardIntervention S) : Prop :=

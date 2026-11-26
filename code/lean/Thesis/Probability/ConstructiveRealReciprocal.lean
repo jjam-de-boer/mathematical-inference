@@ -1,6 +1,21 @@
 import Thesis.Probability.ConstructiveRealOrderedRing
 import Thesis.Probability.RationalReciprocal
 
+/-!
+# Reciprocal with an explicit positive separation from zero
+
+An inverse is constructed only after the caller supplies a positive rational
+lower bound for the real input. Rational enclosure endpoints are clipped to
+that bound before inversion, and the existing rational reciprocal estimate
+determines how finely the original real must be approximated.
+
+The resulting regular rational approximations define a constructive inverse
+and certify its multiplication equation, uniqueness and antitone order law.
+The lower bound is computational input rather than a decidable test for
+arbitrary real nonzeroness. The final congruence lemmas ensure that different
+valid lower bounds still represent the same inverse value.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private def positiveEndpoint (x : ConstructiveReal) (lower : PositiveRatio) (precision : PositiveRatio) : SignedRatio :=

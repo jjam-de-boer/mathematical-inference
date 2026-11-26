@@ -1,6 +1,22 @@
 import Thesis.Probability.ConstructiveRealMomentApproximation
 import Thesis.Probability.Distros.PartialMomentBounds
 
+/-!
+# Constructing the feasible support hull from sharp rational bounds
+
+Exactly feasible rational approximation transfers universal coordinate bounds
+to auxiliary analytic feasible laws. For a supplied compatible rational law,
+the finite coordinate-bound solver supplies extremal witnesses; finite
+mixtures of those witnesses produce a law positive at every cell whose
+feasible upper mass is positive.
+
+The resulting support hull distinguishes cells that are forced to zero
+from cells that merely have zero mass in one chosen law. Its nonempty
+support-face grid and conversion proofs retain the original moment equations
+and intervals. No strictly positive full-grid feasible law is silently
+assumed when constraints force a proper face.
+-/
+
 namespace Thesis.Probability.Distros.PartialMomentProblem
 open ConstructiveReal
 

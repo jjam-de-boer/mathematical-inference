@@ -1,6 +1,20 @@
 import Thesis.Probability.ConstructiveRealOrderedRing
 import Thesis.Probability.Distros.RationalLinearSolve
 
+/-!
+# Interpreting rational constraint rows on constructive real assignments
+
+Integer-coefficient dot products and rational right-hand sides can be read in
+the auxiliary constructive ordered ring without deciding arbitrary real
+comparisons. The finite row operations used by rational elimination remain
+sound under this interpretation.
+
+Consequently an exact rational infeasibility certificate also excludes real
+assignments satisfying those same rows. This is a one-way certificate
+interpretation, not a general algorithm that decides arbitrary constraints
+with real coefficients or selects real witnesses.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 open ConstructiveReal
 
