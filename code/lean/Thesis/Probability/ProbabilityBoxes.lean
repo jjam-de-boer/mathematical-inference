@@ -3,6 +3,19 @@ import Thesis.Probability.Construction
 
 namespace Thesis.Probability.ProbabilityBoxes
 
+/-!
+# Finite rational boxes cover probabilities of arbitrary denominator
+
+Each coordinate chooses one of finitely many interval indices. The explicit
+assignment enumeration is complete, and rational floor division locates any
+probability between its selected endpoints. A positive subdivision size
+gives every box width exactly its reciprocal.
+
+Two arbitrary rational points in the same box differ by at most that width.
+They need not be grid points or share any denominator: enumeration bounds
+spatial precision and never restricts feasible probability denominators.
+-/
+
 /-- Every finite coordinate assignment of box indices is enumerated. The
 indices select intervals, never a cap on a feasible law's denominator. -/
 def enumerate : (dimension size : Nat) → List (Fin dimension → Fin (size + 1))

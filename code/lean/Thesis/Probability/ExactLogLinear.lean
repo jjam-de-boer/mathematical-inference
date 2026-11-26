@@ -2,6 +2,19 @@ import Thesis.Probability.ExactLogWeights
 
 namespace Thesis.Probability.ExactLog
 
+/-!
+# Finite linear algebra of exact logarithmic values
+
+Rational scaling is additive both in the logarithmic value and in its
+nonnegative rational coefficient. Presentation equalities may require a
+proved root rescaling; their resulting rational magnitudes are equivalent.
+Negation, finite sums and differences inherit these laws.
+
+The order identities express nonnegative differences and zero differences
+through the original exact-log comparison. This supplies entropy grouping
+and later error estimates without introducing analytic real arithmetic.
+-/
+
 theorem ext {x y : ExactLog} (argument : x.argument = y.argument) (degree : x.degree = y.degree) : x = y := by
   cases x; cases y; simp_all
 

@@ -2,6 +2,20 @@ import Thesis.Probability.Distros.SignedConcentration
 
 namespace Thesis.Probability.Distros
 
+/-!
+# Covariance Cauchy-Schwarz with explicit zero-variance handling
+
+The covariance numerator of an integer linear combination is an exact
+quadratic form on one common positive squared denominator. Nonnegativity of
+that variance yields the Cauchy-Schwarz inequality after choosing a concrete
+linear combination, without optimizing over an assumed real parameter.
+
+If one variance is zero, its response is almost surely constant and its
+covariance with every response vanishes. Only the remaining positive-variance
+branch cancels a positive factor. The final inequality embeds the signed
+covariance square into ordinary nonnegative rational arithmetic.
+-/
+
 /-- Scaling and adding integer observables gives the usual covariance
 quadratic form on the record's common squared denominator. -/
 theorem Distro.signedCovariance_linear_self_num (μ : Distro Ω) (f g : Ω → Int) (a b : Int) :
@@ -13,6 +27,8 @@ theorem Distro.signedCovariance_linear_self_num (μ : Distro Ω) (f g : Ω → I
   rw [expansion]
   ac_rfl
 
+/-- An almost-sure constant response contributes no centered product.
+Null occurrences may still have arbitrary integer response values. -/
 theorem Distro.signedCovariance_zero_of_varianceInt_zero (μ : Distro Ω) (f g : Ω → Int)
     (zero : (μ.varianceInt f).num = 0) : (μ.signedCovariance f g).num = 0 := by
   rcases (μ.varianceInt_zero_iff_constant f).mp zero with ⟨c, constant⟩
@@ -52,6 +68,8 @@ theorem Distro.signedCovariance_cauchy_num (μ : Distro Ω) (f g : Ω → Int) :
     change C * C ≤ A * B
     simp only [cross, zero, Int.mul_zero, Int.le_refl]
   · have positive : 0 < B := by omega
+    -- The concrete coefficients B and -C complete the square while
+    -- staying entirely inside integer-observable variance arithmetic.
     have quadratic := μ.signedCovariance_self_nonnegative (fun x => B * f x + (-C) * g x)
     rw [μ.signedCovariance_linear_self_num] at quadratic
     change 0 ≤ B * B * A + (-C) * (-C) * B + 2 * B * (-C) * C at quadratic

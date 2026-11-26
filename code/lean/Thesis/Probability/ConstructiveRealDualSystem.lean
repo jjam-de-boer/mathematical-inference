@@ -1,5 +1,16 @@
 import Thesis.Probability.ConstructiveRealNormalCone
 
+/-!
+# Encoding affine stationarity and signs as finite dual rows
+
+There is one nonnegativity constraint per original row multiplier, even
+for repeated primal rows. Each gradient coordinate and the attained value
+supply an equality encoded by a row and its reverse. The last unknown is
+the free normalization coefficient. The checked row evaluations recover
+the intended sign, affine representation, and attained-value conditions
+from the finite linear system.
+-/
+
 namespace Thesis.Probability.AnalyticLinear
 open ConstructiveReal
 open Distros.RationalLinear

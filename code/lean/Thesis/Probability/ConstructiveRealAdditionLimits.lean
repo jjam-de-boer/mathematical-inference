@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealDistance
 
+/-!
+# Addition of regular rational approximations and their limits
+
+Each input is sampled at half the requested precision, so their rational
+errors add to the advertised radius. A four-term rearrangement identifies
+the two-sided error enclosure for the sum. Uniqueness of a value lying in
+every advertised enclosure proves agreement with addition of completed
+real values, even when their approximation schedules differ.
+-/
+
 namespace Thesis.Probability.PositiveRatio
 
 theorem half_le (precision : PositiveRatio) : LE precision.half precision := divideNat_le precision 2 (by decide)

@@ -1,6 +1,18 @@
 import Thesis.Probability.FinitePhysicalModel
 import Thesis.Probability.ConstructiveRealGibbsTiltOptimality
 
+/-!
+# Finite Gibbs laws for energy and particle-number constraints
+
+Signed rational energy and natural particle counts embed into the analytic
+Gibbs interfaces without merging states that share those observables.
+On a supplied physical state space the energy tilt maximizes Shannon
+entropy at its mean energy. The two-feature grand-canonical tilt preserves
+energy and particle means separately. Substituting alpha=-beta*mu gives
+the usual chemical-potential score. For the fixed-particle canonical
+ensemble, use the sector construction that actually enforces that count.
+-/
+
 namespace Thesis.Probability.FinitePhysicalModel
 open ConstructiveReal
 open Distros.RationalLinear

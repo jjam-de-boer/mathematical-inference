@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealFeasibleApproximation
 import Thesis.Probability.Distros.RationalSimplex
 
+/-!
+# Recovering coordinate domains from the original simplex rows
+
+Each analytic coordinate has a nonnegative bound from its own simplex
+row. The paired total rows give normalization, which bounds each
+coordinate above by one using the other nonnegative coordinates.
+Thus the entropy domain follows from feasibility, including forced
+zeros, rather than imposing an extra condition on ideal laws.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 open ConstructiveReal
 

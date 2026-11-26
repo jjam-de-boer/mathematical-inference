@@ -3,6 +3,16 @@ import Thesis.Probability.RationalApproximationSequence
 import Thesis.Probability.ConstructiveRealDifferenceLimits
 import Thesis.Probability.ConstructiveRealProductLimits
 
+/-!
+# Transferring checked finite polynomial identities to real inputs
+
+The rational-coefficient expression has an analytic interpretation using
+the constructed ring. Effective rational approximations propagate through
+its sums and products with proved error moduli. A successful finite
+rational identity check therefore gives a uniform analytic identity
+by passage to the limit, without comparing two arbitrary real values.
+-/
+
 namespace Thesis.Probability.RationalPolynomial.Expression
 open ConstructiveReal
 variable {variables : Nat}

@@ -4,6 +4,20 @@ import Thesis.Probability.RationalSeriesNorm
 namespace Thesis.Probability.RationalTaylorExponential
 open SignedRatio RationalGeometricSeries
 
+/-!
+# Uniform Taylor coefficient bounds on bounded rational intervals
+
+Coefficients at a natural magnitude bound dominate every signed exponential
+Taylor term in that interval. A finite prefix and a common dyadic tail bound
+give one explicit natural bound for every finite sum of absolute coefficients,
+independently of truncation order.
+
+Unlike the earlier pointwise tail schedule, this schedule depends only on
+the interval bound and can therefore support uniform continuity estimates.
+Zero interval radius and empty partial sums are included without special
+positivity assumptions on the argument.
+-/
+
 /-- Nonnegative Taylor coefficients at a natural argument bound. They also
 bound signed coefficients throughout the corresponding rational interval. -/
 def coefficient (bound n : Nat) : QProb := ⟨bound ^ n, factorial n, factorial_pos n⟩

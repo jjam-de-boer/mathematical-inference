@@ -4,6 +4,19 @@ import Thesis.Probability.ConstructiveRealLogarithm
 namespace Thesis.Probability.RationalLogSecant
 open ConstructiveReal
 
+/-!
+# Uniform first variation at one from both rational sides
+
+A single positive rational radius is chosen small enough for the existing
+left and right secant moduli. Every positive rational argument within that
+radius has its logarithm approximated by the signed increment times the
+constructed secant limit, with error bounded by precision times radius.
+
+Natural numerator/denominator comparisons distinguish above, below and
+exactly one. The proof never decides general real order, and the exactly-one
+case gives zero logarithm and zero linear increment explicitly.
+-/
+
 /-- One rational radius valid on both sides of one. Both component radii
 have unit numerator, so adding their denominators gives a smaller radius. -/
 def variationModulus (precision : PositiveRatio) : PositiveRatio :=

@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.PositiveSupport
 import Thesis.Probability.Distros.MultivariateFactorialPGF
 
+/-!
+Factorial PGF expansions using bounds only on positive-weight outcomes.
+
+Almost-sure congruence permits finite scalar and multivariate expansions
+without constraining zero-weight outliers in the original records. Exchanging
+the finite expansion and expectation expresses the PGF through factorial
+moments. For a natural observable bounded almost surely, moments up to that
+bound suffice to match a large-natural PGF value and reconstruct its law.
+The construction keeps every atom and declared outcome; it changes the
+support hypotheses needed by the proof rather than filtering a distribution.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 

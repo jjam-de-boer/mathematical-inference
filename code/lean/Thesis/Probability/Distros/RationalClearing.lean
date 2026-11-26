@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.RationalMoments
 import Thesis.Probability.SignedRatioOrder
 
+/-!
+Transfer signed rational moments through explicit finite denominator clearing.
+
+The common denominator is computed from the observable values on actual
+record occurrences; no ambient-space enumeration or global denominator bound
+is needed. The cleared numerator represents the observable on those atoms.
+Expectations and covariances then reduce to the integer-observable interfaces,
+with one denominator factor per observable. This proves law invariance and
+mapped-observable identities, and transfers nonnegative self-covariance to
+rational variance. All probability atoms and their original labels are retained.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- A denominator constructed only from the supplied finite atom occurrences.
@@ -12,6 +24,9 @@ theorem ratioObservableDenominator_pos (atoms : List (Ω × Nat)) (f : Ω → Si
     0 < ratioObservableDenominator atoms f :=
   observableDenominator_pos atoms _
 
+/-- Scale an observable numerator into proposed common-denominator units.
+Correct representation below uses divisibility at each listed atom; arbitrary
+off-list values need not satisfy that divisibility. -/
 def ratioObservableNumerator (denominator : Nat) (f : Ω → SignedRatio) (x : Ω) : Int :=
   (f x).num * ((denominator / (f x).den : Nat) : Int)
 

@@ -1,5 +1,21 @@
 import Thesis.Probability.ConstructiveRealEntropyStrongConcavityClosed
 
+/-!
+# Entropy curvature at the closed unit-interval boundary
+
+The fixtures concern the single-coordinate term `-p log2(p)`, not the sum
+of both coordinates of a binary law. Its values at zero and one vanish,
+while its value at their midpoint is `1/2`. The strong midpoint theorem
+therefore yields the concrete curvature inequality `1/8 <= 1/2` in both
+endpoint orders.
+
+Boundary-value identities and exact rational polynomial certificates
+separate entropy interpretation from elementary arithmetic. Neither zero
+endpoint is assumed positive, and no `log(0)` is evaluated. The final case
+checks the explicit smoothing formula for the unreduced zero `0/7`, whose
+smoothed mass is exactly `1/(n+2)` at every natural stage.
+-/
+
 namespace Thesis.Examples.ConstructiveEntropyCurvature
 open Probability ConstructiveReal
 

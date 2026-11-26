@@ -1,4 +1,16 @@
 import Thesis.Probability.Distros.ReinforcedAggregation
+/-!
+Sufficient state updates and splitting actual reinforced histories.
+
+`reinforcedUpdate` applies one increment per observed colour in order;
+`reinforcedState` computes the same result from colour counts. Their equality
+is an algebraic fact, even before a history is known to have positive mass.
+Shape, total and coordinate identities expose the updated state to prediction.
+Finally the raw atom list is split at any fixed time into an initial history
+and a continuation from that history's updated urn. This is the foundation
+for later conditional-law theorems, where positive evidence is required.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 
@@ -9,6 +21,8 @@ def reinforcedState (increment : Nat) : List Nat → List Nat → List Nat
   | alphas, [] => alphas
   | alpha :: alphas, count :: counts => (alpha + increment * count) :: reinforcedState increment alphas counts
 
+/-- Apply a recorded sequence of colour updates. List modification ignores
+out-of-range colours; support theorems later exclude those from positive histories. -/
 def reinforcedUpdate : List Nat → Nat → List Nat → List Nat
   | alphas, _, [] => alphas
   | alphas, increment, colour :: history =>
@@ -32,6 +46,8 @@ theorem reinforcedState_modify_alpha (increment : Nat) (alphas counts : List Nat
           | zero => simp only [reinforcedState, List.modify_zero_cons]; congr 1; omega
           | succ i => simp only [reinforcedState, List.modify_succ_cons, ih]
 
+/-- One extra observed count has exactly the same effect as one urn update.
+Matching dimensions make the coordinate comparison valid throughout the recursion. -/
 theorem reinforcedState_modify_count (increment : Nat) (alphas counts : List Nat)
     (dimension : counts.length = alphas.length) (i : Nat) :
     reinforcedState increment alphas (counts.modify i (fun c => c + 1)) =
@@ -59,6 +75,8 @@ theorem reinforcedUpdate_counts (alphas : List Nat) (increment : Nat) (history :
       simp only [reinforcedUpdate, ih, List.length_modify, colourCounts]
       rw [reinforcedState_modify_alpha, reinforcedState_modify_count _ _ _ (colourCounts_length _ _)]
 
+/-- The updated total adds the increment once per recorded count.
+This equality requires a full count vector matching the parameter dimension. -/
 theorem reinforcedState_sum (increment : Nat) (alphas counts : List Nat) (dimension : counts.length = alphas.length) :
     (reinforcedState increment alphas counts).sum = alphas.sum + increment * counts.sum := by
   induction alphas generalizing counts with
@@ -84,6 +102,8 @@ theorem reinforcedUpdate_length (alphas : List Nat) (increment : Nat) (history :
     (reinforcedUpdate alphas increment history).length = alphas.length := by
   rw [reinforcedUpdate_counts, reinforcedState_length]
 
+/-- Reinforcement never removes initial mass, so an initially nonempty
+urn remains normalizable after any recorded sequence of modifications. -/
 theorem reinforcedUpdate_positive (alphas : List Nat) (increment : Nat) (history : List Nat) (positive : 0 < alphas.sum) :
     0 < (reinforcedUpdate alphas increment history).sum := by
   rw [reinforcedUpdate_counts, reinforcedState_sum _ _ _ (colourCounts_length _ _)]

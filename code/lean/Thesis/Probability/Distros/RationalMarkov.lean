@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.LawEquivalence
 
+/-!
+Markov's inequality for exact nonnegative rational observables.
+
+The threshold event compares fractions by natural cross-multiplication,
+so it is decidable without conversion to real numbers. A denominator computed
+from the finite atom list clears the observable on that list; the existing
+natural-observable Markov inequality then applies to a scaled integer
+observable. Transporting both event and expectation yields the rational bound.
+Only the threshold numerator is required positive. Zero observable values,
+zero-weight occurrences and unreduced fractions are retained.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Markov's inequality for arbitrary nonnegative rational observables and

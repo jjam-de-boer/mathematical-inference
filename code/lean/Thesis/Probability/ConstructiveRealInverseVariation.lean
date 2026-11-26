@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealReciprocal
 import Thesis.Probability.ConstructiveRealPolynomialExpression
 
+/-!
+# Exact reciprocal displacement and quadratic remainder
+
+The positive inverses of the two supplied values satisfy their certified
+inverse equations. Algebra expresses their difference without additional
+real division. Subtracting the linear prediction leaves an exact
+quadratic term on a positive half-line. The derivative layer bounds this
+term by the input radius using the supplied common floor.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Exact reciprocal difference on explicitly positive real domains. The

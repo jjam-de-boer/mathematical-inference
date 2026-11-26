@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.EntropyBoxSearch
 import Thesis.Probability.ExactLogPositiveEnclosure
 
+/-!
+Certified rational entropy brackets for partial moment problems.
+
+A symbolic near-optimal feasible law is combined with an exact-log rational
+enclosure. Half of the positive requested tolerance goes to optimization
+and half to enclosure width, yielding rational lower and universal upper
+bounds separated by at most the original tolerance. The returned law remains
+exactly feasible and preserves every declared cell. Infeasibility carries
+the original rational linear certificate. This is approximation with no
+denominator cap, not an assertion of an attained exact rational optimum.
+-/
+
 namespace Thesis.Probability.QProb
 
 /-- A witnessed nonnegative difference inherits the corresponding additive

@@ -2,6 +2,21 @@ import Thesis.Probability.ConstructiveRealOrderedRing
 import Thesis.Probability.ConstructiveRealCauchyOrder
 import Thesis.Probability.EntropyRealProducts
 
+/-!
+# Ordered multiplication and nonnegative approximation at zero
+
+Products, squares, powers and Cauchy limits retain their explicit
+nonnegativity and order hypotheses. A deliberately loose presentation of
+zero has negative enclosure endpoints, so the nonnegative approximation
+must clamp its center rather than treating an enclosure endpoint as a
+nonnegative rational mass. The resulting center is still certified close.
+
+Rational scaling is compared with real multiplication, including equivalent
+unreduced weights. Entropy is interpreted as `-p*log2(p)` only on positive
+coordinates; the finite sum keeps a separate zero branch. No positive
+logarithm argument is fabricated for a null probability.
+-/
+
 namespace Thesis.Examples.ConstructiveRealOrder
 open Probability
 

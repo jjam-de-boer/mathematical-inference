@@ -2,6 +2,20 @@ import Thesis.Probability.Distros.ConditionalPartitions
 
 namespace Thesis.Probability.Distros
 
+/-!
+# Total covariance and variance for finite partitions
+
+The original weighted law decomposes covariance into the expected within-cell
+covariance and the covariance of cell means. Both terms use signed rational
+observables, so negative responses and unreduced fraction presentations are
+allowed. Cells are the exhaustive occurrence partitions of the preceding
+module, including empty and zero-mass cells.
+
+The proof expands both covariance terms and applies total expectation. Their
+shared product-of-cell-means term cancels exactly; no independence of cells
+or conditional independence of responses is assumed.
+-/
+
 private theorem ratio_sub_add_sub (a b c : SignedRatio) :
     SignedRatio.Equiv (SignedRatio.add (SignedRatio.sub a b) (SignedRatio.sub b c)) (SignedRatio.sub a c) := by
   simp only [SignedRatio.Equiv, SignedRatio.sub, SignedRatio.add, SignedRatio.neg,
@@ -26,6 +40,8 @@ theorem AtomPartition.total_covariance {μ : Distro Ω} (partition : AtomPartiti
       (SignedRatio.sub (μ.rationalExpectation (fun x => SignedRatio.mul (f x) (g x))) (ν.rationalExpectation product)) :=
     SignedRatio.equiv_trans (ν.rationalExpectation_sub _ _)
       (ratio_sub_congr (partition.total_expectation _) (SignedRatio.equiv_refl _))
+  -- The between-cell term restores the product of the original means;
+  -- its remaining term cancels the matching within-cell subtraction.
   have between : SignedRatio.Equiv (ν.rationalCovariance mf mg)
       (SignedRatio.sub (ν.rationalExpectation product)
         (SignedRatio.mul (μ.rationalExpectation f) (μ.rationalExpectation g))) :=

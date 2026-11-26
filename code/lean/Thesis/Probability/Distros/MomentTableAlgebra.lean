@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.FactorialInversion
 
+/-!
+Finite signed-sum algebra for reversing bounded moment tables.
+
+Commuting finite rational sums and isolating a selected range entry do not
+require choosing reduced representatives. The alternating inverse Pascal
+coefficients satisfy both directions of orthogonality: existing moments
+recover singleton masses, and the reverse kernel recovers moments from
+candidate masses. The latter is proved first with integer coefficients and
+then embedded into signed rational sums. Signs belong to inversion algebra;
+no negative coefficients are installed as probability atom weights.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 theorem listSum_map_congr_on_mem (values : List A) (f g : A → SignedRatio)

@@ -2,6 +2,18 @@ import Thesis.Probability.Distros.ReinforcedConditioning
 import Thesis.Probability.Distros.ReinforcedExchangeability
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.FiniteRecordSupport
+/-!
+Supported count evidence and one-step prediction for reinforced urns.
+
+A positive evidence mass yields an actual atom witnessing the observation.
+This recovers its dimension and trial total, and the word/count correspondence
+identifies support with a positive count-law singleton mass. Applying the
+conditional continuation theorem at one future draw gives the familiar
+updated-colour-weight divided by updated-total formula. Its hypotheses keep
+zero-probability observations explicit. The unit-increment corollary supplies
+the whole future Pólya path law, not merely its next-draw probabilities.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 
@@ -14,6 +26,8 @@ theorem eventMass_positive_witness (atoms : List (Ω × Nat)) (event : Event Ω)
     ⟨atom, listed, weight, selected⟩
   exact ⟨atom, listed, selected, weight⟩
 
+/-- Positive evidence supplies a real word with the requested histogram,
+so the observed vector necessarily has the alphabet dimension and total m. -/
 theorem reinforcedCountsSupported_shape (m : Nat) (alphas counts : List Nat) (increment : Nat)
     (supported : reinforcedCountsSupported m alphas increment counts) :
     counts.length = alphas.length ∧ counts.sum = m := by
@@ -24,6 +38,8 @@ theorem reinforcedCountsSupported_shape (m : Nat) (alphas counts : List Nat) (in
   rw [← same]
   exact ⟨colourCounts_length _ _, (colourCounts_sum _ _ shape.2).trans shape.1⟩
 
+/-- Check sequential histogram support using the equivalent count law.
+Equality of rational laws preserves numerator positivity because denominators are positive. -/
 theorem reinforcedCountsSupported_iff_pmf (m : Nat) (alphas counts : List Nat) (increment : Nat)
     (positive : 0 < alphas.sum) :
     reinforcedCountsSupported m alphas increment counts ↔
@@ -33,6 +49,8 @@ theorem reinforcedCountsSupported_iff_pmf (m : Nat) (alphas counts : List Nat) (
   have law := reinforcedUrn_count_correspondence m alphas increment positive (FiniteProbRecord.singletonEvent counts)
   exact QProb.equiv_num_pos_iff (QProb.equiv_trans (QProb.equiv_symm mapped) law)
 
+/-- The first draw uses the current urn proportions. Reinforcement affects
+later draws, so it does not appear in this one-step singleton formula. -/
 theorem reinforcedUrn_one_colour (alphas : List Nat) (increment : Nat) (positive : 0 < alphas.sum)
     (i : Nat) (within : i < alphas.length) :
     QProb.Equiv ((reinforcedUrnDistro 1 alphas increment positive).pmf [i])

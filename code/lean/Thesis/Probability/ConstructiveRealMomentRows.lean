@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealSimplexResponseBounds
 
+/-!
+# The analytic interpretation of finite simplex and moment rows
+
+Nonnegative coordinates and a unit total are equivalent to the original
+closed simplex inequalities. Each moment band contributes a row for
+each endpoint. Their analytic pairings retain the exact signed response
+and the original inclusive bounds. This connects feasible probability
+vectors to ordinary linear elimination without deciding analytic signs.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 open ConstructiveReal
 

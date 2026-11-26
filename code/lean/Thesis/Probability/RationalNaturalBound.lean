@@ -2,6 +2,15 @@ import Thesis.Probability.RationalNorm
 
 namespace Thesis.Probability.QProb
 
+/-!
+# A finite natural upper bound for a nonnegative rational
+
+Integer quotient plus one is positive and bounds the rational magnitude.
+The division/remainder identity proves the bound on the original unreduced
+presentation. This gives later series estimates a finite initial coefficient
+without requiring normalization or using the raw numerator as the bound.
+-/
+
 /-- A small positive natural bound computed by division, without reducing or
 choosing a normalized rational representative. -/
 def naturalUpper (value : QProb) : Nat := value.num / value.den + 1

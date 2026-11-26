@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.CategoricalSampling
 import Thesis.Probability.Distros.BinomialMoments
+/-!
+Merge multinomial categories and derive their one-coordinate laws.
+
+`aggregateCounts` sums coordinates into caller-supplied destination labels.
+Dimension and label-range hypotheses ensure it preserves the total count;
+unused destination labels are allowed and receive zero. Polynomial identities
+transport the multivariate generating function through this map, and finite
+PGF separation proves equality of all event probabilities. Selecting one
+coordinate then gives a binomial marginal and transfers its exact mean and
+variance, including zero selected weight and zero complementary weight.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 
@@ -18,6 +30,8 @@ theorem aggregateCounts_length (groups : Nat) (labels counts : List Nat) :
       | nil => exact List.length_replicate
       | cons count counts => simp only [aggregateCounts, List.length_modify, ih]
 
+/-- Total preservation needs one valid group label for every input count.
+Without these hypotheses the total function deliberately does not promise conservation. -/
 theorem aggregateCounts_sum (groups : Nat) (labels counts : List Nat)
     (dimension : labels.length = counts.length) (within : ∀ label ∈ labels, label < groups) :
     (aggregateCounts groups labels counts).sum = counts.sum := by
@@ -54,6 +68,8 @@ theorem natMonomial_modify_add (args counts : List Nat) (dimension : args.length
               rw [ih args tailDimension index (by simpa only [List.length_cons, Nat.succ_lt_succ_iff] using within)]
               ac_rfl
 
+/-- Evaluating a monomial on grouped counts is the same as repeating each
+group's argument at every original coordinate assigned to that group. -/
 theorem natMonomial_aggregate (groups : Nat) (labels counts args : List Nat)
     (dimension : labels.length = counts.length) (argumentDimension : args.length = groups)
     (within : ∀ label ∈ labels, label < groups) :
@@ -99,6 +115,8 @@ theorem weightedNatArgument_modify_add (weights args : List Nat) (dimension : we
                 (by simpa only [List.length_cons, Nat.succ_lt_succ_iff] using within)]
               omega
 
+/-- The analogous linear identity for summed weights. Together with the
+monomial identity, this identifies the grouped multinomial generating function. -/
 theorem weightedNatArgument_aggregate (groups : Nat) (labels weights args : List Nat)
     (dimension : labels.length = weights.length) (argumentDimension : args.length = groups)
     (within : ∀ label ∈ labels, label < groups) :
@@ -232,6 +250,8 @@ theorem weightedNatArgument_coordinate (s : Nat) (weights : List Nat) (index : N
           have bound := list_getD_le_sum weights index
           omega
 
+/-- Observe one natural count while retaining the underlying full occupancy
+law. Marginal theorems below require the selected index to be in range. -/
 def multinomialCoordinate (trials : Nat) (weights : List Nat) (positive : 0 < weights.sum) (index : Nat) :
     NatDistro (List Nat) := ⟨multinomialDistro trials weights positive, fun counts => counts.getD index 0⟩
 
@@ -267,6 +287,8 @@ theorem multinomial_coordinate_binomial (trials : Nat) (weights : List Nat) (pos
   rw [weightedNatArgument_coordinate s weights index within, total]
 
 
+/-- Transfer the mean through the proved binomial marginal, using the
+selected/complement balance to recover the original total weight. -/
 theorem multinomial_coordinate_mean (trials : Nat) (weights : List Nat) (positive : 0 < weights.sum)
     (index : Nat) (within : index < weights.length) :
     QProb.Equiv (mean (multinomialCoordinate trials weights positive index))

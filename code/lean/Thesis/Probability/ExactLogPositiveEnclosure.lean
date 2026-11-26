@@ -5,6 +5,19 @@ import Thesis.Probability.RationalValues
 
 namespace Thesis.Probability.ExactLog
 
+/-!
+# Nonnegative rational endpoints for a nonnegative exact log
+
+An existing proof of nonnegativity permits clipping a signed enclosure's
+negative lower endpoint to zero. The original upper bound proves its upper
+endpoint is already nonnegative, so both endpoints embed as ordinary
+nonnegative rationals without losing their enclosure guarantees.
+
+The resulting rational interval has width at most the requested positive
+tolerance. This represents rational bounds on an exact logarithmic value;
+it does not assert that the enclosed entropy or logarithm is rational.
+-/
+
 /-- Nonnegative rational numbers of bits, embedded without changing any
 probability weights or claiming that all entropy values are rational. -/
 def ofQProb (value : QProb) : ExactLog := ofSignedRatio value.toSignedRatio

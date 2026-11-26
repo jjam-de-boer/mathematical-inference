@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveDerivativeChain
 import Thesis.Probability.ConstructiveDerivative
 import Thesis.Probability.ConstructiveRealExpDistanceVariation
 
+/-!
+# Effective differentiation of the constructed exponential
+
+A local magnitude bound and the Taylor remainder determine a positive
+radius for every requested linear error tolerance. This gives derivative
+exp(x) at every constructive real x, with an actual remainder modulus.
+Applying the chain rule to affine arguments supplies the derivatives of
+finite exponential weights. Normalization and logarithmic partition
+derivatives are handled by the relevant finite-family modules.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A computed input radius for the exponential's first-order approximation. -/

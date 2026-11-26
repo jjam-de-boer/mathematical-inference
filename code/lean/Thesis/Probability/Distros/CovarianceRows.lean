@@ -2,6 +2,20 @@ import Thesis.Probability.Distros.OccupancyNullspace
 
 namespace Thesis.Probability.Distros
 
+/-!
+# Covariance rows detect exactly the null quadratic directions
+
+Applying a covariance row to a coefficient family is covariance with the
+corresponding linear-combination response. If its quadratic form vanishes,
+that response is an almost-sure constant, so every row vanishes, even against
+an observable outside the original index list. Conversely, zero listed rows
+annihilate the double-sum form by bilinearity.
+
+Specializations transfer the exact occupancy null criteria to row equations.
+Zero trials remain separate, and sampling the full finite population supplies
+an additional hypergeometric degeneracy. No covariance matrix is inverted.
+-/
+
 /-- A covariance row applied to a finite coefficient vector. Index lists
 may contain repetitions; each listed contribution has its original multiplicity. -/
 def Distro.rationalCovarianceRow (μ : Distro Ω) (indices : List I)
@@ -26,6 +40,8 @@ theorem Distro.rationalCovarianceForm_zero_iff_rows (μ : Distro Ω) (indices : 
       ∀ i ∈ indices, SignedRatio.Equiv (μ.rationalCovarianceRow indices responses coefficients i) SignedRatio.zero := by
   constructor
   · intro zero i _
+    -- A null combined response is constant on positive atoms, which is
+    -- stronger than merely having a zero inner product with itself.
     rcases (μ.rationalCovarianceForm_zero_iff indices responses coefficients).mp zero with ⟨c, constant⟩
     have same := μ.rationalCovariance_congr_positive (responses i) (responses i)
       (rationalLinearCombination indices coefficients responses) (fun _ => c)
@@ -34,6 +50,8 @@ theorem Distro.rationalCovarianceForm_zero_iff_rows (μ : Distro Ω) (indices : 
       (SignedRatio.equiv_trans same (SignedRatio.equiv_trans (μ.rationalCovariance_symm _ _)
         (μ.rationalCovariance_constant_left c (responses i))))
   · intro rows
+    -- Expand covariance with the combined response one left summand at
+    -- a time; each supplied row equation makes its whole summand vanish.
     have expanded := μ.rationalCovariance_listSum_left indices
       (fun i x => SignedRatio.mul (coefficients i) (responses i x))
       (rationalLinearCombination indices coefficients responses)

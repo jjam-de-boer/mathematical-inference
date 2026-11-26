@@ -1,6 +1,17 @@
 import Thesis.Probability.PositiveRatio
 import Thesis.Probability.Distros.RationalLinearOrder
 
+/-!
+# Signed rational inequalities used in constructive approximation
+
+Halving a positive precision provides two exactly additive error shares.
+Order lemmas move signed terms across a rational inequality and reverse
+it under negation. In the final separation argument, the denominators of
+two stored signed ratios give an explicit positive error that is smaller
+than any gap between those two distinct numerical values. This is a
+finite arithmetic fact and needs no real trichotomy.
+-/
+
 namespace Thesis.Probability
 namespace PositiveRatio
 

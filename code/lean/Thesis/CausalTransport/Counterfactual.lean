@@ -36,6 +36,9 @@ end CounterfactualAtom
 
 namespace CounterfactualEvent
 
+/-- Interpret each Boolean connective at one and the same latent unit.
+The atom's action changes its mechanisms, while the latent input persists
+through all the atoms in the finite source event. -/
 def finiteSourceHolds {T : FiniteTableSignature}
     (event : CounterfactualEvent T.toObserved) (M : FiniteTableSCM T)
     (u : M.latent.Assignment) : Bool :=
@@ -71,6 +74,8 @@ end CounterfactualEvent
 
 namespace CounterfactualQuery
 
+/-- The denominator is the probability of the counterfactual condition in
+the source law. It can vanish even when individual outcomes are possible. -/
 def finiteSourceDenominator {T : FiniteTableSignature}
     (query : CounterfactualQuery T.toObserved) (M : FiniteTableSCM T) :
     QProb :=
@@ -83,6 +88,8 @@ def finiteSourceNumerator {T : FiniteTableSignature}
     query.condition.finiteSourceHolds M u &&
       query.outcome.finiteSourceHolds M u)
 
+/-- Divide the joint event by the condition using partial probability
+semantics. The transport compares defined values and undefined cases. -/
 def finiteSourceDenote {T : FiniteTableSignature}
     (query : CounterfactualQuery T.toObserved) (M : FiniteTableSCM T) :
     ProbabilityResult.Result :=

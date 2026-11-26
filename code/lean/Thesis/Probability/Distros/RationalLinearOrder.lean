@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.ConditionalProjection
 import Thesis.Probability.Distros.RationalConcentration
 
+/-!
+Order and finite endpoint selection on signed rational presentations.
+
+All comparisons are exact integer cross-products with positive denominators;
+no reduced representative or real-number embedding is selected. Translation,
+negation, positive scaling and positive-denominator division laws support
+linear-inequality elimination. The final finite minimum and maximum programs
+return an actual member of the supplied list plus its initial candidate,
+with universal bounds on those entries. Empty lists remain total because
+the caller supplies that initial rational value.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 /-- Order laws on unreduced rational presentations. These compare finite
@@ -114,6 +126,8 @@ theorem le_scaleInt_iff_divide_le (factor : Nat) (positive : 0 < factor) (bound 
   have same : (factor : Int) * value.num * (bound.den : Int) = value.num * ((bound.den : Int) * factor) := by ac_rfl
   rw [same]
 
+/-- Select a least entry among the initial candidate and the list.
+The initial value participates in the minimum and is returned for an empty list. -/
 def selectMin (initial : SignedRatio) : List SignedRatio → SignedRatio
   | [] => initial
   | value :: values => if LE value initial then selectMin value values else selectMin initial values
@@ -150,6 +164,8 @@ theorem selectMin_bounds (initial : SignedRatio) (values : List SignedRatio) :
           · subst other; exact le_trans (ih initial initial (List.mem_cons_self ..)) reversed
           · exact ih initial other (List.mem_cons_of_mem initial later)
 
+/-- Select a greatest entry among the initial candidate and the list.
+Exact rational order handles unreduced fractions directly. -/
 def selectMax (initial : SignedRatio) : List SignedRatio → SignedRatio
   | [] => initial
   | value :: values => if LE initial value then selectMax value values else selectMax initial values

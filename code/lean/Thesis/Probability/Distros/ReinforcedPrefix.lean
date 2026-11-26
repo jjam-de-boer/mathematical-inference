@@ -1,10 +1,24 @@
 import Thesis.Probability.Distros.ReinforcedUpdates
+/-!
+Ordered prefix conditioning and the sufficiency of colour counts.
+
+Unlike the count-only evidence interface, `reinforcedPrefixEvent` records
+the entire order of the observed prefix. Its positive raw mass is required
+before constructing a conditional suffix law. A direct path factorization
+identifies that law with the count-updated urn, yielding the next-colour
+formula and proving that forgetting the observed order loses no information
+about future draws in this urn family. This sufficiency statement compares
+conditional laws under supported evidence, including zero-weight colours.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Observe the complete ordered prefix. -/
 def reinforcedPrefixEvent (history : List Nat) : Event (List Nat) :=
   fun word => decide (word.take history.length = history)
 
+/-- A specified ordered word is supported exactly when its singleton event
+has positive mass in the initial segment experiment of that word's length. -/
 def reinforcedHistorySupported (alphas : List Nat) (increment : Nat) (history : List Nat) : Prop :=
   0 < FiniteProbRecord.eventMass (reinforcedUrnAtoms history.length alphas increment)
     (FiniteProbRecord.singletonEvent history)
@@ -48,6 +62,8 @@ theorem reinforcedPrefixEvent_mass (history : List Nat) (n : Nat) (alphas : List
   rw [rows]
   exact FiniteProbRecord.eventMass_factor_sum _ (FiniteProbRecord.singletonEvent history) _
 
+/-- Extend positive prefix evidence to any finite future horizon.
+The continuation has a positive total because reinforcement preserves initial mass. -/
 theorem reinforcedPrefixEvent_positive (history : List Nat) (n : Nat) (alphas : List Nat) (increment : Nat)
     (positive : 0 < alphas.sum) (supported : reinforcedHistorySupported alphas increment history) :
     (reinforcedUrnDistro (history.length + n) alphas increment positive).record.EventPositive (reinforcedPrefixEvent history) := by
@@ -84,6 +100,8 @@ theorem reinforcedPrefixContinuation_updated (history : List Nat) (n : Nat) (alp
   simp only [totalMass_reinforcedUrnAtoms, reinforcedUpdate_counts]
   ac_rfl
 
+/-- A positive-mass word uses only indices of the original alphabet.
+This is extracted from an actual supported atom rather than assumed of all lists. -/
 theorem reinforcedHistorySupported_valid (alphas : List Nat) (increment : Nat) (history : List Nat)
     (supported : reinforcedHistorySupported alphas increment history) :
     ∀ colour ∈ history, colour < alphas.length := by
@@ -93,6 +111,8 @@ theorem reinforcedHistorySupported_valid (alphas : List Nat) (increment : Nat) (
   rw [← same]
   exact (reinforcedUrn_word_support history.length alphas increment atom member).2
 
+/-- Read the next-colour law in original parameter units. Validity of the
+supported prefix identifies its histogram total with the number of observed draws. -/
 theorem reinforced_next_after_prefix (history : List Nat) (alphas : List Nat) (increment : Nat)
     (positive : 0 < alphas.sum) (supported : reinforcedHistorySupported alphas increment history)
     (i : Nat) (within : i < alphas.length) :
@@ -107,6 +127,8 @@ theorem reinforced_next_after_prefix (history : List Nat) (alphas : List Nat) (i
     (by rw [reinforcedState_sum _ _ _ dimension]; omega) i (by rw [reinforcedState_length]; exact within)
   simpa only [reinforcedState_getD _ _ _ dimension i within, reinforcedState_sum _ _ _ dimension, total] using next
 
+/-- Forgetting order enlarges the evidence event, so a supported exact
+prefix always gives supported count-only evidence. -/
 theorem reinforcedHistorySupported_counts (alphas : List Nat) (increment : Nat) (history : List Nat)
     (supported : reinforcedHistorySupported alphas increment history) :
     reinforcedCountsSupported history.length alphas increment (colourCounts alphas.length history) := by

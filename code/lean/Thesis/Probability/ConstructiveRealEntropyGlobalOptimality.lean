@@ -2,6 +2,21 @@ import Thesis.Probability.ConstructiveRealGibbsInequality
 import Thesis.Probability.ConstructiveRealEqualityConstraints
 import Thesis.Probability.ConstructiveRealEntropyMultipliers
 
+/-!
+# Global entropy optimality from fixed expectations and multipliers
+
+An affine multiplier representation annihilates displacements preserving
+normalization and the stated rational row expectations. Consequently cross
+entropy with a positive reference is constant across such competitors,
+and relative entropy is exactly their entropy gap. Gibbs nonnegativity
+then proves a global maximum, including competing boundary laws.
+Paired equality rows discharge the fixed-expectation requirement and yield
+a necessary-and-sufficient positive-interior coefficient criterion.
+Conversions between bit and natural coefficients include the normalization
+offset. General interval problems still need their appropriate variational
+or signed KKT conditions; row feasibility alone is not fixed expectation.
+-/
+
 namespace Thesis.Probability.Distros.RationalEntropyProblem
 open ConstructiveReal
 open RationalLinear

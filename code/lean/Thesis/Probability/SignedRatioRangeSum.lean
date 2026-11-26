@@ -2,6 +2,18 @@ import Thesis.Probability.SignedRatioAlgebra
 
 namespace Thesis.Probability.SignedRatio
 
+/-!
+# Prefix-sum algebra for signed rational error calculations
+
+The recursive range sum exposes its last term, supporting finite induction
+without a quotient representation of rationals. Pointwise equivalence,
+addition, multiplication and interval splitting all commute with this sum.
+
+Natural scaling can move through sums and products. Cancelling a scale
+against division requires the explicit positive natural divisor, preserving
+the distinction between multiplication by zero and a defined reciprocal.
+-/
+
 /-- A finite prefix sum with its final term exposed by the recursion. -/
 def rangeSum (f : Nat → SignedRatio) : Nat → SignedRatio
   | 0 => zero

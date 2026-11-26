@@ -3,6 +3,17 @@ import Thesis.Probability.ConstructiveRealExpLimits
 import Thesis.Probability.RationalApproximationSequence
 import Thesis.Probability.ConstructiveRealDifferenceLimits
 
+/-!
+# Exponential addition by effective transfer of the rational product law
+
+Termwise agreement on rational approximants identifies the limit of the
+exponential of a sum with the product of the two exponential limits.
+This proves addition for arbitrary coherent real presentations. Combining
+it with the verified exponential at zero makes opposite arguments
+multiplicative inverses, and finite repeated addition gives natural
+powers of the exponential.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- The natural exponential addition law for arbitrary constructive reals.

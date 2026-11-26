@@ -1,5 +1,18 @@
 import Thesis.Probability.RationalGeometricSeries
 
+/-!
+# Effective limits from geometric domination after a finite prefix
+
+Termwise rational equivalence preserves completed Cauchy values even when
+the supplied moduli differ. Finite block congruence and shifts then move
+geometric estimates past an arbitrary initial prefix.
+
+The resulting partial sums have an explicit Cauchy modulus containing that
+prefix, and every truncation after it has a certified remainder to the
+constructed limit. The domination and the starting index are supplied and
+proved; no eventual-bound witness is selected by choice or open-ended search.
+-/
+
 namespace Thesis.Probability.RationalCauchySequence
 
 /-- Termwise rational equivalence gives equal completed values even when the

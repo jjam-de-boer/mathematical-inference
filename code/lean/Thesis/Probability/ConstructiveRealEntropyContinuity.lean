@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealEntropy
 import Thesis.Probability.ConstructiveRealCauchyStability
 
+/-!
+# A uniform enclosure for two analytic entropy contributions
+
+The scalar rational continuity estimate extends to constructive reals on
+[0,1] by comparing bounded rational centers at a common precision. The
+input margin is split between transport to the centers and their original
+separation. Passing the rational bound to the two effective limits gives
+a uniform estimate that includes either zero coordinate.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Uniform entropy continuity on the closed unit interval. Half of the

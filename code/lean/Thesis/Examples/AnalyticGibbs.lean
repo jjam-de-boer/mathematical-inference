@@ -1,5 +1,21 @@
 import Thesis.Probability.ConstructiveRealEntropyGlobalOptimality
 
+/-!
+# A positive entropy maximizer with a boundary competitor
+
+Two coordinates carry duplicate constant moment features, represented by
+paired rational inequality rows. The uniform law is constructed from an
+unreduced rational vector; a point-supported competitor has a genuine zero.
+A constant-gradient Lagrange certificate proves maximality of the uniform
+law, rather than assuming its optimality.
+
+Only the reference law needs the explicit positive floor `1/4`. The examples
+then admit the boundary competitor in both relative-entropy units, derive
+constant cross entropy and the entropy-gap identity, and apply uniqueness
+to any other maximizer. A final path estimate retains positive finite
+approximants when moving toward the zero coordinate.
+-/
+
 namespace Thesis.Examples.AnalyticGibbs
 open Probability Probability.Distros ConstructiveReal
 open RationalLinear RationalEntropyProblem

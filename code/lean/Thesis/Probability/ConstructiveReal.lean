@@ -1,5 +1,18 @@
 import Thesis.Probability.RationalApproximation
 
+/-!
+# Coherent rational enclosures as auxiliary real values
+
+A real takes any positive rational precision and supplies an ordered
+interval of at most that width. Coherence compares all lower endpoints
+with all upper endpoints, without requiring a nested chosen sequence.
+Closed order compares lower enclosures of one value with upper enclosures
+of another. Mutual order defines value equivalence, leaving the algorithms
+and their exact data presentations available. Negation reflects endpoints
+and addition divides the error budget between its inputs. Actual finite
+probability weights remain rational.
+-/
+
 namespace Thesis.Probability
 
 /-- An explicitly computed rational interval with certified width. -/

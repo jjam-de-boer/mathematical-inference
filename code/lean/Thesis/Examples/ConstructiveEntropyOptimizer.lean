@@ -1,6 +1,24 @@
 import Thesis.Probability.ConstructiveRealEntropyOptimizer
 import Thesis.Examples.EntropyMeanHalf
 
+/-!
+# Attained ideal entropy and exact boundary support
+
+The three-state mean-half fixture supplies an exactly feasible rational
+anchor to the general ideal optimizer. The resulting real law attains the
+maximum, has entropy between `2599/2000` and `2601/2000`, and agrees
+coordinatewise with every other maximizer. Its masses are not claimed to
+be rational. The rational approximation sequence has an explicit
+gap-to-coordinate-error schedule for convergence to this attained law.
+
+A separate two-cell problem forces the second coordinate to zero. Its
+anchor retains a zero-weight outlier and duplicate negative constant rows.
+Reading the original constraint proves exact zero for every feasible real
+law, hence also for the constructed optimizer; no interior feasible point
+is assumed. The last arithmetic check makes a `1/10` coordinate tolerance
+concrete from two entropy gaps of `1/800`.
+-/
+
 namespace Thesis.Examples.ConstructiveEntropyOptimizer
 open Probability Probability.Distros ConstructiveReal
 

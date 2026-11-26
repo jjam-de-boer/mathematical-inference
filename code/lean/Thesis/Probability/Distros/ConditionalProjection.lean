@@ -1,5 +1,20 @@
 import Thesis.Probability.Distros.ConditionalAlgebra
 
+/-!
+# Conditional means as rational least-squares projections
+
+Squared error is the weighted expectation of a signed rational square.
+Nonnegativity is needed only on positive-weight atoms; values retained at
+null occurrences impose no restriction. The scalar identities below expand
+the error around a conditional mean without passing to a quotient of rational
+presentations.
+
+Residual orthogonality removes the cross term, giving the Pythagorean error
+decomposition for every predictor depending on the supplied finite key. Its
+nonnegative remainder proves least-squares optimality and contraction of the
+mean-square norm, with unsupported labels handled by the existing convention.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 theorem sub_zero (a : SignedRatio) : Equiv (sub a zero) a := add_zero a
@@ -27,6 +42,8 @@ theorem square_add (a b : SignedRatio) :
   refine equiv_trans (add_congr (equiv_refl _) (add_comm _ _)) ?_
   exact add_interchange _ _ _ _
 
+/-- Expand a squared residual around an intermediate predictor. The two
+equal cross terms will disappear after conditional-residual orthogonality. -/
 theorem square_sub_split (a b c : SignedRatio) :
     Equiv (mul (sub a c) (sub a c))
       (add (add (mul (sub a b) (sub a b)) (mul (sub b c) (sub b c)))
@@ -85,6 +102,8 @@ theorem Distro.conditionalExpectation_squaredError (μ : Distro Ω) (key : Ω �
   let cross := fun x => SignedRatio.mul (residual x) (bias x)
   let gap := fun label => SignedRatio.sub
     (conditionalBlockMean (μ.record.atoms.filter (fun atom => decide (key atom.1 = label))) f) (h label)
+  -- Bias depends only on the key, so it is an admissible test observable
+  -- against the conditional residual. No independence assumption is needed.
   have vanished : SignedRatio.Equiv (μ.rationalExpectation cross) SignedRatio.zero :=
     SignedRatio.equiv_trans (μ.rationalExpectation_congr _ _ (fun x => SignedRatio.mul_comm (residual x) (bias x)))
       (μ.conditionalExpectation_orthogonal key f gap)

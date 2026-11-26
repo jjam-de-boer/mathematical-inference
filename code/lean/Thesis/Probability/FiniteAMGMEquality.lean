@@ -1,5 +1,21 @@
 import Thesis.Probability.FiniteAMGM
 
+/-!
+# Equality conditions for finite multiplicity AM-GM
+
+Mapping values preserves natural multiplicities, and positivity plus
+coordinatewise product bounds allows equality to be recovered at every
+coordinate of positive multiplicity. A natural-number square identity
+then identifies equality in the two-variable midpoint bound.
+
+The final theorem assumes positive listed bases, positive total weight,
+and a positive denominator. Under the arithmetic-mean upper bound,
+attaining the product bound forces every positive-weight entry to equal
+that denominator. Midpoint products and the existing finite AM-GM inequality
+prove this without logarithms or real roots. Zero-multiplicity entries
+are not asserted equal to the denominator.
+-/
+
 namespace Thesis.Probability.FiniteAMGM
 open Combinatorics
 

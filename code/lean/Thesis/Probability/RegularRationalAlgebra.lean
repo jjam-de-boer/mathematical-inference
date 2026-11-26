@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealLimits
 import Thesis.Probability.ConstructiveRealDistance
 
+/-!
+# Multiplying regular rational approximations with explicit error control
+
+The unit-precision sample bounds every finer approximant. The product
+asks its factors for a common, capped precision adjusted by the sum of
+these bounds. This controls the product discrepancy by the desired
+regular error. Equivalent input limits yield equivalent product limits
+even when their sampled bounds and schedules differ.
+-/
+
 namespace Thesis.Probability.RegularRationalApproximation
 
 theorem error_bound (approximation : RegularRationalApproximation) (first second : PositiveRatio) :

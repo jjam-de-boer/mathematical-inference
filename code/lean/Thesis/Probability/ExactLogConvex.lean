@@ -1,5 +1,17 @@
 import Thesis.Probability.ExactLogLinear
 
+/-!
+# Ordered addition and positive scaling of exact logarithms
+
+These lemmas provide the ordered linear algebra used in convex arguments.
+Addition is monotone and cancellative, while scaling reflects order and
+equivalence only with an explicitly positive rational coefficient.
+Equality of the sum of two upper bounds forces equality in each bound;
+the displayed lemma extracts the first equality. Natural convex weights
+may individually be zero, provided their common normalization sum is
+positive. No analytic interpretation of logarithms is needed here.
+-/
+
 namespace Thesis.Probability.ExactLog
 
 theorem add_le_add_left_iff (x y z : ExactLog) : LE (add z x) (add z y) ↔ LE x y := by

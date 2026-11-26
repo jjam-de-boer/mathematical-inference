@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealMomentApproximation
 import Thesis.Probability.Distros.EntropyOptimize
 
+/-!
+# Effective entropy precision and transfer of rational certificates
+
+Distribute a requested entropy error across the declared coordinates.
+The scalar modulus gives uniform continuity on the whole feasible
+polytope, including boundary zeros. Exactly feasible rational density
+then supplies rational samples with a controlled entropy error. A
+universal rational certificate bounds every analytic competitor by
+letting that error tend to zero in closed order.
+-/
+
 namespace Thesis.Probability.Distros.PartialMomentProblem
 open ConstructiveReal
 

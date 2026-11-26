@@ -1,9 +1,22 @@
 import Thesis.Probability.Distros.MultinomialAggregation
 import Thesis.Probability.Distros.SignedMoments
+/-!
+Mixed moments and negative covariance of distinct multinomial counts.
+
+Each coordinate count is a sum of categorical indicators along an IID word.
+At one draw, two distinct colour indicators cannot both be one. Expanding
+that fact through the next-draw recursion gives the mixed count integral;
+the word/occupancy correspondence transfers it to the multinomial law.
+Covariance uses `SignedMoment` with an integer numerator so its negative
+sign survives exactly. Zero trials and zero selected weights need no extra
+cases in the final formulas; only the total weight must be positive.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 
 
+/-- The natural zero-or-one indicator for a specified colour index. -/
 def colourIndicator (index colour : Nat) : Nat := if colour = index then 1 else 0
 
 theorem colourCounts_cons_coordinate (length head index : Nat) (word : List Nat) (within : index < length) :
@@ -12,6 +25,8 @@ theorem colourCounts_cons_coordinate (length head index : Nat) (word : List Nat)
   rw [colourCounts, getD_modify_add _ head index 1 (by simpa only [colourCounts_length] using within)]
   exact Nat.add_comm _ _
 
+/-- The unnormalized integral of one colour indicator is precisely its
+initial weight. The index hypothesis identifies an actual categorical singleton. -/
 theorem categorical_indicator_integral (weights : List Nat) (positive : 0 < weights.sum)
     (index : Nat) (within : index < weights.length) :
     natIntegral (listCategoricalDistro weights positive).record.atoms
@@ -43,6 +58,8 @@ theorem categoricalWord_coordinate_integral (weights : List Nat) (positive : 0 <
   rw [categoricalWord_den] at result
   exact result
 
+/-- A mixed moment counts ordered pairs of distinct trial positions.
+The same-trial contribution vanishes because the two colour indices differ. -/
 theorem categoricalWord_cross_integral (weights : List Nat) (positive : 0 < weights.sum)
     (n i j : Nat) (hi : i < weights.length) (hj : j < weights.length) (different : i ≠ j) :
     natIntegral (categoricalWordDistro weights positive n).record.atoms

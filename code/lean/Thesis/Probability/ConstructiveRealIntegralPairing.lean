@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealBilinearFubini
 import Thesis.Probability.ConstructiveRealKernelElimination
 
+/-!
+# Connecting exact integer dot products to analytic rows
+
+Integer coordinates embed faithfully into analytic arithmetic. Finite
+integer products and sums therefore agree with the corresponding row
+pairings. A coordinate-selector calculation can be checked in the
+analytic pairing and reflected back to integer equality. Scaling the
+analytic coordinates commutes with an integral row evaluation.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 open ConstructiveReal
 open IntegerLinearAlgebra

@@ -1,6 +1,17 @@
 import Thesis.Probability.Distros.EntropyUniform
 import Thesis.Probability.FiniteRecordSupport
 
+/-!
+Internal support restriction without changing the public outcome domain.
+
+Filtering a declared entropy grid is available as a proof tool. When every
+removed cell has zero mass and the law remains supported on the restricted
+grid, the entropy sum is unchanged because only zero terms disappear.
+Neither the caller's original grid nor its record is mutated. The auxiliary
+singleton-positivity lemma extracts positive aggregated mass from an actual
+positive-weight atom, even if other occurrences carry the same label.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Keep a decidable subset for an internal proof. This does not change a
@@ -37,6 +48,8 @@ theorem Distro.entropy_restrict [DecidableEq A] (μ : Distro A) (grid : EntropyG
       rw [entropyTerm_zero_num _ (vanishes value member absent)]
       exact ExactLog.equiv_refl _)
 
+/-- One positive-weight occurrence witnesses positive singleton event
+mass. Duplicate labels can increase that mass and cannot cancel it. -/
 theorem Distro.pmf_pos_of_atom [DecidableEq A] (μ : Distro A) (atom : A × Nat)
     (listed : atom ∈ μ.record.atoms) (positive : 0 < atom.2) : 0 < (μ.pmf atom.1).num :=
   (FiniteProbRecord.eventMass_pos_iff_exists_atom μ.record.atoms _).mpr

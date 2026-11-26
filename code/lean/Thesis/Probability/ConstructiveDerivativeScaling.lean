@@ -1,6 +1,20 @@
 import Thesis.Probability.ConstructiveDerivativeAlgebra
 import Thesis.Probability.ConstructiveDerivativeWithinScaling
 
+/-!
+# Fixed scaling, affine derivatives and a basepoint change estimate
+
+Multiplication by a fixed analytic factor transports the derivative using
+an accuracy schedule derived from an enclosure magnitude bound. This gives
+the affine rule for arbitrary factors, including zero and negative ones.
+
+The slope's computed magnitude bound plus one is a positive local change
+constant. For radii below the derivative modulus at accuracy one, it bounds
+`f(y)` against the fixed value `f(point)`. That explicit basepoint estimate
+supplies the range and domain control needed in later composition rules;
+it requires no separately asserted bound on nearby function values.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.HasDerivativeAt
 open ConstructiveReal
 

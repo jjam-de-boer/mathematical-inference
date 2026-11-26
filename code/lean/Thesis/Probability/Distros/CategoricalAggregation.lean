@@ -1,4 +1,16 @@
 import Thesis.Probability.Distros.MultinomialAggregation
+/-!
+Exact categorical relabelling and compatibility with count updates.
+
+A destination label for each original colour merges their natural weights.
+Matching dimensions and valid destination labels preserve the total mass;
+comparison of all natural-observable expectations proves equality of the
+categorical laws. The remaining algebra shows that incrementing one source
+colour increments its destination group, and grouping a word's histogram
+agrees with counting the relabelled word. These identities support both
+reinforced and depleting urn clients without assuming either mechanism.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- A finite table of an arbitrary natural observable. -/
@@ -18,6 +30,8 @@ theorem natTabulate_getD (f : Nat → Nat) (n i : Nat) (within : i < n) : (natTa
       | zero => rfl
       | succ i => exact ih (fun j => f (j + 1)) i (by omega)
 
+/-- Mapping commutes with an in-range lookup. The range condition avoids
+applying the observable to a default zero that was never an actual list entry. -/
 theorem getD_map_on_lt (values : List Nat) (f : Nat → Nat) (i : Nat) (within : i < values.length) :
     (values.map f).getD i 0 = f (values.getD i 0) := by
   induction values generalizing i with
@@ -60,6 +74,8 @@ theorem categorical_aggregation (groups : Nat) (alphas labels : List Nat)
   change weightedNatArgument alphas (labels.map f) * grouped.sum = weightedNatArgument grouped args * alphas.sum
   rw [total, dot]
 
+/-- Two additions at the same list coordinate combine. The statement
+also covers out-of-range indices, where both modifications leave the list unchanged. -/
 theorem modify_add_combine (values : List Nat) (i a b : Nat) :
     (values.modify i (fun x => x + a)).modify i (fun x => x + b) = values.modify i (fun x => x + (a + b)) := by
   induction values generalizing i with
@@ -104,6 +120,8 @@ theorem aggregateCounts_colourCounts (groups colours : Nat) (labels word : List 
         colour 1 (by simpa only [colourCounts_length] using valid colour (List.mem_cons_self ..)),
         ih (fun i member => valid i (List.mem_cons_of_mem _ member))]
 
+/-- Adding natural weight never decreases a list's total, even if the
+index is out of range. Exact increase requires a separate in-range hypothesis. -/
 theorem sum_modify_add_ge (values : List Nat) (i increment : Nat) :
     values.sum ≤ (values.modify i (fun x => x + increment)).sum := by
   induction values generalizing i with
@@ -112,6 +130,9 @@ theorem sum_modify_add_ge (values : List Nat) (i increment : Nat) :
       | zero => simp only [List.modify_zero_cons, List.sum_cons]; omega
       | succ i => simp only [List.modify_succ_cons, List.sum_cons]; have h := ih i; omega
 
+/-- Maps agreeing on every enumerated atom yield the same law.
+This hypothesis includes zero-weight occurrences and can therefore be stronger
+than merely agreeing almost surely. -/
 theorem Distro.sameLaw_maps_on_support (μ : Distro Ω) (f g : Ω → X)
     (same : ∀ atom ∈ μ.record.atoms, f atom.1 = g atom.1) : (μ.map f).SameLaw (μ.map g) := by
   intro event

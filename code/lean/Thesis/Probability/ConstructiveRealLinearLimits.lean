@@ -2,6 +2,16 @@ import Thesis.Probability.ConstructiveRealLinear
 import Thesis.Probability.ConstructiveRealProductLimits
 import Thesis.Probability.ConstructiveRealCauchyOrder
 
+/-!
+# Preserving every original linear row at an effective limit
+
+A finite row applied to coordinatewise effective sequences is again
+effective. Addition and signed scaling transport its limit to the
+row of the limiting coordinates. Closed order retains the original
+inequality against its bound. Applying the result to a row list keeps
+all finite constraints, irrespective of coefficient signs.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 open ConstructiveReal
 

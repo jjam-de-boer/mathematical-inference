@@ -4,6 +4,20 @@ import Thesis.Probability.Distros.MultivariateFactorialPGF
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Tensor inverse-Pascal reconstruction of a joint count PMF
+
+Products of scalar inverse-Pascal coefficients isolate a complete count
+vector when summed over the finite box of mixed orders. The proof separates
+one coordinate from the tail, then multiplies their two indicator identities.
+All alternating signs remain auxiliary integer coefficients.
+
+Integrating the tensor kernel expresses each joint singleton probability as
+a finite sum of mixed factorial moments. Fixed dimension and the common
+coordinate bound are required only on positive atoms. Total counts may vary,
+and wrong-shaped zero-weight atoms are preserved in the original record.
+-/
+
 /-- Product of the coordinate inverse Pascal coefficients. Each factor is
 (-1)^(order-target) * binom order target when target ≤ order, and zero otherwise. -/
 def jointInverseBinomial : List Nat → List Nat → Int
@@ -40,6 +54,8 @@ theorem jointInverseBinomial_ratio_kernel (counts target : List Nat) (bound : Na
             ac_rfl
           have tailKernel := ih target (Nat.succ.inj dimension)
             (fun other member => bounded other (List.mem_cons_of_mem _ member))
+          -- The tail sum is already its singleton indicator. Factoring
+          -- the head coefficient reduces this dimension to the scalar kernel.
           have rows (order : Nat) : SignedRatio.Equiv
               (SignedRatio.listSum ((factorialBox counts.length bound).map (term order)))
               (SignedRatio.mul (head order) (if counts = target then SignedRatio.one else SignedRatio.zero)) := by

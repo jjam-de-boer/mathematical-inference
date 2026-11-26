@@ -1,5 +1,21 @@
 import Thesis.Probability.FinitePhysicalFitting
 
+/-!
+# Fitting energy and particle means without an independent-row assumption
+
+The grand-canonical constraint problem retains both directions of each
+exact rational mean, giving four original rows. A supplied positive
+feasible law licenses construction of the ideal maximum and natural
+multipliers. Differences of paired coefficients produce beta and alpha;
+a polynomial score identity identifies their named grand-canonical law.
+
+Both targets are attained exactly, and every maximum has the same
+probabilities. Constant or proportional physical features require no rank
+test or unique-parameter premise. The fitted analytic parameters may be
+signed and nonunique; interpreting them as positive temperature and
+chemical potential requires separate physical calibration.
+-/
+
 namespace Thesis.Probability.FinitePhysicalModel
 open ConstructiveReal
 open Distros Distros.RationalLinear Distros.RationalEntropyProblem

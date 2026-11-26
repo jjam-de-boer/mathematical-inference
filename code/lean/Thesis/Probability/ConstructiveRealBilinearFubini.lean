@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealFiniteLinear
 
+/-!
+# Switching finite pairings and canceling constant directions
+
+Finite pairing is bilinear, so a zero argument gives zero and subtraction
+distributes. A constant paired with a zero-total direction also vanishes.
+Swapping the order of the two finite sums transposes a matrix pairing,
+including arbitrary analytic entries. This is a finite reindexing
+identity, without a matrix rank or decision about real equality.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.FiniteLinear
 open ConstructiveReal
 open Distros.RationalLinear

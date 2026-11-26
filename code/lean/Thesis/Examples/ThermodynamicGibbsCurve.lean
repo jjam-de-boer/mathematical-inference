@@ -1,6 +1,24 @@
 import Thesis.Examples.BinaryGibbsCurve
 import Thesis.Probability.FiniteGrandThermodynamicCurve
 
+/-!
+# Clausius variation on a genuine varying binary Gibbs path
+
+The previously constructed regular curve on parameter interval `[1,2]`
+has temperature `1/t` with `kB=1`. Positive reciprocal bounds certify this
+calibration and identify its beta with the actual Gibbs parameter. The
+equilibrium comparison and path regularity then derive a uniform Clausius
+law for statistical entropy without assuming that entropy derivative.
+
+An independently supplied thermodynamic potential with that same uniform
+variation and one reference value agrees up to its reference constant at
+the other endpoint. The open-system example has excited energy two,
+particle number one and chemical potential one, giving effective energy
+one and the same curve. Its thermal contribution explicitly subtracts the
+chemical term from energy variation. Agreement depends on the stated
+calibration, equilibrium, uniform-variation and reference hypotheses.
+-/
+
 namespace Thesis.Examples.ThermodynamicGibbsCurve
 open Probability ConstructiveReal
 open Probability.FiniteStatisticalMechanics

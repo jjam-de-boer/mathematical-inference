@@ -1,5 +1,22 @@
 import Thesis.Probability.ConstructiveUniformAffine
 
+/-!
+# Equal uniform variations determine potentials up to a reference constant
+
+Two independently supplied functions with equivalent slopes have constant
+difference on any explicitly admitted ordered interval. Their common
+quantitative remainder control first permits finite partition telescoping
+on an interval of width at most one. Exact affine pullback to the unit
+interval then removes that auxiliary width restriction, including a
+degenerate zero-length interval.
+
+A supplied equality at the reference endpoint fixes the additive constant
+at the other endpoint. These conclusions require the displayed uniform
+certificates and interval inclusion; pointwise derivative assertions are
+not silently strengthened. No mean-value point, real sign decision or
+compactness principle is selected.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.UniformDerivativeWithin
 open ConstructiveReal
 

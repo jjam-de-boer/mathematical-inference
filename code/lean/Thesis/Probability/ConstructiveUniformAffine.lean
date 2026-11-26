@@ -1,5 +1,20 @@
 import Thesis.Probability.ConstructiveUniformDerivative
 
+/-!
+# Uniform constants, finite sums and exact affine reparameterization
+
+Function equivalence, constants and finite list sums preserve uniform
+derivative certificates with constructed joint moduli. Slopes may vary
+over the explicit domain, and duplicate or empty lists keep their usual
+sum semantics.
+
+Affine pullback consumes a source-to-target domain admission proof and
+uses the fixed factor's rational magnitude bound to rescale the modulus.
+Its exact increment has no inner residual, so no uniform bound on the
+outer slope is required. Negative and zero factors and admitted domain
+endpoints are included without a real sign or membership decision.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.UniformDerivativeWithin
 open ConstructiveReal
 

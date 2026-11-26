@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealExpContinuity
 import Thesis.Probability.ConstructiveRealProductLimits
 
+/-!
+# Exponentials of effective real Cauchy sequences
+
+The original sequence and its limit provide a common bound for sufficiently
+late terms. This bound and the proved exponential modulus construct a
+Cauchy schedule for pointwise exponentiation. The same estimates identify
+its limit with the exponential of the original limit. No extra analytic
+boundedness or an existential choice of indices is needed.
+-/
+
 namespace Thesis.Probability.RealCauchySequence
 open ConstructiveReal
 

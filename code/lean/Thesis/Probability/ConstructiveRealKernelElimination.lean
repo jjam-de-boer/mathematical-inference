@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealFiniteLinear
 import Thesis.Probability.ConstructiveRealSimplexResponseBounds
 
+/-!
+# Fraction-free reduction of integer rows with analytic directions
+
+A multiplier record retains coefficients for the original integer rows,
+allowing repetition and redundancy. At an explicit nonzero integer
+pivot the reduced matrix and gradient use fraction-free operations.
+A reduced kernel direction lifts back to an original direction by
+checked finite algebra. Analytic gradient or direction values never
+serve as pivots.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.IntegerRowSpace
 open ConstructiveReal
 open FiniteLinear

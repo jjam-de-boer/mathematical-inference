@@ -1,5 +1,19 @@
 import Thesis.Probability.PositiveRatio
 
+/-!
+# Finite Bernoulli estimates by natural-number induction
+
+Power differences and complement powers are bounded using addition and
+multiplication of naturals, keeping the common-denominator inequalities
+free of signed subtraction. These algebraic estimates support later
+probability and entropy bounds near zero.
+
+For a positive denominator with `2*m <= den`, removing one unit before
+taking the `m`th power retains at least half the original power. The
+positivity premise justifies natural subtraction recovery and cancellation;
+the exponent may be zero. No distribution or limiting argument is assumed.
+-/
+
 namespace Thesis.Probability.FiniteBernoulli
 
 /-- A finite power difference bound, proved by induction over natural data.

@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealRationalScaling
 import Thesis.Probability.ConstructiveRealReciprocal
 
+/-!
+# What an additive map determines on rational inputs
+
+A map respecting value equivalence and addition must take zero to zero
+and commute with signs and natural multiples. This determines its value
+on every signed rational from its value at one. The proof cancels the
+positive stored denominator and includes unreduced and zero inputs.
+Continuity would be additional data for an extension from rational
+density to arbitrary analytic arguments.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A map that respects real-value equivalence and finite addition. No

@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealLogDerivative
 import Thesis.Probability.ConstructiveRealLogReciprocal
 
+/-!
+# Normalizing a positive real logarithm derivative to the base point one
+
+The supplied lower bound constructs the reciprocal of the base point
+and bounds its size. Dividing nearby inputs by that point transports
+variation to the already proved case at one. The resulting modulus
+and slope are valid throughout the stated positive half-line. The
+base-two coefficient comes from secants, before natural-unit conversion.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A logarithm derivative modulus on an explicitly positive half-line.

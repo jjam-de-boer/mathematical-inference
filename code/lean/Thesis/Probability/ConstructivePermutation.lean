@@ -13,6 +13,8 @@ list to the front of the right list and cancels the matching occurrence.  It
 therefore supplies permutation evidence without appealing to choice.
 -/
 
+/-- Move one known occurrence to the front while retaining every other
+occurrence. Repeated labels are allowed; erasure removes exactly one copy. -/
 private theorem perm_cons_erase {A : Type u}
     [BEq A] [LawfulBEq A] {value : A} : ∀ {values : List A},
     value ∈ values → values.Perm (value :: values.erase value) := by
@@ -33,6 +35,8 @@ private theorem perm_cons_erase {A : Type u}
         exact ((ih tailMember).cons head).trans
           (List.Perm.swap value head (tail.erase value))
 
+/-- The first entry of a nonempty list supplies a concrete count witnessing
+that its multiset cannot agree with the empty list. -/
 private theorem nil_counts_impossible {A : Type u}
     [BEq A] [LawfulBEq A] {value : A} {rest : List A}
     (countsEqual : ∀ item,
@@ -41,6 +45,8 @@ private theorem nil_counts_impossible {A : Type u}
   rw [List.count_nil, List.count_cons_self] at impossible
   omega
 
+/-- Equal counts locate the left head on the right by a positive decidable
+count. This is the witness used by the recursive cancellation argument. -/
 private theorem member_from_counts {A : Type u}
     [BEq A] [LawfulBEq A] {value : A} {rest right : List A}
     (countsEqual : ∀ item,
@@ -50,6 +56,8 @@ private theorem member_from_counts {A : Type u}
   rw [← countsEqual value]
   simp
 
+/-- After the matched occurrence has been moved to the front, cancel its
+contribution for every tested label, whether or not that label is the head. -/
 private theorem cancel_front_counts {A : Type u}
     [BEq A] [LawfulBEq A] {value other : A} {rest right : List A}
     (equal : List.count other (value :: rest) = List.count other right)
@@ -78,6 +86,8 @@ theorem perm_of_count_eq {A : Type u}
       intro right countsEqual
       have member := member_from_counts countsEqual
       have front := perm_cons_erase member
+      -- The recursive invariant is equality of all remaining multiplicities;
+      -- membership alone would lose duplicate information.
       have tailCounts : ∀ other,
           List.count other rest = List.count other (right.erase value) :=
         fun other => cancel_front_counts (countsEqual other) front
@@ -119,6 +129,8 @@ theorem perm_of_nodup_mem_iff {A : Type u} [BEq A] [LawfulBEq A]
         rcases occurs with inPrefix | inSuffix
         · exact rightParts.2.2 head inPrefix head (by simp) rfl
         · exact suffixParts.1 inSuffix
+      -- Uniqueness makes deleting the chosen occurrence remove the head
+      -- entirely, so the tail and the shortened right list have equal members.
       have tailMembers : ∀ value,
           value ∈ tail ↔ value ∈ before ++ suffix := by
         intro value
@@ -226,6 +238,8 @@ def pairList {A : Type u} {B : Type v} :
   | first :: rest, right =>
       right.map (fun second => (first, second)) ++ pairList rest right
 
+/-- A pair is enumerated precisely when both of its coordinates are. This
+membership characterization carries no duplicate-freeness assumption. -/
 @[simp] theorem mem_pairList {A : Type u} {B : Type v}
     [BEq A] [LawfulBEq A] [BEq B] [LawfulBEq B]
     (first : A) (second : B) (left : List A) (right : List B) :

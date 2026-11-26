@@ -1,5 +1,16 @@
 import Thesis.Probability.ConstructiveRealDualSystem
 
+/-!
+# Computing normal multipliers as actual finite solver output
+
+The dual list contains the signs of all original row coefficients, both
+orientations of stationarity, and both orientations of the attained-value
+identity. The full variational inequality yields its Farkas certificate.
+Elimination constructs a nonnegative multiplier vector and a free
+normalization offset, for zero and redundant rows as well. A separate
+finite pairing then derives complementary slackness.
+-/
+
 namespace Thesis.Probability.AnalyticLinear
 open ConstructiveReal
 open Distros.RationalLinear

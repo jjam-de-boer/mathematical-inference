@@ -1,5 +1,22 @@
 import Thesis.Probability.ConstructiveRealEntropyStationarity
 
+/-!
+# Two-sided stationarity and its boundary obstruction
+
+Fermat's theorem makes any certified slope of `-x^2` at its interior
+maximum zero. In contrast, `-x` on the nonnegative half-line has a boundary
+maximum with slope `-1`, demonstrating why a two-sided admitted
+neighborhood cannot be dropped from that conclusion.
+
+For entropy, the fair law and tangent `(1,-1)` give zero first variation
+in both units with an explicit positive floor. General maximizing-law
+fixtures retain their positive-coordinate hypotheses and repeated rational
+rows. The constructed tangent path satisfies normalization and the original
+constraints at admitted parameters of either sign. Even a singleton mass
+one admits its zero tangent without imposing a strict upper probability
+bound.
+-/
+
 namespace Thesis.Examples.EntropyStationarity
 open Probability Probability.Distros ConstructiveReal
 

@@ -1,5 +1,16 @@
 import Thesis.Probability.Combinatorics
 
+/-!
+Reindex finite natural sums by a pair's total index.
+
+The identity enumerates the same triangle i+j ≤ n first by its first
+coordinate and then by total i+j. The induction separates the zero-coordinate
+edge and shifts the remaining triangle. All ranges are finite and the
+subtractions stay within their summation bounds; there are no infinite
+series, convergence assumptions or signed-index conventions. Distribution
+clients can therefore rearrange finite convolution and moment sums exactly.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 

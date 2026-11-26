@@ -4,6 +4,18 @@ import Thesis.Probability.ConstructiveRealProductLimits
 namespace Thesis.Probability.RationalExponential
 open ConstructiveReal RationalGeometricSeries
 
+/-!
+# Exponential addition from finite Taylor convolution
+
+The product of two finite Taylor prefixes differs from the prefix at the
+sum by a certified square-corner error. Its explicit polynomial-times-dyadic
+modulus makes the error vanish in the constructed Cauchy limits.
+
+Uniqueness of those effective limits and the proved product-limit theorem
+give `exp(a+b) = exp(a) exp(b)` for every signed rational pair. No infinite
+series rearrangement theorem or exponential addition axiom is assumed.
+-/
+
 /-- The natural exponential addition law follows from finite Taylor
 convolution and a certified vanishing corner error. The argument applies to
 all signed rational inputs and assumes no infinite rearrangement theorem. -/

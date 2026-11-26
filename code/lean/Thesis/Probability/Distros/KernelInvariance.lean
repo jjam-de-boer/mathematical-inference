@@ -4,6 +4,22 @@ import Thesis.Probability.Distros.LawEquivalence
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Rational-kernel presentation invariance
+
+These finite Gaussian and chi-squared laws are built from natural weights
+obtained by clearing rational denominators. Equivalent rational kernel
+presentations can therefore yield different integer weight tables, while
+their normalized probability laws must agree.
+
+The general lemma proves that cross-proportional weight tables with positive
+total mass have the same law. Kernel-power identities supply that
+proportionality for the finite Gaussian, and products followed by
+squared-coordinate pushforwards
+extend it to each finite chi-squared block. The result concerns these declared
+finite laws; it makes no assertion about continuous Gaussian limits.
+-/
+
 /-- Positive proportional weights define the same normalized law. -/
 theorem ofFinWeights_sameLaw_cross (length : Nat) (w v : Fin length → Nat)
     (hw : 0 < natSum length (finWeight w)) (hv : 0 < natSum length (finWeight v))
@@ -15,6 +31,8 @@ theorem ofFinWeights_sameLaw_cross (length : Nat) (w v : Fin length → Nat)
     intro i hi
     simp only [finWeight, dif_pos hi]
     exact cross ⟨i, hi⟩
+  -- The same proportionality holds for the total mass and every singleton;
+  -- after normalization the common scale cancels in cross multiplication.
   apply Distro.sameLaw_of_singletons _ _ (List.finRange length) (finRange_nodup _) (fun i => List.mem_finRange i)
   intro i
   change FiniteProbRecord.eventMass (finWeighted length w) (FiniteProbRecord.singletonEvent i) *
@@ -55,6 +73,9 @@ theorem chiSquared_record_sameLaw_kernel (df radius : Nat) (p q : QProb)
   induction df with
   | zero => exact Distro.SameLaw.refl _
   | succ df ih =>
+      -- Add one independent finite Gaussian coordinate, then forget its
+      -- sign through the declared squared-distance map. Both operations
+      -- preserve law equivalence before any numeric label conversion.
       exact (ih.product (discreteGaussian_sameLaw_kernel radius p q hp hq same)).map
         (fun pair => (⟨pair.1.val + natSqDiff pair.2.val radius,
           natSqDiff_cons_lt df radius pair.1 pair.2⟩ : Fin ((df + 1) * radius * radius + 1)))

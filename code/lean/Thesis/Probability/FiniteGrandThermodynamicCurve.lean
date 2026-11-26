@@ -1,5 +1,23 @@
 import Thesis.Probability.FiniteThermodynamicCurve
 
+/-!
+# Open-system Clausius variation on a general regular probability curve
+
+The equilibrium score uses current levels and calibrated parameters as
+`beta*(E-mu*N)`, with fixed declared particle counts. A supplied regular
+probability curve provides uniform coordinate remainders and velocities.
+Its entropy variation is derived and rewritten as inverse temperature
+times the probability contribution to energy minus chemical exchange.
+Moving-level work belongs to the separate energy-variation decomposition.
+
+An independent thermodynamic potential with that same uniform Clausius
+certificate agrees with statistical entropy up to a supplied reference
+constant on any admitted ordered finite interval. Equilibrium, temperature,
+chemical potential, interval admission and the independent variation law
+remain explicit hypotheses; no thermodynamic/statistical equality is
+inserted by definition.
+-/
+
 namespace Thesis.Probability.FiniteStatisticalMechanics
 open ConstructiveReal
 

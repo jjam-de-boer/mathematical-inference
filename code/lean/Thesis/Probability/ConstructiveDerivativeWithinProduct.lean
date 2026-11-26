@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveDerivativeWithinChain
 import Thesis.Probability.ConstructiveDerivativeSquare
 import Thesis.Probability.ConstructiveDerivativeProductIdentity
 
+/-!
+# Product differentiation on an explicitly admitted domain
+
+The functions here accept evidence that their argument belongs to the
+domain. The product derivative is constructed from the two supplied
+derivatives using polarization: subtract the squares of f+g and f-g,
+then scale by one quarter. Existing chain and square rules provide the
+quantitative remainder control; checked polynomial identities recover the
+product and its slope. No evaluation outside the admitted domain occurs.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.HasDerivativeWithinAt
 open ConstructiveReal
 

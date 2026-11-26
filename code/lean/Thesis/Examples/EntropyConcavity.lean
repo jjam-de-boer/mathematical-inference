@@ -1,6 +1,21 @@
 import Thesis.Probability.Distros.EntropyConcavity
 import Thesis.Probability.ExactLogRational
 
+/-!
+# Strict mixture concavity with shared zero cells
+
+Point laws on cells zero and one are mixed on a three-cell grid whose
+third cell remains null. Equal mixture weights give exactly one bit, and
+positive unequal weights give strict concavity because the component laws
+differ. Null outliers and unrelated source denominators are preserved by
+the mixture's record construction.
+
+The equality fixture instead splits and rescales one point law. Its
+positive-weight mixture attains equality because the laws coincide, even
+though the atom lists differ. Both strictness and equality are therefore
+tested at the law level with explicit support and weight conditions.
+-/
+
 namespace Thesis.Examples.EntropyConcavity
 open Probability Probability.Distros
 

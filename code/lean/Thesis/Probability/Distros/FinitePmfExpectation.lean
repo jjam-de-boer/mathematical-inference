@@ -2,6 +2,19 @@ import Thesis.Probability.Distros.MomentTableAlgebra
 
 namespace Thesis.Probability.Distros
 
+/-!
+# Integrating signed rational responses against a finite PMF
+
+Indicator integration links the atom-record expectation to event probability.
+For a natural-valued outcome law with a supplied support bound, finitely many
+singleton indicators reconstruct every signed rational response on positive
+atoms. Summing their integrals gives the usual PMF-weighted expectation.
+
+The bound is required only almost surely. A retained zero-weight occurrence
+outside the bounded range need not satisfy the reconstruction identity and
+is neither deleted nor assigned artificial probability mass.
+-/
+
 /-- The rational expectation of a Boolean indicator is its event probability. -/
 theorem Distro.rationalExpectation_indicator (μ : Distro Ω) (event : Event Ω) :
     SignedRatio.Equiv (μ.rationalExpectation (fun x => if event x then SignedRatio.one else SignedRatio.zero))
@@ -20,6 +33,8 @@ theorem Distro.rationalExpectation_bounded_pmf (μ : Distro Nat) (bound : Nat)
       (SignedRatio.listSum ((List.range (bound + 1)).map (fun value =>
         SignedRatio.mul (μ.pmf value).toSignedRatio (f value)))) := by
   let term := fun value x => if x = value then f value else SignedRatio.zero
+  -- A positive occurrence selects exactly its own singleton term; all
+  -- other summands vanish. The support bound is used only at this point.
   have selected : μ.AlmostSurely (fun x => SignedRatio.Equiv
       (SignedRatio.listSum ((List.range (bound + 1)).map (fun value => term value x))) (f x)) := by
     intro atom member weight

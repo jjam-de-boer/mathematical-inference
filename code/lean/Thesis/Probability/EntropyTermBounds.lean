@@ -4,6 +4,19 @@ import Thesis.Probability.ExactLogRational
 namespace Thesis.Probability
 open Distros
 
+/-!
+# Explicit entropy bounds at the zero-mass boundary
+
+A two-state auxiliary law bounds one entropy summand by cross entropy
+against an interior reference. Both endpoint observed masses are permitted;
+only that auxiliary reference requires strict positivity at both states.
+
+Choosing dyadic references yields an explicit small-mass bound and a
+rational threshold for any positive requested entropy error. The estimates
+include zero and supply the boundary part of later uniform-continuity
+certificates without imposing a positive lower probability bound.
+-/
+
 private def binaryGrid : EntropyGrid Bool := ⟨[false, true], by decide⟩
 private def remainingMass (p : QProb) : QProb := ⟨p.den - p.num, p.den, p.den_pos⟩
 private def binaryLaw (p : QProb) (bounded : p.num ≤ p.den) : Distro Bool :=

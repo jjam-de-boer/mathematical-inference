@@ -2,6 +2,17 @@ import Thesis.Probability.EntropyContinuity
 import Thesis.Probability.EntropyRealProducts
 import Thesis.Probability.ConstructiveRealLogarithm
 
+/-!
+# Bringing exact rational entropy into constructive real arithmetic
+
+The analytic term is the interpretation of the already defined exact
+logarithmic contribution. Its rational continuity certificate gives an
+explicit input radius and handles zero masses and unreduced fractions.
+On positive masses, the existing logarithm and scaling identities yield
+the usual product formula. This forms the rational starting point for the
+continuous extension to analytic coordinates.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- The already implemented exact rational entropy contribution, interpreted

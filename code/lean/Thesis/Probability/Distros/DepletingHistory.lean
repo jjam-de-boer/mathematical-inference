@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.DepletingUrn
 
+/-!
+Remaining stocks after ordered removals or recorded colour counts.
+
+`depletingUpdate` removes balls in the supplied order; `depletingState`
+subtracts the resulting histogram coordinate by coordinate. Natural subtraction
+is truncated, so these are total computations even for impossible histories.
+Their equality does not assert that such a history has positive probability.
+`depletingCountsWithin` supplies the additional no-overdraw certificate needed
+for exact stock conservation. Positive raw path weights imply that certificate.
+The final atom-list splitting identity supports later conditioning proofs.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Remaining stocks after a count vector, with missing counts interpreted as zero. -/
@@ -8,6 +20,9 @@ def depletingState : List Nat → List Nat → List Nat
   | stocks, [] => stocks
   | stock :: stocks, count :: counts => (stock - count) :: depletingState stocks counts
 
+/-- Apply the recorded removals one at a time. An exhausted stock stays
+zero and an out-of-range index is ignored by list modification; feasibility
+is a separate condition, not built into this total state computation. -/
 def depletingUpdate : List Nat → List Nat → List Nat
   | stocks, [] => stocks
   | stocks, colour :: history => depletingUpdate (stocks.modify colour (fun stock => stock - 1)) history
@@ -57,6 +72,8 @@ theorem depletingUpdate_length (stocks history : List Nat) :
     (depletingUpdate stocks history).length = stocks.length := by
   rw [depletingUpdate_counts, depletingState_length]
 
+/-- Coordinatewise truncated stock subtraction, with default zero outside
+the alphabet. A feasibility proof is needed when recovering a conservation law. -/
 theorem depletingState_getD (stocks counts : List Nat) (index : Nat) :
     (depletingState stocks counts).getD index 0 = stocks.getD index 0 - counts.getD index 0 := by
   induction stocks generalizing counts index with
@@ -101,6 +118,8 @@ theorem jointFalling_positive_within (counts stocks : List Nat) (positive : 0 < 
               omega
           exact ⟨within, ih stocks tail⟩
 
+/-- A positive atom must have positive falling-kernel weight. Together
+with the no-overdraw lemma this upgrades mere word membership to feasible removals. -/
 theorem multicolourDepletingAtoms_kernel_positive (n : Nat) (stocks : List Nat) (atom : List Nat × Nat)
     (member : atom ∈ multicolourDepletingAtoms n stocks) (positive : 0 < atom.2) :
     0 < jointFalling (colourCounts stocks.length atom.1) stocks := by

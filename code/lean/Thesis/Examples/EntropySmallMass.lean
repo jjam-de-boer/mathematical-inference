@@ -1,6 +1,20 @@
 import Thesis.Probability.EntropyTermBounds
 import Thesis.Probability.ExactLogRational
 
+/-!
+# Quantitative entropy control at a vanishing mass
+
+The complement-log bound and monotonic scaling are instantiated with exact
+rational data. The entropy boundary estimate is then applied to the
+non-dyadic probability `3/10000000`, obtaining error at most `1/256`, and
+to zero with requested error `1/1000`.
+
+The general threshold interface retains both a positive requested error
+and the unit-interval bound on the probability. Its dyadic proof schedule
+does not restrict the input denominator to a power of two and never needs
+to evaluate a logarithm at zero.
+-/
+
 namespace Thesis.Examples.EntropySmallMass
 open Probability
 

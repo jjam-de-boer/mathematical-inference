@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.ProbabilityGrid
 import Thesis.Probability.Distros.FinitePmfExpectation
 
+/-!
+Finite rational laws carried by arbitrary listed cell labels.
+
+The constructor first builds a bounded index grid, then maps each occurrence
+to its listed label. The list is nonempty and its occurrence masses must sum
+to one. Repeated labels and zero weights are retained; a label's eventual
+singleton probability combines all of its occurrences, so the supplied
+per-occurrence mass is not automatically its label PMF. The support and
+retention theorems distinguish possible labels from stored zero-weight cells.
+Signed expectation is the exact weighted sum over the original list.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Enumerating a list by bounded indices visits every occurrence once.
@@ -28,6 +40,8 @@ def probabilityList (cells : List A) (default : A) (probabilities : A → QProb)
   (probabilityGrid (cells.length - 1) (fun i => probabilities (cells.getD i default))
     (probabilityList_normalized cells default probabilities nonempty normalized)).map (fun i => cells.getD i default)
 
+/-- The constructed law assigns positive mass only to listed labels.
+The indexing bound ensures the total getD default is never used by a grid atom. -/
 theorem probabilityList_supported (cells : List A) (default : A) (probabilities : A → QProb)
     (nonempty : 0 < cells.length) (normalized : QProb.Equiv (QProb.listSum (cells.map probabilities)) QProb.one) :
     (probabilityList cells default probabilities nonempty normalized).AlmostSurely (fun cell => cell ∈ cells) := by
@@ -41,6 +55,8 @@ theorem probabilityList_supported (cells : List A) (default : A) (probabilities 
   rw [← List.getElem_eq_getD (h := within) default]
   exact List.getElem_mem within
 
+/-- A listed label occurs in the record even when its supplied mass is
+zero. With repetitions this is an existence statement, not a unique index. -/
 theorem probabilityList_retains (cells : List A) (default : A) (probabilities : A → QProb)
     (nonempty : 0 < cells.length) (normalized : QProb.Equiv (QProb.listSum (cells.map probabilities)) QProb.one)
     (cell : A) (member : cell ∈ cells) :
@@ -52,6 +68,8 @@ theorem probabilityList_retains (cells : List A) (default : A) (probabilities : 
   change (cells.getD i default, weight) = (cell, weight)
   rw [← List.getElem_eq_getD (h := within) default, same]
 
+/-- Expectation sums every listed occurrence once. Repeated labels
+contribute repeatedly with their weights, exactly as in the constructed record. -/
 theorem probabilityList_expectation (cells : List A) (default : A) (probabilities : A → QProb)
     (nonempty : 0 < cells.length) (normalized : QProb.Equiv (QProb.listSum (cells.map probabilities)) QProb.one)
     (f : A → SignedRatio) :

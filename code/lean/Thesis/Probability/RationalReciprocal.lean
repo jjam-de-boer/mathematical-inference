@@ -1,5 +1,18 @@
 import Thesis.Probability.RationalNorm
 
+/-!
+# Reciprocal conversion and stability away from zero
+
+A strictly positive signed numerator permits conversion to a positive
+rational with the same value. A supplied positive rational lower bound then
+bounds reciprocals and proves that such conversions are executable for any
+signed rational lying above it.
+
+The exact reciprocal-difference identity gives an absolute-error bound on
+that fixed positive half-line. Both lower-bound premises are explicit; no
+reciprocal is completed at zero and no global stability at zero is asserted.
+-/
+
 namespace Thesis.Probability.PositiveRatio
 
 /-- Convert a signed rational only with a proof of strict positivity. -/

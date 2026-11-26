@@ -1,5 +1,20 @@
 import Thesis.Probability.FiniteGibbsGrouping
 
+/-!
+# Entropy correction from counted physical degeneracy
+
+Each macrostate's positive reference weight is its actual finite fiber
+cardinality, so its bit logarithm is defined without an empty-fiber
+completion. The microstate family has unit reference weights. Equality of
+partitions and feature means reduces its natural-unit entropy identity
+to macro entropy plus the expected natural logarithm of degeneracy.
+
+The established positive `ln(2)` conversion then yields
+`H_micro = H_macro + E_macro[log2(g)]`. The count concerns distinct physical
+state indices in the supplied grouping; repeated probability-record atoms
+do not change this multiplicity.
+-/
+
 namespace Thesis.Probability.FiniteGibbsGrouping
 open ConstructiveReal
 

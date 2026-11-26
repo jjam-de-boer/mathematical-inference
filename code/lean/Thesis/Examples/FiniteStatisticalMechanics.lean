@@ -1,6 +1,24 @@
 import Thesis.Probability.FiniteStatisticalEntropy
 import Thesis.Probability.ConstructiveRealLogInverse
 
+/-!
+# Finite microcanonical, canonical and thermodynamic calculations
+
+An energy shell contains two distinct physical states with equivalent
+energies `1/2` and `2/4`, each of microcanonical mass `1/2`. Splitting record
+occurrences and adding a null outlier preserves that law and entropy; it
+does not create additional physical states. Particle-sector construction
+also retains the closed model's fixed particle number.
+
+For a binary energy model, inverse identities give the actual canonical
+law `[2/3,1/3]` at parameter `ln(2)` and prove its entropy maximum at mean
+`1/3`. An open-model identity checks the chemical-potential sign convention.
+Thermal calibration with `kB=1,T=2` recovers beta `1/2`. Finally a local affine
+variation independently computes heat `-1/4`, work `1/2` and mean-energy
+derivative `1/4`; no global trajectory is silently assumed from that local
+derivative calculation.
+-/
+
 namespace Thesis.Examples.FiniteStatisticalMechanics
 open Probability Probability.Distros ConstructiveReal
 open Probability.Distros.RationalLinear

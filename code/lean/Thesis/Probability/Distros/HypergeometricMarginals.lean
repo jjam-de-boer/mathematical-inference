@@ -3,6 +3,23 @@ import Thesis.Probability.Distros.HypergeometricFactorialMoments
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Every finite-population colour count has a hypergeometric law
+
+A coordinate observable reads one entry of the full occupancy vector.
+Single-coordinate factorial orders reduce the mixed moment formula to that
+colour's falling factorial and the population total. Fixed shape of listed
+atoms justifies that coordinate reduction on the original record.
+
+Both coordinate laws are bounded by the finite population. Constructive
+factorial-moment reconstruction therefore upgrades the moment calculation
+to equality of every event probability. Zero stock and zero draws remain
+covered; the coordinate index must still belong to the declared colour list.
+-/
+
+/-- Keep the full count-law sample space while reading one natural count;
+an out-of-range lookup is defined as zero, but the marginal theorem below
+requires an actual declared colour. -/
 def multivariateHypergeometricCoordinate (n : Nat) (stocks : List Nat)
     (positive : 0 < binom stocks.sum n) (index : Nat) : NatDistro (List Nat) :=
   ⟨multivariateHypergeometricDistro n stocks positive, fun counts => counts.getD index 0⟩
@@ -39,6 +56,8 @@ theorem multivariateHypergeometric_coordinate_hypergeometric (n : Nat) (stocks :
     (multivariateHypergeometricCoordinate n stocks positive index).SameLaw
       (hypergeometricNatDistro (stocks.getD index 0) stocks.sum n (list_getD_le_sum stocks index) positive) := by
   have sampleBound := hypergeometric_draws_le_total stocks.sum n positive
+  -- A finite support bound is essential here: it is what turns matching
+  -- factorial moments into complete equality of the two marginal laws.
   apply NatDistro.sameLaw_of_factorialMoments _ _ stocks.sum
   · intro atom member
     exact Nat.le_trans (multivariateHypergeometric_coordinate_bound n stocks atom member index) sampleBound

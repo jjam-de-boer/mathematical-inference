@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealLogContinuity
 
+/-!
+# Monotonicity of the constructed positive real logarithm
+
+One-sided finite logarithm comparisons on positive rational centers
+transfer to closed real order. The two inputs need not share their
+stored floor witnesses. Comparison with the logarithm of one yields
+its sign bounds above and below one. This proof consumes supplied real
+order evidence instead of deciding it.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- The constructed logarithm preserves closed order. Positive lower-bound

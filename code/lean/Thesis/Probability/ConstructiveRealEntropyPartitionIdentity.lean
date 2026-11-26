@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealGibbsFamilyDerivative
 import Thesis.Probability.ConstructiveRealFaceKKT
 
+/-!
+# Connecting entropy stationarity to the finite Gibbs partition identity
+
+The independent exponential family uses unit reference weights and the
+original rational constraint features. Its weights, partition and
+reciprocal agree with those computed from the natural-unit multiplier
+certificate. The stationary law therefore has the same actual feature
+expectations and entropy. The partition identity uses those means,
+which an interval constraint need not fix at one endpoint.
+-/
+
 namespace Thesis.Probability.Distros.RationalEntropyProblem
 open ConstructiveReal
 open RationalLinear

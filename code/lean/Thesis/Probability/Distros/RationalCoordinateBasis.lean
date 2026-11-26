@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.RationalVectorSpace
 
+/-!
+Explicit contrast bases from a supplied constant-kernel characterization.
+
+A Boolean active-coordinate mask retains every coordinate, splitting only
+the proof indices into active and null lists. Subtracting a fixed active
+pivot from other active coefficients leaves a representative modulo values
+constant on the active coordinates. If an operator's kernel is exactly that
+constant-on-active space, its corresponding columns form an independent
+spanning image basis. The rank is the active count minus one. This constructs
+a basis for that certified operator class, not a general rank algorithm.
+-/
+
 namespace Thesis.Probability.Distros.RationalVector
 
 def positiveIndices (active : Fin n → Bool) : List (Fin n) := (List.finRange n).filter active
@@ -7,6 +19,8 @@ def contrastIndices (active : Fin n → Bool) (pivot : Fin n) : List (Fin n) :=
   (positiveIndices active).filter (fun i => decide (i ≠ pivot))
 def nullIndices (active : Fin n → Bool) : List (Fin n) := (List.finRange n).filter (fun i => !active i)
 
+/-- All active coordinates represent one rational constant; null
+coordinates remain unconstrained in the original ambient vector. -/
 def ConstantOn (active : Fin n → Bool) (value : Vector n) : Prop :=
   ∃ constant : SignedRatio, ∀ i, active i = true → SignedRatio.Equiv (value i) constant
 

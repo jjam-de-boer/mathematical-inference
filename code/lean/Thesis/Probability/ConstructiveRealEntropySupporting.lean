@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealDyadicSegment
 import Thesis.Probability.ConstructiveRealEntropyFirstVariation
 
+/-!
+# Supporting the entire entropy interval by a positive reference tangent
+
+Repeated midpoints stay inside the closed interval, so concavity gives a
+secant lower bound along the dyadic approach to the reference. Its positive
+floor supplies a derivative remainder for those nearby samples. Comparing
+the two and letting the rational error shrink gives the tangent inequality,
+including a competitor with mass zero. No logarithm of the competitor is
+needed at its boundary.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private theorem difference_add_cancel (first second : ConstructiveReal) : Equiv (add (sub first second) second) first :=

@@ -1,6 +1,24 @@
 import Thesis.Probability.ExactLogRational
 import Thesis.Probability.Distros.UncertaintyCharacterization
 
+/-!
+# Shannon characterization keeps grouping and null alternatives explicit
+
+The compound choice has a point branch, a two-outcome branch and a
+zero-weight branch; refinement retains all five coordinates, including
+the two null alternatives. The Shannon instance satisfies grouping, while
+the abstract requirements derive uniform logarithms and characterize every
+admissible measure on these rational vectors. No general entropy formula
+is added as an extra premise for those arbitrary measures.
+
+Unreduced fair coordinates produce common denominator 24 and counts
+`[12,12]` without merging the two observable alternatives. Null insertion
+and a boundary vector with three zero coordinates still give one bit.
+Finally the distribution-to-vector bridge aggregates split record atoms
+into two observable states, linking characterization to law entropy rather
+than counting raw atom occurrences as distinct outcomes.
+-/
+
 namespace Thesis.Examples.UncertaintyMeasure
 open Probability Probability.ProbabilityVector
 

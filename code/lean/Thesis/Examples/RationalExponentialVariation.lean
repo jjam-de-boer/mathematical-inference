@@ -1,5 +1,21 @@
 import Thesis.Probability.RationalExponentialVariation
 
+/-!
+# Finite quadratic remainders imply exponential first variation
+
+Polynomial identity checking is tested universally on signed rational
+assignments, including rejection of a wrong factorization. Finite Taylor
+remainders then have an explicit quadratic-error bound under the supplied
+argument magnitude bound. Passing through effective limits gives the
+linear approximation `exp(a)+(b-a)*exp(a)` to `exp(b)` without assuming an
+exponential derivative theorem.
+
+The negative arguments `-1/2` and `-49/100` give quadratic error `1/20000`;
+an equivalent unreduced argument gives error zero. The remainder at degree
+zero and invariance of an effective sequence's limit under finite
+shifts exercise boundary cases used in that passage to completed values.
+-/
+
 namespace Thesis.Examples.RationalExponentialVariation
 open Probability
 

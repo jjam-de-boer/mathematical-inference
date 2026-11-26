@@ -3,6 +3,16 @@ import Thesis.Probability.RationalTaylorGeometric
 import Thesis.Probability.RationalDoubleSum
 import Thesis.Probability.RationalPolynomialGeometric
 
+/-!
+# Multiplying finite Taylor prefixes by separating the omitted corner
+
+The coefficient convolution identifies the triangular part of the product
+with the Taylor prefix at the sum of the arguments. The square product
+also contains a finite corner of larger total degrees. Dyadic coefficient
+envelopes control its magnitude for signed rational inputs. This finite
+error bound is the input to the effective proof of exponential addition.
+-/
+
 namespace Thesis.Probability.RationalTaylorExponential
 open SignedRatio RationalGeometricSeries RationalDoubleSum
 

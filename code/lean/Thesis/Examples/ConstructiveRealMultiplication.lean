@@ -1,6 +1,20 @@
 import Thesis.Probability.ConstructiveRealMultiplication
 import Thesis.Probability.ExactLogInterpretation
 
+/-!
+# Real multiplication respects signs and presentation changes
+
+The product `(-3/4)*(7/6)` is proved equal to `-7/8`; its actual computed
+enclosure at precision `1/100` lies between `-88/100` and `-87/100`.
+Unreduced alternative presentations of the factors exercise value
+congruence even when their stored magnitude and precision data differ.
+
+Commutativity, zero and unit laws also apply to arbitrary real inputs,
+illustrated with the interpreted logarithm of three. The final criterion
+recovers value equivalence from closeness at every positive rational error,
+without deciding equality of the underlying enclosure programs.
+-/
+
 namespace Thesis.Examples.ConstructiveRealMultiplication
 open Probability
 

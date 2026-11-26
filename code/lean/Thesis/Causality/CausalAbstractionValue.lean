@@ -12,6 +12,12 @@ value onto a pulled-back macro event. Identifiability is a property of a
 graph class and is not transferred. Event equality is hypothesized: a
 cluster-local query does not by itself equate the fine outcome cylinder
 with `E ∘ τ` when the outcome cluster is a non-injective aggregate.
+
+The identification result and its soundness at the supplied micro model and
+reference are explicit inputs. Exactness then compares this one model pair.
+No macro model-class identification theorem follows from that comparison.
+The transported query is unconditional after intervention, so its result is
+a defined probability even when the selected outcome has zero mass.
 -/
 
 namespace FiniteCausalCoarseGraining
@@ -68,7 +74,11 @@ namespace CausalInterventionMap
 
 /-- Identified fine syntax, already equal to the fine source kernel by
 soundness, denotes the macro interventional mass of `E`. Undefined stays
-undefined; the formula is action-free, so the observational table agrees. -/
+undefined under `ProbabilityResult.Equivalent`; for the unconditional
+query certified here the displayed macro mass is defined, including zero.
+The formula is action-free, so its observational-table interpretation agrees
+with its SCM interpretation. This record contains a value certificate for
+the supplied model pair, rather than class-wide macro identifiability. -/
 structure IdentifiedExactJointValue
     {micro coarse : ObservedSignature}
     (mapping : CausalInterventionMap micro coarse)
@@ -86,7 +96,11 @@ structure IdentifiedExactJointValue
       φ.denote mapping.microModel fineRef
 
 /-- Exact ω on this pair, a hypothesized event pullback, and ID soundness
-at one reference. Not a lift of identifiability to the coarse graph class. -/
+at one reference. The `identified` input supplies action-freeness of the
+formula; `sound` separately supplies equality with the actual fine source.
+Neither node-set locality nor the successful ID syntax alone replaces that
+model-specific soundness obligation. Not a lift of identifiability to the
+coarse graph class. -/
 noncomputable def identifiedExactJointValue
     {micro coarse : ObservedSignature}
     (mapping : CausalInterventionMap micro coarse) (exact : mapping.Exact)

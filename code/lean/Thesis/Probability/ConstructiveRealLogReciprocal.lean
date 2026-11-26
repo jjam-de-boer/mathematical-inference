@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealLogMultiplication
 import Thesis.Probability.ConstructiveRealBounds
 
+/-!
+# Logging the constructed positive reciprocal
+
+A finite natural upper bound for the original value provides a computed
+positive lower bound for its inverse. The logarithm product law then
+compares their product to one, and the proved reciprocal equation
+cancels the two logarithms. The theorem therefore supplies the inverse
+log identity with the reciprocal domain witness already constructed.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A computable candidate lower bound for the reciprocal, derived from a

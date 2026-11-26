@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealExponential
 
+/-!
+# Quantitative error transport through the analytic exponential
+
+A shared natural magnitude bound for fine approximants transfers the
+rational Taylor continuity constant to the real values. A two-point
+variant computes a bound from the given presentations. A separate
+precision formulation chooses the input radius from a desired output
+error and a shared external bound, useful when both inputs vary.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A real input error propagates through the exponential with the same

@@ -4,6 +4,21 @@ import Thesis.Probability.Distros.HypergeometricUrn
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Exact finite sampling without replacement by colour
+
+The recursive atom table records all count allocations summing to the draw
+size and weights each allocation by its product of binomial stock choices.
+Vandermonde's identity computes the total mass as the binomial number of
+population subsets. Normalization is available precisely when that total is
+positive, including the empty population with zero draws.
+
+Impossible allocations may remain as zero-weight atoms. The shape theorem
+therefore asserts dimension and fixed total at every listed occurrence, while
+the coordinate bound uses only that total. Stock-wise bounds for positive
+occurrences are proved separately in the degeneracy development.
+-/
+
 /-- Multicolour sampling without replacement. Each occupancy vector has
 weight equal to the product of the binomial choices from its colour stocks.
 Zero colour stocks and the empty population with zero draws are included. -/
@@ -35,11 +50,15 @@ theorem multivariateHypergeometric_totalMass (stocks : List Nat) (draws : Nat) :
       rw [rows, vandermonde]
       rfl
 
+/-- Normalize the complete count table by its actual subset count. The
+positive binomial normalizer excludes drawing more objects than exist. -/
 def multivariateHypergeometricDistro (draws : Nat) (stocks : List Nat)
     (positive : 0 < binom stocks.sum draws) : Distro (List Nat) :=
   ⟨⟨multivariateHypergeometricAtoms draws stocks, binom stocks.sum draws, positive,
     multivariateHypergeometric_totalMass stocks draws⟩⟩
 
+/-- Every recursive allocation retains the full colour dimension and the
+exact requested total, even when its binomial weight happens to be zero. -/
 theorem multivariateHypergeometric_support (draws : Nat) (stocks : List Nat) (atom : List Nat × Nat)
     (member : atom ∈ multivariateHypergeometricAtoms draws stocks) :
     atom.1.length = stocks.length ∧ atom.1.sum = draws := by

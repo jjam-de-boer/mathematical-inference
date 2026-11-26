@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveRealSimplex
 import Thesis.Probability.ConstructiveRealEntropySum
 import Thesis.Probability.Distros.EntropyMomentConvex
 
+/-!
+# Exactly feasible rational approximation on the original moment grid
+
+An analytic compatible law keeps every declared state and closed
+rational row, with explicit unit-interval bounds and normalization.
+Actual finite rational distributions embed through their aggregated
+state masses. The feasibility approximation constructs rational
+vectors satisfying the same rows and realizes their distributions
+on the original distinct labels, including every forced zero.
+-/
+
 namespace Thesis.Probability.Distros
 open ConstructiveReal
 

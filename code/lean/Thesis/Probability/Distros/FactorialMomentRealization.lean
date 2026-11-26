@@ -4,6 +4,20 @@ import Thesis.Probability.Distros.PositiveFactorialPGF
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Constructing the unique law of a valid bounded moment table
+
+A table's signed inverse masses define probabilities only after their
+nonnegativity and normalization have been certified. The canonical finite
+grid construction then retains every bounded cell, including zero-mass
+cells, and uses the identity numeric embedding.
+
+Reverse inversion proves that this law realizes each supplied factorial
+moment through the bound. Conversely, any bounded realization satisfies the
+same validity conditions. Reconstruction gives uniqueness of the full law,
+allowing other atom orders, scales, duplicate labels and null outliers.
+-/
+
 private theorem factorialTableCoefficient_zero (moments : Nat → QProb) :
     SignedRatio.Equiv (factorialTableCoefficient moments 0) (moments 0).toSignedRatio := by
   simp only [factorialTableCoefficient, fallingFactorial, QProb.div, QProb.ofNat, Nat.mul_one]
@@ -105,6 +119,8 @@ theorem realizedFactorialDistro_moments (moments : Nat → QProb) (bound : Nat) 
     (order : Nat) (within : order ≤ bound) :
     QProb.Equiv (factorialMoment (realizedFactorialDistro moments bound valid) order) (moments order) := by
   have same := (QProb.toSignedRatio_equiv_iff _ _).mp (realizedFactorialDistro_coefficient moments bound valid order within)
+  -- This denominator is the positive integer order factorial, never a
+  -- candidate cell mass. Zero probabilities require no cancellation.
   have positive := fallingFactorial_pos order order (Nat.le_refl _)
   apply Nat.eq_of_mul_eq_mul_right positive
   change (factorialMoment (realizedFactorialDistro moments bound valid) order).num * (moments order).den *

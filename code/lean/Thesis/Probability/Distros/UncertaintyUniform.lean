@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.UncertaintyMeasure
 import Thesis.Probability.ExactLogRoots
 
+/-!
+Derive uniform-choice algebra from the uncertainty grouping requirement.
+
+A compound choice with equally likely outer and conditional alternatives
+refines to a uniform product vector. Grouping and rational normalization
+therefore prove product additivity for any admissible uncertainty measure.
+Applying it to the certain one-alternative choice forces zero uncertainty;
+iteration yields the natural-power law, including exponent zero. These
+results do not assume the logarithm formula for an arbitrary measure and
+supply its input to the later uniform uniqueness argument.
+-/
+
 namespace Thesis.Probability.UncertaintyMeasure
 open ProbabilityVector
 

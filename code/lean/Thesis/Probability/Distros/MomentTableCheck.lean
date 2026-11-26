@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.FactorialMomentRealization
 
+/-!
+Executable validity and realization checks for bounded factorial moments.
+
+The inverse table gives candidate signed masses on 0 through the supplied
+bound. A finite scan either proves every entry nonnegative or returns an
+actual negative cell. A separate normalization check completes validity.
+Success constructs a law retaining every grid cell, including zero masses,
+and proves its requested moments. Failure carries either a negative-cell
+witness or failed normalization, and refutes any supported realizing law.
+The procedure is complete for this bounded factorial-table problem.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- A finite scan either certifies all listed masses or exhibits an actual
@@ -8,6 +20,8 @@ inductive FiniteMassCheck (cells : List A) (mass : A → SignedRatio) where
   | nonnegative (proof : ∀ cell ∈ cells, SignedRatio.Nonnegative (mass cell))
   | negative (cell : A) (member : cell ∈ cells) (proof : (mass cell).num < 0)
 
+/-- Scan the concrete finite list and return the first available negative
+witness or a proof covering every listed mass. No fraction normalization is required. -/
 def checkFiniteMasses (cells : List A) (mass : A → SignedRatio) : FiniteMassCheck cells mass :=
   match cells with
   | [] => .nonnegative (by intro cell member; exact False.elim (List.not_mem_nil member))

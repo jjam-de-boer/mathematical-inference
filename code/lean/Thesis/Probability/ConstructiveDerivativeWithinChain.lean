@@ -1,6 +1,21 @@
 import Thesis.Probability.ConstructiveDerivativeWithinAlgebra
 import Thesis.Probability.ConstructiveDerivativeWithinScaling
 
+/-!
+# A computed chain-rule modulus for partial functions
+
+The source-domain function carries its derivative, and an explicit image
+certificate admits every source evaluation to the outer domain. A
+basepoint change bound controls the image radius. Separate half-error
+budgets then control the inner residual multiplied by the outer slope
+and the outer residual on that image radius.
+
+All divisions use positive natural magnitude bounds, including when a
+slope is zero. The resulting derivative has the product slope and keeps
+the original source domain. Composition with a total outer function is
+the always-admitted special case; no real membership test is used.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.HasDerivativeWithinAt
 open ConstructiveReal
 

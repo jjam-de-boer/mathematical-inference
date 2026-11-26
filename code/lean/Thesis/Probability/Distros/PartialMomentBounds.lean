@@ -1,6 +1,19 @@
 import Thesis.Probability.Distros.PartialMomentProblem
 import Thesis.Probability.Distros.RationalLinearObjective
 
+/-!
+Attained sharp expectation bounds under finite partial moment information.
+
+An objective coordinate is added to the same exact rational mass constraints.
+Redundant bounds from the finite response range ensure both projected extrema
+exist; lifting the extrema constructs compatible laws attaining each endpoint.
+Every compatible rational law satisfies the resulting inequalities without
+any denominator cap. Feasibility is decided first, so incompatible observations
+return their original elimination refutation. Event observables specialize
+the general integer-response result to sharp probability bounds. Endpoint
+attainment does not assert uniqueness of the realizing law.
+-/
+
 namespace Thesis.Probability.Distros
 
 theorem Distro.rationalExpectation_mono (μ : Distro A) (f g : A → SignedRatio)
@@ -11,9 +24,13 @@ theorem Distro.rationalExpectation_mono (μ : Distro A) (f g : A → SignedRatio
 
 def integerResponse (response : A → Int) (x : A) : SignedRatio := ⟨response x, 1, Nat.zero_lt_one⟩
 
+/-- A conservative finite minimum, also including zero. This need not be
+the sharp response minimum; it only supplies a certified finite objective bound. -/
 def responseLower (cells : List A) (response : A → Int) : SignedRatio :=
   SignedRatio.selectMin SignedRatio.zero (cells.map (integerResponse response))
 
+/-- A conservative finite maximum including zero. Sharp endpoints are
+computed later from all constraints, rather than equated with this coarse bound. -/
 def responseUpper (cells : List A) (response : A → Int) : SignedRatio :=
   SignedRatio.selectMax SignedRatio.zero (cells.map (integerResponse response))
 

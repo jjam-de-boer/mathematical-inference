@@ -2,6 +2,18 @@ import Thesis.Probability.ProbabilityBoxes
 import Thesis.Probability.Distros.EntropyContinuity
 import Thesis.Probability.Distros.EntropyMomentConvex
 
+/-!
+Cover finite moment-feasible laws by rational coordinate boxes.
+
+Each box adds closed bounds on singleton probabilities to the original
+partial moment problem. The grid, forced-zero cells and original interval
+rows remain intact. Every admissible rational law lies in an explicitly
+enumerated box without a bound on its probability denominator. Laws in the
+same box are uniformly close on the original cells. The forgetful constructor
+then drops only the added coordinate constraints while retaining the actual
+compatible law, supplying exactly feasible candidates to entropy search.
+-/
+
 namespace Thesis.Probability.Distros
 
 private def boxInterval [DecidableEq A] (cell : A) {size : Nat} (index : Fin (size + 1)) (positive : 0 < size) : MomentInterval A :=

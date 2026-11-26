@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveUniformDerivative
 import Thesis.Probability.ConstructiveRealLogGeneralDerivative
 
+/-!
+# A uniform positive-domain logarithm derivative and an increment bound
+
+A common supplied floor determines a single derivative schedule for the
+whole positive half-line. On its unit-interval part, the established
+secant coefficient and reciprocal bound give slope at least one.
+Uniform finite partition estimates turn this slope comparison into a
+global increment bound, avoiding any appeal to a mean-value point.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- The logarithm first variation has one computed modulus on the whole

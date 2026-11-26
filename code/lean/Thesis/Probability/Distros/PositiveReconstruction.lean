@@ -2,6 +2,18 @@ import Thesis.Probability.Distros.PositiveFactorialPGF
 import Thesis.Probability.Distros.PositivePGFUniqueness
 import Thesis.Probability.Distros.MultivariateReconstruction
 
+/-!
+Mixed factorial moments characterize positively supported count vectors.
+
+A finite rectangle of mixed moment equalities determines a full joint law
+when its fixed dimension and coordinate bound hold almost surely. The proof
+uses the corresponding positive-support factorial expansion and PGF uniqueness,
+so recorded null outliers need not fit the declared rectangle. With only
+almost-sure dimension supplied, finite atom lists provide a common bound,
+and all mixed moments characterize the law. No ambient-space enumeration
+or removal of zero-weight occurrences is required.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- A finite rectangle of mixed moments reconstructs the full joint law

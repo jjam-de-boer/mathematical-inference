@@ -1,5 +1,21 @@
 import Thesis.Probability.FiniteThermodynamicIdentification
 
+/-!
+# Open-system entropy agreement along an admitted affine Gibbs line
+
+The affine coordinates have explicit positive floors on the supplied
+domain and a zero-sum direction. Equilibrium is matched to the named
+grand-canonical model with particle multiplier `-beta*mu`. The constructed
+uniform entropy certificate then gives inverse temperature times energy
+probability variation minus the chemical particle contribution.
+
+An independently specified thermodynamic entropy supplies its own uniform
+Clausius certificate. Equality of these variations and one reference value
+give agreement up to that constant. The reference theorem in this module
+retains its explicit ordered-interval width bound of one and full interval
+admission. Physical calibration and equilibrium remain separate inputs.
+-/
+
 namespace Thesis.Probability.FiniteStatisticalMechanics
 open ConstructiveReal
 open Distros.RationalLinear

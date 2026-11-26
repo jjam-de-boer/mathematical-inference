@@ -2,6 +2,19 @@ import Thesis.Probability.Core
 
 namespace Thesis.Probability
 
+/-!
+# Strictly positive rational arguments with explicit inverses
+
+Positive numerator and denominator witnesses make reciprocal, product and
+power operations total on these unreduced presentations. Their equality and
+order compare rational magnitudes by finite cross multiplication. Positive
+power and multiplication factors preserve and reflect those comparisons.
+
+This is auxiliary arithmetic for logarithmic and mean inequalities, not a
+normalized probability type. Values can exceed one, and distinct numerator/
+denominator presentations can represent the same rational argument.
+-/
+
 /-- A strictly positive rational, with explicit unreduced natural weights.
 This auxiliary value is not a probability law and has no upper bound. -/
 structure PositiveRatio where

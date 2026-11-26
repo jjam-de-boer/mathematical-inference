@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealEntropyStrongConcavityClosed
 import Thesis.Probability.ConstructiveRealDistanceScaling
 
+/-!
+# Admitted dyadic mixtures between two unit-interval values
+
+Starting at the target and repeatedly taking a midpoint with the reference
+halves the displacement exactly. The rational weight is 2 to the negative
+index, and its denominator calculation gives a direct accuracy schedule.
+Each sample remains in the closed unit interval. After the initial sample,
+a supplied positive reference floor survives at half strength, even when
+the target is zero. Neither endpoint needs a real order decision.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Explicit dyadic sampling radii. Their recursion and convergence involve

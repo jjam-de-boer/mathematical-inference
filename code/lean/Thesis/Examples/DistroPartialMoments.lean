@@ -1,5 +1,23 @@
 import Thesis.Examples.DistroRealization
 
+/-!
+# Observation-chain energies and complete rational moment construction
+
+The first fixtures use an almost-surely refining observation chain whose
+retained null label violates literal refinement. Tower, orthogonal-increment
+and prediction-error identities still hold for the specified expectation
+functions; its two increment energies are `1` and `1/4`.
+
+The remaining fixtures execute interval and rational linear elimination,
+including coupled infeasibility, absent interval endpoints and zero
+dimensions. Partial moments construct actual fractional probability laws
+without a denominator grid. Joint rectangles retain zero coordinates and
+the empty count vector. A first moment alone leaves `P(X=2)` in `[0,1/2]`,
+with constructed laws attaining both endpoints; interval inputs likewise
+return attained bounds. Null record labels outside the declared grid are
+permitted by almost-sure support, not silently converted to positive cells.
+-/
+
 namespace Thesis.Examples.DistroPartialMoments
 open Probability Probability.Distros DistributionExtensions DistroRealization
 

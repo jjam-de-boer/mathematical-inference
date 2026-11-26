@@ -1,6 +1,22 @@
 import Thesis.Probability.ConstructiveRealEntropyCurve
 import Thesis.Probability.ConstructiveRealGibbsTiltEntropy
 
+/-!
+# Pointwise entropy variation at an actual normalized Gibbs law
+
+The mass-logarithm identity gives the natural entropy gradient its affine
+energy/offset form. Pairing with a signed velocity of total zero cancels
+the partition constant, leaving parameter times the energy probability
+variation minus the reference-offset variation.
+
+For an actual unit-interval-valued path with full coordinate derivatives
+and global normalization, the tangent equation is derived by uniqueness.
+Agreement with a Gibbs law at the basepoint supplies its positive floors
+and identifies the entropy derivative there. Neighboring path points need
+not themselves be Gibbs laws, and a uniform path certificate is not
+inferred from this pointwise conclusion.
+-/
+
 namespace Thesis.Probability.FiniteGibbsTilt
 open ConstructiveReal
 

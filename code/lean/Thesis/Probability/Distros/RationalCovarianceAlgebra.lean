@@ -1,5 +1,20 @@
 import Thesis.Probability.Distros.RationalClearing
 
+/-!
+# Bilinear covariance for signed rational observables
+
+Finite Cartesian atom products factor the integral of a product response.
+This is an explicit independent-product construction, preserving duplicate
+labels and zero-weight occurrences. Marginal expectation identities then
+show that responses on the two separate factors have zero covariance.
+
+For responses on one arbitrary law, covariance is symmetric and linear in
+each argument. Variance of a sum retains both covariance cross terms; they
+are not discarded merely because each marginal response has its own mean.
+All identities compare rational values by cross multiplication, so reduced
+fraction presentations and strict variance positivity are unnecessary.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 theorem mul_neg (a b : SignedRatio) : Equiv (mul a (neg b)) (neg (mul a b)) := by
@@ -50,6 +65,8 @@ theorem rationalAtomSum_product (left : List (Ω × Nat)) (right : List (X × Na
           (right.map (fun b => SignedRatio.scaleNat b.2 (g b.1)))))
   have grouped := SignedRatio.listSum_flatMap left
     (fun a => right.map (fun b => SignedRatio.scaleNat (a.2 * b.2) (SignedRatio.mul (f a.1) (g b.1))))
+  -- Group the explicit product atoms by their left occurrence, factor
+  -- each row, and only then combine the left weighted integral.
   refine SignedRatio.equiv_trans (by
     simpa only [FiniteProbRecord.rationalAtomSum, List.map_flatMap, List.map_map, Function.comp_def] using grouped) ?_
   refine SignedRatio.equiv_trans (SignedRatio.listSum_map_congr left _ _ row) ?_
@@ -127,6 +144,8 @@ theorem Distro.rationalCovariance_constant_left (μ : Distro Ω) (c : SignedRati
     (SignedRatio.mul_congr (μ.rationalExpectation_constant c) (SignedRatio.equiv_refl _)))
     ((SignedRatio.sub_equiv_zero_iff _ _).mpr (SignedRatio.equiv_refl _))
 
+/-- Separate-factor responses have zero covariance under the actual
+product law. This does not assert independence from covariance zero alone. -/
 theorem Distro.rationalCovariance_independent (μ : Distro Ω) (ν : Distro X)
     (f : Ω → SignedRatio) (g : X → SignedRatio) :
     SignedRatio.Equiv ((μ.product ν).rationalCovariance (fun pair => f pair.1) (fun pair => g pair.2)) SignedRatio.zero :=

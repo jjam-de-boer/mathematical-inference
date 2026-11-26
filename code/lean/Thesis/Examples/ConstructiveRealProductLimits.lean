@@ -1,6 +1,21 @@
 import Thesis.Probability.ConstructiveRealProductLimits
 import Thesis.Probability.ExactLogInterpretation
 
+/-!
+# Product limits use value bounds rather than numerator bounds
+
+The general product and power theorems carry effective Cauchy data, and
+the displayed two-factor error estimate exposes its magnitude-dependent
+constants. The regression sequence presents one as `(n+1)/(n+1)`: its
+numerators grow although every value equals one and a zero Cauchy modulus
+suffices. A uniform tail bound must therefore concern values, not those
+unreduced numerators.
+
+Its product limit is independently identified as one. A cubic-limit example
+also applies to any effective sequence converging to the interpreted
+logarithm of three; no rational probability-weight type is enlarged.
+-/
+
 namespace Thesis.Examples.ConstructiveRealProductLimits
 open Probability
 

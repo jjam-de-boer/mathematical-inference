@@ -1,5 +1,19 @@
 import Thesis.Probability.ConstructiveRealRationalConstraints
 
+/-!
+# Rational approximation preserves an exact unreduced equality
+
+The upper and lower one-coordinate rows present the same coefficient with
+opposite signs as `2/6` and `-3/9`, and the upper row is duplicated. Together
+they force the coordinate to `1/2`. Cross-multiplied integer inequalities
+prove this independently for every rational vector satisfying the rows.
+
+A supplied feasible real embedding licenses the constructive approximation
+procedure at any positive rational precision. Its returned rational vector
+therefore remains exactly one half: clearing denominators and approximation
+never insert a tolerance into the original constraint equality.
+-/
+
 namespace Thesis.Examples.RationalConstraintDensity
 open Probability Probability.Distros ConstructiveReal
 open RationalLinear

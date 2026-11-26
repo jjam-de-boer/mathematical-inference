@@ -1,6 +1,18 @@
 import Thesis.Probability.ConstructiveRealRowSpaceDuality
 import Thesis.Probability.ConstructiveRealEntropyStationarity
 
+/-!
+# Constructing entropy multipliers for the original rational rows
+
+Cleared row coefficients and a final normalization row give an integer
+kernel equivalent to the original rational constraint kernel. At a
+quantitatively positive maximum, proved stationarity lets finite pivot
+elimination compute coefficients for all rows, even redundant ones.
+The output transports back to the original coefficients and converts
+between bit and natural gradients. These unrestricted coefficients express
+stationarity, with signs and complementary slackness treated separately.
+-/
+
 namespace Thesis.Probability.Distros.RationalEntropyProblem
 open ConstructiveReal
 

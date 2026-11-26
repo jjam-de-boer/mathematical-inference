@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.ReinforcedHistory
 import Thesis.Probability.Distros.CategoricalSampling
+/-!
+Ordered-word masses and exchangeability of a reinforced urn.
+
+The recursive word weight follows the same parameter updates as the
+sequential atom constructor. For valid colour indices it equals the product
+of coordinate rising factors, which depends only on counts. Its normalized
+singleton formula therefore proves equality of probabilities for any two
+valid words of equal length and counts, and hence for permuted words.
+Exchangeability here concerns the order of draws; it does not assert that
+colour labels with different initial parameters may be freely swapped.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 
@@ -10,6 +22,8 @@ def reinforcedWordWeight : List Nat → Nat → List Nat → Nat
   | alphas, increment, colour :: history => alphas.getD colour 0 *
       reinforcedWordWeight (alphas.modify colour (fun a => a + increment)) increment history
 
+/-- Factor an ordered branch product by colour. Validity prevents an
+out-of-range colour from being lost by the fixed-size histogram. -/
 theorem reinforcedWordWeight_kernel (alphas : List Nat) (increment : Nat) (history : List Nat)
     (valid : ∀ colour ∈ history, colour < alphas.length) :
     reinforcedWordWeight alphas increment history = stepKernel increment alphas (colourCounts alphas.length history) := by
@@ -23,6 +37,8 @@ theorem reinforcedWordWeight_kernel (alphas : List Nat) (increment : Nat) (histo
       · intro other member
         simpa only [List.length_modify] using valid other (List.mem_cons_of_mem _ member)
 
+/-- The raw singleton event mass equals its recursively computed branch
+weight. Zero initial weights remain zero rather than becoming positive support. -/
 theorem reinforcedUrn_word_mass (alphas : List Nat) (increment : Nat) (history : List Nat)
     (valid : ∀ colour ∈ history, colour < alphas.length) :
     FiniteProbRecord.eventMass (reinforcedUrnAtoms history.length alphas increment)
@@ -93,6 +109,8 @@ theorem reinforcedUrn_exchangeable (alphas : List Nat) (increment : Nat) (positi
   rw [← length, ← counts] at second
   exact QProb.equiv_trans (reinforcedUrn_word_pmf alphas increment positive history valid) (QProb.equiv_symm second)
 
+/-- A permutation preserves valid colour membership, length and counts;
+these are the exact inputs to the preceding exchangeability theorem. -/
 theorem reinforcedUrn_permutation (alphas : List Nat) (increment : Nat) (positive : 0 < alphas.sum)
     (history other : List Nat) (perm : history.Perm other)
     (valid : ∀ colour ∈ history, colour < alphas.length) :

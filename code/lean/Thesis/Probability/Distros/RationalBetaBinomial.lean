@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.RationalAggregation
 
+/-!
+Rational beta-binomial counts as exact two-colour urn marginals.
+
+The constructor observes the first count in a two-colour rational Pólya
+occupancy law. For a coordinate of any larger rational Dirichlet-multinomial
+law, grouping all other colours yields the matching two-parameter marginal.
+Its complement parameter is computed as an exact natural difference in a
+common encoding, with a balance theorem identifying the total. Either side
+may be zero, as long as the combined parameter is positive. Integral
+parameters recover the earlier beta-binomial law up to all-event equality.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- The two-colour rational Pólya count, including either zero parameter
@@ -14,6 +26,9 @@ def rationalParameterComplement (alphas : List QProb) (index : Nat) : QProb :=
   ⟨(rationalUrnWeights alphas).sum - (rationalUrnWeights alphas).getD index 0,
     (QProb.listSum alphas).den, (QProb.listSum alphas).den_pos⟩
 
+/-- The selected rational parameter and encoded complement add back to
+the original total. The encoded coordinate is bounded by that total, making
+the natural subtraction exact even for a zero complement. -/
 theorem rationalParameterComplement_balance (alphas : List QProb) (index : Nat) :
     QProb.Equiv (QProb.add (alphas.getD index QProb.zero) (rationalParameterComplement alphas index))
       (QProb.listSum alphas) := by
@@ -26,6 +41,8 @@ theorem rationalParameterComplement_balance (alphas : List QProb) (index : Nat) 
       (QProb.listSum alphas).den = (QProb.listSum alphas).num * (QProb.listSum alphas).den
   rw [total, rationalUrnWeights_sum]
 
+/-- Grouping the selected colour against its complement gives exactly
+these two rational parameters, independently of fraction presentations. -/
 theorem aggregateRationalParameters_coordinate (alphas : List QProb) (index : Nat) (within : index < alphas.length) :
     RationalParametersEquiv (aggregateRationalParameters 2 (coordinateArguments 0 alphas.length index) alphas)
       [alphas.getD index QProb.zero, rationalParameterComplement alphas index] := by
@@ -38,6 +55,8 @@ theorem aggregateRationalParameters_coordinate (alphas : List QProb) (index : Na
   rw [identity] at encoded
   exact encoded.trans (.cons (rationalUrnWeights_parameter alphas index) (.cons (QProb.equiv_refl _) (.refl [])))
 
+/-- The two grouped parameters retain the positive original total.
+This permits either selected or complementary parameter to vanish separately. -/
 theorem rationalCoordinate_parameters_positive (alphas : List QProb) (positive : 0 < (QProb.listSum alphas).num)
     (index : Nat) (within : index < alphas.length) :
     0 < (QProb.listSum [alphas.getD index QProb.zero, rationalParameterComplement alphas index]).num :=

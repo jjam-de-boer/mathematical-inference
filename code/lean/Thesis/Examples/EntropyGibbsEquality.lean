@@ -1,5 +1,19 @@
 import Thesis.Probability.Distros.EntropyGibbsEquality
 
+/-!
+# Equality in Gibbs' inequality is equality of laws
+
+A reordered and split fair record, with a null outlier, has zero relative
+entropy against the positive fair reference because their laws agree.
+A point law cannot attain zero: the equality theorem would equate its
+missing cell with the reference's positive mass. A zero contribution from
+that observed cell alone is therefore not a global equality certificate.
+
+The rational AM-GM equality fixture constrains arguments only where their
+multiplicities are positive. Its zero-multiplicity outlier remains
+unrestricted, matching the probability library's support-aware convention.
+-/
+
 namespace Thesis.Examples.EntropyGibbsEquality
 open Probability Probability.Distros
 

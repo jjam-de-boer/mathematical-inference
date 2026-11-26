@@ -2,6 +2,25 @@ import Thesis.Examples.ConstructiveEntropyOptimizer
 import Thesis.Probability.ConstructiveRealFaceMultipliers
 import Thesis.Probability.ConstructiveRealEntropyPartitionIdentity
 
+/-!
+# The attained mean-half ideal has a proved Gibbs form
+
+The already constructed ideal optimizer is transferred to the analytic
+constraint interface without changing masses or rows. Its positive lower
+bounds follow from the positive rational anchor, and natural multipliers
+are constructed from the actual maximum with redundant rows retained.
+The earlier rational entropy interval encloses this same attained ideal;
+it does not identify the ideal masses as rational numbers.
+
+Every original feature is affine across the three ordered outcomes.
+Linearity of the fitted scores, exponential addition and a checked common-
+factor identity therefore derive `p0*p2=p1^2`, rather than assuming a
+geometric candidate. The exact-feasibility approximation sequence converges
+to this law with its existing coordinate modulus, and multiplier values
+admit certified rational enclosures even when their representation is not
+unique.
+-/
+
 namespace Thesis.Examples.EntropyMeanHalfGibbs
 open Probability Probability.Distros ConstructiveReal
 open RationalEntropyProblem

@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealDistance
 
+/-!
+# A computed positive natural upper bound from one enclosure
+
+The numerator magnitude of the upper unit-precision endpoint, increased
+by one, bounds that rational endpoint and hence the real itself. The
+witness is computable for every presentation, including negative values.
+It supplies a one-sided upper bound where an explicitly positive integer
+constant is convenient.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A positive natural upper bound computed from a single rational enclosure. -/

@@ -1,6 +1,20 @@
 import Thesis.Probability.EntropyGrouping
 import Thesis.Probability.Distros.EntropyGibbs
 
+/-!
+Explicit rational uncertainty requirements and their Shannon instance.
+
+Normalized finite vectors represent observable alternatives, with rational
+equivalence independent of entry denominators. Compound choices retain a
+normalized conditional vector even for a zero-probability branch, and their
+refinement satisfies the Shannon grouping identity. The uncertainty interface
+requires representation and permutation invariance, null insertion, grouping,
+uniform monotonicity and fair-bit normalization in ExactLog. Shannon entropy
+satisfies those requirements. Uniqueness is established by later modules,
+not embedded in this definition; distribution adapters aggregate singleton
+masses so split atoms never become new uncertainty coordinates.
+-/
+
 namespace Thesis.Probability
 
 /-- A normalized finite vector, with unreduced rational entries. Coordinate
@@ -46,6 +60,8 @@ theorem entropy_congr {first second : ProbabilityVector}
       | cons q qs => exact ExactLog.add_congr (entropyTerm_congr equal.1) (ih qs equal.2)
   exact pointwise first.masses second.masses same
 
+/-- Insert one explicit zero-probability alternative without deleting
+or identifying any existing coordinate. -/
 def addNull (vector : ProbabilityVector) : ProbabilityVector :=
   ⟨QProb.zero :: vector.masses, QProb.equiv_trans
     (QProb.equiv_trans (QProb.add_comm QProb.zero _) (QProb.add_zero _)) vector.normalized⟩
@@ -53,6 +69,8 @@ def addNull (vector : ProbabilityVector) : ProbabilityVector :=
 theorem entropy_addNull (vector : ProbabilityVector) : (vector.addNull).entropy = vector.entropy :=
   entropySum_cons_zero vector.masses
 
+/-- The normalized rational vector of size equally likely alternatives.
+A positive size is necessary because the empty vector cannot normalize to one. -/
 def uniform (size : Nat) (positive : 0 < size) : ProbabilityVector where
   masses := List.replicate size ⟨1, size, positive⟩
   normalized := by

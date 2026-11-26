@@ -1,5 +1,16 @@
 import Thesis.Probability.ExactLog
 
+/-!
+# Rational weighting and finite sums in the exact-log representation
+
+Scaling by a nonnegative rational raises the argument to its numerator
+and multiplies the positive degree by its denominator. The value is
+independent of the chosen presentations of both inputs. The zero weight
+case is included when proving order preservation. List sums support
+permutation, additive decomposition and nonnegativity, which lets entropy
+arguments aggregate exact logarithmic terms before taking real values.
+-/
+
 namespace Thesis.Probability.ExactLog
 
 /-- Multiplication of an exact logarithm by a nonnegative rational coefficient. -/

@@ -1,6 +1,17 @@
 import Thesis.Probability.RegularRationalAlgebra
 import Thesis.Probability.ConstructiveRealCauchy
 
+/-!
+# Sampling regular approximations as effective Cauchy sequences
+
+Reciprocal-natural precisions turn a regular rational approximation into
+a sequence with a computed modulus. Its completed limit agrees with the
+original approximation, using a common accuracy rather than a selected
+existential index. Every constructive real thereby has a canonical
+rational sequence. Exact preservation of external feasibility constraints
+requires its own construction.
+-/
+
 namespace Thesis.Probability.RegularRationalApproximation
 
 /-- Sample a regular rational approximation at reciprocal-natural accuracies.

@@ -1,6 +1,24 @@
 import Thesis.Probability.ConstructiveRealFaceKKT
 import Thesis.Probability.ConstructiveRealPolynomialExpression
 
+/-!
+# Signed KKT certificates on an interval with redundant rows
+
+The second probability is constrained to `[2/3,1]`, with its lower row
+duplicated. The nonuniform candidate `[1/3,2/3]` has an explicit positive
+floor. A hand-checked bit-gradient certificate assigns coefficient one to
+one active lower occurrence and zero to the loose upper and duplicate
+occurrence. Nonnegativity and complementary slackness prove a global
+maximum, including comparison with a zero-coordinate boundary law.
+
+The natural-unit certificate is obtained by scaling, and the necessity
+constructor independently returns KKT multipliers for the same maximum.
+Positive slack forces its upper multiplier to vanish. Polynomial identities
+recover the sum of the two redundant active multipliers as one bit without
+claiming uniqueness of their individual values. No active-set choice or
+multiplier tuple is supplied to the necessity constructor.
+-/
+
 namespace Thesis.Examples.EntropyKKT
 open Probability Probability.Distros ConstructiveReal
 open RationalLinear RationalEntropyProblem

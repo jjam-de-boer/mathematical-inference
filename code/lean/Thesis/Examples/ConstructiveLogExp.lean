@@ -1,5 +1,22 @@
 import Thesis.Probability.ConstructiveRealLogInverse
 
+/-!
+# Logarithm/exponential inverses and an eventually positive sequence
+
+Additivity alone is tested at zero and signed rational multiples; no claim
+of arbitrary-real linearity without further hypotheses is made. The
+`expLog2` examples retain the base-two secant constant, whereas the natural
+logarithm is checked as the two-sided inverse of exponentiation on its
+explicitly positive domain. Monotonicity, derivative and injectivity
+statements keep their actual domain witnesses.
+
+The sequence beginning at `-1` and thereafter equal to one has a positive
+limit although its first term has no logarithm. A computable positive tail,
+not the original whole sequence, licenses the logarithm-limit theorem. The
+limit is identified independently by convergence and then transported
+through the logarithm's value-congruence theorem.
+-/
+
 namespace Thesis.Examples.ConstructiveLogExp
 open Probability ConstructiveReal
 

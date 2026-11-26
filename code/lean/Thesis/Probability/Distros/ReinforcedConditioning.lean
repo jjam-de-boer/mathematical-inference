@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.ReinforcedHistory
 import Thesis.Probability.FiniteRecordSums
+/-!
+Condition the sequential urn on an observed prefix histogram.
+
+Evidence records the counts in the first m draws and forgets their order.
+`reinforcedCountsSupported` asks for positive mass of exactly that evidence;
+no conditional distribution is manufactured for an impossible count vector.
+Splitting paths and using the count-dependent update factors every future
+event into the evidence mass and an updated-urn mass. Cancellation against
+the evidence mass then proves equality of the entire conditional suffix
+law with the urn whose parameters are increased by increment times counts.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 
@@ -7,6 +19,8 @@ open Combinatorics
 def reinforcedCountsEvent (m colours : Nat) (counts : List Nat) : Event (List Nat) :=
   fun word => decide (colourCounts colours (word.take m) = counts)
 
+/-- Positive raw evidence mass for the first m draws. Positivity is checked
+on the sequential law, so both impossible colours and incompatible counts are excluded. -/
 def reinforcedCountsSupported (m : Nat) (alphas : List Nat) (increment : Nat) (counts : List Nat) : Prop :=
   0 < FiniteProbRecord.eventMass (reinforcedUrnAtoms m alphas increment)
     (fun word => decide (colourCounts alphas.length word = counts))

@@ -1,5 +1,16 @@
 import Thesis.Probability.ConstructiveRealDualDirections
 
+/-!
+# From the full feasible variational bound to signed dual feasibility
+
+At a quantitatively positive simplex point, a canceled dual combination
+produces a zero-sum direction. A computed positive rational step retains
+coordinate bounds and every original row. Cancelling that step in the
+variational inequality proves the combination's required sign, and thus
+the Farkas condition for the multiplier rows. There is no active-set or
+rank premise.
+-/
+
 namespace Thesis.Probability.AnalyticLinear
 open ConstructiveReal
 open Distros.RationalLinear

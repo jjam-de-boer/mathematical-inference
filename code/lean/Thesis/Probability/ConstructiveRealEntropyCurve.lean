@@ -4,6 +4,17 @@ import Thesis.Probability.ConstructiveDerivativeChain
 import Thesis.Probability.ConstructiveRealBilinearFubini
 import Thesis.Probability.ConstructiveRealGibbsInequality
 
+/-!
+# Differentiating entropy along varying finite probability coordinates
+
+At the evaluation point, supplied positive rational floors and the
+coordinate derivative estimates compute nearby positive domains. Chain
+and finite-sum rules give the natural entropy derivative as the velocity
+paired with its gradient. If the path is normalized at every parameter,
+differentiating the actual coordinate sum and using derivative uniqueness
+proves that the velocity has zero total.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 open Distros.RationalLinear
 

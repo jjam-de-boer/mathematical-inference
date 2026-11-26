@@ -3,6 +3,16 @@ import Thesis.Probability.ConstructiveRealPositiveTail
 import Thesis.Probability.ConstructiveRealProductLimits
 import Thesis.Probability.ConstructiveRealNaturalLog
 
+/-!
+# Agreement of continuous entropy with its positive product formula
+
+A positive rational floor permits taking the logarithm along a tail of the
+bounded rational approximants. The effective product limit then identifies
+the continuous entropy term with -x log2(x) on that positive domain.
+The established ln(2) calibration gives -x ln(x) in natural units. At zero,
+continuity supplies the entropy value directly, without a logarithm at zero.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- The continuous extension has the usual product formula at every

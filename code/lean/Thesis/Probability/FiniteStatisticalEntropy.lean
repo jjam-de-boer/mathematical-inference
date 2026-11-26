@@ -3,6 +3,23 @@ import Thesis.Probability.FiniteThermalCalibration
 import Thesis.Probability.FiniteEnergyVariation
 import Thesis.Probability.FiniteGibbsEntropyVariation
 
+/-!
+# Physical units and pointwise canonical entropy variation
+
+Statistical entropy is defined as `kB*ln(2)*H_bits`, with a positive
+rational Boltzmann constant. Fixed scaling transports the computed natural
+entropy derivative. At a canonical equilibrium point of an actually
+normalized differentiable probability path, temperature calibration turns
+the rate into the probability-change energy contribution divided by T.
+
+The grand-canonical rate subtracts `mu*particleRate`, with multiplier
+`-beta*mu`. Changes of energy levels have a separate work contribution;
+the full mean-energy derivative is not substituted for thermal heat.
+These mathematical variation identities require their displayed path,
+equilibrium and calibration data. Identifying an independently defined
+thermodynamic entropy requires further variation and reference hypotheses.
+-/
+
 namespace Thesis.Probability.FiniteStatisticalMechanics
 open ConstructiveReal
 open Distros.RationalLinear

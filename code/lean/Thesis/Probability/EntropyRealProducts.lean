@@ -1,6 +1,19 @@
 import Thesis.Probability.EntropyInterpretation
 import Thesis.Probability.ConstructiveRealRationalScaling
 
+/-!
+# Entropy interpretation using the constructed general real product
+
+Rational scaling in the entropy interpretation agrees with multiplication
+by the embedded rational real. Replacing each scale by that product gives
+the usual real formulas for Shannon and relative-entropy summands, with
+logarithms still restricted to positive rational arguments.
+
+The finite entropy sum retains an explicit zero branch at zero mass. This
+bridge identifies two already constructed values; it changes neither
+probability weights nor their supported-zero convention.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Rational coefficient representation changes do not change real scaling. -/

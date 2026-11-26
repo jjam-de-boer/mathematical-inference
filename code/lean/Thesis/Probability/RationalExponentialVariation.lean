@@ -2,6 +2,16 @@ import Thesis.Probability.RationalTaylorVariation
 import Thesis.Probability.ConstructiveRealSequenceShift
 import Thesis.Probability.ConstructiveRealProductLimits
 
+/-!
+# First variation of the completed exponential at rational inputs
+
+The finite Taylor estimate controls the quadratic error before taking
+limits. Effective addition and multiplication then transfer that estimate
+to the two completed exponentials on a supplied, bounded rational domain.
+The uniform sum bound turns the polynomial remainder into a concrete
+error radius. No real derivative theorem is an input.
+-/
+
 namespace Thesis.Probability.RationalExponential
 open ConstructiveReal
 

@@ -3,6 +3,22 @@ import Thesis.Probability.Distros.MomentTableCheck
 
 namespace Thesis.Probability.Distros
 
+/-!
+# A complete checker for the bounded joint factorial-moment problem
+
+The checker enumerates the actual coordinate rectangle and inspects every
+signed inverse mass. A negative cell returns that bounded cell and its strict
+negativity proof; otherwise it checks exact normalization. Either obstruction
+refutes every joint law with the declared moments and almost-sure bounds.
+
+Success constructs a joint probability record with bound, moment and zero-
+cell-retention certificates. The final equivalence proves that this finite
+procedure succeeds exactly for valid tables. The scope is the supplied
+bounded rectangle, not an unbounded general moment problem.
+-/
+
+/-- A concrete violated probability constraint, sufficient to refute every
+realization of this bounded table rather than merely one proposed record. -/
 inductive JointFactorialTableObstruction (moments : List Nat → QProb) (bounds : List Nat) where
   | negative (value : List Nat) (within : CoordinateBounds value bounds)
       (proof : (inverseJointFactorialTable moments bounds value).num < 0)
@@ -22,6 +38,8 @@ theorem JointFactorialTableObstruction.not_realizable {moments : List Nat → QP
       ∀ orders, CoordinateBounds orders bounds → QProb.Equiv (jointFactorialMoment μ orders) (moments orders) :=
   fun law => obstruction.not_valid ((jointFactorialMomentTable_realizable_iff moments bounds).mpr law)
 
+/-- Constructed data retain all bounded cells as well as their proved
+moments. Zero-mass cells are part of the resulting record's presentation. -/
 structure JointFactorialTableRealization (moments : List Nat → QProb) (bounds : List Nat) where
   distro : Distro (List Nat)
   bounded : distro.AlmostSurely (fun counts => CoordinateBounds counts bounds)

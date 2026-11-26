@@ -2,6 +2,16 @@ import Thesis.Probability.ConstructiveRealUnitApproximation
 import Thesis.Probability.ConstructiveRealIntervalPartition
 import Thesis.Probability.ConstructiveRealPolynomialExpression
 
+/-!
+# Strictly positive rational centers for the closed unit interval
+
+Mixing a bounded rational approximation with one by a small positive
+amount produces a strictly positive rational center still at most one.
+The requested precision controls both the input enclosure and the mix.
+The floor may vanish in the limit, so the resulting sequence also
+approximates zero without testing the original analytic coordinate.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private def smoothingLeft (n : Nat) : QProb := ⟨n + 1, n + 2, by omega⟩

@@ -1,5 +1,20 @@
 import Thesis.Probability.Distros.EntropyMomentConvex
 
+/-!
+# Convex moment feasibility and conditional uniqueness of a maximum
+
+Two rational laws on `[0,1,2,3]` satisfy an exact mean, a forced zero at
+three, a signed interval response and repeated constant constraints. Their
+`1:2` mixture preserves all those exact conditions and retains its zero
+cell and null record outliers; its mass at one is checked as `2/3`.
+
+The final theorem applies strict entropy concavity to any two globally
+maximal admissible rational laws and concludes equality of whole laws.
+It quantifies over every feasible rational presentation, with no supplied
+denominator grid. It is a uniqueness implication when maxima exist, not
+an assertion that every rational moment problem attains a rational maximum.
+-/
+
 namespace Thesis.Examples.EntropyMoments
 open Probability Probability.Distros
 

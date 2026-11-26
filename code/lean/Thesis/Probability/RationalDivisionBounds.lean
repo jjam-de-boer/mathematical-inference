@@ -1,5 +1,15 @@
 import Thesis.Probability.RationalNorm
 
+/-!
+# Magnitude estimates for division by a positive natural
+
+For a signed rational, division by n has exactly the original magnitude
+multiplied by 1/n. Positivity of n is explicit, so n=0 is outside this
+operation rather than assigned a fallback value. The weaker contraction
+bound follows by cross multiplication on natural numerator magnitudes.
+Both results respect unreduced rational presentations.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 /-- Dividing by a positive natural does not increase rational magnitude. -/

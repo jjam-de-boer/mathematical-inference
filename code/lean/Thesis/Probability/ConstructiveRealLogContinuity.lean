@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealLogarithm
 import Thesis.Probability.ConstructiveRealCauchyStability
 
+/-!
+# Uniform logarithm continuity above a common positive floor
+
+The two inputs carry the same rational lower bound. Reserve half the
+rational input radius for replacing them by certified rational centers.
+The positive rational logarithm estimate then compares those centers, and
+the effective limit transfers the resulting enclosure. The bound depends
+on the supplied floor, rather than a real sign or equality decision.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A certified uniform continuity modulus for the real logarithm on an

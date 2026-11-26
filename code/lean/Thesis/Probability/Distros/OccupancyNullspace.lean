@@ -5,6 +5,21 @@ import Thesis.Probability.Distros.MultinomialCovariance
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Exact null directions for the three occupancy families
+
+For one categorical draw, a coefficient-weighted count response is just the
+coefficient of the drawn colour. Its variance vanishes exactly when the
+coefficients agree on positive-weight colours. Coefficients on zero-weight
+categories remain arbitrary coordinates of the original representation.
+
+The previously proved covariance scales transfer this criterion to any
+positive number of multinomial or reinforced trials and to a proper nonempty
+hypergeometric sample. A scale is cancelled only after its numerator has been
+proved nonzero. Zero trials and full-population samples are separated first,
+so every finite population size, including zero and one, is covered.
+-/
+
 /-- Coefficients agree as rational values on precisely the positive-weight
 colours. Zero-weight categories retain their arbitrary coefficients. -/
 def CoefficientsConstantOnPositive (weights : List Nat) (coefficients : Nat → SignedRatio) : Prop :=
@@ -170,6 +185,8 @@ theorem multivariateHypergeometric_covarianceForm_zero_iff (n : Nat) (stocks : L
       · intro _
         exact (SignedRatio.equiv_zero_iff _).mp (multivariateHypergeometric_covarianceForm_full_population stocks positive coefficients)
     · have sample := hypergeometric_draws_le_total stocks.sum n positive
+      -- Outside the zero/full branches the population has at least two
+      -- objects, and the finite-population covariance scale is positive.
       have population : 1 < stocks.sum := by omega
       have factorPositive : 0 < n * (stocks.sum - n) := Nat.mul_pos (by omega) (by omega)
       have scalar := multivariateHypergeometric_covarianceForm_scaled n stocks positive population coefficients

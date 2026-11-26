@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealEntropyFormula
 import Thesis.Probability.CrossEntropyValue
 
+/-!
+# Continuous relative entropy against a positive reference coordinate
+
+Cross entropy minus continuous entropy defines the analytic contribution
+at every observed unit mass, including zero. Only the reference requires
+a supplied positive floor. The extension agrees with the usual logarithmic
+product on positive observed masses and is invariant under equivalent
+presentations and different floor witnesses. Natural units use the proved
+ln(2) calibration.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A real KL contribution against an explicitly positive reference. The

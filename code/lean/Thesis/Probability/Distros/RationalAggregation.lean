@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.RationalParameters
 import Thesis.Probability.Distros.ReinforcedAggregation
 
+/-!
+Sum rational urn parameters under a finite colour grouping.
+
+Grouping is computed by rational addition, with zero parameters for unused
+destinations. The encoding lemmas identify it with grouping common-denominator
+natural urn weights and then returning to rational parameter units. Thus
+changes of fraction presentation do not alter the result's law. Matching
+label/parameter dimensions and in-range labels transfer the positive total.
+The final theorems prove all-event aggregation of actual rational Pólya paths
+and complete Dirichlet-multinomial occupancy vectors, including zero groups.
+-/
+
 namespace Thesis.Probability.Distros
 
 namespace RationalParametersEquiv
@@ -37,6 +49,8 @@ theorem aggregateRationalParameters_length (groups : Nat) (labels : List Nat) (a
   | cons label labels ih => cases alphas <;>
       simp only [aggregateRationalParameters, List.length_modify, List.length_replicate, ih]
 
+/-- Equivalent presentations of the input parameters remain equivalent
+after all destination sums; no common reduced fraction form is chosen. -/
 theorem aggregateRationalParameters_congr (groups : Nat) (labels : List Nat) {alphas betas : List QProb}
     (same : RationalParametersEquiv alphas betas) :
     RationalParametersEquiv (aggregateRationalParameters groups labels alphas)
@@ -86,6 +100,8 @@ theorem aggregateRationalParameters_ratios (groups : Nat) (labels weights : List
           exact (urnRatioParameters_modify_add _ denominator positive label weight).trans
             ((ih weights).modify_add (QProb.equiv_refl _) label)
 
+/-- Grouping the integer encoding and grouping rational parameters
+commute up to coordinatewise rational equivalence. -/
 theorem aggregateRationalParameters_encoding (groups : Nat) (labels : List Nat) (alphas : List QProb) :
     RationalParametersEquiv
       (urnRatioParameters (aggregateCounts groups labels (rationalUrnWeights alphas))
@@ -94,6 +110,8 @@ theorem aggregateRationalParameters_encoding (groups : Nat) (labels : List Nat) 
   (aggregateRationalParameters_ratios groups labels _ _ _).trans
     (aggregateRationalParameters_congr groups labels (rationalParameters_encoding alphas))
 
+/-- Valid grouping preserves the positive original total. Dimension and
+range assumptions exclude accidentally dropping an unlabelled parameter. -/
 theorem aggregateRationalParameters_positive (groups : Nat) (labels : List Nat) (alphas : List QProb)
     (positive : 0 < (QProb.listSum alphas).num) (dimension : labels.length = alphas.length)
     (within : ∀ label ∈ labels, label < groups) :

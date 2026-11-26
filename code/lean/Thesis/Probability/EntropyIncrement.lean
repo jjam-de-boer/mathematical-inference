@@ -1,5 +1,16 @@
 import Thesis.Probability.EntropyTermBounds
 
+/-!
+# Entropy increments on the positive rational interval
+
+For ordered positive rational masses within the unit interval, exact-log
+algebra bounds their entropy difference without taking a derivative.
+These one-sided estimates handle the positive part of the later uniform
+continuity argument. The separate small-mass estimate supplies the zero
+boundary, so the continuity proof need not assume a globally bounded
+entropy derivative.
+-/
+
 namespace Thesis.Probability
 
 /-- Algebraic one-sided entropy increment bounds away from zero. Together

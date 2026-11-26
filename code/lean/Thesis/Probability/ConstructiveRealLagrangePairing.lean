@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealEntropyGlobalOptimality
 
+/-!
+# Pairing an affine multiplier identity with a feasible direction
+
+Bilinear transposition expands a gradient pairing into the normalization
+term and the list of original expectation-row pairings. For normalized
+laws their difference has zero total, so the affine offset cancels.
+The identity itself assumes neither nonnegative coefficients nor
+fixed expectations and is shared by several optimality arguments.
+-/
+
 namespace Thesis.Probability.Distros.RationalEntropyProblem
 open ConstructiveReal
 open RationalLinear

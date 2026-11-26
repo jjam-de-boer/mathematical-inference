@@ -1,4 +1,17 @@
 import Thesis.Probability.Distros.StepRising
+/-!
+Sequential finite urns with an arbitrary natural reinforcement increment.
+
+The word constructor branches on actual colour draws and updates only the
+selected colour. The count constructor instead enumerates occupancies and
+multiplies each occupancy coefficient by its reinforced coordinate weight.
+Their all-event correspondence proves that this closed count law describes
+the sequential experiment. Only the total initial weight must be positive;
+individual zero-weight colours remain present. Increment zero recovers IID
+categorical/multinomial sampling; increment one recovers the Pólya and
+Dirichlet-multinomial laws. Scaling both weights and increment preserves laws.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 
@@ -10,6 +23,9 @@ def reinforcedUrnAtoms : Nat → List Nat → Nat → List (List Nat × Nat)
       (reinforcedUrnAtoms n (alphas.modify head.1.val (fun a => a + increment)) increment).map
         (fun rest => (head.1.val :: rest.1, head.2 * rest.2))
 
+/-- Factor the sequential branch weights through the count vector.
+The unweighted word enumeration retains multiplicities; the kernel supplies
+all dependence on the initial urn and reinforcement. -/
 theorem reinforcedUrnAtoms_word_weights (n : Nat) (alphas : List Nat) (increment : Nat) :
     reinforcedUrnAtoms n alphas increment = (unitWordAtoms alphas.length n).map
       (fun atom => (atom.1, atom.2 * stepKernel increment alphas (colourCounts alphas.length atom.1))) := by
@@ -29,6 +45,8 @@ theorem reinforcedUrnAtoms_word_weights (n : Nat) (alphas : List Nat) (increment
       rw [stepKernel_increment increment alphas _ (colourCounts_length _ _).symm head.1.val head.1.isLt]
       ac_rfl
 
+/-- Every next-draw branch has the same reinforced total. Induction therefore
+sums the branches into one rising total, without assuming positive colour weights. -/
 theorem totalMass_reinforcedUrnAtoms (n : Nat) (alphas : List Nat) (increment : Nat) :
     FiniteProbRecord.totalMass (reinforcedUrnAtoms n alphas increment) = stepRising alphas.sum increment n := by
   induction n generalizing alphas with
@@ -46,6 +64,8 @@ theorem totalMass_reinforcedUrnAtoms (n : Nat) (alphas : List Nat) (increment : 
         (fun _ => stepRising (alphas.sum + increment) increment n)]
       rw [natIntegral_constant, totalMass_finWeighted, finWeight_getD_sum, stepRising]
 
+/-- Normalize the actual ordered-word atoms. Positive initial total ensures
+a positive rising denominator even for zero draws or zero reinforcement. -/
 def reinforcedUrnDistro (n : Nat) (alphas : List Nat) (increment : Nat) (positive : 0 < alphas.sum) : Distro (List Nat) :=
   ofWeightedAtoms (reinforcedUrnAtoms n alphas increment) (by
     rw [totalMass_reinforcedUrnAtoms]; exact stepRising_pos _ _ _ positive)
@@ -75,6 +95,8 @@ theorem unitOccupancy_integral (n colours : Nat) (f : List Nat → Nat) (positiv
   rw [unitWordAtoms_categorical colours n positive]
   simp only [ones, List.length_replicate]
 
+/-- Count weights consist of the number of words with that occupancy times
+the weight of any one such word. This includes zero-weight occupancies. -/
 def reinforcedCountAtoms (n : Nat) (alphas : List Nat) (increment : Nat) : List (List Nat × Nat) :=
   (multinomialAtoms n (List.replicate alphas.length 1)).map
     (fun atom => (atom.1, atom.2 * stepKernel increment alphas atom.1))
@@ -85,6 +107,8 @@ theorem totalMass_reinforcedCountAtoms (n : Nat) (alphas : List Nat) (increment 
     (list_length_positive_of_sum alphas positive), ← totalMass_reweight, ← reinforcedUrnAtoms_word_weights,
     totalMass_reinforcedUrnAtoms]
 
+/-- The normalized occupancy law; its denominator is the same rising total
+as the ordered experiment, rather than a separately chosen normalization. -/
 def reinforcedCountDistro (n : Nat) (alphas : List Nat) (increment : Nat) (positive : 0 < alphas.sum) : Distro (List Nat) :=
   ofWeightedAtoms (reinforcedCountAtoms n alphas increment) (by
     rw [totalMass_reinforcedCountAtoms n alphas increment positive]; exact stepRising_pos _ _ _ positive)
@@ -206,6 +230,8 @@ theorem reinforcedUrn_first_step (n : Nat) (alphas : List Nat) (increment : Nat)
   ac_rfl
 
 
+/-- Every enumerated occupancy has the original alphabet dimension and sums
+to the trial count. Membership here includes atoms whose weight is zero. -/
 theorem reinforcedCount_support (n : Nat) (alphas : List Nat) (increment : Nat) (atom : List Nat × Nat)
     (member : atom ∈ reinforcedCountAtoms n alphas increment) :
     atom.1.length = alphas.length ∧ atom.1.sum = n := by
@@ -214,6 +240,8 @@ theorem reinforcedCount_support (n : Nat) (alphas : List Nat) (increment : Nat) 
   have support := multinomialAtoms_support n (List.replicate alphas.length 1) source hs
   exact ⟨support.1.trans List.length_replicate, support.2⟩
 
+/-- Closed singleton mass, with a trial-total test. The multinomial weight
+also enforces the parameter/count dimension; malformed counts do not acquire mass. -/
 theorem reinforcedCount_pmf (n : Nat) (alphas counts : List Nat) (increment : Nat) (positive : 0 < alphas.sum) :
     QProb.Equiv ((reinforcedCountDistro n alphas increment positive).pmf counts)
       ⟨if counts.sum = n then multinomialWeight (List.replicate alphas.length 1) counts * stepKernel increment alphas counts else 0,
@@ -239,6 +267,8 @@ theorem unitWordAtoms_count_sum (n colours : Nat) (positive : 0 < colours) (atom
     (by simpa only [List.sum_replicate_nat, Nat.mul_one] using positive) n atom member
   simpa only [List.length_replicate] using support
 
+/-- A common integer scale contributes exactly one factor per draw.
+The later SameLaw theorem cancels this common rescaling of all atom weights. -/
 theorem reinforcedUrnAtoms_scale (n : Nat) (alphas : List Nat) (increment c : Nat) (positive : 0 < alphas.sum) :
     reinforcedUrnAtoms n (alphas.map (fun a => c * a)) (c * increment) =
       (reinforcedUrnAtoms n alphas increment).map (fun atom => (atom.1, c ^ n * atom.2)) := by

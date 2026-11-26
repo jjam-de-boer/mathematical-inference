@@ -1,6 +1,23 @@
 import Thesis.Probability.ConstructiveRealEntropyGibbsForm
 import Thesis.Probability.ConstructiveRealEntropyInterior
 
+/-!
+# Constructed Gibbs parameters for a nonuniform constrained law
+
+Opposite rational rows fix the second mass to `2/3`, and normalization
+fixes the first to `1/3`; a duplicate upper row and unreduced masses remain
+in the fixture. These equalities prove the candidate maximal, and an
+explicit floor `1/6` supplies its logarithm domain. Natural-gradient
+Lagrange coefficients are then constructed, not provided as fitted values.
+
+The examples recover the Gibbs mass formula and partition-log identity
+from those coefficients. A separate call starts only from positive
+feasibility, constructs the optimizer and its multipliers, and proves its
+masses agree with the independent candidate. Analytic coefficients expose
+rational enclosures at arbitrary precision; rational or unique multiplier
+values are not assumed merely because the probability masses are rational.
+-/
+
 namespace Thesis.Examples.EntropyGibbsForm
 open Probability Probability.Distros ConstructiveReal
 open RationalLinear RationalEntropyProblem

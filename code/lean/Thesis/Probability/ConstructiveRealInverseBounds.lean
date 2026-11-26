@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveRealInverseVariation
 import Thesis.Probability.ConstructiveRealSquareBounds
 import Thesis.Probability.ConstructiveRealDistanceAlgebra
 
+/-!
+# A quantitative first-order enclosure for positive reciprocals
+
+The reciprocal identity leaves a nonnegative quadratic error after the
+linear term. Positive lower bounds at both inputs control the three
+inverse factors by a natural constant based on the floor denominator.
+At a given radius the remainder is at most radius² times this constant.
+The estimate includes zero displacement and supplies the calculus layer
+with a rational error certificate.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Computable reciprocal Taylor error on a positive half-line. -/

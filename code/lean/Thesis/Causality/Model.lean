@@ -34,6 +34,8 @@ def assignmentEnumeration (S : ObservedSignature) : List S.Assignment :=
   deduplicate
     (FiniteProduct.enumeration S.count S.Value S.valueEnumeration)
 
+/-- Every full state remains listed after deduplication, including states
+assigned zero probability by any subsequently supplied model. -/
 theorem assignmentEnumeration_complete (S : ObservedSignature)
     (assignment : S.Assignment) : assignment ∈ S.assignmentEnumeration := by
   rw [assignmentEnumeration, mem_deduplicate]
@@ -90,9 +92,14 @@ instance assignmentDecidableEq (L : LatentExtension S) :
     DecidableEq L.Assignment :=
   FiniteProduct.assignmentDecidableEq L.count L.Value L.valueDecidableEq
 
+/-- A local mechanism receives precisely the latent sources incident to
+its node. The edge argument restricts access even when source types coincide. -/
 def Inputs (L : LatentExtension S) (child : Fin S.count) :=
   (l : Fin L.count) -> L.incident l child = true -> L.Value l
 
+/-- Source-wise evidence is a conjunction of one event per latent root.
+These rectangles state the model's independence condition without imposing
+independence on an arbitrary later belief over the same latent assignment. -/
 def rectangularEvent (L : LatentExtension S)
     (events : (l : Fin L.count) -> L.Value l -> Bool)
     (u : L.Assignment) : Bool :=
@@ -121,6 +128,9 @@ theorem projectedBidirected_irreflexive (L : LatentExtension S) (i) :
   rw [natBeq_refl]
   rfl
 
+/-- Project only latent incidence into confounding edges; the observed
+directed edges are already fixed by `S`. No statistical graph estimation is
+performed by this construction. -/
 def observedGraph (L : LatentExtension S) : ObservedGraph S where
   bidirected := L.projectedBidirected
   bidirected_symmetric := L.projectedBidirected_symmetric
@@ -139,6 +149,8 @@ def CanonicalSemiMarkovian (L : LatentExtension S) : Prop :=
     L.incident l k = true ->
     i = j \/ i = k \/ j = k
 
+/-- Private sources cannot generate a shared-source edge. The proof
+extracts a finite incidence witness if a projected edge were present. -/
 theorem markovian_has_no_bidirected (L : LatentExtension S)
     (hMarkov : L.Markovian) (i j : Fin S.count) :
     L.projectedBidirected i j = false := by
@@ -217,15 +229,21 @@ theorem sourceFactors_normalizedValue (M : FiniteLatentSCM S) (l) :
     QProb.Equiv ((M.factor l).probVal topEvent) QProb.one :=
   (M.factor l).normalization
 
+/-- Observation keeps every structural equation active. It is represented
+by an empty partial setting, not by overwriting values after execution. -/
 def noIntervention (S : ObservedSignature) :
     (i : Fin S.count) -> Option (S.Value i) :=
   fun _ => none
 
+/-- The graph surgery needs only the domain of a hard setting; the chosen
+values affect execution but do not affect which incoming arrows are removed. -/
 def cutOf (S : ObservedSignature)
     (target : (i : Fin S.count) -> Option (S.Value i))
     (i : Fin S.count) : Bool :=
   (target i).isSome
 
+/-- Hard surgery replaces the selected equation by a constant and retains
+every unselected mechanism, evaluated on its current parent readings. -/
 def equationUnder (M : FiniteLatentSCM S)
     (target : (i : Fin S.count) -> Option (S.Value i))
     (child : Fin S.count) (parents : S.ParentValues child)
@@ -244,6 +262,8 @@ def evalPrefixUnder (M : FiniteLatentSCM S)
       let hkPrev : k <= S.count := Nat.le_trans (Nat.le_succ k) hk
       let previous := evalPrefixUnder M target u k hkPrev
       let child : Fin S.count := ⟨k, Nat.lt_of_succ_le hk⟩
+      -- Every declared parent lies inside the already computed prefix;
+      -- the graph's strict index inequality is the recursion invariant.
       let parents : S.ParentValues child := fun parent hEdge =>
         previous ⟨parent.val, S.directed_earlier hEdge⟩
       let latents : M.latent.Inputs child := fun l _ => u l
@@ -263,6 +283,9 @@ termination_by child.val
 decreasing_by
   exact S.directed_earlier _edge
 
+/-- Collect unit-level responses using one common latent assignment.
+Sharing that assignment across settings supplies the model's counterfactual
+coupling; it does not identify such a coupling from observed laws. -/
 def evalUnder (M : FiniteLatentSCM S)
     (target : (i : Fin S.count) -> Option (S.Value i))
     (u : M.latent.Assignment) : S.Assignment :=
@@ -458,6 +481,9 @@ theorem evalUnder_consistency (M : FiniteLatentSCM S)
       intro i value selected
       simpa [eval] using agrees i value selected)
 
+/-- The population observational law is the generative latent prior pushed
+through factual execution. Current epistemic beliefs are separate inputs in
+the mode layer and do not alter this model law. -/
 def observationalDist (M : FiniteLatentSCM S) :
     FiniteProbRecord S.Assignment :=
   M.prior.map M.eval
@@ -466,6 +492,8 @@ def observationalValue (M : FiniteLatentSCM S)
     (event : S.Assignment -> Bool) : QProb :=
   M.observationalDist.probVal event
 
+/-- The population law under surgery uses the original latent prior and
+recomputes all responses, so descendants respond to forced parent values. -/
 def interventionalDist (M : FiniteLatentSCM S)
     (target : (i : Fin S.count) -> Option (S.Value i)) :
     FiniteProbRecord S.Assignment :=
@@ -518,10 +546,15 @@ theorem interventionalValue_eq (M : FiniteLatentSCM S)
       (M.prior.probVal (fun u => event (M.evalUnder target u))) :=
   FiniteProbRecord.map_probVal M.prior (M.evalUnder target) event
 
+/-- Abduction is available only for positive factual evidence. Impossible
+evidence remains undefined; it is never turned into a conditional zero. -/
 def CounterfactualSupported (M : FiniteLatentSCM S)
     (evidence : S.Assignment -> Bool) : Prop :=
   M.observationalDist.EventPositive evidence
 
+/-- First condition latent units on their factual evidence, then evaluate
+the hypothetical setting on those same units. This is model-conditional
+abduction/action/prediction, with explicit support for the abduction step. -/
 def counterfactualValue (M : FiniteLatentSCM S)
     (evidence : S.Assignment -> Bool)
     (hEvidence : M.CounterfactualSupported evidence)
@@ -533,6 +566,9 @@ def counterfactualValue (M : FiniteLatentSCM S)
       FiniteProbRecord.eventMass_map_labels] using hEvidence)
   posterior.probVal (fun u => event (M.evalUnder target u))
 
+/-- The conditional ratio uses factual evidence in its denominator and
+factual-plus-hypothetical agreement in its numerator. The supplied positive
+evidence proof is exactly the support needed for rational division. -/
 theorem counterfactualValue_eq (M : FiniteLatentSCM S)
     (evidence : S.Assignment -> Bool)
     (hEvidence : M.CounterfactualSupported evidence)
@@ -566,6 +602,9 @@ def mutilatedSignature (_M : FiniteLatentSCM S)
   directed := mutilatedDirected S (cutOf S target)
   directed_earlier := mutilatedDirected_earlier S (cutOf S target)
 
+/-- Pair the mutilated directed signature with its surviving confounding
+edges. The exogenous draw is retained; removal describes which equations
+still receive its influence after surgery. -/
 def mutilatedGraph (M : FiniteLatentSCM S)
     (target : (i : Fin S.count) -> Option (S.Value i)) :
     ObservedGraph (M.mutilatedSignature target) where
@@ -583,6 +622,8 @@ def mutilatedGraph (M : FiniteLatentSCM S)
     intro i
     simp [M.observedGraph.bidirected_irreflexive i]
 
+/-- A forced equation no longer reads any observed parent, regardless of
+the value forced or the probability of seeing that value observationally. -/
 theorem do_removes_incoming_directed (M : FiniteLatentSCM S)
     (target : (i : Fin S.count) -> Option (S.Value i))
     (child : Fin S.count) (value : S.Value child)
@@ -590,6 +631,8 @@ theorem do_removes_incoming_directed (M : FiniteLatentSCM S)
     (M.mutilatedSignature target).directed parent child = false := by
   simp [mutilatedSignature, mutilatedDirected, cutOf, hTarget]
 
+/-- A forced equation also stops receiving shared latent inputs, removing
+every confounding arrowhead at that node in the observed projection. -/
 theorem do_removes_incident_bidirected (M : FiniteLatentSCM S)
     (target : (i : Fin S.count) -> Option (S.Value i))
     (child : Fin S.count) (value : S.Value child)

@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.DepletingAggregation
 import Thesis.Probability.FiniteRecordSupport
 
+/-!
+Count conditioning commutes with merging removal-sampling colours.
+
+Positive fine histories leave the same grouped state whether balls are
+removed before or after categories are merged. A supported fine histogram
+provides such a history and also gives supported evidence for the grouped
+histogram. Combining these state and support facts with the exact path-law
+aggregation theorem proves equality of grouped future laws after conditioning.
+This result concerns the merged observables: grouped evidence need not recover
+the fine count vector or the individual remaining stocks inside a group.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Every positive ordered history leaves the same grouped stocks whether

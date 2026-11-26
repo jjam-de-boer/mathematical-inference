@@ -1,6 +1,20 @@
 import Thesis.Probability.ConstructiveDerivativeWithin
 import Thesis.Probability.ConstructiveRealDifferenceLimits
 
+/-!
+# Algebra of derivatives on a shared proof-indexed domain
+
+Restriction consumes a domain inclusion, and function congruence consumes
+value equivalence at each admitted input. Constants, negation and addition
+then preserve the domain explicitly. Addition splits the requested error
+in half and computes the smaller of the constituent moduli before
+collecting their residual bounds.
+
+Finite sums are built by list induction from these rules. Empty lists and
+duplicate indices retain their actual sum semantics, and no value is
+requested outside the domain or selected by a choice principle.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.HasDerivativeWithinAt
 open ConstructiveReal
 

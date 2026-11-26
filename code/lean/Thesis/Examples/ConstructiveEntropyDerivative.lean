@@ -1,5 +1,20 @@
 import Thesis.Probability.ConstructiveRealEntropyDerivative
 
+/-!
+# Domain-relative differentiation of natural entropy
+
+The scalar entropy derivative is used only on the supplied domain with a
+positive rational lower bound and upper bound one. At probability one its
+slope simplifies to `-1` using the proved logarithm-of-one identity. This is
+a derivative relative to the closed domain; it does not assert unrestricted
+derivative uniqueness at that endpoint.
+
+The remaining fixtures exercise products on arbitrary proof-indexed domains,
+the empty finite sum, and two identical entropy summands. Domain admission
+proofs travel with every argument, so no function is evaluated outside its
+domain and no real-valued membership test is introduced.
+-/
+
 namespace Thesis.Examples.ConstructiveEntropyDerivative
 open Probability ConstructiveReal
 

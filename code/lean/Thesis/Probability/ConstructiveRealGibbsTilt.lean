@@ -3,6 +3,19 @@ import Thesis.Probability.ConstructiveRealAffineSimplex
 import Thesis.Probability.ConstructiveRealEntropyVectorConcavity
 import Thesis.Probability.ConstructiveRealNaturalLog
 
+/-!
+# Constructing analytic finite Gibbs laws by exponential tilting
+
+Each declared state supplies an offset and a slope in the log weight.
+Exponentiating these affine scores and summing gives the partition value.
+The nonempty carrier and positive exponential bounds give a computable
+floor for the partition, which licenses construction of its reciprocal.
+Normalization then follows for the actual weights.
+Coordinate floors and unit-interval witnesses allow expectations, covariance,
+entropy and logarithms of the partition to use the same law. These are
+auxiliary analytic values alongside the library's rational finite laws.
+-/
+
 namespace Thesis.Probability
 open ConstructiveReal
 open Distros.RationalLinear

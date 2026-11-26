@@ -2,6 +2,23 @@ import Thesis.Probability.Distros.LogLinearEntropy
 import Thesis.Probability.Distros.EntropyOptimize
 import Thesis.Probability.Distros.EntropyHomogeneous
 
+/-!
+# An exactly feasible rational entropy approximation at mean one half
+
+On outcomes `[0,1,2]`, the candidate masses `[62/100,26/100,12/100]` satisfy
+the exact mean constraint and repeated negative constant rows. Its record
+splits the first atom and retains a null outlier. A different, positive
+geometric reference supplies an affine log-score upper certificate; that
+reference is deliberately not itself feasible at the requested mean.
+
+Homogeneous exact-log arithmetic bounds the candidate below and every
+feasible rational law above, yielding `[1.2995,1.3005]` bits with width
+`1/1000`. This certifies approximation to the global optimum without
+asserting a rational exact maximizer. The general total constructor is
+also exposed for any positive rational error, with an explicit warning
+that its exhaustive fallback can be expensive.
+-/
+
 namespace Thesis.Examples.EntropyMeanHalf
 open Probability Probability.Distros
 

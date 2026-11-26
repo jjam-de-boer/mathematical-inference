@@ -1,6 +1,18 @@
 import Thesis.Probability.ConstructiveDerivativeAlgebra
 import Thesis.Probability.ConstructiveRealDistanceAlgebra
 
+/-!
+# Uniqueness and presentation transport for effective derivatives
+
+Two derivative certificates provide two effective error moduli. Choosing
+a positive rational step inside both radii lets their remainder estimates
+be compared at an actual nearby point. Cancelling the common function
+value and this positive step bounds the difference of the slopes at every
+requested precision, proving value equivalence constructively.
+Transport to another presentation of the base point retains the original
+modulus and requires equivalence of the corresponding function values.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.HasDerivativeAt
 open ConstructiveReal
 

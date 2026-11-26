@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealRing
 import Thesis.Probability.ConstructiveRealScaling
 
+/-!
+# Natural scaling and positive natural division in analytic arithmetic
+
+Repeated addition agrees with multiplying by the embedded natural.
+Division by a supplied positive natural uses the corresponding exact
+rational reciprocal, for every presentation of the value. The bound
+on divided rational differences is used to control the enclosure
+arithmetic, including signed values and zero differences.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 /-- Division by a positive natural cannot increase an absolute difference. -/

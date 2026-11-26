@@ -1,6 +1,15 @@
 import Thesis.Probability.ConstructiveRealDistributivity
 import Thesis.Probability.RationalMonomial
 
+/-!
+# Finite multiplicative algebra of the constructed real values
+
+Natural powers use repeated multiplication with the unit as the empty
+product. Their algebra uses real-value equivalence, allowing different
+approximation schedules. Multiplication distributes over each finite sum,
+which connects the scalar arithmetic to polynomial and moment identities.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 theorem neg_unique (a b : ConstructiveReal) (canceled : Equiv (add a b) zero) : Equiv b (neg a) := by

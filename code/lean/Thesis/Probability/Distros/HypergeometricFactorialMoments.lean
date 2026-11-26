@@ -6,6 +6,22 @@ import Thesis.Probability.Distros.FactorialPGF
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Mixed factorial moments without replacement
+
+An ordered-draw count presentation has the same occupancy law as the subset
+presentation: every unordered sample has exactly the same factorial number
+of orderings. The common weight scaling is proved before normalization.
+Its unnormalized mixed factorial integrals can then be computed recursively
+using falling-factorial convolution.
+
+The primary moment identity keeps the population falling factorial as a
+multiplier, so it remains valid when that factor is zero. Orders above the
+sample size are proved to give actual zero moments separately. The familiar
+ratio is exposed only with an explicit positive-denominator bound on the
+total requested order, preserving zero-stock and excessive-order cases.
+-/
+
 /-- Ordered-draw multiplicity version of the same occupancy law. -/
 def multicolourDepletingCountAtoms (n : Nat) (stocks : List Nat) : List (List Nat × Nat) :=
   (multinomialAtoms n (List.replicate stocks.length 1)).map
@@ -129,6 +145,8 @@ theorem multicolourDepletingCount_joint_integral (n : Nat) (stocks orders : List
             intro used _
             ac_rfl
           rw [terms, fallingBeta_factorial_moment]
+          -- If the requested tail orders exceed its stock total, their
+          -- factorial product is already zero. Cancel no population factor.
           by_cases supportedOrders : orders.sum ≤ stocks.sum
           · have parameter : stock + (stocks.sum - orders.sum) - order = (stock :: stocks).sum - (order :: orders).sum := by
               simp only [List.sum_cons]
@@ -156,6 +174,8 @@ theorem multivariateHypergeometric_jointFactorialMoment_scaled (n : Nat) (stocks
       natIntegral (multicolourDepletingCountAtoms n stocks) (jointFalling orders)) * 1 =
     (fallingFactorial n orders.sum * jointFalling orders stocks) * fallingFactorial stocks.sum n
   rw [multicolourDepletingCount_joint_integral n stocks orders dimension, Nat.mul_one]
+  -- A legitimate order splits the population falling factorial; an order
+  -- above the sample size vanishes on the sample factor instead.
   by_cases within : orders.sum ≤ n
   · have split : fallingFactorial stocks.sum n = fallingFactorial stocks.sum orders.sum *
         fallingFactorial (stocks.sum - orders.sum) (n - orders.sum) := by

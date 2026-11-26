@@ -1,6 +1,22 @@
 import Thesis.Probability.ConstructiveUniformEntropyLine
 import Thesis.Probability.FiniteGibbsEntropyVariation
 
+/-!
+# Uniform natural-entropy variation on a positive affine Gibbs path
+
+The finite affine coordinates are admitted on an explicit positive domain,
+have zero total velocity, and agree there with a fixed Gibbs family's
+masses at a possibly varying parameter. Scalar entropy remainders first
+construct the uniform derivative, then the proved affine Gibbs gradient
+rewrites its slope as parameter times energy variation minus offset
+variation.
+
+No entropy derivative is supplied as a premise and no uniformity is
+deduced from isolated pointwise statements. Positivity, the tangent
+equation and the whole-domain Gibbs agreement are explicit data; the
+domain may include closed interval endpoints.
+-/
+
 namespace Thesis.Probability.FiniteGibbsTilt
 open ConstructiveReal
 

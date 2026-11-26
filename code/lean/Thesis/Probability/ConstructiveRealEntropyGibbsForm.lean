@@ -1,6 +1,18 @@
 import Thesis.Probability.ConstructiveRealEntropyMultipliers
 import Thesis.Probability.ConstructiveRealLogInverse
 
+/-!
+# Turning actual entropy multipliers into a normalized Gibbs form
+
+Scores use the original rational row responses and the supplied
+natural-unit coefficients. Exponentiating the negative score and
+summing gives the partition value. A concrete state proves its positive
+floor, so its reciprocal is constructed. The stationary equation and
+normalization identify the law coordinatewise and force its offset to
+be log(Z)-1. Necessary coefficients at a positive maximum are produced
+by the preceding elimination result.
+-/
+
 namespace Thesis.Probability.Distros.RationalEntropyProblem
 open ConstructiveReal
 

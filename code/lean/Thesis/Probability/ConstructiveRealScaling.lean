@@ -1,5 +1,14 @@
 import Thesis.Probability.ConstructiveRealAdditive
 
+/-!
+# Scaling certified enclosures by finite natural data
+
+Natural scaling is repeated addition. Positive natural division asks the
+input for a precision scaled by the divisor, so the quotient endpoints
+fit the original error request. Width and coherence follow from signed
+rational comparisons, using the positivity of the actual divisor.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 theorem divideNat_le_iff (a b : SignedRatio) (n : Nat) (positive : 0 < n) :

@@ -3,6 +3,20 @@ import Thesis.Probability.Distros.OccupancyRank
 namespace Thesis.Probability.Distros
 open RationalVector
 
+/-!
+# Full operator certificates in deterministic occupancy cases
+
+Zero trials make all three occupancy covariance operators identically zero.
+Taking the whole hypergeometric population does the same because the count
+vector is deterministic. Row null criteria prove these statements for every
+coefficient vector, rather than only for the associated quadratic form.
+
+The image basis is therefore empty and the entire standard coordinate basis
+spans the kernel. Every declared category, including null categories, remains
+an ambient coordinate. An empty category list also gives an empty ambient
+space; a nonempty list of zero stocks retains its declared coordinates.
+-/
+
 /-- Zero trials annihilate every covariance direction, including null
 categories. These results identify the full operator, not only its quadratic form. -/
 theorem multinomial_zero_covarianceOperator (weights : List Nat) (positive : 0 < weights.sum) (coefficients : Vector weights.length) :
@@ -22,14 +36,17 @@ theorem multivariateHypergeometric_zero_covarianceOperator (stocks : List Nat)
   ((multivariateHypergeometricDistro 0 stocks positive).occupancyOperator_kernel_iff_rows stocks.length coefficients).mpr
     ((multivariateHypergeometric_covarianceRows_zero_iff 0 stocks positive (natCoefficients coefficients)).mpr (Or.inl rfl))
 
-/-- Taking the entire population leaves a deterministic count vector. The
-empty population is included, with an empty ambient coordinate space. -/
+/-- Taking the entire population leaves a deterministic count vector.
+An empty category list is included, with an empty ambient coordinate space;
+zero-stock categories in any nonempty list remain ambient coordinates. -/
 theorem multivariateHypergeometric_full_covarianceOperator (stocks : List Nat)
     (positive : 0 < Combinatorics.binom stocks.sum stocks.sum) (coefficients : Vector stocks.length) :
     Equiv (((multivariateHypergeometricDistro stocks.sum stocks positive).occupancyOperator stocks.length).apply coefficients) zero :=
   ((multivariateHypergeometricDistro stocks.sum stocks positive).occupancyOperator_kernel_iff_rows stocks.length coefficients).mpr
     ((multivariateHypergeometric_covarianceRows_zero_iff stocks.sum stocks positive (natCoefficients coefficients)).mpr (Or.inr (Or.inl rfl)))
 
+/-- Construct a rank-zero certificate from the proved zero operator;
+the image dimension is not inferred from the number of positive categories. -/
 def multinomial_covarianceRank_zero (weights : List Nat) (positive : 0 < weights.sum) :
     RankCertificate ((multinomialDistro 0 weights positive).occupancyOperator weights.length) 0 :=
   zeroRank _ (multinomial_zero_covarianceOperator weights positive)

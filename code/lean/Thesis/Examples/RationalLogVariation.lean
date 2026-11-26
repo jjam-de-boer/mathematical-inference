@@ -1,5 +1,21 @@
 import Thesis.Probability.RationalLogVariation
 
+/-!
+# Logarithmic secants from weighted concavity and effective limits
+
+Weighted AM-GM and logarithmic concavity are instantiated at arguments two
+and eight with nonunit arithmetic mean five. Zero multiplicities, equal
+secants and equivalent unreduced steps remain admitted. Offset secants are
+compared by their positive step sizes and converge to a constructed real
+constant between one and three, with an explicit stage-four error bound.
+
+The non-dyadic positive increment `3/256` satisfies the computed right-
+variation modulus and gives analytic error `3/2048`. This is a quantified
+positive-step variation result, not an assumed two-sided derivative.
+The final zero-coefficient dyadic-step fixture recovers the limit of a
+constant effective sequence without a spurious positive-error requirement.
+-/
+
 namespace Thesis.Examples.RationalLogVariation
 open Probability ConstructiveReal
 

@@ -3,6 +3,17 @@ import Thesis.Probability.ConstructiveDerivativeLocalDomain
 import Thesis.Probability.ConstructiveRealMomentRows
 import Thesis.Probability.ConstructiveRealMomentConvexity
 
+/-!
+# Admissible affine directions near a positive simplex point
+
+Taking a finite minimum of rational radii preserves half of each supplied
+coordinate floor in a two-sided neighborhood of the base point. Signed
+directions require no analytic sign tests. Linear rows evaluate affinely,
+so an annihilated row is kept exactly at every parameter. Normalization
+and nonnegativity give the upper coordinate bound one, including base
+points already at that endpoint.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A finite intersection of computed positive radii. The empty family has

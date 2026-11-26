@@ -1,16 +1,34 @@
 import Thesis.Probability.Distros.JointFactorialMoments
 import Thesis.Probability.Distros.SignedCovariance
+/-!
+Coordinate moments and signed covariances for reinforced count laws.
+
+The general joint factorial-moment theorem is specialized by selecting one
+coordinate or two distinct coordinates in its order vector. Support dimensions
+justify reading these vectors on actual occupancy atoms. This yields a mean
+independent of the reinforcement increment and a mixed second moment whose
+denominator contains the increment. Covariance uses an integer numerator so
+negative dependence between distinct counts is retained rather than truncated.
+The unit-increment corollaries give Dirichlet-multinomial cross moments.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-- Common product interface for falling count factors and rising parameter
+factors. Unequal dimensions return zero instead of silently dropping coordinates. -/
 def coordinateProduct (factor : Nat → Nat → Nat) : List Nat → List Nat → Nat
   | [], [] => 1
   | value :: values, order :: orders => factor value order * coordinateProduct factor values orders
   | _, _ => 0
 
+/-- A factorial-moment order vector concentrated at one coordinate.
+An out-of-range index changes nothing; its uses below require an in-range proof. -/
 def singleOrders (length index order : Nat) : List Nat :=
   (List.replicate length 0).modify index (fun old => old + order)
 
+/-- Order one at each of two indices, or order two if they coincide.
+The cross-moment specialization separately requires distinct indices. -/
 def pairOrders (length i j : Nat) : List Nat :=
   ((List.replicate length 0).modify i (fun old => old + 1)).modify j (fun old => old + 1)
 
@@ -34,6 +52,8 @@ theorem coordinateProduct_single (factor : Nat → Nat → Nat) (zero : ∀ valu
             coordinateProduct, zero, Nat.one_mul, List.getD_cons_succ]
           exact ih index (by simpa only [List.length_cons, Nat.succ_lt_succ_iff] using within)
 
+/-- Extract a product of two distinct coordinates from a mixed order vector.
+The distinctness assumption rules out confusing a second factorial factor with a square. -/
 theorem coordinateProduct_pair (factor : Nat → Nat → Nat) (zero : ∀ value, factor value 0 = 1)
     (one : ∀ value, factor value 1 = value) (values : List Nat) (i j : Nat)
     (hi : i < values.length) (hj : j < values.length) (different : i ≠ j) :
@@ -138,6 +158,8 @@ theorem reinforcedCount_coordinate_factorialMoment (n increment : Nat) (alphas :
   rw [obs]
   simpa only [jointFactorialMoment, orderSum, factors] using joint
 
+/-- The expected count is n times the initial colour proportion, for every
+natural reinforcement increment and including zero selected weight. -/
 theorem reinforcedCount_coordinate_mean (n increment : Nat) (alphas : List Nat)
     (positive : 0 < alphas.sum) (i : Nat) (within : i < alphas.length) :
     QProb.Equiv ((reinforcedCountDistro n alphas increment positive).expectNat (fun counts => counts.getD i 0))

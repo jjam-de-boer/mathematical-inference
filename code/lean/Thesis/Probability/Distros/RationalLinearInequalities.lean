@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.RationalIntervalCheck
 
+/-!
+Integer-coefficient inequalities over explicit signed rational assignments.
+
+The finite dot product exposes its last variable, so a row separates into
+a pivot coefficient and a residual bound on that variable. Projection keeps
+zero-pivot rows and combines every positive-pivot row with every negative-pivot
+row. Positive integer multipliers cancel the eliminated coefficient without
+introducing rational coefficients. Dimension, satisfaction and membership
+interfaces expose the exact projected system for later soundness and lifting
+proofs; construction alone is not used as a feasibility oracle.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 
 /-- Integer coefficient rows act on explicit signed rational assignments.
@@ -65,6 +77,8 @@ theorem dot_scale_coefficients (variables : Nat) (factor : Int) (coefficients : 
         (ih (fun i => coefficients i.castSucc) (fun i => values i.castSucc)))
         (SignedRatio.equiv_symm (SignedRatio.scaleInt_add _ _ _))
 
+/-- One closed linear inequality: an integer coefficient vector and a
+signed rational upper bound. Assignment values themselves may be arbitrary rationals. -/
 structure Inequality (variables : Nat) where
   coefficients : Fin variables → Int
   bound : SignedRatio
@@ -101,6 +115,8 @@ def combine (upper lower : Inequality (variables + 1)) : Inequality variables :=
   ⟨fun i => -lower.pivot * upper.coefficients i.castSucc + upper.pivot * lower.coefficients i.castSucc,
     SignedRatio.add (SignedRatio.scaleInt (-lower.pivot) upper.bound) (SignedRatio.scaleInt upper.pivot lower.bound)⟩
 
+/-- Keep constraints independent of the last variable and enumerate
+all lower/upper compatibility pairs. One-sided bounds need no pair. -/
 def project (rows : List (Inequality (variables + 1))) : List (Inequality variables) :=
   ((rows.filter (fun row => decide (row.pivot = 0))).map Inequality.trim) ++
     (rows.filter (fun row => decide (0 < row.pivot))).flatMap (fun upper =>

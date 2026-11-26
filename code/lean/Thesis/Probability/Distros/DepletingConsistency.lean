@@ -1,6 +1,19 @@
 import Thesis.Probability.Distros.DepletingPrefix
 import Thesis.Probability.FiniteRecordSums
 
+/-!
+Finite-horizon consistency and successive count blocks without replacement.
+
+Extending a permitted sampling horizon does not change the law of its first
+block. A raw mass factorization proves this by counting all possible ordered
+suffixes from the remaining total stock; impossible zero-weight prefixes do
+not need a stock-conservation assertion. The count pushforward therefore
+has the first block's hypergeometric law. The final theorem factors a joint
+block event into the first histogram mass and the future hypergeometric law
+from the remaining stocks. It expresses conditional sampling, not independence
+of disjoint draw blocks.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- The unnormalized first-block mass factors by the number of possible

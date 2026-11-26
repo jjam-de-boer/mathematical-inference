@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealLogLimits
 import Thesis.Probability.ConstructiveRealProductLimits
 
+/-!
+# Positive logarithm multiplication by rational approximation
+
+Positive rational multiplication commutes with real embedding, and the
+product of supplied floors bounds the analytic product. Applying the
+exact rational logarithm product law to effective positive sequences
+and transferring their product and logarithm limits proves the identity
+for arbitrary positive analytic inputs, with the domain retained.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Positive-rational multiplication agrees with its real embedding. -/

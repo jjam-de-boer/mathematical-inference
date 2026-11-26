@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.CrossEntropy
 
+/-!
+The uniform reference and the sharp finite Shannon entropy bound.
+
+A nonempty declared grid gives one unit-weight atom per distinct state.
+The resulting reference is positive on every cell, so cross entropy against
+it is the constant log₂ of the grid cardinality. Gibbs comparison yields
+the entropy bound with equality exactly for this uniform law. Null grid
+cells of a compared law remain declared and count toward that cardinality;
+atom splitting and null outliers cannot alter the equality criterion.
+A normalized supported law also proves that its grid cannot be empty.
+-/
+
 namespace Thesis.Probability.Distros
 
 private theorem unit_total (values : List A) :
@@ -32,6 +44,8 @@ theorem EntropyGrid.uniform_support (grid : EntropyGrid A) (positive : 0 < grid.
   rcases List.mem_map.mp member with ⟨value, listed, rfl⟩
   exact listed
 
+/-- Each listed state has exactly one unit-weight occurrence, so its
+singleton mass is 1 divided by the declared cardinality as an actual fraction. -/
 theorem EntropyGrid.uniform_pmf [DecidableEq A] (grid : EntropyGrid A) (positive : 0 < grid.cells.length)
     (value : A) (listed : value ∈ grid.cells) :
     (grid.uniform positive).pmf value = (⟨1, grid.cells.length, positive⟩ : QProb) := by
@@ -55,6 +69,8 @@ theorem EntropyGrid.nonempty_of_support [DecidableEq A] (grid : EntropyGrid A) (
     rw [empty, List.map_nil, List.sum_nil] at normalized
     exact False.elim (Nat.ne_of_gt μ.record.den_pos normalized.symm)
 
+/-- The uniform reference's information score is constant. Integrating
+it uses the compared law's normalization, regardless of which cells have zero mass. -/
 theorem Distro.crossEntropy_uniform [DecidableEq A] (μ : Distro A) (grid : EntropyGrid A)
     (support : μ.AlmostSurely (fun value => value ∈ grid.cells)) (positive : 0 < grid.cells.length) :
     ExactLog.Equiv (μ.crossEntropy (grid.uniform positive) grid support (grid.uniform_support positive) (grid.uniform_positive positive))

@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.RationalConcentration
 import Thesis.Probability.Construction
 
+/-!
+Finite integration and event comparison modulo zero-weight occurrences.
+
+Almost-sure decidable predicates are checked on the actual finite atom list,
+without assuming the ambient outcome type finite. Natural and rational
+integrals, expectations and event probabilities ignore arbitrary differences
+at zero-weight atoms. Singleton exclusion then yields zero PMF, and matching
+all singleton PMFs determines the full finite event law. The latter builds
+its finite carrier from both existing records; the arguments never mutate
+records or delete their null labels.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Almost-sure decidable predicates are checked on the finite atom list;
@@ -56,6 +68,8 @@ theorem Distro.probVal_congr_positive (μ : Distro Ω) (left right : Event Ω)
     FiniteProbRecord.eventMass μ.record.atoms right * μ.record.den
   rw [mass]
 
+/-- An outcome excluded by every positive-weight occurrence has zero
+singleton mass, even if the record still stores zero-weight occurrences of that label. -/
 theorem Distro.pmf_zero_of_almostSure_ne [DecidableEq Ω] (μ : Distro Ω) (value : Ω)
     (avoids : μ.AlmostSurely (fun x => x ≠ value)) : QProb.Equiv (μ.pmf value) QProb.zero :=
   QProb.equiv_trans (μ.probVal_congr_positive (FiniteProbRecord.singletonEvent value) (fun _ => false)

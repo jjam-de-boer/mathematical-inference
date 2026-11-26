@@ -1,6 +1,19 @@
 import Thesis.Probability.Distros.UncertaintyMeasure
 import Thesis.Probability.Distros.RationalPolya
 
+/-!
+Common-count presentations of normalized rational probability vectors.
+
+`ofCounts` interprets a natural count list summing to a positive denominator
+as rational coordinates. `countPresentation` computes such a presentation
+for any normalized rational vector by clearing its actual entry denominators;
+there is no supplied denominator bound. The proof identifies corresponding
+coordinates up to rational equivalence and retains zero coordinates.
+These counts are an exact finite representation of masses, not observations
+from an experiment or an additional assumption about empirical frequencies.
+The SameMasses helpers bridge indexed and recursive coordinate comparisons.
+-/
+
 namespace Thesis.Probability.ProbabilityVector
 
 theorem sameMasses_refl (values : List QProb) : SameMasses values values := by
@@ -16,6 +29,9 @@ theorem sameMasses_map (values : List A) (first second : A → QProb)
   | cons value rest ih =>
       exact ⟨same value (List.mem_cons_self ..), ih (fun entry member => same entry (List.mem_cons_of_mem _ member))⟩
 
+/-- Matching dimensions and equivalent in-range coordinates suffice for
+the recursive SameMasses relation. No arbitrary choices of fraction normal forms
+are needed to compare the two vector presentations. -/
 theorem sameMasses_of_getD (first second : List QProb) (dimension : first.length = second.length)
     (same : ∀ index, index < first.length → QProb.Equiv (first.getD index QProb.zero) (second.getD index QProb.zero)) :
     SameMasses first second := by
@@ -45,6 +61,8 @@ def ofCounts (counts : List Nat) (den : Nat) (positive : 0 < den) (mass : counts
     rw [mass] at common
     exact QProb.equiv_trans common (by simp only [QProb.Equiv, QProb.one, Nat.mul_one, Nat.one_mul])
 
+/-- Read an in-range coordinate of the constructed vector as its original
+count over the common denominator. The range condition excludes the default entry. -/
 theorem ofCounts_getD (counts : List Nat) (den : Nat) (positive : 0 < den) (mass : counts.sum = den)
     (index : Nat) (within : index < counts.length) :
     (ofCounts counts den positive mass).masses.getD index QProb.zero = (⟨counts.getD index 0, den, positive⟩ : QProb) := by
@@ -52,6 +70,8 @@ theorem ofCounts_getD (counts : List Nat) (den : Nat) (positive : 0 < den) (mass
   rw [← List.getElem_eq_getD (h := by simpa only [List.length_map] using within) QProb.zero,
     List.getElem_map, List.getElem_eq_getD (h := within) 0]
 
+/-- A computed natural-count representation, with a positive denominator,
+exact total balance and coordinatewise rational equivalence to the target vector. -/
 structure CountPresentation (vector : ProbabilityVector) where
   counts : List Nat
   den : Nat

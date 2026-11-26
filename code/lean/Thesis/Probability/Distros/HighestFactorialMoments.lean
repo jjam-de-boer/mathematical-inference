@@ -5,6 +5,21 @@ import Thesis.Probability.Distros.DepletingHistory
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Fixed-total count laws need only the highest mixed orders
+
+When the requested mixed order has the same total as a count vector, a
+nonzero falling kernel forces coordinatewise comparison and hence equality
+of the two vectors. The kernel is therefore a singleton indicator times a
+strictly positive product of coordinate factorials.
+
+For an almost-sure fixed-total law, its highest-order mixed moments directly
+recover every compatible singleton mass. With a declared dimension, those
+moments determine the full event law. This avoids lower rectangular orders
+and specializes to multinomial, reinforced and hypergeometric PMFs, including
+zero trials and zero-probability cells.
+-/
+
 theorem depletingCountsWithin_sum_le (counts stocks : List Nat) (within : depletingCountsWithin counts stocks) :
     counts.sum ≤ stocks.sum := by
   have balance := depletingState_sum stocks counts within

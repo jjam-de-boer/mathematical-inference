@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveRealLogSecant
 import Thesis.Probability.ConstructiveRealDistanceAlgebra
 import Thesis.Probability.ConstructiveRealRationalScaling
 
+/-!
+# Effective first variation of the rational logarithm from the right
+
+The previously constructed logarithmic secant limit supplies the linear
+coefficient. Cancelling the positive rational step converts the secant
+error into an error for log(1+h), first at dyadic scales and then with a
+radius computed from a requested positive rational precision.
+Only positive rational increments are covered here. Left increments and
+the extension to constructive real arguments are proved separately.
+-/
+
 namespace Thesis.Probability.RationalLogSecant
 open ConstructiveReal RationalGeometricSeries
 

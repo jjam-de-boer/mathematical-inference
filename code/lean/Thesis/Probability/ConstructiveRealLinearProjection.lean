@@ -1,5 +1,16 @@
 import Thesis.Probability.ConstructiveRealLinearRows
 
+/-!
+# Projecting variables with integer pivots and analytic bounds
+
+The eliminated coefficient is an integer, so positive, negative and
+zero rows can be separated constructively. Projection combines bounds
+by exact analytic arithmetic. Every full satisfying point projects to a
+satisfying point. Given a projected witness, finite minima and maxima
+construct a compatible eliminated coordinate, giving the converse
+without deciding analytic order.
+-/
+
 namespace Thesis.Probability.AnalyticLinear
 open ConstructiveReal
 

@@ -3,6 +3,17 @@ import Thesis.Probability.ConstructiveRealUniformBounds
 import Thesis.Probability.ConstructiveRealExpDerivative
 import Thesis.Probability.ConstructiveRealInverseDerivative
 
+/-!
+# Uniform first variation for exponential and reciprocal maps
+
+A common bound on fine approximants supplies one exponential radius
+schedule over the whole admitted domain. A positive rational floor gives
+a different uniform schedule for reciprocals on the positive half-line.
+The reciprocal slope has computable interval and magnitude bounds, which
+are useful when composing uniform derivative certificates. The data do
+not require deciding the sign of an arbitrary real.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Exponential first variation with one computed modulus for any explicitly

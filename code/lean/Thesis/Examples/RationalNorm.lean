@@ -1,5 +1,19 @@
 import Thesis.Probability.RationalNorm
 
+/-!
+# Signed rational product errors and two-sided magnitude bounds
+
+Four signed inputs give an exact product difference of magnitude `1/24`.
+The reusable product-error theorem bounds it from the separately checked
+factor errors and magnitudes, even though the inputs and algebraic error
+terms need not be nonnegative.
+
+Cancellation has zero magnitude and equivalent unreduced negative
+fractions have equal magnitudes. The final characterization rewrites a
+magnitude upper bound as both signed inequalities, preserving the meaning
+of an absolute error without clipping negative input values.
+-/
+
 namespace Thesis.Examples.RationalNorm
 open Probability
 

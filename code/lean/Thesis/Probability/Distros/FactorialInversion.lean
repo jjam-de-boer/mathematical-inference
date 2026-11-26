@@ -5,6 +5,19 @@ import Thesis.Probability.Distros.RationalChebyshev
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Explicit inversion from bounded factorial moments to singleton masses
+
+The finite inverse Pascal kernel expresses a singleton indicator as a signed
+linear combination of binomial coefficients. Integrating that identity gives
+an explicit alternating sum of normalized factorial moments for each numeric
+PMF cell, even when its target lies outside the support bound.
+
+Signs live only in auxiliary signed rational arithmetic; probability-record
+weights remain natural. The support bound is required only on positive atoms,
+so null outliers stay in the original record without affecting inversion.
+-/
+
 /-- Integer auxiliary coefficients embed into a finite rational sum exactly. -/
 theorem signedRatio_intRangeSum (n : Nat) (f : Nat → Int) :
     SignedRatio.Equiv (SignedRatio.listSum ((List.range n).map (fun k => (⟨f k, 1, Nat.zero_lt_one⟩ : SignedRatio))))
@@ -80,6 +93,8 @@ theorem NatDistro.pmf_factorial_inversion (μ : NatDistro Ω) (bound value : Nat
       (μ.distro.record.probVal event).toSignedRatio :=
     SignedRatio.equiv_trans (μ.distro.rationalExpectation_congr_positive kernel _
       (fun atom member weight => inverseBinomial_ratio_kernel (μ.embed atom.1) value bound (support atom member weight))) indicator
+  -- Having identified the integrated kernel with the singleton event,
+  -- exchange only a finite sum with expectation to expose its moments.
   have expansion := μ.distro.rationalExpectation_listSum (List.range (bound + 1)) terms
   have moments := SignedRatio.listSum_map_congr (List.range (bound + 1))
     (fun order => μ.distro.rationalExpectation (terms order))

@@ -2,9 +2,23 @@ import Thesis.Probability.Distros.DepletingSupport
 import Thesis.Probability.Distros.HypergeometricAggregation
 import Thesis.Probability.Distros.CategoricalAggregation
 
+/-!
+Exact colour merging for sampling without replacement.
+
+Each original colour has a destination label, and group stocks are the sums
+of its constituent stocks. Removing an available ball commutes with this
+merging; positivity matters because truncated subtraction need not commute
+on an impossible removal. The raw event-mass induction separates zero-weight
+branches before using that identity. It proves coarsening even for horizons
+above the population size at the unnormalized level. For permitted horizons,
+total-stock preservation turns this into equality of complete path laws.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-- Adding a ball and then removing it restores any stock, without a
+positivity assumption, including a modification outside the list. -/
 private theorem modify_add_one_sub_one (values : List Nat) (index : Nat) :
     (values.modify index (fun x => x + 1)).modify index (fun x => x - 1) = values := by
   induction values generalizing index with
@@ -13,6 +27,8 @@ private theorem modify_add_one_sub_one (values : List Nat) (index : Nat) :
       | zero => simp only [List.modify_zero_cons, Nat.add_sub_cancel]
       | succ index => simp only [List.modify_succ_cons, ih]
 
+/-- The reverse cancellation requires a genuinely available selected
+ball; otherwise natural subtraction at zero would lose information. -/
 private theorem modify_sub_one_add_one (values : List Nat) (index : Nat)
     (within : index < values.length) (positive : 0 < values.getD index 0) :
     (values.modify index (fun x => x - 1)).modify index (fun x => x + 1) = values := by
@@ -55,6 +71,8 @@ private theorem finWeighted_member_weight (n : Nat) (w : Fin n → Nat) (atom : 
         cases same
         rfl
 
+/-- Rewrite a finite categorical weighted sum as the corresponding
+natural dot product, keeping normalization out of the aggregation calculation. -/
 private theorem categorical_natIntegral_dot (weights args : List Nat) (dimension : args.length = weights.length) :
     natIntegral (finWeighted weights.length (fun i => weights.getD i.val 0))
       (fun i => args.getD i.val 0) = weightedNatArgument weights args := by

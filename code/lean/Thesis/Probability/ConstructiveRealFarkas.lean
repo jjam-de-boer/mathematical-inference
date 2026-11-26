@@ -1,5 +1,16 @@
 import Thesis.Probability.ConstructiveRealLinearCombinations
 
+/-!
+# Tracking original row combinations through constructive elimination
+
+Each projected row carries the nonnegative combination from which it
+was computed. Erasing these witnesses gives the ordinary projection,
+with the same integer coefficients and analytic bounds. At dimension zero,
+the assumed sign of every canceled combination certifies the remaining
+constant rows. Back substitution then returns an actual solution, giving
+finite feasibility under the stated Farkas condition.
+-/
+
 namespace Thesis.Probability.AnalyticLinear
 open ConstructiveReal
 

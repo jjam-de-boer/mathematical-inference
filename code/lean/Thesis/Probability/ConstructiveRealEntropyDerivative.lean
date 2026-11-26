@@ -2,6 +2,18 @@ import Thesis.Probability.ConstructiveRealEntropyFormula
 import Thesis.Probability.ConstructiveDerivativeWithinProduct
 import Thesis.Probability.ConstructiveDerivativeAlgebra
 
+/-!
+# Scalar entropy differentiation with an explicit positive floor
+
+The domain supplies a positive rational lower bound and the upper bound
+one. Within it, the logarithm and product derivative rules construct the
+first variation of the continuous entropy term. Cancelling the positive
+reciprocal yields the bit slope -log2(p)-1/ln(2); multiplication by the
+proved ln(2) calibration yields the natural slope -ln(p)-1.
+The lower floor is essential domain data. Entropy remains continuously
+defined at zero elsewhere, but no derivative at zero is asserted here.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A positive part of the entropy domain. Both membership proofs are

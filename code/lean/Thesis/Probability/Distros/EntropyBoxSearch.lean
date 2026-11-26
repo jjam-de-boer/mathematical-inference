@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.EntropyBoxes
 
+/-!
+A total finite-box reference algorithm for entropy approximation.
+
+The complete rational feasibility solver supplies one exactly feasible law
+from each nonempty coordinate box; infeasible boxes contribute none. Coverage
+and the entropy continuity modulus guarantee a nearby feasible candidate for
+every feasible law, without searching over probability denominators. Exact
+log comparisons select the best candidate and certify a global symbolic
+entropy gap. A universal log-cardinality bound can skip enumeration when
+already sufficient. The exhaustive fallback is finite but may be expensive.
+-/
+
 namespace Thesis.Probability.Distros.PartialMomentProblem
 
 /-- Solve every finite box with the existing complete rational feasibility
@@ -31,6 +43,8 @@ theorem boxCandidates_cover [DecidableEq A] (problem : PartialMomentProblem A) (
       exact False.elim ((problem.withBox size positive indices).refutation_not_realizable certificate
         ⟨μ, inside.1, inside.2⟩)
 
+/-- Evaluate a candidate on the problem's unchanged entropy grid.
+Its compatible-law support proof permits forced-zero cells and null outliers. -/
 private def lawEntropy [DecidableEq A] (problem : PartialMomentProblem A) (law : problem.CompatibleLaw) : ExactLog :=
   law.distro.entropy problem.entropyGrid law.support
 

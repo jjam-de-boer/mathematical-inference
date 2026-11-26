@@ -1,6 +1,22 @@
 import Thesis.Probability.ConstructiveUniformDerivative
 import Thesis.Probability.ConstructiveRealUniformBounds
 
+/-!
+# Uniform composition with explicit quantitative slope bounds
+
+The common derivative modulus and a supplied bound on rational slope
+approximants yield one local change estimate for every admitted pair in
+the domain. General composition uses such bounds for both derivative
+families, together with a proof that inner images belong to the outer
+domain, to construct a uniform product-slope certificate.
+
+The modulus divides two half-error budgets by positive enlarged magnitude
+bounds and controls the outer image radius explicitly. Signed and zero
+slopes are covered. These bounds are supplied quantitative data, rather
+than consequences assumed from compactness or from separate pointwise
+derivatives.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.UniformDerivativeWithin
 open ConstructiveReal
 

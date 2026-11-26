@@ -1,5 +1,20 @@
 import Thesis.Probability.RationalTaylorExponential
 
+/-!
+# A small-domain exponential constructed from rational Taylor sums
+
+An explicit geometric domination certificate supplies the effective limit
+and truncation error of a signed rational series. On `|x| <= 1/2` it yields
+the small exponential, agrees at equivalent half-unit presentations, and
+has cubic terms `1/48` and `-1/48` on the two sides of zero.
+
+The executed enclosure layer places the half-unit exponentials in
+`[1.64,1.66]` and `[0.60,0.62]` at precision `1/100`. A zero domination
+coefficient also remains valid, giving zero remainder for the identically
+zero series at every truncation. Exponentials outside this small-argument
+domain are handled by the separate general construction.
+-/
+
 namespace Thesis.Examples.RationalTaylorExponential
 open Probability
 

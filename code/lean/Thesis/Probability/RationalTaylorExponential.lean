@@ -5,6 +5,20 @@ import Thesis.Probability.RationalMonomial
 namespace Thesis.Probability.RationalTaylorExponential
 open SignedRatio
 
+/-!
+# Exact rational Taylor terms and a certified small-argument exponential
+
+The recurrence computes `x^n/n!` using only positive natural divisors and
+respects rational presentation equivalence. On the rational interval of
+magnitude at most one half, every term is dominated by the unit dyadic
+envelope, including negative arguments.
+
+The resulting effective Cauchy sequence defines a constructive real value
+with an explicit remainder at every truncation. Zero gives one. Extension
+to arbitrary arguments and further analytic identities require the later
+tail and product developments rather than being assumed by this definition.
+-/
+
 /-- Factorials are executable positive naturals. -/
 def factorial : Nat → Nat
   | 0 => 1

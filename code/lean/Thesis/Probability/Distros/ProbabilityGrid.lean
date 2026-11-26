@@ -1,8 +1,22 @@
 import Thesis.Probability.Distros.RationalPolya
 import Thesis.Probability.Distros.PositiveSupport
 
+/-!
+Realize a normalized finite rational table on a bounded natural grid.
+
+The input table specifies masses at cells 0 through bound and proves their
+sum equivalent to one. Common-denominator clearing creates one natural-weight
+atom per cell, including zeros, without expanding weights into unit tickets.
+Normalization ensures the encoded total is positive. The PMF theorem recovers
+each supplied mass exactly, and every declared cell remains present in the
+record. Record occurrence and positive-probability support remain distinct;
+a retained zero cell does not become a possible observation.
+-/
+
 namespace Thesis.Probability.Distros
 
+/-- A normalized sum has equal positive numerator and denominator.
+The common-denominator encoding therefore supplies a nonempty weighted total. -/
 private theorem probabilityGrid_mass_positive (bound : Nat) (probabilities : Nat → QProb)
     (normalized : QProb.Equiv (QProb.listSum ((List.range (bound + 1)).map probabilities)) QProb.one) :
     0 < (rationalUrnWeights ((List.range (bound + 1)).map probabilities)).sum := by
@@ -30,6 +44,8 @@ private theorem probabilityGrid_table_getD (bound : Nat) (probabilities : Nat �
   rw [← List.getElem_eq_getD (h := by simpa only [List.length_map, List.length_range] using Nat.lt_succ_of_le within) QProb.zero]
   simp only [List.getElem_map, List.getElem_range]
 
+/-- All positive-weight occurrences lie inside the declared grid.
+The underlying finite indices in fact bound every constructed occurrence. -/
 theorem probabilityGrid_bounded (bound : Nat) (probabilities : Nat → QProb)
     (normalized : QProb.Equiv (QProb.listSum ((List.range (bound + 1)).map probabilities)) QProb.one) :
     (probabilityGrid bound probabilities normalized).AlmostSurely (fun value => value ≤ bound) := by
@@ -77,6 +93,8 @@ theorem probabilityGrid_pmf (bound : Nat) (probabilities : Nat → QProb)
   rw [rationalUrnWeights_sum, same]
   exact representation
 
+/-- The finite weighted enumeration keeps the specified index even if
+its assigned weight is zero. Later retention proofs use this raw membership. -/
 theorem finWeighted_cell_mem (n : Nat) (weights : Fin n → Nat) (index : Fin n) :
     (index, weights index) ∈ finWeighted n weights := by
   induction n with

@@ -3,6 +3,23 @@ import Thesis.Probability.ConstructiveRealEqualityConstraints
 import Thesis.Probability.ConstructiveRealEntropyPartitionIdentity
 import Thesis.Probability.ConstructiveRealGibbsTiltComparison
 
+/-!
+# Constructing a canonical ensemble at a prescribed rational mean
+
+The original energy observable gives two opposite exact constraint rows.
+A positive feasible law supplies the starting data for the ideal entropy
+optimizer and its fitted natural multipliers. Their coefficient difference
+defines beta, and equality of log weights identifies the actual named
+canonical probabilities with the constructed maximum.
+
+The fitted law attains the requested mean exactly, and every maximum has
+the same probabilities without a row-rank or unique-parameter assumption.
+Beta and ideal masses are analytic values; rational approximation retains
+the original constraints. Positive-temperature interpretation and the
+choice of a fixed-particle sector for a closed physical system are
+separate model/calibration obligations.
+-/
+
 namespace Thesis.Probability.FinitePhysicalModel
 open ConstructiveReal
 open Distros Distros.RationalLinear Distros.RationalEntropyProblem

@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealGibbsTiltComparison
 import Thesis.Probability.ConstructiveRealEqualityConstraints
 
+/-!
+# Multivariate finite Gibbs families with explicit reference weights
+
+The rational feature matrix and positive reference weights are supplied
+on distinct states. Analytic parameters determine finite scores, normalized
+masses and their expectation, covariance and entropy readouts. An affine
+parameter path is identified with a one-parameter finite tilt at every
+point. This bridge uses signed analytic directions and transfers the
+already proved one-parameter derivative estimates.
+-/
+
 namespace Thesis.Probability
 open ConstructiveReal
 open Distros.RationalLinear

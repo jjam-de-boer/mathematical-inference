@@ -3,6 +3,24 @@ import Thesis.Probability.ConstructiveUniformElementary
 import Thesis.Probability.FinitePhysicalEnsembles
 import Thesis.Probability.ConstructiveRealLogInverse
 
+/-!
+# Building a regular binary Gibbs curve from its equations
+
+The two physical states have energies zero and one and equal particle
+number. At parameter `t` their Gibbs weights are `1` and `exp(-t)`; the
+displayed coordinates are `1/(1+exp(-t))` and its complement. The module
+proves equality with the canonical ensemble instead of postulating a
+probability curve with these values.
+
+Uniform regularity is certified on the closed parameter interval `[1,2]`.
+The partition denominator is at least one everywhere, and the interval
+bounds provide a common positive coordinate floor and bounded velocities.
+Exponential, reciprocal and chain rules construct the pointwise and uniform
+remainder data. These are assembled into `RegularProbabilityCurve`, whose
+entropy derivative and zero total velocity are then checked. No logarithm
+at a zero coordinate or unstated path-regularity premise is used.
+-/
+
 namespace Thesis.Examples.BinaryGibbsCurve
 open Probability ConstructiveReal
 open Probability.Distros.RationalLinear

@@ -2,6 +2,16 @@ import Thesis.Probability.ConstructiveDerivativeChain
 import Thesis.Probability.ConstructiveDerivativeWithin
 import Thesis.Probability.ConstructiveRealInverseBounds
 
+/-!
+# Derivatives of reciprocals within a positive denominator domain
+
+The supplied rational floor licenses every reciprocal used in the
+remainder proof. The exact quadratic remainder yields slope -1/x² and
+an effective derivative modulus on that half-line. Restricting an affine
+map to where its denominator is admitted gives the reciprocal-affine
+rule. Its affine slope may vanish or be negative.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private theorem inverse_radius_error_le (lower epsilon radius : PositiveRatio)

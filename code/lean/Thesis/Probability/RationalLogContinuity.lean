@@ -3,6 +3,19 @@ import Thesis.Probability.EntropySmallMass
 import Thesis.Probability.RationalPrecision
 import Thesis.Probability.ConstructiveRealDistance
 
+/-!
+# Effective continuity of rational logarithms away from zero
+
+A finite Bernoulli power bound controls logarithmic increments on a supplied
+positive rational half-line. It yields a conservative rational input modulus
+without a derivative premise or an assumed analytic logarithm inequality.
+
+The exact-log comparison then transfers to the constructed real values.
+Using both one-sided estimates gives a certified two-sided error bound for
+positive rational arguments above the declared lower bound. No uniform
+continuity claim at zero is made.
+-/
+
 namespace Thesis.Probability.PositiveRatio
 
 /-- A conservative explicit input modulus for base-two logarithms on the

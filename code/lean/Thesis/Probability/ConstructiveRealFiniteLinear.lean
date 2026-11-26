@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealLinear
 import Thesis.Probability.IntegerNullspace
 
+/-!
+# Finite analytic pairings and coordinate operations
+
+Pairing sums products on the stated finite index set, preserving the
+coordinate order used by the entropy gradient. The algebraic rules
+handle addition, subtraction and scaling in each compatible argument.
+Embedding signed integer coefficients recovers row evaluation. Unit
+vectors, explicit extension, and simultaneous swaps allow elimination
+arguments to rearrange finite indices without comparing analytic entries.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.FiniteLinear
 open ConstructiveReal
 open Distros.RationalLinear

@@ -2,6 +2,16 @@ import Thesis.Probability.Core
 
 namespace Thesis.Probability.QProb
 
+/-!
+# Decidable order and monotone finite nonnegative rational sums
+
+Cross-multiplied natural comparisons decide rational order without reducing
+fractions. Addition preserves paired inequalities, and induction lifts that
+fact to a finite list whose summands are compared only at listed entries.
+Natural scaling distributes over addition and the same explicit list sum.
+Zero numerators and zero scaling weights require no exceptional branch.
+-/
+
 instance (a b : QProb) : Decidable (LE a b) :=
   inferInstanceAs (Decidable (a.num * b.den ≤ b.num * a.den))
 instance (a b : QProb) : Decidable (LT a b) :=

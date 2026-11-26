@@ -1,6 +1,21 @@
 import Thesis.Probability.ConstructiveRealReciprocal
 import Thesis.Probability.ExactLogInterpretation
 
+/-!
+# Positive reciprocals with certified enclosures and cancellation
+
+Every reciprocal input carries a rational floor `lower > 0`. The product-one
+law, congruence under independent floor witnesses, and positive-factor
+order cancellation all preserve this admission evidence. The reciprocal
+of `2/3` is identified as `3/2` and actually enclosed between `149/100` and
+`151/100` at precision `1/100`.
+
+The same construction applies to `log2(3)` using its exact-log lower bound
+one, without asserting a rational reciprocal value. A positive-floor
+certificate at zero is refuted through the faithful rational embedding;
+the interface supplies no arbitrary inverse there.
+-/
+
 namespace Thesis.Examples.ConstructiveRealReciprocal
 open Probability
 

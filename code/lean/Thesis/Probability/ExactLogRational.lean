@@ -3,6 +3,19 @@ import Thesis.Probability.SignedRatio
 
 namespace Thesis.Probability.ExactLog
 
+/-!
+# Signed rational numbers of bits inside exact logarithms
+
+Powers of two encode a signed rational bit value as an exact logarithmic
+root. Separate natural exponents represent its positive and negative parts.
+Comparison reflects the original integer cross-product order exactly, so
+equivalent unreduced rational presentations have the same exact value.
+
+Binary lengths of the positive argument numerator and denominator give
+explicit initial upper and lower bit bounds. These bounds need no search,
+real logarithm or assumption that every exact logarithm is rational.
+-/
+
 /-- A signed rational number of bits, represented exactly by powers of two.
 The two natural exponents avoid normalized rationals and signed exponentiation. -/
 def ofSignedRatio (q : SignedRatio) : ExactLog :=

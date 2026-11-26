@@ -1,4 +1,16 @@
 import Thesis.Probability.Distros.ReinforcedUrn
+/-!
+Finite Pólya and Dirichlet-multinomial laws with rational parameters.
+
+A common positive denominator encodes the supplied nonnegative rational
+parameters as natural urn weights. The reinforcement increment is that same
+denominator, so one draw adds one unit in the original rational parameter
+units. This gives actual finite path and count laws without a continuous
+mixing distribution. Individual parameters may be zero; only their sum must
+be positive. Cross-scaling proves that equivalent fraction presentations
+induce the same laws, and integral parameters recover the earlier constructors.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Clear a common denominator from all rational urn parameters. -/
@@ -12,6 +24,8 @@ theorem rationalUrnWeights_length (alphas : List QProb) : (rationalUrnWeights al
   | nil => rfl
   | cons alpha alphas ih => simp only [rationalUrnWeights, List.length_cons, List.length_map, ih]
 
+/-- The encoded total is the numerator of the chosen common-denominator
+sum. This identity transfers the rational positivity proof to the integer urn. -/
 theorem rationalUrnWeights_sum (alphas : List QProb) :
     (rationalUrnWeights alphas).sum = (QProb.listSum alphas).num := by
   induction alphas with
@@ -52,11 +66,15 @@ def rationalPolyaDistro (n : Nat) (alphas : List QProb) (positive : 0 < (QProb.l
   reinforcedUrnDistro n (rationalUrnWeights alphas) (QProb.listSum alphas).den
     (by rw [rationalUrnWeights_sum]; exact positive)
 
+/-- The complete occupancy vector of the rational-parameter urn, using
+unit reinforcement in parameter units and the matching integer encoding. -/
 def rationalDirichletMultinomialDistro (n : Nat) (alphas : List QProb)
     (positive : 0 < (QProb.listSum alphas).num) : Distro (List Nat) :=
   reinforcedCountDistro n (rationalUrnWeights alphas) (QProb.listSum alphas).den
     (by rw [rationalUrnWeights_sum]; exact positive)
 
+/-- Forgetting the order of rational-parameter draws gives this count law
+on every event; it is more than an agreement of selected singleton examples. -/
 theorem rationalPolya_count_correspondence (n : Nat) (alphas : List QProb)
     (positive : 0 < (QProb.listSum alphas).num) :
     ((rationalPolyaDistro n alphas positive).map (colourCounts alphas.length)).SameLaw
@@ -82,6 +100,8 @@ theorem scaledLists_eq_of_cross (alphas betas : List Nat) (c d : Nat) (dimension
           simp only [List.map_cons, head]
           rw [ih betas (Nat.succ.inj dimension) (fun i => by simpa only [List.getD_cons_succ] using cross (i + 1))]
 
+/-- Different encodings become exactly equal after multiplying each
+weight vector by the other's denominator. This avoids choosing reduced fractions. -/
 theorem rationalUrnWeights_cross {alphas betas : List QProb} (same : RationalParametersEquiv alphas betas) :
     (rationalUrnWeights alphas).map (fun a => (QProb.listSum betas).den * a) =
       (rationalUrnWeights betas).map (fun a => (QProb.listSum alphas).den * a) := by

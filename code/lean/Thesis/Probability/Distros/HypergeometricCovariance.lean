@@ -4,6 +4,20 @@ import Thesis.Probability.Distros.DepletingSupport
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Covariance between distinct finite-population colour counts
+
+Coordinate means come from the proved hypergeometric marginals, and a mixed
+factorial moment of total order two supplies the cross moment. Subtracting
+the product of means gives the signed negative covariance with its exact
+finite-population factor.
+
+The displayed ratio assumes population size greater than one because its
+denominator contains `S-1`. It still includes zero draws, zero colour stocks
+and full-population draws. Empty and one-object populations are treated by
+the separate degeneracy results rather than by dividing by a vanishing factor.
+-/
+
 /-- Rational covariance agrees with the original natural-observable API. -/
 theorem Distro.rationalCovariance_ofNat (μ : Distro Ω) (f g : Ω → Nat) :
     SignedRatio.Equiv (μ.rationalCovariance (fun x => (QProb.ofNat (f x)).toSignedRatio)
@@ -81,6 +95,8 @@ theorem multivariateHypergeometric_covariance (n : Nat) (stocks : List Nat)
   have h : H * (S * ((stocks.sum - 1 : Nat) : Int)) = ((n * (n - 1) : Nat) : Int) * A * B * D := by
     have cast := congrArg (fun x : Nat => (x : Int)) hm
     simpa only [Int.natCast_mul] using cast
+  -- Work with cross-multiplied moment equations over integers. In
+  -- particular, no colour-stock numerator is assumed positive or cancelled.
   change (D * H - F * G) * ((stocks.sum * stocks.sum * (stocks.sum - 1) : Nat) : Int) =
     -((n * stocks.getD i 0 * stocks.getD j 0 * (stocks.sum - n) : Nat) : Int) * ((μ.record.den * μ.record.den : Nat) : Int)
   simp only [Int.natCast_mul]

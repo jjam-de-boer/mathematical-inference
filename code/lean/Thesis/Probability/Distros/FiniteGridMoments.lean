@@ -1,6 +1,20 @@
 import Thesis.Probability.Distros.ProbabilityList
 import Thesis.Probability.Distros.RationalLinearSolve
 
+/-!
+# Explicit finite-grid integration and coordinate selectors
+
+A supplied duplicate-free grid replaces a natural support bound when the
+outcome alphabet has arbitrary labels. Its singleton selectors reconstruct
+signed rational observables at every positive atom; null outliers remain in
+the original record. Duplicate-freeness matters because each grid PMF should
+contribute exactly once to the expectation.
+
+The remaining lemmas align `Fin` and natural list enumerations and express
+the rational solver's recursive dot product as a finite sum. Unit and negative
+unit rows then read exactly one coordinate, with no chosen indexing bijection.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 /-- A duplicate-free finite list has an exact rational delta selector. -/
@@ -39,6 +53,8 @@ theorem Distro.rationalExpectation_grid_pmf [DecidableEq A] (μ : Distro A) (cel
     SignedRatio.Equiv (μ.rationalExpectation f)
       (SignedRatio.listSum (cells.map (fun cell => SignedRatio.mul (μ.pmf cell).toSignedRatio (f cell)))) := by
   let term := fun cell x => if x = cell then f cell else SignedRatio.zero
+  -- Grid coverage is an almost-sure premise, so the reconstruction can be
+  -- used inside the integral without constraining any zero-weight outlier.
   have selected : μ.AlmostSurely (fun x => SignedRatio.Equiv
       (SignedRatio.listSum (cells.map (fun cell => term cell x))) (f x)) := by
     intro atom member weight
@@ -95,6 +111,8 @@ theorem dot_sum (variables : Nat) (coefficients : Fin variables → Int) (values
         (SignedRatio.add_congr (by simp only [List.map_map, Function.comp_def]; exact SignedRatio.equiv_refl _)
           (SignedRatio.add_zero _)))
 
+/-- A unit constraint row extracts its selected coordinate. The explicit
+`Fin` index supplies membership in the duplicate-free summation grid. -/
 theorem dot_unit (variables : Nat) (index : Fin variables) (values : Fin variables → SignedRatio) :
     SignedRatio.Equiv (dot variables (fun i => if i = index then 1 else 0) values) (values index) := by
   refine SignedRatio.equiv_trans (dot_sum variables _ values) ?_

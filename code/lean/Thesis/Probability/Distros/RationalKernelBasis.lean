@@ -1,7 +1,21 @@
 import Thesis.Probability.Distros.RationalCoordinateBasis
 
+/-!
+Kernel basis and rank-nullity for operators constant on active coordinates.
+
+Given a positive pivot and the exact kernel characterization, the kernel
+basis contains the all-ones direction plus a unit direction for every null
+coordinate. Independence is checked at the active pivot and then each null
+coordinate; spanning separates the common active value from null deviations.
+No null category is deleted from the ambient space. Together with the
+contrast image basis, the explicit cardinalities add to the original finite
+dimension, including the case of only one active coordinate.
+-/
+
 namespace Thesis.Probability.Distros.RationalVector
 
+/-- One distinguished constant-direction index and one optional index
+per null coordinate. The positive-pivot hypothesis later makes them independent. -/
 def kernelIndices (active : Fin n → Bool) : List (Option (Fin n)) := none :: (nullIndices active).map some
 
 def kernelVector : Option (Fin n) → Vector n

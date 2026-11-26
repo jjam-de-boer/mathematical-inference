@@ -2,6 +2,21 @@ import Thesis.Probability.Distros.ConditionalProjection
 import Thesis.Probability.Distros.RationalChebyshev
 import Thesis.Probability.Distros.PositiveSupport
 
+/-!
+# Equality and stability of rational least-squares prediction
+
+A nonnegative weighted integral vanishes exactly where its responses vanish
+on positive-weight occurrences. Applying this to signed rational squares
+turns zero mean-square error into almost-sure rational equivalence, retaining
+arbitrary values on null atoms.
+
+The conditional mean's Pythagorean identity then characterizes every optimal
+key-based predictor: it must agree with that mean almost surely. Conditional
+expectation contracts mean-square distance, and a finer observation cannot
+increase optimal prediction error. The refinement relation itself may hold
+only almost surely; no pointwise equality on unsupported labels is required.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 /-- Equality after adding a term characterizes that term's rational zero value. -/
@@ -16,6 +31,8 @@ end Thesis.Probability.SignedRatio
 
 namespace Thesis.Probability.Distros
 
+/-- Positive denominators prevent cancellation in a sum of nonnegative
+rationals: its numerator is zero exactly when both summands have zero mass. -/
 private theorem qprob_add_num_zero_iff (a b : QProb) :
     (QProb.add a b).num = 0 ↔ a.num = 0 ∧ b.num = 0 := by
   change a.num * b.den + b.num * a.den = 0 ↔ _
@@ -80,6 +97,8 @@ theorem Distro.rationalSquareExpectation_zero_iff (μ : Distro Ω) (f : Ω → S
     (μ.rationalExpectation_toSignedRatio (fun x => squaredRatio (f x)))
   constructor
   · intro vanished
+    -- Embed the square in nonnegative rational arithmetic, where a zero
+    -- expectation gives a zero response at each positive occurrence.
     have integerZero := (SignedRatio.equiv_num_zero_iff embedding).mp ((SignedRatio.equiv_zero_iff _).mp vanished)
     have naturalZero : (μ.expectation (fun x => squaredRatio (f x))).num = 0 := Int.ofNat_inj.mp integerZero
     have supported := (μ.expectation_num_zero_iff _).mp naturalZero
@@ -159,6 +178,8 @@ theorem Distro.conditionalExpectation_error_refinement_almostSurely (μ : Distro
       (μ.rationalSquaredError f (μ.conditionalExpectation coarse f)) := by
   let h := fun label => conditionalBlockMean
     (μ.record.atoms.filter (fun atom => decide (coarse atom.1 = merge label))) f
+  -- The coarse predictor is admissible as a function of the fine label on
+  -- the supported law, which suffices for comparing the two weighted losses.
   have same : μ.AlmostSurely (fun x => SignedRatio.Equiv (h (fine x)) (μ.conditionalExpectation coarse f x)) := by
     intro atom member weight
     change SignedRatio.Equiv

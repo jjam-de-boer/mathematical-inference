@@ -1,5 +1,18 @@
 import Thesis.Probability.Distros.HypergeometricFactorialMoments
 
+/-!
+Actual finite sampling without replacement from several colour stocks.
+
+Each draw contributes the current selected stock as its multiplicity and
+removes one ball before continuing. The raw recursion retains zero-weight
+branches, so an exhausted colour does not acquire positive probability.
+A falling-factorial kernel computes each word weight and the total is the
+number of ordered labelled samples. Normalization requires the draw horizon
+to fit within the total stock; zero draws from an empty population are valid.
+Forgetting order yields the complete multivariate hypergeometric count law,
+proved on every Boolean event rather than postulated from its name.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 
@@ -11,6 +24,8 @@ def multicolourDepletingAtoms : Nat → List Nat → List (List Nat × Nat)
       (multicolourDepletingAtoms n (stocks.modify head.1.val (fun stock => stock - 1))).map
         (fun rest => (head.1.val :: rest.1, head.2 * rest.2))
 
+/-- The empty-draw count vector has unit weight even when some stocks
+are zero; no selected ball is required at order zero. -/
 theorem jointFalling_zeroOrders (stocks : List Nat) :
     jointFalling (List.replicate stocks.length 0) stocks = 1 := by
   induction stocks with
@@ -88,6 +103,9 @@ theorem multicolourDepleting_den (n : Nat) (stocks : List Nat) (within : n ≤ s
     (multicolourDepletingDistro n stocks within).record.den = fallingFactorial stocks.sum n :=
   multicolourDepletingAtoms_totalMass n stocks
 
+/-- Every enumerated word has the requested length and valid colour
+indices. This assertion includes zero-weight branches; stock feasibility
+requires positive weight and is established separately. -/
 theorem multicolourDepletingAtoms_support (n : Nat) (stocks : List Nat) (atom : List Nat × Nat)
     (member : atom ∈ multicolourDepletingAtoms n stocks) :
     atom.1.length = n ∧ ∀ colour ∈ atom.1, colour < stocks.length := by

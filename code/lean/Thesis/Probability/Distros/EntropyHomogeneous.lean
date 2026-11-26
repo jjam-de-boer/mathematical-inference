@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.EntropyGibbs
 
+/-!
+A common-degree exact representation of finite Shannon entropy.
+
+Each positive singleton mass contributes its reciprocal raised to its
+original numerator, with the record denominator as root degree. At zero
+mass the auxiliary ratio is one and its multiplicity is zero, so no zero
+logarithm is formed. Multiplying these contributions produces one ExactLog
+root equivalent to the original entropy sum. This representation supports
+executed comparisons without the degree growth of repeatedly combining
+unreduced roots; the observable grid and probability law stay unchanged.
+-/
+
 namespace Thesis.Probability
 
 /-- Reciprocal positive mass with harmless value one at zero multiplicity. -/
@@ -20,6 +32,8 @@ theorem entropyTerm_root (p : QProb) : ExactLog.Equiv (entropyTerm p)
 
 namespace Distros
 
+/-- Pairs of positive reciprocal ratios and aggregated singleton
+numerators. Zero-mass cells are retained with zero multiplicity. -/
 def Distro.entropyRatioItems [DecidableEq A] (μ : Distro A) (grid : EntropyGrid A) : List (PositiveRatio × Nat) :=
   grid.cells.map (fun value => (entropyRatio (μ.pmf value), (μ.pmf value).num))
 

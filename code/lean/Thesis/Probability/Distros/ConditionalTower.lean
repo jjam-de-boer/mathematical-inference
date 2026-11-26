@@ -3,6 +3,21 @@ import Thesis.Probability.Distros.Reweight
 
 namespace Thesis.Probability.Distros
 
+/-!
+# Nested evidence and deterministic observable refinement
+
+Conditioning on a supported event and then on a supported included event
+produces exactly the record obtained from the finer event alone. Both support
+premises stay explicit: event inclusion does not turn impossible evidence
+into a defined conditional law.
+
+For finite observables, a supplied map from fine labels to coarse labels
+certifies refinement. Averaging a fine conditional mean over a coarse fibre
+recovers its coarse conditional mean. This observable identity also holds on
+unsupported coarse fibres under the established zero convention, without
+constructing conditional probability records there.
+-/
+
 private theorem event_and_eq_right (coarse fine : Event Ω)
     (included : ∀ x, fine x = true → coarse x = true) :
     (fun x => coarse x && fine x) = fine := by
@@ -56,6 +71,8 @@ theorem Distro.conditionalExpectation_tower (μ : Distro Ω) (fine : Ω → Fin 
   change SignedRatio.Equiv (conditionalBlockMean cell (μ.conditionalExpectation fine f)) (conditionalBlockMean cell f)
   by_cases supported : 0 < FiniteProbRecord.totalMass cell
   · let ν : Distro Ω := ⟨⟨cell, FiniteProbRecord.totalMass cell, supported, rfl⟩⟩
+    -- Inside this coarse fibre, any fine fibre through one of its atoms is
+    -- unchanged by the outer restriction. Apply total expectation to ν.
     have compatible : ∀ atom ∈ ν.record.atoms,
         SignedRatio.Equiv (μ.conditionalExpectation fine f atom.1) (ν.conditionalExpectation fine f atom.1) := by
       intro atom member

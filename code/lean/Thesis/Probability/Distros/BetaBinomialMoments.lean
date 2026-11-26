@@ -1,10 +1,23 @@
 import Thesis.Probability.Distros.BetaBinomial
 import Thesis.Probability.Distros.BinomialMoments
 
+/-!
+Second moments and variance of the positive-parameter beta-binomial law.
+
+The second falling-factorial moment reduces to the previously proved first
+moment after one success is removed. Decomposing k² as k(k-1)+k gives the
+ordinary second moment. Variance is established by an additive balance with
+the squared mean, avoiding subtraction of natural rational numerators.
+The trial count may be zero; the constructor's two parameters are positive.
+All results concern exact finite sums rather than asymptotic formulas.
+-/
+
 namespace Thesis.Probability.Distros
 
 open Combinatorics
 
+/-- Evaluate the unnormalized second falling moment by shifting one
+success and applying the first-moment identity to the remaining trials. -/
 theorem betaBinomialTerm_factorial_second (n a b : Nat) :
     natSum (n + 1) (fun k => k * (k - 1) * betaBinomialTerm n a b k) =
       n * (n - 1) * a * (a + 1) * risingFactorial (a + b + 2) (n - 2) := by
@@ -28,6 +41,8 @@ theorem betaBinomialTerm_factorial_second (n a b : Nat) :
       simp only [Nat.zero_mul, Nat.zero_add, Nat.add_sub_cancel, hexp, hs]
       ac_rfl
 
+/-- Recover the raw square moment with the exact natural identity
+k(k-1)+k = k², valid also at k = 0. -/
 theorem betaBinomialTerm_second_moment (n a b : Nat) :
     natSum (n + 1) (fun k => k * k * betaBinomialTerm n a b k) =
       n * (n - 1) * a * (a + 1) * risingFactorial (a + b + 2) (n - 2) +
@@ -41,6 +56,8 @@ theorem betaBinomialTerm_second_moment (n a b : Nat) :
       rw [← Nat.add_mul, nat_falling_square])
   rw [h, natSum_add, betaBinomialTerm_factorial_second, betaBinomialTerm_first_moment]
 
+/-- Normalize the finite square sum. Small trial counts are separated
+to handle truncated natural subtraction in the falling-factorial expression. -/
 theorem betaBinomial_secondMoment (n a b : Nat) (ha : 0 < a) (hb : 0 < b) :
     QProb.Equiv (secondMoment (betaBinomialNatDistro n a b ha hb))
       ⟨n * (n - 1) * a * (a + 1) + n * a * (a + b + 1),
@@ -75,6 +92,8 @@ theorem betaBinomial_secondMoment (n a b : Nat) (ha : 0 < a) (hb : 0 < b) :
           simp only [Nat.add_mul, Nat.mul_add]
           ac_rfl
 
+/-- The exact variance n a b (a+b+n)/((a+b)²(a+b+1)).
+The proof verifies variance plus squared mean equals the second moment. -/
 theorem betaBinomial_variance (n a b : Nat) (ha : 0 < a) (hb : 0 < b) :
     QProb.Equiv (variance (betaBinomialNatDistro n a b ha hb))
       ⟨n * a * b * (a + b + n), (a + b) * (a + b) * (a + b + 1),

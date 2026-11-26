@@ -1,6 +1,22 @@
 import Thesis.Probability.ConstructiveRealInverseDerivative
 import Thesis.Probability.ConstructiveRealExpDerivative
 
+/-!
+# Reciprocal differentiation retains its positive domain
+
+The reciprocal derivative has slope `-1/x^2` on the explicitly admitted
+domain `x >= lower > 0`. The remainder certificate includes a zero
+increment. At one, inverse uniqueness simplifies the slope to `-1`; the
+concrete point `159/160`, with radius `1/80` and tolerance `1/10`, checks
+the resulting analytic error bound `1/800` for a negative increment.
+
+Zero is excluded by the positive lower-bound premise instead of receiving
+a fallback reciprocal. Restriction and composition retain domain witnesses,
+including the preimage domain of a partial outer function. Removing the
+domain restriction requires the explicit final premise that every input is
+admitted; it is not inferred from admission at the differentiation point.
+-/
+
 namespace Thesis.Examples.ConstructiveInverseDerivative
 open Probability ConstructiveReal
 

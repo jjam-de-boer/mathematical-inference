@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealRationalEntropyEncoding
 
+/-!
+# Exact transfer of feasibility and entropy across the moment encoding
+
+Finite coordinate casts preserve the entropy sum and the actual
+integer row evaluation. The original rational constraints correspond
+to their embedded analytic rows. Normalization and coordinate bounds
+already follow from the simplex conditions, allowing every original
+real feasible vector to enter the analytic entropy optimization.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A finite entropy sum is unchanged by transport of its dimension. -/

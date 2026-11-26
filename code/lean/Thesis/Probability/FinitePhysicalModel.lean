@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.EntropyUniform
 import Thesis.Probability.ConstructiveRealGibbsFamilyDerivative
 
+/-!
+# Distinct physical microstates and explicitly admitted sectors
+
+Observables are finite signed rational energies and natural particle
+counts. Distinct states may share both. A sector enumerates a nonempty,
+repetition-free subset and restriction computes a new sector using an
+admitted witness. The closed shell checks both energy and particle
+number. Its uniform law attains the entropy maximum on that explicit
+support, uniquely as a law. Choosing a physical admissibility rule
+remains part of the model input.
+-/
+
 namespace Thesis.Probability
 open ConstructiveReal
 open Distros

@@ -1,6 +1,21 @@
 import Thesis.Probability.Distros.EntropyUniform
 import Thesis.Probability.ExactLogRational
 
+/-!
+# Universal cardinality bounds and a nonuniform constrained comparison
+
+Every law supported on the three-cell grid has entropy between zero and
+`log2(3)`, with equality at the upper bound exactly for the uniform law.
+The uniformity conclusion is equality of whole laws, not of raw records.
+
+A separate positive candidate with masses `[1/4,1/4,1/2]` has entropy `3/2`.
+The point-pair competitor retains a null outlier and has the same cross
+entropy against that candidate. This supplied cross-entropy equality
+licenses the nonuniform entropy bound; it is not a maximum over all laws
+on the grid. A singleton mismatch excludes equality of the two entropies
+through the theorem's law-equality criterion.
+-/
+
 namespace Thesis.Examples.EntropyBounds
 open Probability Probability.Distros
 

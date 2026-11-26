@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealCauchy
 import Thesis.Probability.ConstructiveRealRing
 
+/-!
+# Effective limits of negation and difference
+
+Reflection preserves the same two-sided rational distance as the original
+values. A pointwise negated sequence therefore uses its original Cauchy
+modulus, and uniqueness identifies the limit with the negated limit.
+Combining this with the effective addition theorem treats two moving
+sequences and their difference, including constant rational embeddings.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Negation preserves a certified rational distance bound. -/

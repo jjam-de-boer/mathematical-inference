@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealOrderedRing
 import Thesis.Probability.ConstructiveRealDistanceAlgebra
 
+/-!
+# Multiplication errors controlled by a value bound
+
+If a nonnegative analytic factor lies below a supplied rational bound,
+then multiplication by it scales the distance certificate by at most that
+bound. The result uses the factor's value enclosure rather than the
+numerators in any chosen rational approximation. It therefore applies
+uniformly to all factors satisfying the same checked inequalities.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A supplied nonnegative real upper bound gives a rational Lipschitz

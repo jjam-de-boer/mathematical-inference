@@ -5,6 +5,24 @@ import Thesis.Probability.ConstructiveRealEntropyUniformDerivative
 import Thesis.Probability.ConstructiveRealFiniteLinear
 import Thesis.Probability.ConstructiveDerivativeUniqueness
 
+/-!
+# Regular analytic probability curves with derived entropy variation
+
+The curve record supplies coordinate derivatives, a common domain with
+positive rational floors, uniform remainder certificates and signed
+velocity bounds. Coordinate normalization is global, even though values
+outside the domain need not be probabilities. Full-space point derivatives
+at admitted points and that global identity justify zero total velocity
+by derivative uniqueness, including admitted endpoints.
+
+On the positive domain, chain rules and finite summation construct the
+actual entropy derivative from those coordinate data. The bit and natural
+rates are connected by the proved `ln(2)` factor. Entropy variation and
+tangent normalization are conclusions of the interface, while its
+coordinates remain auxiliary real values and finite `Distro` weights
+remain rational.
+-/
+
 namespace Thesis.Probability
 open ConstructiveReal
 

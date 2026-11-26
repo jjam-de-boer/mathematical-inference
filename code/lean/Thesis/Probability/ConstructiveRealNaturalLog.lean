@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealLogExpCoefficient
 import Thesis.Probability.ConstructiveDerivativeWithinScaling
 
+/-!
+# Natural logarithms with a proved positive conversion factor
+
+The bit-logarithm coefficient supplies a positive reciprocal that
+represents ln(2). Its computed lower bound controls natural logarithm
+scaling on each explicitly positive domain. Compatibility with the
+Taylor exponential follows from the independent calibration of the
+log-exponential composite.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- The natural-log value of two, obtained as the positive reciprocal of

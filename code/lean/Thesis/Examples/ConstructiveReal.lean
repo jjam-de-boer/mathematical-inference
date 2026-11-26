@@ -1,5 +1,22 @@
 import Thesis.Probability.EntropyInterpretation
 
+/-!
+# From exact logarithms to coherent real enclosures
+
+The interpreted base-two logarithm of three is enclosed at requested
+precision `1/100`: the computed endpoints lie between `157/100` and
+`160/100`, and their width is certified by the enclosure itself. A separate
+exact-log certificate transports the sharper lower bound `158/100` into
+the real order.
+
+The remaining fixtures check rational presentation invariance, additive
+algebra and the faithful order/equivalence interpretation of `ExactLog`.
+Entropy interpretation retains a noncanonical zero term without evaluating
+`log(0)`; relative entropy still demands a positive reference mass. These
+auxiliary analytic interpretations leave the finite probability weights
+rational.
+-/
+
 namespace Thesis.Examples.ConstructiveReal
 open Probability
 

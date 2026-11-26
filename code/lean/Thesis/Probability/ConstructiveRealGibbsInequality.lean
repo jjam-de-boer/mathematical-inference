@@ -3,6 +3,17 @@ import Thesis.Probability.ConstructiveRealEntropyVectorConcavity
 import Thesis.Probability.ConstructiveRealRelativeEntropy
 import Thesis.Probability.ConstructiveRealFiniteLinear
 
+/-!
+# Gibbs inequality with a positive reference and arbitrary observed support
+
+Cross entropy logs only reference coordinates, whose positive floors
+are supplied explicitly. The scalar tangent inequality extends through
+zero observed masses. On summing, its extra mass-difference term cancels
+for normalized vectors. The resulting Gibbs bound and relative entropy
+nonnegativity therefore include boundary competitors. The same proved
+ln(2) calibration transports the relative entropy to natural units.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private theorem sum_map_neg (indices : List ι) (values : ι → ConstructiveReal) :

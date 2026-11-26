@@ -1,5 +1,15 @@
 import Thesis.Probability.RationalSeriesNorm
 
+/-!
+# Effective convergence from geometric step errors
+
+A finite telescoping argument adds the rational distance of consecutive
+steps, even when the values themselves are analytic. A dyadic bound on
+each step gives a geometric bound on every later pair and hence a
+binary-logarithm convergence modulus. The completed real remains within
+the advertised tail bound of every index, including the initial one.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 open RationalGeometricSeries
 

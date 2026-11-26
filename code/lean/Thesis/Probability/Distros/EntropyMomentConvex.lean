@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.EntropyConcavity
 import Thesis.Probability.Distros.PartialMomentProblem
 
+/-!
+Convexity of finite rational moment constraints and entropy uniqueness.
+
+Signed rational expectations are affine under the same record-level mixture
+used for entropy. Closed expectation intervals, including exact equalities,
+are therefore preserved by rational mixtures. The admissible-law predicate
+keeps support on the original distinct grid, with every forced-zero cell
+still declared. Its midpoint closure specializes strict entropy concavity
+to uniqueness of any attained constrained maximum. Redundant rows are allowed;
+existence of an exact rational maximizer is not concluded.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Signed rational expectations are affine under the same actual mixture
@@ -81,6 +93,8 @@ namespace PartialMomentProblem
 /-- Entropy uses the original declared grid, including every forced-zero cell. -/
 def entropyGrid (problem : PartialMomentProblem A) : EntropyGrid A := ⟨problem.cells, problem.distinct⟩
 
+/-- Laws supported on the original cells satisfying every supplied
+expectation interval. Record occurrence retention is a separate constructor guarantee. -/
 def Admissible (problem : PartialMomentProblem A) (μ : Distro A) : Prop :=
   μ.AlmostSurely (fun value => value ∈ problem.cells) ∧ ∀ constraint ∈ problem.intervals, constraint.LawHolds μ
 

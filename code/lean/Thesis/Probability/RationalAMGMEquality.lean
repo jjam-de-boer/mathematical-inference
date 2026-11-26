@@ -4,6 +4,19 @@ import Thesis.Probability.FiniteAMGMEquality
 namespace Thesis.Probability.RationalAMGM
 open Combinatorics
 
+/-!
+# Equality in the rational Gibbs form of AM-GM
+
+With positive total multiplicity and arithmetic mean at most one, product
+equal to one forces every positively weighted rational argument to equal
+one. Common-denominator clearing transfers the natural equality theorem and
+then cancels only the proved positive common denominator.
+
+The argument does not constrain zero-multiplicity occurrences or identify
+different unreduced presentations as raw records; its conclusion compares
+their rational values.
+-/
+
 /-- Equality in rational Gibbs forces every positively weighted argument to
 be one. Zero-weight arguments remain unrestricted. -/
 theorem eq_one_of_weightedProduct_equiv_one (items : List (PositiveRatio × Nat))

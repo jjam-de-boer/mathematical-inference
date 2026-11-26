@@ -1,5 +1,20 @@
 import Thesis.Probability.ConstructiveDerivative
 
+/-!
+# Effective differentiation of functions with explicit domains
+
+Nearby evaluations of `HasDerivativeWithinAt` receive proofs that their
+arguments are admitted. The common residual formulation therefore applies
+to partial logarithms and reciprocals without defining values across zero.
+An isolated domain can admit several slopes; domain-relative data alone
+does not assert full-space uniqueness.
+
+Slope equivalence retains the modulus. A full-space certificate restricts
+to any domain containing its basepoint, while unrestricted differentiation
+from a partial function requires membership evidence for every input.
+No domain-membership decision is inferred by these adapters.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Effective differentiation for a function with an explicit domain. Nearby

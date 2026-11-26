@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.PositiveSupport
 import Thesis.Probability.Distros.PGFUniqueness
 
+/-!
+Joint PGF uniqueness under almost-sure dimension and coordinate bounds.
+
+Bounded count vectors can be encoded positionally into natural numbers and
+decoded on positive-weight atoms. Therefore equality of the encoded numeric
+laws implies equality of the original event laws, regardless of null outliers.
+Carefully chosen positive natural PGF arguments produce a large-base numeric
+PGF value determining that law. Natural and rational argument corollaries
+follow by specialization. The bounds and dimension concern positive support,
+while all original zero-weight occurrences remain in the records.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Positional decoding is required only on positive-weight atoms. The

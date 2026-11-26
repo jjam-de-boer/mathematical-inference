@@ -143,6 +143,9 @@ private theorem fin_beq_of_bijective {n : Nat}
       σ i = σ (τ j) := congrArg σ equal
       _ = j := right_inv j
 
+/-- Mapping the canonical enumeration through an explicitly inverted map
+retains exactly one occurrence of each index. This list-level statement is
+the constructive bridge from bijection laws to finite-sum reindexing. -/
 theorem finRange_map_bijective_perm {n : Nat}
     (σ τ : Fin n → Fin n)
     (left_inv : ∀ i, τ (σ i) = i)
@@ -150,6 +153,8 @@ theorem finRange_map_bijective_perm {n : Nat}
     ((List.finRange n).map σ).Perm (List.finRange n) := by
   apply perm_of_count_eq_constructive
   intro j
+  -- The inverse identifies the unique preimage of each target. Counting
+  -- that preimage avoids selecting an inverse from a surjectivity proof.
   have hpoint : ∀ i, (σ i == j) = (i == τ j) :=
     fun i => fin_beq_of_bijective σ τ left_inv right_inv j i
   calc
@@ -178,6 +183,8 @@ theorem finSum_reindex (C : AdditiveCarrier M) (n : Nat) (u : Fin n → M)
   have hperm :
       ((List.finRange n).map (u ∘ σ)).Perm ((List.finRange n).map u) := by
     have hσ := finRange_map_bijective_perm σ τ left_inv right_inv
+    -- Values may repeat even though indices do not. Mapping an existing
+    -- permutation preserves those multiplicities without value equality.
     have hmap := hσ.map u
     rwa [List.map_map] at hmap
   exact listSum_perm C hperm
@@ -224,6 +231,9 @@ theorem nat_finSum_reindex (n : Nat) (u : Fin n → Nat)
       AdditiveCarrier.nat.finSum n u :=
   AdditiveCarrier.nat.finSum_reindex n u σ τ left_inv right_inv
 
+/-- The abstract additive fold specializes to the existing rational fold
+as an actual presentation equality. Only the subsequent permutation result
+needs cross-multiplication equivalence rather than record equality. -/
 theorem qprob_listSum_eq (values : List QProb) :
     AdditiveCarrier.qprob.listSum values = QProb.listSum values := by
   induction values with

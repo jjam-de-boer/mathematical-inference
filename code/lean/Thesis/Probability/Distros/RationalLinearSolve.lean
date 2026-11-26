@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.RationalLinearProjection
 import Thesis.Probability.Distros.MomentTableCheck
 
+/-!
+Complete constructive feasibility for finite rational linear inequalities.
+
+Recursive projection eliminates one variable at each step. At dimension
+zero a finite scan either certifies every constant bound nonnegative or
+returns an actual contradictory row. Feasible projected values are lifted
+by computed rational endpoints, yielding a complete satisfying assignment.
+Failure carries a finite elimination trace down to a negative constant row,
+and its theorem excludes every rational assignment. The algorithm has no
+probability-denominator cap and returns checked data on both branches.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 
 theorem extend_restrict (values : Fin (variables + 1) → SignedRatio) :

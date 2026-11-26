@@ -1,6 +1,20 @@
 import Thesis.Probability.ConstructiveDerivativeWithinProduct
 import Thesis.Probability.ConstructiveDerivativeChain
 
+/-!
+# Full-space Leibniz rule from the shared domain-relative construction
+
+Two effective derivative certificates yield the product slope
+`sf * g(point) + f(point) * sg`. The wrapper restricts both functions to
+the always-admitted domain, applies the proved partial-domain product
+rule, and removes that trivial restriction.
+
+All accuracy schedules are constructed from the input certificates and
+the actual basepoint data. Variable factors need no separately supplied
+neighborhood bound or sign assumption, and the residual formulation also
+covers zero increments.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.HasDerivativeAt
 open ConstructiveReal
 

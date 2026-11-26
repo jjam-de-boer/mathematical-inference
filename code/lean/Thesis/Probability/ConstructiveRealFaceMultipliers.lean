@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveRealSupportFace
 import Thesis.Probability.ConstructiveRealGibbsSupport
 import Thesis.Probability.ConstructiveRealEntropyInterior
 
+/-!
+# Relating the support-face moment laws to the multiplier problem
+
+The analytic problem takes the original expectation rows. Normalization
+and coordinate nonnegativity belong to the probability domain, so those
+coordinate inequalities are not inserted into its stationarity matrix.
+Transfers in both directions preserve feasibility and entropy. A rational
+seed on its computed support face provides the explicit coordinate floors
+needed to fit multipliers there.
+-/
+
 namespace Thesis.Probability.Distros.PartialMomentProblem
 open ConstructiveReal
 open RationalLinear

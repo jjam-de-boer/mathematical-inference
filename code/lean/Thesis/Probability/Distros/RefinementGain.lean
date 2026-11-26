@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.ProjectionEquality
 
+/-!
+Exact prediction-error improvement under a finer finite observation.
+
+A merge map relates the fine and coarse observation labels. It need agree
+with their actual values only on positive-weight occurrences. The conditional
+expectation projection identity decomposes coarse squared error into fine
+squared error plus the squared distance between their conditional means.
+The equality criterion therefore identifies exactly when the finer observation
+has no prediction benefit. These are finite observation refinements of one
+law, not constructors of an SCM abstraction or reconstructions of lost data.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- The improvement from a finer finite observation is exactly the squared
@@ -48,6 +60,8 @@ theorem Distro.conditionalExpectation_refinement_equal_iff_almostSurely (μ : Di
     exact SignedRatio.equiv_trans split ((SignedRatio.add_equiv_left_iff _ _).mpr
       ((μ.rationalSquaredError_zero_iff _ _).mpr equal))
 
+/-- The globally specified ObservableRefinement interface specializes the
+support-only theorem; agreement on null outcomes is not required by its proof. -/
 theorem Distro.conditionalExpectation_refinement_gain (μ : Distro Ω)
     (fine : Ω → Fin n) (coarse : Ω → Fin m) (refinement : ObservableRefinement fine coarse) (f : Ω → SignedRatio) :
     SignedRatio.Equiv (μ.rationalSquaredError f (μ.conditionalExpectation coarse f))
@@ -56,6 +70,8 @@ theorem Distro.conditionalExpectation_refinement_gain (μ : Distro Ω)
   μ.conditionalExpectation_refinement_gain_almostSurely fine coarse refinement.merge
     (fun atom _ _ => refinement.agrees atom.1) f
 
+/-- For a supplied observation refinement, unchanged optimal squared
+error is equivalent to agreement of its two conditional means almost surely. -/
 theorem Distro.conditionalExpectation_refinement_equal_iff (μ : Distro Ω)
     (fine : Ω → Fin n) (coarse : Ω → Fin m) (refinement : ObservableRefinement fine coarse) (f : Ω → SignedRatio) :
     SignedRatio.Equiv (μ.rationalSquaredError f (μ.conditionalExpectation coarse f))

@@ -2,6 +2,16 @@ import Thesis.Probability.ConstructiveRealPolynomialExpression
 import Thesis.Probability.ConstructiveRealReciprocal
 import Thesis.Probability.ConstructiveRealDistanceScaling
 
+/-!
+# Extracting a rational distance certificate from a squared bound
+
+A bound by a positive rational radius squared implies the two closed
+order comparisons defining distance at that radius. No analytic square
+root or decision about the displacement's sign is needed. Applying
+this at arbitrary rational radii proves separation when the square
+vanishes.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private abbrev Expr := RationalPolynomial.Expression 2

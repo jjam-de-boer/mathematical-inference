@@ -1,5 +1,16 @@
 import Thesis.Probability.ConstructiveRealLogOrder
 
+/-!
+# Reflecting positive logarithm order back to real inputs
+
+Closed-order reflection checks cross-endpoints of rational enclosures.
+A rejected comparison would place the relevant rational endpoints in
+positive logarithm domains where faithful exact-log interpretation
+reflects the asserted comparison back. All decisions concern rational
+endpoint data. Reflection in both directions gives injectivity up to
+real-value equivalence.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- The real logarithm reflects closed order. For each pair of rational

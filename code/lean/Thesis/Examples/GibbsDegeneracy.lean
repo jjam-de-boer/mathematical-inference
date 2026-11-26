@@ -1,5 +1,21 @@
 import Thesis.Probability.FinitePhysicalDegeneracy
 
+/-!
+# Physical state multiplicities change grouped Gibbs weights
+
+Three distinct states have energies `[0,0,1]`; grouping by energy produces
+fiber sizes two and one, with representatives also constructed from the
+surjective labeling. Compatibility proves whole Gibbs-mass aggregation for
+every parameter, not merely equality in a chosen numerical example.
+
+At beta `ln(2)`, the original masses are `[2/5,2/5,1/5]` and the grouped
+masses `[4/5,1/5]`. The partition and reciprocal are independently computed.
+Expected log degeneracy is `4/5` bit, giving the exact entropy correction
+and its physical-unit version for any positive Boltzmann constant. The
+multiplicity is that of physical state fibers, not duplicated occurrences
+in a probability record.
+-/
+
 namespace Thesis.Examples.GibbsDegeneracy
 open Probability ConstructiveReal
 open Probability.Distros.RationalLinear

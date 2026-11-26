@@ -2,6 +2,18 @@ import Thesis.Probability.RationalGeometricSeries
 
 namespace Thesis.Probability.RationalGeometricSeries
 
+/-!
+# Explicit decay of polynomially many geometric error terms
+
+The square corner count `n²` can be absorbed into half of a dyadic decay
+exponent, with a fixed coefficient valid even at small indices. This turns
+the Taylor-product corner error into another geometric envelope.
+
+A binary-length calculation gives an executable index after which that
+envelope is at most any supplied positive rational precision. The estimate
+is finite arithmetic rather than an asymptotic big-O or rearrangement claim.
+-/
+
 /-- The polynomial factor from a finite square corner is absorbed by half
 of the dyadic exponent. The estimate includes small n and the empty square. -/
 theorem square_count_decay (n : Nat) : n * n * 2 ^ (n / 2) ≤ 16 * 2 ^ n := by

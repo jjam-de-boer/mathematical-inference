@@ -1,6 +1,19 @@
 import Thesis.Probability.ExactLogInterpretation
 import Thesis.Probability.EntropyGrouping
 
+/-!
+# Interpreting exact rational entropy as constructive real logarithms
+
+Base-two logarithm is supplied here for positive rational arguments by
+interpreting the exact-log representation. Product and inverse laws transport
+to this real value. General positive real arguments are outside this step.
+
+The rational entropy and KL summands interpret as the corresponding finite
+Shannon expressions. Zero observed coordinates are handled before any
+logarithm is evaluated; relative entropy still requires positive reference
+mass. Probability atom weights themselves remain finite rationals.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Base-two logarithm of a positive rational argument, with certified real

@@ -201,6 +201,9 @@ theorem dependentApplyHEq {α : Type _} {β : α -> Type _}
 
 /-! ## Direct combined multiworld model -/
 
+/-- The original mechanisms and latent assignment are shared across copies.
+The event fixes the finite set of syntactic occurrences used to index those
+copies, so repeated atoms may name distinct copies with the same action. -/
 structure OccurrenceMultiworld (S : ObservedSignature.{u})
     (event : CounterfactualEvent S) where
   model : FiniteLatentSCM.{u, v} S
@@ -217,6 +220,8 @@ def action (_W : OccurrenceMultiworld S event)
     (world : OccurrenceWorld S event) :=
   world.action
 
+/-- Incoming observed arrows are inherited within each copy and cut at its
+forced coordinates. No observed arrow connects different worlds. -/
 def directed (W : OccurrenceMultiworld S event)
     (parent child : OccurrenceNode S event) : Bool :=
   if _same : parent.world = child.world then
@@ -268,6 +273,8 @@ def mechanism (W : OccurrenceMultiworld S event)
           simp [OccurrenceMultiworld.incident, selected,
             FiniteLatentSCM.cutOf, incident]))
 
+/-- Evaluate each named world at the same latent unit. This direct product
+of assignments retains the coupling that would be lost by separate draws. -/
 def eval (W : OccurrenceMultiworld S event)
     (u : W.LatentAssignment) : W.Assignment :=
   fun node => W.model.evalUnder (W.action node.world) u node.node
@@ -377,6 +384,8 @@ theorem eventProbability (W : OccurrenceMultiworld S event) :
 
 namespace Encoding
 
+/-- Number worlds in blocks of `S.count`, preserving within-world causal
+order. A zero-node signature gives an empty target index type. -/
 def encode {S : ObservedSignature} {event : CounterfactualEvent S}
     (node : OccurrenceNode S event) :
     Fin ((event.atoms.length + 1) * S.count) :=
@@ -674,6 +683,9 @@ namespace CounterfactualQuery
 def combinedEvent (query : CounterfactualQuery S) : CounterfactualEvent S :=
   .conj query.condition query.outcome
 
+/-- The first segment of the shared occurrence assignment belongs to the
+condition. Reading the matching initial segment avoids mixing duplicated
+atoms from the condition and outcome. -/
 def combinedConditionPredicate
     (query : CounterfactualQuery S)
     (W : OccurrenceMultiworld S query.combinedEvent) :
@@ -790,6 +802,8 @@ theorem combinedNumerator_equiv
       (FiniteProbRecord.probVal_congr W.model.prior _ _
         (fun u => query.combinedNumeratorPredicate_eval W u)))
 
+/-- The observational ratio in the combined model is partial. The shared
+condition event determines support, including an exact zero denominator. -/
 def combinedDenote (query : CounterfactualQuery S)
     (M : FiniteLatentSCM S) :
     ProbabilityResult.Result :=

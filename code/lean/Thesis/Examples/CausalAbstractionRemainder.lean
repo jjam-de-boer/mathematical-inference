@@ -7,7 +7,15 @@ open Probability Causality CausalRemainder
 
 /-! Event remainders on actual aggregation maps. The OR comparison is a
 specialization of the general rational gap, using the already proved laws.
-Exactness is recovered only by vanishing on all events, not one event. -/
+Exactness is recovered only by vanishing on all events, not one event.
+
+The OR map satisfies structural forced-value compatibility yet disagrees on
+the outcome law of its accepted surgery. This is a failure of exactness,
+separate from a missing or malformed intervention correspondence. Every
+remainder here compares two defined unconditional probabilities, including
+zero; lack of a representative for an emergent-coordinate surgery is a
+different kind of unsupported comparison.
+-/
 
 /-- A declared OR comparison accepts double-true cause surgery. It respects
 forced assignments but will fail the separate full-law exactness obligation. -/
@@ -55,8 +63,9 @@ theorem or_remainder_two_thirds : QProb.Equiv
 theorem or_remainder_positive : 0 < (orComparisonMap.remainder microDoubleTrue macroDoTrue yTrue).num :=
   (QProb.equiv_num_pos_iff or_remainder_two_thirds).mpr (by decide +kernel)
 
-/-- The comparison is illegal because its accepted pair fails Exact. It
-remains a well-defined comparison of two unconditional finite laws. -/
+/-- The structurally compatible comparison fails full-law exactness on an
+accepted pair. Its discrepancy remains a defined comparison of two
+unconditional finite laws; this is not an invalid-protocol certificate. -/
 theorem or_comparison_not_exact : ¬ orComparisonMap.Exact := by
   intro exactness
   have zero := (orComparisonMap.exact_iff_remainder_zero.mp exactness)
@@ -89,7 +98,7 @@ theorem and_double_true_defined : andInterventionMap.omega microDoubleTrue = som
   decide +kernel
 
 /-- Contrast between the two fine-to-coarse aggregation choices: an exact
-AND edge has zero discrepancy, while the illegal OR edge has positive gap. -/
+AND edge has zero discrepancy, while the inexact OR edge has positive gap. -/
 theorem aggregation_remainders :
     QProb.Equiv (andInterventionMap.remainder microDoubleTrue macroDoTrue yTrue) QProb.zero ∧
     QProb.Equiv (orComparisonMap.remainder microDoubleTrue macroDoTrue yTrue) ⟨2, 3, by decide⟩ :=

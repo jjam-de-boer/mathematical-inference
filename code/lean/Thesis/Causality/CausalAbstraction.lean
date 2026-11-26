@@ -13,6 +13,12 @@ it does not assert interventional consistency of the two SCMs.
 from cluster compatibility. `CausalInterventionMap` adds a partial ω and
 full-law exactness for every defined micro surgery; exact maps compose when
 the middle SCM agrees. A section transfers exactness to `PreservesAt`.
+Neither a partial map nor `Exact` requires an observational pair or any
+particular macro action in its image. A client that needs observation or
+experiment coverage must demand it separately. In particular, exactness on
+an empty declared domain is logically valid but supplies no experimental
+comparison. The synthesis interface adds explicit observation and coverage
+checks before attempting to construct a model.
 The AND/copy examples construct the merge from explicit interchangeable
 mechanism data and prove full-law consistency for its entire unique-forced-
 preimage class. The observationally matched OR macro remains a counterexample.
@@ -81,7 +87,9 @@ def PreservesEvent (coarsening : FiniteCausalCoarseGraining micro coarse)
     ((coarsening.pushedInterventionalLaw action admitted).probVal event)
 
 /-- Full finite-law consistency at this one declared intervention. The
-bounded examples do not assert this for every possible hard intervention. -/
+bounded examples do not assert this for every possible hard intervention.
+Every event is compared, so impossible outcomes retain their zero masses;
+there is no positivity or conditional-support premise. -/
 def PreservesAt (coarsening : FiniteCausalCoarseGraining micro coarse)
     (action : HardIntervention coarse) (admitted : coarsening.admissible action) : Prop :=
   ∀ event, coarsening.PreservesEvent action admitted event
@@ -110,7 +118,9 @@ structure CausalInterventionMap (micro coarse : ObservedSignature) where
 namespace CausalInterventionMap
 
 /-- Equality of the entire finite interventional law for every defined ω.
-This concerns every allowed micro intervention, not only a chosen section. -/
+This concerns every allowed micro intervention, not only a chosen section.
+It does not itself assert that ω is defined anywhere: required-action
+coverage and inclusion of observation are separate input conditions. -/
 def Exact (mapping : CausalInterventionMap micro coarse) : Prop :=
   ∀ intervention action, mapping.omega intervention = some action →
     ∀ event, QProb.Equiv
@@ -118,7 +128,9 @@ def Exact (mapping : CausalInterventionMap micro coarse) : Prop :=
       (mapping.microModel.interventionalValue intervention.value
         (fun assignment => event (mapping.assignmentMap assignment)))
 
-/-- A supplied representative is a section on its declared macro domain. -/
+/-- A supplied representative is a section on its declared macro domain.
+This certifies coverage on that domain; it does not add distributional
+exactness or make an excluded macro intervention available. -/
 def IsSection (mapping : CausalInterventionMap micro coarse)
     (admissible : HardIntervention coarse → Prop)
     (representative : ∀ action, admissible action → HardIntervention micro) : Prop :=

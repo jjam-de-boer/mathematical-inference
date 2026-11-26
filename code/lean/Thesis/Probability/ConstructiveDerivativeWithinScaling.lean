@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveDerivativeWithin
 import Thesis.Probability.ConstructiveRealDistanceScaling
 
+/-!
+# Scaling and local control of domain-relative derivatives
+
+A constant analytic factor rescales the derivative and its error budget
+using a computed rational magnitude bound. No nearby value is requested
+without domain evidence. Conversely a derivative certificate supplies a
+local Lipschitz bound about its base point by combining the slope bound
+with the remainder at unit precision. This controls admissible nearby
+arguments in subsequent composition proofs.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.HasDerivativeWithinAt
 open ConstructiveReal
 

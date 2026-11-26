@@ -2,6 +2,22 @@ import Thesis.Probability.ConstructiveDerivativeProduct
 import Thesis.Probability.ConstructiveDerivativeUniqueness
 import Thesis.Probability.ConstructiveRealExpDerivative
 
+/-!
+# Polynomial certificates and the product derivative
+
+The finite expression checker accepts `(x+y)(x-y)=x^2-y^2` for arbitrary
+analytic assignments and rejects the incorrect sum-of-squares alternative.
+An unreduced rational constant checks that its interpretation depends on
+value, not on the chosen numerator and denominator.
+
+The product rule is exercised on the square, `x*exp(x)`, a zero factor and
+a negative factor. For the square, derivative uniqueness compares the
+Leibniz slope with the independently proved quadratic-remainder derivative.
+The exponential product example uses the derivative theorem without
+assuming an exponential addition identity. All these full-space rules
+allow arbitrary signs and carry their effective derivative certificates.
+-/
+
 namespace Thesis.Examples.ConstructiveProductDerivative
 open Probability ConstructiveReal
 

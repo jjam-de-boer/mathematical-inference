@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.DepletingHistory
 import Thesis.Probability.Distros.CategoricalSampling
 
+/-!
+Singleton probabilities of ordered sampling-without-replacement words.
+
+The recursive multiplicity of a specified word follows the exact removals
+of the sequential constructor. For valid colour indices it factors as a
+product of stock falling factorials depending only on counts. Normalizing
+by the falling total gives the word probability and allows exhausted-colour
+words to have zero mass. The one-draw constructor agrees with the existing
+categorical law even as a weighted record, while its singleton corollary
+reads the selected stock divided by the total stock.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- The multiplicity of a specified ordered sampling-without-replacement path. -/
@@ -9,6 +21,8 @@ def depletingWordWeight : List Nat → List Nat → Nat
   | stocks, colour :: history => stocks.getD colour 0 *
       depletingWordWeight (stocks.modify colour (fun stock => stock - 1)) history
 
+/-- Gather a word's successive removals by colour. Alphabet validity
+prevents the fixed-size histogram from discarding an unrepresented index. -/
 theorem depletingWordWeight_kernel (stocks history : List Nat)
     (valid : ∀ colour ∈ history, colour < stocks.length) :
     depletingWordWeight stocks history = jointFalling (colourCounts stocks.length history) stocks := by
@@ -22,6 +36,8 @@ theorem depletingWordWeight_kernel (stocks history : List Nat)
       · intro other member
         simpa only [List.length_modify] using valid other (List.mem_cons_of_mem _ member)
 
+/-- Sum the actual atom list at one word label to recover its recursive
+branch multiplicity, including zero when a required stock has been exhausted. -/
 theorem multicolourDepleting_word_mass (stocks : List Nat) (history : List Nat)
     (valid : ∀ colour ∈ history, colour < stocks.length) :
     FiniteProbRecord.eventMass (multicolourDepletingAtoms history.length stocks)
@@ -78,6 +94,9 @@ theorem multicolourDepleting_one_categorical (stocks : List Nat) (positive : 0 <
   simp only [multicolourDepletingAtoms, List.map_cons, List.map_nil, Nat.mul_one]
   exact List.map_eq_flatMap.symm
 
+/-- Closed word mass at a permitted horizon. A globally sufficient total
+stock makes the denominator positive; coordinate overdraw still gives a
+zero numerator rather than a supported word. -/
 theorem multicolourDepleting_word_pmf (stocks history : List Nat)
     (valid : ∀ colour ∈ history, colour < stocks.length) (within : history.length ≤ stocks.sum) :
     QProb.Equiv ((multicolourDepletingDistro history.length stocks within).pmf history)

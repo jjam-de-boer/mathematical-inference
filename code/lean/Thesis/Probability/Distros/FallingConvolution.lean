@@ -5,6 +5,20 @@ import Thesis.Probability.Distros.HypergeometricUrn
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Falling-factorial convolution without population division
+
+The finite-population analogue of the reinforced convolution replaces rising
+weights by falling stock factors. The unordered Vandermonde identity proves
+the corresponding ordered-draw normalizer, and factorial stripping computes
+each unnormalized coordinate moment.
+
+Orders beyond the available stock or sample size are handled by actual zero
+factors, without cancellation. The final mixed-kernel lemma likewise proves
+vanishing when total requested order exceeds the count total, including
+dimension mismatch through the kernel's explicit zero branch.
+-/
+
 /-- Falling-factorial Vandermonde, valid beyond the total population as
 well as for empty colour stocks. -/
 theorem fallingFactorial_vandermonde (n a b : Nat) :
@@ -51,6 +65,8 @@ theorem fallingBeta_factorial_moment (n a b order : Nat) :
       rw [index]
       ac_rfl
     rw [rows, fallingFactorial_vandermonde]
+    -- Natural subtraction has the intended population interpretation only
+    -- in the sufficient-stock branch; otherwise its prefactor is zero.
     by_cases enough : order ≤ a
     · have total : a - order + b = a + b - order := by omega
       rw [total]

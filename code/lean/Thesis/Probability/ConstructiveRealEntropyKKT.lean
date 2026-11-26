@@ -1,5 +1,16 @@
 import Thesis.Probability.ConstructiveRealLagrangePairing
 
+/-!
+# Sufficient KKT certificates for original rational entropy rows
+
+An affine stationarity equation is paired with signs and complementary
+products for the original closed inequality slacks. The products
+vanish without deciding which analytic slacks are zero. Pairing with any
+feasible displacement yields the variational inequality, so the Gibbs
+bound proves global maximality against boundary competitors as well.
+Unit conversion scales the actual coefficients and their sign evidence.
+-/
+
 namespace Thesis.Probability.Distros.RationalEntropyProblem
 open ConstructiveReal
 open RationalLinear

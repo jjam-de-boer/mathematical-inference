@@ -1,5 +1,16 @@
 import Thesis.Probability.ConstructiveRealCauchy
 
+/-!
+# Closed order constraints at effective Cauchy limits
+
+Pointwise comparisons pass to limits by evaluating both sequences at a
+common index computed from their moduli. Each approximation contributes
+half the requested rational error. No monotonicity of either sequence is
+needed. Comparing with a constant sequence gives upper and lower bounds,
+so closed intervals are retained. These are non-strict order results;
+strict separation would require additional positive margin data.
+-/
+
 namespace Thesis.Probability.RealCauchySequence
 open ConstructiveReal
 

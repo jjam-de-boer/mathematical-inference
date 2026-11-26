@@ -4,6 +4,21 @@ import Thesis.Probability.Distros.PGFUniqueness
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Finite generating functions expanded in factorial moments
+
+The normalized factorial moment `E[(X)_r]/r!` equals the expected binomial
+coefficient. A bounded binomial expansion therefore gives the exact finite
+identity for the generating function at `1+t`, for every nonnegative rational
+offset. Padding introduces only coefficients proved to be zero.
+
+Equality of moments through a common bound gives equality of the complete
+numeric law via the existing large-integer generating-function uniqueness
+argument. The bounds in this module apply to all listed atoms, including
+null occurrences; later positive-support variants relax that requirement.
+No analytic differentiation or infinite-series convergence is used.
+-/
+
 /-- The coefficient E[(X)_r]/r! in the finite expansion about one. -/
 def factorialPGFCoefficient (μ : NatDistro Ω) (order : Nat) : QProb :=
   QProb.div (factorialMoment μ order) (QProb.ofNat (fallingFactorial order order))
@@ -104,6 +119,8 @@ theorem NatDistro.sameLaw_of_factorialMoments (μ : NatDistro Ω) (ν : NatDistr
     (hν : ∀ atom ∈ ν.distro.record.atoms, ν.embed atom.1 ≤ bound)
     (same : ∀ order, order ≤ bound → QProb.Equiv (factorialMoment μ order) (factorialMoment ν order)) : μ.SameLaw ν := by
   let base := μ.distro.record.den * ν.distro.record.den
+  -- A concrete integer argument separates the bounded integer coefficient
+  -- tables after their original denominators have been cleared.
   let t := QProb.ofNat base
   have arguments : QProb.Equiv (QProb.add t QProb.one) (QProb.ofNat (base + 1)) := by
     simp only [t, QProb.Equiv, QProb.add, QProb.ofNat, QProb.one, Nat.mul_one]

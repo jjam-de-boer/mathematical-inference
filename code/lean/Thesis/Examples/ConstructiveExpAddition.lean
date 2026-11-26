@@ -1,5 +1,23 @@
 import Thesis.Probability.ConstructiveRealExpPositive
 
+/-!
+# Exponential addition through finite sums and controlled tails
+
+Finite Taylor coefficients satisfy the convolution identity, including
+cancellation for opposite signed arguments. The explicit nonzero corner
+of a rectangular product shows why rectangular and triangular truncations
+cannot simply be identified before their tails are bounded. Geometric
+envelope examples check the square-factor decay estimate, including zero
+index and a zero domination coefficient.
+
+The analytic consequences are tested at arbitrary constructive real inputs:
+addition, cancellation with `exp(-x)`, natural multiples and subtraction.
+The constructed positive lower bound supplies the reciprocal domain without
+a separate caller assumption, and the product-one identity refutes a zero
+exponential. These are analytic values, not new real-valued probability
+weights.
+-/
+
 namespace Thesis.Examples.ConstructiveExpAddition
 open Probability ConstructiveReal
 

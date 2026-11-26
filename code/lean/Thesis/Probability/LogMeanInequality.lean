@@ -1,6 +1,16 @@
 import Thesis.Probability.RationalAMGM
 import Thesis.Probability.ExactLogRoots
 
+/-!
+# Bounding weighted exact logarithms by arithmetic means
+
+Natural multiplicities give a weighted product of positive arguments.
+A common positive degree presents the weighted logarithmic sum as one
+exact logarithm. The finite AM-GM bound reduces its sign to an arithmetic
+mean comparison with one. Applying that comparison to inverses gives
+the opposite sign. Zero multiplicities contribute no term.
+-/
+
 namespace Thesis.Probability.RationalAMGM
 
 /-- Weighted logarithms with a common normalization denominator. -/

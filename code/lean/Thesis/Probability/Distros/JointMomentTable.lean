@@ -4,6 +4,21 @@ import Thesis.Probability.Distros.ProbabilityList
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Candidate joint moment tables and their exact probability constraints
+
+Tensor inversion maps supplied rational mixed moments to signed candidate
+masses on the declared rectangle, independently of any existing joint law.
+Validity requires every bounded cell mass to be nonnegative and their finite
+sum to equal one. Negative auxiliary masses are not probability weights.
+
+Reverse inversion recovers the supplied normalized moment coefficients.
+For actual bounded joint laws, forward inversion proves nonnegativity and
+the zero-order coefficient proves normalization. Only positive occurrences
+must have the rectangle's dimension and bounds; retained null outliers are
+allowed in the original presentation.
+-/
+
 /-- Supplied mixed factorial moments divided by the coordinate factorials. -/
 def jointFactorialTableCoefficient (moments : List Nat → QProb) (orders : List Nat) : SignedRatio :=
   (QProb.div (moments orders) (QProb.ofNat (orderFactorial orders)) (orderFactorial_pos orders)).toSignedRatio
@@ -13,6 +28,8 @@ def inverseJointFactorialTable (moments : List Nat → QProb) (bounds target : L
   SignedRatio.listSum ((factorialRectangle bounds).map (fun orders =>
     SignedRatio.mul ⟨jointInverseBinomial orders target, 1, Nat.zero_lt_one⟩ (jointFactorialTableCoefficient moments orders)))
 
+/-- The complete finite probability conditions on the candidate inverse,
+without presupposing a realizing joint law or independent coordinates. -/
 def JointFactorialMomentTableValid (moments : List Nat → QProb) (bounds : List Nat) : Prop :=
   (∀ value, CoordinateBounds value bounds → SignedRatio.Nonnegative (inverseJointFactorialTable moments bounds value)) ∧
   SignedRatio.Equiv (SignedRatio.listSum ((factorialRectangle bounds).map (inverseJointFactorialTable moments bounds))) SignedRatio.one
@@ -79,6 +96,8 @@ theorem jointFactorialMomentTable_valid_of_moments (μ : Distro (List Nat)) (mom
     have same := inverseJointFactorialTable_of_moments μ moments bounds value (coordinateBounds_length _ _ within) support momentsAgree
     exact (SignedRatio.nonnegative_congr same).mp (QProb.toSignedRatio_nonnegative _)
   · let zeroOrders := List.replicate bounds.length 0
+    -- The zero mixed order integrates the constant one response. Its
+    -- reverse-inversion identity is exactly normalization of all cell masses.
     have zeroBounded : CoordinateBounds zeroOrders bounds := coordinateBounds_zero bounds
     have terms := SignedRatio.listSum_map_congr_on_mem (factorialRectangle bounds)
       (fun counts => SignedRatio.mul (inverseJointFactorialTable moments bounds counts)

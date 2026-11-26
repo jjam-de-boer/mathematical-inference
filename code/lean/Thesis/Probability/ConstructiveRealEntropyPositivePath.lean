@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealCrossEntropyBounds
 import Thesis.Probability.ConstructiveRealEqualityConstraints
 
+/-!
+# Feasible dyadic paths for entropy and cross-entropy comparisons
+
+Midpoint mixtures preserve normalization and every original closed row.
+Iterating towards a positive target gives a sequence converging back to
+the reference, with a known dyadic fraction of the target floor at each
+sample. The forward and backward displacement identities let global
+maximality bound cross entropy at the positive intermediate samples. This
+bridge works even if the reference has zero coordinates.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private theorem rational_half (lower : PositiveRatio) :

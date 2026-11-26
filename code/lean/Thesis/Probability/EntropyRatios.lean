@@ -4,6 +4,19 @@ import Thesis.Probability.QProbOrder
 
 namespace Thesis.Probability
 
+/-!
+# Likelihood-ratio arithmetic for exact relative entropy
+
+A positive observed mass supplies the ratio to its strictly positive
+reference. At zero observed mass the auxiliary ratio is set to one and is
+always used with zero multiplicity, so no unsupported logarithm is formed.
+
+The KL summand becomes an exact root of a weighted ratio power. Weighted
+inverse-ratio identities and bounds remain meaningful at zero observations;
+identifying a ratio with one is equivalent to equal masses only in the
+explicit positive-observation branch.
+-/
+
 /-- The positive likelihood ratio `p/r` at positive observed mass. At zero
 observed mass its harmless value one is always given multiplicity zero. -/
 def relativeRatio (p r : QProb) (referencePositive : 0 < r.num) : PositiveRatio :=

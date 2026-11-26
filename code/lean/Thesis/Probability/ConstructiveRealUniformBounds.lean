@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveRealDifferenceLimits
 import Thesis.Probability.ConstructiveRealBounds
 import Thesis.Probability.ConstructiveRealDistanceScaling
 
+/-!
+# Shared magnitude bounds for bounded families of real values
+
+Bounds computed from the endpoints of a fixed real interval control all
+sufficiently fine rational approximants of every enclosed value. This
+single constant can certify uniform estimates along a path, rather than
+using a different presentation-dependent bound at each point. The
+multiplication result uses the supplied bound to multiply a two-sided
+error by a signed real factor, without deciding its sign.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A presentation-independent natural bound for fine approximants of any

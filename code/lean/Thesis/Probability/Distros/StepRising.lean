@@ -1,5 +1,16 @@
 import Thesis.Probability.Distros.MulticolourPolya
 import Thesis.Probability.Distros.MultinomialAggregation
+/-!
+Natural reinforcement factors for sequential urn weights.
+
+`stepRising a d n` multiplies the successive weights a, a+d, ..., a+(n-1)d.
+The coordinate product `stepKernel` is the raw weight of a word with given
+counts; unequal parameter/count dimensions give zero. The increment-zero
+and increment-one identities connect this common representation to powers
+and ordinary rising factorials. Splitting and scaling identities justify
+continuations and changes of integer units without dividing natural numbers.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 
@@ -29,6 +40,8 @@ theorem stepRising_scale (c a increment n : Nat) :
   | zero => simp only [stepRising, Nat.pow_zero, Nat.mul_one]
   | succ n ih => rw [stepRising, ← Nat.mul_add, ih, stepRising, Nat.pow_succ]; ac_rfl
 
+/-- Split a run into an initial block and the continuation starting at its
+reinforced weight. This is an equality of natural products, including zero factors. -/
 theorem stepRising_add (a increment r n : Nat) :
     stepRising a increment (r + n) = stepRising a increment r * stepRising (a + increment * r) increment n := by
   induction r generalizing a with
@@ -40,6 +53,8 @@ theorem stepRising_add (a increment r n : Nat) :
       rw [index]
       ac_rfl
 
+/-- Product of reinforced factors for matching parameter/count lists.
+The mismatch branch gives zero, so dimension hypotheses are explicit at use sites. -/
 def stepKernel (increment : Nat) : List Nat → List Nat → Nat
   | [], [] => 1
   | alpha :: alphas, count :: counts => stepRising alpha increment count * stepKernel increment alphas counts
@@ -51,6 +66,8 @@ theorem stepKernel_zeros (increment : Nat) (alphas : List Nat) :
   | nil => rfl
   | cons alpha alphas ih => simp only [List.length_cons, List.replicate_succ, stepKernel, stepRising, Nat.one_mul, ih]
 
+/-- Remove one occurrence of a selected colour from its count and move the
+corresponding reinforcement into the starting parameter. The index must be valid. -/
 theorem stepKernel_increment (increment : Nat) (alphas counts : List Nat)
     (dimension : alphas.length = counts.length) (index : Nat) (within : index < alphas.length) :
     stepKernel increment alphas (counts.modify index (fun c => c + 1)) =
@@ -78,6 +95,8 @@ theorem stepKernel_zero (alphas counts : List Nat) : stepKernel 0 alphas counts 
   | nil => cases counts <;> rfl
   | cons alpha alphas ih => cases counts <;> simp only [stepKernel, natMonomial, stepRising_zero, ih]
 
+/-- Changing every initial weight and the increment by the same factor
+multiplies a count weight by that factor to the total number of draws. -/
 theorem stepKernel_scale (c increment : Nat) (alphas counts : List Nat) :
     stepKernel (c * increment) (alphas.map (fun a => c * a)) counts =
       c ^ counts.sum * stepKernel increment alphas counts := by

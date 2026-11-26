@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealOrderedRing
 import Thesis.Probability.RationalApproximationSequence
 
+/-!
+# Rational centers of analytic values in the closed unit interval
+
+A rational lower endpoint can be clamped at zero using exact rational
+order. The clamped endpoint still lies below the original nonnegative
+real and within its requested error. With the supplied upper bound one,
+this constructs an effective sequence of rational unit masses.
+Coordinatewise approximation alone carries no normalization guarantee.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A nonnegative rational approximation of a real, using only a finite

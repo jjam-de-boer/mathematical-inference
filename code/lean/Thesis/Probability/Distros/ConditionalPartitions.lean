@@ -3,6 +3,21 @@ import Thesis.Probability.Distros.SignedConcentration
 
 namespace Thesis.Probability.Distros
 
+/-!
+# Conditional moments over exhaustive atom partitions
+
+Partition cells are lists of actual weighted occurrences. Flattening must be
+a permutation of the original record, so repeated outcomes retain their
+multiplicity and no mass can be dropped or copied. Successive Boolean cuts
+construct such a partition even when the supplied events overlap.
+
+A block mean divides only on positive-mass cells. Null cells use zero as an
+explicit observable convention; the supported conditioning operation still
+requires positive evidence. Multiplying the block mean by its mass recovers
+the original integral in both cases, yielding total expectation without a
+positivity requirement on each cell.
+-/
+
 /-- A finite partition of actual weighted atom occurrences. Empty and
 zero-mass cells are allowed; flattening preserves every occurrence and weight.
 `ofEvents` below constructs partitions directly from Boolean evidence. -/
@@ -49,6 +64,8 @@ theorem partitionAtomCuts_perm (events : List (Event Ω)) (atoms : List (Ω × N
         (partitionAtomCuts events (atoms.filter (fun atom => !event atom.1))).flatten).Perm atoms
       exact ((ih _).append_left _).trans (List.filter_append_perm (fun atom => event atom.1) atoms)
 
+/-- Earlier events take precedence: each later event cuts only the
+remaining complement. A final cell retains everything not selected earlier. -/
 def AtomPartition.ofEvents (μ : Distro Ω) (events : List (Event Ω)) : AtomPartition μ :=
   ⟨partitionAtomCuts events μ.record.atoms, partitionAtomCuts_perm events μ.record.atoms⟩
 
@@ -59,6 +76,8 @@ def conditionalBlockMean (atoms : List (Ω × Nat)) (f : Ω → SignedRatio) : S
     SignedRatio.divideNat (FiniteProbRecord.rationalAtomSum atoms f) (FiniteProbRecord.totalMass atoms) positive
   else SignedRatio.zero
 
+/-- Covariance within a weighted cell, using the same supported mean or
+null-cell zero convention for each of its three component expectations. -/
 def conditionalBlockCovariance (atoms : List (Ω × Nat)) (f g : Ω → SignedRatio) : SignedRatio :=
   SignedRatio.sub (conditionalBlockMean atoms (fun x => SignedRatio.mul (f x) (g x)))
     (SignedRatio.mul (conditionalBlockMean atoms f) (conditionalBlockMean atoms g))
@@ -79,6 +98,8 @@ theorem conditionalBlockMean_conditionOn (μ : Distro Ω) (event : Event Ω)
   simp only [FiniteProbRecord.rationalMean, FiniteProbRecord.conditionOn,
     FiniteProbRecord.totalMass_filter_event]
 
+/-- Nonnegative atom weights force every occurrence in a null cell to have
+weight zero, even when its signed response is nonzero. -/
 private theorem rationalAtomSum_zero_mass (atoms : List (Ω × Nat)) (zero : FiniteProbRecord.totalMass atoms = 0)
     (f : Ω → SignedRatio) : SignedRatio.Equiv (FiniteProbRecord.rationalAtomSum atoms f) SignedRatio.zero := by
   induction atoms with
@@ -139,6 +160,8 @@ theorem AtomPartition.total_expectation {μ : Distro Ω} (partition : AtomPartit
     (SignedRatio.listSum (partition.cells.map (fun cell =>
       SignedRatio.scaleNat (FiniteProbRecord.totalMass cell) (conditionalBlockMean cell f))))
     (FiniteProbRecord.rationalAtomSum μ.record.atoms f)
+  -- Replace each mass-weighted mean by its cell integral, then use the
+  -- exhaustive permutation to recover the original full atom integral.
   refine SignedRatio.equiv_trans (SignedRatio.listSum_map_congr partition.cells _ _
     (fun cell => conditionalBlockMean_weighted cell f)) ?_
   exact SignedRatio.equiv_trans (SignedRatio.equiv_symm (rationalAtomSum_flatten partition.cells f))

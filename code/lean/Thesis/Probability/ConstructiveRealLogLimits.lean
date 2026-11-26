@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealLogOrder
 import Thesis.Probability.ConstructiveRealCauchyOrder
 
+/-!
+# Effective logarithm limits on a common positive domain
+
+Positive rational centers approximate the input while keeping its
+specified lower bound. On an effective Cauchy sequence above one floor,
+the uniform logarithm modulus constructs the transformed sequence.
+Closed order supplies the same floor at the limit. Uniqueness then
+identifies the effective limit with the logarithm there.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A sequence of positive rational values converging effectively to the

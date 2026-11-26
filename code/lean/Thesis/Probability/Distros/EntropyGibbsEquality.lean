@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.EntropyGibbs
 import Thesis.Probability.LogMeanEquality
 
+/-!
+The equality case of finite Gibbs inequality, including observed zeros.
+
+Zero KL first forces the observed/reference ratio to be one wherever the
+observed mass is positive. That statement alone would leave observed-zero
+cells unchecked. Equal normalized totals and a pointwise mass bound then
+force equality on every declared cell as well. Almost-sure support supplies
+zero mass outside the grid, yielding equality of all Boolean event laws.
+The converse follows by law invariance and the self-divergence identity;
+the reference remains positive on the whole declared grid throughout.
+-/
+
 namespace Thesis.Probability.Distros
 
 private theorem sum_map_mono (values : List A) (f g : A → Nat)
@@ -11,6 +23,8 @@ private theorem sum_map_mono (values : List A) (f g : A → Nat)
       exact Nat.add_le_add (bounded head (List.mem_cons_self ..))
         (ih (fun value member => bounded value (List.mem_cons_of_mem _ member)))
 
+/-- Pointwise natural inequalities with equal finite totals must all be
+equalities. This closes the zero-observed-mass cases left by positive-ratio equality. -/
 private theorem eq_of_sum_map_eq (values : List A) (f g : A → Nat)
     (bounded : ∀ value ∈ values, f value ≤ g value) (equal : (values.map f).sum = (values.map g).sum) :
     ∀ value ∈ values, f value = g value := by

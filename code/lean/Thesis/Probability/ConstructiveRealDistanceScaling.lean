@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealDistanceAlgebra
 import Thesis.Probability.ConstructiveRealStability
 
+/-!
+# Rewriting displacement and bounding multiplication errors
+
+Subtracting a common offset leaves the distance unchanged. Reading the
+increment of a nearby value as a difference gives an equivalent bound
+about zero. For a fixed signed factor, the magnitude bound computed
+from its fine rational approximants supplies a Lipschitz constant.
+This applies without a nonnegative-factor premise.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 theorem within_sub_right_iff (error : QProb) (offset x y : ConstructiveReal) :

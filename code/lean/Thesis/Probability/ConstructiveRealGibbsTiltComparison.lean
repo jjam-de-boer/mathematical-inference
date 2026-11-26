@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealGibbsTiltEntropy
 
+/-!
+# Invariance of finite tilts under equivalent log weights
+
+Coordinate equivalence of the log weights transports through the
+exponential and the finite sum. The two positive partition reciprocals
+then agree as values, even if their floor witnesses differ. The lemma
+therefore compares actual normalized distributions built by distinct
+affine paths or different analytic presentations.
+-/
+
 namespace Thesis.Probability.FiniteGibbsTilt
 open ConstructiveReal
 

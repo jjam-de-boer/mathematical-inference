@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.CrossEntropy
 import Thesis.Probability.Distros.FiniteGridMoments
 
+/-!
+Integrate exact logarithmic scores against finite rational probability laws.
+
+The expectation uses aggregated PMFs on a distinct supported entropy grid,
+so repeated atom occurrences do not become additional outcome states.
+ExactLog scores may have either sign; rational masses remain nonnegative.
+Finite linearity and constant-score normalization give an affine-score
+formula depending only on selected natural moments. A supplied representation
+of a reference's information score then identifies this expectation with
+cross entropy, connecting moment constraints to entropy comparisons.
+-/
+
 namespace Thesis.Probability.ExactLog
 
 theorem scaleRatio_ofNat (n : Nat) (x : ExactLog) : scaleRatio (QProb.ofNat n) x = scaleNat n x := by
@@ -47,6 +59,8 @@ theorem Distro.logExpectation_congr [DecidableEq A] (μ : Distro A) (grid : Entr
     ExactLog.Equiv (μ.logExpectation grid support f) (μ.logExpectation grid support g) :=
   ExactLog.listSum_map_congr grid.cells _ _ (fun value member => ExactLog.scaleRatio_value_congr _ (same value member))
 
+/-- Aggregated grid PMFs sum to one, so a constant exact-log score
+integrates to itself even when the score is negative. -/
 theorem Distro.logExpectation_constant [DecidableEq A] (μ : Distro A) (grid : EntropyGrid A)
     (support : μ.AlmostSurely (fun value => value ∈ grid.cells)) (constant : ExactLog) :
     ExactLog.Equiv (μ.logExpectation grid support (fun _ => constant)) constant := by
@@ -73,6 +87,8 @@ theorem Distro.logExpectation_listSum [DecidableEq A] (μ : Distro A) (grid : En
       exact ExactLog.equiv_trans (μ.logExpectation_add grid support (f head) _)
         (ExactLog.add_congr (ExactLog.equiv_refl _) ih)
 
+/-- A logarithmic coefficient times a natural observable integrates as
+that coefficient times the observable's ordinary rational expectation. -/
 theorem Distro.logExpectation_nat [DecidableEq A] (μ : Distro A) (grid : EntropyGrid A)
     (support : μ.AlmostSurely (fun value => value ∈ grid.cells)) (f : A → Nat) (coefficient : ExactLog) :
     ExactLog.Equiv (μ.logExpectation grid support (fun value => ExactLog.scaleNat (f value) coefficient))

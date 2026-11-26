@@ -3,6 +3,20 @@ import Thesis.Probability.Distros.RationalConcentration
 
 namespace Thesis.Probability.Distros
 
+/-!
+# Tower laws from almost-sure refinement
+
+A coarse label need agree with the declared merge of fine labels only at
+positive-weight occurrences. Retained null atoms may carry inconsistent
+labels without changing any weighted integral. The tower conclusion still
+compares conditional means pointwise, even at unsupported coarse labels.
+
+The proof avoids constructing a conditioned law on each coarse fibre.
+Instead, it expresses that fibre as an indicator weight in the original
+unnormalized integral, uses almost-sure agreement to rewrite the indicator,
+and invokes the fine conditional mean's weighted-integral identity.
+-/
+
 /-- Filtering a weighted integral equals masking its response. Null atom
 occurrences remain in the original record throughout the argument. -/
 theorem rationalAtomSum_filter (atoms : List (Ω × Nat)) (event : Event Ω) (f : Ω → SignedRatio) :
@@ -59,6 +73,8 @@ theorem Distro.conditionalExpectation_tower_almostSurely (μ : Distro Ω)
       (FiniteProbRecord.rationalAtomSum (μ.record.atoms.filter (fun atom => decide (coarse atom.1 = coarse x))) u)
       (FiniteProbRecord.rationalAtomSum μ.record.atoms (fun y => SignedRatio.mul (h (fine y)) (u y))) := by
     refine SignedRatio.equiv_trans (rationalAtomSum_filter μ.record.atoms (fun y => decide (coarse y = coarse x)) u) ?_
+    -- Only positive occurrences matter for the mask replacement. This is
+    -- exactly where the weaker almost-sure refinement premise is sufficient.
     apply rationalAtomSum_congr_positive
     intro atom member weight
     rw [agrees atom member weight]
@@ -67,6 +83,8 @@ theorem Distro.conditionalExpectation_tower_almostSurely (μ : Distro Ω)
       exact SignedRatio.equiv_symm (SignedRatio.one_mul _)
     · simp only [h, same, decide_false, Bool.false_eq_true, if_false]
       exact SignedRatio.equiv_symm (SignedRatio.zero_mul _)
+  -- Equal fibre integrals give equal block means with the same denominator;
+  -- if the denominator is zero, both means already use the chosen zero.
   apply conditionalBlockMean_congr_integral
   exact SignedRatio.equiv_trans (mask (μ.conditionalExpectation fine f))
     (SignedRatio.equiv_trans (SignedRatio.equiv_symm (μ.conditionalExpectation_weighted_integral fine f h))

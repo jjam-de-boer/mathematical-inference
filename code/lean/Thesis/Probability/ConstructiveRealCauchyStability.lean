@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealStability
 
+/-!
+# Transferring eventual closed estimates to effective limits
+
+A tail index may exclude any finite initial segment of both sequences.
+The proof chooses a later common index from the two convergence moduli
+and the tail threshold. Adding the approximation errors yields a bound
+at arbitrary additional precision. Removing this arbitrarily small slack
+preserves closed order and two-sided rational distance at the limits.
+-/
+
 namespace Thesis.Probability.RealCauchySequence
 open ConstructiveReal
 

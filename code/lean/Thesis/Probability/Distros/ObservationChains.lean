@@ -3,6 +3,22 @@ import Thesis.Probability.Distros.RefinementGain
 
 namespace Thesis.Probability.Distros
 
+/-!
+# Finite prediction chains under increasing observation
+
+Each stage supplies a finite observation alphabet and a map from the next
+stage's labels to the current labels. Refinement is required only through
+the declared finite horizon and only on positive-weight atom occurrences.
+Composing those maps gives the tower law between any admitted pair of stages.
+
+Differences of successive conditional means have zero conditional mean and
+are orthogonal across distinct stages. Their expected squares are the exact
+gains in prediction accuracy: the original squared error equals the final
+error plus the finite sum of increment energies. This uses refinement and
+weighted orthogonality, without an independence premise or an infinite-time
+convergence claim.
+-/
+
 /-- A finite observation sequence with possibly different finite label
 spaces. Only successive refinements through the declared horizon are required,
 and they are required only on positive-weight occurrences. -/
@@ -16,6 +32,9 @@ structure ObservationChain (μ : Distro Ω) (horizon : Nat) where
 namespace ObservationChain
 variable {μ : Distro Ω} {horizon : Nat}
 
+/-- Compose the supplied label maps backwards to an earlier stage. The
+map exists at all indices; its observational meaning is certified only when
+the accompanying horizon bound is supplied to `agreesTo`. -/
 def mergeTo (chain : ObservationChain μ horizon) (start : Nat) :
     (steps : Nat) → Fin (chain.labels (start + steps)) → Fin (chain.labels start)
   | 0, label => label
@@ -41,6 +60,8 @@ theorem tower (chain : ObservationChain μ horizon) (start steps : Nat) (within 
   μ.conditionalExpectation_tower_almostSurely (chain.observe (start + steps)) (chain.observe start)
     (chain.mergeTo start steps) (chain.agreesTo start steps within) f x
 
+/-- The prediction indexed directly by a stage label, with zero on a
+label whose fibre has no positive mass. -/
 def predictor (chain : ObservationChain μ horizon) (f : Ω → SignedRatio) (stage : Nat)
     (label : Fin (chain.labels stage)) : SignedRatio :=
   conditionalBlockMean (μ.record.atoms.filter (fun atom => decide (chain.observe stage atom.1 = label))) f
@@ -48,6 +69,8 @@ def predictor (chain : ObservationChain μ horizon) (f : Ω → SignedRatio) (st
 def mean (chain : ObservationChain μ horizon) (f : Ω → SignedRatio) (stage : Nat) : Ω → SignedRatio :=
   μ.conditionalExpectation (chain.observe stage) f
 
+/-- The change in the conditional prediction when the next observation
+is made. Its martingale-difference property needs the stage's horizon bound. -/
 def increment (chain : ObservationChain μ horizon) (f : Ω → SignedRatio) (stage : Nat) (x : Ω) : SignedRatio :=
   SignedRatio.sub (chain.mean f (stage + 1) x) (chain.mean f stage x)
 
@@ -61,6 +84,8 @@ theorem increment_conditional_zero (chain : ObservationChain μ horizon) (f : Ω
       (μ.conditionalExpectation_idempotent (chain.observe stage) f x))
       ((SignedRatio.sub_equiv_zero_iff _ _).mpr (SignedRatio.equiv_refl _)))
 
+/-- Both conditional predictions have the original unconditional mean, so
+this weaker zero-mean fact holds even without an admitted refinement step. -/
 theorem increment_mean_zero (chain : ObservationChain μ horizon) (f : Ω → SignedRatio) (stage : Nat) :
     SignedRatio.Equiv (μ.rationalExpectation (chain.increment f stage)) SignedRatio.zero :=
   SignedRatio.equiv_trans (μ.rationalExpectation_sub _ _)
@@ -106,9 +131,13 @@ theorem increments_orthogonal (chain : ObservationChain μ horizon) (f : Ω → 
   exact SignedRatio.equiv_trans (μ.rationalExpectation_sub _ _)
     (SignedRatio.equiv_trans (ratio_sub_congr first second) (SignedRatio.sub_zero SignedRatio.zero))
 
+/-- Expected squared size of one prediction increment. Nonnegativity
+depends only on the square, not on a refinement or independence condition. -/
 def energy (chain : ObservationChain μ horizon) (f : Ω → SignedRatio) (stage : Nat) : SignedRatio :=
   μ.rationalExpectation (fun x => SignedRatio.mul (chain.increment f stage x) (chain.increment f stage x))
 
+/-- Accumulate the increment energies along a finite interval of stages.
+The error-decomposition theorem supplies the interval's horizon check. -/
 def gain (chain : ObservationChain μ horizon) (f : Ω → SignedRatio) (start : Nat) : Nat → SignedRatio
   | 0 => SignedRatio.zero
   | steps + 1 => SignedRatio.add (chain.gain f start steps) (chain.energy f (start + steps))

@@ -1,12 +1,26 @@
 import Thesis.Probability.Distros.RationalConcentration
 import Thesis.Probability.Distros.RationalMarkov
 
+/-!
+Chebyshev bounds for arbitrary finite signed rational observables.
+
+An exact nonnegative square packages the centered signed difference without
+losing its sign before squaring. The centered-square identity and the proved
+nonnegativity of rational variance justify presenting variance as a QProb;
+its natural-numerator conversion does not clip a negative value. Applying
+rational Markov to this square proves the tail bound at any positive rational
+radius. The Boolean deviation event uses only decidable natural comparisons
+and handles zero variance and unreduced fractions directly.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- The square of a signed rational is a nonnegative rational value. -/
 def squaredRatio (value : SignedRatio) : QProb :=
   ⟨value.num.natAbs * value.num.natAbs, value.den * value.den, Nat.mul_pos value.den_pos value.den_pos⟩
 
+/-- The natural absolute-numerator square represents the genuine signed
+rational square. This connects a nonnegative Markov observable to signed moments. -/
 theorem squaredRatio_spec (value : SignedRatio) :
     SignedRatio.Equiv (squaredRatio value).toSignedRatio (SignedRatio.mul value value) := by
   simp only [SignedRatio.Equiv, squaredRatio, QProb.toSignedRatio, SignedRatio.mul,
@@ -82,12 +96,16 @@ The specification below proves that the conversion never clips a negative value.
 def Distro.varianceRational (μ : Distro Ω) (f : Ω → SignedRatio) : QProb :=
   ⟨(μ.rationalVariance f).num.toNat, (μ.rationalVariance f).den, (μ.rationalVariance f).den_pos⟩
 
+/-- Variance nonnegativity makes the numerator's natural conversion exact;
+this is the proof that the packaging preserves the computed rational variance. -/
 theorem Distro.varianceRational_spec (μ : Distro Ω) (f : Ω → SignedRatio) :
     SignedRatio.Equiv (μ.varianceRational f).toSignedRatio (μ.rationalVariance f) := by
   change ((μ.rationalVariance f).num.toNat : Int) * ((μ.rationalVariance f).den : Int) =
     (μ.rationalVariance f).num * ((μ.rationalVariance f).den : Int)
   rw [Int.toNat_of_nonneg (μ.rationalVariance_nonnegative f)]
 
+/-- The expected nonnegative centered square is exactly the packaged
+variance, making the right side of the Markov bound the intended variance term. -/
 theorem Distro.squaredRatioDeviation_mean (μ : Distro Ω) (f : Ω → SignedRatio) :
     QProb.Equiv (μ.expectation (fun x => squaredRatio (SignedRatio.sub (f x) (μ.rationalExpectation f))))
       (μ.varianceRational f) := by

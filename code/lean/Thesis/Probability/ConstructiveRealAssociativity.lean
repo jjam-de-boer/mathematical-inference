@@ -1,5 +1,16 @@
 import Thesis.Probability.ConstructiveRealMultiplication
 
+/-!
+# Associativity across different product approximation schedules
+
+Parenthesizing three factors changes the precision required by each
+regular approximation. The two resulting rational algorithms are compared
+using a common reference evaluation of the three factors and an explicit
+cross-error bound. Arbitrarily small errors imply equivalent limits.
+Transport through the rational approximations of three arbitrary reals
+then establishes associativity for their constructed multiplication.
+-/
+
 namespace Thesis.Probability.RegularRationalApproximation
 
 private theorem error_below (approximation : RegularRationalApproximation) (first second left right : PositiveRatio)

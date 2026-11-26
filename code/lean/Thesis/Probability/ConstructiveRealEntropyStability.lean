@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveRealMomentConvexity
 import Thesis.Probability.ConstructiveRealEntropyUniversalBound
 import Thesis.Probability.ConstructiveRealSquareDistance
 
+/-!
+# Quantitative agreement of feasible near-maximizers
+
+A near-optimality witness compares one feasible law with all feasible
+analytic competitors at a stated rational tolerance. The midpoint is
+also feasible. The quadratic entropy gap at that midpoint bounds the
+squared distance between two near-maximizers by four times the sum of
+their tolerances. A smaller rational threshold then certifies a desired
+coordinatewise distance. The argument uses no positive lower mass floor.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private abbrev Expr := RationalPolynomial.Expression 4

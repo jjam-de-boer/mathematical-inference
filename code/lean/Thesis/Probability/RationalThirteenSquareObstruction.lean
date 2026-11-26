@@ -1,5 +1,16 @@
 import Thesis.Probability.Core
 
+/-!
+# No rational square equals thirteen
+
+The proof checks the thirteen possible residues of an integer numerator.
+Square divisibility forces divisibility of the base. If a positive
+common-denominator solution existed, dividing both numerator and denominator
+by thirteen would give a smaller positive solution. The resulting descent
+needs neither reduced fractions nor a coprimality assumption. This is the
+arithmetic obstruction used by the three-state mean-half entropy example.
+-/
+
 namespace Thesis.Probability.RationalSquareObstruction
 
 /-- Finite residue checking supplies divisibility by thirteen from square

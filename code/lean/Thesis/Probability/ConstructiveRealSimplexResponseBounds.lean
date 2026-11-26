@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealSimplex
 import Thesis.Probability.Distros.ShiftedMoments
 
+/-!
+# Integer response bounds on the closed analytic simplex
+
+The two signed mass rows force exact normalization. Constant responses
+then have their constant value, and nonnegative coordinates preserve a
+computed uniform lower bound on arbitrary finite integer responses.
+This supplies the redundant lower endpoint needed to encode a one-sided
+row as a moment interval. Null coordinates remain valid, and finite
+reindexing preserves row values.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 open ConstructiveReal
 

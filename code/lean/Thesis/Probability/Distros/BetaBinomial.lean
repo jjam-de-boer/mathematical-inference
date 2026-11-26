@@ -2,6 +2,19 @@ import Thesis.Probability.Distros.LimitAnalogs
 import Thesis.Probability.Distros.Moments
 import Thesis.Probability.Distros.BernoulliRace
 
+/-!
+A finite sequential interpretation of the beta-binomial distribution.
+
+The combinatorial part proves rising-factorial Vandermonde by a recurrence
+that remains valid with zero parameters. The probabilistic part constructs
+actual Boolean draw histories of a two-colour Pólya urn, returning each draw
+and adding one matching ball. Counting successes gives the closed beta-binomial
+weights, and an all-event correspondence relates this experiment to the
+existing constructor. Path records need only a positive total; the historical
+beta-binomial constructor used in the correspondence requires both parameters
+positive. The final weighted-sum identity computes the mean exactly.
+-/
+
 namespace Thesis.Probability
 
 namespace Combinatorics
@@ -16,6 +29,8 @@ theorem risingFactorial_head (a n : Nat) :
       rw [h]
       ac_rfl
 
+/-- Unnormalized success-count weight on natural indices. The binomial
+coefficient supplies zero outside the finite trial range. -/
 def betaBinomialTerm (n a b k : Nat) : Nat :=
   binom n k * risingFactorial a k * risingFactorial b (n - k)
 
@@ -109,17 +124,22 @@ def polyaPathAtoms : Nat → Nat → Nat → List (List Bool × Nat)
       (polyaPathAtoms n (a + 1) b).map (fun atom => (true :: atom.1, a * atom.2)) ++
         (polyaPathAtoms n a (b + 1)).map (fun atom => (false :: atom.1, b * atom.2))
 
+/-- The success-count observable on ordered Boolean histories. -/
 def polyaSuccesses : List Bool → Nat
   | [] => 0
   | true :: rest => polyaSuccesses rest + 1
   | false :: rest => polyaSuccesses rest
 
+/-- A count-only version of the same sequential recursion. Distinct
+histories may contribute separate atoms with the same count label. -/
 def polyaCountAtoms : Nat → Nat → Nat → List (Nat × Nat)
   | 0, _, _ => [(0, 1)]
   | n + 1, a, b =>
       (polyaCountAtoms n (a + 1) b).map (fun atom => (atom.1 + 1, a * atom.2)) ++
         (polyaCountAtoms n a (b + 1)).map (fun atom => (atom.1, b * atom.2))
 
+/-- Mapping every path to its success count yields exactly the count-only
+atom list, preserving weights and any repeated labels. -/
 theorem polyaPath_count_atoms (n a b : Nat) :
     (polyaPathAtoms n a b).map (fun atom => (polyaSuccesses atom.1, atom.2)) =
       polyaCountAtoms n a b := by
@@ -152,6 +172,8 @@ theorem polyaCount_totalMass (n a b : Nat) :
     FiniteProbRecord.totalMass (polyaCountAtoms n a b) = risingFactorial (a + b) n := by
   rw [← polyaPath_count_atoms, FiniteProbRecord.totalMass_map_labels, polyaPath_totalMass]
 
+/-- Summing all atoms with one count label recovers its closed
+beta-binomial term. Thus repeated histories are counted, not discarded. -/
 theorem polyaCount_mass (n a b k : Nat) :
     FiniteProbRecord.eventMass (polyaCountAtoms n a b) (FiniteProbRecord.singletonEvent k) =
       betaBinomialTerm n a b k := by
@@ -230,6 +252,8 @@ def polyaCountRecord (n a b : Nat) (positive : 0 < a + b) : FiniteProbRecord Nat
 theorem polyaCountRecord_atoms (n a b : Nat) (positive : 0 < a + b) :
     (polyaCountRecord n a b positive).atoms = polyaCountAtoms n a b := polyaPath_count_atoms n a b
 
+/-- Embed a raw count into the finite trial range by clipping. The
+support theorem shows clipping never changes a count produced by the urn. -/
 def polyaCountFin (n k : Nat) : Fin (n + 1) := ⟨min k n, Nat.lt_succ_of_le (Nat.min_le_right _ _)⟩
 
 /-- The success-count pushforward of the actual reinforced urn paths. -/
@@ -303,6 +327,8 @@ theorem betaBinomialTerm_succ_mul (n a b k : Nat) :
         (a * risingFactorial (a + 1) k) * risingFactorial b (n - k) := by ac_rfl
     _ = _ := by rw [binom_succ_mul]; ac_rfl
 
+/-- Lower the degree of the weighted count sum, then use Vandermonde.
+The zero-trial case is separate so no cancellation needs a positive trial count. -/
 theorem betaBinomialTerm_first_moment (n a b : Nat) :
     natSum (n + 1) (fun k => k * betaBinomialTerm n a b k) =
       n * a * risingFactorial (a + b + 1) (n - 1) := by
@@ -321,6 +347,8 @@ theorem betaBinomialTerm_first_moment (n a b : Nat) :
       have hs : a + 1 + b = a + b + 1 := by omega
       simp only [Nat.zero_mul, Nat.zero_add, Nat.add_sub_cancel, hs]
 
+/-- The expected success count is n a/(a+b). Equality is rational
+equivalence, so no reduction of numerator/denominator presentations is needed. -/
 theorem betaBinomial_mean (n a b : Nat) (ha : 0 < a) (hb : 0 < b) :
     QProb.Equiv (mean (betaBinomialNatDistro n a b ha hb))
       ⟨n * a, a + b, Nat.add_pos_left ha b⟩ := by

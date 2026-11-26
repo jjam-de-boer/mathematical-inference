@@ -1,5 +1,18 @@
 import Thesis.Probability.Distros.RationalSimplex
 
+/-!
+Convert rational simplex assignments to finite weighted probability laws.
+
+A signed rational assignment satisfying nonnegativity and normalization is
+encoded as natural weights on a nonempty listed grid. Nonnegativity is
+essential: the total helper `massProbability` truncates negative integer
+numerators, and its representation theorem assumes they are nonnegative.
+The construction retains zero-weight occurrences and permits repeated cell
+labels. Its expectation formula sums over occurrences. The converse PMF
+vector is a simplex only when the listed labels are distinct and support
+the original law, preventing duplicate labels from counting mass twice.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- A signed presentation is converted only under a nonnegativity proof
@@ -12,6 +25,9 @@ theorem massProbability_spec (value : SignedRatio) (positive : SignedRatio.Nonne
   change (value.num.toNat : Int) * value.den = value.num * value.den
   rw [Int.toNat_of_nonneg positive]
 
+/-- Read a finite simplex coordinate at a natural index, defaulting to
+zero outside the vector. Correct recovery in range uses the simplex's
+nonnegativity assumption through massProbability_spec. -/
 def indexedMassProbability (values : Fin variables → SignedRatio) (i : Nat) : QProb :=
   if within : i < variables then massProbability (values ⟨i, within⟩) else QProb.zero
 
@@ -27,6 +43,9 @@ theorem simplex_sum (values : Fin variables → SignedRatio) (simplex : Rational
     (SignedRatio.listSum_map_congr (List.finRange variables) _ values (fun i => SignedRatio.one_scaleInt (values i)))
   exact SignedRatio.equiv_trans (SignedRatio.equiv_symm expanded) simplex.2
 
+/-- The simplex constraints make the converted nonnegative coordinates
+sum to one as rational probabilities. No rounding or clipping error remains
+under those constraints. -/
 theorem indexedMassProbability_normalized (values : Fin variables → SignedRatio) (simplex : RationalLinear.Simplex values) :
     QProb.Equiv (QProb.listSum ((List.range variables).map (indexedMassProbability values))) QProb.one := by
   apply (QProb.toSignedRatio_equiv_iff _ _).mp
@@ -64,6 +83,8 @@ theorem simplexGrid_supported (cells : List A) (default : A) (values : Fin cells
   rw [← List.getElem_eq_getD (h := within) default]
   exact List.getElem_mem within
 
+/-- Every listed cell has a record occurrence even when its weight is
+zero. This retention assertion does not claim positive support for that cell. -/
 theorem simplexGrid_retains (cells : List A) (default : A) (values : Fin cells.length → SignedRatio)
     (simplex : RationalLinear.Simplex values) (nonempty : 0 < cells.length) (cell : A) (member : cell ∈ cells) :
     ∃ weight, (cell, weight) ∈ (simplexGrid cells default values simplex nonempty).record.atoms := by
@@ -74,6 +95,8 @@ theorem simplexGrid_retains (cells : List A) (default : A) (values : Fin cells.l
   change (cells.getD i default, weight) = (cell, weight)
   rw [← List.getElem_eq_getD (h := within) default, same]
 
+/-- Expectations are exactly the finite coordinate sum, including repeated
+labels and zero weights. The default cell cannot affect an in-range coordinate. -/
 theorem simplexGrid_expectation (cells : List A) (default : A) (values : Fin cells.length → SignedRatio)
     (simplex : RationalLinear.Simplex values) (nonempty : 0 < cells.length) (f : A → SignedRatio) :
     SignedRatio.Equiv ((simplexGrid cells default values simplex nonempty).rationalExpectation f)
@@ -117,6 +140,8 @@ theorem gridMasses_integer_expectation [DecidableEq A] (μ : Distro A) (cells : 
   exact SignedRatio.equiv_trans (SignedRatio.listSum_map_congr _ _ _ (fun _ => SignedRatio.mul_comm _ _))
     (SignedRatio.equiv_symm (RationalLinear.dot_sum _ _ _))
 
+/-- Recover a normalized simplex from singleton probabilities on a distinct
+supporting grid. Distinctness prevents repeated PMF entries from double-counting mass. -/
 theorem gridMasses_simplex [DecidableEq A] (μ : Distro A) (cells : List A) (default : A)
     (distinct : cells.Nodup) (support : μ.AlmostSurely (fun cell => cell ∈ cells)) :
     RationalLinear.Simplex (gridMasses μ cells default) :=

@@ -1,5 +1,19 @@
 import Thesis.Probability.ConstructiveRealEntropyFormula
 
+/-!
+# Finite Shannon sums of bounded auxiliary analytic coordinates
+
+`UnitIntervalValue` carries both closed bounds needed by the continuous
+entropy term. Its finite Shannon sum is defined before any normalization
+or moment-feasibility assertion. The probability-law interface still has
+finite rational weights: these real coordinates support analytic reasoning.
+Permutation, zero-coordinate and finite-error lemmas make the sum usable
+at boundary laws. Embedding a bounded rational vector recovers its existing
+exact entropy, and the proved ln(2) factor converts bits to natural units.
+Coordinates represent declared states; repeated record atoms must first
+be aggregated rather than counted as distinct entropy states.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- An auxiliary analytic value in [0,1]. A list of these coordinates is

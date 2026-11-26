@@ -2,6 +2,16 @@ import Thesis.Probability.ConstructiveRealLogLimits
 import Thesis.Probability.ConstructiveRealSequenceShift
 import Thesis.Probability.ConstructiveRealPositiveNeighborhood
 
+/-!
+# Computing a usable positive tail from a positive effective limit
+
+An explicit floor at the limit and its convergence modulus select a
+tail where each term retains half the floor. Earlier terms can have any
+sign. The shortened sequence has a common domain for taking logarithms,
+and its logarithm limit agrees with the original limit's logarithm.
+No decision about arbitrary real signs is required.
+-/
+
 namespace Thesis.Probability.RealCauchySequence
 open ConstructiveReal
 

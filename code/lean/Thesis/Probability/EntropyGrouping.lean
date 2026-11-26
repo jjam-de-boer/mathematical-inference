@@ -3,6 +3,19 @@ import Thesis.Probability.ExactLogLinear
 
 namespace Thesis.Probability
 
+/-!
+# Shannon grouping from finite exact-log arithmetic
+
+The product-mass entropy identity holds in both positive and zero branches.
+Finite summation separates the entropy of selecting a branch from its
+weighted internal entropy. Each conditional vector must be normalized;
+the outer branch weights need not be normalized for that algebraic identity.
+
+Permutation, rational presentation changes and added zero cells preserve
+the entropy sum. For two normalized independent finite choices, grouping
+then proves additive entropy rather than assuming additivity as an axiom.
+-/
+
 /-- Entropy of a finite vector of masses. Normalization is a separate
 hypothesis; this algebraic helper never changes a distribution record. -/
 def entropySum (masses : List QProb) : ExactLog :=

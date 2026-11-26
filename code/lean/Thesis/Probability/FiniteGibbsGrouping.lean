@@ -1,6 +1,23 @@
 import Thesis.Probability.ConstructiveRealFiniteFibers
 import Thesis.Probability.ConstructiveRealGibbsFamilyDerivative
 
+/-!
+# Exact Gibbs aggregation over finite physical state fibers
+
+A supplied surjective state grouping pulls each observable back to the
+microstates in its fiber. Micro reference weights are one, while macro
+reference weights are the computed positive fiber cardinalities. Finite
+fiber sums prove equality of partitions and normalized macro masses with
+the sums of their actual micro masses for every analytic parameter.
+
+States sharing observables remain distinct physical indices with equal
+individual probabilities. Expectations of all macro observables, including
+features and their products, are preserved by aggregation. Rationality of
+the analytic Gibbs masses is not assumed. This physical weight grouping
+has its own data; causal abstraction additionally requires intervention
+correspondence and interventional exactness certificates.
+-/
+
 namespace Thesis.Probability
 open ConstructiveReal
 

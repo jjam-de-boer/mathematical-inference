@@ -1,6 +1,17 @@
 import Thesis.Probability.RationalAMGMMean
 import Thesis.Probability.ExactLogLinear
 
+/-!
+# Two-point logarithmic concavity from finite weighted AM-GM
+
+A two-element weighted list specializes the established rational AM-GM
+inequality to an upper bound on a weighted logarithmic sum. The undivided
+version permits both natural multiplicities to vanish. The normalized
+version additionally requires their sum positive before division.
+Arguments and the proposed arithmetic-mean bound are positive rationals;
+no logarithm of zero or derivative formula is used to justify concavity.
+-/
+
 namespace Thesis.Probability
 
 /-- The undivided weighted form is convenient for secant comparisons. -/

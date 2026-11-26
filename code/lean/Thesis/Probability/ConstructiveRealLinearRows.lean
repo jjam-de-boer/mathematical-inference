@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveRealKernelElimination
 import Thesis.Probability.ConstructiveRealLattice
 import Thesis.Probability.ConstructiveRealReciprocal
 
+/-!
+# Linear inequalities with integer responses and analytic right sides
+
+The coefficients are integral data used for sign tests in elimination.
+The response is a finite analytic pairing and satisfaction is closed
+real order. A reciprocal needed for an explicit positive pivot is an
+embedded rational. Row operations combine the analytic bounds exactly,
+so this representation supports constructive projection without a
+decider for arbitrary real comparisons.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private theorem difference_add_cancel (first second : ConstructiveReal) : Equiv (add (sub first second) second) first :=

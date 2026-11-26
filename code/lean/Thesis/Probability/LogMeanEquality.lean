@@ -3,6 +3,19 @@ import Thesis.Probability.RationalAMGMEquality
 
 namespace Thesis.Probability.RationalAMGM
 
+/-!
+# Equality in the finite inverse-mean logarithmic bound
+
+When the weighted inverse arithmetic mean is bounded by one and the exact
+logarithmic mean is zero, every positively weighted ratio equals one.
+The proof converts logarithmic equality into weighted product equality and
+applies the rational arithmetic-geometric equality theorem to inverse ratios.
+
+Positive total weight is explicit. Recorded arguments with zero weight
+remain unconstrained, because they contribute to neither weighted product
+nor logarithmic mean.
+-/
+
 /-- Equality in the inverse-mean Gibbs bound determines every positively
 weighted ratio. This does not constrain any recorded zero-weight argument. -/
 theorem eq_one_of_logMean_zero (items : List (PositiveRatio × Nat)) (den : Nat) (positive : 0 < den)

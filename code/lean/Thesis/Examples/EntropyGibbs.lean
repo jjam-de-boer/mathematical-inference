@@ -1,5 +1,19 @@
 import Thesis.Probability.Distros.EntropyGibbs
 
+/-!
+# Gibbs nonnegativity with zero observed cells
+
+A point-supported observed law is compared with a uniform positive
+three-cell reference. The KL theorem accepts two zero observed cells and
+a retained null outlier, and the exact result is `log2(3)`. Positivity is
+required of the reference on the declared grid, not of the observed law.
+
+The arithmetic fixtures expose the multiplicity form of rational AM-GM:
+the arguments `2/3` and `4/3` satisfy the weighted product bound, while a
+recorded argument 100 with multiplicity zero contributes nothing. Finite
+multiplicities supply the proof rather than an assumed logarithm inequality.
+-/
+
 namespace Thesis.Examples.EntropyGibbs
 open Probability Probability.Distros
 

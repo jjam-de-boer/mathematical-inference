@@ -1,5 +1,21 @@
 import Thesis.Probability.ConstructiveRealLogReciprocal
 
+/-!
+# Base-two logarithm laws with transported positive witnesses
+
+Passage to a logarithmic limit requires one positive rational floor for
+every term of the supplied real Cauchy sequence. Product and quotient laws
+retain separate floors for their inputs and construct the appropriate
+floor for the resulting argument. A reciprocal's own positive lower bound
+is computed from an enclosure and then carried into its logarithm.
+
+The concrete reference is `log2(3)`, whose lower bound one comes from an
+exact-log certificate. Its reciprocal illustrates that the reciprocal-log
+identity applies to analytic values, with a constructed unit-numerator
+rational lower witness and positive denominator. No logarithm at zero is
+defined and no equality decision on arbitrary real inputs is needed.
+-/
+
 namespace Thesis.Examples.ConstructiveRealLogLaws
 open Probability
 

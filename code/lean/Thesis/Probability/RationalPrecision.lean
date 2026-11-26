@@ -1,6 +1,16 @@
 import Thesis.Probability.RationalApproximation
 import Thesis.Probability.QProbOrder
 
+/-!
+# Arithmetic for requesting positive rational precision
+
+A requested tolerance can be capped at one or divided by a positive
+natural factor. Multiplying the refined tolerance back up consumes at
+most the requested error budget. The schedule 1/(n+1) gives explicit
+indices for every positive rational tolerance. These lemmas use only
+the stored rational data and support the effective convergence moduli.
+-/
+
 namespace Thesis.Probability.PositiveRatio
 
 def capOne (precision : PositiveRatio) : PositiveRatio := if LE precision one then precision else one

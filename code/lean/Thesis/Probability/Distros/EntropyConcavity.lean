@@ -1,7 +1,23 @@
 import Thesis.Probability.Distros.EntropyMixture
 
+/-!
+Strict concavity and uniqueness of attained finite entropy maxima.
+
+Two positive rational mixture coefficients make every input-positive cell
+positive in the mixture. The proof temporarily restricts to this active
+grid to apply Gibbs comparison against a positive reference, then restores
+all null cells using entropy invariance under zero-term removal. Equality
+in concavity holds exactly when the two input laws agree on every event.
+The midpoint argument therefore makes any attained maximum unique in a
+midpoint-closed class. It supplies uniqueness conditional on attainment,
+not existence of an exactly rational maximum for every feasible problem.
+-/
+
 namespace Thesis.Probability.Distros
 
+/-- First prove the mixture comparison where the mixture is a positive
+reference on the declared grid. Positive coefficients make equality in the
+weighted Gibbs bounds force both inputs to have that same law. -/
 private theorem comparison_positive [DecidableEq A] (μ ν : Distro A) (grid : EntropyGrid A)
     (first : μ.AlmostSurely (fun value => value ∈ grid.cells))
     (second : ν.AlmostSurely (fun value => value ∈ grid.cells))

@@ -1,5 +1,16 @@
 import Thesis.Probability.ConstructiveRealCauchy
 
+/-!
+# Retaining a quantitative positive lower bound nearby
+
+A positive rational lower bound is useful computational domain data for
+reciprocals and logarithms. A value within half that bound of the original
+value remains above half the bound. The proof splits the original margin
+into two equal pieces and cancels an additive term in closed order.
+It uses the supplied enclosure rather than deciding whether a real is
+positive or searching for an unspecified neighborhood.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Closeness to a value with a known positive rational lower bound keeps

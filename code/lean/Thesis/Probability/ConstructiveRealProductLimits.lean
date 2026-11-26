@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealRing
 import Thesis.Probability.ConstructiveRealStability
 
+/-!
+# Products of effective real sequences with computed uniform tail bounds
+
+Each sequence limit bounds the fine approximants of all sufficiently
+late terms. The product Cauchy schedule uses those two fixed bounds
+instead of the numerators of individual changing presentations.
+Pointwise multiplication therefore preserves effective convergence and
+its limit is the product of the two original limits.
+-/
+
 namespace Thesis.Probability.RealCauchySequence
 open ConstructiveReal
 

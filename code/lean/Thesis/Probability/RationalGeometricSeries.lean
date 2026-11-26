@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealCauchyStability
 
+/-!
+# Effective completion of signed series with dyadic domination
+
+A finite block estimate bounds its magnitude by twice the first dyadic
+term bound. Subtracting two partial sums reduces to such a block, even
+for mixed signs. A binary logarithm of explicit natural data computes a
+later index for any rational error request, including a zero coefficient.
+The resulting constructive real limit has a tail bound at every truncation.
+-/
+
 namespace Thesis.Probability.RationalGeometricSeries
 open SignedRatio
 

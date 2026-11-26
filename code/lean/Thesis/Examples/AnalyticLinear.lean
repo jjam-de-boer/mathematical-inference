@@ -2,6 +2,23 @@ import Thesis.Probability.ConstructiveRealFarkas
 import Thesis.Probability.ConstructiveRealPolynomialExpression
 import Thesis.Probability.ConstructiveRealNaturalLog
 
+/-!
+# Linear elimination with analytic right-hand sides
+
+The main fixture encodes `x+y=alpha` and `x-y=beta` with both inequality
+directions, a zero row, and a duplicate row. An explicit reference solution
+supplies the Farkas condition consumed by the constructive solver. Polynomial
+identity certificates independently recover its returned coordinates as
+`(alpha+beta)/2` and `(alpha-beta)/2` for arbitrary constructive real inputs.
+This use does not decide the order of arbitrary real right-hand sides.
+
+The logarithm/exponential instance tests certified numerical enclosures.
+An upper-only signed system needs no invented lower endpoint, while the
+constant contradiction `0 <= -1` is excluded through the necessary Farkas
+condition. Redundancy and opposite pivot signs are retained in the actual
+systems passed to the solver.
+-/
+
 namespace Thesis.Examples.AnalyticLinear
 open Probability ConstructiveReal
 open Probability.Distros.RationalLinear

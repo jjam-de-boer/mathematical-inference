@@ -1,6 +1,20 @@
 import Thesis.Probability.ConstructiveRealReciprocal
 import Thesis.Probability.ConstructiveRealLogMultiplication
 
+/-!
+# Temperature calibration supplies the positive reciprocal domain
+
+A fixed positive rational Boltzmann constant and an analytic temperature
+with a supplied positive rational floor determine thermal energy, beta
+and inverse temperature by the constructive reciprocal interface. The
+thermal-energy floor is the product of the given positive certificates.
+
+Reciprocal normalization and uniqueness prove `kB*beta = 1/T`. Zero or
+negative temperature is not admitted by this record. The calibration
+is additional physical input and neither defines thermodynamic entropy
+nor establishes empirical adequacy of a chosen finite model.
+-/
+
 namespace Thesis.Probability
 open ConstructiveReal
 

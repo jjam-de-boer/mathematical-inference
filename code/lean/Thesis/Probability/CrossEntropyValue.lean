@@ -3,6 +3,19 @@ import Thesis.Probability.ExactLogLinear
 
 namespace Thesis.Probability
 
+/-!
+# Exact cross entropy separates the reference and observed masses
+
+The cross-entropy contribution scales the inverse-reference logarithm by the
+observed mass. Only the reference must be strictly positive; a zero observed
+mass vanishes through rational scaling. The term respects equivalent
+unreduced mass presentations.
+
+Subtracting the observed entropy contribution gives relative entropy in
+both the positive and zero-observation branches, with no probability clipping
+or artificial positive lower bound.
+-/
+
 /-- The exact cross-entropy contribution `-p log₂(r)` for positive reference
 mass. Zero observed mass is handled by rational scaling, without clipping. -/
 def crossEntropyTerm (p r : QProb) (referencePositive : 0 < r.num) : ExactLog :=

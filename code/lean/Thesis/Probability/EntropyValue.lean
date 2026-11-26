@@ -2,6 +2,19 @@ import Thesis.Probability.ExactLogWeights
 
 namespace Thesis.Probability
 
+/-!
+# Exact entropy and relative-entropy summands with explicit zeros
+
+The entropy contribution is rational mass times the exact logarithm of its
+inverse. A zero mass contributes the exact zero without evaluating a
+logarithm at zero. Nonnegativity additionally requires that mass be at most
+one; normalization is not built into the summand itself.
+
+Relative entropy uses a strictly positive reference mass and permits zero
+observed mass. Rational presentation changes preserve both summands, and
+matching positive observed/reference masses give a zero relative term.
+-/
+
 /-- The exact contribution `-p log₂(p)`, with the conventional value zero
 at zero mass. No artificial positive lower bound on probabilities is needed. -/
 def entropyTerm (p : QProb) : ExactLog :=

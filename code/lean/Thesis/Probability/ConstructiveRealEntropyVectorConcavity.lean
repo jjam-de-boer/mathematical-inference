@@ -1,5 +1,17 @@
 import Thesis.Probability.ConstructiveRealEntropyStrongConcavityClosed
 
+/-!
+# Summing the quantitative entropy gap over a finite vector
+
+Finite-list order and linearity lemmas collect the scalar midpoint bounds
+into one entropy inequality with the sum of squared coordinate differences.
+Every coordinate lies in [0,1], including its zero boundary, but the list
+need not be normalized. Applications to feasible probability laws must
+separately retain their normalization and original constraint rows.
+List membership also bounds one nonnegative summand by the full sum,
+without deciding equality between analytic values or selecting an occurrence.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Finite sums respect pointwise closed order. -/

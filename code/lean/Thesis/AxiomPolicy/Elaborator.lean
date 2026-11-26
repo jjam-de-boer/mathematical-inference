@@ -1,6 +1,18 @@
 import Lean.Elab.Command
 import Lean.Util.CollectAxioms
 
+/-!
+# Checking transitive kernel assumptions by source owner
+
+Each imported mathematical module is assigned one ownership prefix. The
+audit walks declarations through the private environment so that helper
+proofs are included, then collects the transitive axioms of each declaration.
+Source ownership keeps each pass focused and gives the coverage check a
+separate way to reject an imported mathematical module with no assigned pass.
+The diagnostic choice path follows one dependency at a time with finite
+fuel. It helps locate a violation but plays no role in accepting a proof.
+-/
+
 open Lean Elab Command
 
 namespace Thesis
@@ -63,6 +75,7 @@ def choicePath (fuel : Nat) (name : Name) : CommandElabM (List Name) := do
 
 /-- Private-proof axiom walk for declarations owned by `keep` sources. -/
 def audit (keep : String → Bool) (subject : String) : CommandElabM Unit := do
+  -- The audit needs the local module context, including private declarations.
   setEnv ((← getEnv).setExporting false)
   let env ← getEnv
   let mut checked := 0

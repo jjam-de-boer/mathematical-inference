@@ -1,9 +1,27 @@
 import Thesis.Probability.Distros.LawEquivalence
 namespace Thesis.Probability.Distros
 
+/-!
+# Natural likelihood updates and transport
+
+Reweighting multiplies each existing atom mass by a supplied natural weight
+and normalizes by the resulting total. It keeps repeated and zero-weight
+occurrences; a positive total is required before a normalized record exists.
+The caller supplies the likelihood and its sampling interpretation.
+
+The normalization and event-mass identities make the update usable without
+depending on atom-list syntax. Law-equivalent priors produce law-equivalent
+updates, and a likelihood depending only on a mapped label can be applied
+before or after that map with exactly the same resulting record.
+-/
+
+/-- Normalize an explicit weighted list by its actual total mass. Empty or
+all-zero lists cannot inhabit the positive-mass input of this constructor. -/
 def ofWeightedAtoms (atoms : List (Ω × Nat)) (positive : 0 < FiniteProbRecord.totalMass atoms) : Distro Ω :=
   ⟨⟨atoms, FiniteProbRecord.totalMass atoms, positive, rfl⟩⟩
 
+/-- Atom and denominator equality determine the record; normalization and
+positivity witnesses add no further computational data to compare. -/
 theorem Distro.eq_of_atoms_den {μ ν : Distro Ω} (atoms : μ.record.atoms = ν.record.atoms)
     (den : μ.record.den = ν.record.den) : μ = ν := by
   cases μ with
@@ -34,6 +52,8 @@ theorem totalMass_reweight (atoms : List (Ω × Nat)) (weight : Ω → Nat) :
   | nil => rfl
   | cons atom rest ih => simp only [List.map_cons, FiniteProbRecord.totalMass, natIntegral, ih]
 
+/-- Event mass after updating is the original weighted integral restricted
+to that event. This numerator identity includes structural likelihood zeros. -/
 theorem eventMass_reweight (atoms : List (Ω × Nat)) (weight : Ω → Nat) (event : Event Ω) :
     FiniteProbRecord.eventMass (atoms.map (fun atom => (atom.1, atom.2 * weight atom.1))) event =
       natIntegral atoms (fun x => if event x then weight x else 0) := by
@@ -63,6 +83,8 @@ theorem Distro.SameLaw.reweightNat {μ ν : Distro Ω} (same : μ.SameLaw ν) (w
   have mass := same.expectNat (fun x => if event x then weight x else 0)
   change natIntegral μ.record.atoms weight * ν.record.den = natIntegral ν.record.atoms weight * μ.record.den at total
   change natIntegral μ.record.atoms _ * ν.record.den = natIntegral ν.record.atoms _ * μ.record.den at mass
+  -- Compare numerator and normalizer after clearing the original positive
+  -- denominator. Reduced fractions or a common atom presentation are unneeded.
   apply Nat.eq_of_mul_eq_mul_right μ.record.den_pos
   calc
     _ = natIntegral μ.record.atoms (fun x => if event x then weight x else 0) *
@@ -75,6 +97,8 @@ theorem Distro.SameLaw.reweightNat {μ ν : Distro Ω} (same : μ.SameLaw ν) (w
                 natIntegral μ.record.atoms weight := by ac_rfl
             _ = _ := by rw [mass]; ac_rfl
 
+/-- A label-level likelihood can be applied on either side of pushforward.
+The map may merge outcomes; all masses in each fibre are still retained. -/
 theorem Distro.reweightNat_map (μ : Distro Ω) (f : Ω → X) (weight : X → Nat)
     (positive : 0 < natIntegral (μ.map f).record.atoms weight) :
     ((μ.reweightNat (fun x => weight (f x)) (by simpa only [map, FiniteProbRecord.map, natIntegral_map] using positive)).map f) =

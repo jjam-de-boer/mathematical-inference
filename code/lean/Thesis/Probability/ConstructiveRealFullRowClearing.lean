@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealEqualityConstraints
 import Thesis.Probability.ConstructiveRealIntegralPairing
 
+/-!
+# Making an entire rational constraint row integral
+
+The coefficients and the bound are packed into one finite denominator
+clearing problem. Its computed positive scale converts both sides to
+integer data and preserves the original real inequality in both directions.
+The slack scales by the same factor, so later complementary-slackness
+arguments can translate back to the original row. A least denominator and
+canonical rational presentation are unnecessary.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 open ConstructiveReal
 

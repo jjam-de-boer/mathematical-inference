@@ -3,6 +3,19 @@ import Thesis.Probability.RationalNorm
 
 namespace Thesis.Probability.RationalAMGM
 
+/-!
+# Rational AM-GM relative to a supplied positive mean
+
+Multiplying every argument by the inverse of a proposed arithmetic upper
+mean reduces the comparison to the Gibbs bound at one. The finite weighted
+sum scales linearly, and the product gains the corresponding power of the
+same factor while all multiplicities remain unchanged.
+
+The conclusion is a power inequality and needs no positive total weight.
+Empty or all-zero-weight families therefore remain covered without defining
+a normalized weighted mean or selecting a geometric root.
+-/
+
 /-- Multiply the values of a finite weighted family, retaining every weight
 and occurrence, including zero multiplicities. -/
 def multiplyValues (items : List (PositiveRatio × Nat)) (factor : PositiveRatio) : List (PositiveRatio × Nat) :=

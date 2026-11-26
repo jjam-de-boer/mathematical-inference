@@ -1,6 +1,22 @@
 import Thesis.Probability.ConstructiveRealLimits
 import Thesis.Probability.ExactLogInterpretation
 
+/-!
+# A nonconstant rational sequence constructs the expected real limit
+
+The explicit sequence `1-1/(n+1)` starts at zero and equals `3/4` at stage
+three. Its conservative Cauchy modulus is the requested precision's
+denominator. Rational inequalities first verify the effective sequence;
+limit uniqueness then identifies its independently constructed limit as
+one, rather than defining the limit to be the desired answer.
+
+Tail bounds preserve their stated modulus threshold. Finally, the
+rational-approximation construction reconstructs any coherent real value,
+including the interpreted logarithm of three. All precision requests are
+positive rational data; neither real equality nor an unbounded search for
+a convergence stage is used.
+-/
+
 namespace Thesis.Examples.ConstructiveRealLimits
 open Probability
 

@@ -3,12 +3,29 @@ import Thesis.Probability.Distros.RationalPolya
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Mixed factorial moments of finite count vectors
+
+The mixed response multiplies the coordinate falling factorials and returns
+zero on dimension mismatch. An unnormalized recursive integral computes its
+value for reinforced count tables, even with zero total parameters or orders
+larger than the number of trials.
+
+Positive total parameter mass permits normalization. The resulting formula
+specializes to multinomial counts, natural Dirichlet-multinomial counts and
+rational parameter tables through the existing common-scale urn construction.
+Individual colour parameters may vanish; their zero factors are retained
+instead of being cancelled during the recursive argument.
+-/
+
 /-- Product of the coordinate falling factorials, with explicit dimension. -/
 def jointFalling : List Nat → List Nat → Nat
   | [], [] => 1
   | order :: orders, count :: counts => fallingFactorial count order * jointFalling orders counts
   | _, _ => 0
 
+/-- Integrate the declared mixed response under the full joint count law;
+coordinate dependence is retained rather than replaced by marginal moments. -/
 def jointFactorialMoment (μ : Distro (List Nat)) (orders : List Nat) : QProb := μ.expectNat (jointFalling orders)
 
 theorem natIntegral_flatMap (values : List α) (atoms : α → List (Ω × Nat)) (f : Ω → Nat) :
@@ -120,6 +137,8 @@ theorem reinforcedCount_jointFactorialMoment (n increment : Nat) (alphas orders 
     (fallingFactorial n orders.sum * stepKernel increment alphas orders) *
       (reinforcedCountDistro n alphas increment positive).record.den
   rw [reinforcedCount_joint_integral n increment alphas orders dimension, reinforcedCount_den]
+  -- Split the rising normalizer for admissible orders. For an order
+  -- above the trial count, the falling numerator already vanishes.
   by_cases within : orders.sum ≤ n
   · have split : stepRising alphas.sum increment n = stepRising alphas.sum increment orders.sum *
         stepRising (alphas.sum + increment * orders.sum) increment (n - orders.sum) := by

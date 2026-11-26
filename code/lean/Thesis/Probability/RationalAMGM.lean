@@ -5,6 +5,19 @@ import Thesis.Probability.Distros.LawEquivalence
 namespace Thesis.Probability.RationalAMGM
 open Combinatorics
 
+/-!
+# Weighted rational AM-GM by constructive denominator clearing
+
+Each listed positive rational carries a natural multiplicity, possibly zero.
+A common denominator is computed from the actual occurrences, preserving
+their weighted sums and products. The natural weighted AM-GM theorem then
+proves the Gibbs form: arithmetic mean at most one implies product at most one.
+
+Empty and zero-total-weight families are included without division by total
+multiplicity. Clearing denominators is an exact finite construction, not a
+restriction on which rational arguments or denominators are admitted.
+-/
+
 /-- Multiplicative averaging data; multiplicities are natural and may be zero. -/
 def weightedProduct : List (PositiveRatio × Nat) → PositiveRatio
   | [] => PositiveRatio.one

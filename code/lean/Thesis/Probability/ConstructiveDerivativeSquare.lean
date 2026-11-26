@@ -3,6 +3,20 @@ import Thesis.Probability.ConstructiveRealSquareBounds
 import Thesis.Probability.ConstructiveRealDistanceAlgebra
 import Thesis.Probability.ConstructiveRealPolynomialExpression
 
+/-!
+# An independent square derivative from its exact quadratic remainder
+
+A rational polynomial certificate expands the nearby square into its
+basepoint value, linear term and squared increment. Nonnegativity and the
+rational distance bound control that last term by `radius^2`, without
+deciding either real input's sign.
+
+Taking the requested tolerance itself as the input modulus turns the
+quadratic bound into the derivative certificate with slope `point+point`.
+The argument includes a zero increment and does not assume a general
+product differentiation rule.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private abbrev Expr := RationalPolynomial.Expression 2

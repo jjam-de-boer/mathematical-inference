@@ -2,6 +2,17 @@ import Thesis.Probability.RationalLogSecant
 import Thesis.Probability.ConstructiveRealDyadicCauchy
 import Thesis.Probability.ConstructiveRealCauchyOrder
 
+/-!
+# Constructing the logarithm's linear coefficient from right secants
+
+Exact logarithmic comparisons control each doubling of the dyadic index,
+so the interpreted right secants form an effective Cauchy sequence. Its
+limit lies between one and three. A separate squeeze extends the dyadic
+error to every smaller positive rational step, which is needed for first
+variation away from the chosen sequence. Left steps and the derivative
+of the analytic logarithm are established in later modules.
+-/
+
 namespace Thesis.Probability.RationalLogSecant
 open ConstructiveReal RationalGeometricSeries
 

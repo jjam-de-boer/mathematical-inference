@@ -1,6 +1,19 @@
 import Thesis.Probability.Distros.UncertaintyUniform
 import Thesis.Probability.ExactLogSeparation
 
+/-!
+Uniform uncertainty is forced by fair-bit normalization and ordering.
+
+Uniform power additivity compares repeated n-way choices with powers of two.
+Integer log₂ bounds bracket both admissible measures between the same adjacent
+bit multiples. The proved Archimedean separation of ExactLog then turns
+those bounds for every repetition into equality of their uniform values.
+The logarithm formula follows by comparing with the constructed Shannon
+instance. The argument derives that formula from the stated requirements,
+using separation properties of the declared value space rather than
+assuming continuity or the formula for an unknown measure.
+-/
+
 namespace Thesis.Probability.UncertaintyMeasure
 open ProbabilityVector
 

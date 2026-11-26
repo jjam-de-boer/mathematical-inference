@@ -1,6 +1,19 @@
 import Thesis.Probability.ConstructiveRealEntropyPositivePath
 import Thesis.Probability.ConstructiveRealEntropyGibbsForm
 
+/-!
+# Positive feasibility gives a quantitative interior entropy maximum
+
+A supplied feasible law with positive rational coordinate floors provides
+an explicit lower floor for every coordinate of any entropy maximum.
+The argument compares dyadic mixtures with that feasible law and uses
+the resulting cross-entropy bound; positivity of the unknown optimizer
+is a conclusion. Applying it to the constructed maximum supplies the
+domain data for fitted natural multipliers and its normalized Gibbs form.
+With closed inequalities, the displayed all-row stationarity coefficients
+are not by themselves signed KKT multipliers.
+-/
+
 namespace Thesis.Probability.Distros.RationalEntropyProblem
 open ConstructiveReal
 

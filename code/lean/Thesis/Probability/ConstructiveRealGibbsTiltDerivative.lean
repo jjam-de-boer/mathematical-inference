@@ -3,6 +3,17 @@ import Thesis.Probability.ConstructiveDerivativePositiveComposition
 import Thesis.Probability.ConstructiveRealExpDerivative
 import Thesis.Probability.ConstructiveDerivativeProduct
 
+/-!
+# Derivatives of finite Gibbs weights and their normalization
+
+The unnormalized numerator and partition are finite sums of exponentials.
+Existing Taylor differentiation supplies each weight certificate with
+its effective modulus. Finite sums assemble these certificates and the
+positive partition floor permits the reciprocal rule. The resulting
+expectation formulas keep signed energies and observables in their
+original units.
+-/
+
 namespace Thesis.Probability.FiniteGibbsTilt
 open ConstructiveReal
 open Distros.RationalLinear

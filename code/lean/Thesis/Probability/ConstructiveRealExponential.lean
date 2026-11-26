@@ -1,6 +1,17 @@
 import Thesis.Probability.RationalExponentialContinuity
 import Thesis.Probability.RationalPrecision
 
+/-!
+# Extending the rational Taylor exponential to analytic arguments
+
+For every requested precision, the real presentation computes a rational
+approximant. A uniform Taylor modulus on their finite magnitude bound makes
+their exponentials an effective Cauchy sequence. Its limit agrees with the
+previous construction for every signed rational argument, including zero.
+Using a common magnitude bound proves independence from the presentation
+and its chosen approximation schedule.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Exponentials of computed rational approximants form an effective real

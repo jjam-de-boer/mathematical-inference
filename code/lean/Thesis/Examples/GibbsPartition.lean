@@ -1,5 +1,21 @@
 import Thesis.Probability.ConstructiveRealFittedGibbsCertificates
 
+/-!
+# Partition derivatives expose repeated-feature degeneracy
+
+Positive reference weights one and two give the nonuniform law `[1/3,2/3]`
+at zero parameters, with partition three. Both features are the same
+indicator, whose mean is `2/3` and whose every mixed covariance is `2/9`.
+These independent calculations identify the actual log-partition derivative
+as `-2/3` and its diagonal and mixed natural-log curvature as `2/9`.
+
+The difference of the repeated features has zero variance, so positive
+individual variances do not justify strict curvature in every direction.
+The final entropy-partition identity keeps the expected log-reference
+correction, which remains necessary even at zero parameters. No feature
+independence or strict-curvature assumption is introduced.
+-/
+
 namespace Thesis.Examples.GibbsPartition
 open Probability ConstructiveReal
 open Probability.Distros.RationalLinear

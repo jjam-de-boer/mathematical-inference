@@ -1,5 +1,22 @@
 import Thesis.Probability.ConstructiveRealExpLimits
 
+/-!
+# Constructed exponential values and effective passage to limits
+
+Finite Taylor bounds include radius zero and the concrete conservative
+uniform constants `16` and `486`. Rational argument variation is controlled
+by an explicit magnitude bound. For a general real input, the exponential
+is recovered from its rational approximation sequence after the stated
+modulus threshold, and rational embeddings agree with the existing
+rational exponential, including the unreduced negative argument `-1000/1000`.
+
+Value congruence permits different real enclosure presentations of the same
+input. Exponentiation of a real Cauchy sequence computes the needed family
+bound before transporting its limit; it does not assume all presented
+inputs are bounded by an unspecified common constant. The last estimate
+exposes the actual magnitude-dependent continuity factor.
+-/
+
 namespace Thesis.Examples.ConstructiveRealExponential
 open Probability
 

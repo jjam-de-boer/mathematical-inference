@@ -2,6 +2,18 @@ import Thesis.Probability.Distros.EntropySupport
 import Thesis.Probability.ExactLogConvex
 import Thesis.Probability.RationalMixture
 
+/-!
+Actual rational mixtures and affine cross entropy on a finite grid.
+
+The mixture retains both input atom lists with common-denominator scaling;
+either coefficient may vanish as long as their total is positive. Support
+transfers from the inputs, and singleton probabilities are the prescribed
+convex combination. A positive coefficient preserves any positive input
+singleton mass, which later allows restriction to the mixture's active grid.
+Cross entropy is affine in its observed law against a fixed positive
+reference, while mixing equal laws returns that same law.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- A rational convex combination, retaining both original atom lists. -/
@@ -26,6 +38,8 @@ theorem Distro.mixture_pmf [DecidableEq A] (μ ν : Distro A) (left right : Nat)
   QProb.equiv_trans (μ.record.mixture_probVal ν.record left right positive _)
     (QProb.weightedPair_eq_sum left right positive _ _)
 
+/-- The actual common-denominator numerator adds the two scaled input
+masses. This raw identity makes positivity transfer independent of fraction reduction. -/
 theorem Distro.mixture_pmf_num [DecidableEq A] (μ ν : Distro A) (left right : Nat)
     (positive : 0 < left + right) (value : A) :
     ((μ.mixture ν left right positive).pmf value).num =

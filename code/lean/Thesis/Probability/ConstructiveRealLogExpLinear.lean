@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealLogExp
 import Thesis.Probability.ConstructiveRealPositiveTail
 
+/-!
+# Extending rational log-exponential linearity to all real values
+
+Use an effective rational sequence converging to the input. The exponential
+sequence converges effectively as well. A floor at its positive limit
+gives a computed tail on which every term may be logged with a common
+bound. Applying the rational linear identity and taking limits gives the
+actual composite's linear form everywhere.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Continuity of the actual logarithm-exponential composite extends its

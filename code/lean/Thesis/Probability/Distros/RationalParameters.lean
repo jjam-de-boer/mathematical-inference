@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.RationalPolya
 
+/-!
+Convert positive-reinforcement integer urns to rational parameter units.
+
+The ratio of each initial weight to the reinforcement increment is its
+rational Pólya parameter. Simultaneous integer scaling proves equality of
+all ordered path probabilities and then of the full count law. The increment
+must be positive for this conversion; zero reinforcement is handled by the
+separate categorical/multinomial specialization. Returning an encoded urn
+to parameter units recovers its original rational parameters up to equivalence.
+The final namespace provides equivalence operations and transports positivity.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Parameters in the original urn's units, divided by its positive
@@ -7,6 +19,8 @@ reinforcement. These may exceed one; `QProb` represents nonnegative rationals. -
 def urnRatioParameters (weights : List Nat) (increment : Nat) (positive : 0 < increment) : List QProb :=
   weights.map (fun weight => ⟨weight, increment, positive⟩)
 
+/-- Each encoded coordinate represents weight divided by increment,
+including the default zero beyond the alphabet. -/
 theorem urnRatioParameters_getD (weights : List Nat) (increment : Nat) (positive : 0 < increment) (index : Nat) :
     QProb.Equiv ((urnRatioParameters weights increment positive).getD index QProb.zero)
       ⟨weights.getD index 0, increment, positive⟩ := by
@@ -71,6 +85,10 @@ theorem rationalParameters_encoding (alphas : List QProb) :
   · intro i
     exact QProb.equiv_trans (urnRatioParameters_getD _ _ _ i) (rationalUrnWeights_parameter alphas i)
 
+/-
+Parameter equivalence preserves both dimension and each rational value.
+These operations let later constructions change integer presentations while
+transporting the positive-total hypothesis needed to normalize their laws. -/
 namespace RationalParametersEquiv
 
 theorem refl (alphas : List QProb) : RationalParametersEquiv alphas alphas :=

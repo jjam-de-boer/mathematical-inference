@@ -1,6 +1,18 @@
 import Thesis.Probability.ConstructiveRealEntropyOptimizerSequence
 import Thesis.Probability.ConstructiveRealLinearLimits
 
+/-!
+# Constructing the ideal entropy maximum by effective limits
+
+A sequence of exactly feasible rational near-maximizers has a common
+coordinate modulus from strong concavity. Its effective limit retains
+every original constraint and its entropy converges even at zero masses.
+The universal rational approximation bound transfers through exact-feasible
+density to every analytic competitor. The resulting maximum is unique
+coordinatewise, so changing the initial feasible witness changes at
+most its presentation and evaluation path.
+-/
+
 namespace Thesis.Probability.Distros.PartialMomentProblem
 open ConstructiveReal
 

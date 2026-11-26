@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.HighestFactorialMoments
 import Thesis.Probability.Distros.DepletingPrefix
 
+/-!
+Explicit feasibility criteria for removal-sampling observations.
+
+Positive histogram evidence is equivalent to matching dimension, the stated
+draw total and coordinate counts no larger than the available stocks. The
+reverse implication uses the exact hypergeometric singleton formula and
+positive falling factors, so no external support oracle is assumed. These
+criteria give public conditional constructors taking ordinary stock bounds.
+The module also proves exchangeability under permutations of draws,
+including invalid-alphabet words, whose singleton probabilities are zero.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 
@@ -137,6 +149,8 @@ def depletingCountsContinuationOfBounds (m n : Nat) (stocks counts : List Nat)
   depletingCountsContinuation m n stocks counts within
     ((depletingCountsSupported_iff_coordinates m stocks counts).mpr ⟨dimension, total, bounds⟩)
 
+/-- The explicit feasibility constructor still conditions the actual
+path record; its future law agrees on every event with the remaining-stock urn. -/
 theorem depletingCountsContinuationOfBounds_updated (m n : Nat) (stocks counts : List Nat)
     (within : m + n ≤ stocks.sum) (dimension : counts.length = stocks.length) (total : counts.sum = m)
     (bounds : ∀ index, index < stocks.length → counts.getD index 0 ≤ stocks.getD index 0) :

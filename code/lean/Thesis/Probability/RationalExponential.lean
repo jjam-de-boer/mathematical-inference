@@ -5,6 +5,20 @@ import Thesis.Probability.RationalNaturalBound
 namespace Thesis.Probability.RationalExponential
 open SignedRatio RationalTaylorExponential
 
+/-!
+# The natural exponential of every signed rational argument
+
+A quotient-based natural magnitude bound computes a finite Taylor prefix
+after which successive absolute terms shrink by at least one half. This
+proves eventual geometric domination and supplies an effective Cauchy modulus
+for the complete coefficient sequence at any signed rational input.
+
+The constructed real value has a certified post-prefix remainder and agrees
+with the earlier small-argument value. Equivalent rational inputs yield the
+same real even when their computed prefixes or moduli differ. General real
+inputs and analytic identities are separate later results.
+-/
+
 /-- A finite initial block after which consecutive absolute Taylor terms
 shrink by at least a factor of two. Quotients keep unreduced numerators from
 artificially determining the size of this block. -/

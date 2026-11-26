@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealExpVariation
 import Thesis.Probability.ConstructiveRealSquareBounds
 
+/-!
+# A local quadratic exponential remainder for analytic values
+
+Rational first variation on a uniform magnitude bound passes to the
+limits of the two real inputs. The resulting enclosure compares exp(y)
+with its affine approximation around x. A computed local bound makes this
+usable whenever y lies within an admitted unit radius of x, including zero
+displacement. The bound is on the error, without solving a real order test.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Rational error advertised by the real exponential's quadratic remainder

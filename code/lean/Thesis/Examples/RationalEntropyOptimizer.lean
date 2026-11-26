@@ -1,5 +1,23 @@
 import Thesis.Probability.ConstructiveRealRationalEntropyOptimizer
 
+/-!
+# Ideal optimization and rational outputs retain a forced-zero state
+
+The three-state fixture combines unreduced signed coefficients, an exact
+coordinate equality, a closed band and repeated constant rows. A checked
+feasible anchor has masses `[1/3,2/3,0]`; no positive point on the whole grid
+is assumed. The optimizer is attained and unique as a real law, with finite
+dimension transport returning the original state labels.
+
+The original zero row proves that every feasible analytic law has zero
+third mass. Hence both the ideal optimizer and every rational approximation
+have exact zero there, while the record still retains that state label.
+All rational outputs satisfy the unchanged rows, converge under the stated
+coordinate modulus, and share any universal rational certificate's upper
+entropy bound with the attained ideal. Opacity caches a checked anchor body
+without assuming any optimization conclusion.
+-/
+
 namespace Thesis.Examples.RationalEntropyOptimizer
 open Probability Probability.Distros ConstructiveReal
 open RationalLinear

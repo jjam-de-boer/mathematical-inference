@@ -1,5 +1,17 @@
 import Thesis.Probability.ConstructiveRealEntropyUniformDerivative
 
+/-!
+# A quadratic correction exposes entropy's midpoint curvature
+
+Adding half the coordinate square gives an adjusted entropy with a
+nonincreasing slope on each supplied positive domain. Uniform derivative
+control and the logarithm increment inequality yield tangent bounds.
+At the midpoint the two endpoint displacements cancel, allowing the
+adjusted midpoint comparison to retain a quantitative gap for the
+original entropy. Endpoint-order and zero-boundary extensions follow
+through separate approximation lemmas.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private def halfRatio : SignedRatio := ⟨1, 2, by decide⟩

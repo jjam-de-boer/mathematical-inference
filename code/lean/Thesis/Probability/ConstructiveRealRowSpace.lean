@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealKernelElimination
 import Thesis.Probability.ConstructiveRealPolynomialExpression
 
+/-!
+# Recovering row multipliers by finite integer pivot elimination
+
+A vector known to annihilate the analytic kernel has a representation in
+the original integer row span. Recursion locates nonzero integer pivots,
+reduces the matrix and gradient, and reconstructs coefficients by exact
+back-substitution. Only pivot data are tested and inverted. Analytic
+coefficients require no equality decision, and zero or redundant rows
+need no independence premise.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.IntegerRowSpace
 open ConstructiveReal
 open FiniteLinear

@@ -4,6 +4,21 @@ import Thesis.Probability.Distros.ReinforcedVariance
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# One categorical covariance geometry with different sampling scales
+
+The common entry formula separates categorical weights from a scalar
+sampling factor. Diagonal entries are nonnegative variances and distinct
+entries have signed negative numerators. Reinforced sampling and proper
+finite-population sampling each realize this pattern with their own scale.
+
+Entrywise equivalence lifts to every finite covariance quadratic form by
+distributing the same scalar through both finite sums. This proves a shared
+coefficient geometry without equating the underlying sampling laws. The
+hypergeometric ratio here requires population size greater than one; the
+separate degeneracy module covers smaller populations directly.
+-/
+
 /-- The common occupancy covariance pattern: a scaled categorical matrix,
 with natural diagonal numerators and auxiliary signed off-diagonal entries. -/
 def occupancyCovarianceEntry (weights : List Nat) (scale tail : Nat)
@@ -77,6 +92,8 @@ theorem Distro.occupancyCovarianceForm_scale_entries (μ ν : Distro (List Nat))
   let values := List.range colours
   let cell := fun i j => SignedRatio.mul (SignedRatio.mul (coefficients i) (coefficients j))
     (ν.rationalCovariance (countResponse i) (countResponse j))
+  -- First move the common factor outside each row, then outside the
+  -- outer row sum. No coefficient or covariance entry is cancelled.
   have rows (i : Nat) (within : i < colours) : SignedRatio.Equiv
       (SignedRatio.listSum (values.map (fun j => SignedRatio.mul (SignedRatio.mul (coefficients i) (coefficients j))
         (μ.rationalCovariance (countResponse i) (countResponse j)))))

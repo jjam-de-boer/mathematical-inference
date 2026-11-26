@@ -1,6 +1,24 @@
 import Thesis.Probability.ConstructiveRealEntropyCertificates
 import Thesis.Examples.EntropyMeanHalf
 
+/-!
+# Exact rational constraints survive approximation of a feasible real point
+
+The two-coordinate fixture combines the simplex, a forced-zero coordinate,
+a closed signed band, and repeated constant rows. A supplied real feasible
+point licenses rational approximation at every requested precision. The
+returned point satisfies the original constraints exactly: simplex
+nonnegativity and the original zero upper row prove its second coordinate
+is zero, rather than merely small in the approximation tolerance.
+
+The mean-half entropy certificate is then applied to every feasible real
+law, not only rational competitors. Its rational anchor has a split atom
+and a zero-weight outlier, so the interpretation theorem compares entropy
+of aggregated probability masses with the real law rather than treating
+record occurrences as distinct outcomes. No strictly positive anchor is
+required in the boundary feasibility fixture.
+-/
+
 namespace Thesis.Examples.ConstructiveRealFeasibility
 open Probability Probability.Distros ConstructiveReal
 

@@ -1,6 +1,20 @@
 import Thesis.Probability.RationalTaylorBounds
 import Thesis.Probability.ConstructiveRealScaling
 
+/-!
+# Uniform rational-input continuity of the constructed exponential
+
+Finite Taylor-term differences have a derivative-sized algebraic bound,
+proved before any differentiation theorem. The common absolute coefficient
+sum bound gives one Lipschitz constant for every truncation on a supplied
+bounded rational interval.
+
+The bound passes to the effective Cauchy limits and yields an executable
+input-precision requirement for any positive requested output precision.
+Only rational bounds select this requirement; no real comparison or search
+for a local neighbourhood is performed.
+-/
+
 namespace Thesis.Probability.RationalGeometricSeries
 open SignedRatio
 

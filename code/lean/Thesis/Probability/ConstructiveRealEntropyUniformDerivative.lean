@@ -1,6 +1,18 @@
 import Thesis.Probability.ConstructiveRealUniformLogarithm
 import Thesis.Probability.ConstructiveRealEntropyVariation
 
+/-!
+# Uniform derivative certificates on a supplied positive domain
+
+The entropy certificate uses one radius schedule for all admitted points
+above the same positive rational floor and at most one. Its derivative
+formula and uniform error bound are inherited from the proved logarithm
+and entropy variation estimates. The separate square certificate has a
+global quadratic remainder and works on any supplied domain, without
+requiring decidable membership. These are quantitative data-bearing
+certificates, rather than an existential assertion of differentiability.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- The uniform entropy first-variation certificate is inhabited by the

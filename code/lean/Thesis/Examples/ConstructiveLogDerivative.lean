@@ -1,5 +1,20 @@
 import Thesis.Probability.ConstructiveRealLogGeneralDerivative
 
+/-!
+# Base-two logarithm derivatives with explicit positive floors
+
+The general slope is the proved logarithmic secant constant multiplied by
+the reciprocal of the point. Every use carries a positive rational lower
+bound, and zero is explicitly refuted as an admitted input. Zero increments
+are covered without testing equality or signs of arbitrary real values.
+
+Rational points `63/64`, `65/64` and the unreduced unit `9/9` exercise both
+sides of the variation estimate. Reflection includes its endpoint `1/2`.
+The real presentation `511/512` checks a concrete negative-increment error
+bound, while the derivative at two is independently simplified to half the
+secant constant using the rational reciprocal interpretation.
+-/
+
 namespace Thesis.Examples.ConstructiveLogDerivative
 open Probability ConstructiveReal
 

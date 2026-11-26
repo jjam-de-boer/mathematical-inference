@@ -1,12 +1,26 @@
 import Thesis.Probability.Distros.DepletingConditioning
 import Thesis.Probability.FiniteRecordSums
 
+/-!
+Ordered-prefix conditioning and count sufficiency for removal sampling.
+
+The evidence event records the entire observed prefix, and its positive
+singleton mass is required before conditioning. Exact path splitting shows
+that the future starts from the stocks left by those removals. Forgetting
+the prefix order gives the same complete future law as retaining it, since
+the remaining state depends only on colour counts. The last theorem reads
+the next-colour probability in original stock units and uses a horizon
+with at least one ball remaining; an exhausted population has no next draw.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- The complete ordered prefix is genuine evidence on the actual path record. -/
 def depletingPrefixEvent (history : List Nat) : Event (List Nat) :=
   fun word => decide (word.take history.length = history)
 
+/-- Support of a specified ordered prefix in the actual experiment of its
+own length. A syntactically valid list alone need not have positive mass. -/
 def depletingHistorySupported (stocks history : List Nat) : Prop :=
   0 < FiniteProbRecord.eventMass (multicolourDepletingAtoms history.length stocks)
     (FiniteProbRecord.singletonEvent history)
@@ -15,6 +29,8 @@ instance (stocks history : List Nat) : Decidable (depletingHistorySupported stoc
   unfold depletingHistorySupported
   infer_instance
 
+/-- Count-only evidence includes the exact-prefix event, so forgetting
+order preserves positive support. -/
 theorem depletingHistorySupported_counts (stocks history : List Nat)
     (supported : depletingHistorySupported stocks history) :
     depletingCountsSupported history.length stocks (colourCounts stocks.length history) := by
@@ -30,6 +46,8 @@ theorem depletingHistory_remaining (stocks history : List Nat) (n : Nat)
   exact depletingCounts_remaining history.length n stocks (colourCounts stocks.length history) within
     (depletingHistorySupported_counts stocks history supported)
 
+/-- Factor a selected ordered prefix from any suffix event. This equality
+of raw masses precedes normalization and does not require positive evidence. -/
 theorem depletingPrefixEvent_mass (history : List Nat) (n : Nat) (stocks : List Nat)
     (event : Event (List Nat)) :
     FiniteProbRecord.eventMass (multicolourDepletingAtoms (history.length + n) stocks)
@@ -75,6 +93,8 @@ theorem depletingPrefixEvent_positive (history : List Nat) (n : Nat) (stocks : L
   rw [factor]
   exact Nat.mul_pos supported (fallingFactorial_pos _ _ (depletingHistory_remaining stocks history n within supported))
 
+/-- Condition on supported ordered evidence and retain only the suffix.
+The horizon bound and support proof jointly guarantee enough remaining stock. -/
 def depletingPrefixContinuation (history : List Nat) (n : Nat) (stocks : List Nat)
     (within : history.length + n ≤ stocks.sum) (supported : depletingHistorySupported stocks history) : Distro (List Nat) :=
   ⟨((multicolourDepletingDistro (history.length + n) stocks within).record.conditionOn
@@ -112,6 +132,8 @@ theorem depletingPrefix_counts_sufficient (history : List Nat) (n : Nat) (stocks
   exact ordered.trans (depletingCountsContinuation_updated history.length n stocks
     (colourCounts stocks.length history) within (depletingHistorySupported_counts stocks history supported)).symm
 
+/-- The next-draw numerator is the selected remaining stock. The total
+remaining stock is positive because the declared horizon includes one further draw. -/
 theorem depleting_next_after_prefix (history stocks : List Nat)
     (within : history.length + 1 ≤ stocks.sum) (supported : depletingHistorySupported stocks history)
     (index : Nat) (valid : index < stocks.length) :

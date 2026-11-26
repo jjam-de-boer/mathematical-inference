@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealEntropyDerivative
 import Thesis.Probability.ConstructiveRealSquareBounds
 
+/-!
+# A common first-variation radius for positive entropy inputs
+
+Expanding the logarithmic product isolates the linear entropy slope and a
+quadratic error term. The supplied rational floor bounds reciprocal factors
+uniformly throughout its positive part of [0,1]. An explicit radius spends
+the requested error budget on both the logarithm remainder and the quadratic
+correction. This is the quantitative estimate used by the uniform derivative
+certificate, with no differentiability assertion at zero.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private abbrev Expr := RationalPolynomial.Expression 5

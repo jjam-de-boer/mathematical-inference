@@ -2,6 +2,22 @@ import Thesis.Probability.ConstructiveDerivativeWithinAlgebra
 import Thesis.Probability.ConstructiveDerivativeWithinScaling
 import Thesis.Probability.ConstructiveRealIntervalPartition
 
+/-!
+# A uniform residual certificate and finite-partition secant bounds
+
+`UniformDerivativeWithin` stores one rational remainder modulus over the
+entire admitted domain and requires function values to respect equivalent
+real presentations. Restriction, slope congruence, negation, addition and
+fixed scaling transform this data; taking a point gives the corresponding
+domain-relative derivative.
+
+On an explicitly admitted ordered interval of width at most one, equal
+finite partitions telescope the remainders. A common upper or lower slope
+bound therefore gives the corresponding secant inequality. The bound may
+have either sign. The proof uses rational error schedules, without choosing
+a mean-value point or deriving uniformity from unrelated pointwise moduli.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A derivative with one computed remainder modulus for an entire explicit

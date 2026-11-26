@@ -2,6 +2,19 @@ import Thesis.Probability.ExactLogConvex
 
 namespace Thesis.Probability.ExactLog
 
+/-!
+# Constructive order separation by natural amplification
+
+If an exact logarithm is positive, a multiple computed from its root degree
+and argument denominator is at least one bit. A finite natural-power lower
+bound proves this directly, without real completeness or a limit argument.
+
+Consequently, uniformly bounded natural multiples force nonpositivity, and
+an order inequality with at most one bit of error after every amplification
+forces the exact original order. These are the Archimedean separation steps
+used by the finite Shannon uniqueness argument.
+-/
+
 private theorem unit_power_lower (b n : Nat) :
     b ^ (n + 1) + (n + 1) * b ^ n ≤ (b + 1) ^ (n + 1) := by
   induction n with

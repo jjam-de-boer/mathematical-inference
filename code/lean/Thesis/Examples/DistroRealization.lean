@@ -1,5 +1,23 @@
 import Thesis.Examples.DistributionExtensions
 
+/-!
+# Support-aware expectation identities and full moment-table realization
+
+The tower examples permit refinement to fail at retained null outcome 99.
+Their pointwise conclusions concern the library's specified conditional-
+expectation function, including its unsupported-label value; they do not
+define a conditional probability at null evidence. Repeated indices remain
+occurrences in covariance forms, and zero-trial/full-population cases keep
+their degenerate covariance conclusions.
+
+Full scalar and joint factorial tables are checked by inversion: negative
+cells and failed normalization are distinct failures. The valid joint
+fixture realizes equal masses at `[0,0,0]` and `[1,0,2]`, retains zero grid
+cells, and agrees in law with a split record containing null outliers.
+Invalid cross moments, empty rectangles and duplicate list-grid occurrences
+exercise the constructive realization boundary without a supplied law.
+-/
+
 namespace Thesis.Examples.DistroRealization
 open Probability Probability.Distros DistributionExtensions
 

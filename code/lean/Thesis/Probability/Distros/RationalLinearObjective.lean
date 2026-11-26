@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.RationalLinearBounds
 import Thesis.Probability.Distros.FiniteGridMoments
 
+/-!
+Introduce and retain an exact linear objective as the first coordinate.
+
+Prepending a coordinate is an explicit finite function operation. Existing
+inequalities are weakened by a zero first coefficient, while two additional
+rows force that coordinate equal to the requested integer linear objective
+in the remaining assignment. Dot-product and head-row identities prove this
+encoding exactly on signed rational values. Combined with elimination bounds,
+this lets clients optimize a response without changing its original mass
+variables or asserting an external optimum witness.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 theorem neg_add_le_zero_iff (a b : SignedRatio) : LE (add (neg a) b) zero ↔ LE b a :=
@@ -44,6 +56,8 @@ theorem dot_prepend (first : Int) (tail : Fin n → Int) (values : Fin (n + 1) �
       (SignedRatio.add (SignedRatio.scaleInt first (values 0)) (dot n tail (fun i => values i.succ))) := by
   simpa only [prepend_zero, prepend_succ] using dot_head n (prepend first tail) values
 
+/-- Add an unused first coordinate while preserving the inequality on
+all original variables, now indexed by successor indices. -/
 def Inequality.weaken (row : Inequality n) : Inequality (n + 1) := ⟨prepend 0 row.coefficients, row.bound⟩
 
 theorem Inequality.holds_weaken_iff (row : Inequality n) (values : Fin (n + 1) → SignedRatio) :

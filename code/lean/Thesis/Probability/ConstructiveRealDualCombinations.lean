@@ -1,6 +1,18 @@
 import Thesis.Probability.ConstructiveRealFarkas
 import Thesis.Probability.FiniteDenominatorClearing
 
+/-!
+# Retaining provenance in finite combinations of dual inequalities
+
+Each row carries signed direction and total data and nonnegative cone
+coefficients. Their scaled combinations preserve the actual integer
+coefficients and analytic bounds in the multiplier problem. The signature
+is computed from a solver row combination, so zero coefficients give
+exact cancellation identities. Proving the sign of those canceled
+signatures supplies the finite Farkas condition without deciding real
+slack or guessing an active row family.
+-/
+
 namespace Thesis.Probability.AnalyticLinear
 open ConstructiveReal
 open Distros.RationalLinear

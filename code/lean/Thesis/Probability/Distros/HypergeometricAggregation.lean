@@ -4,6 +4,21 @@ import Thesis.Probability.Distros.TriangularSums
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Coarsening finite-population colour counts
+
+Merging colour counts corresponds exactly to adding their population stocks.
+The proof first establishes this for unnormalized natural integrals at every
+draw size, including cases with zero total mass. A two-colour Vandermonde step
+merges the head stock into a chosen destination; recursive labelled merging
+then handles any supplied finite category partition.
+
+Only the final probability-law theorem requests a positive original
+normalizer. Aggregation preserves the total population, so it supplies the
+same positive normalizer on the coarse side. Empty destination categories
+and zero-stock source colours remain explicit coordinates throughout.
+-/
+
 /-- Unnormalized subset integral. Keeping this defined for every sample
 size permits coarsening proofs without assuming positive intermediate stocks. -/
 def hypergeometricIntegral (n : Nat) (stocks : List Nat) (f : List Nat → Nat) : Nat :=
@@ -45,6 +60,8 @@ theorem hypergeometricIntegral_two (n a b : Nat) (stocks : List Nat) (f : List N
       have index : n - used - (total - used) = n - total := by omega
       rw [index]
 
+/-- Remove the head count and add it into one specified tail coordinate.
+The coarsening theorem supplies the bound that makes that destination valid. -/
 def mergeHeadInto (index : Nat) : List Nat → List Nat
   | [] => []
   | head :: tail => tail.modify index (fun old => old + head)
@@ -173,6 +190,8 @@ theorem hypergeometricIntegral_aggregation (n groups : Nat) (stocks labels : Lis
       | nil => have dim := dimension; simp only [List.length_nil, List.length_cons] at dim; exact False.elim (by omega)
       | cons label labels =>
           let grouped := aggregateCounts groups labels stocks
+          -- Empty coarse categories remain in the fixed-length grouped
+          -- vector, so every supplied destination label remains in range.
           have labelWithin : label < grouped.length := by
             rw [aggregateCounts_length]
             exact within label (List.mem_cons_self ..)

@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.EntropyGibbsEquality
 import Thesis.Probability.CrossEntropyValue
 
+/-!
+Cross entropy and global variational comparisons of finite laws.
+
+Both laws share one explicit distinct support grid, and the reference law
+must be positive on every grid cell. The exact identity KL = cross entropy
+minus entropy transfers Gibbs nonnegativity into an entropy upper bound.
+A feasible positive candidate with fixed cross entropy therefore maximizes
+entropy throughout that comparison class, with equality exactly at its law.
+These are certificates for supplied candidates; they do not assert that
+every rational constraint problem has an exactly rational optimizer.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Cross entropy in bits on the same explicit finite grid as entropy and KL. -/
@@ -11,6 +23,8 @@ def Distro.crossEntropy [DecidableEq A] (μ reference : Distro A) (grid : Entrop
   ExactLog.listSum (grid.cells.attach.map (fun cell =>
     crossEntropyTerm (μ.pmf cell.val) (reference.pmf cell.val) (positive cell.val cell.property)))
 
+/-- The finite sum of pointwise information identities gives KL as
+cross entropy minus entropy, retaining zero observed probabilities. -/
 theorem Distro.relativeEntropy_cross_sub [DecidableEq A] (μ reference : Distro A) (grid : EntropyGrid A)
     (support : μ.AlmostSurely (fun value => value ∈ grid.cells))
     (referenceSupport : reference.AlmostSurely (fun value => value ∈ grid.cells))
@@ -38,6 +52,8 @@ theorem Distro.entropy_le_crossEntropy [DecidableEq A] (μ reference : Distro A)
     (μ.relativeEntropy_cross_sub reference grid support referenceSupport positive)).mp nonnegative
   exact (ExactLog.zero_le_sub_iff _ _).mp difference
 
+/-- Scoring a positive law against itself gives its own Shannon entropy.
+The positivity assumption is the declared cross-entropy reference domain. -/
 theorem Distro.crossEntropy_self [DecidableEq A] (μ : Distro A) (grid : EntropyGrid A)
     (support : μ.AlmostSurely (fun value => value ∈ grid.cells)) (positive : μ.GridPositive grid) :
     ExactLog.Equiv (μ.crossEntropy μ grid support support positive) (μ.entropy grid support) := by

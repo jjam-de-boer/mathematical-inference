@@ -1,5 +1,16 @@
 import Thesis.Probability.ConstructiveRealEntropyPartitionIdentity
 
+/-!
+# Checking rational enclosures of the actual fitted Gibbs parameters
+
+Complementary products replace weighted expectations by weighted row
+bounds at the fitted maximum. The resulting partition identity is a
+certificate for the computed parameters, not only a symbolic form.
+Each nonnegative multiplier has the standard rational enclosure with a
+certified width. The finite family approximation uses those enclosures
+to bound the entropy certificate for the actual ideal law.
+-/
+
 namespace Thesis.Probability.Distros.RationalEntropyProblem
 open ConstructiveReal
 open RationalLinear

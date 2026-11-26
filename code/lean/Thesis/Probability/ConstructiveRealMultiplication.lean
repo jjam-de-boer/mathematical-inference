@@ -1,5 +1,15 @@
 import Thesis.Probability.RegularRationalAlgebra
 
+/-!
+# Constructing real products from regular rational product approximations
+
+Measured input magnitude bounds determine the requested rational
+precisions before multiplying. The regular product limit defines
+analytic multiplication. It recovers exact signed rational products
+and has a certified enclosure from the computed rational product at
+any requested precision, even when both inputs are analytic.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Multiplication is constructed from a regular net of rational products,

@@ -1,12 +1,28 @@
 import Thesis.Probability.Distros.RationalLinearInequalities
 
+/-!
+Exact existential elimination with a computed rational lifting program.
+
+A positive last coefficient gives an upper endpoint, a negative one a lower
+endpoint, and zero leaves a constraint on the remaining variables. Each
+projected pair is precisely the compatibility condition for its endpoints.
+Every full satisfying assignment therefore satisfies the projection. In the
+reverse direction, the finite interval checker chooses a last coordinate;
+a contradictory endpoint pair would violate an actual projected row. The
+result proves existential equivalence and computes its witness constructively.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 
+/-- Read an upper endpoint only for a positive pivot. The zero fallback
+outside that domain is a total-function convention, not a bound from the row. -/
 def Inequality.upperValue (row : Inequality (variables + 1)) (values : Fin variables → SignedRatio) : SignedRatio :=
   if positive : 0 < row.pivot then
     SignedRatio.divideNat (row.residual values) row.pivot.toNat (by omega)
   else SignedRatio.zero
 
+/-- Read a lower endpoint only for a negative pivot, reversing its sign.
+The correctness theorem separately supplies that sign hypothesis. -/
 def Inequality.lowerValue (row : Inequality (variables + 1)) (values : Fin variables → SignedRatio) : SignedRatio :=
   if negative : row.pivot < 0 then
     SignedRatio.divideNat (SignedRatio.neg (row.residual values)) (-row.pivot).toNat (by omega)

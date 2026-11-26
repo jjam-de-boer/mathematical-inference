@@ -7,6 +7,11 @@ open Probability
 /-!
 Cluster-local queries pull outcome and action node sets back to unions of
 micro clusters. Locality of the assignment map transports outcome events.
+Here query pullback selects node sets only. It neither chooses a microscopic
+representative of a macro surgery nor equates an aggregated event with a
+single fine assignment cylinder. Such an equality needs a further argument
+when a cluster map is not injective, as for Boolean AND or OR.
+
 This is a syntactic/semantic locality statement, not identification over a
 whole graph class: exactness of one pair of SCMs does not provide a lift of
 all observationally equivalent macro models to equivalent micro models.
@@ -14,6 +19,9 @@ all observationally equivalent macro models to equivalent micro models.
 
 namespace FiniteCausalCoarseGraining
 
+/-- Disjoint macro node sets have disjoint micro-cluster unions. The proof
+uses both disjointness of the selected node sets and pairwise disjointness
+of distinct clusters; no assumption about probability support is needed. -/
 theorem microNodes_disjoint (coarsening : FiniteCausalCoarseGraining micro coarse)
     (left right : NodeSet coarse) (disjoint : NodeSet.Disjoint left right) :
     NodeSet.Disjoint (coarsening.microNodes left) (coarsening.microNodes right) := by
@@ -41,12 +49,16 @@ def pullbackQuery (coarsening : FiniteCausalCoarseGraining micro coarse)
   action := coarsening.microNodes query.action
   action_outcome_disjoint := coarsening.microNodes_disjoint _ _ query.action_outcome_disjoint
 
-/-- Explicit τ-locality for a supplied fine/coarse query pair. -/
+/-- Explicit τ-locality for a supplied fine/coarse query pair. This records
+equality of the selected node sets, independently of intervention values,
+representative choices, or equality of the corresponding event cylinders. -/
 def PullsBackQuery (coarsening : FiniteCausalCoarseGraining micro coarse)
     (fineQuery : JointKernelQuery micro) (coarseQuery : JointKernelQuery coarse) : Prop :=
   fineQuery.outcome = coarsening.microNodes coarseQuery.outcome ∧
   fineQuery.action = coarsening.microNodes coarseQuery.action
 
+/-- The constructed query satisfies exactly the two node-set pullback
+equalities, without an additional model or identification premise. -/
 theorem pullbackQuery_local (coarsening : FiniteCausalCoarseGraining micro coarse)
     (query : JointKernelQuery coarse) : coarsening.PullsBackQuery (coarsening.pullbackQuery query) query :=
   ⟨rfl, rfl⟩

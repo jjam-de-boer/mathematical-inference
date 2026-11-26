@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.ReinforcedUrn
 import Thesis.Probability.Distros.CategoricalAggregation
+/-!
+Exact coarsening of reinforced colours and their count marginals.
+
+A label for each original colour specifies its destination group. Summing
+initial weights in those groups and retaining the increment gives the same
+law as mapping each actual draw to its label. The count-law proof transports
+that result through the word/occupancy correspondence. Labels must be in
+range and match the original dimension; empty destination groups and zero
+initial weights are allowed. Grouping one colour against its complement
+then derives beta-binomial marginals and their mean and variance.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Grouping every draw of a reinforced urn gives the urn with summed
@@ -47,6 +59,8 @@ theorem reinforcedUrn_aggregation (n groups : Nat) (alphas labels : List Nat) (i
       refine QProb.equiv_trans transport ?_
       exact QProb.equiv_symm (reinforcedUrn_first_step n grouped increment groupPositive event)
 
+/-- Every enumerated word has the declared length and uses valid colour
+indices, even if its atom weight is zero. This licenses the count regrouping. -/
 theorem reinforcedUrn_word_support (n : Nat) (alphas : List Nat) (increment : Nat) (atom : List Nat × Nat)
     (member : atom ∈ reinforcedUrnAtoms n alphas increment) :
     atom.1.length = n ∧ ∀ colour ∈ atom.1, colour < alphas.length := by
@@ -124,6 +138,8 @@ theorem aggregateCounts_all_complement (counts : List Nat) :
         List.modify_succ_cons, List.modify_zero_cons, List.sum_cons]
       congr 2 <;> omega
 
+/-- The two-group map separates a selected coordinate from all remaining
+counts. Natural subtraction is exact because the selected count is bounded by the sum. -/
 theorem aggregateCounts_coordinate (counts : List Nat) (index : Nat) (within : index < counts.length) :
     aggregateCounts 2 (coordinateArguments 0 counts.length index) counts =
       [counts.getD index 0, counts.sum - counts.getD index 0] := by
@@ -174,6 +190,8 @@ theorem dirichletMultinomial_coordinate_betaBinomial (n : Nat) (alphas : List Na
       (dirichletMultinomial_two_coordinate n (alphas.getD index 0) (alphas.sum - alphas.getD index 0)
         (by have h := list_getD_le_sum alphas index; omega)) event
 
+/-- Transport the beta-binomial mean along the proved marginal law.
+The complement balance restores the original total parameter. -/
 theorem dirichletMultinomial_coordinate_mean (n : Nat) (alphas : List Nat) (positive : 0 < alphas.sum)
     (index : Nat) (within : index < alphas.length) :
     QProb.Equiv (mean (dirichletMultinomialCoordinate n alphas positive index))
@@ -183,6 +201,8 @@ theorem dirichletMultinomial_coordinate_mean (n : Nat) (alphas : List Nat) (posi
     (by have h := list_getD_le_sum alphas index; omega)
   simpa only [Nat.add_sub_of_le (list_getD_le_sum alphas index)] using beta
 
+/-- Transport variance along the same marginal law, retaining the
+zero-selected and zero-complement boundary cases. -/
 theorem dirichletMultinomial_coordinate_variance (n : Nat) (alphas : List Nat) (positive : 0 < alphas.sum)
     (index : Nat) (within : index < alphas.length) :
     QProb.Equiv (variance (dirichletMultinomialCoordinate n alphas positive index))

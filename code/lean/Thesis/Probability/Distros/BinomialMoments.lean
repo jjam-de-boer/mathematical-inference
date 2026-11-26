@@ -1,10 +1,23 @@
 import Thesis.Probability.Distros.Binomial
 import Thesis.Probability.Distros.Moments
 
+/-!
+Bernoulli and binomial moments from exact natural-weight sums.
+
+The event indicator has identical first and second moments. For the binomial
+count, degree lowering evaluates the second falling-factorial moment, and
+k² = k(k-1)+k gives the ordinary second moment. Variance is proved through
+an additive balance with the squared mean; no signed probability weights
+are introduced. Only the total a+b must be positive, so zero success or
+failure weight and zero trials are covered by the stated formulas.
+-/
+
 namespace Thesis.Probability.Distros
 
 open Combinatorics
 
+/-- A zero-or-one observable equals its square on every atom, so its
+second moment and mean agree as the displayed rational presentations. -/
 theorem bernoulli_secondMoment (a b : Nat) (positive : 0 < b + a) :
     secondMoment (bernoulliNatDistro a b positive) = mean (bernoulliNatDistro a b positive) := by
   simp [secondMoment, mean, rawMoment_expectNat, Distro.expectNat,
@@ -21,6 +34,8 @@ theorem bernoulli_variance (a b : Nat) (positive : 0 < b + a) :
   simp only [QProb.Equiv, QProb.add, QProb.mul, Nat.add_mul, Nat.mul_add]
   ac_rfl
 
+/-- Present the existing weighted-sum mean in the usual n a/(a+b)
+form, treating n = 0 before simplifying the denominator power. -/
 theorem binomial_mean_ratio (n a b : Nat) (positive : 0 < b + a) :
     QProb.Equiv (mean (binomialNatDistro n a b positive)) ⟨n * a, b + a, positive⟩ := by
   refine QProb.equiv_trans (binomial_mean n a b positive) ?_
@@ -30,12 +45,16 @@ theorem binomial_mean_ratio (n a b : Nat) (positive : 0 < b + a) :
       simp only [QProb.Equiv, Nat.add_sub_cancel, Nat.pow_succ]
       ac_rfl
 
+/-- Natural subtraction causes no loss here: multiplying k-1 by k and
+adding k reconstructs k², including the zero boundary. -/
 theorem nat_falling_square (k : Nat) : k * (k - 1) + k = k * k := by
   cases k with
   | zero => rfl
   | succ k =>
       simp only [Nat.add_sub_cancel, Nat.mul_add, Nat.mul_one, Nat.succ_mul]
 
+/-- The unnormalized falling second moment counts two ordered successes;
+its closed form is n(n-1)a²(a+b)^(n-2). -/
 theorem binomTerm_factorial_second (n a b : Nat) :
     natSum (n + 1) (fun k => k * (k - 1) * binomTerm n a b k) =
       n * (n - 1) * (a * a) * (a + b) ^ (n - 2) := by
@@ -100,6 +119,8 @@ theorem binomial_secondMoment (n a b : Nat) (positive : 0 < b + a) :
           simp only [Nat.pow_succ, Nat.add_mul, Nat.mul_add]
           ac_rfl
 
+/-- The normalized variance n a b/(a+b)², with the same positive-total
+hypothesis as the binomial constructor and no positivity requirement on a or b alone. -/
 theorem binomial_variance (n a b : Nat) (positive : 0 < b + a) :
     QProb.Equiv (variance (binomialNatDistro n a b positive))
       ⟨n * a * b, (b + a) * (b + a), Nat.mul_pos positive positive⟩ := by

@@ -1,6 +1,19 @@
 import Thesis.Probability.Distros.LogExpectation
 import Thesis.Probability.Distros.ShiftedMoments
 
+/-!
+Global entropy certificates from supplied rational log-linear references.
+
+A reference is positive on the original grid and its information score is
+represented by an affine combination of shifted integer moment responses.
+Only selected exact rows are used; other interval constraints may remain.
+Integrating that representation makes cross entropy constant across all
+admissible laws. Even a reference that is not feasible yields a universal
+entropy upper bound through a feasible anchor. If the reference is itself
+feasible, Gibbs comparison certifies its optimality and equality exactly
+at its law. The representation and feasibility are supplied certificates.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Affine log scores use shifted integer responses on the unchanged grid.

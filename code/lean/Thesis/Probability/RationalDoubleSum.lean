@@ -1,6 +1,17 @@
 import Thesis.Probability.SignedRatioRangeSum
 import Thesis.Probability.RationalSeriesNorm
 
+/-!
+# Finite signed sums over squares, diagonals and omitted corners
+
+A prefix may be accumulated either from the first term or the last.
+Row and diagonal enumeration of a strict-total-degree triangle agree.
+A square splits into that triangle and a corner, and a separable square
+is the product of two prefix sums. Dyadic entry bounds control the
+omitted corner by n² times the degree-n envelope. All rearrangements
+here concern finite signed rational sums, including empty prefixes.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 /-- Changing the order in which a finite prefix is accumulated preserves

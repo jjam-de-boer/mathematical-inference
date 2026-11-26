@@ -2,6 +2,16 @@ import Thesis.Probability.ConstructiveRealMomentRows
 import Thesis.Probability.ConstructiveRealRationalConstraints
 import Thesis.Probability.ConstructiveRealEntropyOptimizer
 
+/-!
+# Encoding closed rational entropy constraints as finite moment bands
+
+The original problem is a rational polytope in the probability simplex.
+After positive row clearing, each one-sided restriction becomes a
+moment band using a proved redundant lower endpoint. Equalities,
+redundant rows and forced zeros are retained. Analytic ideal coordinates
+remain separate from the rational weights in the finite solver.
+-/
+
 namespace Thesis.Probability.Distros
 open ConstructiveReal
 

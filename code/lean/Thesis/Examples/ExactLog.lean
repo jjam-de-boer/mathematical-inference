@@ -1,5 +1,20 @@
 import Thesis.Probability.ExactLogEnclosure
 
+/-!
+# Exact logarithmic values and executed rational bisection
+
+Integer-power comparisons verify root presentations, the bounds
+`3/2 <= log2(3) <= 8/5`, degree rescaling and unreduced arguments. Signed
+bit values remain possible, so logarithmic values are not clipped as if
+they were nonnegative probability weights.
+
+The actual enclosure procedure returns `[49/32,52/32]` for `log2(3)` at
+requested error `1/8`, with width `3/32`. Its general contract keeps a
+positive rational tolerance and certifies strictly smaller enclosure
+width for any exact-log value, including negative values and nonunit root
+degrees. No floating-point approximation is used as a proof premise.
+-/
+
 namespace Thesis.Examples.ExactLog
 open Probability
 

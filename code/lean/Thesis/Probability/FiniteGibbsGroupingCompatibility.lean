@@ -1,5 +1,21 @@
 import Thesis.Probability.FiniteGibbsDegeneracy
 
+/-!
+# Transferring counted grouping to a preexisting Gibbs family
+
+Compatibility checks that the original reference weights equal one in
+rational value and that its observables agree with the supplied grouped
+ones on each microstate. Unreduced rational presentations are permitted.
+These local checks imply score and log-weight equivalence for every
+parameter, from which partition, probability aggregation and the counted
+entropy correction follow.
+
+The grouping is supplied rather than discovered, and agreement of the
+desired partition or outcome law is not a compatibility premise. The
+unit-reference condition states the scope in which simple physical fiber
+cardinalities provide the correction.
+-/
+
 namespace Thesis.Probability.FiniteGibbsGrouping
 open ConstructiveReal
 open ConstructiveReal.FiniteFibers

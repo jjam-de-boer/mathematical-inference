@@ -1,6 +1,19 @@
 import Thesis.Probability.ConstructiveRealEntropyKKT
 import Thesis.Probability.ConstructiveRealEntropyPositivePath
 
+/-!
+# A full feasible-direction characterization of entropy maximality
+
+For a reference law with supplied positive floors, maximality implies a
+nonpositive entropy-gradient pairing with every feasible displacement.
+Dyadic convex mixtures construct the needed admissible nearby points,
+including when the competitor has zero coordinates or changes interval
+expectations. The derivative remainder bounds this pairing at arbitrary
+precision. Conversely the gradient inequality and the global Gibbs bound
+prove maximality. This is the full variational inequality on the original
+closed-row problem; extracting signed KKT data is a separate duality step.
+-/
+
 namespace Thesis.Probability.Distros.RationalEntropyProblem
 open ConstructiveReal
 

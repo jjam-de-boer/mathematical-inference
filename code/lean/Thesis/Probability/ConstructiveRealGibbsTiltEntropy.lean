@@ -1,5 +1,16 @@
 import Thesis.Probability.ConstructiveRealGibbsTiltMoments
 
+/-!
+# Entropy and the log partition of a finite Gibbs tilt
+
+The log of each positive normalized mass is its log weight minus the
+log partition. Substituting this into the proved continuous entropy
+formula gives natural entropy as a finite expectation. Expanded by
+normalization, it is ln Z plus parameter times expected energy minus
+the expected log reference weight. Entropy in bits uses the proved
+ln(2) conversion.
+-/
+
 namespace Thesis.Probability.FiniteGibbsTilt
 open ConstructiveReal
 

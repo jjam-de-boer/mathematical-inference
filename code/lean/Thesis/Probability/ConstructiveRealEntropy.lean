@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveRealUnitApproximation
 import Thesis.Probability.ConstructiveRealRationalEntropy
 import Thesis.Probability.ConstructiveRealCauchyOrder
 
+/-!
+# Completing the rational entropy term on the closed unit interval
+
+Rational unit centers keep every approximation inside the closed domain.
+The rational continuity modulus controls their entropy values, including
+zero masses, to construct the real limit. The result agrees with exact
+rational entropy and is independent of the enclosure presentation and
+its bound witnesses. The endpoints both have entropy zero, and the
+whole domain has nonnegative entropy. No logarithm is evaluated at zero.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Entropy contributions of scalar rational unit-interval approximants.

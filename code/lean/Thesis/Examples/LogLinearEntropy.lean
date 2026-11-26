@@ -2,6 +2,22 @@ import Thesis.Probability.Distros.LogLinearEntropy
 import Thesis.Probability.ConstructiveRealLogLinearOptimality
 import Thesis.Probability.ExactLogPositiveEnclosure
 
+/-!
+# A signed-moment log-linear certificate gives a global maximum
+
+The response is negative one on cell two and zero elsewhere, with exact
+expectation `-1/2`. The positive candidate `[1/4,1/4,1/2]` retains a null
+outlier and supplies a verified log-linear reference. Shifting the signed
+response by its grid minimum adjusts the score offset; the null outlier
+does not impose an extra response condition outside that grid.
+
+The certificate bounds every exactly feasible rational law, with equality
+exactly for the candidate's law. Its analytic transfer also bounds all
+feasible real laws and identifies any ideal maximum coordinatewise. These
+are verified consequences of the supplied score identity and support
+premises, rather than a parameter-search or model-selection algorithm.
+-/
+
 namespace Thesis.Examples.LogLinearEntropy
 open Probability Probability.Distros
 

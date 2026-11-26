@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealNormalMultipliers
 import Thesis.Probability.ConstructiveRealEntropyVectorConcavity
 
+/-!
+# Complementarity from the attained primal and dual values
+
+Pair stationarity with the actual normalized primal law. Finite bilinear
+transposition sums all original rows and exposes their weighted slacks.
+Equality of the attained objective and dual value makes their sum zero.
+Every multiplier and slack has the required nonnegativity, so each
+complementary product vanishes. The proof never classifies analytic
+slack as zero or positive and does not select an active basis.
+-/
+
 namespace Thesis.Probability.AnalyticLinear
 open ConstructiveReal
 open Distros.RationalLinear

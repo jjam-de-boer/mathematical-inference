@@ -2,12 +2,27 @@ import Thesis.Probability.Distros.DepletingWord
 import Thesis.Probability.FiniteRecordSums
 import Thesis.Probability.FiniteRecordSupport
 
+/-!
+Condition the actual removal experiment on a prefix histogram.
+
+Positive evidence yields the observation's dimension, draw count and every
+stock bound; impossible observations never receive a conditional law here.
+The total horizon bounds the original population, and stock conservation
+then bounds the future horizon in the remaining population. Splitting raw
+paths factors each future event through the observed histogram. This proves
+the full conditional suffix law is removal sampling from the remaining
+stocks, with hypergeometric future counts and a categorical next draw.
+All results retain zero-stock categories explicitly.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Observed colour counts in the first m actual draws. -/
 def depletingCountsEvent (m colours : Nat) (counts : List Nat) : Event (List Nat) :=
   fun word => decide (colourCounts colours (word.take m) = counts)
 
+/-- Positive raw mass of precisely this histogram in the first m draws.
+This evidence condition excludes both malformed vectors and overdrawn colours. -/
 def depletingCountsSupported (m : Nat) (stocks counts : List Nat) : Prop :=
   0 < FiniteProbRecord.eventMass (multicolourDepletingAtoms m stocks)
     (fun word => decide (colourCounts stocks.length word = counts))
@@ -29,6 +44,8 @@ theorem depletingCountsSupported_data (m : Nat) (stocks counts : List Nat)
   rw [← same]
   exact ⟨colourCounts_length _ _, (colourCounts_sum _ _ shape.2).trans shape.1, bounded⟩
 
+/-- A feasible prefix has removed exactly m balls. The original horizon
+bound therefore leaves enough total stock for the declared n future draws. -/
 theorem depletingCounts_remaining (m n : Nat) (stocks counts : List Nat)
     (within : m + n ≤ stocks.sum) (supported : depletingCountsSupported m stocks counts) :
     n ≤ (depletingState stocks counts).sum := by
@@ -37,6 +54,8 @@ theorem depletingCounts_remaining (m n : Nat) (stocks counts : List Nat)
   rw [data.2.1] at conserved
   omega
 
+/-- The raw sufficient-count factorization: all histories with the same
+observed histogram have the same remaining state and future event mass. -/
 theorem depletingCountsEvent_mass (m n : Nat) (stocks counts : List Nat)
     (event : Event (List Nat)) :
     FiniteProbRecord.eventMass (multicolourDepletingAtoms (m + n) stocks)
@@ -72,6 +91,8 @@ theorem depletingCountsEvent_mass (m n : Nat) (stocks counts : List Nat)
     (fun word => decide (colourCounts stocks.length word = counts)) _
 
 
+/-- Supported prefix evidence remains positive in the longer experiment
+because its permitted continuation has a positive falling-factorial total. -/
 theorem depletingCountsEvent_positive (m n : Nat) (stocks counts : List Nat)
     (within : m + n ≤ stocks.sum) (supported : depletingCountsSupported m stocks counts) :
     (multicolourDepletingDistro (m + n) stocks within).record.EventPositive

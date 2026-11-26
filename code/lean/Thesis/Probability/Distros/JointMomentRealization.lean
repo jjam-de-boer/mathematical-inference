@@ -2,6 +2,20 @@ import Thesis.Probability.Distros.JointMomentTable
 
 namespace Thesis.Probability.Distros
 
+/-!
+# Canonical joint-law realization of a valid rectangle table
+
+Certified nonnegative signed inverse masses embed into ordinary rational
+probabilities without changing their magnitudes. The explicit rectangle
+probability construction retains every cell, including zero masses and the
+empty vector, then reverse inversion proves each supplied mixed moment.
+
+Validity is necessary and sufficient for a joint law with the declared
+almost-sure coordinate bounds. Reconstruction makes that realization unique
+as a full event law, allowing duplicated or rescaled alternative atom lists
+and arbitrary null outliers. The theorem imposes no coordinate independence.
+-/
+
 /-- Convert a candidate signed mass to a nonnegative rational presentation.
 The realization constructor below always supplies its nonnegativity proof. -/
 def jointTableProbability (moments : List Nat → QProb) (bounds value : List Nat) : QProb :=
@@ -76,6 +90,8 @@ theorem realizedJointFactorialDistro_moments (moments : List Nat → QProb) (bou
     (valid : JointFactorialMomentTableValid moments bounds) (orders : List Nat) (within : CoordinateBounds orders bounds) :
     QProb.Equiv (jointFactorialMoment (realizedJointFactorialDistro moments bounds valid) orders) (moments orders) := by
   have same := (QProb.toSignedRatio_equiv_iff _ _).mp (realizedJointFactorialDistro_coefficient moments bounds valid orders within)
+  -- The cancelled factor is a product of positive order factorials,
+  -- independent of whether any realized grid cell has positive probability.
   apply Nat.eq_of_mul_eq_mul_right (orderFactorial_pos orders)
   change (jointFactorialMoment (realizedJointFactorialDistro moments bounds valid) orders).num * (moments orders).den * orderFactorial orders =
     (moments orders).num * (jointFactorialMoment (realizedJointFactorialDistro moments bounds valid) orders).den * orderFactorial orders

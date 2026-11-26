@@ -39,12 +39,18 @@ namespace ObservedSignature
 instance (S : ObservedSignature) (i : Fin S.count) : DecidableEq (S.Value i) :=
   S.valueDecidableEq i
 
+/-- A complete joint state retains one value of its declared type at each
+node. No common value alphabet or positive probability is assumed. -/
 abbrev Assignment (S : ObservedSignature) :=
   (i : Fin S.count) -> S.Value i
 
+/-- The first `k` coordinates in the chosen topological order. The bound
+embeds each prefix index into the full signature without selecting labels. -/
 def Prefix (S : ObservedSignature) (k : Nat) (hk : k <= S.count) :=
   (i : Fin k) -> S.Value ⟨i.val, Nat.lt_of_lt_of_le i.isLt hk⟩
 
+/-- A mechanism sees values only at declared directed parents. Requiring
+edge evidence in the argument prevents accidental access to other nodes. -/
 def ParentValues (S : ObservedSignature) (child : Fin S.count) :=
   (parent : Fin S.count) ->
     S.directed parent child = true -> S.Value parent
@@ -100,6 +106,8 @@ def inter (X Y : NodeSet S) : NodeSet S :=
 def diff (X Y : NodeSet S) : NodeSet S :=
   fun i => X i && !(Y i)
 
+/-- Propositional inclusion of the decidable selections. Computable
+inclusion is exposed separately by `subsetBool` and proved equivalent below. -/
 def Subset (X Y : NodeSet S) : Prop :=
   forall i, X i = true -> Y i = true
 
@@ -151,6 +159,8 @@ theorem union_subset {X Y Z : NodeSet S}
         exact hi
       exact hY i hy
 
+/-- Every selected left coordinate is excluded on the right. This oriented
+form is convenient for restrictions and requires no complement universe. -/
 def Disjoint (X Y : NodeSet S) : Prop :=
   forall i, X i = true -> Y i = false
 
@@ -209,6 +219,8 @@ theorem disjoint_of_subset_right {X Y Z : NodeSet S}
       exact False.elim
         (Bool.false_ne_true ((hdis i hX).symm.trans (hsub i hZ)))
 
+/-- A shared selected coordinate. Executable witness extraction uses the
+enumerated intersection rather than eliminating this proposition into data. -/
 def Meets (X Y : NodeSet S) : Prop :=
   Exists fun i => X i = true /\ Y i = true
 
@@ -283,6 +295,8 @@ theorem members_full (S : ObservedSignature) :
   | cons node rest inductionHypothesis =>
       simp [List.filter, inductionHypothesis]
 
+/-- Enumeration loses no selected coordinate and introduces none. Together
+with `nodup_members`, this licenses exact finite sums over a node set. -/
 theorem mem_members_iff (X : NodeSet S) (i : Fin S.count) :
     i ∈ members X ↔ X i = true := by
   simp [members, List.mem_filter, mem_enumerated]
@@ -553,6 +567,8 @@ theorem eq_empty_of_isEmpty {X : NodeSet S} (h : isEmpty X = true) :
   funext i
   exact (isEmpty_eq_true_iff X).mp h i
 
+/-- The finite inclusion test is sound and complete for extensional subset
+inclusion; all quantification is discharged by the supplied enumeration. -/
 theorem subsetBool_eq_true_iff (X Y : NodeSet S) :
     subsetBool X Y = true ↔ Subset X Y := by
   constructor
@@ -566,6 +582,8 @@ theorem subsetBool_eq_true_iff (X Y : NodeSet S) :
     intro i hi
     exact h i ((mem_members_iff X i).mp hi)
 
+/-- Equality testing reflects equality of the Boolean functions, rather
+than equality of an arbitrary list representation of the selected nodes. -/
 theorem equal_eq_true_iff (X Y : NodeSet S) :
     equal X Y = true ↔ X = Y := by
   constructor
@@ -750,6 +768,8 @@ theorem Subset.diff_of_subset_disjoint {X Y Z : NodeSet S}
 def firstMember (X : NodeSet S) : Option (Fin S.count) :=
   (members X).head?
 
+/-- A successful optional search carries membership in the original set,
+so downstream graph searches can use the returned coordinate directly. -/
 theorem firstMember_mem {X : NodeSet S} {i : Fin S.count}
     (h : firstMember X = some i) : X i = true := by
   have hx : (members X).head? = some i := by
@@ -800,6 +820,8 @@ theorem getMember_mem (X : NodeSet S) (h : isEmpty X = false) :
     X (getMember X h) = true :=
   firstMember_mem (getMember_eq_some X h)
 
+/-- A failed emptiness test has a concrete selected index. The forward
+proof follows the member list and needs no unrestricted excluded middle. -/
 theorem isEmpty_eq_false_iff (X : NodeSet S) :
     isEmpty X = false ↔ Exists fun i => X i = true := by
   constructor
@@ -814,6 +836,8 @@ theorem isEmpty_eq_false_iff (X : NodeSet S) :
         exact False.elim (Bool.false_ne_true (allFalse.symm.trans hi))
     | false => rfl
 
+/-- The executable overlap test agrees exactly with the shared-coordinate
+proposition, including the case where either selection is empty. -/
 theorem meetsBool_eq_true_iff (X Y : NodeSet S) :
     meetsBool X Y = true ↔ Meets X Y := by
   constructor
@@ -860,6 +884,8 @@ theorem getMeeting_right {X Y : NodeSet S} (h : meetsBool X Y = true) :
   (Bool.and_eq_true_iff.mp
     (getMember_mem (inter X Y) (isEmpty_inter_eq_false_of_meetsBool h))).2
 
+/-- The universal finite test certifies absence of overlap. It remains a
+decision about graph-node sets, independent of probability support. -/
 theorem disjointBool_eq_true_iff (X Y : NodeSet S) :
     disjointBool X Y = true ↔ Disjoint X Y := by
   constructor
@@ -989,15 +1015,21 @@ structure ObservedGraph (S : ObservedSignature) where
 
 namespace ObservedGraph
 
+/-- Directed arrows belong to the signature, while the graph record adds
+the projected latent confounding relation. -/
 def DirectedEdge (_G : ObservedGraph S) (i j : Fin S.count) : Prop :=
   S.directed i j = true
 
+/-- Reflexive directed ancestry, witnessed by a finite forward path.
+Reflexivity includes the starting node in its own ancestral closure. -/
 inductive DirectedReachable (G : ObservedGraph S) :
     Fin S.count -> Fin S.count -> Prop
   | refl (i) : DirectedReachable G i i
   | tail {i j k} :
       DirectedReachable G i j -> G.DirectedEdge j k -> DirectedReachable G i k
 
+/-- Reflexive connectivity through confounding edges. These components
+ignore directed arrows and need not coincide with directed ancestry. -/
 inductive BidirectedConnected (G : ObservedGraph S) :
     Fin S.count -> Fin S.count -> Prop
   | refl (i) : BidirectedConnected G i i
@@ -1019,6 +1051,9 @@ inductive ExpandedNode (latentCount observedCount : Nat) where
 
 namespace ExpandedNode
 
+/-- All latent roots precede observed nodes; observed ranks follow the
+signature's topological order. Equal root ranks are harmless because no
+edge enters a latent root. -/
 def rank : ExpandedNode latentCount observedCount -> Nat
   | latent _ => 0
   | observed i => i.val + 1
@@ -1062,10 +1097,14 @@ def mutilatedDirected (S : ObservedSignature) (cut : Fin S.count -> Bool)
     (parent child : Fin S.count) : Bool :=
   if cut child then false else S.directed parent child
 
+/-- A projected confounding edge has an arrowhead at both endpoints, so
+forcing either endpoint removes it from the mutilated projection. -/
 def mutilatedBidirected (G : ObservedGraph S) (cut : Fin S.count -> Bool)
     (i j : Fin S.count) : Bool :=
   !(cut i) && !(cut j) && G.bidirected i j
 
+/-- Removing incoming arrows preserves the original topological ranking.
+Intervention changes response equations without creating a directed cycle. -/
 theorem mutilatedDirected_earlier (S : ObservedSignature)
     (cut : Fin S.count -> Bool) {parent child}
     (h : mutilatedDirected S cut parent child = true) :

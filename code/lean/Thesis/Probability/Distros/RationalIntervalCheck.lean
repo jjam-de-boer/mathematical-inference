@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.RationalLinearOrder
 
+/-!
+Construct a rational point satisfying finite lower and upper bounds.
+
+The checker selects the greatest listed lower endpoint and least listed
+upper endpoint. Compatible endpoints produce an actual satisfying rational
+value; otherwise they form a concrete contradictory pair with membership
+proofs. Empty-sided intervals are handled by selecting the constrained side,
+and a wholly unconstrained interval returns zero. The refutation theorem
+excludes every proposed rational point between an incompatible pair; this
+one-variable program supplies constructive back-substitution later.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- An executable one-variable inequality decision with a computed witness

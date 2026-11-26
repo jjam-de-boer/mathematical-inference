@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealReciprocal
 
+/-!
+# Translating and rescaling rational distance certificates
+
+A common real translation cancels in each closed distance inequality.
+An explicitly positive rational factor scales both sides, with the proved
+inverse supplying the converse. A computed positive rational shift also
+constructs a nearby point whose increment is exactly that rational value.
+This is the witness used to compare effective derivative slopes.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Translation preserves and reflects closed rational distance bounds. -/

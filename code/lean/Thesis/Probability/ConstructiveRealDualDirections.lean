@@ -3,6 +3,17 @@ import Thesis.Probability.ConstructiveRealIntegralPairing
 import Thesis.Probability.ConstructiveRealAffineSimplex
 import Thesis.Probability.ConstructiveRealPolynomialExpression
 
+/-!
+# Reading a primal direction from a canceled dual combination
+
+The signature of a canceled combination contains integral direction and
+normalization coefficients. Interpreting them at the current primal point
+builds a direction of zero total mass. Its row changes are expressed in
+terms of the original slacks and nonnegative cone coefficients. The pairing
+with the gradient exposes the negative of the dual right-hand side, allowing
+primal variational bounds to certify the canceled inequality.
+-/
+
 namespace Thesis.Probability.AnalyticLinear
 open ConstructiveReal
 open Distros.RationalLinear

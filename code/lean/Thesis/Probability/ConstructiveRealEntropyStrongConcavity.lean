@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealEntropyCurvature
 import Thesis.Probability.ConstructiveRealEntropySum
 
+/-!
+# A positive-domain quantitative midpoint gap for entropy
+
+The corrected entropy tangent comparison yields the explicit bit gap
+(x-y)^2/8 at the midpoint of ordered positive inputs. Midpoint itself
+preserves the unit bounds without comparing endpoints. Positive rational
+inputs admit a computed order case split, whose conclusions agree by
+midpoint symmetry. A later effective limit handles arbitrary endpoint
+order and the zero boundary.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private def halfRatio : SignedRatio := ⟨1, 2, by decide⟩

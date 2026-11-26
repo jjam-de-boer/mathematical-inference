@@ -1,5 +1,17 @@
 import Thesis.Probability.RationalTaylorBounds
 
+/-!
+# One geometric envelope for every exponential Taylor term
+
+The factorial tail estimate initially starts after a computable offset.
+Enlarging its coefficient by the corresponding power of two also absorbs
+the finite prefix. The proof splits at that offset: a coarse polynomial
+bound handles the prefix, and reindexing the existing tail bound handles
+the remaining coefficients. The resulting dyadic envelope is uniform in
+all signed rational arguments whose magnitude is at most the supplied
+natural bound, ready for effective convergence estimates.
+-/
+
 namespace Thesis.Probability.RationalTaylorExponential
 open SignedRatio RationalGeometricSeries
 

@@ -4,6 +4,20 @@ import Thesis.Probability.Distros.DepletingSupport
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Reconstruction on a supplied coordinate-specific rectangle
+
+Each coordinate has its own finite bound. The recursive rectangle retains
+zero-width axes as zero coordinates and has one empty vector in dimension
+zero. Finite binomial expansion and tensor inverse-Pascal reconstruction
+operate on exactly this rectangle rather than padding to one common bound.
+
+Dimensions and coordinate bounds are required only on positive atoms.
+Matching mixed moments throughout the supplied rectangle therefore determine
+the complete joint law, while arbitrary wrong-shaped or out-of-bounds null
+occurrences remain recorded. No fixed-total count assumption is needed.
+-/
+
 /-- Exact coordinatewise bounds, including matching dimensions. This reuses
 the existing finite coordinate comparison; bounds need not describe an urn. -/
 abbrev CoordinateBounds (counts bounds : List Nat) : Prop := depletingCountsWithin counts bounds
@@ -233,6 +247,8 @@ theorem Distro.sameLaw_of_rectangleFactorialMoments (μ ν : Distro (List Nat)) 
       (QProb.toSignedRatio_congr (QProb.div_congr (same orders (factorialRectangle_mem bounds orders member))
         (QProb.equiv_refl _) _ _))
   · have left := μ.pmf_zero_of_almostSure_ne target (fun atom member weight equal =>
+      -- A wrong-dimensional target cannot coincide with any positive atom;
+      -- both laws assign it zero without deleting null outliers.
       dimension (equal ▸ coordinateBounds_length atom.1 bounds (hμ atom member weight)))
     have right := ν.pmf_zero_of_almostSure_ne target (fun atom member weight equal =>
       dimension (equal ▸ coordinateBounds_length atom.1 bounds (hν atom member weight)))

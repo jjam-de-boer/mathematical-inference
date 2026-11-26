@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealEntropyGibbsForm
 
+/-!
+# Finite Gibbs representations force positive coordinates
+
+Each finite exponential score has a computed positive lower value. The
+partition reciprocal also has a positive bound, so their product gives
+a positive floor for every normalized coordinate. A feasible law with
+a forced zero cannot share those full-grid masses. Restricting the
+representation to its feasible support face removes this obstruction.
+-/
+
 namespace Thesis.Probability.Distros.RationalEntropyProblem.LagrangeCoefficients
 open ConstructiveReal
 

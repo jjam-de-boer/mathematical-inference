@@ -1,6 +1,19 @@
 import Thesis.Probability.Distros.RationalMassGrid
 import Thesis.Probability.Distros.JointMomentTableAlgebra
 
+/-!
+Decide finite partial moment feasibility and construct compatible laws.
+
+A distinct nonempty outcome grid carries integer-valued responses with
+closed rational expectation intervals; equal endpoints express exact rows.
+Simplex mass constraints and two inequalities per interval form a complete
+rational linear problem. Feasible vectors become actual finite laws retaining
+all declared cells, including forced zeros. Conversely supported laws yield
+mass vectors, so elimination refutations exclude every compatible law, even
+with extra null record labels. Scalar and joint factorial helpers use their
+existing observables and finite grids without a probability-denominator cap.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Selected integer-valued responses with rational expectation intervals.
@@ -22,6 +35,8 @@ def MomentInterval.LawHolds (constraint : MomentInterval A) (μ : Distro A) : Pr
 def MomentInterval.coefficients (constraint : MomentInterval A) (cells : List A) (default : A) : Fin cells.length → Int :=
   fun i => constraint.response (cells.getD i.val default)
 
+/-- Encode the upper bound directly and the lower bound by negating
+both response coefficients and endpoint. Redundant or exact rows are allowed. -/
 def MomentInterval.rows (constraint : MomentInterval A) (cells : List A) (default : A) : List (RationalLinear.Inequality cells.length) :=
   [⟨constraint.coefficients cells default, constraint.upper⟩,
     ⟨fun i => -constraint.coefficients cells default i, SignedRatio.neg constraint.lower⟩]
@@ -81,6 +96,8 @@ theorem rows_iff (problem : PartialMomentProblem A) (values : Fin problem.cells.
     · rcases List.mem_flatMap.mp moment with ⟨constraint, listed, belongs⟩
       exact (constraint.rows_iff problem.cells problem.default values).mpr (intervals constraint listed) row belongs
 
+/-- A concrete realizing distribution, proofs of support and all moments,
+and record occurrences for every declared cell, even those assigned zero mass. -/
 structure CompatibleLaw (problem : PartialMomentProblem A) where
   distro : Distro A
   support : distro.AlmostSurely (fun cell => cell ∈ problem.cells)

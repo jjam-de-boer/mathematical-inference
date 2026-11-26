@@ -1,6 +1,22 @@
 import Thesis.Probability.ConstructiveRealCauchy
 import Thesis.Probability.ExactLogInterpretation
 
+/-!
+# Effective real Cauchy limits and a vanishing rational perturbation
+
+The general fixtures retain the explicit Cauchy/convergence moduli in tail
+estimates, pointwise congruence, limit uniqueness and finite sums. They
+concern supplied effective sequences, not arbitrary sequences merely
+asserted to be classically Cauchy.
+
+The nonconstant sequence `1/(n+1)` has conservative modulus
+`precision.den`; exact rational inequalities prove that its constructed
+limit is zero. Its first two terms are distinguished independently. Adding
+it to any real constant recovers that constant in the limit, illustrated
+with the interpreted logarithm of three. The final bridge agrees with the
+original limit of a rational Cauchy presentation.
+-/
+
 namespace Thesis.Examples.ConstructiveRealCauchy
 open Probability
 

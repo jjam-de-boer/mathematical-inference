@@ -4,6 +4,19 @@ import Thesis.Probability.ExactLogRationalArithmetic
 
 namespace Thesis.Probability.RationalLogSecant
 
+/-!
+# Exact right-secant geometry of the rational logarithm at one
+
+Reciprocal-step slopes are exact logarithmic values, not rational slope
+approximations. Finite weighted AM-GM proves their monotonicity as the step
+decreases, including coincident denominators with a zero auxiliary weight.
+A quadratic-gap estimate controls the change when a step is halved.
+
+The same interface extends to every strictly positive rational offset and
+proves antitonicity with respect to its exact step size. No step is rounded
+and construction of a limiting derivative belongs to the later modules.
+-/
+
 /-- A rational point one reciprocal unit above one. -/
 def point (den : Nat) (positive : 0 < den) : PositiveRatio :=
   ⟨den + 1, den, Nat.zero_lt_succ _, positive⟩

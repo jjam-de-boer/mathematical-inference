@@ -2,6 +2,21 @@ import Thesis.Probability.ConstructiveUniformAffine
 import Thesis.Probability.ConstructiveRealEntropyUniformDerivative
 import Thesis.Probability.ConstructiveRealEntropyFirstVariation
 
+/-!
+# Uniform entropy variation along finite affine coordinates
+
+Each affine coordinate is admitted only where it lies between its supplied
+positive floor and one. Pulling back the scalar entropy certificate along
+that affine map, then summing the finite family, constructs one uniform
+first-variation modulus on this explicit positive cube domain.
+
+Normalization and tangent constraints can be supplied separately by
+probability-curve clients; the construction here concerns the sum of the
+coordinate entropy terms. Bit gradients give the first rate, and the
+coordinatewise unit identity converts it to natural gradients. Admitted
+endpoints are covered without evaluating a logarithm at zero.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- The actual finite entropy on an affine probability line has a computed

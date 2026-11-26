@@ -5,6 +5,17 @@ import Thesis.Probability.ConstructiveDerivativeUniqueness
 import Thesis.Probability.ConstructiveRealExpDerivative
 import Thesis.Probability.ConstructiveRealLogGeneralDerivative
 
+/-!
+# Calibrating the logarithm of the Taylor exponential
+
+The derivative of the constructed composite at zero is the coefficient
+already obtained from logarithmic secants. An explicit nearby positivity
+witness licenses its logarithm. Comparing with the proved linear form
+and using derivative uniqueness identifies the unit factor. This gives
+the base-two logarithm of the natural Taylor exponential at every real
+argument, with neither construction assuming the other one's units.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- The derivative of log₂(exp x) at zero is the independently constructed

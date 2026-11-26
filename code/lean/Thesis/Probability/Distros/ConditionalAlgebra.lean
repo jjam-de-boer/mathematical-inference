@@ -4,6 +4,20 @@ import Thesis.Probability.FiniteRecordSupport
 
 namespace Thesis.Probability.Distros
 
+/-!
+# Algebra and uniqueness of finite conditional means
+
+Block means inherit signed rational linearity from their unnormalized
+integrals. Separating positive and null block mass makes linearity and
+pulling out a key-measurable factor valid pointwise, including the explicit
+zero values assigned on unsupported fibres.
+
+A constant key-observable is recovered only on a supported fibre. Every
+positive-weight atom supplies that support for its own fibre, which is why
+the uniqueness theorem concludes almost-sure rational equivalence rather
+than pointwise equality of arbitrary values on null labels.
+-/
+
 /-- Equal unnormalized fibre integrals have equal conditional means,
 including unsupported fibres with the existing explicit zero convention. -/
 theorem conditionalBlockMean_congr_integral (atoms : List (Ω × Nat)) (f g : Ω → SignedRatio)
@@ -47,6 +61,8 @@ theorem conditionalBlockMean_sub (atoms : List (Ω × Nat)) (f g : Ω → Signed
   · simp only [conditionalBlockMean, dif_neg positive]
     exact SignedRatio.equiv_refl _
 
+/-- Recovering a constant requires positive cell mass: an unsupported
+cell's chosen zero mean need not equal that constant. -/
 theorem conditionalBlockMean_constant (atoms : List (Ω × Nat)) (c : SignedRatio)
     (positive : 0 < FiniteProbRecord.totalMass atoms) :
     SignedRatio.Equiv (conditionalBlockMean atoms (fun _ => c)) c := by
@@ -97,18 +113,24 @@ theorem Distro.conditionalExpectation_pull_out (μ : Distro Ω) (key : Ω → Fi
   rw [same]
   exact SignedRatio.equiv_refl _
 
+/-- Reconditioning on the same key changes no block integral, so its mean
+is an idempotent observable even at unsupported key values. -/
 theorem Distro.conditionalExpectation_idempotent (μ : Distro Ω) (key : Ω → Fin colours)
     (f : Ω → SignedRatio) (x : Ω) :
     SignedRatio.Equiv (μ.conditionalExpectation key (μ.conditionalExpectation key f) x)
       (μ.conditionalExpectation key f x) :=
   conditionalBlockMean_congr_integral _ _ _ (μ.conditionalExpectation_fibre_integral key f (key x))
 
+/-- A positive occurrence gives an explicit witness of positive mass for
+its entire key fibre; zero-weight occurrences supply no such witness. -/
 theorem Distro.observableFibre_positive (μ : Distro Ω) (key : Ω → Fin colours)
     (atom : Ω × Nat) (member : atom ∈ μ.record.atoms) (weight : 0 < atom.2) :
     μ.record.EventPositive (fun y => decide (key y = key atom.1)) :=
   (FiniteProbRecord.eventMass_pos_iff_exists_atom μ.record.atoms _).mpr
     ⟨atom, member, weight, decide_eq_true rfl⟩
 
+/-- A supported key-observable survives conditioning unchanged. Support
+is essential here because the observable's value on a null label is free. -/
 theorem Distro.conditionalExpectation_of_key (μ : Distro Ω) (key : Ω → Fin colours)
     (h : Fin colours → SignedRatio) (x : Ω)
     (positive : μ.record.EventPositive (fun y => decide (key y = key x))) :

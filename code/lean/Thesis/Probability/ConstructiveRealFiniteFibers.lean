@@ -1,6 +1,18 @@
 import Thesis.Probability.ConstructiveRealBilinearFubini
 import Thesis.Probability.ConstructiveRealRationalScaling
 
+/-!
+# Grouping finite analytic sums by actual state fibers
+
+Each fiber filters the declared finite index list. Its selector identity
+allows grouping pairings and total sums without dropping empty fibers.
+Constant quantities on a fiber contribute its actual multiplicity, rather
+than the number of repeated occurrences in a separately weighted record.
+The stronger grouping type requires a representative for each retained
+label. Finite search extracts one from a nonempty fiber and certifies the
+positive degeneracy used for coarse reference weights.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.FiniteFibers
 open ConstructiveReal
 open Distros.RationalLinear

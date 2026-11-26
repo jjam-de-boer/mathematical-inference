@@ -1,5 +1,22 @@
 import Thesis.Probability.FiniteGrandPhysicalFitting
 
+/-!
+# Fitting physical ensemble parameters from exact mean targets
+
+The binary model has energies zero and the unreduced unit `2/2`. A positive
+feasible law with masses `[2/3,1/3]` supplies the exact mean-energy target
+`1/3`; the canonical constructor fits its analytic parameter without an
+input optimum or parameter value. The excited-state probability is then
+independently recovered from the physical energy indicator.
+
+In the open model energy and particle number coincide. Grand-canonical
+fitting still attains both equivalent targets `1/3` and `2/6`, without an
+independent-feature or unique-parameter premise. The fitted law agrees
+with the constructed optimizer, and its parameters retain arbitrary-
+precision rational enclosure certificates rather than assumed rational
+closed forms.
+-/
+
 namespace Thesis.Examples.FiniteEnsembleFitting
 open Probability Probability.Distros ConstructiveReal
 open Probability.Distros.RationalEntropyProblem Probability.Distros.RationalLinear

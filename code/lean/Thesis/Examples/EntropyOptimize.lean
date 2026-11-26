@@ -1,5 +1,22 @@
 import Thesis.Probability.Distros.EntropyOptimize
 
+/-!
+# Executing certified rational entropy optimization
+
+The binary box fixture checks actual enumeration and removal of an
+incompatible box only after rational infeasibility is certified. A large
+unreduced fraction tests location without a denominator grid. The public
+solver rejects an impossible expectation, gives a zero-entropy singleton
+certificate, and retains a forced-zero cell with repeated signed rows.
+
+A supplied exactly feasible fair law takes the faster certification path
+at error `1/1000`, retaining its original denominator. Every certificate's
+upper bound applies to all admissible rational laws, not just the search's
+finite candidates. Tolerance positivity and exact moment feasibility remain
+explicit; the algorithm certifies an error interval rather than promising
+an exactly attained rational maximizer in every problem.
+-/
+
 namespace Thesis.Examples.EntropyOptimize
 open Probability Probability.Distros
 

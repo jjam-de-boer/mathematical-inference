@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveRealExpPositive
 import Thesis.Probability.ConstructiveRealLogReciprocal
 import Thesis.Probability.ConstructiveRealAdditiveMap
 
+/-!
+# Linearity of the logarithm of the constructed exponential
+
+For each real input, the exponential supplies a positive floor for
+taking its base-two logarithm. Exponential addition and logarithmic
+multiplication identify this composite as additive. Its values on
+embedded signed rationals are therefore determined by its value at one.
+The calibration to the independently constructed logarithmic slope is
+a subsequent result.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- The base-two logarithm of the Taylor exponential is defined at every

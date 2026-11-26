@@ -1,5 +1,16 @@
 import Thesis.Probability.ConstructiveRealCauchyOrder
 
+/-!
+# Passing a varying error radius to an effective limit
+
+`WithinReal error x y` records both closed inequalities comparing x and y
+with the same real radius. It generalizes a rational enclosure without
+requiring a decision about real equality or sign. Congruence changes only
+representatives, while monotonicity permits enlarging the radius.
+The limit theorem applies closed-order preservation separately to the two
+inequalities and uses the effective addition law for the limiting radius.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Two-sided closed error bounds whose radius is itself a constructive real.

@@ -1,5 +1,16 @@
 import Thesis.Probability.ExactLogWeights
 
+/-!
+# Exact logarithms with a common positive degree
+
+`root a degree` represents log(a)/degree inside the existing exact-log
+representation. It does not compute or adjoin a rational degree-th root.
+Using a shared degree lets sums combine by multiplying their arguments;
+comparison or equality with zero reduces to comparison or equality of
+the positive argument with one. The degree is always supplied positive,
+including when the argument itself equals one.
+-/
+
 namespace Thesis.Probability.ExactLog
 
 /-- A common-degree exact logarithm, convenient for normalized weighted sums. -/

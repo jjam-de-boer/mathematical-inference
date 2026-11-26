@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealOrderedRing
 
+/-!
+# Bounding squared increments without a sign decision
+
+The difference-of-squares identity holds in the constructed real ring.
+A two-sided enclosure controls the square of a signed real value
+through monotonic multiplication, without branching on its sign.
+Applied to the displacement of two nearby values this gives the
+rational radius squared, used in effective first-order remainders.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private theorem sub_pair_cancel (a b c : ConstructiveReal) : Equiv (sub (add a b) (add b c)) (sub a c) :=

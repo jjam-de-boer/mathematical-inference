@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveRealNormalComplementarity
 import Thesis.Probability.ConstructiveRealFullRowClearing
 import Thesis.Probability.ConstructiveRealEntropyVariational
 
+/-!
+# Computing signed KKT coefficients at a positive entropy maximum
+
+Clear each original row, including its bound, by a positive factor.
+Feasibility in the exactly cleared simplex transfers the global
+variational inequality. Finite normal-cone duality then supplies actual
+multipliers. Undoing the row scaling preserves their signs and
+complementary slacks. This proves necessity as well as global sufficiency
+at a quantitatively positive reference, with natural-unit conversion.
+-/
+
 namespace Thesis.Probability.Distros.RationalEntropyProblem
 open ConstructiveReal
 open RationalLinear

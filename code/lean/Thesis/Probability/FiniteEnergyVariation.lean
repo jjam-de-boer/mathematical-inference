@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveDerivativeProduct
 import Thesis.Probability.ConstructiveRealBilinearFubini
 
+/-!
+# Differentiating the energy pairing along a finite path
+
+Both probabilities and energy levels can vary. The effective product rule
+and finite summation give the derivative as the sum of the probability
+change term and the level change term. The latter is work along a
+normalized nonnegative physical path. In a closed system the former is
+the heat rate. Open-system thermal heat additionally accounts for
+chemical exchange in the grand-canonical analysis.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.FiniteLinear
 open ConstructiveReal
 

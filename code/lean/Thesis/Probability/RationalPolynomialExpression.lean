@@ -2,6 +2,20 @@ import Thesis.Probability.RationalPolynomialIdentity
 
 namespace Thesis.Probability.RationalPolynomial
 
+/-!
+# Sound compilation of finite rational algebra expressions
+
+Constants, coordinates, sums, differences and products form a finite
+expression language over signed rationals. Compilation targets the existing
+sparse polynomial representation, and structural induction proves equality
+of its evaluation with the original expression at every supplied variable
+assignment.
+
+A successful polynomial equality check therefore proves universal rational
+expression equality. Numerical sampling of the variables is never used as
+an algebraic certificate.
+-/
+
 /-- Finite signed rational expressions. Compiling these expressions to the
 existing sparse-polynomial checker supplies reusable universal algebra proofs;
 checking an identity never substitutes numerical samples for its variables. -/

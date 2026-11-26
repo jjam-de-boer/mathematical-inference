@@ -5,6 +5,19 @@ import Thesis.Probability.SignedRatioFiniteSum
 
 namespace Thesis.Probability.ExactLog
 
+/-!
+# Arithmetic compatibility of the rational-bit embedding
+
+The signed rational embedding preserves addition up to exact-log equivalence
+and preserves negation and positive natural division in their explicit
+presentations. Positive/negative exponent parts are recombined over integers
+when an addition changes their natural-power presentation.
+
+Natural amplification follows by finite induction through the exact root
+addition identity. No rational root is selected and no representation is
+silently reduced to a canonical fraction.
+-/
+
 private theorem signed_parts (value : Int) :
     (value.toNat : Int) - ((-value).toNat : Int) = value := by
   cases value with

@@ -4,6 +4,21 @@ import Thesis.Probability.Distros.RationalClearing
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Conditional expectation as a finite observable
+
+A finite-valued key partitions the actual weighted atom list into fibres.
+The regrouping theorem preserves every occurrence, including duplicate labels
+and null atoms. Conditional expectation assigns each outcome the rational
+mean of the fibre named by its key, with the explicit zero convention on
+unsupported fibres.
+
+On a positive fibre this agrees with the existing supported conditioning
+operation. Fibre-integral preservation then yields total expectation and
+orthogonality of the residual against every signed rational function of the
+key. These integral identities need no positivity assumption on each label.
+-/
+
 /-- Regrouping by a finite list of distinct labels preserves every weighted
 atom occurrence, including repeated outcomes and zero-weight atoms. -/
 theorem fibreCells_perm [DecidableEq A] (labels : List A) (key : Ω → A) (atoms : List (Ω × Nat))
@@ -40,6 +55,8 @@ theorem fibreCells_perm [DecidableEq A] (labels : List A) (key : Ω → A) (atom
           intro same
           simp only [same, decide_true, Bool.not_true, Bool.false_eq_true] at rejected
         exact (List.mem_cons.mp (covered atom source)).resolve_left absent)
+      -- Distinct labels leave the later fibres unchanged after the first
+      -- cut; coverage ensures no occurrence escapes the recursive remainder.
       simp only [List.map_cons, List.flatten_cons, unchanged]
       exact (tail.append_left _).trans (List.filter_append_perm (fun atom => decide (key atom.1 = label)) atoms)
 
@@ -53,6 +70,8 @@ Unsupported fibres have the same explicit zero convention as block means. -/
 def Distro.conditionalExpectation (μ : Distro Ω) (key : Ω → Fin colours) (f : Ω → SignedRatio) : Ω → SignedRatio :=
   fun x => conditionalBlockMean (μ.record.atoms.filter (fun atom => decide (key atom.1 = key x))) f
 
+/-- A supported key fibre computes the same mean as conditioning the
+record on that fibre. No such conditional record is claimed on null fibres. -/
 theorem Distro.conditionalExpectation_conditionOn (μ : Distro Ω) (key : Ω → Fin colours)
     (f : Ω → SignedRatio) (x : Ω)
     (positive : μ.record.EventPositive (fun y => decide (key y = key x))) :
@@ -68,6 +87,8 @@ theorem rationalAtomSum_constant (atoms : List (Ω × Nat)) (c : SignedRatio) :
   rw [FiniteProbRecord.signedAtomMass_const] at result
   exact result
 
+/-- Split an unnormalized signed integral into all key fibres before any
+division. This form remains meaningful for fibres with zero total mass. -/
 theorem rationalAtomSum_byObservable (atoms : List (Ω × Nat)) (key : Ω → Fin colours) (f : Ω → SignedRatio) :
     SignedRatio.Equiv (FiniteProbRecord.rationalAtomSum atoms f)
       (SignedRatio.listSum ((List.finRange colours).map (fun label =>
@@ -105,6 +126,8 @@ theorem Distro.conditionalExpectation_weighted (μ : Distro Ω) (key : Ω → Fi
   refine SignedRatio.equiv_trans (SignedRatio.listSum_map_congr (List.finRange colours) _ _ (fun label => ?_))
     (SignedRatio.equiv_symm (rationalAtomSum_byObservable μ.record.atoms key _))
   let cell := μ.record.atoms.filter (fun atom => decide (key atom.1 = label))
+  -- The key weight is constant inside this one fibre, so fibre-integral
+  -- preservation may be used before summing the labels back together.
   have factor (u : Ω → SignedRatio) :
       SignedRatio.Equiv (FiniteProbRecord.rationalAtomSum cell (fun x => SignedRatio.mul (h (key x)) (u x)))
         (SignedRatio.mul (h label) (FiniteProbRecord.rationalAtomSum cell u)) := by

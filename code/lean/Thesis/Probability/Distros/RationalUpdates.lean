@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.RationalAggregation
 import Thesis.Probability.Distros.ReinforcedUpdates
 
+/-!
+Supported rational-parameter updating from actual count observations.
+
+The public update adds each observed count to its rational parameter.
+Integer-encoding lemmas relate this to reinforced-state updates, so the
+conclusion follows from conditioning the original finite sequential path
+law. `rationalCountsSupported` retains a positive-evidence requirement;
+no posterior continuation is assigned to an impossible histogram. The
+main theorem identifies the entire future word law with parameters
+alpha + counts, and its pushforward gives the future count-vector law.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Sufficient-count update in rational parameter units: `alpha_i + count_i`. -/
@@ -30,6 +42,8 @@ theorem updateRationalParameters_congr {alphas betas : List QProb}
               exact .cons (QProb.add_congr (same.2 0) (QProb.equiv_refl _))
                 (ih ⟨Nat.succ.inj same.1, fun i => same.2 (i + 1)⟩ counts)
 
+/-- Adding denominator times a count to an integer weight is equivalent
+to adding that count after dividing back into rational parameter units. -/
 theorem updateRationalParameters_ratios (weights counts : List Nat) (denominator : Nat) (positive : 0 < denominator) :
     RationalParametersEquiv
       (urnRatioParameters (reinforcedState denominator weights counts) denominator positive)
@@ -43,6 +57,8 @@ theorem updateRationalParameters_ratios (weights counts : List Nat) (denominator
           simp only [QProb.Equiv, QProb.add, QProb.ofNat, Nat.mul_one, Nat.add_mul]
           ac_rfl
 
+/-- Encoding and count updating commute up to rational parameter
+equivalence, even when the original fractions have different presentations. -/
 theorem updateRationalParameters_encoding (alphas : List QProb) (counts : List Nat) :
     RationalParametersEquiv
       (urnRatioParameters (reinforcedState (QProb.listSum alphas).den (rationalUrnWeights alphas) counts)
@@ -51,6 +67,8 @@ theorem updateRationalParameters_encoding (alphas : List QProb) (counts : List N
   (updateRationalParameters_ratios _ counts _ _).trans
     (updateRationalParameters_congr (rationalParameters_encoding alphas) counts)
 
+/-- The updated total remains positive for a matching count vector.
+The proof transfers positivity from the integer reinforced state. -/
 theorem updateRationalParameters_positive (alphas : List QProb) (counts : List Nat)
     (positive : 0 < (QProb.listSum alphas).num) (dimension : counts.length = alphas.length) :
     0 < (QProb.listSum (updateRationalParameters alphas counts)).num := by
@@ -68,6 +86,8 @@ instance (m : Nat) (alphas : List QProb) (counts : List Nat) :
     Decidable (rationalCountsSupported m alphas counts) :=
   inferInstanceAs (Decidable (reinforcedCountsSupported m (rationalUrnWeights alphas) (QProb.listSum alphas).den counts))
 
+/-- Supported observations have the declared dimension and total, so the
+conditional interface can recover those shape facts from support alone. -/
 theorem rationalCountsSupported_shape (m : Nat) (alphas : List QProb) (counts : List Nat)
     (supported : rationalCountsSupported m alphas counts) : counts.length = alphas.length ∧ counts.sum = m := by
   have shape := reinforcedCountsSupported_shape m (rationalUrnWeights alphas) counts (QProb.listSum alphas).den supported

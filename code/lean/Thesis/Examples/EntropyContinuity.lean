@@ -1,5 +1,21 @@
 import Thesis.Probability.Distros.EntropyContinuity
 
+/-!
+# A single entropy modulus covers zero, one and interior masses
+
+Scalar examples compare both unit-interval endpoints and the midpoint
+with nearby rational masses of denominator 4096, obtaining entropy error
+at most `1/4`. The endpoint cases require no positive observed mass and
+do not depend on equal fraction presentations.
+
+The finite-law fixture moves one part in 4194304 away from a point mass,
+keeps a shared zero cell and null outliers, and bounds entropy change by
+`1/8`. Both coordinatewise directions of the computed threshold are checked
+explicitly before applying the law theorem. The threshold has a positive
+numerator; the stated entropy estimate still retains its required tolerance
+and support premises.
+-/
+
 namespace Thesis.Examples.EntropyContinuity
 open Probability Probability.Distros
 

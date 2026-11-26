@@ -2,16 +2,32 @@ import Thesis.Probability.Distros.SignedCovariance
 import Thesis.Probability.FiniteRationalMoment
 import Thesis.Probability.SignedRatioAlgebra
 
+/-!
+Exact finite moments of signed rational observables.
+
+Signed rational expectations allow nonintegral conditional means while
+probability atom weights remain natural. Covariance is E[fg]-E[f]E[g] and
+variance is its diagonal; these computations retain negative intermediate
+values rather than truncating natural subtraction. Weighted-sum identities
+prove congruence, linearity and compatibility with mapped laws. Bridges to
+existing integer and natural observable interfaces show these are the same
+moments up to rational equivalence, not competing definitions of variance.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Signed rational observables include the nonintegral conditional means
 needed in finite total-variance and total-covariance formulas. -/
 def Distro.rationalExpectation (μ : Distro Ω) (f : Ω → SignedRatio) : SignedRatio := μ.record.rationalMean f
 
+/-- Signed rational covariance, allowing negative results. Its probability
+weights still come from the original nonnegative finite law. -/
 def Distro.rationalCovariance (μ : Distro Ω) (f g : Ω → SignedRatio) : SignedRatio :=
   SignedRatio.sub (μ.rationalExpectation (fun x => SignedRatio.mul (f x) (g x)))
     (SignedRatio.mul (μ.rationalExpectation f) (μ.rationalExpectation g))
 
+/-- The covariance of an observable with itself. Nonnegativity is a
+later theorem; the computation uses the same signed arithmetic as covariance. -/
 def Distro.rationalVariance (μ : Distro Ω) (f : Ω → SignedRatio) : SignedRatio := μ.rationalCovariance f f
 
 def SignedMoment.toRatio (moment : SignedMoment) : SignedRatio := ⟨moment.num, moment.den, moment.den_pos⟩
@@ -64,6 +80,8 @@ theorem Distro.rationalExpectation_congr (μ : Distro Ω) (f g : Ω → SignedRa
     SignedRatio.Equiv (μ.rationalExpectation f) (μ.rationalExpectation g) :=
   SignedRatio.divideNat_congr (rationalAtomSum_congr _ _ _ same) μ.record.den μ.record.den_pos
 
+/-- A mapped law integrates by composing the observable with its map.
+This is equality of the constructed presentations, not only rational equivalence. -/
 theorem Distro.rationalExpectation_map (μ : Distro Ω) (encode : Ω → X) (f : X → SignedRatio) :
     (μ.map encode).rationalExpectation f = μ.rationalExpectation (fun x => f (encode x)) :=
   μ.record.rationalMean_map encode f
@@ -80,6 +98,8 @@ theorem Distro.rationalExpectation_mul_left (μ : Distro Ω) (factor : SignedRat
   SignedRatio.equiv_trans (SignedRatio.divideNat_congr (rationalAtomSum_mul_left _ _ _) μ.record.den μ.record.den_pos)
     (divideNat_mul _ _ μ.record.den μ.record.den_pos)
 
+/-- Normalization makes the expectation of any rational constant equal
+to that constant, with no sign restriction on its numerator. -/
 theorem Distro.rationalExpectation_constant (μ : Distro Ω) (value : SignedRatio) :
     SignedRatio.Equiv (μ.rationalExpectation (fun _ => value)) value := by
   refine SignedRatio.equiv_trans (μ.record.rationalMean_cleared (fun _ => value)
@@ -117,6 +137,8 @@ theorem ratio_sub_congr {a b c d : SignedRatio} (first : SignedRatio.Equiv a b) 
     SignedRatio.Equiv (SignedRatio.sub a c) (SignedRatio.sub b d) :=
   SignedRatio.add_congr first (SignedRatio.neg_congr second)
 
+/-- Finite linearity for a caller-supplied list of rational observables.
+Repeated indices are summed as supplied; no distinctness hypothesis is needed. -/
 theorem Distro.rationalExpectation_listSum (μ : Distro Ω) (values : List X) (f : X → Ω → SignedRatio) :
     SignedRatio.Equiv (μ.rationalExpectation (fun x => SignedRatio.listSum (values.map (fun i => f i x))))
       (SignedRatio.listSum (values.map (fun i => μ.rationalExpectation (f i)))) := by

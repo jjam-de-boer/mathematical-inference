@@ -1,6 +1,22 @@
 import Thesis.Probability.ConstructiveDerivativeUniqueness
 import Thesis.Probability.ConstructiveRealExpDerivative
 
+/-!
+# Effective derivatives, including zero and negative increments
+
+The exponential examples use the derivative certificate's computed modulus
+to bound its linearization error at every sufficiently close real value,
+including the point itself. A concrete negative rational increment exercises
+the same certificate. Constant, identity, empty-sum and repeated-summand
+cases check the actual finite algebra of derivatives.
+
+Uniqueness refutes a zero derivative for the identity and identifies any
+certified exponential slope. Point congruence, composition at the actual
+inner image, and zero/negative affine coefficients test the reusable rules.
+All error radii are explicit positive rationals; none of these arguments
+needs equality decisions on reals or division by a nonzero increment.
+-/
+
 namespace Thesis.Examples.ConstructiveDerivative
 open Probability ConstructiveReal
 

@@ -1,5 +1,20 @@
 import Thesis.Probability.RationalExponential
 
+/-!
+# Exponentials beyond the small-argument Taylor domain
+
+The completed rational exponential has a geometric remainder estimate after
+its explicit argument-dependent offset and agrees with the earlier
+small-domain construction when `|x| <= 1/2`. The magnitude schedule respects
+represented quotient values, as checked by equivalent arguments `1000/1000`
+and one, rather than bounding their unreduced numerators.
+
+Actual enclosures at precision `1/100` place `exp(1)` in `[2.71,2.73]`,
+`exp(-1)` in `[0.36,0.38]` and `exp(2)` in `[7.38,7.40]`. The construction
+and error certificates supply these values; no exponential value or
+derivative is assumed as an input premise.
+-/
+
 namespace Thesis.Examples.RationalExponential
 open Probability
 

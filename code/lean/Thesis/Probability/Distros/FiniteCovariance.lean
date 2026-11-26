@@ -3,6 +3,21 @@ import Thesis.Probability.Distros.RationalConcentration
 
 namespace Thesis.Probability.Distros
 
+/-!
+# Finite covariance forms and their null directions
+
+An explicit index list and rational coefficient function determine both a
+linear combination of responses and the full covariance quadratic form.
+Repeated indices retain their multiplicity in both expressions. Bilinearity
+proves that the form is the variance of the linear combination, so every such
+form is nonnegative without an independence or nonsingularity assumption.
+
+The exact zero criterion is that the combined response is constant on the
+positive-weight law. Arbitrary values on null occurrences remain immaterial.
+This criterion covers empty lists and dependent or constant response families
+and provides the support-sensitive foundation for later kernel/rank results.
+-/
+
 /-- A finite rational linear combination of response observables. Index
 lists need not be duplicate-free; every listed contribution is retained. -/
 def rationalLinearCombination (indices : List I) (coefficients : I → SignedRatio)
@@ -42,6 +57,8 @@ theorem Distro.rationalVariance_linearCombination (μ : Distro Ω) (indices : Li
     (responses : I → Ω → SignedRatio) (coefficients : I → SignedRatio) :
     SignedRatio.Equiv (μ.rationalVariance (rationalLinearCombination indices coefficients responses))
       (μ.rationalCovarianceForm indices responses coefficients) := by
+  -- Expand once in each argument. Every diagonal and off-diagonal pair
+  -- appears with the same multiplicity as in the declared double sum.
   refine SignedRatio.equiv_trans (μ.rationalCovariance_listSum_left indices
     (fun i x => SignedRatio.mul (coefficients i) (responses i x))
     (rationalLinearCombination indices coefficients responses)) ?_

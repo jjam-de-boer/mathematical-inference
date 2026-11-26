@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveRealFeasibleApproximation
 import Thesis.Probability.ConstructiveRealReciprocal
 import Thesis.Probability.FiniteDenominatorClearing
 
+/-!
+# Clearing signed rational rows while retaining their exact semantics
+
+The finite coefficient vector gives a computable positive common
+denominator. Scaling the entire row by it preserves and reflects its
+closed inequality for rational and analytic assignments. The integer-row
+approximation procedure can therefore be reused, then its result
+transported back to all original rows. Equality pairs and redundant rows
+retain exact satisfaction rather than being rounded or dropped.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 open ConstructiveReal
 

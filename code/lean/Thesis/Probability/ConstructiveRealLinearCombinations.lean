@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealLinearProjection
 
+/-!
+# Nonnegative combinations of analytic linear constraints
+
+A combination records row positions and natural scaling data explicitly.
+Its soundness follows by scaling and adding closed inequalities, even
+with analytic right-hand sides. A canceled combination has zero variable
+coefficients, so its bound must be nonnegative for any feasible law.
+This formulation supplies the Farkas condition used by traced elimination.
+-/
+
 namespace Thesis.Probability.AnalyticLinear
 open ConstructiveReal
 open Distros.RationalLinear

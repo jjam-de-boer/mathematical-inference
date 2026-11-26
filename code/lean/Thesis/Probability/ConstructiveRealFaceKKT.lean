@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealFaceMultipliers
 import Thesis.Probability.ConstructiveRealEntropyKKTNecessity
 
+/-!
+# Fitting signed entropy multipliers on the attainable support face
+
+A positive feasible law yields an ideal maximum with computed positive
+floors. The KKT construction then produces its natural-unit multipliers,
+signs, complementary products and normalized Gibbs form. From an arbitrary
+rational feasible seed, first compute the support face and a positive seed
+there. Forced zero coordinates are omitted from the logarithmic system
+while the original moment rows retain their restricted meanings.
+-/
+
 namespace Thesis.Probability.Distros.RationalEntropyProblem
 open ConstructiveReal
 

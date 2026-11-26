@@ -1,5 +1,18 @@
 import Thesis.Probability.Distros.UncertaintyRefinement
 
+/-!
+Characterize rational Shannon entropy from the explicit uncertainty axioms.
+
+Null insertion and permutation extend positive-count refinement uniqueness
+to count vectors containing zeros. A constructive zero-erasure argument is
+used only inside the proof, leaving the theorem's original input intact.
+Every normalized rational vector has a computed common-count presentation,
+so representation invariance transfers equality to arbitrary vectors.
+Comparison with the Shannon instance then identifies every admissible measure
+with entropy, and the distribution corollary agrees with aggregated grid
+entropy while permitting null record outliers.
+-/
+
 namespace Thesis.Probability.UncertaintyMeasure
 open ProbabilityVector
 

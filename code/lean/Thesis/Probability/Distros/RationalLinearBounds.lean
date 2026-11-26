@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.RationalLinearSolve
 
+/-!
+Project a retained coordinate to exact attained rational endpoints.
+
+Eliminating every other variable preserves all possible first-coordinate
+values. Back-substitution lifts any satisfying projected value to a complete
+assignment. With a feasible assignment and explicit finite lower and upper
+rows, finite endpoint selection computes the sharp closed interval, and
+lifting constructs assignments attaining both extrema. Every rational value
+between the endpoints also lifts directly. The endpoint constructor requires
+both bounds; it does not treat an unbounded projection as a finite interval.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 
 /-- Keep the first coordinate and eliminate every remaining coordinate. -/
@@ -147,6 +159,9 @@ def SharpRange.pointBetween (certificate : SharpRange others rows) (value : Sign
       (fun bound member => SignedRatio.le_trans between.2 (one_upper_bound projected _ highValid bound member))
   exact liftFromOne others rows value valid
 
+/-- Compute sharp attained endpoints from one feasible point and explicit
+bounding rows for the retained coordinate. Those rows survive every projection
+and guarantee nonempty endpoint lists. -/
 def sharpRange (others : Nat) (rows : List (Inequality (others + 1)))
     (values : Fin (others + 1) → SignedRatio) (valid : Satisfies rows values)
     (lo hi : SignedRatio) (lowerMember : headRow others (-1) (SignedRatio.neg lo) ∈ rows)

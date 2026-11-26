@@ -4,6 +4,21 @@ import Thesis.Probability.Distros.MomentTableAlgebra
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Finite rectangle selectors and reverse tensor inversion
+
+The reverse tensor inverse-Pascal kernel recovers one mixed binomial
+coefficient from signed candidate masses. This algebraic step precedes any
+nonnegativity or probability-law assumption and factors recursively into
+scalar head and tail identities.
+
+Coordinate bounds are also proved complete for the actual rectangle list.
+Its finite delta-selector identity ensures that every bounded multi-index
+contributes exactly once, including the unique empty index and zero axes.
+The zero-order vector belongs to every rectangle and later certifies total
+probability through the table's zeroth moment.
+-/
+
 /-- Reverse tensor inversion recovers the supplied mixed binomial moments
 from signed candidate masses, before any realization is assumed. -/
 theorem jointInverseBinomial_reverse_rectangle_kernel (counts target bounds : List Nat)
@@ -86,6 +101,8 @@ theorem coordinateBounds_zero (bounds : List Nat) : CoordinateBounds (List.repli
   | cons bound bounds ih => exact ⟨Nat.zero_le _, ih⟩
 
 theorem factorialRectangle_positive (bounds : List Nat) : 0 < (factorialRectangle bounds).length := by
+  -- Even a rectangle with only zero axes contains its all-zero vector;
+  -- positive enumeration length requires no positive axis width.
   have member := factorialRectangle_complete bounds _ (coordinateBounds_zero bounds)
   cases same : factorialRectangle bounds with
   | nil => rw [same] at member; exact False.elim (List.not_mem_nil member)

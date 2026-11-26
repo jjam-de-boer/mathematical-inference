@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealGibbsTiltEntropy
 import Thesis.Probability.ConstructiveRealGibbsInequality
 
+/-!
+# Which entropy is maximized by a finite Gibbs tilt
+
+Cross entropy against the positive tilted law depends on the competitor
+through its energy and reference-offset expectations. Under a fixed energy
+mean, Gibbs nonnegativity gives maximality of entropy plus the expected
+reference offset. Ordinary Shannon maximality holds when the offset mean
+is fixed too, in particular for zero offsets. Normalized competitors may
+lie on boundary faces, since positivity is required of the reference only.
+-/
+
 namespace Thesis.Probability.FiniteGibbsTilt
 open ConstructiveReal
 open Distros.RationalLinear

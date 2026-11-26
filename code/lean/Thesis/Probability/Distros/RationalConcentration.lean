@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.RationalClearing
 import Thesis.Probability.Distros.SignedCauchy
 
+/-!
+Support-aware rational moments and their basic concentration structure.
+
+Changing an observable only on zero-weight occurrences leaves its moments
+unchanged. This gives the zero-variance characterization by almost-sure
+rational constancy, allowing arbitrary null outliers and equivalent fraction
+presentations. Finite-support denominator clearing transfers the integer
+covariance Cauchy inequality to signed rational observables, including zero
+variance. Auxiliary cross-multiplication and zero-numerator facts permit
+these transfers without choosing normalized representatives of fractions.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 theorem equiv_num_zero_iff {a b : SignedRatio} (same : Equiv a b) : a.num = 0 ↔ b.num = 0 := by
@@ -33,6 +45,8 @@ theorem rationalAtomSum_congr_positive (atoms : List (Ω × Nat)) (f g : Ω → 
         · exact SignedRatio.scaleNat_congr atom.2 (same atom (List.mem_cons_self ..) (Nat.pos_of_ne_zero zero))
       · exact ih (fun other member => same other (List.mem_cons_of_mem _ member))
 
+/-- Rational expectation depends only on positive-weight occurrences;
+no constraint is imposed on observable values at null atoms. -/
 theorem Distro.rationalExpectation_congr_positive (μ : Distro Ω) (f g : Ω → SignedRatio)
     (same : μ.AlmostSurely (fun x => SignedRatio.Equiv (f x) (g x))) :
     SignedRatio.Equiv (μ.rationalExpectation f) (μ.rationalExpectation g) :=
@@ -48,6 +62,8 @@ theorem Distro.rationalCovariance_congr_positive (μ : Distro Ω) (f f' g g' : �
     (SignedRatio.mul_congr (μ.rationalExpectation_congr_positive _ _ first)
       (μ.rationalExpectation_congr_positive _ _ second))
 
+/-- A rational constant has zero variance regardless of its fraction
+presentation or sign. -/
 theorem Distro.rationalVariance_constant (μ : Distro Ω) (c : SignedRatio) :
     SignedRatio.Equiv (μ.rationalVariance (fun _ => c)) SignedRatio.zero :=
   SignedRatio.equiv_trans

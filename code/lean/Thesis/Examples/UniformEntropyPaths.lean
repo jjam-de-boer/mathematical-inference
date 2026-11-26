@@ -1,5 +1,21 @@
 import Thesis.Probability.FiniteGrandThermodynamicIdentification
 
+/-!
+# Uniform path certificates determine entropy rates and reference agreement
+
+The affine binary line starts at the fair law with velocities `1/4` and
+`-1/4`. Its positive-domain uniform entropy certificate gives zero rate at
+the midpoint by cancellation of equal gradients. A separate negative
+affine pullback checks the uniform chain rule on an actual square function.
+
+For an independently supplied potential, a uniform derivative `2t` and
+initial value seven determine value eight at one and eleven at two.
+Reference agreement uses explicit interval admission and uniform remainder
+data; the potential is not defined to be the comparison polynomial. The
+length-two case exercises interval rescaling and does not retain an
+artificial unit-width restriction on the parameter interval.
+-/
+
 namespace Thesis.Examples.UniformEntropyPaths
 open Probability ConstructiveReal
 

@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealBilinearFubini
 import Thesis.Probability.ConstructiveRealRationalEntropyLaw
 
+/-!
+# Encoding fixed rational expectations as paired closed rows
+
+Evaluation of rational responses agrees with the finite analytic pairing.
+Negating the coefficients and the bound reverses an inequality, so each
+original feature can be required in both directions to fix its value
+exactly. The lemmas recover equality for either row position, including
+redundant features and arbitrary signed data.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 open ConstructiveReal
 

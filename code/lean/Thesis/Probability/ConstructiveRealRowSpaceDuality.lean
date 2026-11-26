@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealRowSpace
 
+/-!
+# The analytic kernel and the original integer row space
+
+Transposing a finite bilinear sum evaluates a row combination against a
+direction by first pairing each original row with that direction. This
+proves that supplied multipliers annihilate the kernel. Together with the
+constructive elimination in the parent module it gives the equivalence,
+retaining actual coefficients even when the original rows are redundant.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.IntegerRowSpace
 open ConstructiveReal
 open FiniteLinear

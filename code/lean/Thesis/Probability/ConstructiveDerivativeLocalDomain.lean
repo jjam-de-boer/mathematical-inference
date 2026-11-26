@@ -2,6 +2,22 @@ import Thesis.Probability.ConstructiveDerivativeWithin
 import Thesis.Probability.ConstructiveDerivativeScaling
 import Thesis.Probability.ConstructiveRealPositiveNeighborhood
 
+/-!
+# Local admission turns a partial derivative into a total-function one
+
+`toLocalTotal` consumes an explicitly admitted neighborhood and value
+agreement there with the chosen total function. Its modulus is the smaller
+of the admission radius and the original derivative modulus; values
+outside that neighborhood need no comparison.
+
+A full-space derivative also computes a neighborhood on which a positive
+basepoint value retains half its certified rational floor. The construction
+combines the fixed-basepoint change bound with the requested lower margin.
+It supplies domain witnesses for logarithm and reciprocal composition
+without deciding arbitrary real membership or assuming a uniform global
+positive lower bound.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private def commonRadius (a b : PositiveRatio) : PositiveRatio := if PositiveRatio.LE a b then a else b

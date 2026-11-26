@@ -4,10 +4,27 @@ import Thesis.Probability.Distros.RationalKernelBasis
 namespace Thesis.Probability.Distros
 open RationalVector
 
+/-!
+# Constructive rank and kernel bases for occupancy covariance
+
+The semantic covariance operator is identified with explicit row equations.
+For a nondegenerate sample its kernel consists of vectors constant on the
+positive categories, with arbitrary coordinates on null categories. This
+description feeds the finite rational contrast-basis construction.
+
+A positive category is selected recursively from the actual weight list,
+without choice. If there are `r` positive categories, the resulting image
+basis has size `r-1`; null categories remain in the ambient coordinate space.
+These certificates require nonzero trials, and hypergeometric samples must
+also be proper. The zero/full cases have separate rank-zero certificates.
+-/
+
 /-- The genuine covariance matrix of the displayed count coordinates. -/
 def Distro.occupancyOperator (μ : Distro (List Nat)) (colours : Nat) : Operator colours colours :=
   μ.covarianceOperator (fun i => countResponse i.val)
 
+/-- The parameter support, rather than all listed categories, determines
+which covariance contrasts can carry nonzero variance. -/
 def positiveColours (weights : List Nat) (i : Fin weights.length) : Bool := decide (0 < weights.getD i.val 0)
 def positiveColourCount (weights : List Nat) : Nat := (positiveIndices (positiveColours weights)).length
 

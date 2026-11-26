@@ -2,6 +2,16 @@ import Thesis.Probability.ConstructiveRealUniformBounds
 import Thesis.Probability.ConstructiveRealEntropyFirstVariation
 import Thesis.Probability.ConstructiveRealLogOrder
 
+/-!
+# Uniform magnitude bounds for the positive entropy gradient
+
+On a unit-interval domain above a common rational floor, logarithm order
+bounds the bit gradient between explicit endpoint values. Those values
+give a single natural magnitude bound on all sufficiently fine rational
+slope approximants. This constant depends on the domain floor instead
+of each point's enclosure algorithm and is used for uniform composition.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Fixed endpoint bounds for the bit-entropy gradient on a positive part

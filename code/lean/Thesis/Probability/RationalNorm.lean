@@ -1,6 +1,19 @@
 import Thesis.Probability.RationalApproximation
 import Thesis.Probability.QProbOrder
 
+/-!
+# Exact rational magnitudes and propagation of approximation error
+
+Absolute integer numerator over the original positive denominator defines
+the magnitude of a signed rational presentation. It respects rational
+equivalence, is multiplicative, and satisfies the triangle inequality.
+A magnitude bound is equivalent to two signed order bounds, including zero.
+
+Splitting a difference of products then bounds output error by two input
+errors and magnitudes. These certificates use only finite rational
+comparisons; no real norm, reduced fractions or limiting argument is assumed.
+-/
+
 namespace Thesis.Probability.QProb
 
 theorem mul_le_mul {a b c d : QProb} (first : LE a b) (second : LE c d) : LE (mul a c) (mul b d) := by

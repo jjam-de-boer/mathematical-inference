@@ -21,6 +21,9 @@ the law correspondence by a permutation of uniformly weighted source cells.
 No probability-preservation or SCM-equivalence premise is hidden in the data.
 -/
 
+/-- Read only the declared recorded nodes, converting each game label to
+the corresponding observed value. Hidden instructions remain part of the
+execution even though their readings are absent from this assignment. -/
 def project (game : CausalUrnGame S P)
     (assignment : (node : Fin P.hiddenDAG.count) → game.Value node) : S.Assignment :=
   fun i => (game.recordedValue i).forward (assignment (P.hiddenDAG.observedNode i))
@@ -80,12 +83,17 @@ theorem read_corresponds (rename : Renaming first second) (left right)
 termination_by P.hiddenDAG.rank node
 decreasing_by exact P.hiddenDAG.edge_rank_lt sourceEdge
 
+/-- The local reading correspondence descends to the complete recorded
+assignment through the separately checked projection map. -/
 theorem record_corresponds (rename : Renaming first second) (left right)
     (settings : rename.SettingsCorrespond left right) (cell) :
     rename.records.forward (first.record left (first.superurn.draw cell)) =
       second.record right (second.superurn.draw (rename.cells.forward cell)) :=
   rename.projection _ _ (fun node => rename.read_corresponds left right settings cell node)
 
+/-- An explicit cell bijection transports the whole finite enumeration.
+The statement allows different numeric cardinality presentations; equality
+of those cardinalities follows later from this permutation's length. -/
 private theorem cells_perm {n m : Nat} (cells : ValueEquivalence (Fin n) (Fin m)) :
     ((List.finRange n).map cells.forward).Perm (List.finRange m) := by
   apply AdditiveCarrier.perm_of_count_eq_constructive
@@ -147,6 +155,8 @@ theorem law_invariant (rename : Renaming first second) (left right)
     (fun ticket => event (rename.records.forward (first.record left ticket)))
     (fun ticket => event (second.record right ticket))
     (fun cell => congrArg event (rename.record_corresponds left right settings cell))
+  -- First compare the independent ticket interpreters. Only after this
+  -- counting step do the record-urn agreement theorems identify their laws.
   have urnAgreement := QProb.equiv_trans
     (first.superurn.probVal_map (first.record left) (fun record => event (rename.records.forward record)))
     (QProb.equiv_trans ticketAgreement (QProb.equiv_symm (second.superurn.probVal_map (second.record right) event)))

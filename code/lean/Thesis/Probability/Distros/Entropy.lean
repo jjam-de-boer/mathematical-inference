@@ -1,6 +1,18 @@
 import Thesis.Probability.EntropyValue
 import Thesis.Probability.Distros.LawBasics
 
+/-!
+Shannon entropy and relative entropy on explicit finite outcome grids.
+
+The grid lists distinct observable states, independently of repeated atom
+occurrences in a record. Entropy sums their aggregated singleton masses in
+bits using ExactLog; zero-mass states contribute zero. Almost-sure support
+allows null record outliers outside the grid. Relative entropy additionally
+requires reference mass positive at every declared state, including states
+where the observed law has zero mass. Law-invariance and null-cell lemmas
+separate these quantities from arbitrary choices of atom presentation.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- The distinct observable outcomes on which entropy is computed. The grid
@@ -15,6 +27,8 @@ def Distro.entropy [DecidableEq A] (μ : Distro A) (grid : EntropyGrid A)
     (_support : μ.AlmostSurely (fun value => value ∈ grid.cells)) : ExactLog :=
   ExactLog.listSum (grid.cells.map (fun value => entropyTerm (μ.pmf value)))
 
+/-- Every singleton probability is at most one, so each entropy term is
+nonnegative and their finite exact-log sum is nonnegative. -/
 theorem Distro.entropy_nonnegative [DecidableEq A] (μ : Distro A) (grid : EntropyGrid A)
     (support : μ.AlmostSurely (fun value => value ∈ grid.cells)) :
     ExactLog.LE ExactLog.zero (μ.entropy grid support) := by
@@ -32,6 +46,8 @@ theorem Distro.entropy_sameLaw [DecidableEq A] {μ ν : Distro A} (same : μ.Sam
   intro value _
   exact entropyTerm_congr (same (FiniteProbRecord.singletonEvent value))
 
+/-- Changing the order of a declared grid changes only the sum order,
+not the entropy value. Grid distinctness remains part of both declarations. -/
 theorem Distro.entropy_grid_perm [DecidableEq A] (μ : Distro A) (first second : EntropyGrid A)
     (permutation : first.cells.Perm second.cells)
     (supportedFirst : μ.AlmostSurely (fun value => value ∈ first.cells))

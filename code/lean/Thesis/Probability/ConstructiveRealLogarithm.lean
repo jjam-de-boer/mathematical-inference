@@ -1,6 +1,17 @@
 import Thesis.Probability.RationalLogContinuity
 import Thesis.Probability.ConstructiveRealReciprocal
 
+/-!
+# A constructive real logarithm on a supplied positive half-line
+
+Positive rational centers approximate the real argument while retaining
+a rational floor. Applying the exact rational logarithm to those centers
+produces an effective Cauchy sequence by the Bernoulli power bound. Its
+limit agrees with the rational logarithm on the embedded positive rationals.
+Equivalent real presentations and different floor witnesses may change the
+evaluation schedule, but they yield equivalent logarithm values.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 theorem rationalLog2_congr {a b : PositiveRatio} (same : PositiveRatio.Equiv a b) : Equiv (rationalLog2 a) (rationalLog2 b) :=

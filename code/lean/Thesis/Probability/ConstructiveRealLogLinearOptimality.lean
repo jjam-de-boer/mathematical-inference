@@ -1,6 +1,18 @@
 import Thesis.Probability.ConstructiveRealEntropyOptimizer
 import Thesis.Probability.Distros.LogLinearEntropy
 
+/-!
+# Extending an exact rational log-linear optimum to analytic laws
+
+Exact-feasible entropy density transfers the existing rational certificate's
+global upper bound to every compatible analytic law, including irrational
+and boundary competitors. When its rational reference is presented on the
+retained grid, its analytic embedding attains that bound. The established
+uniqueness theorem then identifies each coordinate of every analytic
+maximum with the embedded reference. No new real optimum is assumed and
+no rational probability constructor is replaced by analytic weights.
+-/
+
 namespace Thesis.Probability.Distros.PartialMomentProblem
 open ConstructiveReal
 

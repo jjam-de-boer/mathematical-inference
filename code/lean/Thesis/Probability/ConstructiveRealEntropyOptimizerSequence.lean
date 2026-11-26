@@ -1,5 +1,16 @@
 import Thesis.Probability.ConstructiveRealEntropyStability
 
+/-!
+# Selecting rational near-maximizers at a computable precision schedule
+
+The rational approximation procedure starts from one compatible law and
+returns a checked feasible law at every requested entropy tolerance.
+The midpoint gap estimate converts a squared coordinate target radius
+into a sufficient budget for two entropy errors. This gives a common
+Cauchy modulus for the actual coordinate sequence, ready for the ideal
+law construction.
+-/
+
 namespace Thesis.Probability.PositiveRatio
 
 /-- Entropy gap sufficient for a requested coordinate radius. -/

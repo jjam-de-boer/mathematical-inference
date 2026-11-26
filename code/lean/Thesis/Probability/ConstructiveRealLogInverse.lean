@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealNaturalLog
 import Thesis.Probability.ConstructiveRealLogOrderReflection
 
+/-!
+# Order reflection and the inverse identity for the natural logarithm
+
+The proved positive conversion factor transports order and equality
+reflection from bit logarithms to natural logarithms, with independent
+floor witnesses for each argument. To prove exp(ln x)=x, compare the
+natural logarithms of the two positive inputs and use that reflection.
+This supplies the other inverse composition constructively.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Natural logarithm equality also determines positive real inputs. The

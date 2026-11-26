@@ -3,6 +3,18 @@ import Thesis.Probability.ConstructiveRealDistanceBounded
 import Thesis.Probability.ConstructiveRealDistanceScaling
 import Thesis.Probability.ConstructiveRealDifferenceLimits
 
+/-!
+# Reflecting the right logarithm estimate across one
+
+For a positive rational step h at most one half, inversion rewrites
+log(1-h) as -log(1+h/(1-h)). The reflected step is at most 2h and differs
+from h by at most 2h squared. An explicit left modulus simultaneously
+keeps 1-h positive, places the reflected step in the right-hand domain,
+and controls that quadratic discrepancy. Combining the two error bounds
+gives the same linear coefficient on the left. Every radius and domain
+witness is computed with rational comparisons.
+-/
+
 namespace Thesis.Probability.RationalLogSecant
 open ConstructiveReal
 

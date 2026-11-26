@@ -2,6 +2,18 @@ import Thesis.Probability.ConstructiveRealEntropyStrongConcavity
 import Thesis.Probability.ConstructiveRealPositiveUnitApproximation
 import Thesis.Probability.ConstructiveRealEntropyLimits
 
+/-!
+# Quantitative entropy concavity on the closed unit interval
+
+The scalar midpoint inequality includes the explicit squared-distance gap
+(1/8)(x-y)^2. Positive rational centers approximate both inputs, allowing
+the established positive-rational estimate to be applied without deciding
+which real input is larger. Effective product and entropy limits then pass
+the entire inequality to the closed interval, including zero coordinates.
+Ordinary midpoint concavity follows by dropping the nonnegative gap; it
+is not an additional positivity assumption or a derivative at zero.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private def halfRatio : SignedRatio := ⟨1, 2, by decide⟩

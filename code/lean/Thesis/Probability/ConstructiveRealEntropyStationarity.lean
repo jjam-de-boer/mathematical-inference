@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveRealAffineSimplex
 import Thesis.Probability.ConstructiveDerivativeExtremum
 import Thesis.Probability.ConstructiveRealRationalEntropyOptimizer
 
+/-!
+# Entropy stationarity along exactly feasible kernel directions
+
+The kernel annihilates normalization and every original row. A positive
+reference law admits a computed two-sided neighborhood along such a
+direction, with the same row values exactly. The effective derivative
+and the two-sided maximum argument force a zero gradient pairing.
+Converting the entire gradient by ln(2) gives the natural-unit version.
+Directions changing inequality rows are treated by variational analysis.
+-/
+
 namespace Thesis.Probability.Distros.RationalEntropyProblem
 open ConstructiveReal
 

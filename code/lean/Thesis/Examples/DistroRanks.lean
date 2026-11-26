@@ -1,5 +1,21 @@
 import Thesis.Examples.DistroPartialMoments
 
+/-!
+# Covariance image and kernel bases retain null categories
+
+The three-category fixture `[1,0,2]` has two positive categories but keeps
+the middle zero category as a coordinate. Its multinomial covariance has
+one selected image column; explicit column entries, independence and
+spanning are checked through the public basis certificates. The kernel
+combines the common positive-category direction with the separate null
+coordinate, including unreduced and negative coefficients.
+
+Reinforced and without-replacement examples exercise the corresponding
+scaled columns. A single positive category, zero trials and full-population
+sampling give rank zero with the appropriate full kernel. Empty and
+one-ball populations are handled without inventing a positive pivot.
+-/
+
 namespace Thesis.Examples.DistroRanks
 open Probability Probability.Distros RationalVector
 

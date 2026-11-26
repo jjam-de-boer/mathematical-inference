@@ -2,6 +2,20 @@ import Thesis.Probability.Distros.LawEquivalence
 import Thesis.Probability.FiniteSignedMass
 namespace Thesis.Probability.Distros
 
+/-!
+# Signed covariance on finite natural-observable laws
+
+Covariance can be negative even when both responses are natural-valued, so
+it uses an integer numerator and positive natural denominator. The chosen
+denominator is the square of the original record denominator; numerator
+subtraction is performed over integers rather than truncated naturals.
+
+Expanding the weighted centered product identifies that numerator with
+`E[fg] - E[f]E[g]`. On the diagonal it agrees with the existing nonnegative
+variance value. The agreement is rational equivalence, preserving arbitrary
+fraction presentations and all singular or zero-variance cases.
+-/
+
 /-- An integer numerator over a positive natural denominator, used for
 signed moments rather than probabilities. -/
 structure SignedMoment where
@@ -9,6 +23,8 @@ structure SignedMoment where
   den : Nat
   den_pos : 0 < den
 
+/-- Compare signed rational magnitudes without normalizing either integer
+numerator or positive denominator. -/
 def SignedMoment.Equiv (p q : SignedMoment) : Prop := p.num * (q.den : Int) = q.num * (p.den : Int)
 
 instance (p q : SignedMoment) : Decidable (p.Equiv q) :=
@@ -50,6 +66,8 @@ theorem Distro.covariance_centered (μ : Distro Ω) (f g : Ω → Nat) :
   let D : Int := μ.record.den
   let F : Int := natIntegral μ.record.atoms f
   let G : Int := natIntegral μ.record.atoms g
+  -- Clear both means before multiplying the centered responses. This
+  -- keeps the whole expansion in exact integer weighted sums.
   have point (x : Ω) : (D * (f x : Int) - F) * (D * (g x : Int) - G) =
       D * D * (f x : Int) * (g x : Int) - D * G * (f x : Int) -
       D * F * (g x : Int) + F * G := by

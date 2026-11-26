@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealMomentApproximation
 import Thesis.Probability.ConstructiveRealEntropyVectorConcavity
 
+/-!
+# Convex feasible moment laws and their entropy midpoint gap
+
+The row pairing respects addition and scaling even for signed coefficients.
+Each original closed linear row and the normalization equation therefore
+survive a midpoint of compatible analytic laws. The scalar entropy gap
+collects over the declared grid, with a squared distance controlling each
+individual coordinate square. These properties support comparison of
+optimizers and near-optimizers without requiring full support.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 open ConstructiveReal
 

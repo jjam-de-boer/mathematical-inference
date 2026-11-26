@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealEntropyContinuity
 import Thesis.Probability.ConstructiveRealCauchyOrder
 
+/-!
+# Effective limits of continuous entropy contributions
+
+The same closed unit-interval entropy modulus controls both Cauchy tails
+and agreement with the entropy of their limit. Closed order supplies the
+unit-interval witnesses at the limit. The modulus applies even to terms
+approaching zero, so this proof does not need lower floors on the sequence.
+The convergence schedule is computed by composing the sequence modulus
+with the entropy input radius.
+-/
+
 namespace Thesis.Probability.RealCauchySequence
 open ConstructiveReal
 

@@ -3,6 +3,17 @@ import Thesis.Probability.ConstructiveRealLogLimits
 import Thesis.Probability.ConstructiveRealProductLimits
 import Thesis.Probability.ConstructiveDerivativeWithin
 
+/-!
+# Two-sided analytic logarithm variation at one
+
+Rational left and right remainder estimates are transferred to nearby
+real values by reserving part of their common radius for enclosure
+errors. The input remains on its supplied positive domain. This proves
+an effective domain-relative derivative at one with the coefficient
+constructed from finite logarithmic secants. Zero displacement and
+both signs of displacement are covered.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Spare half of the rational variation radius absorbs input-enclosure

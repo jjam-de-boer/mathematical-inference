@@ -1,5 +1,16 @@
 import Thesis.Probability.Distros.FiniteGridMoments
 
+/-!
+Encode finite probability-mass simplex constraints as linear inequalities.
+
+One negative-unit row per coordinate enforces nonnegativity. Opposite total
+mass inequalities jointly express exact normalization to one. The equivalence
+theorem identifies satisfaction of these concrete rows with nonnegative
+signed rational coordinates having total one. Zero coordinates are allowed
+and no distribution constructor is invoked here; a later grid constructor
+turns any such certified vector into an actual natural-weight finite law.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 
 def nonnegativeRow (variables : Nat) (index : Fin variables) : Inequality variables :=
@@ -12,6 +23,8 @@ def lowerMassRow (variables : Nat) : Inequality variables := ⟨fun _ => -1, Sig
 def simplexRows (variables : Nat) : List (Inequality variables) :=
   (List.finRange variables).map (nonnegativeRow variables) ++ [upperMassRow variables, lowerMassRow variables]
 
+/-- Nonnegative coordinate masses whose integer-one dot product is
+rationally equivalent to one. This predicate does not impose strict positivity. -/
 def Simplex (values : Fin variables → SignedRatio) : Prop :=
   (∀ i, SignedRatio.Nonnegative (values i)) ∧ SignedRatio.Equiv (dot variables (fun _ => 1) values) SignedRatio.one
 

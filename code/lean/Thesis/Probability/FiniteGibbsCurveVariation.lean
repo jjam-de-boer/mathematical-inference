@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveProbabilityCurve
 import Thesis.Probability.FiniteGibbsEntropyVariation
 
+/-!
+# Entropy variation on an admitted curve of Gibbs laws
+
+Each point of the probability curve has an identified Gibbs expression.
+The tilt family and its parameter may both vary along the curve. The
+normalization tangent cancels the constant part of the entropy gradient,
+and coordinate positivity supplies the logarithm domain. The uniform
+remainder is inherited from the actual probability curve rather than
+postulating a separate thermodynamic derivative or Clausius law.
+-/
+
 namespace Thesis.Probability.RegularProbabilityCurve
 open ConstructiveReal
 

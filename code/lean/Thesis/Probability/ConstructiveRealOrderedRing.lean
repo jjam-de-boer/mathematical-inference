@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealRing
 import Thesis.Probability.ConstructiveRealCauchy
 
+/-!
+# Ordered real multiplication using nonnegative rational approximants
+
+When supplied a nonnegativity proof, one can clamp rational endpoints
+without worsening the requested error. This gives nonnegative rational
+approximations for ordered product arguments. The resulting algebra and
+order laws are stated on real values up to equivalence, with rational
+comparison used only on explicit approximate data.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 theorem zero_le_iff_nonnegative (value : SignedRatio) : LE zero value ↔ Nonnegative value := by

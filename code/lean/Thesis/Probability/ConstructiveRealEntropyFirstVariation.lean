@@ -3,6 +3,19 @@ import Thesis.Probability.ConstructiveRealEntropySum
 import Thesis.Probability.ConstructiveDerivativeWithinChain
 import Thesis.Probability.ConstructiveDerivativeScaling
 
+/-!
+# Effective finite entropy variation along an affine coordinate path
+
+The path and its positive-cube domain are explicit. Coordinatewise affine,
+logarithm and product derivative certificates combine with the finite-sum
+rule to construct an actual remainder modulus for the whole entropy sum.
+The slope is the direction paired with the bit gradient; the established
+ln(2) calibration converts it to the natural gradient, including its
+constant normalization term. This module neither asserts feasibility of
+an arbitrary direction nor concludes stationarity or maximality.
+Normalization and moment constraints enter in later feasible-path arguments.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- An affine coordinate path. These are auxiliary analytic coordinates;

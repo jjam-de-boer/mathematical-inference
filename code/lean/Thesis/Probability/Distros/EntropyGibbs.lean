@@ -3,6 +3,18 @@ import Thesis.Probability.Distros.PositiveSupport
 import Thesis.Probability.EntropyRatios
 import Thesis.Probability.LogMeanInequality
 
+/-!
+Finite Gibbs nonnegativity from aggregated rational likelihood ratios.
+
+Singleton probabilities on a distinct supporting grid normalize even when
+the atom record splits a state or carries null outliers. Their original
+numerators provide the multiplicities of a rational AM–GM construction,
+with total multiplicity equal to the record denominator. Zero observed
+masses receive multiplicity zero; reference masses stay positive on every
+declared cell. Bounding the mean of inverse ratios and applying the exact
+log-mean inequality proves nonnegativity of finite KL divergence in bits.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Aggregated singleton probabilities normalize on every distinct grid
@@ -42,6 +54,8 @@ theorem Distro.relativeRatioItems_weight [DecidableEq A] (μ reference : Distro 
     List.attach_map_val (f := fun value => (μ.pmf value).num)]
   exact μ.pmf_grid_numerator_sum grid support
 
+/-- Represent the KL sum by one weighted log mean. Multiplicities are
+aggregated observed singleton numerators, not individual record-occurrence weights. -/
 theorem Distro.relativeEntropy_logMean [DecidableEq A] (μ reference : Distro A) (grid : EntropyGrid A)
     (support : μ.AlmostSurely (fun value => value ∈ grid.cells))
     (referenceSupport : reference.AlmostSurely (fun value => value ∈ grid.cells))

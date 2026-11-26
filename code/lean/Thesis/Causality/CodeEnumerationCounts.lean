@@ -43,6 +43,8 @@ end CodeEnumeration
 
 namespace CodeCount
 
+/-- A kernel code chooses three masks independently. This counts syntax
+before checking that the masks form an admissible semantic query. -/
 def kernel (dictionary : CodeDictionaries) : Nat :=
   dictionary.masks * (dictionary.masks * dictionary.masks)
 
@@ -56,6 +58,9 @@ def term (dictionary : CodeDictionaries) : Nat → Nat
       1 + kernel dictionary + dictionary.masks * smaller + dictionary.references * smaller +
         smaller * smaller + smaller * smaller + smaller * smaller + smaller * smaller
 
+/-- Count raw derivation codes with separate expression and proof depths.
+At each successor level, roots carrying subderivations use the smaller
+proof count. Constructors carrying terms use the fixed expression count. -/
 def derivation (dictionary : CodeDictionaries) (expressionDepth : Nat) : Nat → Nat
   | 0 => 0
   | depth + 1 =>
@@ -141,6 +146,7 @@ private theorem clip_mul_left (limit left right : Nat) :
   by_cases small : left ≤ limit + 1
   · simp only [clip, Nat.min_eq_left small]
   · have large : limit + 1 ≤ left := by omega
+    -- Multiplication by zero clears even an overflowed factor.
     by_cases zero : right = 0
     · simp [zero]
     · have positive : 1 ≤ right := by omega

@@ -1,5 +1,19 @@
 import Thesis.Probability.ConstructiveDerivativeWithinAlgebra
 
+/-!
+# Full-space algebra of effective derivative certificates
+
+Slope congruence preserves the original modulus, and pointwise value
+equivalence transports the differentiated function. Constants, identity,
+addition, negation and finite sums are constructed with explicit remainder
+data, primarily by restricting to the always-admitted domain and reusing
+the domain-relative rules.
+
+The finite sum is indexed by the supplied list: repeated indices contribute
+repeated summands, and the empty list has the constant-zero derivative.
+Neither selecting an index nor deciding equality of real values is needed.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.HasDerivativeAt
 open ConstructiveReal
 

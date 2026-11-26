@@ -3,6 +3,20 @@ import Thesis.Probability.Distros.RationalVectorSpace
 
 namespace Thesis.Probability.Distros
 
+/-!
+# The finite covariance matrix as an explicit rational operator
+
+The operator sends a coefficient vector to covariances with its combined
+response. Rational bilinearity supplies the operator laws before any matrix
+representation is introduced. A row-sum theorem identifies this semantic
+definition with the existing finite covariance rows.
+
+The final bridge extends a finite coefficient vector by zero outside its
+range, aligning `Fin` coordinates with the natural-coordinate occupancy API.
+This changes only the coefficient presentation: zero-weight categories and
+their original count coordinates remain in the ambient space.
+-/
+
 private theorem linearCombination_add (indices : List I) (responses : I → A → SignedRatio)
     (first second : I → SignedRatio) (x : A) :
     SignedRatio.Equiv (rationalLinearCombination indices (fun i => SignedRatio.add (first i) (second i)) responses x)
@@ -83,6 +97,8 @@ def Distro.covarianceOperator (μ : Distro A) (responses : Fin n → A → Signe
     exact SignedRatio.equiv_trans (μ.rationalCovariance_congr_right (responses i) _ _
       (linearCombination_sub (List.finRange n) responses first second)) (μ.rationalCovariance_sub_right _ _ _)
 
+/-- The semantic operator really has the advertised covariance matrix
+entries; linearity alone would not identify which operator was constructed. -/
 theorem Distro.covarianceOperator_row (μ : Distro A) (responses : Fin n → A → SignedRatio)
     (coefficients : RationalVector.Vector n) (i : Fin n) :
     SignedRatio.Equiv ((μ.covarianceOperator responses).apply coefficients i)

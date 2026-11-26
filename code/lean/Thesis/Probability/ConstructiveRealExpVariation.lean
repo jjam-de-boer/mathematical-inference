@@ -4,6 +4,17 @@ import Thesis.Probability.ConstructiveRealDifferenceLimits
 import Thesis.Probability.ConstructiveRealErrorLimits
 import Thesis.Probability.ConstructiveRealExpLimits
 
+/-!
+# Passing the rational exponential remainder to analytic values
+
+The first-order expression at x uses its exponential times the signed
+increment y-x. The rational error polynomial is its exact square times a
+computable interval constant. Approximate both inputs with a common bound
+and pass the verified rational remainder through effective limits. The
+analytic result controls both sides of the error without testing the sign
+of either input or increment.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 private theorem magnitude_square (value : SignedRatio) :

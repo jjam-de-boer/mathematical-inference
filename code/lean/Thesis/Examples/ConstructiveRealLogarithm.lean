@@ -1,5 +1,20 @@
 import Thesis.Probability.ConstructiveRealLogOrder
 
+/-!
+# A computable logarithm on explicitly positive real inputs
+
+Value congruence permits separate lower-bound witnesses for equivalent
+inputs. Tail estimates and the uniform continuity modulus retain their
+precision thresholds, while monotonicity carries the supplied real order.
+The rational input `3/2`, admitted above `1/2`, computes enclosures between
+`1/2` and `3/4` at precision `1/16` and agrees with the rational logarithm.
+
+An iterated logarithm of `log2(3)` exercises an analytic input with a proved
+positive floor. The final half-unit example gives logarithm `-1`, showing
+that positivity of the argument does not require argument at least one or
+nonnegative logarithm. Zero is outside this interface's stated domain.
+-/
+
 namespace Thesis.Examples.ConstructiveRealLogarithm
 open Probability
 

@@ -1,5 +1,22 @@
 import Thesis.Probability.ConstructiveRealFaceKKT
 
+/-!
+# Forced zeros require fitting on the computed support face
+
+Duplicated exact constraints force the third probability to zero on a
+three-cell grid. Retaining that zero atom does not make it a positive
+support state. A point-supported starting law also omits a possible second
+state; the computed hull recovers it and gives the same face as a seed
+already positive on both possible coordinates.
+
+Forced nullness holds for every feasible analytic law, and restriction to
+the face and extension back preserve entropy. Gibbs and signed KKT
+coefficients are fitted on that computed face without a positive law on
+the original grid. A finite full-grid Gibbs proposal is explicitly refuted
+at the forced zero. The multiplier rows retain the two exact constraints
+and their reverses, rather than adding per-coordinate simplex inequalities.
+-/
+
 namespace Thesis.Examples.EntropySupportFace
 open Probability Probability.Distros ConstructiveReal
 open RationalLinear PartialMomentProblem

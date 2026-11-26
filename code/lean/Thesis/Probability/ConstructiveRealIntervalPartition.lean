@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealDistanceScaling
 import Thesis.Probability.ConstructiveRealRationalScaling
 
+/-!
+# Explicit finite subdivisions of a closed analytic interval
+
+Partition points use rational coefficients with a known positive
+subdivision count. Their affine formulas keep every point within the
+ordered interval. Unit bounds control the interval width, and rational
+mesh estimates control the displacement of consecutive samples. These
+are finite constructions for derivative comparisons.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Rational partition coefficients are auxiliary arithmetic, not probability

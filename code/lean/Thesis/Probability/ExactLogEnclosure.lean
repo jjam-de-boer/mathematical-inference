@@ -2,6 +2,19 @@ import Thesis.Probability.ExactLogRational
 
 namespace Thesis.Probability.ExactLog
 
+/-!
+# Certified dyadic enclosures of any exact logarithm
+
+Finite bisection starts from the explicit binary-length bounds and decides
+each midpoint comparison by rational powers. Its invariant retains a lower
+integer and the fixed initial width at the current dyadic denominator.
+Each step halves the represented interval, including when the value is zero.
+
+A positive rational tolerance selects a sufficient depth before bisection
+begins. The returned endpoints enclose the exact value and have strictly
+smaller width than that tolerance; no open-ended approximation search is used.
+-/
+
 /-- A dyadic number of bits, with its positive denominator retained explicitly. -/
 def dyadic (numerator : Int) (steps : Nat) : SignedRatio :=
   ⟨numerator, 2 ^ steps, Nat.pow_pos (by decide)⟩

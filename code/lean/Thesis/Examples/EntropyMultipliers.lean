@@ -1,5 +1,21 @@
 import Thesis.Probability.ConstructiveRealEntropyMultipliers
 
+/-!
+# Constructive multiplier elimination with dependent and zero rows
+
+The four-by-three integer matrix has proportional rows, a zero row and a
+negative pivot away from the final column. A represented analytic gradient
+supplies its kernel-annihilation premise; elimination constructs another
+multiplier representation for arbitrary real coefficients. Two dropped
+rows are inspected in the returned data and receive literal zero values.
+
+A separate one-coordinate entropy problem is maximal by normalization,
+with duplicated unreduced rows and a slack constraint. Its positive-domain
+gradient multipliers are then constructed and converted from bits to
+natural units. Checked opaque certificates prevent later type comparison
+from rerunning elimination; they introduce no assumed multiplier result.
+-/
+
 namespace Thesis.Examples.EntropyMultipliers
 open Probability Probability.Distros ConstructiveReal
 open IntegerRowSpace RationalLinear

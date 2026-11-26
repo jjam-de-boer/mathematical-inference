@@ -3,6 +3,22 @@ import Thesis.Probability.ConstructiveInteger
 
 namespace Thesis.Probability.Distros
 
+/-!
+# Finite-grid shifts from signed to natural moment responses
+
+A maximum over the explicitly declared entropy grid computes a natural
+offset large enough to make an integer response nonnegative at every grid
+cell. This includes grid coordinates forced to have probability zero. The
+resulting natural response has expectation equal to the signed mean plus
+that offset for every law supported on the grid.
+
+The construction imposes no condition on retained null atoms outside the
+grid. Equal signed means therefore give equal shifted natural means on
+supported laws. Separately, an exact interval constraint forces equality of
+its selected means by rational order alone, without independent constraints
+or strictly positive cell masses.
+-/
+
 /-- A computed finite offset makes an integer response nonnegative on the
 original declared grid, including its forced-zero coordinates. -/
 def EntropyGrid.responseShift (grid : EntropyGrid A) (response : A → Int) : Nat :=
@@ -17,6 +33,8 @@ private theorem shift_bound (values : List A) (response : A → Int) (value : A)
       · exact Nat.le_max_left _ _
       · exact Nat.le_trans (ih later) (Nat.le_max_right _ _)
 
+/-- Truncate to a natural only after adding the computed offset. The
+following specification proves truncation is inactive on declared cells. -/
 def EntropyGrid.shiftedResponse (grid : EntropyGrid A) (response : A → Int) (value : A) : Nat :=
   (response value + (grid.responseShift response : Int)).toNat
 
@@ -39,6 +57,8 @@ theorem MomentInterval.shiftedMean [DecidableEq A] (constraint : MomentInterval 
     (support : μ.AlmostSurely (fun value => value ∈ grid.cells)) :
     SignedRatio.Equiv (μ.expectNat (grid.shiftedResponse constraint.response)).toSignedRatio
       (SignedRatio.add (constraint.mean μ) ⟨(grid.responseShift constraint.response : Int), 1, Nat.zero_lt_one⟩) := by
+  -- The shift identity need hold only on positive occurrences for the
+  -- expectation comparison, even though it was proved on the entire grid.
   have terms := μ.rationalExpectation_congr_positive
     (fun value => (QProb.ofNat (grid.shiftedResponse constraint.response value)).toSignedRatio)
     (fun value => SignedRatio.add (⟨constraint.response value, 1, Nat.zero_lt_one⟩ : SignedRatio)

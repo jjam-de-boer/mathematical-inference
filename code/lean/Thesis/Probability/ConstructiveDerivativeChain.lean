@@ -1,6 +1,20 @@
 import Thesis.Probability.ConstructiveDerivativeWithinChain
 import Thesis.Probability.ConstructiveDerivativeScaling
 
+/-!
+# Composition preserves the actual outer-function domain
+
+A full-space inner derivative composes with a partial outer derivative
+on the preimage of the outer domain. Every composed evaluation receives
+that admission proof, and the outer derivative is taken at the actual
+inner value at the basepoint. The slope is the product of the two supplied
+slopes and its effective modulus comes from the domain-relative chain rule.
+
+The unrestricted chain rule is obtained by taking the outer domain to be
+always true. These wrappers introduce no positivity or global range
+assumption beyond the explicit domain evidence in the partial case.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.HasDerivativeAt
 open ConstructiveReal
 

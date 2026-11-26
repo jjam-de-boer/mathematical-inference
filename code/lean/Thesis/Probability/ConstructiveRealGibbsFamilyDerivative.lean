@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealGibbsFamily
 import Thesis.Probability.ConstructiveRealLogInverse
 
+/-!
+# Directional derivative data from the one-parameter Gibbs calculus
+
+Evaluate the original rational features as analytic observables, then use
+the affine-path realization as a finite tilt. The log-partition derivative
+is the corresponding signed expectation with a computed modulus. Variation
+of a fixed observable is minus its covariance with the response in that
+parameter direction. This supplies directional certificates without
+requiring an independent multivariate differentiability assumption.
+-/
+
 namespace Thesis.Probability.FiniteGibbsFamily
 open ConstructiveReal
 open Distros.RationalLinear

@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.MultivariateFactorialPGF
 
+/-!
+Recover a bounded joint count law from mixed factorial moments.
+
+Fixed length and coordinate bounds give a finite rectangle of moment orders.
+Expanding the multivariate PGF about one makes that rectangle determine its
+values at positive natural arguments; positional PGF uniqueness then yields
+equality of all events, not just coordinate marginals. The final equivalence
+uses finite atom records to compute a common bound, so all mixed moments
+characterize fixed-dimensional laws. The bounded hypotheses here cover every
+recorded atom; positive-support variants are provided separately.
+-/
+
 namespace Thesis.Probability.Distros
 
 /-- Coordinatewise rational equivalence preserves monomials, including

@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealAdditive
 
+/-!
+# Computing interval maxima and minima without testing real order
+
+Rational maxima of corresponding enclosure endpoints give a new
+coherent enclosure with the requested width. Its order laws characterize
+the analytic maximum. Reflecting it gives the minimum. These are values
+with certified bounds, without an operation choosing which input attains
+the result or deciding whether they are equal.
+-/
+
 namespace Thesis.Probability.SignedRatio
 
 /-- Rational endpoint maximum. Only explicit rational order is decided. -/

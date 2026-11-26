@@ -1,5 +1,16 @@
 import Thesis.Probability.ConstructiveReal
 
+/-!
+# The additive structure of coherent real enclosures
+
+Addition and negation satisfy their algebraic laws up to real value
+equivalence. Endpoint comparisons prove each law on the enclosures, and
+a common translation reflects closed order using arbitrarily small
+rational margins. Signed rational embedding preserves these operations.
+Finite sums inherit congruence from the scalar addition without invoking
+any equality decision on real values.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 theorem add_comm (x y : ConstructiveReal) : Equiv (add x y) (add y x) := by

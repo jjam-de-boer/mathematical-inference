@@ -1,6 +1,18 @@
 import Thesis.Probability.Distros.UncertaintyUniformUniqueness
 import Thesis.Probability.Distros.ProbabilityVectorCounts
 
+/-!
+Extend uniform uncertainty uniqueness to positive rational vectors.
+
+A common-count presentation with all counts positive splits each coordinate
+into a uniform conditional choice of that count's size. The refined vector
+has exactly the denominator many entries, all equivalent to its reciprocal,
+so any two admissible measures agree on it by uniform uniqueness. Grouping
+also makes them agree on every conditional branch; cancelling that common
+contribution proves equality on the original count vector. Zero counts are
+handled separately because a zero-size uniform conditional is unavailable.
+-/
+
 namespace Thesis.Probability.UncertaintyMeasure
 open ProbabilityVector
 

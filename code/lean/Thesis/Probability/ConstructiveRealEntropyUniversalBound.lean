@@ -1,5 +1,15 @@
 import Thesis.Probability.ConstructiveRealEntropyCertificates
 
+/-!
+# Extending universal rational entropy bounds to analytic competitors
+
+Every compatible analytic law has exactly feasible rational approximants
+with certified entropy accuracy. Apply the rational bound to each one
+and close the order estimate as the chosen rational error shrinks. In
+particular the executable optimizer's symbolic gap bounds the entire ideal
+feasible set, including laws with irrational coordinates or zero masses.
+-/
+
 namespace Thesis.Probability.Distros.PartialMomentProblem
 open ConstructiveReal
 

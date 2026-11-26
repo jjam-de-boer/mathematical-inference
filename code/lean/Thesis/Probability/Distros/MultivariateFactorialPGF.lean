@@ -4,6 +4,21 @@ import Thesis.Probability.Distros.JointFactorialMoments
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Tensor products of finite factorial generating-function expansions
+
+A rectangular list enumerates mixed orders with one common coordinate bound,
+including the unique empty multi-index in dimension zero. Dividing a mixed
+factorial moment by the product of positive order factorials gives the
+expected product of coordinate binomial coefficients.
+
+Tensoring bounded scalar binomial expansions yields an exact finite expansion
+of the multivariate generating function about the all-ones vector. Arguments
+are arbitrary nonnegative rational offsets. The stated dimension and bound
+conditions apply to every listed atom here; later rectangle results use
+coordinate-specific bounds and almost-sure support instead.
+-/
+
 /-- Rectangular finite set of mixed orders, including the unique empty order. -/
 def factorialBox : Nat → Nat → List (List Nat)
   | 0, _ => [[]]
@@ -37,6 +52,8 @@ theorem orderFactorial_pos (orders : List Nat) : 0 < orderFactorial orders := by
   | nil => exact Nat.zero_lt_one
   | cons order orders ih => exact Nat.mul_pos (fallingFactorial_pos order order (Nat.le_refl _)) ih
 
+/-- Product of coordinate binomial coefficients, with dimension mismatch
+explicitly assigned zero just as for the mixed falling-factorial response. -/
 def jointChoose : List Nat → List Nat → Nat
   | [], [] => 1
   | order :: orders, count :: counts => binom count order * jointChoose orders counts

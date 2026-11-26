@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.FactorialPGF
 
+/-!
+Constructive finite inverse Pascal coefficients.
+
+`inverseBinomial` computes signed integer coefficients recursively and the
+closed-form theorem identifies their alternating binomial expression.
+Finite orthogonality against a row of Pascal's triangle isolates a single
+natural value. Padding that row to a supplied support bound adds only zeros,
+which makes the identity suitable for reconstructing bounded count laws
+from factorial/binomial moments. Signed numbers occur only in this auxiliary
+reconstruction algebra; probability atom weights remain natural.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 
@@ -46,6 +58,8 @@ def inverseBinomial : Nat → Nat → Int
   | order + 1, 0 => -inverseBinomial order 0
   | order + 1, value + 1 => inverseBinomial order value - inverseBinomial order (value + 1)
 
+/-- The inverse row has finite triangular support, so values above its
+order contribute zero to any later reconstruction sum. -/
 theorem inverseBinomial_above (order value : Nat) (above : order < value) : inverseBinomial order value = 0 := by
   induction order generalizing value with
   | zero => cases value with

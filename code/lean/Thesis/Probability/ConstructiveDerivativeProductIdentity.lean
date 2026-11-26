@@ -1,5 +1,18 @@
 import Thesis.Probability.ConstructiveRealPolynomialExpression
 
+/-!
+# Exact polynomial identities supporting product differentiation
+
+The polarization formula expresses `x*y` as one quarter of the difference
+between the squares of `x+y` and `x-y`. A second identity reduces the
+corresponding sum/difference slope expression to `sf*g + f*sg`.
+
+Finite rational polynomial checks certify both identities for arbitrary
+constructive real assignments. No differentiability premise occurs here;
+this algebra can therefore support a product-rule construction without
+assuming the derivative rule it is intended to justify.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 def derivativeProductQuarter : SignedRatio := ⟨1, 4, by decide⟩

@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealAssociativity
 import Thesis.Probability.ConstructiveRealAdditionLimits
 
+/-!
+# Distributivity of multiplication over completed addition
+
+The two regular approximation algorithms refine their inputs differently.
+An explicit error bound transports both to comparable rational products
+where signed rational distributivity applies exactly. Limit equivalence
+lifts the identity to arbitrary constructive real presentations. The
+opposite distributive orientation follows by multiplication commutativity.
+-/
+
 namespace Thesis.Probability.RegularRationalApproximation
 
 private theorem error_below (approximation : RegularRationalApproximation) (first second left right : PositiveRatio)

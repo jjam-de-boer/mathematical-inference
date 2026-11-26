@@ -1,5 +1,17 @@
 import Thesis.Probability.Distros.FiniteGridMoments
 
+/-!
+Finite rational vector spaces with explicit basis and rank certificates.
+
+Vectors are finite coordinate functions of signed rational presentations;
+equality of values means coordinatewise rational equivalence. Operators
+carry the congruence and linearity proofs needed to map finite combinations.
+A basis records a duplicate-free finite index list, membership, independence
+and spanning, and a rank certificate exhibits such an image basis of the
+stated size. Standard-coordinate and zero-operator constructors cover
+dimension zero constructively, without enumerating the rational scalar type.
+-/
+
 namespace Thesis.Probability.Distros.RationalVector
 
 abbrev Vector (dimension : Nat) := Fin dimension → SignedRatio
@@ -15,6 +27,8 @@ def sub (first second : Vector n) : Vector n := fun i => SignedRatio.sub (first 
 
 def unit (index : Fin n) : Vector n := fun i => if index = i then SignedRatio.one else SignedRatio.zero
 
+/-- A finite linear combination using exactly the supplied index list.
+Only listed coefficients matter; repeated indices would contribute repeatedly. -/
 def combine (indices : List I) (vectors : I → Vector n) (coefficients : I → SignedRatio) : Vector n :=
   fun i => SignedRatio.listSum (indices.map (fun index => SignedRatio.mul (coefficients index) (vectors index i)))
 

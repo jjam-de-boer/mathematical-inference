@@ -1,6 +1,22 @@
 import Thesis.Probability.ConstructiveRealEntropySum
 import Thesis.Probability.ConstructiveRealRelativeEntropy
 
+/-!
+# Entropy interpretation keeps zero masses and positive reference domains
+
+The fair law is presented as `[2/4, 0/7, 3/6]`. Exact-log interpretation
+proves its continuous entropy is one bit and hence `ln(2)` in natural
+units. Unit-interval bounds are explicit data for every coordinate; they
+are not inferred from the unrestricted `QProb` type.
+
+Uniform continuity bounds entropy near zero without deciding whether the
+analytic input vanishes. Zero insertion also respects value equivalence.
+The relative-entropy fixtures permit a zero observed mass against the
+positive reference `2/3`, and compute the half-versus-quarter contribution
+as `1/2` bit. Each reference has its own supplied positive floor; no
+zero-reference logarithm or smoothing fallback is introduced.
+-/
+
 namespace Thesis.Examples.ConstructiveRealEntropy
 open Probability ConstructiveReal
 

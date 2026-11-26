@@ -1,5 +1,18 @@
 import Thesis.Probability.FiniteAMGM
 
+/-!
+# Natural-number AM-GM at arbitrary finite multiplicities
+
+The general list theorem is instantiated at length three, rather than
+only a power-of-two length. Weighted examples retain natural multiplicities
+and use explicit arithmetic-mean premises for non-strict and strict product
+bounds. A recorded zero base with multiplicity zero has no contribution.
+
+The empty list and an all-zero-multiplicity list both have product one.
+These conventions are checked directly and need no artificial positive
+sample count or nonempty list assumption.
+-/
+
 namespace Thesis.Examples.FiniteAMGM
 open Probability
 

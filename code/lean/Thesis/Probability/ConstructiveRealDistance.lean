@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveRealLimits
 import Thesis.Probability.RationalNorm
 import Thesis.Probability.RationalPrecision
 
+/-!
+# Certified real distances with explicit rational radii
+
+`Within` packages the two closed comparisons around the supplied radius.
+Its triangle rule adds radii, and on embedded signed rationals it reduces
+to the magnitude of their difference. Arbitrarily small rational errors
+separate real values without a decision about equality. These rules also
+relate regular rational approximation errors to equality of limits,
+including errors amplified by a fixed natural factor.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Two-sided rational error in the closed real order. No arbitrary real

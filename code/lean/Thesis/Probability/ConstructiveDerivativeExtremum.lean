@@ -2,6 +2,21 @@ import Thesis.Probability.ConstructiveDerivativeWithin
 import Thesis.Probability.ConstructiveRealDistanceAlgebra
 import Thesis.Probability.ConstructiveRealDifferenceLimits
 
+/-!
+# Constructive Fermat stationarity on an admitted two-sided neighborhood
+
+The local maximum is supplied together with a positive rational radius
+whose whole neighborhood belongs to the domain. Sharing that radius with
+the derivative modulus admits both positive and negative rational test
+increments. Their remainder inequalities bound the slope and its negative
+by every rational error, proving zero slope through closed order.
+
+Only rational radii are compared, and cancellation uses their proved
+positivity. The theorem neither decides the real slope's sign nor asserts
+existence of a local maximum. Its neighborhood premise is essential for
+excluding isolated-domain and one-sided boundary maxima.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 private def sharedRadius (first second : PositiveRatio) : PositiveRatio :=

@@ -1,6 +1,16 @@
 import Thesis.Probability.ConstructiveRealGibbsTiltDerivative
 import Thesis.Probability.ConstructiveRealPolynomialExpression
 
+/-!
+# Variance and curvature in the finite Gibbs family
+
+Centering an observable and expanding its square gives the variance
+identity, with normalization supplying the expectation of a constant.
+Nonnegative weights and squares then give nonnegative variance.
+The log-partition derivative formulas identify its curvature with this
+variance, including constant observables or a zero direction.
+-/
+
 namespace Thesis.Probability.FiniteGibbsTilt
 open ConstructiveReal
 open Distros.RationalLinear

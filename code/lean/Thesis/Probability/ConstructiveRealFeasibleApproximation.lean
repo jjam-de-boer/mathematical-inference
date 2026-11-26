@@ -2,6 +2,17 @@ import Thesis.Probability.ConstructiveRealLinear
 import Thesis.Probability.ConstructiveRealDistance
 import Thesis.Probability.Distros.FiniteGridMoments
 
+/-!
+# Rational approximants that retain all original linear inequalities
+
+For each analytic coordinate the requested enclosure adds two rational box
+rows. The analytic witness satisfies these alongside the original rows,
+so finite rational elimination can construct a rational solution to the
+augmented system. Its box membership gives the promised approximation
+radius, and retaining the original rows gives exact feasibility, including
+closed equality pairs.
+-/
+
 namespace Thesis.Probability.Distros.RationalLinear
 open ConstructiveReal
 

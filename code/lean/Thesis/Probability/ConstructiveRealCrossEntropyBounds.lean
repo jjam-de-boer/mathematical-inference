@@ -1,6 +1,17 @@
 import Thesis.Probability.ConstructiveRealGibbsInequality
 import Thesis.Probability.ConstructiveRealLogInverse
 
+/-!
+# Turning a cross-entropy bound into an explicit positive floor
+
+A coarse bound of three per entropy coordinate is enough for the later
+interiority proof. Each negative-log reference contribution is controlled
+by cross entropy divided by a supplied positive observed-coordinate floor.
+Exponentiating this inequality produces a reference floor depending only
+on the observed floor and the cross-entropy bound. The temporary witness
+used to define the reference logarithm does not enter the resulting floor.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- A deliberately coarse entropy bound, computed from the declared finite

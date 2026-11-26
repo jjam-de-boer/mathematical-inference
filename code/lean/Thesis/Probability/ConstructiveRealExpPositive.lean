@@ -3,6 +3,18 @@ import Thesis.Probability.ConstructiveRealOrderedRing
 import Thesis.Probability.ConstructiveRealBounds
 import Thesis.Probability.ConstructiveRealReciprocal
 
+/-!
+# Positive exponentials with explicit inverse data
+
+The exponential addition law first identifies exp(x) as the square of
+exp(x/2), proving nonnegativity without deciding the sign of a real.
+A computed natural upper bound on exp(-x), together with exp(x)exp(-x)=1,
+then gives a strictly positive rational lower bound on exp(x). This bound
+is the domain witness required by the constructive reciprocal operation.
+The final identities identify that reciprocal with exp(-x) and derive the
+subtraction law; they do not introduce a total real-division operation.
+-/
+
 namespace Thesis.Probability.ConstructiveReal
 
 /-- Exponentials are nonnegative because every exponential is the square

@@ -1,5 +1,17 @@
 import Thesis.Probability.EntropyContinuity
 
+/-!
+An explicit uniform continuity bound for entropy on a finite grid.
+
+A positive rational total-error tolerance determines a computed power-of-two
+coordinate tolerance. Two-sided coordinate mass bounds then control each
+entropy term, including masses approaching or equal to zero. Summing the
+coordinate errors over the declared grid proves both directions of the
+entropy comparison. No bound is imposed on input fraction denominators or
+on a minimum positive probability. The tolerance is sufficient rather than
+claimed optimal, and it counts every declared grid cell, including null ones.
+-/
+
 namespace Thesis.Probability.ExactLog
 
 private theorem constant_roots (values : List A) (argument : PositiveRatio) (degree : Nat) (positive : 0 < degree) :

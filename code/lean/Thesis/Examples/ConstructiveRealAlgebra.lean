@@ -1,5 +1,19 @@
 import Thesis.Probability.ConstructiveRealRing
 
+/-!
+# Ring laws for real values rather than presentation equality
+
+Associativity, distributivity, negation and subtraction are checked through
+`ConstructiveReal.Equiv`, allowing distinct coherent enclosure programs for
+the same value. Faithfulness of the signed-rational embedding refutes the
+collapse of one to zero; no arbitrary real equality test is required.
+
+The concrete power `(3/2)^3=27/8` connects real multiplication with exact
+rational arithmetic. General natural-power addition and multiplication
+through finite list sums exercise the reusable algebra, including their
+zero-exponent and empty-list cases through the quantified laws.
+-/
+
 namespace Thesis.Examples.ConstructiveRealAlgebra
 open Probability
 

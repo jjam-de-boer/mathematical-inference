@@ -2,6 +2,21 @@ import Thesis.Probability.ConstructiveDerivativeLocalDomain
 import Thesis.Probability.ConstructiveRealNaturalLog
 import Thesis.Probability.ConstructiveRealInverseDerivative
 
+/-!
+# Logarithm and reciprocal rules with varying positive certificates
+
+The differentiated function is globally positive through a supplied
+point-dependent rational floor. At the chosen basepoint a fixed half-floor
+and the computed positive neighborhood license the partial outer chain
+rule. Local value congruence then restores the actual total composition,
+whose evaluations may use different lower witnesses at different inputs.
+
+The resulting slopes are the inner slope times the reciprocal value for
+natural logarithm, and times the negative reciprocal square for inversion.
+No uniform global floor, positivity test, or fallback value at zero is
+introduced.
+-/
+
 namespace Thesis.Probability.ConstructiveReal.HasDerivativeAt
 open ConstructiveReal
 

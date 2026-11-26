@@ -3,6 +3,19 @@ import Thesis.Probability.RationalSeriesTail
 namespace Thesis.Probability.RationalGeometricSeries
 open SignedRatio
 
+/-!
+# Absolute bounds for finite blocks of a signed rational series
+
+The nonnegative bound sum controls the magnitude of a signed block by the
+triangle inequality. It splits across adjacent intervals and commutes with
+scaling and index shifts. Uniform coordinate bounds give a count-times-size
+estimate on each finite block.
+
+Dyadic term domination bounds the sum of absolute sizes as well as the
+signed sum itself. Later continuity and product-error arguments therefore
+use genuine absolute control rather than accidental cancellation.
+-/
+
 /-- Finite sums of nonnegative rational bounds for a signed series. -/
 def normSum (sizes : Nat → QProb) (start : Nat) : Nat → QProb
   | 0 => QProb.zero

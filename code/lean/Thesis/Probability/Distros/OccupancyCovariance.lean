@@ -4,10 +4,27 @@ import Thesis.Probability.Distros.HypergeometricMarginals
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Covariance geometry forced by count conservation
+
+Count coordinates are embedded as signed rational responses, allowing their
+covariance matrix to use the general finite quadratic-form results. A fixed
+total makes the sum of coordinates an almost-sure constant, so the all-ones
+coefficient direction is null. Nonnegative counts with zero mean vanish on
+positive atoms and therefore give complete zero covariance rows.
+
+These two mechanisms specialize to multinomial, reinforced and finite-
+population counts. Zero-weight or zero-stock categories remain in the count
+vector; their rows are proved zero rather than deleted. The empty-population
+hypergeometric case uses support bounds instead of a population denominator.
+-/
+
 /-- A count coordinate as a signed rational response. -/
 def countResponse (index : Nat) (counts : List Nat) : SignedRatio :=
   (QProb.ofNat (counts.getD index 0)).toSignedRatio
 
+/-- Restrict the general covariance form to the declared count coordinates.
+Out-of-range list coordinates are the existing zero-valued lookup response. -/
 def Distro.occupancyCovarianceForm (μ : Distro (List Nat)) (colours : Nat)
     (coefficients : Nat → SignedRatio) : SignedRatio :=
   μ.rationalCovarianceForm (List.range colours) countResponse coefficients
@@ -125,6 +142,8 @@ theorem multivariateHypergeometric_covariance_zero_stock (n : Nat) (stocks : Lis
     exact QProb.equiv_trans result (by simp only [QProb.Equiv, zero, Nat.mul_zero, QProb.zero, Nat.zero_mul])
   · apply (Distro.expectNat_equiv_zero_iff _ _).mpr
     intro atom member _
+    -- Positivity of the subset normalizer forces zero draws when the
+    -- population is empty, and every listed count is bounded by those draws.
     change atom.1.getD i 0 = 0
     have bound := multivariateHypergeometric_coordinate_bound n stocks atom member i
     have sample := hypergeometric_draws_le_total stocks.sum n positive

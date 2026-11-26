@@ -2,6 +2,16 @@ import Thesis.Probability.Distros.EntropyUniform
 import Thesis.Probability.ExactLogConvex
 import Thesis.Probability.FiniteBernoulli
 
+/-!
+# Algebraic logarithm estimates for the small-mass boundary
+
+With a positive finite decrement witness, Bernoulli-style rational
+arithmetic bounds the logarithm of an inverse complement. The second
+lemma permits increasing the rational coefficient of a nonnegative exact
+logarithm. These tools feed the small-mass entropy estimate without
+assigning a value to log(0) or assuming differentiability at zero.
+-/
+
 namespace Thesis.Probability
 
 /-- A finite algebraic logarithm bound for a small complement decrement.

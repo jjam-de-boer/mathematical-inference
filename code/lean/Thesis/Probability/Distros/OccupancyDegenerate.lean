@@ -4,6 +4,21 @@ import Thesis.Probability.Distros.MomentTableAlgebra
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Deterministic occupancy cases without singular ratio formulas
+
+An almost-sure zero total forces every natural count coordinate to vanish.
+An almost-sure point vector makes every coefficient-weighted response
+constant. Either condition annihilates the entire covariance quadratic form,
+without assumptions on retained null occurrences.
+
+Zero-trial multinomial, reinforced and hypergeometric laws use the first
+argument. A full-population hypergeometric sample uses the second: positive
+atoms cannot overdraw any stock, and equal total mass then forces the complete
+stock vector. Empty and one-object populations are included without dividing
+by a population size or by population size minus one.
+-/
+
 /-- A zero total count forces every weighted response sum to vanish. The
 shape of a retained null occurrence imposes no obligation. -/
 theorem Distro.occupancyCovarianceForm_zero_total (μ : Distro (List Nat)) (colours : Nat)
@@ -67,6 +82,8 @@ theorem multivariateHypergeometric_positive_within (n : Nat) (stocks : List Nat)
       rcases List.mem_map.mp tail with ⟨rest, listed, same⟩
       cases same
       change 0 < binom stock used * rest.2 at positive
+      -- Positive product weight proves both that this colour is not
+      -- overdrawn and that the recursive tail is itself a positive atom.
       exact ⟨hypergeometric_draws_le_total stock used (Nat.pos_of_mul_pos_right positive),
         ih (n - used) rest listed (Nat.pos_of_mul_pos_left positive)⟩
 

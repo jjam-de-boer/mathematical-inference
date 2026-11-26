@@ -1,6 +1,17 @@
 import Thesis.Probability.RationalTaylorExponential
 import Thesis.Probability.SignedRatioRangeSum
 
+/-!
+# Finite Taylor coefficient convolution over signed rationals
+
+The total degree fixes a finite diagonal of coefficient pairs. Splitting
+that diagonal and using the one-factor Taylor recurrences shows that the
+convolution satisfies the coefficient recurrence at the sum of the two
+arguments. Induction identifies every coefficient, including negative
+arguments. Infinite rearrangement and the exponential addition law are
+unneeded at this algebraic step.
+-/
+
 namespace Thesis.Probability.RationalTaylorExponential
 open SignedRatio
 

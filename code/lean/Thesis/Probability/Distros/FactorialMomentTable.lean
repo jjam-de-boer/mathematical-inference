@@ -4,6 +4,20 @@ import Thesis.Probability.Distros.ProbabilityGrid
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Algebraic validity of a supplied finite factorial-moment table
+
+Inversion is defined directly on candidate rational moments, before a law is
+known to realize them. The candidate cell masses can be signed. Their finite
+probability constraints are nonnegativity at every bounded cell and total
+mass one; later constructors use those conditions to build natural weights.
+
+Reverse Pascal inversion recovers each supplied binomial-moment coefficient
+without a positivity premise. If the table agrees with an actual bounded law,
+the same inversion recovers that law's singleton probabilities, with bounds
+needed only at positive occurrences of its original atom presentation.
+-/
+
 /-- Candidate factorial moments divided by the corresponding factorial. -/
 def factorialTableCoefficient (moments : Nat → QProb) (order : Nat) : SignedRatio :=
   (QProb.div (moments order) (QProb.ofNat (fallingFactorial order order))
@@ -40,6 +54,8 @@ theorem inverseFactorialTable_choose (moments : Nat → QProb) (bound order : Na
         simp only [SignedRatio.Equiv, SignedRatio.mul, Int.natCast_mul]
         ac_rfl))
   refine SignedRatio.equiv_trans (SignedRatio.listSum_map_congr values _ _ rows) ?_
+  -- Swap the finite value/order sums, then the reverse inverse-Pascal
+  -- kernel kills every order except the requested one.
   refine SignedRatio.equiv_trans (SignedRatio.listSum_swap values values kernel) ?_
   refine SignedRatio.equiv_trans (SignedRatio.listSum_map_congr_on_mem values _
     (fun r => if r = order then factorialTableCoefficient moments order else SignedRatio.zero) ?_) ?_

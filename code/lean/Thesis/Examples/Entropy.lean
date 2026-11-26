@@ -1,6 +1,21 @@
 import Thesis.Probability.Distros.Entropy
 import Thesis.Probability.ExactLogEnclosure
 
+/-!
+# Entropy depends on aggregated laws, not atom-record syntax
+
+The fair binary law has entropy one bit and a point law has entropy zero.
+A reordered, rescaled split record keeps a null outlier outside the
+entropy grid yet has the same fair law. Almost-sure support is explicit;
+positive occurrences must lie on the grid, while null occurrences need not.
+
+Grid permutation and insertion of a null grid cell preserve entropy.
+Relative-entropy examples compare self, point and nonuniform-reference
+laws, retaining exact symbolic logarithms when the answer is nonintegral.
+Reference positivity is supplied separately on every grid cell; observed
+zero probabilities are allowed.
+-/
+
 namespace Thesis.Examples.Entropy
 open Probability Probability.Distros
 

@@ -1,5 +1,16 @@
 import Thesis.Probability.Distros.ReinforcedMoments
 
+/-!
+Second moments and nonnegative variance of a reinforced colour count.
+
+`reinforcedCountCoordinate` chooses one observable from the full occupancy
+law. The second factorial moment and mean give its ordinary second moment
+through k² = k(k-1)+k. The variance proof uses an additive numerator balance,
+so all calculations stay in nonnegative rationals. Only the total initial
+weight is positive: zero trials, zero selected weight, zero complement and
+zero reinforcement are covered by the same formula.
+-/
+
 namespace Thesis.Probability.Distros
 open Combinatorics
 
@@ -8,6 +19,8 @@ def reinforcedCountCoordinate (n : Nat) (alphas : List Nat) (increment : Nat)
     (positive : 0 < alphas.sum) (index : Nat) : NatDistro (List Nat) :=
   ⟨reinforcedCountDistro n alphas increment positive, fun counts => counts.getD index 0⟩
 
+/-- Convert the order-two falling moment to E[K²] by adding E[K].
+No division by the trial count or by the selected colour weight is needed. -/
 theorem reinforcedCount_coordinate_secondMoment (n increment : Nat) (alphas : List Nat)
     (positive : 0 < alphas.sum) (index : Nat) (within : index < alphas.length) :
     QProb.Equiv (secondMoment (reinforcedCountCoordinate n alphas increment positive index))

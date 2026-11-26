@@ -2,6 +2,20 @@ import Thesis.Probability.Distros.ReinforcedUrn
 namespace Thesis.Probability.Distros
 open Combinatorics
 
+/-!
+# Finite factorial convolutions for reinforced counts
+
+Stripping a falling factorial from a binomial sum shifts the remaining
+index range and extracts the corresponding trial factorial. Complementary
+orders are handled by reversing the finite range. Both identities include
+orders above the trial count, where the extracted factorial vanishes.
+
+The reinforced two-colour kernel then satisfies Vandermonde and an exact
+factorial-integral formula for every natural reinforcement increment. All
+work is on unnormalized natural sums, so zero colour weights and increment
+zero require no division or separate probability-law assumption.
+-/
+
 /-- Strip any falling-factorial order from a binomial coefficient inside
 an arbitrary finite sum. The identity includes orders above the trial count. -/
 theorem binomial_factorial_sum (n order : Nat) (f : Nat → Nat) :
@@ -136,6 +150,8 @@ theorem stepBetaTerm_factorial_moment (increment n a b order : Nat) :
         (stepRising a increment k * stepRising b increment (n - k))) := by
     apply natSum_congr; intro k _; simp only [stepBetaTerm]; ac_rfl
   rw [grouping, binomial_factorial_sum]
+  -- Extract a rising factor only in a range where the shifted indices
+  -- agree; an excessive factorial order is settled by its zero trial factor.
   by_cases within : order ≤ n
   · have terms : natSum (n - order + 1) (fun k => binom (n - order) k *
         (stepRising a increment (k + order) * stepRising b increment (n - (k + order)))) =
