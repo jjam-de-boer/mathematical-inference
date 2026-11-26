@@ -348,20 +348,26 @@ private def independentQuerySupport :
     query.sourceTerm.SupportedAt independenceModel reference :=
   ⟨⟨1, 2, by decide⟩, equivalentOfMassTest _ _ (by decide +kernel)⟩
 
+/-- With no outcome coordinates specified, the formula observes the sure event. -/
+private def constantOne : ProbabilityTerm signature :=
+  .kernel ⟨NodeSet.empty, NodeSet.empty, NodeSet.empty⟩
+
 /-- The value one is correct in the copy model at the requested reference.
 It cannot certify a constant replacement over the policy's supported domain. -/
 theorem no_constant_one_replacement :
     ¬ ∃ replacement : CertifiedQuery.FormulaCertificate.Total query.sourceTerm
         (fun model => HasProjectedGraph model chainModel.observedGraph),
-      replacement.certificate.formula = .one := by
+      replacement.certificate.formula = constantOne := by
   rintro ⟨replacement, constant⟩
   have agreement := replacement.certificate.sound independenceModel independentInCopyClass
     reference independentQuerySupport
     (replacement.defined independenceModel independentInCopyClass reference independentQuerySupport)
   have impossible := ProbabilityResult.trans (ProbabilityResult.symm independentQuerySupport.2) agreement
   rw [constant] at impossible
-  change ProbabilityResult.Equivalent (some ⟨1, 2, by decide⟩) (some QProb.one) at impossible
-  cases impossible with
+  have unitValue : ProbabilityResult.Equivalent (constantOne.denote independenceModel reference)
+      (some QProb.one) := equivalentOfMassTest _ _ (by decide +kernel)
+  have halfEqualsOne := ProbabilityResult.trans impossible unitValue
+  cases halfEqualsOne with
   | value falseEquality => cases falseEquality
 
 /-- The same scope applies to enclosures. The correct singleton interval at

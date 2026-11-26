@@ -25,8 +25,8 @@ answer in that one model is never promoted to class-wide identification.
 Replacement formulas and bounds must cover the projected graph class and
 every supported instance of the requested source query. Guarded-ID's own
 formula remains usable on its proved local support. At the requested model
-and reference the adapter checks the source support before applying either
-kind of supplied certificate.
+and reference the adapter uses unconditional support for joint queries
+and checks the conditioner for conditional queries.
 -/
 
 variable {S : ObservedSignature.{0}}
@@ -80,26 +80,21 @@ noncomputable def identifyJoint (policy : ModeQueryPolicy S) (query : JointKerne
   if policy.jointAdmissible query then
     match replacement with
     | some evidence =>
-        match query.sourceTerm.supported? policy.mode.model reference with
-        | none => .undefined
-        | some supported =>
-            .identified ⟨evidence.certificate, fun _ _ => rfl, supported,
-              evidence.defined policy.mode.model (fun _ _ => rfl) reference supported⟩
+        let supported := query.supportedAt policy.mode.model reference
+        .identified ⟨evidence.certificate, fun _ _ => rfl, supported,
+          evidence.defined policy.mode.model (fun _ _ => rfl) reference supported⟩
     | none =>
         match result : identifyGuardedJointKernel policy.graph query with
         | .identified term =>
-            match query.sourceTerm.supported? policy.mode.model reference,
-              term.supported? policy.mode.model reference with
-            | some sourceSupported, some printedSupported =>
+            match term.supported? policy.mode.model reference with
+            | none => .undefined
+            | some printedSupported =>
                 .identified ⟨jointFormulaCertificate policy.graph query result,
-                  fun _ _ => rfl, sourceSupported, printedSupported⟩
-            | _, _ => .undefined
+                  fun _ _ => rfl, query.supportedAt policy.mode.model reference, printedSupported⟩
         | .failed failure =>
             match bounds with
             | some evidence =>
-                match query.sourceTerm.supported? policy.mode.model reference with
-                | some supported => .bounded ⟨evidence, fun _ _ => rfl, supported⟩
-                | none => .undefined
+                .bounded ⟨evidence, fun _ _ => rfl, query.supportedAt policy.mode.model reference⟩
             | none => .failed failure
         | .unfinished => .unfinished
   else .modeUnsupported

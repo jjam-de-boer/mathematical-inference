@@ -305,6 +305,25 @@ theorem splitClassPrior_aggregate (prior : Distro Class) (classOf : Fin n → Cl
   rw [split]
   ac_rfl
 
+/-- Supported class-level evidence updates the original class prior whether
+computed on the class labels directly or through any encoding catalogue. -/
+theorem splitClassPrior_reweight (prior : Distro Class) (classOf : Fin n → Class)
+    (represented : ∀ label, ∃ i, classOf i = label) (weight : Class → Nat)
+    (positive : 0 < natIntegral prior.record.atoms weight) :
+    ∃ encodingPositive : 0 < natIntegral (splitClassPrior prior classOf represented).record.atoms
+        (fun i => weight (classOf i)),
+      (aggregateClasses ((splitClassPrior prior classOf represented).reweightNat
+        (fun i => weight (classOf i)) encodingPositive) classOf).SameLaw
+        (prior.reweightNat weight positive) := by
+  have priorAgreement := splitClassPrior_aggregate prior classOf represented
+  have aggregatePositive : 0 < natIntegral
+      (aggregateClasses (splitClassPrior prior classOf represented) classOf).record.atoms weight :=
+    (QProb.equiv_num_pos_iff (priorAgreement.expectNat weight)).mpr positive
+  refine ⟨by simpa only [aggregateClasses, Distro.map, FiniteProbRecord.map, natIntegral_map]
+    using aggregatePositive, ?_⟩
+  rw [aggregateClasses_reweight _ _ weight aggregatePositive]
+  exact priorAgreement.reweightNat weight aggregatePositive positive
+
 /-- Construct a catalogue with a prior defined on classes. Complexity or
 other prior information can be applied to the class law before the split.
 The class labels are supplied by the modeller. -/
