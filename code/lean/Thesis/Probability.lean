@@ -82,6 +82,9 @@ import Thesis.Probability.FiniteProductReindex
 import Thesis.Probability.FiniteProductSplicing
 import Thesis.Probability.FiniteProductSourceCompression
 import Thesis.Probability.FiniteProbabilityPolynomialCertificates
+import Thesis.Probability.IntegerPolynomialSolvability
+import Thesis.Probability.PellHalfRates
+import Thesis.Probability.FourSquareNorm
 import Thesis.Probability.FiniteRecordSlicing
 import Thesis.Probability.FiniteRecordCatalogue
 import Thesis.Probability.FiniteSupportCatalogue

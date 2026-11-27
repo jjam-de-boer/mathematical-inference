@@ -6,6 +6,7 @@ import Thesis.Examples.CurrentBeliefInference
 import Thesis.Examples.CausalAbstraction
 import Thesis.Examples.CausalUrnGame
 import Thesis.Examples.QualitativeExperimentRepresentation
+import Thesis.Examples.QualitativeTies
 import Thesis.Examples.CausalUrnRenaming
 import Thesis.Examples.CausalAbstractionExtension
 import Thesis.Examples.CausalAbstractionScale
