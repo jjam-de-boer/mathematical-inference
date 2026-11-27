@@ -8,6 +8,7 @@ import Thesis.Causality.CausalAbstraction
 import Thesis.Causality.CausalUrnTickets
 import Thesis.Causality.CausalUrnFreshness
 import Thesis.Causality.QualitativeTiesToPolynomial
+import Thesis.Causality.BoundedArithmeticTies
 import Thesis.Causality.CausalUrnExperimentalLaw
 import Thesis.Causality.QualitativeExperimentFactorization
 import Thesis.Causality.QualitativeExperimentRoundTrip
