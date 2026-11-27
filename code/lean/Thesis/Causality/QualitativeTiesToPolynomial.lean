@@ -1,5 +1,6 @@
 import Thesis.Causality.QualitativeTieMasses
 import Thesis.Probability.IntegerPolynomialSolvability
+import Thesis.Probability.FourSquares
 
 namespace Thesis.Causality.QualitativeTies
 open Probability
@@ -211,6 +212,153 @@ theorem realizable_of_solvable (problem : Instance) (solved : (compile problem).
     (List.mem_append_left _ (List.mem_map.mpr ⟨tie, member, rfl⟩))
   exact (tieEquation_zero_iff valuation rates (fun node input => boundedRate_correct _ _ _)
     problem.graph tie).mp compiledTie
+
+private def squareSum (values : Fin 4 → SignedRatio) : SignedRatio :=
+  SignedRatio.listSum ((List.finRange 4).map fun i => (values i).mul (values i))
+
+/-- A nonnegative rational n/d is a sum of four squares: represent the
+natural product n·d and divide the four witnesses by d. -/
+private theorem rational_squares (value : QProb) : ∃ roots : Fin 4 → SignedRatio,
+    (squareSum roots).Equiv value.toSignedRatio := by
+  obtain ⟨a, b, c, d, squares⟩ := FourSquareNorm.exists_natural_squares (value.num * value.den)
+  let quotient (n : Nat) : SignedRatio := ⟨n, value.den, value.den_pos⟩
+  let roots (i : Fin 4) : SignedRatio := [quotient a, quotient b, quotient c, quotient d][i.val]
+  refine ⟨roots, ?_⟩
+  let numerators : List Int := [((a*a : Nat) : Int), ((b*b : Nat) : Int), ((c*c : Nat) : Int), ((d*d : Nat) : Int)]
+  have aligned : (List.finRange 4).map (fun i => (roots i).mul (roots i)) =
+      numerators.map (fun num => ⟨num, value.den*value.den, Nat.mul_pos value.den_pos value.den_pos⟩) := by
+    dsimp [numerators, roots, quotient, SignedRatio.mul]
+    rfl
+  unfold squareSum
+  rw [aligned]
+  apply SignedRatio.equiv_trans (SignedRatio.listSum_mk_same_den _ _ numerators)
+  have total := congrArg (fun n : Nat => (n : Int)) squares
+  change numerators.sum * (value.den : Int) = (value.num : Int) * (value.den * value.den : Nat)
+  dsimp [numerators]
+  simp only [Int.add_zero, Int.natCast_add, Int.natCast_mul] at total ⊢
+  rw [← Int.add_assoc, ← Int.add_assoc, total, Int.mul_assoc]
+
+private theorem finite_witnesses {W : Type} {n : Nat} {p : Fin n → W → Prop}
+    (pointwise : ∀ i, ∃ witness, p i witness) : ∃ witnesses : Fin n → W, ∀ i, p i (witnesses i) := by
+  induction n with
+  | zero => exact ⟨Fin.elim0, fun i => Fin.elim0 i⟩
+  | succ n ih =>
+    obtain ⟨first, correctFirst⟩ := pointwise 0
+    obtain ⟨rest, correctRest⟩ := ih (p := fun i => p i.succ) (fun i => pointwise i.succ)
+    refine ⟨Fin.cases first rest, ?_⟩
+    intro i
+    refine Fin.cases correctFirst correctRest i
+
+private theorem bool_witnesses {W : Type} {p : Bool → W → Prop}
+    (pointwise : ∀ i, ∃ witness, p i witness) : ∃ witnesses : Bool → W, ∀ i, p i (witnesses i) := by
+  obtain ⟨first, correctFirst⟩ := pointwise false
+  obtain ⟨last, correctLast⟩ := pointwise true
+  refine ⟨fun bit => if bit then last else first, ?_⟩
+  intro bit
+  cases bit
+  · exact correctFirst
+  · exact correctLast
+
+/-- Recover the three indices packed in a polynomial coordinate. Every
+actual slot decodes back to its original row and witness position. -/
+private def slotData (index : Fin (18 * n)) : Fin n × Bool × Fin 9 :=
+  (⟨index.val / 18, by have h := index.isLt; omega⟩,
+    decide (9 ≤ index.val % 18), ⟨(index.val % 18) % 9, Nat.mod_lt _ (by decide)⟩)
+
+private theorem slotData_slot (node : Fin n) (input : Bool) (kind : Fin 9) :
+    slotData (slot node input kind) = (node, input, kind) := by
+  have kindBound := kind.isLt
+  have nodeEq : (slotData (slot node input kind)).1 = node := by
+    apply Fin.ext
+    cases input <;> dsimp [slotData, slot] <;> omega
+  have inputEq : (slotData (slot node input kind)).2.1 = input := by
+    cases input
+    · change decide (9 ≤ (18 * node.val + 0 + kind.val) % 18) = false
+      exact decide_eq_false (by omega)
+    · change decide (9 ≤ (18 * node.val + 9 + kind.val) % 18) = true
+      exact decide_eq_true (by omega)
+  have kindEq : (slotData (slot node input kind)).2.2 = kind := by
+    apply Fin.ext
+    cases input <;> dsimp [slotData, slot] <;> omega
+  exact Prod.ext nodeEq (Prod.ext inputEq kindEq)
+
+private def valuationOf (rates : Rates n) (roots : Fin n → Bool → Bool → Fin 4 → SignedRatio)
+    (index : Fin (18 * n)) : SignedRatio :=
+  let (node, input, kind) := slotData index
+  if kind.val = 0 then (rates node input).val.toSignedRatio
+  else if lower : kind.val < 5 then roots node input false ⟨kind.val - 1, by omega⟩
+  else roots node input true ⟨kind.val - 5, by have h := kind.isLt; omega⟩
+
+private theorem valuationOf_rate (rates : Rates n) (roots : Fin n → Bool → Bool → Fin 4 → SignedRatio)
+    (node : Fin n) (input : Bool) :
+    valuationOf rates roots (slot node input 0) = (rates node input).val.toSignedRatio := by
+  rw [valuationOf, slotData_slot]
+  rfl
+
+private theorem valuationOf_witness (rates : Rates n) (roots : Fin n → Bool → Bool → Fin 4 → SignedRatio)
+    (node : Fin n) (input upper : Bool) (index : Fin 4) :
+    valuationOf rates roots (slot node input ⟨index.val + (if upper then 5 else 1), by
+        have h := index.isLt
+        cases upper <;> dsimp <;> omega⟩) = roots node input upper index := by
+  rw [valuationOf, slotData_slot]
+  have indexBound := index.isLt
+  cases upper <;> dsimp
+  · rw [dif_pos (show index.val + 1 < 5 by omega)]
+  · rw [dif_neg (show ¬index.val + 5 < 5 by omega)]
+    exact congrArg (roots node input true) (Fin.ext (by dsimp; omega))
+
+private theorem evaluate_fourSquares (rates : Rates n) (roots : Fin n → Bool → Bool → Fin 4 → SignedRatio)
+    (node : Fin n) (input upper : Bool) :
+    (fourSquares node input upper).evaluate (valuationOf rates roots) = squareSum (roots node input upper) := by
+  unfold fourSquares IntegerPolynomial.sumSquares squareSum
+  rw [IntegerPolynomial.evaluate_sum]
+  simp only [List.map_map, Function.comp_def, IntegerPolynomial.square, IntegerPolynomial.evaluate, valuationOf_witness]
+
+/-- The bounds for all the rows extend any realizing game to a zero of the
+single compiled polynomial. Witnesses are assembled over explicit finite
+index types, so no unrestricted choice is needed. -/
+theorem solvable_of_realizable (problem : Instance) (realized : problem.Realizable) : (compile problem).Solvable := by
+  obtain ⟨rates, holds⟩ := problem.realizable_iff_rates.mp realized
+  have rootWitnesses (node : Fin problem.count) (input upper : Bool) :
+      ∃ witnesses : Fin 4 → SignedRatio, (squareSum witnesses).Equiv
+        ((if upper then opposite (rates node input).val else (rates node input).val).toSignedRatio) :=
+    rational_squares _
+  obtain ⟨roots, rootsCorrect⟩ := finite_witnesses (fun node =>
+    bool_witnesses (fun input => bool_witnesses (rootWitnesses node input)))
+  let valuation := valuationOf rates roots
+  refine ⟨valuation, (IntegerPolynomial.sumSquares_zero_iff _ _).mpr ?_⟩
+  intro expression appearing
+  rcases List.mem_append.mp appearing with fromTie | fromBound
+  · obtain ⟨tie, member, rfl⟩ := List.mem_map.mp fromTie
+    exact (tieEquation_zero_iff valuation rates
+      (fun node input => by unfold valuation; rw [valuationOf_rate]; exact SignedRatio.equiv_refl _)
+      problem.graph tie).mpr (holds tie member)
+  · obtain ⟨node, _, fromRow⟩ := List.mem_flatMap.mp fromBound
+    have rowCorrect (input : Bool) (term : Polynomial problem.count) (member : term ∈ rowEquations node input) :
+        (term.evaluate valuation).Equiv .zero := by
+      rcases List.mem_cons.mp member with lower | rest
+      · subst term
+        change ((valuation (slot node input 0)).sub ((fourSquares node input false).evaluate valuation)).Equiv .zero
+        unfold valuation
+        rw [SignedRatio.sub_equiv_zero_iff, valuationOf_rate, evaluate_fourSquares]
+        exact SignedRatio.equiv_symm (rootsCorrect node input false)
+      · rcases List.mem_cons.mp rest with upper | impossible
+        · subst term
+          change ((SignedRatio.one.sub (valuation (slot node input 0))).sub
+            ((fourSquares node input true).evaluate valuation)).Equiv .zero
+          unfold valuation
+          rw [SignedRatio.sub_equiv_zero_iff, valuationOf_rate, evaluate_fourSquares]
+          exact SignedRatio.equiv_symm (SignedRatio.equiv_trans (rootsCorrect node input true)
+            (held_rate_toSignedRatio (rates node input)))
+        · cases impossible
+    rcases List.mem_append.mp fromRow with falseRow | trueRow
+    · exact rowCorrect false _ falseRow
+    · exact rowCorrect true _ trueRow
+
+/-- Exact rational realization is preserved and reflected by the
+computable reduction from unary ties to one integer polynomial. -/
+theorem compile_correct (problem : Instance) : (compile problem).Solvable ↔ problem.Realizable :=
+  ⟨realizable_of_solvable problem, solvable_of_realizable problem⟩
 
 end TiesToPolynomial
 end Thesis.Causality.QualitativeTies
