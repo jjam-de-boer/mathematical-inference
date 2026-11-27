@@ -10,18 +10,13 @@ open Probability
 A graph program may produce an observational expression, but that expression
 is not by itself evidence that a numerical answer is valid for the record
 being read.  This module makes the missing application boundary explicit.
-Every formula or bound names its source query, its class of generative SCMs,
-and its assignment-local domain.  Applying it requires actual membership
-and domain data.  Thus a caller cannot turn an arbitrary formula, an empty
-model class, or an unproved pair of endpoints into an accepted answer.
-
-The domain lives in `Type`: support witnesses retain the displayed rational
-value and are constructed by inspecting the finite computation.  No choice
-of a witness from a mere existence proposition is needed.  Domains may
-express additional mechanism restrictions or local support, but those
-restrictions remain visible parts of the certificate.  In particular,
-conditioning a mode's belief does not silently change the class of models
-for which a population-identification certificate was proved.
+The model class is a type index supplied by the consumer of the proof.
+Formula soundness ranges over every member where the source and the printed
+observational formula are defined. An optional replacement must additionally
+prove that its formula is defined everywhere the source is supported.
+Bounds cover every supported source value in the class. An answer cannot
+supply a private model class or an answer-dependent domain to narrow either
+obligation.
 
 Certificates are independent of any particular identification engine.  The
 transport layer supplies adapters from the existing do-calculus proofs;
@@ -32,32 +27,40 @@ only with undefined, and a supported zero remains a genuine numerical value.
 
 variable {S : ObservedSignature.{0}}
 
-/-- A formula valid for `source` throughout an explicitly named class and
-on an explicit local application domain.  `actionFree` licenses reading
-the formula from the observational law rather than the hidden mechanisms. -/
-structure FormulaCertificate (source : ProbabilityTerm S) where
-  models : ExactModel S → Prop
-  domain : (model : ExactModel S) → S.Assignment → Type
+/-- An observational formula valid throughout the declared class on the
+common support of the source query and the formula's used conditionals. -/
+structure FormulaCertificate (source : ProbabilityTerm S) (models : ExactModel S → Prop) where
   formula : ProbabilityTerm S
   actionFree : formula.ActionFree
-  sound : ∀ model, models model → ∀ reference, domain model reference →
-    ProbabilityTerm.EquivalentAt model source formula reference
+  sound : ∀ model, models model → ∀ reference,
+    source.SupportedAt model reference → formula.SupportedAt model reference →
+      ProbabilityTerm.EquivalentAt model source formula reference
 
 namespace FormulaCertificate
 
-/-- A certificate together with evidence that this particular model and
-reference lie inside its stated scope.  Empty classes therefore cannot be
-used to manufacture an answer about a model outside the class. -/
+/-- A replacement covers the query's full supported domain in the class.
+Its own formula's support cannot select which source instances it certifies. -/
+structure Total (source : ProbabilityTerm S) (models : ExactModel S → Prop) where
+  certificate : FormulaCertificate source models
+  defined : ∀ model, models model → ∀ reference, source.SupportedAt model reference →
+    certificate.formula.SupportedAt model reference
+
+/-- Applying a formula requires class membership and both support witnesses.
+These checks keep an undefined conditioner out of the identified branch. -/
 structure At (source : ProbabilityTerm S) (model : ExactModel S)
-    (reference : S.Assignment) where
-  certificate : FormulaCertificate source
-  member : certificate.models model
-  application : certificate.domain model reference
+    (reference : S.Assignment)
+    (models : ExactModel S → Prop := fun candidate => HasProjectedGraph candidate model.observedGraph)
+    where
+  certificate : FormulaCertificate source models
+  member : models model
+  sourceSupported : source.SupportedAt model reference
+  formulaSupported : certificate.formula.SupportedAt model reference
 
 /-- Read only the observational table of the admitted generative model.
 The result remains partial so an undefined expression is never completed. -/
 def At.value {source : ProbabilityTerm S} {model : ExactModel S}
-    {reference : S.Assignment} (answer : At source model reference) :
+    {reference : S.Assignment} {models : ExactModel S → Prop}
+    (answer : At source model reference models) :
     ProbabilityResult.Result :=
   answer.certificate.formula.observationalDenote model.observationalDist reference
 
@@ -65,9 +68,11 @@ def At.value {source : ProbabilityTerm S} {model : ExactModel S}
 its class-wide theorem; the second is the intrinsic action-free evaluation
 lemma, which justifies replacing SCM interpretation by the observed table. -/
 noncomputable def At.correct {source : ProbabilityTerm S} {model : ExactModel S}
-    {reference : S.Assignment} (answer : At source model reference) :
+    {reference : S.Assignment} {models : ExactModel S → Prop}
+    (answer : At source model reference models) :
     ProbabilityResult.Equivalent (source.denote model reference) answer.value := by
-  have agreement := answer.certificate.sound model answer.member reference answer.application
+  have agreement := answer.certificate.sound model answer.member reference
+    answer.sourceSupported answer.formulaSupported
   have observed := ProbabilityTerm.observationalDenote_eq_scm model
     answer.certificate.formula answer.certificate.actionFree reference
   unfold At.value
@@ -79,46 +84,48 @@ end FormulaCertificate
 /-- A class-wide enclosure for the same source query.  The bound theorem
 quantifies over every supported value, so it is independent of the choice
 of unreduced rational presentation.  Endpoints are not trusted input data. -/
-structure BoundsCertificate (source : ProbabilityTerm S) where
-  models : ExactModel S → Prop
-  domain : (model : ExactModel S) → S.Assignment → Type
+structure BoundsCertificate (source : ProbabilityTerm S) (models : ExactModel S → Prop) where
   lower : QProb
   upper : QProb
-  valid : ∀ model, models model → ∀ reference, domain model reference →
+  valid : ∀ model, models model → ∀ reference,
     ∀ value, ProbabilityResult.Equivalent (source.denote model reference) (some value) →
       QProb.LE lower value ∧ QProb.LE value upper
 
 namespace BoundsCertificate
 
-/-- Applying bounds requires both class/domain membership and a defined
+/-- Applying bounds requires class membership and a defined
 target.  An unsupported conditioner cannot be enclosed by invented numbers. -/
 structure At (source : ProbabilityTerm S) (model : ExactModel S)
-    (reference : S.Assignment) where
-  certificate : BoundsCertificate source
-  member : certificate.models model
-  application : certificate.domain model reference
+    (reference : S.Assignment)
+    (models : ExactModel S → Prop := fun candidate => HasProjectedGraph candidate model.observedGraph)
+    where
+  certificate : BoundsCertificate source models
+  member : models model
   supported : source.SupportedAt model reference
 
 /-- The actual supported source value lies between the certified endpoints.
 This is the evidence carried alongside the displayed interval. -/
 theorem At.correct {source : ProbabilityTerm S} {model : ExactModel S}
-    {reference : S.Assignment} (answer : At source model reference) :
+    {reference : S.Assignment} {models : ExactModel S → Prop}
+    (answer : At source model reference models) :
     QProb.LE answer.certificate.lower answer.supported.1 ∧
       QProb.LE answer.supported.1 answer.certificate.upper :=
-  answer.certificate.valid model answer.member reference answer.application
+  answer.certificate.valid model answer.member reference
     answer.supported.1 answer.supported.2
 
 end BoundsCertificate
 
-/-- A certified public answer keeps its query, model and reference as type
-indices.  Diagnostic outcomes carry no numerical assertion.  `identified`
+/-- A certified public answer keeps its query, model, reference and model class
+as type indices.  Diagnostic outcomes carry no numerical assertion.  `identified`
 retains the whole formula certificate, including its class and local domain;
 `bounded` retains its bound proof.  Display projections may discard those
 proofs, but they are never an alternative constructor for a certified answer. -/
 inductive Answer (source : ProbabilityTerm S) (model : ExactModel S)
-    (reference : S.Assignment) where
-  | identified (evidence : FormulaCertificate.At source model reference)
-  | bounded (evidence : BoundsCertificate.At source model reference)
+    (reference : S.Assignment)
+    (models : ExactModel S → Prop := fun candidate => HasProjectedGraph candidate model.observedGraph)
+    where
+  | identified (evidence : FormulaCertificate.At source model reference models)
+  | bounded (evidence : BoundsCertificate.At source model reference models)
   | undefined
   | failed (failure : IdentificationFail S)
   | unfinished
@@ -129,21 +136,24 @@ namespace Answer
 /-- Recognize a certified formula branch without erasing the certificate
 from the answer itself. Diagnostic and interval branches are kept distinct. -/
 def isIdentified {source : ProbabilityTerm S} {model : ExactModel S}
-    {reference : S.Assignment} : Answer source model reference → Bool
+    {reference : S.Assignment} {models : ExactModel S → Prop} :
+    Answer source model reference models → Bool
   | .identified _ => true
   | _ => false
 
 /-- Read the numerical component only from a class-certified formula. An
 undefined expression remains `none`, independently of its graph provenance. -/
 def identifiedValue {source : ProbabilityTerm S} {model : ExactModel S}
-    {reference : S.Assignment} : Answer source model reference → Option QProb
+    {reference : S.Assignment} {models : ExactModel S → Prop} :
+    Answer source model reference models → Option QProb
   | .identified evidence => evidence.value
   | _ => none
 
 /-- A declared experimental-access miss makes no assertion about whether
 the same query is graphically identifiable in some other epistemic policy. -/
 def isModeUnsupported {source : ProbabilityTerm S} {model : ExactModel S}
-    {reference : S.Assignment} : Answer source model reference → Bool
+    {reference : S.Assignment} {models : ExactModel S → Prop} :
+    Answer source model reference models → Bool
   | .modeUnsupported => true
   | _ => false
 

@@ -22,9 +22,11 @@ original population graph identified it.  Direct evaluation under the fully
 specified mode is a third, explicitly model-conditional operation: a computed
 answer in that one model is never promoted to class-wide identification.
 
-Formula replacements and bound fallbacks are accepted only with certificates
-already applied to this exact source, model and reference.  There is no path
-from raw formula syntax or a pair of rational endpoints to a certified answer.
+Replacement formulas and bounds must cover the projected graph class and
+every supported instance of the requested source query. Guarded-ID's own
+formula remains usable on its proved local support. At the requested model
+and reference the adapter uses unconditional support for joint queries
+and checks the conditioner for conditional queries.
 -/
 
 variable {S : ObservedSignature.{0}}
@@ -44,12 +46,10 @@ it need not require positivity of the complete observational joint. -/
 noncomputable def jointFormulaCertificate (graph : ObservedGraph S)
     (query : JointKernelQuery S) {term : ProbabilityTerm S}
     (result : identifyGuardedJointKernel graph query = .identified term) :
-    FormulaCertificate query.sourceTerm where
-  models := fun model => HasProjectedGraph model graph
-  domain := fun model reference => term.SupportedAt model reference
+    FormulaCertificate query.sourceTerm (fun model => HasProjectedGraph model graph) where
   formula := term
   actionFree := identifyGuardedJointKernel_identified_actionFree graph query result
-  sound := fun model member reference supported =>
+  sound := fun model member reference _sourceSupported supported =>
     identifyGuardedJointKernel_soundAt_of_printed_support query result model member reference supported
 
 /-- Conditional certification additionally keeps the original causal
@@ -58,15 +58,12 @@ for a target that was never defined in the intervened model. -/
 noncomputable def conditionalFormulaCertificate (graph : ObservedGraph S)
     (query : ConditionalKernelQuery S) {term : ProbabilityTerm S}
     (result : identifyGuardedConditionalKernel graph query = .identified term) :
-    FormulaCertificate query.sourceTerm where
-  models := fun model => HasProjectedGraph model graph
-  domain := fun model reference =>
-    query.sourceTerm.SupportedAt model reference × term.SupportedAt model reference
+    FormulaCertificate query.sourceTerm (fun model => HasProjectedGraph model graph) where
   formula := term
   actionFree := identifyGuardedConditionalKernel_identified_actionFree graph query result
-  sound := fun model member reference supported =>
+  sound := fun model member reference sourceSupported printedSupported =>
     identifyGuardedConditionalKernel_soundAt_of_printed_support query result model member reference
-      supported.1 supported.2
+      sourceSupported printedSupported
 
 namespace ModeQueryPolicy
 
@@ -75,26 +72,29 @@ extensions. Every successful numerical branch retains the theorem that
 licenses it; diagnostic branches make no numerical causal assertion. -/
 noncomputable def identifyJoint (policy : ModeQueryPolicy S) (query : JointKernelQuery S)
     (reference : S.Assignment)
-    (bounds : Option (BoundsCertificate.At query.sourceTerm policy.mode.model reference))
-    (replacement : Option (FormulaCertificate.At query.sourceTerm policy.mode.model reference)) :
+    (bounds : Option (BoundsCertificate query.sourceTerm
+      (fun model => HasProjectedGraph model policy.graph)))
+    (replacement : Option (FormulaCertificate.Total query.sourceTerm
+      (fun model => HasProjectedGraph model policy.graph))) :
     Answer query.sourceTerm policy.mode.model reference :=
   if policy.jointAdmissible query then
     match replacement with
     | some evidence =>
-        match evidence.value with
-        | none => .undefined
-        | some _ => .identified evidence
+        let supported := query.supportedAt policy.mode.model reference
+        .identified ⟨evidence.certificate, fun _ _ => rfl, supported,
+          evidence.defined policy.mode.model (fun _ _ => rfl) reference supported⟩
     | none =>
         match result : identifyGuardedJointKernel policy.graph query with
         | .identified term =>
             match term.supported? policy.mode.model reference with
             | none => .undefined
-            | some supported =>
+            | some printedSupported =>
                 .identified ⟨jointFormulaCertificate policy.graph query result,
-                  fun _ _ => rfl, supported⟩
+                  fun _ _ => rfl, query.supportedAt policy.mode.model reference, printedSupported⟩
         | .failed failure =>
             match bounds with
-            | some evidence => .bounded evidence
+            | some evidence =>
+                .bounded ⟨evidence, fun _ _ => rfl, query.supportedAt policy.mode.model reference⟩
             | none => .failed failure
         | .unfinished => .unfinished
   else .modeUnsupported
@@ -104,7 +104,8 @@ boundary, and checks both source and printed support before accepting a
 numerical result. Bounds are meaningful only when their target is defined. -/
 noncomputable def identifyConditional (policy : ModeQueryPolicy S)
     (query : ConditionalKernelQuery S) (reference : S.Assignment)
-    (bounds : Option (BoundsCertificate.At query.sourceTerm policy.mode.model reference)) :
+    (bounds : Option (BoundsCertificate query.sourceTerm
+      (fun model => HasProjectedGraph model policy.graph))) :
     Answer query.sourceTerm policy.mode.model reference :=
   if policy.conditionalAdmissible query then
     match result : identifyGuardedConditionalKernel policy.graph query with
@@ -113,11 +114,14 @@ noncomputable def identifyConditional (policy : ModeQueryPolicy S)
           term.supported? policy.mode.model reference with
         | some sourceSupported, some printedSupported =>
             .identified ⟨conditionalFormulaCertificate policy.graph query result,
-              fun _ _ => rfl, ⟨sourceSupported, printedSupported⟩⟩
+              fun _ _ => rfl, sourceSupported, printedSupported⟩
         | _, _ => .undefined
     | .failed failure =>
         match bounds with
-        | some evidence => .bounded evidence
+        | some evidence =>
+            match query.sourceTerm.supported? policy.mode.model reference with
+            | some supported => .bounded ⟨evidence, fun _ _ => rfl, supported⟩
+            | none => .undefined
         | none => .failed failure
     | .unfinished => .unfinished
   else .modeUnsupported
@@ -144,8 +148,10 @@ def evaluateCurrentJoint (policy : ModeQueryPolicy S)
 action is a policy result, independently of its graphical identifiability. -/
 theorem identifyJoint_modeUnsupported (policy : ModeQueryPolicy S)
     (query : JointKernelQuery S) (reference : S.Assignment)
-    (bounds : Option (BoundsCertificate.At query.sourceTerm policy.mode.model reference))
-    (replacement : Option (FormulaCertificate.At query.sourceTerm policy.mode.model reference))
+    (bounds : Option (BoundsCertificate query.sourceTerm
+      (fun model => HasProjectedGraph model policy.graph)))
+    (replacement : Option (FormulaCertificate.Total query.sourceTerm
+      (fun model => HasProjectedGraph model policy.graph)))
     (denied : policy.jointAdmissible query = false) :
     policy.identifyJoint query reference bounds replacement = .modeUnsupported := by
   simp [identifyJoint, denied]
@@ -158,8 +164,10 @@ namespace WorkspaceQueryPolicy
 The compact intervention note does not silently widen experimental access. -/
 noncomputable def identifyJoint (policy : WorkspaceQueryPolicy S)
     (query : JointKernelQuery S) (reference : S.Assignment)
-    (bounds : Option (BoundsCertificate.At query.sourceTerm policy.state.model reference))
-    (replacement : Option (FormulaCertificate.At query.sourceTerm policy.state.model reference)) :
+    (bounds : Option (BoundsCertificate query.sourceTerm
+      (fun model => HasProjectedGraph model policy.toQueryPolicy.graph)))
+    (replacement : Option (FormulaCertificate.Total query.sourceTerm
+      (fun model => HasProjectedGraph model policy.toQueryPolicy.graph))) :
     Answer query.sourceTerm policy.state.model reference :=
   policy.toQueryPolicy.identifyJoint query reference bounds replacement
 

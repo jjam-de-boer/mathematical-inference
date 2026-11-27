@@ -13,11 +13,10 @@ symmetric prior. With a symmetric prior one may reuse the original prior
 after transforming the data; asymmetric evidence is still allowed to break
 invariance of the posterior at the *fixed* dataset.
 
-The final section treats duplicate encodings as a probability pushforward.
-The mass of an equivalence class is the sum of the masses of its encodings;
-it is not silently reset to a uniform prior on whichever representatives
-happen to remain in a list. The same pushforward commutes with updating when
-the evidence depends only on the class.
+Choose a prior on equivalence classes before assigning mass to their
+encodings. Uniform splitting within each class preserves the entire class
+law, including zeros. The pushforward to classes also commutes with updating
+when the evidence depends only on the class.
 -/
 
 variable {G : Group} {H : Type u}
@@ -201,8 +200,8 @@ theorem aggregateClasses_pmf [DecidableEq Class] (prior : Distro H)
   exact prior.map_pmf classOf label
 
 /-- Updating encodings by a class-level likelihood and then aggregating is
-exactly updating the class prior. This is the operational protection against
-accidental duplication of equivalent representations in a catalogue. -/
+exactly updating the aggregated prior. To keep this prior independent of the
+number of encodings, start from a class law and use `splitClassPrior` below. -/
 theorem aggregateClasses_reweight (prior : Distro H) (classOf : H → Class)
     (weight : Class → Nat)
     (positive : 0 < natIntegral (aggregateClasses prior classOf).record.atoms weight) :
@@ -212,5 +211,129 @@ theorem aggregateClasses_reweight (prior : Distro H) (classOf : H → Class)
           natIntegral_map] using positive)) classOf =
       (aggregateClasses prior classOf).reweightNat weight positive :=
   prior.reweightNat_map classOf weight positive
+
+section ClassPrior
+
+open FiniteProbRecord
+variable {Class : Type v} [DecidableEq Class]
+
+/-- Each catalogue index appears once in the fibre of its declared class. -/
+private def classFibre (classOf : Fin n → Class) (label : Class) : List (Fin n) :=
+  (List.finRange n).filter (fun i => decide (classOf i = label))
+
+private theorem mem_classFibre (classOf : Fin n → Class) (label : Class) (i : Fin n) :
+    i ∈ classFibre classOf label ↔ classOf i = label := by
+  simp [classFibre]
+
+/-- The common integer scale clears the denominators of the uniform choices
+inside the fibres, without enumerating combinations of those choices. -/
+private def classSplitScale (classOf : Fin n → Class) : List (Class × Nat) → Nat
+  | [] => 1
+  | (label, _) :: rest => (classFibre classOf label).length * classSplitScale classOf rest
+
+private theorem classSplitScale_pos (classOf : Fin n → Class)
+    (represented : ∀ label, ∃ i, classOf i = label) (atoms : List (Class × Nat)) :
+    0 < classSplitScale classOf atoms := by
+  induction atoms with
+  | nil => exact Nat.zero_lt_succ 0
+  | cons atom rest ih =>
+      obtain ⟨i, same⟩ := represented atom.1
+      have nonempty := List.length_pos_of_mem ((mem_classFibre classOf atom.1 i).mpr same)
+      exact Nat.mul_pos nonempty ih
+
+/-- Replace a class atom with one equally weighted atom per encoding. Scale
+the old tail by the new fibre size so both parts use the same denominator. -/
+private def classSplitAtoms (classOf : Fin n → Class) : List (Class × Nat) → List (Fin n × Nat)
+  | [] => []
+  | (label, mass) :: rest =>
+      let fibre := classFibre classOf label
+      fibre.map (fun i => (i, mass * classSplitScale classOf rest)) ++
+        (classSplitAtoms classOf rest).map (fun atom => (atom.1, fibre.length * atom.2))
+
+omit [DecidableEq Class] in
+private theorem eventMass_fibre (classOf : Fin n → Class) (label : Class)
+    (indices : List (Fin n)) (inClass : ∀ i ∈ indices, classOf i = label)
+    (mass : Nat) (event : Event Class) :
+    eventMass (indices.map (fun i => (i, mass))) (fun i => event (classOf i)) =
+      if event label then indices.length * mass else 0 := by
+  induction indices with
+  | nil => simp [eventMass]
+  | cons i rest ih =>
+      have same := inClass i (List.mem_cons_self ..)
+      have tail := ih (fun j member => inClass j (List.mem_cons_of_mem _ member))
+      cases selected : event label <;>
+        simp [eventMass, same, selected, tail, Nat.add_mul, Nat.add_comm]
+
+private theorem eventMass_classSplitAtoms (classOf : Fin n → Class)
+    (atoms : List (Class × Nat)) (event : Event Class) :
+    eventMass (classSplitAtoms classOf atoms) (fun i => event (classOf i)) =
+      classSplitScale classOf atoms * eventMass atoms event := by
+  induction atoms with
+  | nil => rfl
+  | cons atom rest ih =>
+      rcases atom with ⟨label, mass⟩
+      simp only [classSplitAtoms, eventMass_append, eventMass_scale, ih]
+      rw [eventMass_fibre classOf label _ (fun i member => (mem_classFibre classOf label i).mp member)]
+      cases selected : event label <;>
+        simp only [classSplitScale, eventMass, selected, Bool.false_eq_true, if_false, if_true,
+          Nat.zero_add, Nat.mul_add] <;> ac_rfl
+
+/-- Give each class its declared prior mass, split uniformly over the
+indices with that label. A representation of the class prior requires a
+nonempty fibre for every declared class. The prior may give classes mass zero. -/
+def splitClassPrior (prior : Distro Class) (classOf : Fin n → Class)
+    (represented : ∀ label, ∃ i, classOf i = label) : Distro (Fin n) where
+  record :=
+    { atoms := classSplitAtoms classOf prior.record.atoms
+      den := classSplitScale classOf prior.record.atoms * prior.record.den
+      den_pos := Nat.mul_pos (classSplitScale_pos classOf represented _) prior.record.den_pos
+      total_mass := by
+        have mass := eventMass_classSplitAtoms classOf prior.record.atoms topEvent
+        change eventMass (classSplitAtoms classOf prior.record.atoms) topEvent = _ at mass
+        simpa only [eventMass_top, prior.record.total_mass] using mass }
+
+/-- Adding or removing equivalent encodings cannot change the mass of any
+class-level event, provided the presentation still has every class. -/
+theorem splitClassPrior_aggregate (prior : Distro Class) (classOf : Fin n → Class)
+    (represented : ∀ label, ∃ i, classOf i = label) :
+    (aggregateClasses (splitClassPrior prior classOf represented) classOf).SameLaw prior := by
+  intro event
+  have split := eventMass_classSplitAtoms classOf prior.record.atoms event
+  apply QProb.equiv_trans ((splitClassPrior prior classOf represented).map_probVal classOf event)
+  change eventMass (classSplitAtoms classOf prior.record.atoms) (fun i => event (classOf i)) *
+      prior.record.den = eventMass prior.record.atoms event *
+      (classSplitScale classOf prior.record.atoms * prior.record.den)
+  rw [split]
+  ac_rfl
+
+/-- Supported class-level evidence updates the original class prior whether
+computed on the class labels directly or through any encoding catalogue. -/
+theorem splitClassPrior_reweight (prior : Distro Class) (classOf : Fin n → Class)
+    (represented : ∀ label, ∃ i, classOf i = label) (weight : Class → Nat)
+    (positive : 0 < natIntegral prior.record.atoms weight) :
+    ∃ encodingPositive : 0 < natIntegral (splitClassPrior prior classOf represented).record.atoms
+        (fun i => weight (classOf i)),
+      (aggregateClasses ((splitClassPrior prior classOf represented).reweightNat
+        (fun i => weight (classOf i)) encodingPositive) classOf).SameLaw
+        (prior.reweightNat weight positive) := by
+  have priorAgreement := splitClassPrior_aggregate prior classOf represented
+  have aggregatePositive : 0 < natIntegral
+      (aggregateClasses (splitClassPrior prior classOf represented) classOf).record.atoms weight :=
+    (QProb.equiv_num_pos_iff (priorAgreement.expectNat weight)).mpr positive
+  refine ⟨by simpa only [aggregateClasses, Distro.map, FiniteProbRecord.map, natIntegral_map]
+    using aggregatePositive, ?_⟩
+  rw [aggregateClasses_reweight _ _ weight aggregatePositive]
+  exact priorAgreement.reweightNat weight aggregatePositive positive
+
+/-- Construct a catalogue with a prior defined on classes. Complexity or
+other prior information can be applied to the class law before the split.
+The class labels are supplied by the modeller. -/
+def catalogueOfClassPrior (item : Fin n → Hypothesis) (prior : Distro Class)
+    (classOf : Fin n → Class) (represented : ∀ label, ∃ i, classOf i = label) :
+    CatalogueInference.Catalogue n Hypothesis where
+  item := item
+  prior := splitClassPrior prior classOf represented
+
+end ClassPrior
 
 end Thesis.Causality.FiniteSymmetry

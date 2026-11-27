@@ -379,4 +379,54 @@ theorem split_presentation_update_commutes :
         (by decide +kernel) :=
   aggregateClasses_reweight splitPresentation hypothesisClass (likelihood true) (by decide +kernel)
 
+/-! ## Construct the encoding law from a fixed class prior -/
+
+private def unduplicatedClass (i : Fin 2) : Bool := decide (i.val = 1)
+
+private theorem twoClassesRepresented : ∀ label, ∃ i, unduplicatedClass i = label := by
+  intro label
+  cases label
+  · exact ⟨0, rfl⟩
+  · exact ⟨1, rfl⟩
+
+private theorem duplicatedClassesRepresented : ∀ label, ∃ i, hypothesisClass i = label := by
+  intro label
+  cases label
+  · exact ⟨0, rfl⟩
+  · exact ⟨2, rfl⟩
+
+private def unsplitCatalogue :=
+  catalogueOfClassPrior unduplicatedClass symmetricPrior unduplicatedClass twoClassesRepresented
+
+private def duplicatedCatalogue :=
+  catalogueOfClassPrior hypothesisClass symmetricPrior hypothesisClass duplicatedClassesRepresented
+
+/-- Duplicating the false class splits its fixed half into two quarters.
+The single encoding of the true class retains its half. -/
+theorem duplicated_catalogue_prior :
+    QProb.Equiv (unsplitCatalogue.prior.pmf 0) ⟨1, 2, by decide⟩ ∧
+    QProb.Equiv (duplicatedCatalogue.prior.pmf 0) ⟨1, 4, by decide⟩ ∧
+    QProb.Equiv (duplicatedCatalogue.prior.pmf 1) ⟨1, 4, by decide⟩ ∧
+    QProb.Equiv (duplicatedCatalogue.prior.pmf 2) ⟨1, 2, by decide⟩ := by
+  decide +kernel
+
+/-- Under one class-level likelihood the two catalogues return the same
+posterior class probabilities even though their index spaces differ. -/
+theorem duplicated_catalogue_posterior :
+    ((CatalogueInference.posterior? unsplitCatalogue.prior
+      (fun i => likelihood true (unduplicatedClass i))).map
+      (fun law => (aggregateClasses law unduplicatedClass).pmf true)).any
+      (fun p => decide (QProb.Equiv p ⟨3, 4, by decide⟩)) = true ∧
+    ((CatalogueInference.posterior? duplicatedCatalogue.prior
+      (fun i => likelihood true (hypothesisClass i))).map
+      (fun law => (aggregateClasses law hypothesisClass).pmf true)).any
+      (fun p => decide (QProb.Equiv p ⟨3, 4, by decide⟩)) = true := by
+  decide +kernel
+
+/-- A zero-mass class stays zero before and after splitting. -/
+theorem duplicate_zero_class :
+    QProb.Equiv ((splitClassPrior (Distro.pointMass true) hypothesisClass duplicatedClassesRepresented).pmf 0)
+      QProb.zero := by
+  decide +kernel
+
 end Thesis.Examples.FiniteSymmetry

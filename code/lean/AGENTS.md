@@ -134,8 +134,10 @@ The main implemented results are:
 - Public finished modes are an SCM plus current belief. Compact `do` (the
   workspace intervention field) and the modal stack live only on workspace
   records. Population query adapters read the generative prior and retain
-  model-class and local-domain certificates for formulas and bounds;
-  raw overrides cannot certify an answer. Any current belief has a
+  certificates indexed by the declared projected graph class. Supplied
+  replacements and bounds cover every supported query in that class.
+  Guarded identification retains its printed formula's local support.
+  Any current belief has a
   shared-response SCM preserving every hard-intervention event law,
   with a complete bidirected projection. The representation also preserves
   the supplied shared-unit coupling for finite counterfactual queries,
@@ -234,8 +236,9 @@ The main implemented results are:
   transport give equivariance of every interventional event law. Invariant
   complexity weights preserve invariant priors. Transforming the data and
   hypotheses together transports the posterior, even when a fixed dataset
-  breaks symmetry. Aggregating equivalent encodings sums their prior mass
-  and commutes with updating when likelihoods depend only on the class.
+  breaks symmetry. A class-level prior can be split uniformly among its
+  declared encodings, preserving the entire class law. Aggregation commutes
+  with updating when likelihoods depend only on the class.
 - A declared finite family of hard interventions (set some coordinates
   to a value; empty `do` is observation), optionally the host's full
   finite list with an explicit cap on number of targets, can be searched
