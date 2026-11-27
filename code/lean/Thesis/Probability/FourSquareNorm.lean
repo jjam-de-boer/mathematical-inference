@@ -36,6 +36,9 @@ def product (a b : Quad) : Quad :=
 /-- Euler's identity by polynomial normalization over the integers. -/
 theorem norm_product (a b : Quad) : (a.product b).norm = a.norm * b.norm := by
   simp only [norm, product]
+  -- Negate the decidable goal explicitly so the arithmetic solver starts at False.
+  apply Decidable.byContradiction
+  intro contradiction
   grind
 
 def scale (a : Quad) (factor : Int) : Quad :=
@@ -43,6 +46,8 @@ def scale (a : Quad) (factor : Int) : Quad :=
 
 theorem norm_scale (a : Quad) (factor : Int) : (a.scale factor).norm = factor * factor * a.norm := by
   simp only [norm, scale]
+  apply Decidable.byContradiction
+  intro contradiction
   grind
 
 /-- Coordinatewise congruence modulo a supplied integer. -/
@@ -70,8 +75,11 @@ theorem product_dvd_of_congruent (a b : Quad) (modulus : Int)
   simp only [scale, product, first, second, third, fourth, Quad.mk.injEq]
   constructor
   · rw [Int.mul_add, Int.mul_add, Int.mul_add, Int.mul_add, normalized]
+    apply Decidable.byContradiction
+    intro contradiction
     grind
-  · exact ⟨by grind, by grind, by grind⟩
+  · refine ⟨?_, ?_, ?_⟩ <;>
+      (apply Decidable.byContradiction; intro contradiction; grind)
 
 end Quad
 end Thesis.Probability.FourSquareNorm

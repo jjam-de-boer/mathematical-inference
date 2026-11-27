@@ -23,6 +23,9 @@ def pair : Nat → Nat × Nat
 private theorem norm_step (a b : Nat) (norm : a * a = 2 * (b * b) + 1) :
     (3 * a + 4 * b) * (3 * a + 4 * b) =
       2 * ((2 * a + 3 * b) * (2 * a + 3 * b)) + 1 := by
+  -- Negate the decidable goal explicitly so the arithmetic solver starts at False.
+  apply Decidable.byContradiction
+  intro contradiction
   grind
 
 /-- Writing the norm identity without natural subtraction lets both sides
