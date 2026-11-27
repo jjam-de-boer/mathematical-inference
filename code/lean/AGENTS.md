@@ -199,9 +199,13 @@ The main implemented results are:
   for each repetition need not give one finite supply for all repetitions
   (`Thesis.Examples.PetriWordRequirements`,
   `Thesis.Examples.PetriWordCompletion` and
-  `Thesis.Examples.PetriControlWordCompletion`). These results do not decide
-  exact reachability. Token-balance equations can be feasible while no
-  execution reaches the requested marking.
+  `Thesis.Examples.PetriControlWordCompletion`). Partial exact endpoints
+  reduce to ordinary exact reachability, including fixed initial and final
+  control states. Setup and cleanup change only unspecified counters.
+  Encoding followed by decoding recovers the literal original word and both
+  concrete markings (`Thesis.Examples.PetriExactEndpoints`). The reduction
+  requires a separate exact-reachability solver. Token-balance equations
+  can be feasible while no execution reaches the requested marking.
 - Exact undefined/zero/positive support analysis for the current formula and
   guard languages, finite causal support-profile coverage, and checked bounded
   proof enumeration and formula selection. A supplied checked query trace
