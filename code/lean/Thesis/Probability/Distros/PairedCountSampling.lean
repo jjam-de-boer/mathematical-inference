@@ -33,6 +33,37 @@ def iidWordDistro (law : Distro Ω) : Nat → Distro (List Ω)
   | 0 => Distro.pointMass []
   | n + 1 => (law.product (iidWordDistro law n)).map (fun pair => pair.1 :: pair.2)
 
+/-- Equal finite laws produce equal laws of ordered IID histories, including
+when the input records use different weights for the same rational law. -/
+theorem iidWordDistro_sameLaw {left right : Distro Ω} (same : left.SameLaw right)
+    (trials : Nat) : (iidWordDistro left trials).SameLaw (iidWordDistro right trials) := by
+  induction trials with
+  | zero => exact fun _ => QProb.equiv_refl _
+  | succ trials ih =>
+    exact (same.product ih).map (fun pair => pair.1 :: pair.2)
+
+/-- Relabelling each draw commutes with independently sampling a fixed
+finite law. The conclusion concerns the full word law, before counting. -/
+theorem iidWordDistro_map (law : Distro Ω) (rename : Ω → X) (trials : Nat) :
+    (iidWordDistro (law.map rename) trials).SameLaw
+      ((iidWordDistro law trials).map (List.map rename)) := by
+  induction trials with
+  | zero => exact fun _ => QProb.equiv_refl _
+  | succ trials ih =>
+    intro event
+    let cons := fun pair : X × List X => pair.1 :: pair.2
+    let sameHead : (law.map rename).SameLaw (law.map rename) := fun _ => QProb.equiv_refl _
+    refine QProb.equiv_trans (Distro.map_probVal _ _ _) ?_
+    refine QProb.equiv_trans ((sameHead.product ih) (fun pair => event (cons pair))) ?_
+    refine QProb.equiv_trans (FiniteProbRecord.product_map_right_probVal
+      (law.map rename).record (iidWordDistro law trials).record (List.map rename)
+      (fun pair => event (cons pair))) ?_
+    refine QProb.equiv_trans (FiniteProbRecord.product_map_left_probVal
+      law.record (iidWordDistro law trials).record rename
+      (fun pair => event (cons (pair.1, pair.2.map rename)))) ?_
+    exact QProb.equiv_symm (QProb.equiv_trans (Distro.map_probVal _ _ _)
+      (Distro.map_probVal _ _ _))
+
 /-- Counts in the caller's declared label order. Observable labels, rather
 than atom occurrences, are counted, so repeated record labels are combined.
 Clients that describe a complete joint table supply distinct exhaustive labels. -/

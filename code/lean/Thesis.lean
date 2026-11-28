@@ -1,6 +1,7 @@
 import Thesis.Examples.FiniteSymmetry
 import Thesis.Examples.CausalAbstractionSynthesis
 import Thesis.Examples.CausalAbstractionInverse
+import Thesis.Examples.CatalogueIIDSymmetry
 import Thesis.Examples.InferenceWorkflow
 import Thesis.Examples.CatalogueSampling
 import Thesis.Examples.CurrentBeliefInference
