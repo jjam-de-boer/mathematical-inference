@@ -4,6 +4,7 @@ import Thesis.CausalTransport.CatalogueIIDSymmetry
 import Thesis.CausalTransport.CausalAbstractionSynthesis
 import Thesis.CausalTransport.CausalAbstractionInverse
 import Thesis.CausalTransport.CausalAbstractionInverseConditional
+import Thesis.CausalTransport.LocalSCMReplacement
 import Thesis.CausalTransport.CatalogueSampling
 import Thesis.CausalTransport.CertifiedModeInference
 import Thesis.CausalTransport.DSeparation
