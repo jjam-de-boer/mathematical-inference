@@ -188,5 +188,8 @@ theorem Infeasibility.not_real (certificate : Infeasibility variables rows) :
   | projected rows previous ih =>
       rintro ⟨values, valid⟩
       exact ih ⟨fun i => values i.castSucc, real_project_sound rows values valid⟩
+  | subsystem rows smaller subset previous ih =>
+      rintro ⟨values, valid⟩
+      exact ih ⟨values, fun row listed => valid row (subset row listed)⟩
 
 end Thesis.Probability.Distros.RationalLinear
