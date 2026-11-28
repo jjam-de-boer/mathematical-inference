@@ -2,6 +2,7 @@ import Thesis.CausalTransport.CertifiedModeComputation
 import Thesis.CausalTransport.CatalogueSymmetry
 import Thesis.CausalTransport.CausalAbstractionSynthesis
 import Thesis.CausalTransport.CausalAbstractionInverse
+import Thesis.CausalTransport.CausalAbstractionInverseConditional
 import Thesis.CausalTransport.CatalogueSampling
 import Thesis.CausalTransport.CertifiedModeInference
 import Thesis.CausalTransport.DSeparation

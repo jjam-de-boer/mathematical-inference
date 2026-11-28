@@ -1,4 +1,5 @@
 import Thesis.Causality.CausalAbstractionProtocol
+import Thesis.Causality.Counterfactual
 import Thesis.Causality.SharedResponseModel
 import Thesis.Probability.Distros.PartialMomentBounds
 
@@ -35,6 +36,100 @@ structure Measurement (coarse : ObservedSignature.{0}) where
 
 structure Specification (fine coarse : ObservedSignature.{0}) extends Protocol fine coarse where
   measurements : List (Measurement coarse)
+
+/-- Both kinds of query are evaluated on one response table per unit. In a
+multiworld formula all intervention atoms refer to that same table. -/
+inductive EventQuery (fine : ObservedSignature.{0}) where
+  | intervention (action : HardIntervention fine) (event : Event fine.Assignment)
+  | counterfactual (event : CounterfactualEvent fine)
+  | conj (left right : EventQuery fine)
+
+namespace EventQuery
+
+private def tableHolds (table : Table fine) : CounterfactualEvent fine → Bool
+  | .truth => true
+  | .falsity => false
+  | .atom atom => decide (SharedResponse.eval fine atom.action table atom.node = atom.value)
+  | .conj left right => tableHolds table left && tableHolds table right
+  | .disj left right => tableHolds table left || tableHolds table right
+  | .neg event => !(tableHolds table event)
+
+private theorem holds_eq_tableHolds (event : CounterfactualEvent fine)
+    (model : ExactModel fine) (unit : model.latent.Assignment) (table : Table fine)
+    (agrees : ∀ action, model.evalUnder action unit = SharedResponse.eval fine action table) :
+    event.holds model unit = tableHolds table event := by
+  induction event with
+  | truth => rfl
+  | falsity => rfl
+  | atom atom => simp only [CounterfactualEvent.holds, CounterfactualAtom.holds, tableHolds, agrees]
+  | conj left right leftIH rightIH => simp only [CounterfactualEvent.holds, tableHolds, leftIH, rightIH]
+  | disj left right leftIH rightIH => simp only [CounterfactualEvent.holds, tableHolds, leftIH, rightIH]
+  | neg inner ih => simp only [CounterfactualEvent.holds, tableHolds, ih]
+
+def onTable : EventQuery fine → Event (Table fine)
+  | .intervention a event => fun table => event (SharedResponse.eval fine a.value table)
+  | .counterfactual event => fun table => tableHolds table event
+  | .conj left right => fun table => left.onTable table && right.onTable table
+
+def holds (query : EventQuery fine) (model : ExactModel fine) : Event model.latent.Assignment :=
+  match query with
+  | .intervention a event => fun unit => event (model.evalUnder a.value unit)
+  | .counterfactual event => event.holds model
+  | .conj left right => fun unit => left.holds model unit && right.holds model unit
+
+/-- Native semantics at an actual model, independent of the solver. -/
+def value (query : EventQuery fine) (model : ExactModel fine) : QProb :=
+  match query with
+  | .intervention a event => model.interventionalValue a.value event
+  | .counterfactual event => model.prior.probVal (event.holds model)
+  | .conj left right => model.prior.probVal ((conj left right).holds model)
+
+theorem value_eq_probVal (query : EventQuery fine) (model : ExactModel fine) :
+    QProb.Equiv (query.value model) (model.prior.probVal (query.holds model)) := by
+  cases query with
+  | intervention a event => exact model.interventionalValue_eq a.value event
+  | counterfactual _ => exact QProb.equiv_refl _
+  | conj _ _ => exact QProb.equiv_refl _
+
+/-- Pointwise execution suffices for an entire Boolean multiworld formula. -/
+theorem holds_eq_onTable (query : EventQuery fine) (model : ExactModel fine)
+    (unit : model.latent.Assignment) (table : Table fine)
+    (agrees : ∀ action, model.evalUnder action unit = SharedResponse.eval fine action table) :
+    query.holds model unit = query.onTable table := by
+  induction query with
+  | intervention a event => exact congrArg event (agrees a.value)
+  | counterfactual event => exact holds_eq_tableHolds event model unit table agrees
+  | conj left right leftIH rightIH => simp only [holds, onTable, leftIH, rightIH]
+
+theorem holds_responseOf (query : EventQuery fine) (model : ExactModel fine)
+    (unit : model.latent.Assignment) :
+    query.holds model unit = query.onTable (SharedResponse.responseOf fine model unit) :=
+  query.holds_eq_onTable model unit _ (fun action =>
+    (SharedResponse.eval_responseOf fine model unit action).symm)
+
+theorem holds_model (query : EventQuery fine) (law : FiniteProbRecord (Table fine))
+    (unit : (SharedResponse.latent fine).Assignment) :
+    query.holds (SharedResponse.model fine law) unit = query.onTable (unit (SharedResponse.root fine)) :=
+  query.holds_eq_onTable (SharedResponse.model fine law) unit _ (fun action =>
+    SharedResponse.model_eval fine law action unit)
+
+theorem value_of_responseLaw (query : EventQuery fine) (law : FiniteProbRecord (Table fine)) :
+    QProb.Equiv (query.value (SharedResponse.model fine law)) (law.probVal query.onTable) :=
+  QProb.equiv_trans (query.value_eq_probVal (SharedResponse.model fine law))
+    (QProb.equiv_trans ((SharedResponse.model fine law).prior.probVal_congr (query.holds _)
+      (fun unit => query.onTable (unit (SharedResponse.root fine))) (query.holds_model law))
+      (law.map_probVal (fun table _ => table)
+        (fun unit : (SharedResponse.latent fine).Assignment => query.onTable (unit (SharedResponse.root fine)))))
+
+theorem responseLaw_value (query : EventQuery fine) (model : ExactModel fine) :
+    QProb.Equiv ((SharedResponse.lawOf fine model).probVal query.onTable) (query.value model) :=
+  QProb.equiv_trans (model.prior.map_probVal (SharedResponse.responseOf fine model) query.onTable)
+    (QProb.equiv_trans (model.prior.probVal_congr
+      (fun unit => query.onTable (SharedResponse.responseOf fine model unit)) (query.holds model)
+      (fun unit => (query.holds_responseOf model unit).symm))
+      (QProb.equiv_symm (query.value_eq_probVal model)))
+
+end EventQuery
 
 namespace Specification
 
@@ -157,27 +252,24 @@ theorem infeasible_not_exists (spec : Specification fine coarse)
     ⟨law, spec.table_support law, (spec.moments_iff_responseFits law).mpr
       (spec.responseFits_of_fits model fits)⟩
 
-/-- Sharp bounds in the original fine model class. The two endpoints
-retain actual models and proofs that each fits the coarse laws. -/
-structure SharpBounds (spec : Specification fine coarse) (a : HardIntervention fine)
-    (event : Event fine.Assignment) where
+/-- Sharp bounds in the original fine model class. The endpoint models
+are both compatible with the coarse laws and attain the reported values. -/
+structure QueryBounds (spec : Specification fine coarse) (query : EventQuery fine) where
   lower : SignedRatio
   upper : SignedRatio
   lowerModel : ExactModel fine
   upperModel : ExactModel fine
   lowerFits : spec.Fits lowerModel
   upperFits : spec.Fits upperModel
-  lowerAttained : SignedRatio.Equiv (lowerModel.interventionalValue a.value event).toSignedRatio lower
-  upperAttained : SignedRatio.Equiv (upperModel.interventionalValue a.value event).toSignedRatio upper
+  lowerAttained : SignedRatio.Equiv (query.value lowerModel).toSignedRatio lower
+  upperAttained : SignedRatio.Equiv (query.value upperModel).toSignedRatio upper
   bounds : ∀ model, spec.Fits model →
-    SignedRatio.LE lower (model.interventionalValue a.value event).toSignedRatio ∧
-    SignedRatio.LE (model.interventionalValue a.value event).toSignedRatio upper
+    SignedRatio.LE lower (query.value model).toSignedRatio ∧
+    SignedRatio.LE (query.value model).toSignedRatio upper
 
-def boundsOfMoment (spec : Specification fine coarse) (a : HardIntervention fine)
-    (event : Event fine.Assignment)
-    (sharp : spec.problem.SharpBounds
-      (eventResponse (fun table => event (SharedResponse.eval fine a.value table)))) :
-    spec.SharpBounds a event where
+def queryBoundsOfMoment (spec : Specification fine coarse) (query : EventQuery fine)
+    (sharp : spec.problem.SharpBounds (eventResponse query.onTable)) :
+    spec.QueryBounds query where
   lower := sharp.lower
   upper := sharp.upper
   lowerModel := spec.fittedModel sharp.lowerLaw
@@ -185,52 +277,60 @@ def boundsOfMoment (spec : Specification fine coarse) (a : HardIntervention fine
   lowerFits := spec.fittedModel_fits sharp.lowerLaw
   upperFits := spec.fittedModel_fits sharp.upperLaw
   lowerAttained := SignedRatio.equiv_trans
-    (QProb.toSignedRatio_congr (SharedResponse.model_interventionalValue fine _ a.value event))
-    sharp.event_lower_attained
+    (QProb.toSignedRatio_congr (query.value_of_responseLaw _)) sharp.event_lower_attained
   upperAttained := SignedRatio.equiv_trans
-    (QProb.toSignedRatio_congr (SharedResponse.model_interventionalValue fine _ a.value event))
-    sharp.event_upper_attained
+    (QProb.toSignedRatio_congr (query.value_of_responseLaw _)) sharp.event_upper_attained
   bounds := by
     intro model fits
     let law : Distro (Table fine) := ⟨SharedResponse.lawOf fine model⟩
     have bounded := sharp.event_bounds law (spec.table_support law)
       ((spec.moments_iff_responseFits law).mpr (spec.responseFits_of_fits model fits))
-    have preserved := QProb.toSignedRatio_congr
-      (SharedResponse.lawOf_interventionalValue fine model a.value event)
+    have preserved := QProb.toSignedRatio_congr (query.responseLaw_value model)
     exact ⟨(SignedRatio.le_congr (SignedRatio.equiv_refl _) preserved).mp bounded.1,
       (SignedRatio.le_congr preserved (SignedRatio.equiv_refl _)).mp bounded.2⟩
 
 /-- Coincident endpoints give a uniform value over the nonempty class. -/
-theorem SharpBounds.point {spec : Specification fine coarse} {a : HardIntervention fine}
-    {event : Event fine.Assignment} (sharp : spec.SharpBounds a event)
-    (same : SignedRatio.Equiv sharp.lower sharp.upper)
+theorem QueryBounds.point {spec : Specification fine coarse} {query : EventQuery fine}
+    (sharp : spec.QueryBounds query) (same : SignedRatio.Equiv sharp.lower sharp.upper)
     (model : ExactModel fine) (fits : spec.Fits model) :
-    SignedRatio.Equiv (model.interventionalValue a.value event).toSignedRatio sharp.lower := by
+    SignedRatio.Equiv (query.value model).toSignedRatio sharp.lower := by
   have bounded := sharp.bounds model fits
   exact SignedRatio.equiv_of_le_of_le
     ((SignedRatio.le_congr (SignedRatio.equiv_refl _) (SignedRatio.equiv_symm same)).mp
       bounded.2) bounded.1
 
-inductive Result (spec : Specification fine coarse) (a : HardIntervention fine)
-    (event : Event fine.Assignment) where
+inductive QueryResult (spec : Specification fine coarse) (query : EventQuery fine) where
   | invalid (reason : ¬ spec.Valid)
   | incompatible (valid : spec.Valid) (excluded : ¬ ∃ model : ExactModel fine, spec.Fits model)
-  | point (valid : spec.Valid) (sharp : spec.SharpBounds a event)
+  | point (valid : spec.Valid) (sharp : spec.QueryBounds query)
       (same : SignedRatio.Equiv sharp.lower sharp.upper)
-  | interval (valid : spec.Valid) (sharp : spec.SharpBounds a event)
+  | interval (valid : spec.Valid) (sharp : spec.QueryBounds query)
       (different : ¬ SignedRatio.Equiv sharp.lower sharp.upper)
 
-/-- Validate the experiment interface, then solve the inverse query exactly. -/
-def solve (spec : Specification fine coarse) (a : HardIntervention fine)
-    (event : Event fine.Assignment) : spec.Result a event :=
+/-- Validate the experiment interface, then solve the fine query exactly. -/
+def solveQuery (spec : Specification fine coarse) (query : EventQuery fine) : spec.QueryResult query :=
   if valid : spec.Valid then
-    match spec.problem.solveEventBounds (fun table => event (SharedResponse.eval fine a.value table)) with
+    match spec.problem.solveEventBounds query.onTable with
     | .infeasible certificate => .incompatible valid (spec.infeasible_not_exists certificate)
     | .bounded bounds =>
-        let sharp := spec.boundsOfMoment a event bounds
+        let sharp := spec.queryBoundsOfMoment query bounds
         if same : SignedRatio.Equiv sharp.lower sharp.upper then .point valid sharp same
         else .interval valid sharp same
   else .invalid valid
+
+abbrev SharpBounds (spec : Specification fine coarse) (a : HardIntervention fine)
+    (event : Event fine.Assignment) :=
+  spec.QueryBounds (.intervention a event)
+
+abbrev Result (spec : Specification fine coarse) (a : HardIntervention fine)
+    (event : Event fine.Assignment) :=
+  spec.QueryResult (.intervention a event)
+
+/-- Unconditional interventional queries use the same solver, with a
+one-world event as their response-table objective. -/
+def solve (spec : Specification fine coarse) (a : HardIntervention fine)
+    (event : Event fine.Assignment) : spec.Result a event :=
+  spec.solveQuery (.intervention a event)
 
 end Specification
 end Thesis.Causality.CausalAbstractionInverse
