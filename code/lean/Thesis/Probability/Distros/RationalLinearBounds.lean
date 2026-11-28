@@ -14,10 +14,23 @@ both bounds; it does not treat an unbounded projection as a finite interval.
 
 namespace Thesis.Probability.Distros.RationalLinear
 
+private def retainedOnly (row : Inequality (n + 1)) : Bool :=
+  decide (∀ i : Fin (n + 1), i.val ≠ 0 → row.coefficients i = 0)
+
+/-- Keep the literal objective bounds as well as the pruned system. Such
+rows have zero coefficient on every eliminated coordinate. -/
+private def pruneForObjective (rows : List (Inequality (n + 1))) : PrunedRows rows :=
+  let pruned := prune rows
+  ⟨rows.filter retainedOnly ++ pruned.rows,
+    fun row listed => (List.mem_append.mp listed).elim
+      (fun kept => (List.mem_filter.mp kept).1) (pruned.subset row),
+    fun values valid => pruned.restores values (fun row listed =>
+      valid row (List.mem_append_right _ listed))⟩
+
 /-- Keep the first coordinate and eliminate every remaining coordinate. -/
 def projectToOne : (others : Nat) → List (Inequality (others + 1)) → List (Inequality 1)
   | 0, rows => rows
-  | others + 1, rows => projectToOne others (project rows)
+  | others + 1, rows => projectToOne others (pruneForObjective (project rows)).rows
 
 def oneValues (value : SignedRatio) : Fin 1 → SignedRatio := extend (fun i => Fin.elim0 i) value
 
@@ -34,9 +47,11 @@ theorem projectToOne_sound (others : Nat) (rows : List (Inequality (others + 1))
   induction others with
   | zero => simpa only [projectToOne, oneValues_restrict] using valid
   | succ others ih =>
-      apply ih (project rows) (fun i => values i.castSucc)
-      apply project_sound rows _ (values (Fin.last _))
-      simpa only [extend_restrict] using valid
+      apply ih (pruneForObjective (project rows)).rows (fun i => values i.castSucc)
+      have projected := project_sound rows (fun i => values i.castSucc) (values (Fin.last _))
+        (by simpa only [extend_restrict] using valid)
+      intro row listed
+      exact projected row ((pruneForObjective (project rows)).subset row listed)
 
 /-- Lift a retained objective value back to a complete satisfying assignment. -/
 def liftFromOne : (others : Nat) → (rows : List (Inequality (others + 1))) →
@@ -44,8 +59,9 @@ def liftFromOne : (others : Nat) → (rows : List (Inequality (others + 1))) →
     {values : Fin (others + 1) → SignedRatio // Satisfies rows values ∧ SignedRatio.Equiv (values 0) value}
   | 0, rows, value, valid => ⟨oneValues value, valid, by rw [oneValues_zero]; exact SignedRatio.equiv_refl _⟩
   | others + 1, rows, value, valid =>
-      let previous := liftFromOne others (project rows) value valid
-      let last := lift rows previous.val previous.property.1
+      let retained := pruneForObjective (project rows)
+      let previous := liftFromOne others retained.rows value valid
+      let last := lift rows previous.val (retained.restores previous.val previous.property.1)
       ⟨extend previous.val last.val, last.property, by
         change SignedRatio.Equiv (extend previous.val last.val (0 : Fin (others + 1)).castSucc) value
         rw [extend_castSucc]
@@ -61,10 +77,16 @@ theorem projectToOne_headRow_mem (others : Nat) (rows : List (Inequality (others
   induction others with
   | zero => exact member
   | succ others ih =>
-      apply ih (project rows)
+      apply ih (pruneForObjective (project rows)).rows
       have zero : (headRow (others + 1) coefficient bound).pivot = 0 := by
         simp only [headRow, Inequality.pivot, Fin.val_last, Nat.add_one_ne_zero, if_false]
-      exact project_zero_mem rows _ member zero
+      have projected : headRow others coefficient bound ∈ project rows :=
+        project_zero_mem rows _ member zero
+      apply List.mem_append_left
+      apply List.mem_filter.mpr
+      refine ⟨projected, decide_eq_true ?_⟩
+      intro i later
+      simp only [headRow, if_neg later]
 
 private theorem one_lower_bound (rows : List (Inequality 1)) (value : SignedRatio)
     (valid : Satisfies rows (oneValues value)) :

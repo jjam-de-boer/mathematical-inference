@@ -5,6 +5,8 @@ import Thesis.CausalTransport.ModelDescriptionCost
 import Thesis.CausalTransport.CausalAbstractionSynthesis
 import Thesis.CausalTransport.CausalAbstractionInverse
 import Thesis.CausalTransport.CausalAbstractionInverseConditional
+import Thesis.CausalTransport.CausalAbstractionRowSpan
+import Thesis.CausalTransport.CausalScaleSelection
 import Thesis.CausalTransport.LocalSCMReplacement
 import Thesis.CausalTransport.CatalogueSampling
 import Thesis.CausalTransport.CertifiedModeInference
