@@ -20,6 +20,7 @@ inductive IntegerPolynomial (Variable : Type) where
   | add (left right : IntegerPolynomial Variable)
   | mul (left right : IntegerPolynomial Variable)
   | neg (value : IntegerPolynomial Variable)
+  deriving DecidableEq
 
 namespace IntegerPolynomial
 

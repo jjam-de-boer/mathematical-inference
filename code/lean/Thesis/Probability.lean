@@ -83,6 +83,7 @@ import Thesis.Probability.FiniteProductSplicing
 import Thesis.Probability.FiniteProductSourceCompression
 import Thesis.Probability.FiniteProbabilityPolynomialCertificates
 import Thesis.Probability.IntegerPolynomialSolvability
+import Thesis.Probability.ElementaryRationalEquations
 import Thesis.Probability.PellHalfRates
 import Thesis.Probability.FourSquares
 import Thesis.Probability.FiniteRecordSlicing
