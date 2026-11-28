@@ -1,4 +1,3 @@
-import Init.Data.Rat.Lemmas
 import Thesis.CausalTransport.CatalogueSymmetry
 import Thesis.CausalTransport.HiddenDAGModel
 import Thesis.Probability.FiniteFunctionTables
@@ -121,18 +120,32 @@ theorem Layout.Relabel.cost_eq {left right : Layout vertices sources} (rename : 
     (fun source => by simp only [rename.incident, rename.latentValues])
   simp only [Layout.mechanismCells, ← edges, ← incidences, ← parentRows, ← latentRows]
 
-/-- Canonicalize the numerator and denominator by their common divisor. -/
-def reducedMass (mass : QProb) : Rat :=
-  Rat.normalize mass.num mass.den (Nat.ne_of_gt mass.den_pos)
+private def reducePair (numerator denominator : Nat) : Nat × Nat :=
+  let common := numerator.gcd denominator
+  (numerator / common, denominator / common)
 
+/-- Canonicalize the numerator and denominator by their common divisor. -/
+def reducedMass (mass : QProb) : Nat × Nat := reducePair mass.num mass.den
+
+private theorem reducePair_scale (numerator denominator : Nat) {factor : Nat}
+    (positive : 0 < factor) :
+    reducePair (numerator * factor) (denominator * factor) = reducePair numerator denominator := by
+  simp only [reducePair, Nat.gcd_mul_right, Nat.mul_div_mul_right _ _ positive]
+
+/-- Equal fractions have equal reduced pairs. The two positive rescalings
+bring the fractions to a literally identical common denominator. -/
 theorem reducedMass_eq {left right : QProb} (same : QProb.Equiv left right) :
     reducedMass left = reducedMass right := by
-  apply (Rat.normalize_eq_iff (Nat.ne_of_gt left.den_pos) (Nat.ne_of_gt right.den_pos)).mpr
   change left.num * right.den = right.num * left.den at same
-  simpa only [← Int.natCast_mul, Int.ofNat_inj] using same
+  calc
+    _ = reducePair (left.num * right.den) (left.den * right.den) :=
+      (reducePair_scale _ _ right.den_pos).symm
+    _ = reducePair (right.num * left.den) (right.den * left.den) := by
+      rw [same, Nat.mul_comm left.den right.den]
+    _ = _ := reducePair_scale _ _ left.den_pos
 
-private def digitCost (mass : Rat) : Nat :=
-  (mass.num.natAbs.log2 + 1) + (mass.den.log2 + 1)
+private def digitCost (mass : Nat × Nat) : Nat :=
+  (mass.1.log2 + 1) + (mass.2.log2 + 1)
 
 /-- One slot per declared label and the digits of the reduced fraction in
 that slot. Zero uses one numerator digit and the denominator one. Reading
