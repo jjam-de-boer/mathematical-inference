@@ -185,6 +185,56 @@ theorem eventResponse_expectation (μ : Distro A) (event : Event A) :
     simp only [integerResponse, eventResponse, selected, Bool.false_eq_true, if_true, if_false] <;>
     exact SignedRatio.equiv_refl _
 
+/-- An exact indicator expectation is precisely the probability of that
+event. This elementary translation is checked independently of causal
+soundness: the linear solver receives signed integer response coefficients
+and rational bounds, while the model interface speaks in event probabilities. -/
+theorem MomentInterval.exactEvent_iff (law : Distro A) (event : Event A) (value : QProb) :
+    (MomentInterval.exact (eventResponse event) value.toSignedRatio).LawHolds law ↔
+      QProb.Equiv (law.record.probVal event) value := by
+  have indicator := eventResponse_expectation law event
+  constructor
+  · intro bounded
+    have same := SignedRatio.equiv_of_le_of_le bounded.2 bounded.1
+    exact (QProb.toSignedRatio_equiv_iff _ _).mp
+      (SignedRatio.equiv_trans (SignedRatio.equiv_symm indicator) same)
+  · intro same
+    have mean := SignedRatio.equiv_trans indicator (QProb.toSignedRatio_congr same)
+    exact ⟨(SignedRatio.le_congr (SignedRatio.equiv_refl _) mean).mpr (SignedRatio.le_refl _),
+      (SignedRatio.le_congr mean (SignedRatio.equiv_refl _)).mpr (SignedRatio.le_refl _)⟩
+
+/-- An exact singleton measurement of a deterministic readout. -/
+def MomentInterval.exactPushforward [DecidableEq B] (readout : A → B)
+    (measured : FiniteProbRecord B) (reference : B) : MomentInterval A :=
+  MomentInterval.exact (eventResponse (fun table =>
+    FiniteProbRecord.singletonEvent reference (readout table)))
+    (measured.probVal (FiniteProbRecord.singletonEvent reference)).toSignedRatio
+
+/-- Seeing every singleton of a readout determines its whole pushforward
+law. The measurement list includes zero-mass cells as well as positive ones. -/
+theorem MomentInterval.exactPushforward_iff [DecidableEq B]
+    (law : Distro A) (readout : A → B) (measured : FiniteProbRecord B)
+    (labels : List B) (distinct : labels.Nodup) (complete : ∀ label, label ∈ labels) :
+    (∀ row ∈ labels.map (MomentInterval.exactPushforward readout measured), row.LawHolds law) ↔
+      ∀ event : Event B, QProb.Equiv (law.record.probVal (fun a => event (readout a)))
+        (measured.probVal event) := by
+  constructor
+  · intro equations event
+    let predicted := law.record.map readout
+    have cells (reference : B) : QProb.Equiv
+        (predicted.probVal (FiniteProbRecord.singletonEvent reference))
+        (measured.probVal (FiniteProbRecord.singletonEvent reference)) :=
+      QProb.equiv_trans (law.record.map_probVal _ _)
+        ((MomentInterval.exactEvent_iff _ _ _).mp (equations _
+          (List.mem_map_of_mem (complete reference))))
+    exact QProb.equiv_trans (QProb.equiv_symm (law.record.map_probVal _ _))
+      (FiniteProbRecord.probVal_extensional_of_singletons predicted measured labels
+        distinct complete cells event)
+  · rintro fits row member
+    obtain ⟨reference, _, rfl⟩ := List.mem_map.mp member
+    exact (MomentInterval.exactEvent_iff _ _ _).mpr
+      (fits (FiniteProbRecord.singletonEvent reference))
+
 def PartialMomentProblem.solveEventBounds [DecidableEq A] (problem : PartialMomentProblem A) (event : Event A) :=
   problem.solveBounds (eventResponse event)
 

@@ -5,6 +5,7 @@ import Thesis.Causality.CertifiedQuery
 import Thesis.Causality.CurrentBelief
 import Thesis.Causality.IndependentBeliefUpdate
 import Thesis.Causality.CausalAbstraction
+import Thesis.Causality.CausalAbstractionProtocol
 import Thesis.Causality.CausalUrnTickets
 import Thesis.Causality.CausalUrnFreshness
 import Thesis.Causality.QualitativeTiesToPolynomial
