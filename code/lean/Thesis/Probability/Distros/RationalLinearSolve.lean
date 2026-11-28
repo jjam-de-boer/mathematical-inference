@@ -119,10 +119,8 @@ inductive SolveResult (variables : Nat) (rows : List (Inequality variables)) whe
   | feasible (values : Fin variables → SignedRatio) (valid : Satisfies rows values)
   | infeasible (certificate : Infeasibility variables rows)
 
-/-- Complete constructive rational linear feasibility. Elimination uses
-integer row combinations; back-substitution uses computed rational endpoints.
-The number of variables decreases at every recursive call. -/
-def solve : (variables : Nat) → (rows : List (Inequality variables)) → SolveResult variables rows
+private def solveUsing (usePruning : Bool) :
+    (variables : Nat) → (rows : List (Inequality variables)) → SolveResult variables rows
   | 0, rows =>
       match checkFiniteMasses rows (fun row => row.bound) with
       | .negative row member negative => .infeasible (.constant rows row member negative)
@@ -130,13 +128,32 @@ def solve : (variables : Nat) → (rows : List (Inequality variables)) → Solve
           intro row member
           exact (SignedRatio.nonnegative_congr (SignedRatio.sub_zero row.bound)).mpr (nonnegative row member))
   | variables + 1, rows =>
-      let reduced := prune (project rows)
-      match solve variables reduced.rows with
-      | .infeasible certificate =>
-          .infeasible (.projected rows (.subsystem _ _ reduced.subset certificate))
-      | .feasible values valid =>
-          let last := lift rows values (reduced.restores values valid)
-          .feasible (extend values last.val) last.property
+      if usePruning then
+        let reduced := prune (project rows)
+        match solveUsing usePruning variables reduced.rows with
+        | .infeasible certificate =>
+            .infeasible (.projected rows (.subsystem _ _ reduced.subset certificate))
+        | .feasible values valid =>
+            let last := lift rows values (reduced.restores values valid)
+            .feasible (extend values last.val) last.property
+      else
+        match solveUsing usePruning variables (project rows) with
+        | .infeasible certificate => .infeasible (.projected rows certificate)
+        | .feasible values valid =>
+            let last := lift rows values valid
+            .feasible (extend values last.val) last.property
+
+/-- Complete constructive rational linear feasibility with fraction-free
+elimination. The unpruned recursion also supports small kernel-reduction
+fixtures where comparing redundant rows costs more than retaining them. -/
+def solve (variables : Nat) (rows : List (Inequality variables)) : SolveResult variables rows :=
+  solveUsing false variables rows
+
+/-- On larger systems the solver removes redundant intermediate rows
+before eliminating the next variable. The result has the same checked
+feasibility or refutation interface. -/
+def solvePruned (variables : Nat) (rows : List (Inequality variables)) : SolveResult variables rows :=
+  solveUsing true variables rows
 
 theorem solve_success_iff (variables : Nat) (rows : List (Inequality variables)) :
     (match solve variables rows with | .feasible _ _ => True | .infeasible _ => False) ↔

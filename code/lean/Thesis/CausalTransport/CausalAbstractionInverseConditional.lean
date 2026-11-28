@@ -148,6 +148,33 @@ inductive ConditionalResult (spec : Specification fine coarse) (evidence event :
   | supported (valid : spec.Valid) (sharp : spec.ConditionalBounds evidence event)
       (nullEvidence : spec.NullEvidence evidence)
 
+/-- Interpret the sharp evidence range before invoking conditional
+optimization. A reduced solver can supply bounds and a range program
+already transported back to the complete fine table problem. -/
+def conditionalResultOfBounds (spec : Specification fine coarse) (valid : spec.Valid)
+    (evidence event : EventQuery fine)
+    (tableBounds : spec.problem.SharpBounds (eventResponse evidence.onTable))
+    (computeRange : spec.problem.ConditionalLaw evidence.onTable →
+      spec.problem.ConditionalRange evidence.onTable event.onTable) :
+    spec.ConditionalResult evidence event :=
+  let sharp := spec.queryBoundsOfMoment evidence tableBounds
+  if positive : tableBounds.upperLaw.distro.record.EventPositive evidence.onTable then
+    let reference : spec.problem.ConditionalLaw evidence.onTable :=
+      ⟨tableBounds.upperLaw.distro, spec.table_support _, tableBounds.upperLaw.moments, positive⟩
+    .supported valid
+      (spec.conditionalBoundsOfRange evidence event (computeRange reference))
+      (nullEvidenceOfBounds sharp)
+  else
+    .undefined valid sharp.upperModel sharp.upperFits (by
+      intro model fits
+      apply Nat.eq_zero_of_not_pos
+      intro candidatePositive
+      apply positive
+      apply (QProb.equiv_num_pos_iff (evidence.value_of_responseLaw _)).mp
+      exact positive_of_le candidatePositive ((SignedRatio.toSignedRatio_le_iff _ _).mp
+        ((SignedRatio.le_congr (SignedRatio.equiv_refl _) (SignedRatio.equiv_symm sharp.upperAttained)).mp
+          (sharp.bounds model fits).2)))
+
 /-- Only a positive attained upper evidence mass starts fractional
 optimization. A null maximum supplies a fitted witness and excludes positive
 denominators throughout the class. -/
@@ -156,25 +183,8 @@ def solveConditional (spec : Specification fine coarse) (evidence event : EventQ
   if valid : spec.Valid then
     match spec.problem.solveEventBounds evidence.onTable with
     | .infeasible certificate => .incompatible valid (spec.infeasible_not_exists certificate)
-    | .bounded tableBounds =>
-      let sharp := spec.queryBoundsOfMoment evidence tableBounds
-      if positive : tableBounds.upperLaw.distro.record.EventPositive evidence.onTable then
-        let reference : spec.problem.ConditionalLaw evidence.onTable :=
-          ⟨tableBounds.upperLaw.distro, spec.table_support _, tableBounds.upperLaw.moments, positive⟩
-        .supported valid
-          (spec.conditionalBoundsOfRange evidence event
-            (spec.problem.conditionalRange evidence.onTable event.onTable reference))
-          (nullEvidenceOfBounds sharp)
-      else
-        .undefined valid sharp.upperModel sharp.upperFits (by
-          intro model fits
-          apply Nat.eq_zero_of_not_pos
-          intro candidatePositive
-          apply positive
-          apply (QProb.equiv_num_pos_iff (evidence.value_of_responseLaw _)).mp
-          exact positive_of_le candidatePositive ((SignedRatio.toSignedRatio_le_iff _ _).mp
-            ((SignedRatio.le_congr (SignedRatio.equiv_refl _) (SignedRatio.equiv_symm sharp.upperAttained)).mp
-              (sharp.bounds model fits).2)))
+    | .bounded tableBounds => spec.conditionalResultOfBounds valid evidence event tableBounds
+        (spec.problem.conditionalRange evidence.onTable event.onTable)
   else .invalid valid
 
 end Specification

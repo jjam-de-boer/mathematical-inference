@@ -44,13 +44,13 @@ private def setting (input forceOutcome : Bool) : HardIntervention signature :=
 
 private def readout (state : signature.Assignment) : Bool × Bool := (state x, state y)
 
-def localModel (flip : Bool) : Subsystem Bool Bool Bool (Bool × Bool) :=
-  Subsystem.ofExactModel boundary (pairedModel flip) (expose flip) setting readout
-
 theorem shared_source_law (flip : Bool) :
     boundary.shared.SameLaw ⟨(pairedModel flip).prior.map (expose flip)⟩ := by
   intro event
   exact QProb.equiv_refl _
+
+def localModel (flip : Bool) : Subsystem Bool Bool Bool (Bool × Bool) :=
+  Subsystem.ofExactModel boundary (pairedModel flip) (expose flip) (shared_source_law flip) setting readout
 
 theorem single_world_table : boundaryCheck boundary 1 (localModel false) (localModel true) = true := by
   decide +kernel

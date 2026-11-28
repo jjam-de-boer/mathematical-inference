@@ -7,6 +7,8 @@ import Thesis.CausalTransport.CausalAbstractionInverse
 import Thesis.CausalTransport.CausalAbstractionInverseConditional
 import Thesis.CausalTransport.CausalAbstractionRowSpan
 import Thesis.CausalTransport.CausalScaleSelection
+import Thesis.CausalTransport.ResponseOrbitReduction
+import Thesis.CausalTransport.CausalAbstractionOrbits
 import Thesis.CausalTransport.LocalSCMReplacement
 import Thesis.CausalTransport.CatalogueSampling
 import Thesis.CausalTransport.CertifiedModeInference

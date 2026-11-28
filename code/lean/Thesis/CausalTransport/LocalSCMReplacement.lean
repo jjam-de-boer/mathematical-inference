@@ -67,23 +67,6 @@ def Interface.sourceEvent (face : Interface U I A O E) (expose : UnitState → U
     Event UnitState :=
   fun unit => face.sharedEvent u (expose unit)
 
-/-- An actual SCM supplies a local evaluator and a conditional latent law.
-The setting map registers how each input and permitted local intervention
-become hard settings of the subsystem. The readout keeps the chosen joint
-boundary outputs. On shared states of zero probability the conditional
-seed law is immaterial to all admitted contexts. -/
-def Subsystem.ofExactModel (face : Interface U I A O E) {S : ObservedSignature.{0}}
-    (model : ExactModel S) (expose : model.latent.Assignment → U)
-    (setting : I → A → HardIntervention S) (readout : S.Assignment → O) :
-    Subsystem U I A O where
-  Seed := model.latent.Assignment
-  noise u :=
-    if positive : model.prior.EventPositive (face.sourceEvent expose u) then
-      ⟨model.prior.conditionOn (face.sourceEvent expose u) positive⟩
-    else ⟨model.prior⟩
-  response _ unit input intervention :=
-    readout (model.evalUnder (setting input intervention).value unit)
-
 theorem Interface.exposed_support_iff (face : Interface U I A O E)
     {S : ObservedSignature.{0}} (model : ExactModel S) (expose : model.latent.Assignment → U)
     (sharedLaw : face.shared.SameLaw ⟨model.prior.map expose⟩) (u : U) :
@@ -91,15 +74,35 @@ theorem Interface.exposed_support_iff (face : Interface U I A O E)
   QProb.equiv_num_pos_iff (QProb.equiv_trans (sharedLaw (face.sharedEvent u))
     (model.prior.map_probVal expose (face.sharedEvent u)))
 
+/-- An actual SCM supplies a local evaluator and a conditional latent law.
+The setting map registers how each input and permitted local intervention
+become hard settings of the subsystem. The readout keeps the chosen joint
+boundary outputs. On shared states of zero probability the conditional
+seed law is immaterial to all admitted contexts. The exposed marginal
+must agree with the interface population law. -/
+def Subsystem.ofExactModel (face : Interface U I A O E) {S : ObservedSignature.{0}}
+    (model : ExactModel S) (expose : model.latent.Assignment → U)
+    (sharedLaw : face.shared.SameLaw ⟨model.prior.map expose⟩)
+    (setting : I → A → HardIntervention S) (readout : S.Assignment → O) :
+    Subsystem U I A O where
+  Seed := model.latent.Assignment
+  noise u :=
+    if positive : face.Supported u then
+      ⟨model.prior.conditionOn (face.sourceEvent expose u)
+        ((face.exposed_support_iff model expose sharedLaw u).mp positive)⟩
+    else ⟨model.prior⟩
+  response _ unit input intervention :=
+    readout (model.evalUnder (setting input intervention).value unit)
+
 theorem Subsystem.ofExactModel_noise_at (face : Interface U I A O E)
     {S : ObservedSignature.{0}} (model : ExactModel S) (expose : model.latent.Assignment → U)
     (sharedLaw : face.shared.SameLaw ⟨model.prior.map expose⟩)
     (setting : I → A → HardIntervention S) (readout : S.Assignment → O)
     (u : U) (positive : face.Supported u) :
-    ((ofExactModel face model expose setting readout).noise u).record =
+    ((ofExactModel face model expose sharedLaw setting readout).noise u).record =
       model.prior.conditionOn (face.sourceEvent expose u)
         ((face.exposed_support_iff model expose sharedLaw u).mp positive) := by
-  simp only [ofExactModel, dif_pos ((face.exposed_support_iff model expose sharedLaw u).mp positive)]
+  simp only [ofExactModel, dif_pos positive]
 
 /-- A context can route inputs and interventions using the shared state
 and the outside draw. Its readout can also use those values and the

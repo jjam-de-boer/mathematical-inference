@@ -143,12 +143,19 @@ inductive Result (problem : PartialMomentProblem A) where
   | feasible (law : problem.CompatibleLaw)
   | infeasible (certificate : RationalLinear.Infeasibility problem.cells.length problem.rows)
 
+private def decisionOfResult (problem : PartialMomentProblem A)
+    (result : RationalLinear.SolveResult problem.cells.length problem.rows) : problem.Result :=
+  match result with
+  | .feasible values valid => .feasible (problem.lawOfVector values ((problem.rows_iff values).mp valid))
+  | .infeasible certificate => .infeasible certificate
+
 /-- Complete finite partial-moment decision, with no denominator cap and
 no completed full moment table supplied by the caller. -/
 def solve (problem : PartialMomentProblem A) : problem.Result :=
-  match RationalLinear.solve problem.cells.length problem.rows with
-  | .feasible values valid => .feasible (problem.lawOfVector values ((problem.rows_iff values).mp valid))
-  | .infeasible certificate => .infeasible certificate
+  problem.decisionOfResult (RationalLinear.solve problem.cells.length problem.rows)
+
+def solvePruned (problem : PartialMomentProblem A) : problem.Result :=
+  problem.decisionOfResult (RationalLinear.solvePruned problem.cells.length problem.rows)
 
 theorem solve_success_iff [DecidableEq A] (problem : PartialMomentProblem A) :
     (match problem.solve with | .feasible _ => True | .infeasible _ => False) ↔

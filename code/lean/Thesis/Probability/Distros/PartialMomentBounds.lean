@@ -169,7 +169,7 @@ inductive BoundResult (problem : PartialMomentProblem A) (response : A → Int) 
 /-- Decide feasibility and, when feasible, return attained sharp bounds
 for any integer response, including events and scalar or mixed moments. -/
 def solveBounds [DecidableEq A] (problem : PartialMomentProblem A) (response : A → Int) : problem.BoundResult response :=
-  match RationalLinear.solve problem.cells.length problem.rows with
+  match RationalLinear.solvePruned problem.cells.length problem.rows with
   | .feasible values valid => .bounded (problem.boundsOfVector response values ((problem.rows_iff values).mp valid))
   | .infeasible certificate => .infeasible certificate
 

@@ -3,6 +3,7 @@ import Thesis.Examples.CausalAbstractionSynthesis
 import Thesis.Examples.CausalAbstractionInverse
 import Thesis.Examples.CausalAbstractionRowSpan
 import Thesis.Examples.CausalScaleSelection
+import Thesis.Examples.CausalAbstractionOrbits
 import Thesis.Examples.LocalSCMReplacement
 import Thesis.Examples.CatalogueIIDSymmetry
 import Thesis.Examples.ModelDescriptionCost

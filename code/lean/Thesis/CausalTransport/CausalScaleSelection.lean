@@ -218,7 +218,7 @@ def Candidate.check (candidate : Candidate fine) (workload : Workload fine) :
   | .missing action required missing => .fail (.missingExperiment action required missing)
   | .all covers =>
     if valid : candidate.specification.Valid then
-      match candidate.specification.problem.solve with
+      match candidate.specification.problem.solvePruned with
       | .infeasible certificate => .fail (.incompatible
           (candidate.specification.infeasible_not_exists certificate))
       | .feasible law =>
