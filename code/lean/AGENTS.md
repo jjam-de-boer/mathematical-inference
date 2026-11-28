@@ -74,6 +74,14 @@ The main implemented results are:
   a unique completed assignment. Response tables choose a coupling across
   hypothetical experiments, without determining a unique counterfactual law
   or reconstructing the graph.
+  With only a finite list of unary plausibility ties as input, existence
+  of a single finite rational game is computably equivalent to rational
+  solvability of an integer polynomial. The graph is supplied and consists
+  of disjoint directed edges and isolated vertices, all recorded bits.
+  Each tie compares events in one experiment, either observation or a
+  single-bit setting. On one edge with an isolated reference bit, four
+  ties force the irrational bias `1/√2`. Each experiment alone has a
+  rational urn, and the four ties share an exact quadratic-rate realization.
 - Joint and conditional identification completeness for the stated positive
   model classes, original finite hidden-DAG transfer, and supported-zero
   certificates on each formula's used-conditional domain (the primitive
