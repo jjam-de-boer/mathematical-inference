@@ -61,6 +61,7 @@ import Thesis.Causality.PetriWordRequirements
 import Thesis.Causality.PetriWordCompletion
 import Thesis.Causality.PetriControlWordCompletion
 import Thesis.Causality.PetriExactEndpointReduction
+import Thesis.Causality.PetriCharacteristicAnalysis
 import Thesis.Causality.PetriReversal
 import Thesis.Causality.CoordinateBoxes
 import Thesis.Causality.CoordinateBoxScan
@@ -225,6 +226,13 @@ completion for that word. Searching for a word remains separate.
 to ordinary exact reachability. Setup and cleanup change only unspecified
 counters. Constructing the compiled execution and decoding any successful
 compiled word preserve actual original words and matching endpoints.
+
+`PetriCharacteristicAnalysis` compiles sequences of controlled segments
+into signed linear equations over natural counts and markings. Each run
+supplies a solution. Arithmetic infeasibility rules out all runs, and
+arithmetic coordinate bounds constrain their actual counts. Specified
+bridges retain their full firing guards. Interior firing order still
+requires a separate argument.
 
 `CoordinateBoxScan` and `PetriCoverabilityScan` check finite supplied lists
 with exact success and failure statements. Hits retain literal box contexts

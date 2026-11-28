@@ -126,6 +126,7 @@ import Thesis.Examples.PetriControlCoverability
 import Thesis.Examples.PetriPartialCoverability
 import Thesis.Examples.PetriControlWordCompletion
 import Thesis.Examples.PetriExactEndpoints
+import Thesis.Examples.PetriCharacteristic
 import Thesis.Examples.PetriControlPumping
 import Thesis.Examples.IntegerFeasibility
 import Thesis.Examples.IntegerCarryLoops
