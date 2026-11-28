@@ -3,6 +3,7 @@ import Thesis.Examples.CausalAbstractionSynthesis
 import Thesis.Examples.CausalAbstractionInverse
 import Thesis.Examples.LocalSCMReplacement
 import Thesis.Examples.CatalogueIIDSymmetry
+import Thesis.Examples.ModelDescriptionCost
 import Thesis.Examples.InferenceWorkflow
 import Thesis.Examples.CatalogueSampling
 import Thesis.Examples.CurrentBeliefInference

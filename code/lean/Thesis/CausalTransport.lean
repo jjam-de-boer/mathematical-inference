@@ -1,6 +1,7 @@
 import Thesis.CausalTransport.CertifiedModeComputation
 import Thesis.CausalTransport.CatalogueSymmetry
 import Thesis.CausalTransport.CatalogueIIDSymmetry
+import Thesis.CausalTransport.ModelDescriptionCost
 import Thesis.CausalTransport.CausalAbstractionSynthesis
 import Thesis.CausalTransport.CausalAbstractionInverse
 import Thesis.CausalTransport.CausalAbstractionInverseConditional
